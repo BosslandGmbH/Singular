@@ -11,6 +11,7 @@ namespace Singular
         Instances = 0x2,
         Battlegrounds = 0x4,
 
+
         All = Normal | Instances | Battlegrounds,
     }
 

@@ -18,6 +18,7 @@ namespace Singular
         LegionStrike = 4,
         Pursuit = 5,
         AxeToss = 6,
+        Felstorm = 7,
 
         // Felpup
         DevourMagic = 4,

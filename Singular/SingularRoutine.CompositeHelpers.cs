@@ -200,7 +200,7 @@ namespace Singular
         public Composite CreateSpellBuff(int spellId, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector)
         {
             return new Decorator(
-                ret => extra(ret) && SpellManager.CanBuff(spellId, unitSelector(ret)),
+                ret => extra(ret) && unitSelector(ret) != null && SpellManager.CanBuff(spellId, unitSelector(ret)),
                 new Action(ret => CastWithLog(spellId, unitSelector(ret))));
         }
 

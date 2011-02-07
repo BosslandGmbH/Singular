@@ -14,7 +14,7 @@ namespace Singular
         [Class(WoWClass.Warlock), Spec(TalentSpec.DemonologyWarlock), Context(WoWContext.All), Behavior(BehaviorType.Combat), Behavior(BehaviorType.Pull)]
         public Composite CreateDemonologyCombat()
         {
-            AddSpellSucceedWait("Immolate");
+            //AddSpellSucceedWait("Immolate");
             
             return new PrioritySelector(
                 CreateRangeAndFace(35f, ret => Me.CurrentTarget),
@@ -36,7 +36,7 @@ namespace Singular
                         CreateSpellCast("Shadowflame", ret => Me.CurrentTarget.Distance < 5)
                         )),
 
-                CreateSpellBuff("Immolate"),
+                CreateSpellBuff("Immolate", ret=> LastSpellCast != "Immolate"),
                 CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss),
                 CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom")),
                 CreateSpellBuff("Corruption"),

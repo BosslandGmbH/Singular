@@ -42,9 +42,9 @@ namespace Singular
         {
             return new PrioritySelector(
 
-                new Decorator(
-                    ret => Me.HealthPercent >= 95 && Me.ManaPercent >= 95 && (Me.HasAura("Food") || Me.HasAura("Drink")),
-                    new Action(ret => Lua.DoString("SitStandOrDescendStart()"))),
+                //new Decorator(
+                //    ret => Me.HealthPercent >= 95 && Me.ManaPercent >= 95 && (Me.HasAura("Food") || Me.HasAura("Drink")),
+                //    new Action(ret => Lua.DoString("SitStandOrDescendStart()"))),
 
                 new Decorator(
                     ret => Me.HealthPercent <= 50 && !Me.HasAura("Food"),

@@ -110,6 +110,7 @@ namespace Singular
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
             if (!EnsureComposite(false, BehaviorType.Rest, out _restBehavior))
             {
+                Logger.Write("Using default rest behavior.");
                 _restBehavior = CreateDefaultRestComposite();
             }
 
@@ -155,6 +156,20 @@ namespace Singular
         public bool CurrentTargetIsEliteOrBoss
         {
             get { return Me.CurrentTarget.Elite; }
+        }
+
+        public bool IsMounted
+        {
+            get
+            {
+                switch (StyxWoW.Me.Shapeshift)
+                {
+                    case ShapeshiftForm.FlightForm:
+                    case ShapeshiftForm.EpicFlightForm:
+                        return true;
+                }
+                return StyxWoW.Me.Mounted;
+            }
         }
 
         public bool IsCrowdControlled(WoWUnit unit)

@@ -60,7 +60,9 @@
   <ItemGroup>
     <Compile Include="ClassSpecific\Priest\PriestHealing.cs" />
     <Compile Include="Composites\ActionEventFire.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="HealTargeting.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="PetManager.cs" />
     <Compile Include="SingularRoutine.CompositeHelpers.cs" />
     <Compile Include="SingularRoutine.cs" />

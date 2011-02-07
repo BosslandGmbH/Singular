@@ -11,11 +11,7 @@ namespace Singular
 {
 	partial class SingularRoutine
 	{
-        [Class(WoWClass.Hunter), 
-        Spec(TalentSpec.BeastMasteryHunter), 
-        Behavior(BehaviorType.Combat), 
-        Behavior(BehaviorType.Pull),
-        Context(WoWContext.All)]
+        [Class(WoWClass.Hunter), Spec(TalentSpec.BeastMasteryHunter), Behavior(BehaviorType.Combat), Behavior(BehaviorType.Pull), Context(WoWContext.All)]
         public Composite CreateBeastMasterCombat()
         {
             return new PrioritySelector(

@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 using System.Reflection;
 
 using Styx;
@@ -6,6 +8,7 @@ using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.Logic;
 using Styx.Logic.BehaviorTree;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
@@ -120,6 +123,11 @@ namespace Singular
         {
             Logger.Write(reason);
             TreeRoot.Stop();
+        }
+
+        public List<WoWPlayer> NearbyFriendlyPlayers
+        {
+            get { return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40).ToList(); }
         }
     }
 }

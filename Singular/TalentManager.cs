@@ -158,7 +158,7 @@ namespace Singular
 					{
 						var glyphInfo = Lua.GetReturnValues(String.Format("return GetGlyphSocketInfo({0})", i));
 
-						if (glyphInfo != null && glyphInfo[3] != "nil")
+						if (glyphInfo != null && glyphInfo[3] != "nil" && !string.IsNullOrEmpty(glyphInfo[3]))
 						{
 							Glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name);
 						}

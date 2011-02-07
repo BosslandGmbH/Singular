@@ -137,6 +137,11 @@ namespace Singular
             get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet).ToList(); }
         }
 
+        public bool CurrentTargetIsEliteOrBoss
+        {
+            get { return Me.CurrentTarget.Elite; }
+        }
+
         public bool IsCrowdControlled(WoWUnit unit)
         {
             return unit.GetAllAuras().Any(

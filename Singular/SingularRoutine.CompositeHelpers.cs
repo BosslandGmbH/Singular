@@ -71,7 +71,7 @@ namespace Singular
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
 
                     new Decorator(
-                        ret => Me.CurrentTarget != null && Me.IsSafelyFacing(Me.CurrentTarget, 70),
+                        ret => Me.CurrentTarget != null && !Me.IsSafelyFacing(Me.CurrentTarget, 70),
                         new Action(ret => Me.CurrentTarget.Face()))
                     ));
         }

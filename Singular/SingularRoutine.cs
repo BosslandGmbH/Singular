@@ -129,7 +129,7 @@ namespace Singular
 
         public List<WoWPlayer> NearbyFriendlyPlayers
         {
-            get { return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40).ToList(); }
+            get { return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList(); }
         }
 
         public List<WoWUnit> NearbyUnfriendlyUnits

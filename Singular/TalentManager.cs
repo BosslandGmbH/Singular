@@ -5,6 +5,7 @@ using System.Linq;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.WoWInternals;
+using Styx.Logic.Combat;
 
 namespace Singular
 {
@@ -70,11 +71,14 @@ namespace Singular
         {
             Talents = new List<Talent>();
             Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", HandlePointsChangedEvent);
+			Lua.Events.AttachEvent("GLYPH_UPDATED", HandleGlyphUpdateEvent);
         }
 
         public static TalentSpec CurrentSpec { get; private set; }
 
         public static List<Talent> Talents { get; private set; }
+
+		public static List<string> Glyphs { get; private set; }
 
         public static int GetCount(int tab, int index)
         {
@@ -85,6 +89,11 @@ namespace Singular
         {
             Update();
         }
+
+		private static void HandleGlyphUpdateEvent(object sender, LuaEventArgs args)
+		{
+			Update();
+		}
 
         public static void Update()
         {
@@ -137,6 +146,23 @@ namespace Singular
                         }
                     }
                 }
+
+				Glyphs.Clear();
+
+				int glyphCount = Lua.GetReturnVal<int>("return GetNumGlyphSockets()", 0);
+
+				if (glyphCount != 0)
+				{
+					for (int i = 1; i <= glyphCount; i++)
+					{
+						var glyphInfo = Lua.GetReturnValues(String.Format("return GetGlyphSocketInfo({0})", i));
+
+						if (glyphInfo != null && glyphInfo[3] != "nil")
+						{
+							Glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name);
+						}
+					}
+				}
             }
 
             if (treeOne == 0 && treeTwo == 0 && treeThree == 0)

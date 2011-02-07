@@ -19,6 +19,9 @@ namespace Singular
         public Composite CreateBeastMasterCombat()
         {
             return new PrioritySelector(
+                // Make sure we're in range, and facing the damned target. (LOS check as well)
+                CreateRangeAndFace(35f, ret => Me.CurrentTarget),
+                CreateAutoAttack(true),
 
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),
@@ -30,7 +33,9 @@ namespace Singular
                 // Basically, cast it whenever its up.
                 CreateSpellCast("Kill Command"),
                 // Only really cast this when we need a sting refresh.
-                CreateSpellCast("Cobra Shot", ret => Me.CurrentTarget.HasAura("Serpent Sting") && Me.CurrentTarget.Auras["Serpent Sting"].TimeLeft.TotalSeconds < 3),
+                CreateSpellCast(
+                    "Cobra Shot",
+                    ret => Me.CurrentTarget.HasAura("Serpent Sting") && Me.CurrentTarget.Auras["Serpent Sting"].TimeLeft.TotalSeconds < 3),
                 // Focus dump on arcane shot, unless our pet has bestial wrath, then we use it for better DPS
                 CreateSpellCast("Arcane Shot")
                 );
@@ -40,6 +45,8 @@ namespace Singular
         public Composite CreateSurvivalCombat()
         {
             return new PrioritySelector(
+                // Make sure we're in range, and facing the damned target. (LOS check as well)
+                CreateRangeAndFace(35f, ret => Me.CurrentTarget),
 
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),

@@ -1,10 +1,13 @@
-﻿using Styx.Logic.Combat;
+﻿using Styx;
+using Styx.Logic.Combat;
+using Styx.Logic.Pathing;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
 
 namespace Singular
 {
+    public delegate WoWPoint LocationRetrievalDelegate(object context);
     partial class SingularRoutine
     {
         #region Delegates
@@ -14,6 +17,37 @@ namespace Singular
         public delegate WoWUnit UnitSelectionDelegate(object context);
 
         #endregion
+
+        protected Composite CreateRangeAndFace(float maxRange, UnitSelectionDelegate distanceFrom)
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    // Either get in range, or get in LOS.
+                    ret => StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) > maxRange || !distanceFrom(ret).InLineOfSight,
+                    new Action(ret => Navigator.MoveTo(distanceFrom(ret).Location))),
+                new Decorator(
+                    ret => Me.IsMoving,
+                    new Action(ret => Navigator.PlayerMover.MoveStop())),
+
+                new Decorator(
+                    ret => Me.CurrentTarget != null && Me.IsSafelyFacing(Me.CurrentTarget, 70),
+                    new Action(ret => Me.CurrentTarget.Face()))
+                );
+        }
+
+        protected Composite CreateAutoAttack(bool includePet)
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => !Me.IsAutoAttacking,
+                    new Action(ret => Me.ToggleAttack())),
+
+                new Decorator(
+                    ret => includePet && Me.GotAlivePet && !Me.Pet.IsAutoAttacking,
+                    new Action(ret => PetManager.CastPetAction(PetAction.Attack)))
+
+                );
+        }
 
         private void CastWithLog(string spellName, WoWUnit onTarget)
         {

@@ -79,14 +79,33 @@ namespace Singular
         public void CreateBehaviors()
         {
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
-            if (!EnsureComposite(true, BehaviorType.Combat, out _combatBehavior))
+            Composite temporaryCombat;
+            if (!EnsureComposite(true, BehaviorType.Combat, out temporaryCombat))
             {
                 return;
             }
+
+            // Deal with ensuring a proper target here. We don't want invalid/null tagets to go down the tree.
+            _combatBehavior = new PrioritySelector(
+                new Decorator(
+                    ret => Me.CurrentTarget == null || Me.CurrentTarget.Dead,
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => Targeting.Instance.FirstUnit != null,
+                            new Sequence(
+                                new Action(ret => Logger.Write("Target is invalid. Switching to the first one in the target list!")),
+                                new Action(ret => Targeting.Instance.FirstUnit.Target()))))),
+
+                temporaryCombat);
+
+
             if (!EnsureComposite(true, BehaviorType.Pull, out _pullBehavior))
             {
                 return;
             }
+
+
+
 
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
             if (!EnsureComposite(false, BehaviorType.Rest, out _restBehavior))

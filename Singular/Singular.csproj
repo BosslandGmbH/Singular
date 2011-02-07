@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="ClassSpecific\Priest\Discipline.cs" />
+    <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
     <Compile Include="CompositeBuilder.cs" />
     <Compile Include="Composites\ActionEventFire.cs" />

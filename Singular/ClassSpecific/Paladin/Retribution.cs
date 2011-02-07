@@ -16,24 +16,17 @@ namespace Singular
 		Context(WoWContext.All)]
 		public Composite CreateRetributionPaladinCombat()
 		{
+            // Divine Purpose - Tab 3, Index 17
 			return 
 				new PrioritySelector(
 
-					CreateSpellBuffOnSelf("Inquisition",
-						ret => Me.CurrentHolyPower == 3),
+					CreateSpellBuffOnSelf("Inquisition", ret => Me.CurrentHolyPower == 3),
 					CreateSpellCast("Hammer of Wrath"),
-					CreateSpellCast("Exorcism",
-						ret => Me.ActiveAuras.ContainsKey("The Art of War")),
-					CreateSpellCast("Templar's Verdict",
-						ret => Me.CurrentHolyPower == 3),
-					CreateSpellCast("Crusader Strike",
-						ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 8) < 4 ||
-						       TalentManager.GetCount(3,17) < 2),
-					CreateSpellCast("Divine Storm",
-						ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 4 && 
-							   TalentManager.GetCount(3,17) >= 2),
-					CreateSpellCast("Templar's Verdict",
-						ret => Me.HasAura("Hand of Light")),
+					CreateSpellCast("Exorcism", ret => Me.ActiveAuras.ContainsKey("The Art of War")),
+					CreateSpellCast("Templar's Verdict", ret => Me.CurrentHolyPower == 3),
+					CreateSpellCast("Crusader Strike", ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 8) < 4 || TalentManager.GetCount(3,17) < 2),
+					CreateSpellCast("Divine Storm", ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 4 && TalentManager.GetCount(3,17) >= 2),
+					CreateSpellCast("Templar's Verdict", ret => Me.HasAura("Hand of Light")),
 					CreateSpellCast("Judgement"),
 					CreateSpellCast("Holy Wrath"),
 					CreateSpellCast("Consecration")
@@ -64,14 +57,10 @@ namespace Singular
 
 			return
 				new PrioritySelector(
-					CreateSpellBuffOnSelf("Zealotry",
-						ret => Me.CurrentTarget.MaxHealth > Me.MaxHealth * 10),
-					CreateSpellBuffOnSelf("Avenging Wrath",
-						ret => !Me.HasAura("Zealotry") && NearbyUnfriendlyUnits.Count > 0),
-					CreateSpellBuffOnSelf("Lay on Hands",
-						ret => Me.HealthPercent <= LayOnHandsHealth && !Me.HasAura("Forbearance")),
-					CreateSpellBuffOnSelf("Divine Protection",
-						ret => Me.HealthPercent <= DivineProtectionHealth)
+					CreateSpellBuffOnSelf("Zealotry", ret => Me.CurrentTarget.MaxHealth > Me.MaxHealth * 10),
+					CreateSpellBuffOnSelf("Avenging Wrath", ret => !Me.HasAura("Zealotry") && NearbyUnfriendlyUnits.Count > 0),
+					CreateSpellBuffOnSelf("Lay on Hands", ret => Me.HealthPercent <= LayOnHandsHealth && !Me.HasAura("Forbearance")),
+					CreateSpellBuffOnSelf("Divine Protection", ret => Me.HealthPercent <= DivineProtectionHealth)
 					);
 		}
 
@@ -87,9 +76,11 @@ namespace Singular
                         ret => (!Me.HasAura("Blessing of Might") || Me.Auras["Blessing of Might"].CreatorGuid != Me.Guid) &&
                                 !Me.HasAura("Embrace of the Shale Spider") &&
                                 !Me.HasAura("Mark of the Wild")),
+
                     CreateSpellBuffOnSelf("Blessing of Might",
                         ret => !Me.HasAura("Blessing of Kings") || 
                                 Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
+
 					CreateSpellBuffOnSelf("Seal of Truth")
 					);
 		}

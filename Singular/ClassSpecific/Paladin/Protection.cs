@@ -16,38 +16,30 @@ namespace Singular
 		Context(WoWContext.All)]
 		public Composite CreateProtectionPaladinCombat()
 		{
-			return
-				new PrioritySelector(
+		    return new PrioritySelector(
 
-					//Single target
-					new Decorator(ret => NearbyUnfriendlyUnits.Count == 0 || !NearbyUnfriendlyUnits.Exists(a => a.Distance < 8),
-						new PrioritySelector(
-							CreateSpellCast("Hand of Reckoning",
-								ret => !Me.CurrentTarget.IsTargetingMeOrPet && !Me.CurrentTarget.Fleeing && Me.IsInParty),
-							CreateSpellCast("Hammer of Wrath"),
-							CreateSpellCast("Shield of the Righteous",
-								ret => Me.CurrentHolyPower == 3),
-							CreateSpellCast("Avenger's Shield"),
-							CreateSpellCast("Crusader Strike"),
-							CreateSpellCast("Judgement"),
-							CreateSpellCast("Consecration"),
-							CreateSpellCast("Holy Wrath"))),
-					
-					//Multi target
-					new Decorator(ret => NearbyUnfriendlyUnits.Count > 0 && NearbyUnfriendlyUnits.Exists(a => a.Distance < 8),
-						new PrioritySelector(
-							CreateSpellCast("Hand of Reckoning",
-								ret => !Me.CurrentTarget.IsTargetingMeOrPet && !Me.CurrentTarget.Fleeing && Me.IsInParty),
-							CreateSpellCast("Hammer of Wrath"),
-							CreateSpellCast("Shield of the Righteous",
-								ret => Me.CurrentHolyPower == 3),
-							CreateSpellCast("Avenger's Shield"),
-							CreateSpellCast("Hammer of the Righteous"),
-							CreateSpellCast("Consecration"),
-							CreateSpellCast("Holy Wrath"),
-							CreateSpellCast("Judgement")))
+		            // Same rotation for both.
+		            CreateSpellCast("Hand of Reckoning", ret => !Me.CurrentTarget.IsTargetingMeOrPet && !Me.CurrentTarget.Fleeing && Me.IsInParty),
+		            CreateSpellCast("Hammer of Wrath"),
+		            CreateSpellCast("Shield of the Righteous", ret => Me.CurrentHolyPower == 3),
+		            CreateSpellCast("Avenger's Shield"),
 
-				);
+		            //Multi target
+		            new Decorator(
+		                ret => NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1,
+		                new PrioritySelector(
+		                    CreateSpellCast("Hammer of the Righteous"),
+		                    CreateSpellCast("Consecration"),
+		                    CreateSpellCast("Holy Wrath"),
+		                    CreateSpellCast("Judgement"))),
+		            new Decorator(
+		                ret => NearbyUnfriendlyUnits.Count(a => a.Distance < 8) <= 1,
+		                new PrioritySelector(
+		                    //Single target
+		                    CreateSpellCast("Crusader Strike"),
+		                    CreateSpellCast("Judgement"),
+		                    CreateSpellCast("Consecration"),
+		                    CreateSpellCast("Holy Wrath"))));
 		}
 
 		[Class(WoWClass.Paladin),

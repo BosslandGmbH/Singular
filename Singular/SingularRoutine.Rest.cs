@@ -58,8 +58,9 @@ namespace Singular
                         )),
 
 
+                // Make sure we're a class with mana, if not, just ignore drinking all together!
                 new Decorator(
-                    ret => Me.ManaPercent <= 50 && !Me.HasAura("Drink"),
+                    ret => Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= 50 && !Me.HasAura("Drink"),
                     new PrioritySelector(
                         new Decorator(
                             ret => Me.IsMoving,

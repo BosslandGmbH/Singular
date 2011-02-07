@@ -19,6 +19,32 @@ namespace Singular
 
         #endregion
 
+        protected Composite CreateWaitForCast()
+        {
+            return new Decorator(
+                ret => Me.IsCasting,
+                new Action(delegate { }));
+        }
+
+        protected Composite CreateCastPetAction(PetAction action, bool parentIsSelector)
+        {
+            return CreateCastPetActionOn(action, parentIsSelector, ret => Me.CurrentTarget);
+        }
+
+        protected Composite CreateCastPetActionOn(PetAction action, bool parentIsSelector, UnitSelectionDelegate onUnit)
+        {
+            return new Action(
+                delegate(object context)
+                    {
+                        PetManager.CastPetAction(action, onUnit(context));
+
+                        // Purposely fail here, we want to 'skip' down the tree.
+                        if (parentIsSelector)
+                            return RunStatus.Failure;
+                        return RunStatus.Success;
+                    });
+        }
+
         protected Composite CreateEnsureTarget()
         {
             return new Decorator(

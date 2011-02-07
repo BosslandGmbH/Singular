@@ -17,8 +17,13 @@ namespace Singular
             return new PrioritySelector(
                 CreateRangeAndFace(35f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
+                CreateWaitForCast(),
 
                 CreateSpellBuffOnSelf("Soulburn"),
+
+                new Decorator(
+                    ret => Me.CurrentTarget.Fleeing,
+                    CreateCastPetAction(PetAction.AxeToss, true)),
 
                 new Decorator(
                     ret => CurrentTargetIsEliteOrBoss,

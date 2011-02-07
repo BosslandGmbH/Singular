@@ -40,7 +40,6 @@ namespace Singular
                         CreateSpellCast("Shadowflame", ret => Me.CurrentTarget.Distance < 5)
                         )),
 
-                new ActionLogMessage(false, "Immolate"),
                 CreateSpellBuff("Immolate"),
                 CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss),
                 CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom")),

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Singular.Composites;
+
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
@@ -15,7 +17,7 @@ namespace Singular
         public Composite CreateDemonologyCombat()
         {
             WantedPet = "Felguard";
-            //AddSpellSucceedWait("Immolate");
+            AddSpellSucceedWait("Immolate");
 
             return new PrioritySelector(
                 CreateRangeAndFace(35f, ret => Me.CurrentTarget),
@@ -37,11 +39,14 @@ namespace Singular
                         CreateSpellCast("Shadowflame", ret => Me.CurrentTarget.Distance < 5)
                         )),
 
-                CreateSpellBuff("Immolate", ret=> LastSpellCast != "Immolate"),
+                new ActionLogMessage(false, "Immolate"),
+                CreateSpellBuff("Immolate", ret=>{Logger.Write(Me.CurrentTarget.ActiveAuras.ContainsKey("Immolate").ToString());
+                                                     return true;
+                }),
                 CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss),
                 CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom")),
                 CreateSpellBuff("Corruption"),
-                CreateSpellCast("Handl of Gul'dan"),
+                CreateSpellCast("Hand of Gul'dan"),
 
                 // TODO: Make this cast Soulburn if it's available
                 CreateSpellCast("Soul Fire", ret => Me.HasAura("Improved Soul Fire")),

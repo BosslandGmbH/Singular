@@ -128,7 +128,7 @@ namespace Singular
 
         public Composite CreateSpellCastOnSelf(string spellName, SimpleBoolReturnDelegate extra)
         {
-            return CreateSpellCast(spellName, ret => true, ret => Me);
+            return CreateSpellCast(spellName, extra, ret => Me);
         }
 
         #endregion
@@ -190,7 +190,7 @@ namespace Singular
 
         public Composite CreateSpellBuffOnSelf(string spellName, SimpleBoolReturnDelegate extra)
         {
-            return CreateSpellBuff(spellName, ret => true, ret => Me);
+            return CreateSpellBuff(spellName, extra, ret => Me);
         }
 
         #endregion
@@ -221,7 +221,7 @@ namespace Singular
 
         public Composite CreateSpellBuffOnSelf(int spellId, SimpleBoolReturnDelegate extra)
         {
-            return CreateSpellCast(spellId, ret => true, ret => Me);
+            return CreateSpellCast(spellId, extra, ret => Me);
         }
 
         #endregion

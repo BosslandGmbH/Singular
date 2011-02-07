@@ -1,6 +1,5 @@
 ﻿using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Helpers;
 using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWCache;

@@ -1,4 +1,6 @@
-﻿using Styx.Combat.CombatRoutine;
+﻿using Singular.Composites;
+
+using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
 
 using TreeSharp;
@@ -22,8 +24,9 @@ namespace Singular
                 CreateSpellBuffOnSelf("Fel Armor"),
                 CreateSpellBuffOnSelf("Soul Link"),
 
+                new ActionLogMessage(false, "Checking for pet"),
                 new Decorator(
-                    ret => Me.GotAlivePet,
+                    ret => !Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(WantedPet)))
                 );
         }

@@ -66,6 +66,7 @@
     <Compile Include="CombatLog.cs" />
     <Compile Include="CompositeBuilder.cs" />
     <Compile Include="Composites\ActionEventFire.cs" />
+    <Compile Include="Composites\ActionLogMessage.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="HealTargeting.cs" />
     <Compile Include="Logger.cs" />

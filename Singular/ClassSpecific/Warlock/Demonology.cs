@@ -14,8 +14,8 @@ namespace Singular
         [Class(WoWClass.Warlock), Spec(TalentSpec.DemonologyWarlock), Context(WoWContext.All), Behavior(BehaviorType.Combat), Behavior(BehaviorType.Pull)]
         public Composite CreateDemonologyCombat()
         {
-            //AddSpellSucceedWait("Immolate");
-            
+            WantedPet = "Felguard";
+
             return new PrioritySelector(
                 CreateRangeAndFace(35f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),

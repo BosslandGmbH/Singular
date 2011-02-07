@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using Styx;
+using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.WoWInternals;
 
@@ -38,6 +39,10 @@ namespace Singular
                     LastSpellCast = e.SpellName;
 
                     if (_sleepAfterSuccessSpells.Contains(e.SpellName))
+                        StyxWoW.SleepForLagDuration();
+
+                    // Force a wait for all summoned minions. This prevents double-casting it.
+                    if (Class == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
                         StyxWoW.SleepForLagDuration();
                     break;
             }

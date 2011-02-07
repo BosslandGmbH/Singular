@@ -168,9 +168,9 @@ namespace Singular
 
         public Composite CreateSpellBuff(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector)
         {
-            return new Decorator(
-                ret => extra(ret) && unitSelector(ret) != null && SpellManager.CanBuff(spellName, unitSelector(ret)),
-                new Action(ret => CastWithLog(spellName, unitSelector(ret))));
+            // BUGFIX: HB currently doesn't check ActiveAuras in the spell manager. So this'll break on new spell procs
+            return CreateSpellCast(
+                spellName, ret => extra(ret) && unitSelector(ret) != null && !unitSelector(ret).ActiveAuras.ContainsKey(spellName), unitSelector);
         }
 
         public Composite CreateSpellBuff(string spellName)

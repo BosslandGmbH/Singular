@@ -1,5 +1,7 @@
 ﻿using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Helpers;
+using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWCache;
@@ -78,6 +80,12 @@ namespace Singular
     }
     class PetManager
     {
+        static PetManager()
+        {
+            // NOTE: This is a bit hackish. This fires VERY OFTEN in major cities. But should prevent us from summoning right after dismounting.
+            Lua.Events.AttachEvent("COMPANION_UPDATE", (s, e) => CallPetTimer.Reset());
+        }
+        private static readonly WaitTimer CallPetTimer = WaitTimer.OneSecond;
         public static PetType CurrentPetType
         {
             get
@@ -116,6 +124,9 @@ namespace Singular
         /// <returns>true if it succeeds, false if it fails.</returns>
         public static bool CallPet(string petName)
         {
+            if (!CallPetTimer.IsFinished)
+                return false;
+
             switch (StyxWoW.Me.Class)
             {
                 case WoWClass.Warlock:

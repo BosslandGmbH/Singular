@@ -134,7 +134,7 @@ namespace Singular
                         TalentManager.CurrentSpec, CurrentWoWContext));
                 return false;
             }
-            return true;
+            return composite != null;
         }
 
         private static void StopBot(string reason)

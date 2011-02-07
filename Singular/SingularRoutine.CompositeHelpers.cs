@@ -1,4 +1,6 @@
-﻿using Styx;
+﻿using System.Threading;
+
+using Styx;
 using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
@@ -108,7 +110,15 @@ namespace Singular
         {
             return new Decorator(
                 ret => extra(ret) && unitSelector(ret) != null && SpellManager.CanCast(spellName, unitSelector(ret)),
-                new Action(ret => CastWithLog(spellName, unitSelector(ret))));
+                new Sequence(
+                    new DecoratorContinue(ret => SpellManager.Spells[spellName].CastTime != 0,
+                        new Action(
+                            ret =>
+                                {
+                                    Navigator.PlayerMover.MoveStop();
+                                    StyxWoW.SleepForLagDuration();
+                                })),
+                    new Action(ret => CastWithLog(spellName, unitSelector(ret)))));
         }
 
         public Composite CreateSpellCast(string spellName)

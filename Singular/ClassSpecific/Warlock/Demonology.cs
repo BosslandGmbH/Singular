@@ -20,6 +20,7 @@ namespace Singular
             AddSpellSucceedWait("Immolate");
 
             return new PrioritySelector(
+                CreateEnsureTarget(),
                 CreateRangeAndFace(35f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
                 CreateWaitForCast(),

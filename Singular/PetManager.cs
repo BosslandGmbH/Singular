@@ -98,13 +98,13 @@ namespace Singular
 
         public static void CastPetAction(PetAction action)
         {
-            Logger.Write("[Pet] Casting " + action.ToString().CamelToSpaced());
+            Logger.Write(string.Format("[Pet] Casting {0}", action.ToString().CamelToSpaced()));
             Lua.DoString("CastPetAction({0})", (int)action);
         }
 
         public static void CastPetAction(PetAction action, WoWUnit on)
         {
-            Logger.Write("[Pet] Casting " + action.ToString().CamelToSpaced());
+            Logger.Write(string.Format("[Pet] Casting {0}", action.ToString().CamelToSpaced()));
             StyxWoW.Me.SetFocus(on);
             Lua.DoString("CastPetAction({0}, 'focus')", (int)action);
             StyxWoW.Me.SetFocus(0);
@@ -121,7 +121,7 @@ namespace Singular
                 case WoWClass.Warlock:
                     if (SpellManager.CanCast("Summon " + petName))
                     {
-                        Logging.Write("[Singular][Pet] Calling out my " + petName);
+                        Logger.Write(string.Format("[Pet] Calling out my {0}", petName));
                         return SpellManager.Cast("Summon " + petName);
                     }
                     break;
@@ -129,7 +129,7 @@ namespace Singular
                 case WoWClass.Mage:
                     if (SpellManager.CanCast("Summon Water Elemental"))
                     {
-                        Logging.Write("[Singular][Pet] Calling out Water Elemental");
+                        Logger.Write("[Pet] Calling out Water Elemental");
                         return SpellManager.Cast("Summon Water Elemental");
                     }
                     break;
@@ -137,7 +137,7 @@ namespace Singular
                 case WoWClass.Hunter:
                     if (SpellManager.CanCast("Call Pet " + petName))
                     {
-                        Logging.Write("[Singular][Pet] Calling out pet #" + petName);
+                        Logger.Write(string.Format("[Pet] Calling out pet #{0}", petName));
                         return SpellManager.Cast("Call Pet " + petName);
                     }
                     break;

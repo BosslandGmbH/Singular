@@ -15,6 +15,7 @@ namespace Singular
         public Composite CreateDemonologyCombat()
         {
             WantedPet = "Felguard";
+            //AddSpellSucceedWait("Immolate");
 
             return new PrioritySelector(
                 CreateRangeAndFace(35f, ret => Me.CurrentTarget),

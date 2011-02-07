@@ -16,7 +16,7 @@ namespace Singular
         {
             BotEvents.Player.OnMapChanged += Player_OnMapChanged;
 
-            Lua.Events.AttachEvent("COMBAT_LOG_UNFILTERED", HandleCombatLog);
+            Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
         }
 
         protected void AddSpellSucceedWait(string spellName)
@@ -37,6 +37,7 @@ namespace Singular
                         return;
                     // Update the last spell we cast. So certain classes can 'switch' their logic around.
                     LastSpellCast = e.SpellName;
+                    Logger.Write("Successfully cast " + LastSpellCast);
 
                     if (_sleepAfterSuccessSpells.Contains(e.SpellName))
                         StyxWoW.SleepForLagDuration();

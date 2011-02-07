@@ -58,6 +58,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes.cs" />
     <Compile Include="ClassSpecific\Priest\PriestHealing.cs" />
     <Compile Include="Composites\ActionEventFire.cs" />
     <Compile Include="Extensions.cs" />
@@ -67,8 +68,10 @@
     <Compile Include="SingularRoutine.CompositeHelpers.cs" />
     <Compile Include="SingularRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TalentManager.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SingularRoutine.EventHandlers.cs" />
     <Compile Include="SingularRoutine.Rest.cs" />
   </ItemGroup>
   <ItemGroup>

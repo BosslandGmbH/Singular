@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Styx.Combat.CombatRoutine;
+
 using TreeSharp;
 
 namespace Singular
 {
 	partial class SingularRoutine
 	{
+        [ClassSpecific(WoWClass.Hunter)]
         public Composite CreateBeastMasterCombat()
         {
             return new PrioritySelector(
@@ -29,6 +32,7 @@ namespace Singular
                 );
         }
 
+        [ClassSpecific(WoWClass.Hunter)]
         public Composite CreateSurvivalCombat()
         {
             return new PrioritySelector(

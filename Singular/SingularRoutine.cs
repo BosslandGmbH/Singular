@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Reflection;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
@@ -15,11 +16,17 @@ namespace Singular
 
         public LocalPlayer Me { get { return StyxWoW.Me; } }
 
+        public string LastSpellCast { get; set; }
+
         public void Log(string message)
         {
             Logging.Write(Color.Orange, message);
         }
 
-        public string LastSpellCast { get; set; }
+        public override void Initialize()
+        {
+            Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
+            AttachEventHandlers();
+        }
     }
 }

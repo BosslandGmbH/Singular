@@ -14,7 +14,7 @@ namespace Singular
 
         public static void Write(string message)
         {
-            Logging.Write(Color.Green, "[Singular]" + message);
+            Logging.Write(Color.Green, "[Singular] " + message);
         }
 
         public static void WriteDebug(string message)
@@ -22,7 +22,7 @@ namespace Singular
             if (!WriteDebugMessages)
                 return;
 
-            Logging.WriteDebug(Color.Green, "[Singular-DEBUG]" + message);
+            Logging.WriteDebug(Color.Green, "[Singular-DEBUG] " + message);
         }
     }
 }

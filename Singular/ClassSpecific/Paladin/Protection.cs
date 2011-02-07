@@ -103,7 +103,7 @@ namespace Singular
 
 		[Class(WoWClass.Paladin),
 		Spec(TalentSpec.ProtectionPaladin),
-		Behavior(BehaviorType.PreCombatBuffs),
+		Behavior(BehaviorType.PullBuffs),
 		Context(WoWContext.All)]
 		public Composite CreateProtectionPaladinPullBuffs()
 		{

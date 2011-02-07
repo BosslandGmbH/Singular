@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -74,7 +75,14 @@ namespace Singular
             Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
             AttachEventHandlers();
             Logger.Write("Determining talent spec.");
-            TalentManager.Update();
+            try
+            {
+                TalentManager.Update();
+            }
+            catch(Exception e)
+            {
+                StopBot(e.ToString());
+            }
             Logger.Write("Current spec is " + TalentManager.CurrentSpec.ToString().CamelToSpaced());
 
             if (!CreateBehaviors())

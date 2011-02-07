@@ -27,6 +27,8 @@ namespace Singular
         protected Composite _pullBuffsBehavior;
         protected Composite _restBehavior;
 
+        
+
         public override string Name { get { return "Singular"; } }
 
         public override WoWClass Class { get { return StyxWoW.Me.Class; } }

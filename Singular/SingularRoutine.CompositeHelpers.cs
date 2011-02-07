@@ -64,7 +64,7 @@ namespace Singular
                 new PrioritySelector(
                     new Decorator(
                         // Either get in range, or get in LOS.
-                        ret => StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) > maxRange || !distanceFrom(ret).InLineOfSight,
+                        ret => StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) > maxRange*maxRange || !distanceFrom(ret).InLineOfSight,
                         new Action(ret => Navigator.MoveTo(distanceFrom(ret).Location))),
                     new Decorator(
                         ret => Me.IsMoving,
@@ -107,7 +107,7 @@ namespace Singular
         public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector)
         {
             return new Decorator(
-                ret => extra(ret) && SpellManager.CanCast(spellName, unitSelector(ret)),
+                ret => extra(ret) && unitSelector(ret) != null && SpellManager.CanCast(spellName, unitSelector(ret)),
                 new Action(ret => CastWithLog(spellName, unitSelector(ret))));
         }
 
@@ -169,7 +169,7 @@ namespace Singular
         public Composite CreateSpellBuff(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector)
         {
             return new Decorator(
-                ret => extra(ret) && SpellManager.CanBuff(spellName, unitSelector(ret)),
+                ret => extra(ret) && unitSelector(ret) != null && SpellManager.CanBuff(spellName, unitSelector(ret)),
                 new Action(ret => CastWithLog(spellName, unitSelector(ret))));
         }
 

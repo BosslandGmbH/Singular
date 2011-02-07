@@ -7,7 +7,12 @@ namespace Singular
 {
     partial class SingularRoutine
     {
-        [Class(WoWClass.Warlock), Spec(TalentSpec.AfflictionWarlock), Spec(TalentSpec.DemonologyWarlock), Spec(TalentSpec.DestructionWarlock), Behavior(BehaviorType.PreCombatBuffs), Context(WoWContext.All)]
+        [Class(WoWClass.Warlock), 
+        Spec(TalentSpec.AfflictionWarlock), 
+        Spec(TalentSpec.DemonologyWarlock), 
+        Spec(TalentSpec.DestructionWarlock), 
+        Behavior(BehaviorType.PreCombatBuffs),
+        Context(WoWContext.All)]
         public Composite CreateWarlockBuffs()
         {
             return new PrioritySelector(

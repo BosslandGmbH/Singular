@@ -63,6 +63,7 @@
     <Compile Include="ClassSpecific\Priest\Discipline.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
+    <Compile Include="CombatLog.cs" />
     <Compile Include="CompositeBuilder.cs" />
     <Compile Include="Composites\ActionEventFire.cs" />
     <Compile Include="Extensions.cs" />
@@ -85,6 +86,10 @@
     <Compile Include="ClassSpecific\Hunter\Hunter.BasicRotation.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
+ECHO Copied</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

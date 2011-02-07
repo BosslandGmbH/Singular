@@ -86,6 +86,16 @@ namespace Singular
             return Talents.FirstOrDefault(t => t.Tab == tab && t.Index == index).Count;
         }
 
+		/// <summary>
+		/// Checks if we have a glyph or not
+		/// </summary>
+		/// <param name="glyphName">Name of the glyph without "Glyph of". i.e. HasGlyph("Aquatic Form")</param>
+		/// <returns></returns>
+		public static bool HasGlyph(string glyphName)
+		{
+			return Glyphs.Count > 0 && Glyphs.Contains(glyphName);
+		}
+
         private static void HandlePointsChangedEvent(object sender, LuaEventArgs args)
         {
             Update();
@@ -160,7 +170,7 @@ namespace Singular
 
 						if (glyphInfo != null && glyphInfo[3] != "nil" && !string.IsNullOrEmpty(glyphInfo[3]))
 						{
-							Glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name);
+							Glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name.Replace("Glyph of ", ""));
 						}
 					}
 				}

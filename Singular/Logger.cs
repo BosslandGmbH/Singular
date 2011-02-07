@@ -10,6 +10,11 @@ namespace Singular
 {
     class Logger
     {
+        static Logger()
+        {
+            WriteDebugMessages = true;
+        }
+
         public static bool WriteDebugMessages { get; set; }
 
         public static void Write(string message)

@@ -16,6 +16,7 @@ namespace Singular
             foreach (MethodInfo mi in
                 methods.Where(mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(mi => mi.ReturnType == typeof(Composite) || mi.ReturnType.IsSubclassOf(typeof(Composite))))
             {
+                Logger.WriteDebug("[CompositeBuilder] Checking attributes on " + mi.Name);
                 bool classMatches = false, specMatches = false, behaviorMatches = false, contextMatches = false;
                 foreach (object ca in mi.GetCustomAttributes(false))
                 {
@@ -26,6 +27,7 @@ namespace Singular
                         {
                             continue;
                         }
+                        Logger.WriteDebug(mi.Name + " has my class");
                         classMatches = true;
                     }
                     else if (ca is SpecAttribute)
@@ -35,6 +37,7 @@ namespace Singular
                         {
                             continue;
                         }
+                        Logger.WriteDebug(mi.Name + " has my spec");
                         specMatches = true;
                     }
                     else if (ca is BehaviorAttribute)
@@ -44,15 +47,17 @@ namespace Singular
                         {
                             continue;
                         }
+                        Logger.WriteDebug(mi.Name + " has my behavior");
                         behaviorMatches = true;
                     }
                     else if (ca is ContextAttribute)
                     {
                         var attrib = ca as ContextAttribute;
-                        if ((attrib.SpecificContext & context) != 0)
+                        if ((attrib.SpecificContext & context) == 0)
                         {
                             continue;
                         }
+                        Logger.WriteDebug(mi.Name + " has my context");
                         contextMatches = true;
                     }
                 }
@@ -60,6 +65,7 @@ namespace Singular
                 // If all our attributes match, then mark it as wanted!
                 if (classMatches && specMatches && behaviorMatches && contextMatches)
                 {
+                    Logger.WriteDebug(mi.Name + " is a match!");
                     bestMatch = mi;
                 }
             }

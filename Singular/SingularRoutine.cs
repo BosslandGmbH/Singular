@@ -77,20 +77,24 @@ namespace Singular
             TalentManager.Update();
             Logger.Write("Current spec is " + TalentManager.CurrentSpec.ToString().CamelToSpaced());
 
-            CreateBehaviors();
+            if (!CreateBehaviors())
+            {
+                return;
+            }
+            Logger.Write("Behaviors created!");
         }
 
-        public void CreateBehaviors()
+        public bool CreateBehaviors()
         {
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
             if (!EnsureComposite(true, BehaviorType.Combat, out _combatBehavior))
             {
-                return;
+                return false;
             }
 
             if (!EnsureComposite(true, BehaviorType.Pull, out _pullBehavior))
             {
-                return;
+                return false;
             }
 
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
@@ -104,11 +108,12 @@ namespace Singular
             EnsureComposite(false, BehaviorType.Heal, out _healBehavior);
             EnsureComposite(false, BehaviorType.PullBuffs, out _pullBuffsBehavior);
             EnsureComposite(false, BehaviorType.PreCombatBuffs, out _preCombatBuffsBehavior);
+            return true;
         }
 
         private bool EnsureComposite(bool error, BehaviorType type, out Composite composite)
         {
-            Logging.Write("Creating " + type + " behavior.");
+            Logger.WriteDebug("Creating " + type + " behavior.");
             composite = CompositeBuilder.GetComposite(this, Class, TalentManager.CurrentSpec, type, CurrentWoWContext);
             if (composite == null && error)
             {

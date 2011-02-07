@@ -172,6 +172,8 @@ namespace Singular
             }
 
             int max = Math.Max(Math.Max(treeOne, treeTwo), treeThree);
+            Logger.WriteDebug("[Talents] Best Tree: " + max);
+            Logger.WriteDebug("[Talents] Is Special Spec: " + isExtraSpec);
             int specMask = ((int)StyxWoW.Me.Class << 8);
 
             // Bear tanks, healing disc priests, etc.

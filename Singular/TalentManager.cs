@@ -70,6 +70,7 @@ namespace Singular
         static TalentManager()
         {
             Talents = new List<Talent>();
+            Glyphs = new List<string>();
             Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", HandlePointsChangedEvent);
 			Lua.Events.AttachEvent("GLYPH_UPDATED", HandleGlyphUpdateEvent);
         }

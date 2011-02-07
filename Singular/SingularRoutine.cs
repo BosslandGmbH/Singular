@@ -8,6 +8,7 @@ using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.Logic;
 using Styx.Logic.BehaviorTree;
+using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
@@ -112,8 +113,9 @@ namespace Singular
             if (composite == null && error)
             {
                 StopBot(
-                    "Singular currently does not support " + type + " for this class/spec combination, in this context! [" + Class + ", " +
-                    TalentManager.CurrentSpec + ", " + CurrentWoWContext + "]");
+                    string.Format(
+                        "Singular currently does not support {0} for this class/spec combination, in this context! [{1}, {2}, {3}]", type, Class,
+                        TalentManager.CurrentSpec, CurrentWoWContext));
                 return false;
             }
             return true;
@@ -128,6 +130,26 @@ namespace Singular
         public List<WoWPlayer> NearbyFriendlyPlayers
         {
             get { return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40).ToList(); }
+        }
+
+        public List<WoWUnit> NearbyUnfriendlyUnits
+        {
+            get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet).ToList(); }
+        }
+
+        public bool IsCrowdControlled(WoWUnit unit)
+        {
+            return unit.GetAllAuras().Any(
+                a => a.IsHarmful &&
+                     (a.Spell.Mechanic == WoWSpellMechanic.Shackled ||
+                      a.Spell.Mechanic == WoWSpellMechanic.Polymorphed ||
+                      a.Spell.Mechanic == WoWSpellMechanic.Horrified ||
+                      a.Spell.Mechanic == WoWSpellMechanic.Rooted ||
+                      a.Spell.Mechanic == WoWSpellMechanic.Frozen ||
+                      a.Spell.Mechanic == WoWSpellMechanic.Stunned ||
+                      a.Spell.Mechanic == WoWSpellMechanic.Fleeing ||
+                      a.Spell.Mechanic == WoWSpellMechanic.Banished ||
+                      a.Spell.Mechanic == WoWSpellMechanic.Sapped));
         }
     }
 }

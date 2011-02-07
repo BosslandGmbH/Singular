@@ -37,9 +37,7 @@ namespace Singular
 	            handler(this, eventArgs);
 	        }
 	    }
-
-	    private Composite _restBehavior;
-
+        
         public Composite CreateDefaultRestComposite()
         {
             return new PrioritySelector(

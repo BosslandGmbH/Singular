@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="ClassSpecific\Priest\PriestHealing.cs" />
+    <Compile Include="CompositeBuilder.cs" />
     <Compile Include="Composites\ActionEventFire.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="HealTargeting.cs" />

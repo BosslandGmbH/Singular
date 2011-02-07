@@ -40,9 +40,7 @@ namespace Singular
                         )),
 
                 new ActionLogMessage(false, "Immolate"),
-                CreateSpellBuff("Immolate", ret=>{Logger.Write(Me.CurrentTarget.ActiveAuras.ContainsKey("Immolate").ToString());
-                                                     return true;
-                }),
+                CreateSpellBuff("Immolate"),
                 CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss),
                 CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom")),
                 CreateSpellBuff("Corruption"),
@@ -51,7 +49,7 @@ namespace Singular
                 // TODO: Make this cast Soulburn if it's available
                 CreateSpellCast("Soul Fire", ret => Me.HasAura("Improved Soul Fire")),
 
-                CreateSpellCast("Soul Fire", ret => Me.HasAura("Decimate")),
+                CreateSpellCast("Soul Fire", ret => Me.HasAura("Decimation")),
                 CreateSpellCast("Incinerate", ret => Me.HasAura("Molten Core")),
                 CreateSpellCast("Life Tap", ret => Me.ManaPercent < 50 && Me.HealthPercent > 70),
                 CreateSpellCast("Shadow Bolt")

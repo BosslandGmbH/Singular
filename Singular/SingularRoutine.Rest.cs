@@ -43,6 +43,9 @@ namespace Singular
         public Composite CreateDefaultRestComposite()
         {
             return new PrioritySelector(
+                // Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
+                new Decorator(ret=>Me.HasAura("Resurrection Sickness"),
+                    new Action(delegate{})),
 
                 //new Decorator(
                 //    ret => Me.HealthPercent >= 95 && Me.ManaPercent >= 95 && (Me.HasAura("Food") || Me.HasAura("Drink")),

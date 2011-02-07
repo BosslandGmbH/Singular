@@ -118,7 +118,13 @@ namespace Singular
             EnsureComposite(false, BehaviorType.CombatBuffs, out _combatBuffsBehavior);
             EnsureComposite(false, BehaviorType.Heal, out _healBehavior);
             EnsureComposite(false, BehaviorType.PullBuffs, out _pullBuffsBehavior);
+
             EnsureComposite(false, BehaviorType.PreCombatBuffs, out _preCombatBuffsBehavior);
+
+            // Since we can be lazy, we're going to fix a bug right here and now.
+            // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
+            _preCombatBuffsBehavior = new Decorator(ret => !IsMounted, _preCombatBuffsBehavior);
+
             return true;
         }
 

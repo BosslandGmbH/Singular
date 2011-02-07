@@ -29,7 +29,7 @@ namespace Singular
         private void HandleCombatLog(object sender, LuaEventArgs args)
         {
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
-            Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
+            //Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
             switch (e.Event)
             {
                 case "SPELL_AURA_APPLIED":

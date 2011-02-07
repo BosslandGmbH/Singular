@@ -1,18 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Styx;
+﻿using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.Logic.Combat;
-using Styx.Logic.Pathing;
-using Styx.WoWInternals.WoWObjects;
-
-using TreeSharp;
-
-using Action = TreeSharp.Action;
 
 namespace Singular
 {
@@ -23,11 +12,20 @@ namespace Singular
             get { return StyxWoW.Me.GotAlivePet; }
         }
 
+        /// <summary>Calls a pet by name, if applicable.</summary>
+        /// <remarks>Created 2/7/2011.</remarks>
+        /// <param name="petName">Name of the pet. This parameter is ignored for mages. Warlocks should pass only the name of the pet. Hunters should pass which pet (1, 2, etc)</param>
+        /// <returns>true if it succeeds, false if it fails.</returns>
         public static bool CallPet(string petName)
         {
             switch (StyxWoW.Me.Class)
             {
                 case WoWClass.Warlock:
+                    if (SpellManager.CanCast("Summon " + petName))
+                    {
+                        Logging.Write("[Singular][Pet] Calling out my " + petName);
+                        return SpellManager.Cast("Summon " + petName);
+                    }
                     break;
 
                 case WoWClass.Mage:
@@ -39,19 +37,14 @@ namespace Singular
                     break;
 
                 case WoWClass.Hunter:
+                    if (SpellManager.CanCast("Call Pet " + petName))
+                    {
+                        Logging.Write("[Singular][Pet] Calling out pet #" + petName);
+                        return SpellManager.Cast("Call Pet " + petName);
+                    }
                     break;
             }
             return false;
-        }
-
-        private WoWPlayer CT;
-        public Composite ApproachToCast(string spellName)
-        {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => CT.IsValid && (CT.Distance > Math.Max(SpellManager.Spells[spellName].MaxRange - 2f, 4f) || !CT.InLineOfSight),
-                    new Action(ret => Navigator.MoveTo(CT.Location))),
-                new Action(ret => Navigator.PlayerMover.MoveStop()));
         }
     }
 }

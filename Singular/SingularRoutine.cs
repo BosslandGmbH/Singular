@@ -108,7 +108,7 @@ namespace Singular
             if (composite == null && error)
             {
                 StopBot(
-                    "Singularity currently does not support " + type + " for this class/spec combination, in this context! [" + Class + ", " +
+                    "Singular currently does not support " + type + " for this class/spec combination, in this context! [" + Class + ", " +
                     TalentManager.CurrentSpec + ", " + CurrentWoWContext + "]");
                 return false;
             }

@@ -34,6 +34,8 @@ namespace Singular
                 case "SPELL_CAST_SUCCESS":
                     if (e.SourceGuid != Me.Guid)
                         return;
+                    // Update the last spell we cast. So certain classes can 'switch' their logic around.
+                    LastSpellCast = e.SpellName;
 
                     if (_sleepAfterSuccessSpells.Contains(e.SpellName))
                         StyxWoW.SleepForLagDuration();

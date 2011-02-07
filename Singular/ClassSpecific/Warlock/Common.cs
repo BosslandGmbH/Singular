@@ -20,12 +20,15 @@ namespace Singular
         public Composite CreateWarlockBuffs()
         {
             return new PrioritySelector(
+                CreateWaitForCast(),
                 CreateSpellBuffOnSelf("Demon Armor", ret => !SpellManager.HasSpell("Fel Armor")),
                 CreateSpellBuffOnSelf("Fel Armor"),
 
                 // Soul Link is considered "passive". It has no duration (thus, no end-time)
                 // We have to check it this way, or we'll keep casting it over and over and over
                 CreateSpellBuffOnSelf("Soul Link", ret => !Me.HasAura("Soul Link")),
+
+                CreateSpellCast("Soul Harvest", ret=> Me.CurrentSoulShards < 2),
 
                 //new ActionLogMessage(false, "Checking for pet"),
                 new Decorator(

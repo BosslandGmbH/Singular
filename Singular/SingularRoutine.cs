@@ -111,7 +111,8 @@ namespace Singular
             if (!EnsureComposite(false, BehaviorType.Rest, out _restBehavior))
             {
                 Logger.Write("Using default rest behavior.");
-                _restBehavior = CreateDefaultRestComposite();
+                // By default, eat/drink at 50%
+                _restBehavior = CreateDefaultRestComposite(50, 50);
             }
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.

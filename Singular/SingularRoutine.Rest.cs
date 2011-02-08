@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 using Singular.Composites;
 
 using Styx;
 using Styx.Logic.Inventory;
 using Styx.Logic.Pathing;
-using Styx.WoWInternals;
 
 using TreeSharp;
 
@@ -40,7 +36,7 @@ namespace Singular
 	        }
 	    }
         
-        public Composite CreateDefaultRestComposite()
+        public Composite CreateDefaultRestComposite(int minHealth, int minMana)
         {
             return new PrioritySelector(
                 // Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
@@ -51,7 +47,7 @@ namespace Singular
                 //    ret => Me.HealthPercent >= 95 && Me.ManaPercent >= 95 && (Me.HasAura("Food") || Me.HasAura("Drink")),
                 //    new Action(ret => Lua.DoString("SitStandOrDescendStart()"))),
 
-                new Decorator(ret => Me.HealthPercent <= 60 && !Me.HasAura("Food"),
+                new Decorator(ret => Me.HealthPercent <= minHealth && !Me.HasAura("Food"),
                     new PrioritySelector(
                         new ActionLogMessage(true, "Checking movement for food."),
                         new Decorator(
@@ -65,7 +61,7 @@ namespace Singular
 
 
                 // Make sure we're a class with mana, if not, just ignore drinking all together!
-                new Decorator(ret => Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= 60 && !Me.HasAura("Drink"),
+                new Decorator(ret => Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= minMana && !Me.HasAura("Drink"),
                     new PrioritySelector(
                         new ActionLogMessage(true, "Checking movement for water."),
                         new Decorator(

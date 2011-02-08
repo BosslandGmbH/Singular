@@ -19,19 +19,32 @@ namespace Singular
 {
     public partial class SingularRoutine : CombatRoutine
     {
-        protected Composite _combatBehavior;
-        protected Composite _combatBuffsBehavior;
-        protected Composite _healBehavior;
-        protected Composite _preCombatBuffsBehavior;
-        protected Composite _pullBehavior;
-        protected Composite _pullBuffsBehavior;
-        protected Composite _restBehavior;
+        private Composite _combatBehavior;
 
-        
+        private Composite _combatBuffsBehavior;
+
+        private Composite _healBehavior;
+
+        private Composite _preCombatBuffsBehavior;
+
+        private Composite _pullBehavior;
+
+        private Composite _pullBuffsBehavior;
+
+        private Composite _restBehavior;
 
         public override string Name { get { return "Singular"; } }
 
         public override WoWClass Class { get { return StyxWoW.Me.Class; } }
+
+        public override bool WantButton
+        {
+            get { return true; }
+        }
+        public override void OnButtonPress()
+        {
+            new GUI.ConfigurationForm().ShowDialog();
+        }
 
         public LocalPlayer Me { get { return StyxWoW.Me; } }
 
@@ -67,6 +80,26 @@ namespace Singular
 
         public override Composite RestBehavior { get { return _restBehavior; } }
 
+        public List<WoWPlayer> NearbyFriendlyPlayers { get { return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList(); } }
+
+        public List<WoWUnit> NearbyUnfriendlyUnits { get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet && p.DistanceSqr <= 40 * 40).ToList(); } }
+
+        public bool CurrentTargetIsEliteOrBoss { get { return Me.CurrentTarget.Elite; } }
+
+        public bool IsMounted
+        {
+            get
+            {
+                switch (StyxWoW.Me.Shapeshift)
+                {
+                    case ShapeshiftForm.FlightForm:
+                    case ShapeshiftForm.EpicFlightForm:
+                        return true;
+                }
+                return StyxWoW.Me.Mounted;
+            }
+        }
+
         public void Log(string message)
         {
             Logging.Write(Color.Orange, message);
@@ -81,7 +114,7 @@ namespace Singular
             {
                 TalentManager.Update();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 StopBot(e.ToString());
             }
@@ -148,35 +181,6 @@ namespace Singular
         {
             Logger.Write(reason);
             TreeRoot.Stop();
-        }
-
-        public List<WoWPlayer> NearbyFriendlyPlayers
-        {
-            get { return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList(); }
-        }
-
-        public List<WoWUnit> NearbyUnfriendlyUnits
-        {
-            get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet).ToList(); }
-        }
-
-        public bool CurrentTargetIsEliteOrBoss
-        {
-            get { return Me.CurrentTarget.Elite; }
-        }
-
-        public bool IsMounted
-        {
-            get
-            {
-                switch (StyxWoW.Me.Shapeshift)
-                {
-                    case ShapeshiftForm.FlightForm:
-                    case ShapeshiftForm.EpicFlightForm:
-                        return true;
-                }
-                return StyxWoW.Me.Mounted;
-            }
         }
 
         public bool IsCrowdControlled(WoWUnit unit)

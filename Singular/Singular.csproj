@@ -70,9 +70,26 @@
     <Compile Include="Composites\ActionEventFire.cs" />
     <Compile Include="Composites\ActionLogMessage.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="GUI\ConfigurationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\ConfigurationForm.Designer.cs">
+      <DependentUpon>ConfigurationForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="HealTargeting.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="PetManager.cs" />
+    <Compile Include="Settings\DeathKnightSettings.cs" />
+    <Compile Include="Settings\DruidSettings.cs" />
+    <Compile Include="Settings\HunterSettings.cs" />
+    <Compile Include="Settings\MageSettings.cs" />
+    <Compile Include="Settings\PaladinSettings.cs" />
+    <Compile Include="Settings\PriestSettings.cs" />
+    <Compile Include="Settings\RogueSettings.cs" />
+    <Compile Include="Settings\ShamanSettings.cs" />
+    <Compile Include="Settings\SingularSettings.cs" />
+    <Compile Include="Settings\WarlockSettings.cs" />
+    <Compile Include="Settings\WarriorSettings.cs" />
     <Compile Include="SingularRoutine.CompositeHelpers.cs" />
     <Compile Include="SingularRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -87,6 +104,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassSpecific\Hunter\Hunter.BasicRotation.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="GUI\ConfigurationForm.resx">
+      <DependentUpon>ConfigurationForm.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

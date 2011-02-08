@@ -62,8 +62,7 @@ namespace Singular
                     CreateSpellBuff("Pain Supression", ret => ((WoWUnit)ret).HealthPercent < PainSuppression, ret => (WoWUnit)ret),
                     CreateSpellBuff("Penance", ret => ((WoWUnit)ret).HealthPercent < Penance, ret => (WoWUnit)ret),
                     CreateSpellCast("Flash Heal", ret => ((WoWUnit)ret).HealthPercent < FlashHeal, ret => (WoWUnit)ret),
-                    CreateSpellCast(
-                        "Binding Heal", ret => ((WoWUnit)ret).HealthPercent < BindingHealThem && Me.HealthPercent < BindingHealMe, ret => (WoWUnit)ret),
+                    CreateSpellCast("Binding Heal", ret => ((WoWUnit)ret).HealthPercent < BindingHealThem && Me.HealthPercent < BindingHealMe, ret => (WoWUnit)ret),
                     CreateSpellCast("Greater Heal", ret => ((WoWUnit)ret).HealthPercent < GreaterHeal, ret => (WoWUnit)ret),
                     CreateSpellCast("Heal", ret => ((WoWUnit)ret).HealthPercent < Heal, ret => (WoWUnit)ret),
                     CreateSpellBuff("Renew", ret => ((WoWUnit)ret).HealthPercent < Renew, ret => (WoWUnit)ret),

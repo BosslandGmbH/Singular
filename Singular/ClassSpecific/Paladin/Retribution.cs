@@ -17,8 +17,13 @@ namespace Singular
 		public Composite CreateRetributionPaladinCombat()
 		{
             // Divine Purpose - Tab 3, Index 17
-			return 
-				new PrioritySelector(
+			return
+                new PrioritySelector(
+                    CreateEnsureTarget(),
+					// Make sure we're in range, and facing the damned target. (LOS check as well)
+                    CreateRangeAndFace(5f, ret => Me.CurrentTarget),
+                    CreateAutoAttack(true),
+					
 
 					CreateSpellBuffOnSelf("Inquisition", ret => Me.CurrentHolyPower == 3),
 					CreateSpellCast("Hammer of Wrath"),
@@ -70,19 +75,22 @@ namespace Singular
 		Context(WoWContext.All)]
 		public Composite CreateRetributionPaladinPreCombatBuffs()
 		{
-			return
-				new PrioritySelector(
-					CreateSpellBuffOnSelf("Blessing of Kings", 
-                        ret => (!Me.HasAura("Blessing of Might") || Me.Auras["Blessing of Might"].CreatorGuid != Me.Guid) &&
-                                !Me.HasAura("Embrace of the Shale Spider") &&
-                                !Me.HasAura("Mark of the Wild")),
+		    return
+		        new PrioritySelector(
+		            CreateSpellBuffOnSelf(
+		                "Blessing of Kings",
+		                ret => (!Me.HasAura("Blessing of Might") || Me.Auras["Blessing of Might"].CreatorGuid != Me.Guid) &&
+		                       !Me.HasAura("Embrace of the Shale Spider") &&
+		                       !Me.HasAura("Mark of the Wild")),
 
-                    CreateSpellBuffOnSelf("Blessing of Might",
-                        ret => !Me.HasAura("Blessing of Kings") || 
-                                Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
+		            CreateSpellBuffOnSelf(
+		                "Blessing of Might",
+		                ret => !Me.HasAura("Blessing of Kings") ||
+		                       Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
 
-					CreateSpellBuffOnSelf("Seal of Truth")
-					);
+		            CreateSpellBuffOnSelf("Seal of Truth", ret => !Me.HasAura("Seal of Truth")),
+		            CreateSpellBuffOnSelf("Seal of Righteousness", ret => !Me.HasAura("Seal of Truth") && !Me.HasAura("Seal of Righteousness"))
+		            );
 		}
 	}
 }

@@ -17,6 +17,10 @@ namespace Singular
             BotEvents.Player.OnMapChanged += Player_OnMapChanged;
 
             Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
+            if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED'"))
+            {
+                Logger.Write("ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
+            }
         }
 
         protected void AddSpellSucceedWait(string spellName)

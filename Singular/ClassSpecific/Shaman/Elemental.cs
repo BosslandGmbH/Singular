@@ -3,13 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Styx.Combat.CombatRoutine;
+
 using TreeSharp;
 
 namespace Singular
 {
     partial class SingularRoutine
     {
-
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
+        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat)]
+        [Behavior(BehaviorType.Pull)]
         public Composite CreateElementalShamanCombat()
         {
             return new PrioritySelector(
@@ -27,6 +33,10 @@ namespace Singular
                 );
         }
 
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
+        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.PreCombatBuffs)]
         public Composite CreateElementalShamanBuffs()
         {
             return new PrioritySelector(

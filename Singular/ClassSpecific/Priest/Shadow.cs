@@ -14,10 +14,13 @@ namespace Singular
         [Class(WoWClass.Priest)]
         [Spec(TalentSpec.ShadowPriest)]
         [Behavior(BehaviorType.Combat)]
+        [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public Composite CreateShadowPriestCombat()
         {
             return new PrioritySelector(
+                CreateRangeAndFace(30, ret => Me.CurrentTarget),
+                CreateWaitForCast(),
 
                 CreateSpellBuff("Shadow Word: Pain"),
                 CreateSpellBuff("Devouring Plague"),

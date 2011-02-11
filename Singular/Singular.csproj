@@ -65,6 +65,7 @@
     <Compile Include="ClassSpecific\Priest\Common.cs" />
     <Compile Include="ClassSpecific\Priest\Discipline.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
+    <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
     <Compile Include="CombatLog.cs" />
@@ -103,7 +104,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ClassSpecific\Rogue\" />
-    <Folder Include="ClassSpecific\Shaman\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassSpecific\Hunter\Hunter.BasicRotation.cs" />

@@ -180,7 +180,7 @@ namespace Singular
         {
             // BUGFIX: HB currently doesn't check ActiveAuras in the spell manager. So this'll break on new spell procs
             return CreateSpellCast(
-                spellName, ret => extra(ret) && unitSelector(ret) != null && !unitSelector(ret).ActiveAuras.ContainsKey(spellName), unitSelector);
+                spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 1, unitSelector(ret)), unitSelector);
         }
 
         public Composite CreateSpellBuff(string spellName)

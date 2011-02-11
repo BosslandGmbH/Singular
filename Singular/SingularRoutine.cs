@@ -206,5 +206,22 @@ namespace Singular
                       a.Spell.Mechanic == WoWSpellMechanic.Banished ||
                       a.Spell.Mechanic == WoWSpellMechanic.Sapped));
         }
+
+        public bool HasAuraStacks(string aura, int stacks, WoWUnit unit)
+        {
+            // Active auras first.
+            if (unit.ActiveAuras.ContainsKey(aura))
+                return unit.ActiveAuras[aura].StackCount >= stacks;
+
+            // Check passive shit. (Yep)
+            if (unit.Auras.ContainsKey(aura))
+                return unit.ActiveAuras[aura].StackCount >= stacks;
+
+            return false;
+        }
+        public bool HasAuraStacks(string aura, int stacks)
+        {
+            return HasAuraStacks(aura, stacks, Me);
+        }
     }
 }

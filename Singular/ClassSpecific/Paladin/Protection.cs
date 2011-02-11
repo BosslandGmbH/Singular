@@ -16,8 +16,11 @@ namespace Singular
 		Context(WoWContext.All)]
 		public Composite CreateProtectionPaladinCombat()
 		{
-		    return new PrioritySelector(
-                CreateRangeAndFace(4f, ret=>Me.CurrentTarget),
+            return new PrioritySelector(
+                    CreateEnsureTarget(),
+                // Make sure we're in range, and facing the damned target. (LOS check as well)
+                    CreateRangeAndFace(5f, ret => Me.CurrentTarget),
+                    CreateAutoAttack(true),
 
 		            // Same rotation for both.
 		            CreateSpellCast("Hand of Reckoning", ret => !Me.CurrentTarget.IsTargetingMeOrPet && !Me.CurrentTarget.Fleeing && Me.IsInParty),

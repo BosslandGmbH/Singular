@@ -125,7 +125,7 @@ namespace Singular
                 if (tanks.Equals(p.Guid))
                 {
                     //Logger.Write(p.Name + " is a tank!");
-                    prio.Score += 150f;
+                    prio.Score += 100f;
                 }
             }
         }

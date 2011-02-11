@@ -18,7 +18,7 @@ namespace Singular
 		{
             return new PrioritySelector(
                     CreateEnsureTarget(),
-                // Make sure we're in range, and facing the damned target. (LOS check as well)
+                    // Make sure we're in range, and facing the damned target. (LOS check as well)
                     CreateRangeAndFace(5f, ret => Me.CurrentTarget),
                     CreateAutoAttack(true),
 

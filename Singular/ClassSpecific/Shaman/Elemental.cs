@@ -19,6 +19,7 @@ namespace Singular
         public Composite CreateElementalShamanCombat()
         {
             return new PrioritySelector(
+                    CreateEnsureTarget(),
                 CreateRangeAndFace(39, ret => Me.CurrentTarget),
                 CreateWaitForCast(),
 

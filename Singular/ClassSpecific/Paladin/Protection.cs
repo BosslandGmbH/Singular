@@ -17,6 +17,7 @@ namespace Singular
 		public Composite CreateProtectionPaladinCombat()
 		{
 		    return new PrioritySelector(
+                CreateRangeAndFace(4f, ret=>Me.CurrentTarget),
 
 		            // Same rotation for both.
 		            CreateSpellCast("Hand of Reckoning", ret => !Me.CurrentTarget.IsTargetingMeOrPet && !Me.CurrentTarget.Fleeing && Me.IsInParty),

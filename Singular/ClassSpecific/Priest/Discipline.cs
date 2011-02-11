@@ -79,13 +79,5 @@ namespace Singular
 
                     ));
         }
-
-        public bool CanCastFortitudeOn(WoWUnit unit)
-        {
-            return !unit.HasAura("Blood Pact") &&
-                   !unit.HasAura("Power Word: Fortitude") &&
-                   !unit.HasAura("Qiraji Fortitude") &&
-                   !unit.HasAura("Commanding Shout");
-        }
     }
 }

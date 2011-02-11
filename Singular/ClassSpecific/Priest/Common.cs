@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 
 using Styx.Combat.CombatRoutine;
+using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
 
@@ -25,6 +26,14 @@ namespace Singular
                 CreateSpellBuffOnSelf("Shadowform"),
                 CreateSpellBuffOnSelf("Vampiric Embrace")
                 );
+        }
+
+        public bool CanCastFortitudeOn(WoWUnit unit)
+        {
+            return !unit.HasAura("Blood Pact") &&
+                   !unit.HasAura("Power Word: Fortitude") &&
+                   !unit.HasAura("Qiraji Fortitude") &&
+                   !unit.HasAura("Commanding Shout");
         }
     }
 }

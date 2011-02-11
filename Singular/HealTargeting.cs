@@ -1,25 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 using Styx;
+using Styx.Helpers;
 using Styx.Logic;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
-    /// <summary>Values that represent a role in our current group. [Retrieved from Me.RaidMemberInfos]</summary>
-    /// <remarks>
-    ///  TODO: Push this into the HB core as an enum instead of an integer return
-    /// </remarks>
-    public enum GroupRole
-    {
-        Tank = 0,
-        Healer = 1,
-        Damage = 2,
-        None = 3,
-    }
-
     /*
      * Targeting works like so, in order of being called
      * 
@@ -40,10 +31,25 @@ namespace Singular
 
         public new static HealTargeting Instance { get; private set; }
 
+        public List<WoWPlayer> HealList { get { return ObjectList.ConvertAll(o => o.ToPlayer()); } }
+
         protected override List<WoWObject> GetInitialObjectList()
         {
             // Targeting requires a list of WoWObjects - so it's not bound to any specific type of object. Just casting it down to WoWObject will work fine.
             return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Cast<WoWObject>().ToList();
+        }
+
+        protected override void DefaultIncludeTargetsFilter(List<WoWObject> incomingUnits, HashSet<WoWObject> outgoingUnits)
+        {
+            bool foundMe = false;
+            foreach (var incomingUnit in incomingUnits)
+            {
+                if (incomingUnit.IsMe)
+                    foundMe = true;
+                outgoingUnits.Add(incomingUnit);
+            }
+            if (!foundMe)
+                outgoingUnits.Add(StyxWoW.Me);
         }
 
         protected override void DefaultRemoveTargetsFilter(List<WoWObject> units)
@@ -92,7 +98,7 @@ namespace Singular
 
         protected override void DefaultTargetWeight(List<TargetPriority> units)
         {
-            HashSet<ulong> tanks = GetMainTankGuids();
+            var tanks = GetMainTankGuids();
             foreach (TargetPriority prio in units)
             {
                 prio.Score = 500f;
@@ -116,20 +122,59 @@ namespace Singular
                 }
 
                 // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
-                if (tanks.Contains(p.Guid))
+                if (tanks.Equals(p.Guid))
                 {
+                    //Logger.Write(p.Name + " is a tank!");
                     prio.Score += 150f;
                 }
             }
         }
 
-        private static HashSet<ulong> GetMainTankGuids()
+        private static readonly WaitTimer _tankReset = WaitTimer.ThirtySeconds;
+
+        private static ulong _tankGuid;
+        private static ulong GetMainTankGuids()
         {
-            return new HashSet<ulong>(
-                from pi in StyxWoW.Me.RaidMemberInfos
-                where pi.Role == (uint)GroupRole.Tank ||
-                      pi.IsMainTank
-                select pi.Guid);
+            if (!_tankReset.IsFinished)
+            {
+                return _tankGuid;
+            }
+            _tankReset.Reset();
+
+            for (int i = 1; i <= StyxWoW.Me.PartyMemberGuids.Count(); i++)
+            {
+                string memberRole = Lua.GetReturnVal<string>("return UnitGroupRolesAssigned(\"party" + i + "\")", 0);
+                if (memberRole == "TANK")
+                {
+                    string tankGuidString = Lua.GetReturnVal<string>("return UnitGUID(\"party" + i + "\")", 0);
+                    _tankGuid = ulong.Parse(tankGuidString.Replace("0x", string.Empty), NumberStyles.HexNumber);
+                    return _tankGuid;
+                }
+            }
+            _tankGuid = 0;
+            return 0;
+            //List<WoWPartyMember> infos = null;
+            //if (StyxWoW.Me.IsInRaid)
+            //{
+            //    infos = StyxWoW.Me.RaidMemberInfos;
+            //}
+            //else
+            //{
+            //    infos = (from g in StyxWoW.Me.PartyMemberGuids
+            //             select new WoWPartyMember(g)).ToList();
+            //}
+
+
+            //return new HashSet<ulong>(
+            //    from pi in infos
+            //    where pi.Role == WoWPartyMember.GroupRole.Tank
+            //    select pi.Guid);
+        }
+
+        public /*override*/ void Pulse()
+        {
+            //Logger.Write("Pulsing!");
+            //base.Pulse();
         }
     }
 }

@@ -46,6 +46,11 @@ namespace Singular
             new GUI.ConfigurationForm().ShowDialog();
         }
 
+        public override void Pulse()
+        {
+            HealTargeting.Instance.Pulse();
+        }
+
         public LocalPlayer Me { get { return StyxWoW.Me; } }
 
         public WoWContext CurrentWoWContext
@@ -80,8 +85,12 @@ namespace Singular
 
         public override Composite RestBehavior { get { return _restBehavior; } }
 
+        /// <summary>Gets the nearby friendly players within 40 yards.</summary>
+        /// <value>The nearby friendly players.</value>
         public List<WoWPlayer> NearbyFriendlyPlayers { get { return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList(); } }
 
+        /// <summary>Gets the nearby unfriendly units within 40 yards.</summary>
+        /// <value>The nearby unfriendly units.</value>
         public List<WoWUnit> NearbyUnfriendlyUnits { get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet && p.DistanceSqr <= 40 * 40).ToList(); } }
 
         public bool CurrentTargetIsEliteOrBoss { get { return Me.CurrentTarget.Elite; } }

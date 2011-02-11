@@ -14,7 +14,9 @@ namespace Singular
         // Note: This will probably break shit if we're solo, but oh well!
         [Class(WoWClass.Priest), 
         Spec(TalentSpec.DisciplineHealingPriest), 
-        Behavior(BehaviorType.Combat), Behavior(BehaviorType.Heal), Behavior(BehaviorType.Pull),
+        Behavior(BehaviorType.Combat), 
+        Behavior(BehaviorType.Heal), 
+        Behavior(BehaviorType.Pull),
         Context(WoWContext.All)]
         public Composite CreateDiscHealComposite()
         {
@@ -76,6 +78,33 @@ namespace Singular
                     // TODO: Add smite healing. Only if Atonement is talented. (Its useless otherwise)
 
                     ));
+        }
+
+        public bool CanCastFortitudeOn(WoWUnit unit)
+        {
+            return !unit.HasAura("Blood Pact") &&
+                   !unit.HasAura("Power Word: Fortitude") &&
+                   !unit.HasAura("Qiraji Fortitude") &&
+                   !unit.HasAura("Commanding Shout");
+        }
+              
+        [Class(WoWClass.Priest),
+        Spec(TalentSpec.DisciplineHealingPriest),
+        Behavior(BehaviorType.PreCombatBuffs),
+        Context(WoWContext.All)]
+        public Composite CreateDiscHealPreCombatBuffs()
+        {
+            return new PrioritySelector(
+                CreateSpellBuffOnSelf("Power Word: Fortitude", ret => CanCastFortitudeOn(Me)),
+                CreateSpellBuffOnSelf("Inner Fire"),
+                CreateSpellBuffOnSelf("Fear Ward"),
+
+                CreateSpellCast(
+                    "Power Word: Fortitude",
+                    ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastFortitudeOn(u)))
+
+
+                );
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Singular
             foreach (MethodInfo mi in
                 methods.Where(mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(mi => mi.ReturnType == typeof(Composite) || mi.ReturnType.IsSubclassOf(typeof(Composite))))
             {
-                Logger.WriteDebug("[CompositeBuilder] Checking attributes on " + mi.Name);
+                //Logger.WriteDebug("[CompositeBuilder] Checking attributes on " + mi.Name);
                 bool classMatches = false, specMatches = false, behaviorMatches = false, contextMatches = false;
                 foreach (object ca in mi.GetCustomAttributes(false))
                 {

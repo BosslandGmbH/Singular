@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Windows.Forms;
 
 using Singular.Settings;
@@ -17,6 +18,7 @@ namespace Singular.GUI
 
         private void ConfigurationForm_Load(object sender, EventArgs e)
         {
+            //HealTargeting.Instance.OnTargetListUpdateFinished += new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished);
             pgGeneral.SelectedObject = SingularSettings.Instance;
             SingularSettings main = SingularSettings.Instance;
             Styx.Helpers.Settings toSelect = null;
@@ -61,6 +63,22 @@ namespace Singular.GUI
             }
         }
 
+        void Instance_OnTargetListUpdateFinished(object context)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished), context);
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var u in HealTargeting.Instance.HealList)
+            {
+                sb.AppendLine(u.Name + " - " + u.HealthPercent);
+            }
+            lblHealTargets.Text = sb.ToString();
+        }
+
         private void btnSaveAndClose_Click(object sender, EventArgs e)
         {
             ((Styx.Helpers.Settings)pgGeneral.SelectedObject).Save();
@@ -69,6 +87,16 @@ namespace Singular.GUI
                 ((Styx.Helpers.Settings)pgClass.SelectedObject).Save();
             }
             Close();
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var u in HealTargeting.Instance.HealList.ToArray())
+            {
+                sb.AppendLine(u.Name + " - " + u.HealthPercent);
+            }
+            lblHealTargets.Text = sb.ToString();
         }
     }
 }

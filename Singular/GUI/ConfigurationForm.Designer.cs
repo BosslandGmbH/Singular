@@ -28,18 +28,25 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.btnSaveAndClose = new System.Windows.Forms.Button();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
             this.pgGeneral = new System.Windows.Forms.PropertyGrid();
+            this.tabPage2 = new System.Windows.Forms.TabPage();
             this.pgClass = new System.Windows.Forms.PropertyGrid();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.lblHealTargets = new System.Windows.Forms.Label();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
+            this.tabPage3.SuspendLayout();
+            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -84,6 +91,7 @@
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Top;
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Multiline = true;
@@ -103,6 +111,14 @@
             this.tabPage1.Text = "General";
             this.tabPage1.UseVisualStyleBackColor = true;
             // 
+            // pgGeneral
+            // 
+            this.pgGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pgGeneral.Location = new System.Drawing.Point(3, 3);
+            this.pgGeneral.Name = "pgGeneral";
+            this.pgGeneral.Size = new System.Drawing.Size(323, 276);
+            this.pgGeneral.TabIndex = 0;
+            // 
             // tabPage2
             // 
             this.tabPage2.Controls.Add(this.pgClass);
@@ -114,14 +130,6 @@
             this.tabPage2.Text = "Class Specific";
             this.tabPage2.UseVisualStyleBackColor = true;
             // 
-            // pgGeneral
-            // 
-            this.pgGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pgGeneral.Location = new System.Drawing.Point(3, 3);
-            this.pgGeneral.Name = "pgGeneral";
-            this.pgGeneral.Size = new System.Drawing.Size(323, 276);
-            this.pgGeneral.TabIndex = 0;
-            // 
             // pgClass
             // 
             this.pgClass.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -129,6 +137,41 @@
             this.pgClass.Name = "pgClass";
             this.pgClass.Size = new System.Drawing.Size(323, 276);
             this.pgClass.TabIndex = 0;
+            // 
+            // tabPage3
+            // 
+            this.tabPage3.Controls.Add(this.groupBox1);
+            this.tabPage3.Location = new System.Drawing.Point(4, 22);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage3.Size = new System.Drawing.Size(329, 282);
+            this.tabPage3.TabIndex = 2;
+            this.tabPage3.Text = "Debugging";
+            this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.lblHealTargets);
+            this.groupBox1.Location = new System.Drawing.Point(8, 6);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(313, 157);
+            this.groupBox1.TabIndex = 0;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Heal Targeting";
+            // 
+            // lblHealTargets
+            // 
+            this.lblHealTargets.AutoSize = true;
+            this.lblHealTargets.Location = new System.Drawing.Point(6, 16);
+            this.lblHealTargets.Name = "lblHealTargets";
+            this.lblHealTargets.Size = new System.Drawing.Size(0, 13);
+            this.lblHealTargets.TabIndex = 0;
+            // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Interval = 250;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // ConfigurationForm
             // 
@@ -150,6 +193,9 @@
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
+            this.tabPage3.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -166,5 +212,9 @@
         private System.Windows.Forms.PropertyGrid pgGeneral;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.PropertyGrid pgClass;
+        private System.Windows.Forms.TabPage tabPage3;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.Label lblHealTargets;
+        private System.Windows.Forms.Timer timer1;
     }
 }

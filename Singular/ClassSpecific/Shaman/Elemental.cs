@@ -27,7 +27,6 @@ namespace Singular
                 CreateSpellBuff("Flame Shock"),
                 CreateSpellCast("Unleash Elements"),
                 CreateSpellCast("Lava Burst"),
-                CreateSpellBuff("Searing Totem"),
                 CreateSpellCast("Earth Shock", ret => HasAuraStacks("Lightning Shield", 6)),
                 CreateSpellCast("Lightning Bolt")
 

@@ -12,8 +12,8 @@ namespace Singular
     {
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
         // Note: This will probably break shit if we're solo, but oh well!
-        [Class(WoWClass.Priest), 
-        Spec(TalentSpec.DisciplineHealingPriest), 
+        [Class(WoWClass.Priest),
+        Spec(TalentSpec.DisciplineHealingPriest),
         Behavior(BehaviorType.Combat), 
         Behavior(BehaviorType.Heal), 
         Behavior(BehaviorType.Pull),
@@ -86,25 +86,6 @@ namespace Singular
                    !unit.HasAura("Power Word: Fortitude") &&
                    !unit.HasAura("Qiraji Fortitude") &&
                    !unit.HasAura("Commanding Shout");
-        }
-              
-        [Class(WoWClass.Priest),
-        Spec(TalentSpec.DisciplineHealingPriest),
-        Behavior(BehaviorType.PreCombatBuffs),
-        Context(WoWContext.All)]
-        public Composite CreateDiscHealPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                CreateSpellBuffOnSelf("Power Word: Fortitude", ret => CanCastFortitudeOn(Me)),
-                CreateSpellBuffOnSelf("Inner Fire"),
-                CreateSpellBuffOnSelf("Fear Ward"),
-
-                CreateSpellCast(
-                    "Power Word: Fortitude",
-                    ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastFortitudeOn(u)))
-
-
-                );
         }
     }
 }

@@ -109,11 +109,6 @@ namespace Singular
             }
         }
 
-        public void Log(string message)
-        {
-            Logging.Write(Color.Orange, message);
-        }
-
         public override void Initialize()
         {
             Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);

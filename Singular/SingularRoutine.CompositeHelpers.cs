@@ -94,13 +94,13 @@ namespace Singular
 
         private void CastWithLog(string spellName, WoWUnit onTarget)
         {
-            Log("Casting " + spellName);
+            Logger.Write("Casting " + spellName);
             SpellManager.Cast(spellName, onTarget);
         }
 
         private void CastWithLog(int spellId, WoWUnit onTarget)
         {
-            Log("Casting " + WoWSpell.FromId(spellId).Name);
+            Logger.Write("Casting " + WoWSpell.FromId(spellId).Name);
             SpellManager.Cast(spellId, onTarget);
         }
 

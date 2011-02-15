@@ -19,7 +19,7 @@ namespace Singular
         public Composite CreateElementalShamanCombat()
         {
             return new PrioritySelector(
-                    CreateEnsureTarget(),
+                CreateEnsureTarget(),
                 CreateRangeAndFace(39, ret => Me.CurrentTarget),
                 CreateWaitForCast(),
 
@@ -40,7 +40,7 @@ namespace Singular
         public Composite CreateElementalShamanBuffs()
         {
             return new PrioritySelector(
-                CreateSpellBuff("Lightning Shield"),
+                CreateSpellBuffOnSelf("Lightning Shield"),
 
                 CreateSpellCast("Flametongue Weapon", ret => Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Name != "Flametongue Weapon")
 

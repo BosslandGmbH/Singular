@@ -21,7 +21,7 @@ namespace Singular
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public Composite CreateUnholyDeathKnightCombat()
-        { 
+        {
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 //Make sure we're in range, and facing the damned target. (LOS check as well)

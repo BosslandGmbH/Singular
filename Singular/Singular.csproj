@@ -106,7 +106,9 @@
     <Compile Include="SingularRoutine.EventHandlers.cs" />
     <Compile Include="SingularRoutine.Rest.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="CONTRIBUTORS.txt" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassSpecific\Hunter\Hunter.BasicRotation.cs" />
   </ItemGroup>

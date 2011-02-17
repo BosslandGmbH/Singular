@@ -44,7 +44,7 @@ namespace Singular
             bool foundMe = false;
             foreach (var incomingUnit in incomingUnits)
             {
-                if (incomingUnit.IsMe)
+                if (incomingUnit.IsMe && incomingUnit.ToUnit().HealthPercent != 100)
                     foundMe = true;
                 outgoingUnits.Add(incomingUnit);
             }
@@ -89,6 +89,12 @@ namespace Singular
 
                 // They're not in our party/raid. So ignore them. We can't heal them anyway.
                 if (!p.IsInMyPartyOrRaid)
+                {
+                    units.RemoveAt(i);
+                    continue;
+                }
+
+                if (p.HealthPercent == 100)
                 {
                     units.RemoveAt(i);
                     continue;
@@ -169,12 +175,6 @@ namespace Singular
             //    from pi in infos
             //    where pi.Role == WoWPartyMember.GroupRole.Tank
             //    select pi.Guid);
-        }
-
-        public /*override*/ void Pulse()
-        {
-            //Logger.Write("Pulsing!");
-            //base.Pulse();
         }
     }
 }

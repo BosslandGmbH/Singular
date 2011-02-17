@@ -212,6 +212,10 @@ namespace Singular
             if (unit.Auras.ContainsKey(aura))
                 return unit.ActiveAuras[aura].StackCount >= stacks;
 
+            // Try just plain old auras...
+            if (stacks == 0)
+                return unit.HasAura(aura);
+
             return false;
         }
         public bool HasAuraStacks(string aura, int stacks)

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using CommonBehaviors.Actions;
 
 using Singular.Composites;
 
@@ -8,72 +8,44 @@ using Styx.Logic.Pathing;
 
 using TreeSharp;
 
-using Action = TreeSharp.Action;
-
 namespace Singular
 {
-	partial class SingularRoutine
-	{
-	    public event EventHandler OnRestBeforeEat;
-
-	    public void InvokeOnRestBeforeEat(object sender, EventArgs eventArgs)
-	    {
-	        EventHandler handler = OnRestBeforeEat;
-	        if (handler != null)
-	        {
-	            handler(this, eventArgs);
-	        }
-	    }
-
-	    public event EventHandler OnRestBeforeDrink;
-
-	    public void InvokeOnRestBeforeDrink(object sender, EventArgs eventArgs)
-	    {
-	        EventHandler handler = OnRestBeforeDrink;
-	        if (handler != null)
-	        {
-	            handler(this, eventArgs);
-	        }
-	    }
-        
+    partial class SingularRoutine
+    {
         public Composite CreateDefaultRestComposite(int minHealth, int minMana)
         {
             return new PrioritySelector(
                 // Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
-                new Decorator(ret=>Me.HasAura("Resurrection Sickness"),
-                    new Action(delegate{})),
-
-                //new Decorator(
-                //    ret => Me.HealthPercent >= 95 && Me.ManaPercent >= 95 && (Me.HasAura("Food") || Me.HasAura("Drink")),
-                //    new Action(ret => Lua.DoString("SitStandOrDescendStart()"))),
-
-                new Decorator(ret => Me.HealthPercent <= minHealth && !Me.HasAura("Food"),
+                new Decorator(
+                    ret => Me.HasAura("Resurrection Sickness"),
+                    new ActionAlwaysSucceed()),
+                // This is to ensure we STAY SEATED while eating/drinking. No reason for us to get up before we have to.
+                new Decorator(
+                    ret =>
+                    (Me.HasAura("Food") && Me.HealthPercent < 95) || (Me.HasAura("Drink") && Me.PowerType == WoWPowerType.Mana && Me.ManaPercent < 95),
+                    new ActionAlwaysSucceed()),
+                // Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.
+                new Decorator(
+                    ret => Me.HealthPercent <= minHealth && !Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
                     new PrioritySelector(
                         new ActionLogMessage(true, "Checking movement for food."),
                         new Decorator(
                             ret => Me.IsMoving,
                             new Action(ret => Navigator.PlayerMover.MoveStop())),
-                        new ActionLogMessage(true, "Checking for food and eating if we have some."),
-                        new Decorator(
-                            ret => Consumable.GetBestFood(false) != null,
-                            new Action(ret => Styx.Logic.Common.Rest.FeedImmediate()))
+                        new Action(ret => Styx.Logic.Common.Rest.FeedImmediate())
                         )),
-
-
-                // Make sure we're a class with mana, if not, just ignore drinking all together!
-                new Decorator(ret => Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= minMana && !Me.HasAura("Drink"),
+                // Make sure we're a class with mana, if not, just ignore drinking all together! Other than that... same for food.
+                new Decorator(
+                    ret =>
+                    Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= minMana && !Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
                     new PrioritySelector(
                         new ActionLogMessage(true, "Checking movement for water."),
                         new Decorator(
                             ret => Me.IsMoving,
                             new Action(ret => Navigator.PlayerMover.MoveStop())),
-                        new ActionLogMessage(true, "Checking for water and drinking if we have some."),
-                        new Decorator(
-                            ret => Consumable.GetBestDrink(false) != null,
-                            new Action(ret => Styx.Logic.Common.Rest.DrinkImmediate()))
+                        new Action(ret => Styx.Logic.Common.Rest.DrinkImmediate())
                         ))
-
                 );
         }
-	}
+    }
 }

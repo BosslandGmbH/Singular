@@ -94,13 +94,13 @@ namespace Singular
 
         private void CastWithLog(string spellName, WoWUnit onTarget)
         {
-            Logger.Write("Casting " + spellName);
+            Logger.Write("Casting " + spellName + " on " + onTarget.Name);
             SpellManager.Cast(spellName, onTarget);
         }
 
         private void CastWithLog(int spellId, WoWUnit onTarget)
         {
-            Logger.Write("Casting " + WoWSpell.FromId(spellId).Name);
+            Logger.Write("Casting " + WoWSpell.FromId(spellId).Name + " on " + onTarget.Name);
             SpellManager.Cast(spellId, onTarget);
         }
 
@@ -180,7 +180,7 @@ namespace Singular
         {
             // BUGFIX: HB currently doesn't check ActiveAuras in the spell manager. So this'll break on new spell procs
             return CreateSpellCast(
-                spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 1, unitSelector(ret)), unitSelector);
+                spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 0, unitSelector(ret)), unitSelector);
         }
 
         public Composite CreateSpellBuff(string spellName)
@@ -195,7 +195,7 @@ namespace Singular
 
         public Composite CreateSpellBuffOnSelf(string spellName)
         {
-            return CreateSpellBuff(spellName, ret => true);
+            return CreateSpellBuffOnSelf(spellName, ret => true);
         }
 
         public Composite CreateSpellBuffOnSelf(string spellName, SimpleBoolReturnDelegate extra)

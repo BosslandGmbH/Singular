@@ -1,0 +1,8 @@
+﻿$Revision$
+$Date$
+$HeadURL$
+
+Apoc - Lead
+Nuok - Numerous patches & fixes
+strix - Rogue Combat spec rotation.
+markeloff - Death Knight rotations.

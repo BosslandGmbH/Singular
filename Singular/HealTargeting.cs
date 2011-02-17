@@ -1,4 +1,16 @@
-﻿using System;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -23,6 +35,10 @@ namespace Singular
 
     internal class HealTargeting : Targeting
     {
+        private static readonly WaitTimer _tankReset = WaitTimer.ThirtySeconds;
+
+        private static ulong _tankGuid;
+
         static HealTargeting()
         {
             // Make sure we have a singleton instance!
@@ -42,14 +58,18 @@ namespace Singular
         protected override void DefaultIncludeTargetsFilter(List<WoWObject> incomingUnits, HashSet<WoWObject> outgoingUnits)
         {
             bool foundMe = false;
-            foreach (var incomingUnit in incomingUnits)
+            foreach (WoWObject incomingUnit in incomingUnits)
             {
                 if (incomingUnit.IsMe && incomingUnit.ToUnit().HealthPercent != 100)
+                {
                     foundMe = true;
+                }
                 outgoingUnits.Add(incomingUnit);
             }
             if (!foundMe)
+            {
                 outgoingUnits.Add(StyxWoW.Me);
+            }
         }
 
         protected override void DefaultRemoveTargetsFilter(List<WoWObject> units)
@@ -104,7 +124,7 @@ namespace Singular
 
         protected override void DefaultTargetWeight(List<TargetPriority> units)
         {
-            var tanks = GetMainTankGuids();
+            ulong tanks = GetMainTankGuids();
             foreach (TargetPriority prio in units)
             {
                 prio.Score = 500f;
@@ -136,9 +156,6 @@ namespace Singular
             }
         }
 
-        private static readonly WaitTimer _tankReset = WaitTimer.ThirtySeconds;
-
-        private static ulong _tankGuid;
         private static ulong GetMainTankGuids()
         {
             if (!_tankReset.IsFinished)
@@ -149,10 +166,10 @@ namespace Singular
 
             for (int i = 1; i <= StyxWoW.Me.PartyMemberGuids.Count(); i++)
             {
-                string memberRole = Lua.GetReturnVal<string>("return UnitGroupRolesAssigned(\"party" + i + "\")", 0);
+                var memberRole = Lua.GetReturnVal<string>("return UnitGroupRolesAssigned(\"party" + i + "\")", 0);
                 if (memberRole == "TANK")
                 {
-                    string tankGuidString = Lua.GetReturnVal<string>("return UnitGUID(\"party" + i + "\")", 0);
+                    var tankGuidString = Lua.GetReturnVal<string>("return UnitGUID(\"party" + i + "\")", 0);
                     _tankGuid = ulong.Parse(tankGuidString.Replace("0x", string.Empty), NumberStyles.HexNumber);
                     return _tankGuid;
                 }
@@ -169,7 +186,6 @@ namespace Singular
             //    infos = (from g in StyxWoW.Me.PartyMemberGuids
             //             select new WoWPartyMember(g)).ToList();
             //}
-
 
             //return new HashSet<ulong>(
             //    from pi in infos

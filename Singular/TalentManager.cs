@@ -1,11 +1,24 @@
-﻿using System;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.WoWInternals;
 using Styx.Logic.Combat;
+using Styx.WoWInternals;
 
 namespace Singular
 {
@@ -72,39 +85,39 @@ namespace Singular
             Talents = new List<Talent>();
             Glyphs = new List<string>();
             Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", HandlePointsChangedEvent);
-			Lua.Events.AttachEvent("GLYPH_UPDATED", HandleGlyphUpdateEvent);
+            Lua.Events.AttachEvent("GLYPH_UPDATED", HandleGlyphUpdateEvent);
         }
 
         public static TalentSpec CurrentSpec { get; private set; }
 
         public static List<Talent> Talents { get; private set; }
 
-		public static List<string> Glyphs { get; private set; }
+        public static List<string> Glyphs { get; private set; }
 
         public static int GetCount(int tab, int index)
         {
             return Talents.FirstOrDefault(t => t.Tab == tab && t.Index == index).Count;
         }
 
-		/// <summary>
-		/// Checks if we have a glyph or not
-		/// </summary>
-		/// <param name="glyphName">Name of the glyph without "Glyph of". i.e. HasGlyph("Aquatic Form")</param>
-		/// <returns></returns>
-		public static bool HasGlyph(string glyphName)
-		{
-			return Glyphs.Count > 0 && Glyphs.Contains(glyphName);
-		}
+        /// <summary>
+        ///   Checks if we have a glyph or not
+        /// </summary>
+        /// <param name = "glyphName">Name of the glyph without "Glyph of". i.e. HasGlyph("Aquatic Form")</param>
+        /// <returns></returns>
+        public static bool HasGlyph(string glyphName)
+        {
+            return Glyphs.Count > 0 && Glyphs.Contains(glyphName);
+        }
 
         private static void HandlePointsChangedEvent(object sender, LuaEventArgs args)
         {
             Update();
         }
 
-		private static void HandleGlyphUpdateEvent(object sender, LuaEventArgs args)
-		{
-			Update();
-		}
+        private static void HandleGlyphUpdateEvent(object sender, LuaEventArgs args)
+        {
+            Update();
+        }
 
         public static void Update()
         {
@@ -158,22 +171,22 @@ namespace Singular
                     }
                 }
 
-				Glyphs.Clear();
+                Glyphs.Clear();
 
-				int glyphCount = Lua.GetReturnVal<int>("return GetNumGlyphSockets()", 0);
+                var glyphCount = Lua.GetReturnVal<int>("return GetNumGlyphSockets()", 0);
 
-				if (glyphCount != 0)
-				{
-					for (int i = 1; i <= glyphCount; i++)
-					{
-						var glyphInfo = Lua.GetReturnValues(String.Format("return GetGlyphSocketInfo({0})", i));
+                if (glyphCount != 0)
+                {
+                    for (int i = 1; i <= glyphCount; i++)
+                    {
+                        List<string> glyphInfo = Lua.GetReturnValues(String.Format("return GetGlyphSocketInfo({0})", i));
 
-						if (glyphInfo != null && glyphInfo[3] != "nil" && !string.IsNullOrEmpty(glyphInfo[3]))
-						{
-							Glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name.Replace("Glyph of ", ""));
-						}
-					}
-				}
+                        if (glyphInfo != null && glyphInfo[3] != "nil" && !string.IsNullOrEmpty(glyphInfo[3]))
+                        {
+                            Glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name.Replace("Glyph of ", ""));
+                        }
+                    }
+                }
             }
 
             if (treeOne == 0 && treeTwo == 0 && treeThree == 0)

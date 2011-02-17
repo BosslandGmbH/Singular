@@ -1,4 +1,17 @@
-﻿using System;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System;
 
 using Styx.Combat.CombatRoutine;
 
@@ -10,7 +23,6 @@ namespace Singular
         Normal = 0x1,
         Instances = 0x2,
         Battlegrounds = 0x4,
-
 
         All = Normal | Instances | Battlegrounds,
     }
@@ -36,6 +48,7 @@ namespace Singular
 
         public WoWClass SpecificClass { get; private set; }
     }
+
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
     internal sealed class BehaviorAttribute : Attribute
     {
@@ -68,6 +81,4 @@ namespace Singular
 
         public WoWContext SpecificContext { get; private set; }
     }
-
-    
 }

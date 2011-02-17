@@ -1,5 +1,15 @@
-﻿// ORIGINAL by markeloff - http://www.thebuddyforum.com/honorbuddy-forum/classes/all-one/20005-%5Bwip%5D-singular-community-driven-all-one-cc-just-plain-works-6.html#post233363
-// MODIFIED by Apoc - fixed specs, and other misc issues.
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
 
 using System.Linq;
 

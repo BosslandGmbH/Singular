@@ -1,4 +1,17 @@
-﻿using System.Linq;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System.Linq;
 
 using Styx.Combat.CombatRoutine;
 using Styx.WoWInternals.WoWObjects;
@@ -22,7 +35,9 @@ namespace Singular
                 CreateSpellBuffOnSelf("Power Word: Fortitude", ret => CanCastFortitudeOn(Me)),
                 CreateSpellBuffOnSelf("Inner Fire"),
                 CreateSpellBuffOnSelf("Fear Ward"),
-                CreateSpellCast("Power Word: Fortitude", ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastFortitudeOn(u))),
+                CreateSpellCast(
+                    "Power Word: Fortitude",
+                    ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastFortitudeOn(u))),
                 CreateSpellBuffOnSelf("Shadowform"),
                 CreateSpellBuffOnSelf("Vampiric Embrace")
                 );

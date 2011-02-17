@@ -1,4 +1,17 @@
-﻿using System.Linq;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System.Linq;
 using System.Reflection;
 
 using Styx.Combat.CombatRoutine;
@@ -14,7 +27,8 @@ namespace Singular
             MethodInfo[] methods = createFrom.GetType().GetMethods();
             MethodInfo bestMatch = null;
             foreach (MethodInfo mi in
-                methods.Where(mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(mi => mi.ReturnType == typeof(Composite) || mi.ReturnType.IsSubclassOf(typeof(Composite))))
+                methods.Where(mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(
+                    mi => mi.ReturnType == typeof(Composite) || mi.ReturnType.IsSubclassOf(typeof(Composite))))
             {
                 //Logger.WriteDebug("[CompositeBuilder] Checking attributes on " + mi.Name);
                 bool classMatches = false, specMatches = false, behaviorMatches = false, contextMatches = false;

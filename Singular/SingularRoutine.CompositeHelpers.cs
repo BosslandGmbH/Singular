@@ -1,4 +1,15 @@
-﻿using System.Threading;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
 
 using CommonBehaviors.Actions;
 
@@ -15,6 +26,7 @@ using TreeSharp;
 namespace Singular
 {
     public delegate WoWPoint LocationRetrievalDelegate(object context);
+
     partial class SingularRoutine
     {
         #region Delegates
@@ -46,7 +58,9 @@ namespace Singular
 
                         // Purposely fail here, we want to 'skip' down the tree.
                         if (parentIsSelector)
+                        {
                             return RunStatus.Failure;
+                        }
                         return RunStatus.Success;
                     });
         }
@@ -64,7 +78,6 @@ namespace Singular
                         new Sequence(
                             new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).Name + "!")),
                             new Action(ret => ((WoWUnit)ret).Target()))),
-
                     // In order to resolve getting "stuck" on a target, we'll clear it if there's nothing viable.
                     new Action(
                         ret =>
@@ -83,12 +96,11 @@ namespace Singular
                 new PrioritySelector(
                     new Decorator(
                         // Either get in range, or get in LOS.
-                        ret => StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) > maxRange*maxRange || !distanceFrom(ret).InLineOfSight,
+                        ret => StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) > maxRange * maxRange || !distanceFrom(ret).InLineOfSight,
                         new Action(ret => Navigator.MoveTo(distanceFrom(ret).Location))),
                     new Decorator(
                         ret => Me.IsMoving,
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
-
                     new Decorator(
                         ret => Me.CurrentTarget != null && !Me.IsSafelyFacing(Me.CurrentTarget, 70),
                         new Action(ret => Me.CurrentTarget.Face()))
@@ -101,11 +113,9 @@ namespace Singular
                 new Decorator(
                     ret => !Me.IsAutoAttacking,
                     new Action(ret => Me.ToggleAttack())),
-
                 new Decorator(
                     ret => includePet && Me.GotAlivePet && !Me.Pet.IsAutoAttacking,
                     new Action(ret => PetManager.CastPetAction(PetAction.Attack)))
-
                 );
         }
 
@@ -128,7 +138,8 @@ namespace Singular
             return new Decorator(
                 ret => extra(ret) && unitSelector(ret) != null && SpellManager.CanCast(spellName, unitSelector(ret)),
                 new Sequence(
-                    new DecoratorContinue(ret => SpellManager.Spells[spellName].CastTime != 0,
+                    new DecoratorContinue(
+                        ret => SpellManager.Spells[spellName].CastTime != 0,
                         new Action(
                             ret =>
                                 {

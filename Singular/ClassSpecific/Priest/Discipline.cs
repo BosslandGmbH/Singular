@@ -1,4 +1,17 @@
-﻿using System.Collections.Generic;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System.Collections.Generic;
 using System.Linq;
 
 using Singular.Settings;
@@ -15,6 +28,8 @@ namespace Singular
 {
     partial class SingularRoutine
     {
+        public List<WoWPlayer> ResurrectablePlayers { get { return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(p => !p.IsMe && p.Dead).ToList(); } }
+
         [Class(WoWClass.Priest)]
         [Spec(TalentSpec.DisciplineHealingPriest)]
         [Behavior(BehaviorType.Rest)]
@@ -24,18 +39,15 @@ namespace Singular
             return new PrioritySelector(
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 CreateDefaultRestComposite(SingularSettings.Instance.DefaultRestHealth, SingularSettings.Instance.DefaultRestMana),
-
                 // Make sure we're healing OOC too!
                 CreateDiscHealOnlyBehavior(),
-
                 // Can we res people?
                 new Decorator(
                     ret => ResurrectablePlayers.Count != 0,
                     CreateSpellCast("Resurrection", ret => true, ret => ResurrectablePlayers.FirstOrDefault()))
-
                 );
         }
-        
+
         private Composite CreateDiscHealOnlyBehavior()
         {
             // Atonement - Tab 1  index 10 - 1/2 pts
@@ -49,10 +61,10 @@ namespace Singular
                       BindingHealThem = 70;
 
             const int PrayerOfHealing = 50,
-                // Number of players to use POH for
+                      // Number of players to use POH for
                       PrayerOfHealingCount = 3;
-            return new 
-            Decorator(
+            return new
+                Decorator(
                 ret => HealTargeting.Instance.FirstUnit != null,
                 new PrioritySelector(
                     ctx => HealTargeting.Instance.FirstUnit,
@@ -104,41 +116,26 @@ namespace Singular
         public Composite CreateDiscHealComposite()
         {
             return new PrioritySelector(
-
-                    // Firstly, deal with healing people!
-                    CreateDiscHealOnlyBehavior(),
-
-                    // If we have nothing to heal, and we're in combat (or the leader is)... kill something!
-                    new Decorator(
-                        ret => HealTargeting.Instance.FirstUnit == null && (Me.Combat || (RaFHelper.Leader != null && RaFHelper.Leader.Combat)),
-                        new PrioritySelector(
-                            CreateEnsureTarget(),
-                            CreateRangeAndFace(39f, ret => Me.CurrentTarget),
-                            CreateSpellBuff("Power Word: Shadow"),
-                            CreateSpellCast("Smite")
-                            )),
-
-                    // No combat... check for resurrectable people!
-                    new Decorator(
-                        ret => !Me.Combat,
-                        new PrioritySelector(
-                            // Find and res a friendly player damnit!
-                            new Decorator(
-                                ret => ResurrectablePlayers.Count != 0,
-                                CreateSpellCast("Resurrection", ret => true, ret => ResurrectablePlayers.FirstOrDefault()))))
-
-
-
-                    );
-        }
-
-        public List<WoWPlayer> ResurrectablePlayers
-        {
-            get 
-            { 
-                return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(p => !p.IsMe && p.Dead).ToList();
-
-            }
+                // Firstly, deal with healing people!
+                CreateDiscHealOnlyBehavior(),
+                // If we have nothing to heal, and we're in combat (or the leader is)... kill something!
+                new Decorator(
+                    ret => HealTargeting.Instance.FirstUnit == null && (Me.Combat || (RaFHelper.Leader != null && RaFHelper.Leader.Combat)),
+                    new PrioritySelector(
+                        CreateEnsureTarget(),
+                        CreateRangeAndFace(39f, ret => Me.CurrentTarget),
+                        CreateSpellBuff("Power Word: Shadow"),
+                        CreateSpellCast("Smite")
+                        )),
+                // No combat... check for resurrectable people!
+                new Decorator(
+                    ret => !Me.Combat,
+                    new PrioritySelector(
+                        // Find and res a friendly player damnit!
+                        new Decorator(
+                            ret => ResurrectablePlayers.Count != 0,
+                            CreateSpellCast("Resurrection", ret => true, ret => ResurrectablePlayers.FirstOrDefault()))))
+                );
         }
     }
 }

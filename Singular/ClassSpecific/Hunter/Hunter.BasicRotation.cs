@@ -1,7 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
 
 using Styx.Combat.CombatRoutine;
 
@@ -9,9 +17,13 @@ using TreeSharp;
 
 namespace Singular
 {
-	partial class SingularRoutine
-	{
-        [Class(WoWClass.Hunter), Spec(TalentSpec.BeastMasteryHunter), Behavior(BehaviorType.Combat), Behavior(BehaviorType.Pull), Context(WoWContext.All)]
+    partial class SingularRoutine
+    {
+        [Class(WoWClass.Hunter)]
+        [Spec(TalentSpec.BeastMasteryHunter)]
+        [Behavior(BehaviorType.Combat)]
+        [Behavior(BehaviorType.Pull)]
+        [Context(WoWContext.All)]
         public Composite CreateBeastMasterCombat()
         {
             return new PrioritySelector(
@@ -19,16 +31,12 @@ namespace Singular
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateRangeAndFace(35f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
-
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark", ret => !Me.CurrentTarget.HasAura("Hunter's Mark")),
-
-				// Heal pet when below 70
-				CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
-
-				//Rapid fire on elite 
-				CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsEliteOrBoss),
-
+                // Heal pet when below 70
+                CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
+                //Rapid fire on elite 
+                CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsEliteOrBoss),
                 CreateSpellBuff("Serpent Sting", ret => !Me.CurrentTarget.HasAura("Serpent Sting")),
                 // Ignore these two when our pet is raging
                 CreateSpellCast("Focus Fire", ret => !Me.Pet.HasAura("Bestial Wrath")),
@@ -44,7 +52,9 @@ namespace Singular
                 );
         }
 
-        [Class(WoWClass.Hunter), Spec(TalentSpec.SurvivalHunter), Behavior(BehaviorType.Combat)]
+        [Class(WoWClass.Hunter)]
+        [Spec(TalentSpec.SurvivalHunter)]
+        [Behavior(BehaviorType.Combat)]
         public Composite CreateSurvivalCombat()
         {
             return new PrioritySelector(
@@ -52,19 +62,14 @@ namespace Singular
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateRangeAndFace(35f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
-
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark", ret => !Me.CurrentTarget.HasAura("Hunter's Mark")),
-				
-				// Heal pet when below 70
-				CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
-
-				//Rapid fire on elite 
-				CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsEliteOrBoss),
-
-				//Cast when mob Hp below 20
-				CreateSpellCast("Kill Shot", ret => Me.CurrentTarget.HealthPercent < 19),
-
+                // Heal pet when below 70
+                CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
+                //Rapid fire on elite 
+                CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsEliteOrBoss),
+                //Cast when mob Hp below 20
+                CreateSpellCast("Kill Shot", ret => Me.CurrentTarget.HealthPercent < 19),
                 new Decorator(
                     ret => !Me.HasAura("Lock and Load"),
                     new PrioritySelector(
@@ -72,7 +77,6 @@ namespace Singular
                         CreateSpellCast("Kill Command", ret => Me.FocusPercent == 100),
                         CreateSpellCast("Explosive Shot", ret => LastSpellCast != "Explosive Shot"),
                         CreateSpellCast("Steady Shot", ret => LastSpellCast != "Steady Shot"))),
-
                 // Refresh when it wears off.
                 CreateSpellBuff("Serpent Sting", ret => !Me.CurrentTarget.HasAura("Serpent Sting")),
                 // Whenever it's not on CD
@@ -81,8 +85,7 @@ namespace Singular
                 CreateSpellCast("Black Arrow"),
                 // Main DPS filler
                 CreateSpellCast("Steady Shot")
-
                 );
         }
-	}
+    }
 }

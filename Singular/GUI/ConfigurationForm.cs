@@ -1,4 +1,17 @@
-﻿using System;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System;
 using System.Text;
 using System.Windows.Forms;
 
@@ -6,6 +19,8 @@ using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.GUI
 {
@@ -63,16 +78,16 @@ namespace Singular.GUI
             }
         }
 
-        void Instance_OnTargetListUpdateFinished(object context)
+        private void Instance_OnTargetListUpdateFinished(object context)
         {
             if (InvokeRequired)
             {
-                Invoke(new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished), context);
+                Invoke(new TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished), context);
                 return;
             }
 
-            StringBuilder sb = new StringBuilder();
-            foreach (var u in HealTargeting.Instance.HealList)
+            var sb = new StringBuilder();
+            foreach (WoWPlayer u in HealTargeting.Instance.HealList)
             {
                 sb.AppendLine(u.Name + " - " + u.HealthPercent);
             }
@@ -91,8 +106,8 @@ namespace Singular.GUI
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (var u in HealTargeting.Instance.HealList.ToArray())
+            var sb = new StringBuilder();
+            foreach (WoWPlayer u in HealTargeting.Instance.HealList.ToArray())
             {
                 sb.AppendLine(u.Name + " - " + u.HealthPercent);
             }

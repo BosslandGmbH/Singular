@@ -1,7 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
 
 using Styx.Combat.CombatRoutine;
 
@@ -19,10 +27,9 @@ namespace Singular
         public Composite CreateShadowPriestCombat()
         {
             return new PrioritySelector(
-                    CreateEnsureTarget(),
+                CreateEnsureTarget(),
                 CreateRangeAndFace(30, ret => Me.CurrentTarget),
                 CreateWaitForCast(),
-
                 CreateSpellBuff("Shadow Word: Pain"),
                 CreateSpellBuff("Devouring Plague"),
                 CreateSpellBuff("Vampiric Touch"),
@@ -31,7 +38,6 @@ namespace Singular
                 CreateSpellCast("Shadow Fiend"),
                 CreateSpellCast("Mind Blast"),
                 CreateSpellCast("Mind Flay")
-
                 );
         }
     }

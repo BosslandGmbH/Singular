@@ -1,6 +1,19 @@
-﻿namespace Singular.Settings
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+namespace Singular.Settings
 {
-    class ShamanSettings : Styx.Helpers.Settings
+    internal class ShamanSettings : Styx.Helpers.Settings
     {
         public ShamanSettings()
             : base(SingularSettings.SettingsPath + "_Shaman.xml")

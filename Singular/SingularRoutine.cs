@@ -1,12 +1,25 @@
-﻿using System;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Reflection;
 
+using Singular.GUI;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Helpers;
 using Styx.Logic;
 using Styx.Logic.BehaviorTree;
 using Styx.Logic.Combat;
@@ -37,19 +50,7 @@ namespace Singular
 
         public override WoWClass Class { get { return StyxWoW.Me.Class; } }
 
-        public override bool WantButton
-        {
-            get { return true; }
-        }
-        public override void OnButtonPress()
-        {
-            new GUI.ConfigurationForm().ShowDialog();
-        }
-
-        public override void Pulse()
-        {
-            HealTargeting.Instance.Pulse();
-        }
+        public override bool WantButton { get { return true; } }
 
         public LocalPlayer Me { get { return StyxWoW.Me; } }
 
@@ -85,13 +86,25 @@ namespace Singular
 
         public override Composite RestBehavior { get { return _restBehavior; } }
 
-        /// <summary>Gets the nearby friendly players within 40 yards.</summary>
+        /// <summary>
+        ///   Gets the nearby friendly players within 40 yards.
+        /// </summary>
         /// <value>The nearby friendly players.</value>
         public List<WoWPlayer> NearbyFriendlyPlayers { get { return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList(); } }
 
-        /// <summary>Gets the nearby unfriendly units within 40 yards.</summary>
+        /// <summary>
+        ///   Gets the nearby unfriendly units within 40 yards.
+        /// </summary>
         /// <value>The nearby unfriendly units.</value>
-        public List<WoWUnit> NearbyUnfriendlyUnits { get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet && p.DistanceSqr <= 40 * 40).ToList(); } }
+        public List<WoWUnit> NearbyUnfriendlyUnits
+        {
+            get
+            {
+                return
+                    ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet && p.DistanceSqr <= 40 * 40).
+                        ToList();
+            }
+        }
 
         public bool CurrentTargetIsEliteOrBoss { get { return Me.CurrentTarget.Elite; } }
 
@@ -107,6 +120,16 @@ namespace Singular
                 }
                 return StyxWoW.Me.Mounted;
             }
+        }
+
+        public override void OnButtonPress()
+        {
+            new ConfigurationForm().ShowDialog();
+        }
+
+        public override void Pulse()
+        {
+            HealTargeting.Instance.Pulse();
         }
 
         public override void Initialize()
@@ -206,18 +229,25 @@ namespace Singular
         {
             // Active auras first.
             if (unit.ActiveAuras.ContainsKey(aura))
+            {
                 return unit.ActiveAuras[aura].StackCount >= stacks;
+            }
 
             // Check passive shit. (Yep)
             if (unit.Auras.ContainsKey(aura))
+            {
                 return unit.Auras[aura].StackCount >= stacks;
+            }
 
             // Try just plain old auras...
             if (stacks == 0)
+            {
                 return unit.HasAura(aura);
+            }
 
             return false;
         }
+
         public bool HasAuraStacks(string aura, int stacks)
         {
             return HasAuraStacks(aura, stacks, Me);

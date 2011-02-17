@@ -1,14 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
 using System.Drawing;
-using System.Linq;
-using System.Text;
 
 using Styx.Helpers;
 
 namespace Singular
 {
-    class Logger
+    internal class Logger
     {
         static Logger()
         {
@@ -25,7 +34,9 @@ namespace Singular
         public static void WriteDebug(string message)
         {
             if (!WriteDebugMessages)
+            {
                 return;
+            }
 
             Logging.WriteDebug(Color.Green, "[Singular-DEBUG] " + message);
         }

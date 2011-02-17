@@ -1,10 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿#region Revision Info
 
-using Styx.Logic.Combat;
-using Styx.WoWInternals;
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
 
 using TreeSharp;
 
@@ -15,22 +20,17 @@ namespace Singular
         public Composite CreateFireMageCombat()
         {
             return new PrioritySelector(
-
                 CreateSpellCast(
                     "Scorch",
                     ret =>
                     !Me.CurrentTarget.HasAura("Critical Mass") || Me.CurrentTarget.Auras["Critical Mass"].TimeLeft.TotalSeconds < 3 ||
                     // If we have the Firestarter buff, we can cast scorch on the move. Do so please!
                     (Me.IsMoving && TalentManager.GetCount(2, 15) != 0)),
-
                 CreateSpellCast("Pyroblast", ret => Me.HasAura("Hot Streak")),
                 CreateSpellCast("Fire Blast", ret => Me.HasAura("Impact")),
                 CreateSpellBuff("Living Bomb"),
-
                 CreateSpellCast("Blast Wave"),
-
                 CreateSpellCast("Fireball")
-
                 );
         }
     }

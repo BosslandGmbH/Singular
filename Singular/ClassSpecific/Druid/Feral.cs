@@ -1,13 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System;
 using System.Linq;
-using System.Text;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.Logic.Combat;
-using Styx.Logic.Pathing;
 
 using TreeSharp;
 
@@ -32,22 +42,13 @@ namespace Singular
                 new Decorator(
                     ret => Me.Shapeshift != WantedDruidForm,
                     CreateSpellCast("Cat Form")),
-
                 CreateEnsureTarget(),
-
                 CreateAutoAttack(false),
-
                 CreateSpellCast("Berserk", ret => Me.Fleeing),
-
                 CreateSpellCast("Survival Instincts", ret => Me.HealthPercent <= 45),
-
                 CreateSpellBuffOnSelf("Prowl"),
-
                 CreateSpellCast("Feral Charge (Cat)", ret => Me.CurrentTarget.Distance >= 8 && Me.CurrentTarget.Distance <= 25),
-
                 CreateSpellCast("Skull Bash (Cat)", ret => Me.CurrentTarget.IsCasting),
-
-
                 // Kudos to regecksqt for the dash/stampeding roar logic. Slightly changed for reading purposes.
                 new Decorator(
                     ret =>
@@ -57,10 +58,8 @@ namespace Singular
                     new PrioritySelector(
                         CreateSpellCast("Dash"),
                         CreateSpellCast("Stampeding Roar (Cat)", ret => Me.CurrentEnergy >= 50))),
-
                 new Decorator(
                     ret => Me.CurrentTarget.Distance <= 5,
-
                     new PrioritySelector(
                         //new Decorator(
                         //    ret => StyxWoW.Me.IsMoving,
@@ -70,7 +69,6 @@ namespace Singular
                         CreateSpellCast("Pounce", ret => Me.HasAura("Prowl")),
                         CreateSpellCast("Barkskin", ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 5) > 0),
                         CreateSpellCast("Tiger's Fury", ret => Me.CurrentEnergy <= 50),
-
                         new Decorator(
                             ret => Me.ComboPoints == 5,
                             new PrioritySelector(
@@ -79,12 +77,10 @@ namespace Singular
                                 CreateSpellCast(
                                     "Rip", ret => !Me.CurrentTarget.HasAura("Rip") || Me.CurrentTarget.GetAuraByName("Rip").CreatorGuid != Me.Guid),
                                 CreateSpellCast("Ferocious Bite"))),
-
                         // Handle Ravage! proc. Cast from spell ID here. Ignore the SpellManager!
                         new Decorator(
                             ret => /*IsBehind(Me.CurrentTarget) &&*/ Me.HasAura("Stampede"),
                             new Action(a => WoWSpell.FromId(81170).Cast())),
-
                         new Decorator(
                             ret => !Me.CurrentTarget.HasAura("Mangle") && SpellManager.CanCast("Mangle (Cat)"),
                             new Action(ret => SpellManager.Cast("Mangle (Cat)"))),
@@ -93,13 +89,9 @@ namespace Singular
                         CreateSpellCast("Shred", ret => Me.IsBehind(Me.CurrentTarget)),
                         // Don't swipe if we don't have more than 2 people/mobs on us, within range.
                         CreateSpellCast("Swipe (Cat)", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 5 * 5) >= 2),
-
                         //new ActionLog("Mangle"),
                         CreateSpellCast("Mangle (Cat)"))),
-
                 CreateSpellBuff("Faerie Fire (Feral)"),
-
-
                 // We're putting movement at the bottom. Since we want the stuff above, to happen first. If we're out of range, we'll automatically fall
                 // back to here and get within melee range to fuck shit up.
                 CreateRangeAndFace(4, ret => Me.CurrentTarget)

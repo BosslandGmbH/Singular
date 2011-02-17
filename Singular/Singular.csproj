@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\markeloff.cs" />
     <Compile Include="ClassSpecific\Druid\Common.cs" />
     <Compile Include="ClassSpecific\Druid\Feral.cs" />
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
@@ -67,6 +68,7 @@
     <Compile Include="ClassSpecific\Priest\Common.cs" />
     <Compile Include="ClassSpecific\Priest\Discipline.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
+    <Compile Include="ClassSpecific\Rogue\Combat.cs" />
     <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
@@ -104,9 +106,7 @@
     <Compile Include="SingularRoutine.EventHandlers.cs" />
     <Compile Include="SingularRoutine.Rest.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ClassSpecific\Rogue\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Compile Include="ClassSpecific\Hunter\Hunter.BasicRotation.cs" />
   </ItemGroup>

@@ -1,5 +1,9 @@
 ﻿using System.Threading;
 
+using CommonBehaviors.Actions;
+
+using Singular.Composites;
+
 using Styx;
 using Styx.Logic;
 using Styx.Logic.Combat;
@@ -25,7 +29,7 @@ namespace Singular
         {
             return new Decorator(
                 ret => Me.IsCasting,
-                new Action(delegate { }));
+                new ActionAlwaysSucceed());
         }
 
         protected Composite CreateCastPetAction(PetAction action, bool parentIsSelector)
@@ -52,11 +56,17 @@ namespace Singular
             return new Decorator(
                 ret => Me.CurrentTarget == null || Me.CurrentTarget.Dead,
                 new PrioritySelector(
+                    // Set our context to the RaF leaders target, or the first in the target list.
+                    ctx => (RaFHelper.Leader != null ? RaFHelper.Leader.CurrentTarget : null) ?? Targeting.Instance.FirstUnit,
+                    // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
                     new Decorator(
-                        ret => Targeting.Instance.FirstUnit != null,
+                        ret => ret != null,
                         new Sequence(
                             new Action(ret => Logger.Write("Target is invalid. Switching to the first one in the target list!")),
-                            new Action(ret => Targeting.Instance.FirstUnit.Target())))));
+                            new Action(ret => Targeting.Instance.FirstUnit.Target()))),
+
+
+                    new ActionLogMessage(false, "No viable target! NOT GOOD!")));
         }
 
         protected Composite CreateRangeAndFace(float maxRange, UnitSelectionDelegate distanceFrom)

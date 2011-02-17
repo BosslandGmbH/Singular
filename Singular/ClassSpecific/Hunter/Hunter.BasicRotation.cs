@@ -21,9 +21,15 @@ namespace Singular
                 CreateAutoAttack(true),
 
                 // Always keep it up on our target!
-                CreateSpellBuff("Hunter's Mark"),
+                CreateSpellBuff("Hunter's Mark", ret => !Me.CurrentTarget.HasAura("Hunter's Mark")),
 
-                CreateSpellBuff("Serpent Sting"),
+				// Heal pet when below 70
+				CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
+
+				//Rapid fire on elite 
+				CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsEliteOrBoss),
+
+                CreateSpellBuff("Serpent Sting", ret => !Me.CurrentTarget.HasAura("Serpent Sting")),
                 // Ignore these two when our pet is raging
                 CreateSpellCast("Focus Fire", ret => !Me.Pet.HasAura("Bestial Wrath")),
                 CreateSpellCast("Kill Shot", ret => !Me.Pet.HasAura("Bestial Wrath")),
@@ -48,7 +54,16 @@ namespace Singular
                 CreateAutoAttack(true),
 
                 // Always keep it up on our target!
-                CreateSpellBuff("Hunter's Mark"),
+                CreateSpellBuff("Hunter's Mark", ret => !Me.CurrentTarget.HasAura("Hunter's Mark")),
+				
+				// Heal pet when below 70
+				CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
+
+				//Rapid fire on elite 
+				CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsEliteOrBoss),
+
+				//Cast when mob Hp below 20
+				CreateSpellCast("Kill Shot", ret => Me.CurrentTarget.HealthPercent < 19),
 
                 new Decorator(
                     ret => !Me.HasAura("Lock and Load"),
@@ -59,7 +74,7 @@ namespace Singular
                         CreateSpellCast("Steady Shot", ret => LastSpellCast != "Steady Shot"))),
 
                 // Refresh when it wears off.
-                CreateSpellBuff("Serpent Sting"),
+                CreateSpellBuff("Serpent Sting", ret => !Me.CurrentTarget.HasAura("Serpent Sting")),
                 // Whenever it's not on CD
                 CreateSpellCast("Explosive Shot"),
                 // Whenever its not on CD

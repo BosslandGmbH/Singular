@@ -57,7 +57,7 @@ namespace Singular
                 ret => Me.CurrentTarget == null || Me.CurrentTarget.Dead,
                 new PrioritySelector(
                     // Set our context to the RaF leaders target, or the first in the target list.
-                    ctx => (RaFHelper.Leader != null ? RaFHelper.Leader.CurrentTarget : null) ?? Targeting.Instance.FirstUnit,
+                    ctx => RaFHelper.Leader != null ? RaFHelper.Leader.CurrentTarget : Targeting.Instance.FirstUnit,
                     // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
                     new Decorator(
                         ret => ret != null,
@@ -65,7 +65,14 @@ namespace Singular
                             new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).Name + "!")),
                             new Action(ret => ((WoWUnit)ret).Target()))),
 
-
+                    // In order to resolve getting "stuck" on a target, we'll clear it if there's nothing viable.
+                    new Action(
+                        ret =>
+                            {
+                                Me.ClearTarget();
+                                // Force a failure, just so we can move down the branch.
+                                return RunStatus.Failure;
+                            }),
                     new ActionLogMessage(false, "No viable target! NOT GOOD!")));
         }
 

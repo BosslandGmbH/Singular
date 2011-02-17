@@ -6,7 +6,7 @@ using System.Text;
 using Singular.Composites;
 
 using Styx.Combat.CombatRoutine;
-
+using Styx.Logic.Combat;
 using TreeSharp;
 
 namespace Singular
@@ -17,7 +17,6 @@ namespace Singular
         public Composite CreateDemonologyCombat()
         {
             WantedPet = "Felguard";
-            AddSpellSucceedWait("Immolate");
 
             return new PrioritySelector(
                 CreateEnsureTarget(),
@@ -25,8 +24,11 @@ namespace Singular
                 CreateWaitForCast(),
                 CreateAutoAttack(true),
 
-                CreateSpellBuffOnSelf("Soulburn"),
-
+                CreateSpellBuffOnSelf("Soulburn",ret => SpellManager.HasSpell("Soul Fire") || Me.HealthPercent < 70),
+                CreateSpellCast("Life Tap", ret => Me.ManaPercent < 50 && Me.HealthPercent > 70),
+                CreateSpellCast("Drain Life", ret => Me.HealthPercent < 70),
+				CreateSpellCast("Health Funnel", ret => Me.Pet.HealthPercent < 70),
+	
                 new Decorator(
                     ret => Me.CurrentTarget.Fleeing,
                     CreateCastPetAction(PetAction.AxeToss, true)),
@@ -40,18 +42,17 @@ namespace Singular
                         CreateSpellCast("Shadowflame", ret => Me.CurrentTarget.Distance < 5)
                         )),
 
-                CreateSpellBuff("Immolate"),
-                CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss),
-                CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom")),
-                CreateSpellBuff("Corruption"),
+                CreateSpellBuff("Immolate", ret => !Me.CurrentTarget.HasAura("Immolate")),
+                CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss && !Me.CurrentTarget.HasAura("Bane of Doom")),
+                CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Agony") && !Me.CurrentTarget.HasAura("Bane of Doom")),
+                CreateSpellBuff("Corruption", ret => !Me.CurrentTarget.HasAura("Corruption")),
                 CreateSpellCast("Hand of Gul'dan"),
 
                 // TODO: Make this cast Soulburn if it's available
-                CreateSpellCast("Soul Fire", ret => Me.HasAura("Improved Soul Fire")),
+                CreateSpellCast("Soul Fire", ret => Me.HasAura("Improved Soul Fire") || Me.HasAura("Soulburn")),
 
                 CreateSpellCast("Soul Fire", ret => Me.HasAura("Decimation")),
                 CreateSpellCast("Incinerate", ret => Me.HasAura("Molten Core")),
-                CreateSpellCast("Life Tap", ret => Me.ManaPercent < 50 && Me.HealthPercent > 70),
                 CreateSpellCast("Shadow Bolt")
 
                 );

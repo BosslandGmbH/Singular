@@ -24,7 +24,7 @@ namespace Singular
                     CreateRangeAndFace(5f, ret => Me.CurrentTarget),
                     CreateAutoAttack(true),
 					
-
+					CreateSpellCast("Word of Glory", ret => Me.CurrentHolyPower >= 2 && Me.HealthPercent <= 50),
 					CreateSpellBuffOnSelf("Inquisition", ret => Me.CurrentHolyPower == 3),
 					CreateSpellCast("Hammer of Wrath"),
 					CreateSpellCast("Exorcism", ret => Me.ActiveAuras.ContainsKey("The Art of War")),
@@ -81,12 +81,13 @@ namespace Singular
 		                "Blessing of Kings",
 		                ret => (!Me.HasAura("Blessing of Might") || Me.Auras["Blessing of Might"].CreatorGuid != Me.Guid) &&
 		                       !Me.HasAura("Embrace of the Shale Spider") &&
-		                       !Me.HasAura("Mark of the Wild")),
+		                       !Me.HasAura("Mark of the Wild") &&
+							   !Me.HasAura("Blessing of Kings")),
 
 		            CreateSpellBuffOnSelf(
 		                "Blessing of Might",
-		                ret => !Me.HasAura("Blessing of Kings") ||
-		                       Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
+		                ret => (!Me.HasAura("Blessing of Kings") ||  Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid) &&
+							   !Me.HasAura("Blessing of Might")),
 
 		            CreateSpellBuffOnSelf("Seal of Truth", ret => !Me.HasAura("Seal of Truth")),
 		            CreateSpellBuffOnSelf("Seal of Righteousness", ret => !Me.HasAura("Seal of Truth") && !Me.HasAura("Seal of Righteousness"))

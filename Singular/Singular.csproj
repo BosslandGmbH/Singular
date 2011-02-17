@@ -72,6 +72,8 @@
     <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
+    <Compile Include="ClassSpecific\Warrior\Arms.cs" />
+    <Compile Include="ClassSpecific\Warrior\Fury.cs" />
     <Compile Include="CombatLog.cs" />
     <Compile Include="CompositeBuilder.cs" />
     <Compile Include="Composites\ActionEventFire.cs" />

@@ -62,8 +62,8 @@ namespace Singular
                     new Decorator(
                         ret => ret != null,
                         new Sequence(
-                            new Action(ret => Logger.Write("Target is invalid. Switching to the first one in the target list!")),
-                            new Action(ret => Targeting.Instance.FirstUnit.Target()))),
+                            new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).Name + "!")),
+                            new Action(ret => ((WoWUnit)ret).Target()))),
 
 
                     new ActionLogMessage(false, "No viable target! NOT GOOD!")));

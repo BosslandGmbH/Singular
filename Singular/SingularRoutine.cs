@@ -210,7 +210,7 @@ namespace Singular
 
             // Check passive shit. (Yep)
             if (unit.Auras.ContainsKey(aura))
-                return unit.ActiveAuras[aura].StackCount >= stacks;
+                return unit.Auras[aura].StackCount >= stacks;
 
             // Try just plain old auras...
             if (stacks == 0)

@@ -1,13 +1,13 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author: apoc $
-// $Date: 2011-02-17 10:50:06 +0200 (Per, 17 Şub 2011) $
-// $HeadURL: http://svn.apocdev.com/singular/trunk/Singular/ClassSpecific/Priest/Discipline.cs $
-// $LastChangedBy: apoc $
-// $LastChangedDate: 2011-02-17 10:50:06 +0200 (Per, 17 Şub 2011) $
-// $LastChangedRevision: 72 $
-// $Revision: 72 $
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
 
 #endregion
 

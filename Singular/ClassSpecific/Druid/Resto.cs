@@ -49,6 +49,7 @@ namespace Singular
 
 		private Composite CreateRestoDruidHealOnlyBehavior()
 		{
+		    const uint MAPLE_SEED_ID = 17034;
 			return new
 				Decorator(
 				ret => HealTargeting.Instance.FirstUnit != null,
@@ -67,39 +68,48 @@ namespace Singular
 							   (!((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).Auras["Lifebloom"].StackCount < 3 ||
 							   ((WoWUnit)ret).Auras["Lifebloom"].TimeLeft <= TimeSpan.FromSeconds(3)),
 						ret => (WoWUnit)ret),
+
 					//Cast rebirth if the tank is dead. Check for Unburdened Rebirth glyph or Maple seed reagent
 					CreateSpellCast("Rebirth",
 						ret => Me.Combat && RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader &&
-							   ((WoWUnit)ret).Dead && (TalentManager.HasGlyph("Unburdened Rebirth") || Me.BagItems.Any(i => i.Entry == 17034)),
+							   ((WoWUnit)ret).Dead && (TalentManager.HasGlyph("Unburdened Rebirth") || Me.BagItems.Any(i => i.Entry == MAPLE_SEED_ID)),
 						ret => (WoWUnit)ret),
+
 					CreateSpellCast("Tranquility",
 						ret => Me.Combat && Me.IsInParty && NearbyFriendlyPlayers.Count(p =>
 								p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid.TranquilityHealth && p.Distance <= 30) >= SingularSettings.Instance.Druid.TranquilityCount),
+
 					//Use Innervate on party members if we have Glyph of Innervate
 					CreateSpellBuff("Innervate",
 						ret => TalentManager.HasGlyph("Innervate") && Me.Combat && (WoWUnit)ret != Me && Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana && 
 							   ((WoWUnit)ret).PowerType == Styx.WoWPowerType.Mana && ((WoWUnit)ret).ManaPercent <= SingularSettings.Instance.Druid.InnervateMana,
 						ret => (WoWUnit)ret),
+
 					CreateSpellCast("Swiftmend",
 						ret => Me.Combat && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Swiftmend && 
 							   (((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth")),
 						ret => (WoWUnit)ret),
+
 					CreateSpellCast("Wild Growth",
 						ret => Me.IsInParty && NearbyFriendlyPlayers.Count(
 									p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid.WildGrowthHealth &&
 										 p.Location.Distance(((WoWUnit)ret).Location) <= 30) >= SingularSettings.Instance.Druid.WildGrowthCount,
 						ret => (WoWUnit)ret),
+
 					CreateSpellBuff("Regrowth",
 						ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Regrowth,
 						ret => (WoWUnit)ret),
+
 					CreateSpellCast("Healing Touch",
 						ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.HealingTouch,
 						ret => (WoWUnit)ret),
+
 					CreateSpellCast("Nourish",
 						ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Nourish && 
 							   (((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth") ||
 							   ((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).HasAura("Wild Growth")),
 						ret => (WoWUnit)ret),
+
 					CreateSpellCast("Rejuvenation",
 						ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Rejuvenation,
 						ret => (WoWUnit)ret)

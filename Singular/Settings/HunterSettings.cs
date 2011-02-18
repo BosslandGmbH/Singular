@@ -11,6 +11,13 @@
 
 #endregion
 
+using System.ComponentModel;
+
+using Styx;
+using Styx.Helpers;
+
+using DefaultValue = Styx.Helpers.DefaultValueAttribute;
+
 namespace Singular.Settings
 {
     internal class HunterSettings : Styx.Helpers.Settings

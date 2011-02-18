@@ -28,7 +28,7 @@ namespace Singular
 {
     partial class SingularRoutine
     {
-        public List<WoWPlayer> ResurrectablePlayers { get { return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(p => !p.IsMe && p.Dead).ToList(); } }
+        public List<WoWPlayer> ResurrectablePlayers { get { return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(p => !p.IsMe && p.Dead && p.IsFriendly).ToList(); } }
 
         [Class(WoWClass.Priest)]
         [Spec(TalentSpec.DisciplineHealingPriest)]
@@ -51,18 +51,7 @@ namespace Singular
         private Composite CreateDiscHealOnlyBehavior()
         {
             // Atonement - Tab 1  index 10 - 1/2 pts
-            const int Penance = 30,
-                      FlashHeal = 40,
-                      GreaterHeal = 50,
-                      Heal = 70,
-                      Renew = 80,
-                      PainSuppression = 30,
-                      BindingHealMe = 70,
-                      BindingHealThem = 70;
 
-            const int PrayerOfHealing = 50,
-                      // Number of players to use POH for
-                      PrayerOfHealingCount = 3;
             return new
                 Decorator(
                 ret => HealTargeting.Instance.FirstUnit != null,
@@ -75,7 +64,7 @@ namespace Singular
                     CreateSpellBuff("Power Word: Shield", ret => !((WoWUnit)ret).HasAura("Weakened Soul"), ret => (WoWUnit)ret),
                     new Decorator(
                         ret =>
-                        NearbyFriendlyPlayers.Count(p => !p.Dead && p.HealthPercent < PrayerOfHealing) > PrayerOfHealingCount &&
+						NearbyFriendlyPlayers.Count(p => !p.Dead && p.HealthPercent < SingularSettings.Instance.Priest.PrayerOfHealing) > SingularSettings.Instance.Priest.PrayerOfHealingCount &&
                         (SpellManager.CanCast("Prayer of Healing") || SpellManager.CanCast("Divine Hymn")),
                         new Sequence(
                             CreateSpellCast("Archangel"),
@@ -85,15 +74,15 @@ namespace Singular
                                 ret => SpellManager.CanCast("Divine Hymn"),
                                 CreateSpellCast("Divine Hymn")),
                             CreateSpellCast("Prayer of Healing"))),
-                    CreateSpellBuff("Pain Supression", ret => ((WoWUnit)ret).HealthPercent < PainSuppression, ret => (WoWUnit)ret),
-                    CreateSpellBuff("Penance", ret => ((WoWUnit)ret).HealthPercent < Penance, ret => (WoWUnit)ret),
-                    CreateSpellCast("Flash Heal", ret => ((WoWUnit)ret).HealthPercent < FlashHeal, ret => (WoWUnit)ret),
+					CreateSpellBuff("Pain Supression", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.PainSuppression, ret => (WoWUnit)ret),
+					CreateSpellBuff("Penance", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Penance, ret => (WoWUnit)ret),
+					CreateSpellCast("Flash Heal", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.FlashHeal, ret => (WoWUnit)ret),
                     CreateSpellCast(
-                        "Binding Heal", ret => ((WoWUnit)ret).HealthPercent < BindingHealThem && Me.HealthPercent < BindingHealMe,
+						"Binding Heal", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.BindingHealThem && Me.HealthPercent < SingularSettings.Instance.Priest.BindingHealMe,
                         ret => (WoWUnit)ret),
-                    CreateSpellCast("Greater Heal", ret => ((WoWUnit)ret).HealthPercent < GreaterHeal, ret => (WoWUnit)ret),
-                    CreateSpellCast("Heal", ret => ((WoWUnit)ret).HealthPercent < Heal, ret => (WoWUnit)ret),
-                    CreateSpellBuff("Renew", ret => ((WoWUnit)ret).HealthPercent < Renew, ret => (WoWUnit)ret),
+					CreateSpellCast("Greater Heal", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.GreaterHeal, ret => (WoWUnit)ret),
+					CreateSpellCast("Heal", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Heal, ret => (WoWUnit)ret),
+					CreateSpellBuff("Renew", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Renew, ret => (WoWUnit)ret),
                     CreateSpellBuff("Prayer of Mending", ret => ((WoWUnit)ret).HealthPercent < 90, ret => (WoWUnit)ret)
 
                     // Divine Hymn

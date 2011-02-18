@@ -11,10 +11,13 @@
 
 #endregion
 
+using System.Linq;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
@@ -32,10 +35,18 @@ namespace Singular
         public Composite CreateDruidBuffComposite()
         {
             return new PrioritySelector(
-                CreateSpellBuffOnSelf("Mark of the Wild")
-
+				CreateSpellCast(
+                    "Mark of the Wild",
+                    ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastMotWOn(u)))
                 // TODO: Have it buff MotW when nearby party/raid members are missing the buff.
                 );
         }
+
+		public bool CanCastMotWOn(WoWUnit unit)
+		{
+			return !unit.HasAura("Mark of the Wild") &&
+				   !unit.HasAura("Embrace of the Shale Spider") &&
+				   !unit.HasAura("Blessing of Kings");
+		}
     }
 }

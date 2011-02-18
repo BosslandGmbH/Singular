@@ -15,6 +15,8 @@ using System.Linq;
 
 using Styx.Combat.CombatRoutine;
 
+using Singular.Settings;
+
 using TreeSharp;
 
 namespace Singular
@@ -69,15 +71,12 @@ namespace Singular
         [Context(WoWContext.All)]
         public Composite CreateRetributionPaladinCombatBuffs()
         {
-            const int LayOnHandsHealth = 30,
-                      DivineProtectionHealth = 70;
-
             return
                 new PrioritySelector(
                     CreateSpellBuffOnSelf("Zealotry", ret => Me.CurrentTarget.MaxHealth > Me.MaxHealth * 10),
                     CreateSpellBuffOnSelf("Avenging Wrath", ret => !Me.HasAura("Zealotry") && NearbyUnfriendlyUnits.Count > 0),
-                    CreateSpellBuffOnSelf("Lay on Hands", ret => Me.HealthPercent <= LayOnHandsHealth && !Me.HasAura("Forbearance")),
-                    CreateSpellBuffOnSelf("Divine Protection", ret => Me.HealthPercent <= DivineProtectionHealth)
+                    CreateSpellBuffOnSelf("Lay on Hands", ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealthRet && !Me.HasAura("Forbearance")),
+					CreateSpellBuffOnSelf("Divine Protection", ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthRet)
                     );
         }
 

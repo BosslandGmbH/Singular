@@ -62,6 +62,7 @@
     <Compile Include="ClassSpecific\DeathKnight\markeloff.cs" />
     <Compile Include="ClassSpecific\Druid\Common.cs" />
     <Compile Include="ClassSpecific\Druid\Feral.cs" />
+    <Compile Include="ClassSpecific\Druid\Resto.cs" />
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
     <Compile Include="ClassSpecific\Paladin\Protection.cs" />
     <Compile Include="ClassSpecific\Paladin\Retribution.cs" />
@@ -74,6 +75,7 @@
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
     <Compile Include="ClassSpecific\Warrior\Arms.cs" />
     <Compile Include="ClassSpecific\Warrior\Fury.cs" />
+    <Compile Include="ClassSpecific\Warrior\Protection.cs" />
     <Compile Include="CombatLog.cs" />
     <Compile Include="CompositeBuilder.cs" />
     <Compile Include="Composites\ActionEventFire.cs" />
@@ -122,6 +124,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
+xcopy "$(ProjectDir)*.cs" "C:\Users\Dodo\Desktop\HB\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
 ECHO Copied</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -11,6 +11,9 @@
 
 #endregion
 
+
+using System.Linq;
+
 using CommonBehaviors.Actions;
 
 using Singular.Composites;
@@ -263,5 +266,27 @@ namespace Singular
         }
 
         #endregion
-    }
+
+		#region Party Buff By Name
+
+		/// <summary>
+		/// To cast buffs on party members like Dampen Magic and such.
+		/// </summary>
+		/// <param name="spellName">Name of the buff</param>
+		/// <returns></returns>
+		public Composite CreateSpellPartyBuff(string spellName)
+		{
+			return
+				new PrioritySelector(
+					new Decorator(
+						ret => Me.IsInParty && Me.PartyMembers.Any(p => p.IsAlive && !p.HasAura(spellName)),
+						new PrioritySelector(
+							ctx => Me.PartyMembers.First(p => p.IsAlive && !p.HasAura(spellName)),
+							CreateRangeAndFace(35, ret => (WoWUnit)ret),
+							CreateSpellCast(spellName, ret => true, ret => (WoWUnit)ret)))
+				);
+		}
+
+		#endregion
+	}
 }

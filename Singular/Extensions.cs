@@ -13,6 +13,8 @@
 
 using System.Text;
 
+using Styx.WoWInternals.WoWObjects;
+
 namespace Singular
 {
     internal static class Extensions
@@ -37,6 +39,20 @@ namespace Singular
                 sb.Append(c);
             }
             return sb.ToString();
+        }
+
+        public static string SafeName(this WoWObject obj)
+        {
+            if (obj.IsMe)
+                return "Myself";
+
+            if (obj is WoWPlayer)
+                return "Player";
+
+            if (obj is WoWUnit && obj.ToUnit().IsPet)
+                return "a Pet";
+
+            return obj.Name;
         }
     }
 }

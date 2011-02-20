@@ -124,13 +124,13 @@ namespace Singular
 
         private void CastWithLog(string spellName, WoWUnit onTarget)
         {
-            Logger.Write("Casting " + spellName + " on " + onTarget.Name);
+            Logger.Write(string.Format("Casting {0} on {1}", spellName, onTarget.SafeName()));
             SpellManager.Cast(spellName, onTarget);
         }
 
         private void CastWithLog(int spellId, WoWUnit onTarget)
         {
-            Logger.Write("Casting " + WoWSpell.FromId(spellId).Name + " on " + onTarget.Name);
+            Logger.Write(string.Format("Casting {0} on {1}", WoWSpell.FromId(spellId).Name, onTarget.SafeName()));
             SpellManager.Cast(spellId, onTarget);
         }
 
@@ -140,16 +140,7 @@ namespace Singular
         {
             return new Decorator(
                 ret => extra(ret) && unitSelector(ret) != null && SpellManager.CanCast(spellName, unitSelector(ret)),
-                new Sequence(
-                    new DecoratorContinue(
-                        ret => SpellManager.Spells[spellName].CastTime != 0,
-                        new Action(
-                            ret =>
-                                {
-                                    Navigator.PlayerMover.MoveStop();
-                                    StyxWoW.SleepForLagDuration();
-                                })),
-                    new Action(ret => CastWithLog(spellName, unitSelector(ret)))));
+                new Action(ret => CastWithLog(spellName, unitSelector(ret))));
         }
 
         public Composite CreateSpellCast(string spellName)

@@ -61,7 +61,7 @@ namespace Singular
                     // Ensure we're in range of the unit to heal, and it's in LOS.
                     CreateRangeAndFace(35f, ret => (WoWUnit)ret),
                     //CreateSpellBuff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
-                    CreateSpellBuff("Power Word: Shield", ret => !((WoWUnit)ret).HasAura("Weakened Soul"), ret => (WoWUnit)ret),
+                    CreateSpellBuff("Power Word: Shield", ret => !((WoWUnit)ret).HasAura("Weakened Soul") && ((WoWUnit)ret).Combat, ret => (WoWUnit)ret),
                     new Decorator(
                         ret =>
 						NearbyFriendlyPlayers.Count(p => !p.Dead && p.HealthPercent < SingularSettings.Instance.Priest.PrayerOfHealing) > SingularSettings.Instance.Priest.PrayerOfHealingCount &&
@@ -78,7 +78,7 @@ namespace Singular
 					CreateSpellBuff("Penance", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Penance, ret => (WoWUnit)ret),
 					CreateSpellCast("Flash Heal", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.FlashHeal, ret => (WoWUnit)ret),
                     CreateSpellCast(
-						"Binding Heal", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.BindingHealThem && Me.HealthPercent < SingularSettings.Instance.Priest.BindingHealMe,
+						"Binding Heal", ret => (WoWUnit)ret != Me && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.BindingHealThem && Me.HealthPercent < SingularSettings.Instance.Priest.BindingHealMe,
                         ret => (WoWUnit)ret),
 					CreateSpellCast("Greater Heal", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.GreaterHeal, ret => (WoWUnit)ret),
 					CreateSpellCast("Heal", ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Heal, ret => (WoWUnit)ret),
@@ -107,14 +107,23 @@ namespace Singular
             return new PrioritySelector(
                 // Firstly, deal with healing people!
                 CreateDiscHealOnlyBehavior(),
+				//Pull with Holy Fire while we are solo
+				CreateSpellCast("Holy Fire", ret => !Me.IsInParty && !Me.Combat),
                 // If we have nothing to heal, and we're in combat (or the leader is)... kill something!
                 new Decorator(
-                    ret => HealTargeting.Instance.FirstUnit == null && (Me.Combat || (RaFHelper.Leader != null && RaFHelper.Leader.Combat)),
+                    ret => Me.Combat || (RaFHelper.Leader != null && RaFHelper.Leader.Combat),
                     new PrioritySelector(
                         CreateEnsureTarget(),
                         CreateRangeAndFace(39f, ret => Me.CurrentTarget),
-                        CreateSpellBuff("Power Word: Shadow"),
-                        CreateSpellCast("Smite")
+                        CreateSpellBuff("Shadow Word: Pain"),
+						//Solo combat rotation
+						new Decorator(
+							ret => !Me.IsInParty,
+							new PrioritySelector(
+								CreateSpellCast("Holy Fire"),
+								CreateSpellCast("Penance"))),
+						//Don't smite while mana is below the setting while in a party (default 70)
+                        CreateSpellCast("Smite", ret => !Me.IsInParty || Me.ManaPercent >= SingularSettings.Instance.Priest.SmiteMana)
                         )),
                 // No combat... check for resurrectable people!
                 new Decorator(

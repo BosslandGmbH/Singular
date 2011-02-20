@@ -96,5 +96,12 @@ namespace Singular.Settings
 		[DisplayName("Prayer of Healing Count")]
 		[Description("Prayer of Healing will be used when count of players whom health is below PoH Health setting mets this value")]
 		public int PrayerOfHealingCount { get; set; }
+
+		[Setting]
+		[DefaultValue(70)]
+		[Category("Discipline")]
+		[DisplayName("Smite Mana")]
+		[Description("Use Smite while mana is above this value (Used while in a party)")]
+		public int SmiteMana { get; set; }
     }
 }

@@ -52,24 +52,17 @@ namespace Singular
         protected override List<WoWObject> GetInitialObjectList()
         {
             // Targeting requires a list of WoWObjects - so it's not bound to any specific type of object. Just casting it down to WoWObject will work fine.
-            return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Cast<WoWObject>().ToList();
+            return ObjectManager.ObjectList.Where(o => o is WoWPlayer).ToList();
         }
 
         protected override void DefaultIncludeTargetsFilter(List<WoWObject> incomingUnits, HashSet<WoWObject> outgoingUnits)
         {
-            bool foundMe = false;
             foreach (WoWObject incomingUnit in incomingUnits)
             {
-                if (incomingUnit.IsMe && incomingUnit.ToUnit().HealthPercent != 100)
-                {
-                    foundMe = true;
-                }
                 outgoingUnits.Add(incomingUnit);
             }
-            if (!foundMe)
-            {
-                outgoingUnits.Add(StyxWoW.Me);
-            }
+            //if (!outgoingUnits.Any(o => o.IsMe))
+            //    outgoingUnits.Add(StyxWoW.Me);
         }
 
         protected override void DefaultRemoveTargetsFilter(List<WoWObject> units)
@@ -78,7 +71,7 @@ namespace Singular
             for (int i = units.Count - 1; i >= 0; i--)
             {
                 WoWObject o = units[i];
-                if (!(o is WoWPlayer))
+                if (!(o is WoWPlayer) && !(o is LocalPlayer))
                 {
                     units.RemoveAt(i);
                     continue;
@@ -114,12 +107,16 @@ namespace Singular
                     continue;
                 }
 
-                if (p.HealthPercent == 100)
+                if (p.HealthPercent >= 98)
                 {
                     units.RemoveAt(i);
                     continue;
                 }
             }
+
+            if (!units.Any(o=>o.IsMe) && StyxWoW.Me.HealthPercent < 100)
+                units.Add(StyxWoW.Me);
+
         }
 
         protected override void DefaultTargetWeight(List<TargetPriority> units)

@@ -123,8 +123,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
-xcopy "$(ProjectDir)*.cs" "C:\Users\Dodo\Desktop\HB\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+    <PostBuildEvent>%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
+
 ECHO Copied</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

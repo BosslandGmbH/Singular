@@ -84,8 +84,10 @@ namespace Singular
         {
             Talents = new List<Talent>();
             Glyphs = new List<string>();
-            Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", HandlePointsChangedEvent);
-            Lua.Events.AttachEvent("GLYPH_UPDATED", HandleGlyphUpdateEvent);
+            Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", UpdateTalentManager);
+			Lua.Events.AttachEvent("GLYPH_UPDATED", UpdateTalentManager);
+			Lua.Events.AttachEvent("ACTIVE_TALENT_GROUP_CHANGED", UpdateTalentManager);
+
         }
 
         public static TalentSpec CurrentSpec { get; private set; }
@@ -109,12 +111,7 @@ namespace Singular
             return Glyphs.Count > 0 && Glyphs.Contains(glyphName);
         }
 
-        private static void HandlePointsChangedEvent(object sender, LuaEventArgs args)
-        {
-            Update();
-        }
-
-        private static void HandleGlyphUpdateEvent(object sender, LuaEventArgs args)
+		private static void UpdateTalentManager(object sender, LuaEventArgs args)
         {
             Update();
         }

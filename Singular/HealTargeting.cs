@@ -107,14 +107,15 @@ namespace Singular
                     continue;
                 }
 
-                if (p.HealthPercent >= 98)
+                if (p.HealthPercent >= Settings.SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
                 {
                     units.RemoveAt(i);
                     continue;
                 }
             }
 
-            if (!units.Any(o=>o.IsMe) && StyxWoW.Me.HealthPercent < 100)
+            // A little bit of a hack, but this ensures 'Me' is in the list.
+            if (!units.Any(o => o.IsMe) && StyxWoW.Me.HealthPercent < Settings.SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
                 units.Add(StyxWoW.Me);
 
         }

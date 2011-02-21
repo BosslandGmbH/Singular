@@ -46,6 +46,13 @@ namespace Singular.Settings
 		[Description("Your character will drink when your mana drops below this value")]
         public int DefaultRestMana { get; set; }
 
+        [Setting]
+        [DefaultValue(95)]
+        [Category("Healing")]
+        [DisplayName("Ignore Targets Health")]
+        [Description("Ignore healing targets when their health is above this value.")]
+        public int IgnoreHealTargetsAboveHealth { get; set; }
+
         #region Class Late-Loading Wrappers
 
         // Do not change anything within this region.

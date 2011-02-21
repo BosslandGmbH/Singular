@@ -159,6 +159,24 @@ namespace Singular
 
         #endregion
 
+        #region Lowbie
+
+        [Class(WoWClass.DeathKnight)]
+        [Spec(TalentSpec.Lowbie)]
+        [Behavior(BehaviorType.Combat)]
+        [Context(WoWContext.All)]
+        public Composite CreateLowbieDeathKnightCombat()
+        {
+            return new PrioritySelector(
+                CreateSpellCast("Death Coil"),
+                CreateSpellCast("Icy Touch"),
+                CreateSpellCast("Blood Strike"),
+                CreateSpellCast("Plague Strike")
+                );
+        }
+
+        #endregion
+
         #endregion
 
         #region Pull
@@ -168,6 +186,7 @@ namespace Singular
         [Spec(TalentSpec.BloodDeathKnight)]
         [Spec(TalentSpec.FrostDeathKnight)]
         [Spec(TalentSpec.UnholyDeathKnight)]
+        [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         public Composite CreateDeathKnightPull()
         {
@@ -188,6 +207,7 @@ namespace Singular
         [Spec(TalentSpec.BloodDeathKnight)]
         [Spec(TalentSpec.FrostDeathKnight)]
         [Spec(TalentSpec.UnholyDeathKnight)]
+        [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         public Composite CreateDeathKnightPreCombatBuffs()
         {

@@ -51,7 +51,7 @@ namespace Singular
         private Composite CreateDiscHealOnlyBehavior()
         {
             // Atonement - Tab 1  index 10 - 1/2 pts
-
+            NeedHealTargeting = true;
             return new
                 Decorator(
                 ret => HealTargeting.Instance.FirstUnit != null,

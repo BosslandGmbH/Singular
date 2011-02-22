@@ -127,9 +127,16 @@ namespace Singular
             new ConfigurationForm().ShowDialog();
         }
 
+        public bool NeedHealTargeting { get; set; }
+
+        public bool NeedTankTargeting { get; set; }
+
         public override void Pulse()
         {
-            HealTargeting.Instance.Pulse();
+            if(NeedHealTargeting)
+                HealTargeting.Instance.Pulse();
+            if(NeedTankTargeting)
+                TankTargeting.Instance.Pulse();
         }
 
         public override void Initialize()
@@ -156,6 +163,9 @@ namespace Singular
 
         public bool CreateBehaviors()
         {
+            NeedHealTargeting = false;
+            NeedTankTargeting = false;
+
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
             if (!EnsureComposite(true, BehaviorType.Combat, out _combatBehavior))
             {

@@ -49,6 +49,7 @@ namespace Singular
 
 		private Composite CreateRestoDruidHealOnlyBehavior()
 		{
+		    NeedHealTargeting = true;
 		    const uint MAPLE_SEED_ID = 17034;
 			return new
 				Decorator(

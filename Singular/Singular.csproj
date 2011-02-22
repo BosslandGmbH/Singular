@@ -74,6 +74,7 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="ClassSpecific\DeathKnight\markeloff.cs" />
+    <Compile Include="ClassSpecific\Druid\BearTank.cs" />
     <Compile Include="ClassSpecific\Druid\Common.cs" />
     <Compile Include="ClassSpecific\Druid\Feral.cs" />
     <Compile Include="ClassSpecific\Druid\Resto.cs" />
@@ -119,6 +120,7 @@
     <Compile Include="SingularRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TalentManager.cs" />
+    <Compile Include="TankTargeting.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="SingularRoutine.EventHandlers.cs" />

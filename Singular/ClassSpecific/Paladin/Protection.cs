@@ -30,6 +30,7 @@ namespace Singular
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinCombat()
         {
+            NeedTankTargeting = true;
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)

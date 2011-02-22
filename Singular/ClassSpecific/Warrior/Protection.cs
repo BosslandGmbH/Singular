@@ -30,6 +30,7 @@ namespace Singular
 		[Behavior(BehaviorType.Combat)]
 		public Composite CreateProtectionWarriorCombat()
 		{
+		    NeedTankTargeting = true;
 			return
 				new PrioritySelector(
 					CreateSpellCast("Taunt", ret => Me.CurrentTarget.CurrentTarget != null && !Me.CurrentTarget.IsTargetingMeOrPet),

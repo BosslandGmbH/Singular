@@ -129,6 +129,8 @@ namespace Singular
 					new Decorator(
 						ret => !Me.IsInParty,
 						new PrioritySelector(
+							CreateEnsureTarget(),
+							CreateRangeAndFace(35f, ret => Me.CurrentTarget),
 							CreateSpellBuff("Moonfire"),
 							CreateSpellCast("Starfire", ret => Me.HasAura("Fury of Stormrage")),
 							CreateSpellCast("Wrath")))

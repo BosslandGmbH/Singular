@@ -94,20 +94,20 @@ namespace Singular
 
         protected Composite CreateRangeAndFace(float maxRange, UnitSelectionDelegate distanceFrom)
         {
-            return new Decorator(
-                ret => distanceFrom(ret) != null,
-                new PrioritySelector(
-                    new Decorator(
-                        // Either get in range, or get in LOS.
-                        ret => StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) > maxRange * maxRange || !distanceFrom(ret).InLineOfSight,
+			return new Decorator(
+				ret => distanceFrom(ret) != null,
+				new PrioritySelector(
+					new Decorator(
+				// Either get in range, or get in LOS.
+						ret => StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) > maxRange * maxRange || !distanceFrom(ret).InLineOfSight,
 						new Action(ret => Navigator.MoveTo(distanceFrom(ret).Location))),
-                    new Decorator(
-                        ret => Me.IsMoving && StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) <= maxRange * maxRange,
-                        new Action(ret => Navigator.PlayerMover.MoveStop())),
-                    new Decorator(
-                        ret => Me.CurrentTarget != null && Me.CurrentTarget.IsAlive && !Me.IsSafelyFacing(Me.CurrentTarget, 70),
-                        new Action(ret => Me.CurrentTarget.Face()))
-                    ));
+					new Decorator(
+						ret => Me.IsMoving && StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) <= maxRange * maxRange,
+						new Action(ret => Navigator.PlayerMover.MoveStop())),
+					new Decorator(
+						ret => Me.CurrentTarget != null && Me.CurrentTarget.IsAlive && !Me.IsSafelyFacing(Me.CurrentTarget, 70),
+						new Action(ret => Me.CurrentTarget.Face()))
+					));
         }
 
         protected Composite CreateAutoAttack(bool includePet)

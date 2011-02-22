@@ -16,8 +16,10 @@ using System.Linq;
 
 using Styx;
 using Styx.Logic;
+using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+
 
 namespace Singular
 {
@@ -52,7 +54,7 @@ namespace Singular
             {
                 WoWUnit u = units[i].ToUnit();
 
-                if (u.Dead || u.IsPet || !u.Combat)
+                if (u.Dead || u.IsPet || !u.Combat || IsCrowdControlled(u))
                 {
                     units.RemoveAt(i);
                     continue;
@@ -96,10 +98,30 @@ namespace Singular
                 p.Score -= aggroDiff;
 
                 // If we have NO threat on the mob. Taunt the fucking thing.
-                if (aggroDiff < 0)
+				// Don't taunt fleeing mobs!
+                if (aggroDiff < 0 && !u.Fleeing)
                     NeedToTaunt.Add(u);
             }
         }
+
+		private bool IsCrowdControlled(WoWUnit unit)
+		{
+			var auras = unit.Auras.Values;
+
+			if (auras == null)
+				return false;
+
+			if (auras.Any(a => a.Spell.Mechanic == WoWSpellMechanic.Banished ||
+							   a.Spell.Mechanic == WoWSpellMechanic.Charmed ||
+							   a.Spell.Mechanic == WoWSpellMechanic.Horrified ||
+							   a.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
+							   a.Spell.Mechanic == WoWSpellMechanic.Polymorphed ||
+							   a.Spell.Mechanic == WoWSpellMechanic.Sapped ||
+							   a.Spell.Mechanic == WoWSpellMechanic.Shackled))
+				return true;
+
+			return false;
+		}
 
         private int GetAggroDifferenceFor(WoWUnit unit, IEnumerable<WoWPlayer> partyMembers)
         {

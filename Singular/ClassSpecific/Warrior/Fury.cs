@@ -29,7 +29,7 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
-                CreateRangeAndFace(4f, ret => Me.CurrentTarget),
+                CreateRangeAndFace(5f, ret => Me.CurrentTarget),
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 2,
                     new PrioritySelector(

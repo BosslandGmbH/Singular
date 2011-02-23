@@ -33,6 +33,8 @@ namespace Singular
 		    NeedTankTargeting = true;
 			return
 				new PrioritySelector(
+					CreateEnsureTarget(),
+					CreateRangeAndFace(5f, ret => Me.CurrentTarget),
 					CreateSpellCast("Heroic Strike", ret => Me.CurrentRage >= 60),
 					CreateSpellCast("Revenge"),
 					new Decorator(
@@ -66,6 +68,7 @@ namespace Singular
 		{
 			return
 				new PrioritySelector(
+					CreateEnsureTarget(),
 					CreateSpellCast("Charge"),
 					CreateSpellCast("Throw",
 						ret => Me.Inventory.Equipped.Ranged != null &&
@@ -73,7 +76,8 @@ namespace Singular
 					CreateSpellCast("Shoot",
 						ret => Me.Inventory.Equipped.Ranged != null &&
 							   (Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow ||
-							   Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow))
+							   Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow)),
+					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
 				);
 		}
 

@@ -52,6 +52,12 @@ namespace Singular
         {
             for (int i = units.Count - 1; i >= 0; i--)
             {
+				if (!units[i].IsValid)
+				{
+					units.RemoveAt(i);
+					continue;
+				}
+					
                 WoWUnit u = units[i].ToUnit();
 
                 if (u.Dead || u.IsPet || !u.Combat || IsCrowdControlled(u))

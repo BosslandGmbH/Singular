@@ -37,7 +37,6 @@ namespace Singular
                 CreateRangeAndFace(5f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
                 // Same rotation for both.
-                CreateSpellCast("Hand of Reckoning", ret => !Me.CurrentTarget.IsTargetingMeOrPet && !Me.CurrentTarget.Fleeing && Me.IsInParty),
                 CreateSpellCast("Hammer of Wrath"),
                 CreateSpellCast("Shield of the Righteous", ret => Me.CurrentHolyPower == 3),
                 CreateSpellCast("Avenger's Shield"),
@@ -80,6 +79,7 @@ namespace Singular
         {
             return
                 new PrioritySelector(
+					CreateSpellCast("Hand of Reckoning", ret => TankTargeting.Instance.NeedToTaunt.Count != 0, ret => TankTargeting.Instance.NeedToTaunt.FirstOrDefault()),
                     CreateSpellBuffOnSelf("Avenging Wrath"),
                     CreateSpellBuffOnSelf(
                         "Lay on Hands",

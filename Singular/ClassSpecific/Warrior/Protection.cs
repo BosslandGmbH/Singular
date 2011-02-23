@@ -33,8 +33,6 @@ namespace Singular
 		    NeedTankTargeting = true;
 			return
 				new PrioritySelector(
-					CreateSpellCast("Taunt", ret => Me.CurrentTarget.CurrentTarget != null && !Me.CurrentTarget.IsTargetingMeOrPet),
-					CreateSpellCast("Challenging Shout", ret => Me.CurrentTarget.CurrentTarget != null && !Me.CurrentTarget.IsTargetingMeOrPet),
 					CreateSpellCast("Heroic Strike", ret => Me.CurrentRage >= 60),
 					CreateSpellCast("Revenge"),
 					new Decorator(
@@ -87,6 +85,8 @@ namespace Singular
 		{
 			return
 				new PrioritySelector(
+					//CreateSpellCast("Taunt", ret => TankTargeting.Instance.NeedToTaunt.Count != 0, ret => TankTargeting.Instance.NeedToTaunt.FirstOrDefault()),
+					//CreateSpellCast("Challenging Shout", ret => TankTargeting.Instance.NeedToTaunt.Count(u => u.Distance < 10) > 2),
 					CreateSpellBuffOnSelf("Berserker Rage",
 							ret => Me.Auras.Any(
 								aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing ||
@@ -107,7 +107,7 @@ namespace Singular
 		[Class(WoWClass.Warrior)]
 		[Spec(TalentSpec.ProtectionWarrior)]
 		[Context(WoWContext.All)]
-		[Behavior(BehaviorType.CombatBuffs)]
+		[Behavior(BehaviorType.PreCombatBuffs)]
 		public Composite CreateProtectionWarriorPreCombatBuffs()
 		{
 			return

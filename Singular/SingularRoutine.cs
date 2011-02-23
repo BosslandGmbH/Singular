@@ -133,10 +133,10 @@ namespace Singular
 
         public override void Pulse()
         {
-            if(NeedHealTargeting)
-                HealTargeting.Instance.Pulse();
-            if(NeedTankTargeting)
-                TankTargeting.Instance.Pulse();
+			if (NeedHealTargeting)
+				HealTargeting.Instance.Pulse();
+			if (NeedTankTargeting)
+				TankTargeting.Instance.Pulse();
         }
 
         public override void Initialize()

@@ -25,6 +25,10 @@ using Styx.Logic.Pathing;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
+using Styx.Helpers;
+using System;
+
+using Action = TreeSharp.Action;
 
 namespace Singular
 {
@@ -68,28 +72,41 @@ namespace Singular
                     });
         }
 
+		private static WaitTimer targetingTimer = new WaitTimer(TimeSpan.FromSeconds(2));
+
         protected Composite CreateEnsureTarget()
         {
-            return new Decorator(
-                ret => Me.CurrentTarget == null || Me.CurrentTarget.Dead,
-                new PrioritySelector(
-                    // Set our context to the RaF leaders target, or the first in the target list.
-                    ctx => RaFHelper.Leader != null && RaFHelper.Leader.Combat ? RaFHelper.Leader.CurrentTarget : Targeting.Instance.FirstUnit,
-                    // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
-                    new Decorator(
-                        ret => ret != null,
-                        new Sequence(
-                            new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).Name + "!")),
-                            new Action(ret => ((WoWUnit)ret).Target()))),
-                    // In order to resolve getting "stuck" on a target, we'll clear it if there's nothing viable.
-                    new Action(
-                        ret =>
-                            {
-                                Me.ClearTarget();
-                                // Force a failure, just so we can move down the branch.
-                                return RunStatus.Failure;
-                            }),
-                    new ActionLogMessage(false, "No viable target! NOT GOOD!")));
+            return
+				new PrioritySelector(
+					new Decorator(
+						ret => NeedTankTargeting && targetingTimer.IsFinished && Me.Combat &&
+							   TankTargeting.Instance.FirstUnit != null && Me.CurrentTarget != TankTargeting.Instance.FirstUnit,
+						new Action(ret =>
+							{
+								Logger.Write("Targeting first unit of TankTargeting");
+								TankTargeting.Instance.FirstUnit.Target();
+								targetingTimer.Reset();
+							})),
+					new Decorator(
+						ret => Me.CurrentTarget == null || Me.CurrentTarget.Dead,
+						new PrioritySelector(
+							// Set our context to the RaF leaders target, or the first in the target list.
+							ctx => RaFHelper.Leader != null && RaFHelper.Leader.Combat ? RaFHelper.Leader.CurrentTarget : Targeting.Instance.FirstUnit,
+							// Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
+							new Decorator(
+								ret => ret != null,
+								new Sequence(
+									new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).Name + "!")),
+									new Action(ret => ((WoWUnit)ret).Target()))),
+							// In order to resolve getting "stuck" on a target, we'll clear it if there's nothing viable.
+							new Action(
+								ret =>
+									{
+										Me.ClearTarget();
+										// Force a failure, just so we can move down the branch.
+										return RunStatus.Failure;
+									}),
+							new ActionLogMessage(false, "No viable target! NOT GOOD!"))));
         }
 
         protected Composite CreateRangeAndFace(float maxRange, UnitSelectionDelegate distanceFrom)

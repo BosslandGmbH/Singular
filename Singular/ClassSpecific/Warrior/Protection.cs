@@ -85,8 +85,8 @@ namespace Singular
 		{
 			return
 				new PrioritySelector(
-					//CreateSpellCast("Taunt", ret => TankTargeting.Instance.NeedToTaunt.Count != 0, ret => TankTargeting.Instance.NeedToTaunt.FirstOrDefault()),
-					//CreateSpellCast("Challenging Shout", ret => TankTargeting.Instance.NeedToTaunt.Count(u => u.Distance < 10) > 2),
+					CreateSpellCast("Taunt", ret => TankTargeting.Instance.NeedToTaunt.Count != 0, ret => TankTargeting.Instance.NeedToTaunt.FirstOrDefault()),
+					CreateSpellCast("Challenging Shout", ret => TankTargeting.Instance.NeedToTaunt.Count(u => u.Distance < 10) > 2),
 					CreateSpellBuffOnSelf("Berserker Rage",
 							ret => Me.Auras.Any(
 								aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing ||

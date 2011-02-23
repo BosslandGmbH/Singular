@@ -85,6 +85,7 @@ namespace Singular
 							{
 								Logger.Write("Targeting first unit of TankTargeting");
 								TankTargeting.Instance.FirstUnit.Target();
+								StyxWoW.SleepForLagDuration();
 								targetingTimer.Reset();
 							})),
 					new Decorator(

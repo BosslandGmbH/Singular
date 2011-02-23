@@ -67,6 +67,7 @@ namespace Singular
             return
                 new PrioritySelector(
 					CreateEnsureTarget(),
+					CreateAutoAttack(true),
                     CreateSpellCast("Avenger's Shield"),
                     CreateSpellCast("Judgement"),
 					CreateRangeAndFace(5f, ret => Me.CurrentTarget)

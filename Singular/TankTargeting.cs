@@ -131,13 +131,14 @@ namespace Singular
 
         private int GetAggroDifferenceFor(WoWUnit unit, IEnumerable<WoWPlayer> partyMembers)
         {
-            uint myThreat = unit.ThreatInfo.RawPercent;
+            uint myThreat = unit.ThreatInfo.ThreatValue;
             uint highestParty = (from p in partyMembers
                                  let tVal = unit.GetThreatInfoFor(p).ThreatValue
                                  orderby tVal descending
                                  select tVal).FirstOrDefault();
 
-            return (int)myThreat - (int)highestParty;
+			var result = (int)myThreat - (int)highestParty;
+			return result;
         }
     }
 }

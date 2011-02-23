@@ -156,20 +156,41 @@ namespace Singular
 
         public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector)
         {
-            return new Decorator(
-                ret => extra(ret) && unitSelector(ret) != null && SpellManager.CanCast(spellName, unitSelector(ret)),
-                new Action(ret => CastWithLog(spellName, unitSelector(ret))));
+			return CreateSpellCast(spellName, extra, ret => unitSelector(ret), true);
         }
+
+		public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector, bool checkMoving)
+		{
+			return new Decorator(
+				ret => extra(ret) && unitSelector(ret) != null && CanCast(spellName, unitSelector(ret), checkMoving),
+				new PrioritySelector(
+					new Decorator(
+						ret => !checkMoving && Me.IsMoving && SpellManager.Spells[spellName].CastTime > 0,
+						new Sequence(
+							new Action(ret => Navigator.PlayerMover.MoveStop()),
+							new Action(ret => StyxWoW.SleepForLagDuration()))),
+					new Action(ret => CastWithLog(spellName, unitSelector(ret)))));
+		}
 
         public Composite CreateSpellCast(string spellName)
         {
-            return CreateSpellCast(spellName, ret => true);
+			return CreateSpellCast(spellName, true);
         }
+
+		public Composite CreateSpellCast(string spellName, bool checkMoving)
+		{
+			return CreateSpellCast(spellName, ret => true, checkMoving);
+		}
 
         public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra)
         {
-            return CreateSpellCast(spellName, extra, ret => Me.CurrentTarget);
+			return CreateSpellCast(spellName, extra, true);
         }
+
+		public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, bool checkMoving)
+		{
+			return CreateSpellCast(spellName, extra, ret => Me.CurrentTarget, checkMoving);
+		}
 
         public Composite CreateSpellCastOnSelf(string spellName)
         {
@@ -294,6 +315,53 @@ namespace Singular
 							CreateRangeAndFace(35, ret => (WoWUnit)ret),
 							CreateSpellCast(spellName, ret => true, ret => (WoWUnit)ret)))
 				);
+		}
+
+		#endregion
+
+		#region CanCast
+
+		public bool CanCast(string spellName, WoWUnit onUnit, bool checkMoving)
+		{
+			// Use default CanCast if checkmoving is false
+			if (checkMoving)
+				return SpellManager.CanCast(spellName, onUnit);
+
+			// Do we have spell?
+			if (!SpellManager.Spells.ContainsKey(spellName))
+				return false;
+
+			WoWSpell spell = SpellManager.Spells[spellName];
+
+			// is spell in CD?
+			if (spell.Cooldown)
+				return false;
+
+			// are we closer then minrange ?
+			if (onUnit.Distance < spell.MinRange)
+				return false;
+
+			// Are we further away from MaxRange ?
+			if (onUnit.Distance > spell.MaxRange)
+				return false;
+
+			// are we casting or channeling ?
+			if (Me.IsCasting || Me.ChanneledCastingSpellId != 0)
+				return false;
+
+			// do we have enough power?
+			if (Me.GetCurrentPower(spell.PowerType) < spell.PowerCost)
+				return false;
+
+			// GCD check
+			if (StyxWoW.GlobalCooldown)
+				return false;
+
+			// lua
+			if (!spell.CanCast)
+				return false;
+
+			return true;
 		}
 
 		#endregion

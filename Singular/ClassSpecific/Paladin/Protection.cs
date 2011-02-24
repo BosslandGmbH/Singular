@@ -18,6 +18,7 @@ using Styx.Combat.CombatRoutine;
 using Singular.Settings;
 
 using TreeSharp;
+using Styx.Logic.Combat;
 
 namespace Singular
 {
@@ -121,6 +122,7 @@ namespace Singular
                         ret => !Me.HasAura("Blessing of Kings") ||
                                Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
                     CreateSpellBuffOnSelf("Seal of Truth"),
+					CreateSpellBuffOnSelf("Seal of Righteousness", ret => SpellManager.HasSpell("Seal of Truth")),
                     CreateSpellBuffOnSelf("Devotion Aura"),
                     CreateSpellBuffOnSelf("Righteous Fury")
                     );

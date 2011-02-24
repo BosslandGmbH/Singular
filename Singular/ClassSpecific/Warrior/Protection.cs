@@ -38,6 +38,7 @@ namespace Singular
 					CreateAutoAttack(true),
 					CreateSpellCast("Heroic Strike", ret => Me.CurrentRage >= 60),
 					CreateSpellCast("Revenge"),
+					CreateSpellBuff("Rend"),
 					new Decorator(
 						ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 2,
 						new PrioritySelector(
@@ -48,7 +49,6 @@ namespace Singular
 					CreateSpellCast("Victory Rush"),
 					CreateSpellCast("Shield Bash", ret => Me.CurrentTarget.IsCasting),
 					CreateSpellCast("Shield Slam"),
-					CreateSpellBuff("Rend"),
 					CreateSpellBuff("Demoralizing Shout", 
 						ret => Me.CurrentRage > 30 &&
 							   Me.CurrentTarget.HealthPercent > 30),

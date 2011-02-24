@@ -135,7 +135,7 @@ namespace Singular
         {
 			if (NeedHealTargeting)
 				HealTargeting.Instance.Pulse();
-			if (NeedTankTargeting)
+			if (NeedTankTargeting && (Me.IsInParty || Me.IsInRaid))
 				TankTargeting.Instance.Pulse();
         }
 

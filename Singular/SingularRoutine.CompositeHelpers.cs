@@ -325,7 +325,7 @@ namespace Singular
 		{
 			// Use default CanCast if checkmoving is false
 			if (checkMoving)
-				return SpellManager.CanCast(spellName, onUnit);
+				return SpellManager.CanCast(spellName, onUnit, true);
 
 			// Do we have spell?
 			if (!SpellManager.Spells.ContainsKey(spellName))

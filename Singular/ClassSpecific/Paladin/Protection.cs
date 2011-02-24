@@ -25,6 +25,7 @@ namespace Singular
     {
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
+		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
@@ -60,6 +61,7 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
+		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinPull()
@@ -76,6 +78,7 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
+		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinCombatBuffs()
@@ -101,6 +104,7 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
+		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinPreCombatBuffs()
@@ -124,6 +128,7 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
+		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.PullBuffs)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinPullBuffs()

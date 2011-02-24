@@ -32,6 +32,7 @@ namespace Singular
 
         [Class(WoWClass.Priest)]
         [Spec(TalentSpec.DisciplineHealingPriest)]
+		[Spec(TalentSpec.DisciplinePriest)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public Composite CreatDiscHealRest()
@@ -98,6 +99,7 @@ namespace Singular
         // Note: This will probably break shit if we're solo, but oh well!
         [Class(WoWClass.Priest)]
         [Spec(TalentSpec.DisciplineHealingPriest)]
+		[Spec(TalentSpec.DisciplinePriest)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Heal)]
         [Behavior(BehaviorType.Pull)]
@@ -107,8 +109,13 @@ namespace Singular
             return new PrioritySelector(
                 // Firstly, deal with healing people!
                 CreateDiscHealOnlyBehavior(),
-				//Pull with Holy Fire while we are solo
-				CreateSpellCast("Holy Fire", ret => !Me.IsInParty && !Me.Combat),
+				//Pull stuff
+				new Decorator(
+					ret => !Me.IsInParty && !Me.Combat,
+					new PrioritySelector(
+						CreateSpellCast("Holy Fire", ret => !Me.IsInParty && !Me.Combat),
+						CreateSpellCast("Smite", ret => !Me.IsInParty && !Me.Combat),
+						CreateRangeAndFace(28f, ret => Me.CurrentTarget))),
                 // If we have nothing to heal, and we're in combat (or the leader is)... kill something!
                 new Decorator(
                     ret => Me.Combat || (RaFHelper.Leader != null && RaFHelper.Leader.Combat),

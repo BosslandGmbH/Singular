@@ -57,7 +57,8 @@ namespace Singular
                         CreateSpellCast("Crusader Strike"),
                         CreateSpellCast("Judgement"),
                         CreateSpellCast("Consecration"),
-                        CreateSpellCast("Holy Wrath"))));
+                        CreateSpellCast("Holy Wrath"))),
+				CreateSpellCast("Crusader Strike"));
         }
 
         [Class(WoWClass.Paladin)]
@@ -122,7 +123,7 @@ namespace Singular
                         ret => !Me.HasAura("Blessing of Kings") ||
                                Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
                     CreateSpellBuffOnSelf("Seal of Truth"),
-					CreateSpellBuffOnSelf("Seal of Righteousness", ret => SpellManager.HasSpell("Seal of Truth")),
+					CreateSpellBuffOnSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth")),
                     CreateSpellBuffOnSelf("Devotion Aura"),
                     CreateSpellBuffOnSelf("Righteous Fury")
                     );

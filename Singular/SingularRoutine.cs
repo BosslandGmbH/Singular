@@ -194,8 +194,10 @@ namespace Singular
 
             // Since we can be lazy, we're going to fix a bug right here and now.
             // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
-            _preCombatBuffsBehavior = new Decorator(ret => !IsMounted, _preCombatBuffsBehavior);
-			_combatBuffsBehavior = new Decorator(ret => !IsMounted, _combatBuffsBehavior);
+            if (_preCombatBuffsBehavior != null)
+                _preCombatBuffsBehavior = new Decorator(ret => !IsMounted, _preCombatBuffsBehavior);
+            if (_combatBuffsBehavior != null)
+                _combatBuffsBehavior = new Decorator(ret => !IsMounted, _combatBuffsBehavior);
 
             return true;
         }

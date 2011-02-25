@@ -172,7 +172,7 @@ namespace Singular
             return new PrioritySelector(
 				CreateEnsureTarget(),
 				CreateLosAndFace(ret => Me.CurrentTarget, 70),
-                CreateSpellCast("Death Coil", ret => Me.CurrentTarget.Distance > 15f, false),
+                CreateSpellCast("Death Coil", false),
                 CreateSpellCast("Icy Touch", false),
 				CreateRangeAndFace(5f, ret => Me.CurrentTarget),
                 CreateSpellCast("Blood Strike"),

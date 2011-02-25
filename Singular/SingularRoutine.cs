@@ -46,6 +46,8 @@ namespace Singular
 
         private Composite _restBehavior;
 
+		public static SingularRoutine Instance { get; set; }
+
         public override string Name { get { return "Singular"; } }
 
         public override WoWClass Class { get { return StyxWoW.Me.Class; } }
@@ -53,6 +55,11 @@ namespace Singular
         public override bool WantButton { get { return true; } }
 
         public LocalPlayer Me { get { return StyxWoW.Me; } }
+
+		public SingularRoutine()
+		{
+			Instance = this;
+		}
 
         public WoWContext CurrentWoWContext
         {

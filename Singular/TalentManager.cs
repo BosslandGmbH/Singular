@@ -84,7 +84,7 @@ namespace Singular
         {
             Talents = new List<Talent>();
             Glyphs = new List<string>();
-            Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", HandleCharacterPointsChanged);
+			Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", UpdateTalentManager);
 			Lua.Events.AttachEvent("GLYPH_UPDATED", UpdateTalentManager);
 			Lua.Events.AttachEvent("ACTIVE_TALENT_GROUP_CHANGED", UpdateTalentManager);
 
@@ -112,20 +112,16 @@ namespace Singular
         }
 
 		private static void UpdateTalentManager(object sender, LuaEventArgs args)
-        {
-            Update();
-        }
-
-		private static void HandleCharacterPointsChanged(object sender, LuaEventArgs args)
 		{
-			if (CurrentSpec == TalentSpec.Lowbie)
+			var oldSpec = CurrentSpec;
+
+			Update();
+
+			if (CurrentSpec != oldSpec)
 			{
 				Logger.Write("Your spec has been changed. Rebuilding behaviors");
-				Update();
 				SingularRoutine.Instance.CreateBehaviors();
-				return;
 			}
-			Update();
 		}
 
         public static void Update()

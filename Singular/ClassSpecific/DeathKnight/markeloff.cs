@@ -13,6 +13,8 @@
 
 using System.Linq;
 
+using Singular.Composites;
+
 using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
 

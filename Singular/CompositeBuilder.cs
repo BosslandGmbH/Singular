@@ -41,7 +41,7 @@ namespace Singular
                         {
                             continue;
                         }
-                        Logger.WriteDebug(mi.Name + " has my class");
+                        //Logger.WriteDebug(mi.Name + " has my class");
                         classMatches = true;
                     }
                     else if (ca is SpecAttribute)
@@ -51,7 +51,7 @@ namespace Singular
                         {
                             continue;
                         }
-                        Logger.WriteDebug(mi.Name + " has my spec");
+                        //Logger.WriteDebug(mi.Name + " has my spec");
                         specMatches = true;
                     }
                     else if (ca is BehaviorAttribute)
@@ -61,7 +61,7 @@ namespace Singular
                         {
                             continue;
                         }
-                        Logger.WriteDebug(mi.Name + " has my behavior");
+                        //Logger.WriteDebug(mi.Name + " has my behavior");
                         behaviorMatches = true;
                     }
                     else if (ca is ContextAttribute)
@@ -71,7 +71,7 @@ namespace Singular
                         {
                             continue;
                         }
-                        Logger.WriteDebug(mi.Name + " has my context");
+                        //Logger.WriteDebug(mi.Name + " has my context");
                         contextMatches = true;
                     }
                 }
@@ -80,6 +80,7 @@ namespace Singular
                 if (classMatches && specMatches && behaviorMatches && contextMatches)
                 {
                     Logger.WriteDebug(mi.Name + " is a match!");
+                    Logger.Write("Using " + mi.Name + " for " + spec.ToString().CamelToSpaced() + " " + behavior);
                     bestMatch = mi;
                 }
             }

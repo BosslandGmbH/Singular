@@ -28,7 +28,7 @@ namespace Singular
 {
     partial class SingularRoutine
     {
-        public List<WoWPlayer> ResurrectablePlayers { get { return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(p => !p.IsMe && p.Dead && p.IsFriendly).ToList(); } }
+        public List<WoWPlayer> ResurrectablePlayers { get { return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(p => !p.IsMe && p.Dead && p.IsFriendly && p.IsInMyPartyOrRaid && p.DistanceSqr < 40 * 40).ToList(); } }
 
         [Class(WoWClass.Priest)]
         [Spec(TalentSpec.DisciplineHealingPriest)]
@@ -38,6 +38,7 @@ namespace Singular
         public Composite CreatDiscHealRest()
         {
             return new PrioritySelector(
+                CreateWaitForCast(),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 CreateDefaultRestComposite(SingularSettings.Instance.DefaultRestHealth, SingularSettings.Instance.DefaultRestMana),
                 // Make sure we're healing OOC too!

@@ -16,6 +16,7 @@ using CommonBehaviors.Actions;
 using Singular.Composites;
 
 using Styx;
+using Styx.Logic;
 using Styx.Logic.Inventory;
 using Styx.Logic.Pathing;
 
@@ -28,6 +29,11 @@ namespace Singular
         public Composite CreateDefaultRestComposite(int minHealth, int minMana)
         {
 			return new PrioritySelector(
+                // Don't rest if the leader is in combat. Ever.
+                new Decorator(ret=>Me.IsInParty,
+                    new Decorator(ret=>RaFHelper.Leader != null && RaFHelper.Leader.Combat,
+                        new ActionAlwaysFail())),
+
 				// Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
 				// At least try to do something if we are in combat :)
 				new Decorator(

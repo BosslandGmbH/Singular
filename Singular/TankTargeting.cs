@@ -60,7 +60,7 @@ namespace Singular
 					
                 WoWUnit u = units[i].ToUnit();
 
-                if (u.Dead || u.IsPet() || !u.Combat || IsCrowdControlled(u))
+                if (u.IsFriendly || u.Dead || u.IsPet() || !u.Combat || IsCrowdControlled(u))
                 {
                     units.RemoveAt(i);
                     continue;
@@ -114,19 +114,14 @@ namespace Singular
 		{
 			var auras = unit.Auras.Values;
 
-			if (auras == null)
-				return false;
-
-			if (auras.Any(a => a.Spell.Mechanic == WoWSpellMechanic.Banished ||
-							   a.Spell.Mechanic == WoWSpellMechanic.Charmed ||
-							   a.Spell.Mechanic == WoWSpellMechanic.Horrified ||
-							   a.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
-							   a.Spell.Mechanic == WoWSpellMechanic.Polymorphed ||
-							   a.Spell.Mechanic == WoWSpellMechanic.Sapped ||
-							   a.Spell.Mechanic == WoWSpellMechanic.Shackled))
-				return true;
-
-			return false;
+		    return auras.Any(a => a.Spell.Mechanic == WoWSpellMechanic.Banished ||
+		                          a.Spell.Mechanic == WoWSpellMechanic.Charmed ||
+		                          a.Spell.Mechanic == WoWSpellMechanic.Horrified ||
+		                          a.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
+		                          a.Spell.Mechanic == WoWSpellMechanic.Polymorphed ||
+		                          a.Spell.Mechanic == WoWSpellMechanic.Sapped ||
+		                          a.Spell.Mechanic == WoWSpellMechanic.Shackled ||
+		                          a.Spell.Mechanic == WoWSpellMechanic.Asleep);
 		}
 
         private int GetAggroDifferenceFor(WoWUnit unit, IEnumerable<WoWPlayer> partyMembers)

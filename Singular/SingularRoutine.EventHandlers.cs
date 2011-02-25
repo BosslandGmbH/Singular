@@ -11,10 +11,14 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Helpers;
+using Styx.Logic;
+using Styx.Logic.POI;
 using Styx.WoWInternals;
 
 namespace Singular
@@ -28,7 +32,7 @@ namespace Singular
             BotEvents.Player.OnMapChanged += Player_OnMapChanged;
 
             Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
-            if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED'"))
+            if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED' or args[2] == 'SPELL_MISSED'"))
             {
                 Logger.Write("ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
             }
@@ -67,6 +71,18 @@ namespace Singular
                     if (Class == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
                     {
                         StyxWoW.SleepForLagDuration();
+                    }
+                    break;
+
+                case "SPELL_MISSED":
+                    //Logger.Write(e.Args.ToRealString());
+                    if (e.Args[11].ToString() == "EVADE")
+                    {
+                        Logger.Write("Mob is evading. Blacklisting it!");
+                        Blacklist.Add(e.DestGuid, TimeSpan.FromMinutes(30));
+                        if (StyxWoW.Me.CurrentTargetGuid == e.DestGuid)
+                            StyxWoW.Me.ClearTarget();
+                        BotPoi.Clear("Blacklisting evading mob");
                     }
                     break;
             }

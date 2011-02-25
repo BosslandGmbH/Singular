@@ -26,7 +26,6 @@ namespace Singular
     {
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
-		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
@@ -47,6 +46,7 @@ namespace Singular
                     ret => NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1,
                     new PrioritySelector(
                         CreateSpellCast("Hammer of the Righteous"),
+						CreateSpellCast("Crusader Strike"),
                         CreateSpellCast("Consecration"),
                         CreateSpellCast("Holy Wrath"),
                         CreateSpellCast("Judgement"))),
@@ -57,13 +57,11 @@ namespace Singular
                         CreateSpellCast("Crusader Strike"),
                         CreateSpellCast("Judgement"),
                         CreateSpellCast("Consecration"),
-                        CreateSpellCast("Holy Wrath"))),
-				CreateSpellCast("Crusader Strike"));
+                        CreateSpellCast("Holy Wrath"))));
         }
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
-		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinPull()
@@ -80,7 +78,6 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
-		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinCombatBuffs()
@@ -106,7 +103,6 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
-		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinPreCombatBuffs()
@@ -123,7 +119,6 @@ namespace Singular
                         ret => !Me.HasAura("Blessing of Kings") ||
                                Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
                     CreateSpellBuffOnSelf("Seal of Truth"),
-					CreateSpellBuffOnSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth")),
                     CreateSpellBuffOnSelf("Devotion Aura"),
                     CreateSpellBuffOnSelf("Righteous Fury")
                     );
@@ -131,7 +126,6 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
-		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.PullBuffs)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinPullBuffs()

@@ -323,43 +323,56 @@ namespace Singular
 
 		public bool CanCast(string spellName, WoWUnit onUnit, bool checkMoving)
 		{
-			// Use default CanCast if checkmoving is false
-			if (checkMoving)
-				return SpellManager.CanCast(spellName, onUnit, true);
-
 			// Do we have spell?
-			if (!SpellManager.Spells.ContainsKey(spellName))
+			if (!SpellManager.HasSpell(spellName))
 				return false;
 
 			WoWSpell spell = SpellManager.Spells[spellName];
 
+			// Use default CanCast if checkmoving is false
+			if (checkMoving)
+			{
+				if (spell.MaxRange == 0)
+					return SpellManager.CanCast(spellName, onUnit);
+				else
+					return SpellManager.CanCast(spellName, onUnit, true);
+			}
+
 			// is spell in CD?
 			if (spell.Cooldown)
+			{
 				return false;
-
-			// are we closer then minrange ?
-			if (onUnit.Distance < spell.MinRange)
-				return false;
+			}
 
 			// Are we further away from MaxRange ?
-			if (onUnit.Distance > spell.MaxRange)
+			if (onUnit.Distance > spell.MaxRange && (spell.MaxRange != 0 || onUnit.Distance > 5f || onUnit == Me))
+			{
 				return false;
+			}
 
 			// are we casting or channeling ?
 			if (Me.IsCasting || Me.ChanneledCastingSpellId != 0)
+			{
 				return false;
+			}
 
 			// do we have enough power?
 			if (Me.GetCurrentPower(spell.PowerType) < spell.PowerCost)
+			{
 				return false;
+			}
 
 			// GCD check
 			if (StyxWoW.GlobalCooldown)
+			{
 				return false;
+			}
 
 			// lua
 			if (!spell.CanCast)
+			{
 				return false;
+			}
 
 			return true;
 		}

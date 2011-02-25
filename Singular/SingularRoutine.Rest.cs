@@ -72,7 +72,12 @@ namespace Singular
 				new Decorator(
 					ret =>
 					(Me.HasAura("Food") && Me.HealthPercent < 95) || (Me.HasAura("Drink") && Me.PowerType == WoWPowerType.Mana && Me.ManaPercent < 95),
-					new ActionAlwaysSucceed())
+					new ActionAlwaysSucceed()),
+
+				new Decorator(
+					ret => (Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= minMana) || Me.HealthPercent <= minHealth,
+					new Action(ret => Logger.Write("We have no food/drink. Waiting to recover our health/mana back")))
+
 				);
         }
     }

@@ -54,5 +54,10 @@ namespace Singular
 
             return obj.Name;
         }
+
+        public static bool IsPet(this WoWUnit unit)
+        {
+            return unit.SummonedByUnitGuid != 0 || unit.CharmedByUnitGuid != 0;
+        }
     }
 }

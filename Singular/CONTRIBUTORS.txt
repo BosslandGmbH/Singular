@@ -3,6 +3,7 @@ $Date$
 $HeadURL$
 
 Apoc - Lead
+raphus - Bunch o shit
 Nuok - Numerous patches & fixes
 strix - Rogue Combat spec rotation.
 markeloff - Death Knight rotations.

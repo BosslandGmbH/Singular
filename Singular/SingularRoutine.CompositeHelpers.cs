@@ -112,14 +112,14 @@ namespace Singular
 
         protected Composite CreateAutoAttack(bool includePet)
         {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => !Me.IsAutoAttacking,
-                    new Action(ret => Me.ToggleAttack())),
-                new Decorator(
-                    ret => includePet && Me.GotAlivePet && !Me.Pet.IsAutoAttacking,
-                    new Action(ret => PetManager.CastPetAction(PetAction.Attack)))
-                );
+			return new PrioritySelector(
+				new Decorator(
+					ret => !Me.IsAutoAttacking,
+					new Action(ret => Me.ToggleAttack())),
+				new Decorator(
+					ret => includePet && Me.GotAlivePet && !Me.Pet.IsAutoAttacking,
+					new Action(delegate { PetManager.CastPetAction(PetAction.Attack); return RunStatus.Failure; }))
+				);
         }
 
         private void CastWithLog(string spellName, WoWUnit onTarget)

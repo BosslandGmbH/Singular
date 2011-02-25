@@ -73,7 +73,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes.cs" />
-    <Compile Include="ClassSpecific\DeathKnight\markeloff.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\Blood.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\Frost.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\Lowbie.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\Common.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\Unholy.cs" />
     <Compile Include="ClassSpecific\Druid\BearTank.cs" />
     <Compile Include="ClassSpecific\Druid\Common.cs" />
     <Compile Include="ClassSpecific\Druid\Feral.cs" />

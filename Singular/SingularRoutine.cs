@@ -161,8 +161,13 @@ namespace Singular
             Logger.Write("Behaviors created!");
         }
 
+		private WoWContext lastContext { get; set; }
+
         public bool CreateBehaviors()
         {
+			//Caching the context to not recreate same behaviors repeatedly.
+			lastContext = CurrentWoWContext;
+
             NeedHealTargeting = false;
             NeedTankTargeting = false;
 

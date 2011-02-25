@@ -169,7 +169,7 @@ namespace Singular
         {
             return new PrioritySelector(
 				CreateEnsureTarget(),
-				CreateLosAndFace(ret => Me.CurrentTarget),
+				CreateLosAndFace(ret => Me.CurrentTarget, 70),
                 CreateSpellCast("Death Coil", ret => Me.CurrentTarget.Distance > 15f, false),
                 CreateSpellCast("Icy Touch", false),
 				CreateRangeAndFace(5f, ret => Me.CurrentTarget),
@@ -186,10 +186,10 @@ namespace Singular
 
         [Class(WoWClass.DeathKnight)]
         [Behavior(BehaviorType.Pull)]
-        [Spec(TalentSpec.BloodDeathKnight)]
-        [Spec(TalentSpec.FrostDeathKnight)]
+		[Spec(TalentSpec.BloodDeathKnight)]
+		[Spec(TalentSpec.FrostDeathKnight)]
         [Spec(TalentSpec.UnholyDeathKnight)]
-        [Spec(TalentSpec.Lowbie)]
+		[Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         public Composite CreateDeathKnightPull()
         {
@@ -207,31 +207,31 @@ namespace Singular
 
         #region PreCombatBuffs
 
-        [Class(WoWClass.DeathKnight)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Spec(TalentSpec.BloodDeathKnight)]
-        [Spec(TalentSpec.FrostDeathKnight)]
-        [Spec(TalentSpec.UnholyDeathKnight)]
-        [Spec(TalentSpec.Lowbie)]
-        [Context(WoWContext.All)]
-        public Composite CreateDeathKnightPreCombatBuffs()
-        {
-            return
-                new PrioritySelector(
+		[Class(WoWClass.DeathKnight)]
+		[Behavior(BehaviorType.PreCombatBuffs)]
+		[Spec(TalentSpec.BloodDeathKnight)]
+		[Spec(TalentSpec.FrostDeathKnight)]
+		[Spec(TalentSpec.UnholyDeathKnight)]
+		[Spec(TalentSpec.Lowbie)]
+		[Context(WoWContext.All)]
+		public Composite CreateDeathKnightPreCombatBuffs()
+		{
+			return
+				new PrioritySelector(
 					CreateSpellBuffOnSelf(
 						"Frost Presence",
 						ret => TalentManager.CurrentSpec == TalentSpec.Lowbie),
-                    CreateSpellBuffOnSelf(
-                        "Blood Presence",
-                        ret => TalentManager.CurrentSpec == TalentSpec.BloodDeathKnight),
-                    CreateSpellBuffOnSelf(
-                        "Unholy Presence",
-                        ret => TalentManager.CurrentSpec == TalentSpec.UnholyDeathKnight || TalentManager.CurrentSpec == TalentSpec.FrostDeathKnight),
-                    CreateSpellBuffOnSelf(
-                        "Horn of Winter",
-                        ret => !Me.HasAura("Horn of Winter") && !Me.HasAura("Battle Shout") && !Me.HasAura("Roar of Courage"))
-                    );
-        }
+					CreateSpellBuffOnSelf(
+					    "Blood Presence",
+					    ret => TalentManager.CurrentSpec == TalentSpec.BloodDeathKnight),
+					CreateSpellBuffOnSelf(
+					    "Unholy Presence",
+					    ret => TalentManager.CurrentSpec == TalentSpec.UnholyDeathKnight || TalentManager.CurrentSpec == TalentSpec.FrostDeathKnight),
+					CreateSpellBuffOnSelf(
+					    "Horn of Winter",
+					    ret => !Me.HasAura("Horn of Winter") && !Me.HasAura("Battle Shout") && !Me.HasAura("Roar of Courage"))
+					);
+		}
 
         #endregion
     }

@@ -78,6 +78,10 @@ namespace Singular
 			if (Me.BaseAddress == 0)
 				return;
 
+			//Why would we create same behaviors all over ?
+			if (lastContext == CurrentWoWContext)
+				return;
+
             Logger.Write("Map changed. New context: " + CurrentWoWContext + ". Rebuilding behaviors.");
             CreateBehaviors();
         }

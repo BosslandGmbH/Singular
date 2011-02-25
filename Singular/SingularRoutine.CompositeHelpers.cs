@@ -317,7 +317,7 @@ namespace Singular
 				if (spell.MaxRange == 0)
 					return SpellManager.CanCast(spellName, onUnit);
 				else
-					return SpellManager.CanCast(spellName, onUnit, true);
+				    return SpellManager.CanCast(spellName, onUnit, true);
 			}
 
 			// is spell in CD?

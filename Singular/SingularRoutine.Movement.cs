@@ -57,11 +57,11 @@ namespace Singular
                     ret => unitToCheck(ret) != null,
                     new PrioritySelector(
                         new Decorator(
-                            ret => !unitToCheck(ret).InLineOfSight,
+                            ret => !unitToCheck(ret).InLineOfSightOCD,
                             new Action(ret => Navigator.MoveTo(unitToCheck(ret).Location))),
                         new Decorator(
-                            ret => unitToCheck(ret).IsAlive && !Me.IsSafelyFacing(unitToCheck(ret), coneDegree),
-                            new Action(ret => unitToCheck(ret).Face()))
+							ret => Me.CurrentTarget != null && Me.CurrentTarget.IsAlive && !Me.IsSafelyFacing(Me.CurrentTarget, coneDegree),
+							new Action(ret => Me.CurrentTarget.Face()))
                 ));
         }
     }

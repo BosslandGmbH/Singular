@@ -35,6 +35,7 @@ namespace Singular
 		{
 			return
 				new PrioritySelector(
+					CreateLosAndFace(ret => Me.CurrentTarget),
 					CreateSpellCast("Judgement"),
 					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
 				);

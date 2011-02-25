@@ -117,7 +117,7 @@ namespace Singular
 				new PrioritySelector(
 					new Decorator(
 				// Either get in range, or get in LOS.
-						ret => StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) > maxRange * maxRange || !distanceFrom(ret).InLineOfSight,
+						ret => StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) > maxRange * maxRange || !distanceFrom(ret).InLineOfSightOCD,
 						new Action(ret => Navigator.MoveTo(distanceFrom(ret).Location))),
 					new Decorator(
 						ret => Me.IsMoving && StyxWoW.Me.Location.DistanceSqr(distanceFrom(ret).Location) <= maxRange * maxRange,
@@ -127,6 +127,21 @@ namespace Singular
 						new Action(ret => Me.CurrentTarget.Face()))
 					));
         }
+
+		protected Composite CreateLosAndFace(UnitSelectionDelegate unitToCheck, float coneDegree = 70f)
+		{
+			return
+				new Decorator(
+					ret => unitToCheck(ret) != null,
+					new PrioritySelector(
+						new Decorator(
+							ret => !unitToCheck(ret).InLineOfSight,
+							new Action(ret => Navigator.MoveTo(unitToCheck(ret).Location))),
+						new Decorator(
+							ret => unitToCheck(ret).IsAlive && !Me.IsSafelyFacing(unitToCheck(ret), coneDegree),
+							new Action(ret => unitToCheck(ret).Face()))
+				));
+		}
 
         protected Composite CreateAutoAttack(bool includePet)
         {

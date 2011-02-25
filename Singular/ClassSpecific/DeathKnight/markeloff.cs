@@ -192,7 +192,8 @@ namespace Singular
         {
             return
                 new PrioritySelector(
-                    CreateSpellCast("Death Grip"),
+					CreateLosAndFace(ret => Me.CurrentTarget),
+					CreateSpellCast("Death Grip"),
                     CreateSpellCast("Howling Blast"),
                     CreateSpellCast("Icy Touch"),
 					CreateRangeAndFace(5f, ret => Me.CurrentTarget)

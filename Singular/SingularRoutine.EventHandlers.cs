@@ -74,6 +74,10 @@ namespace Singular
 
         private void Player_OnMapChanged(BotEvents.Player.MapChangedEventArgs args)
         {
+			//We shall not create behavior while we are on loading screen
+			if (Me.BaseAddress == 0)
+				return;
+
             Logger.Write("Map changed. New context: " + CurrentWoWContext + ". Rebuilding behaviors.");
             CreateBehaviors();
         }

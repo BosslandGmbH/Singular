@@ -168,8 +168,11 @@ namespace Singular
         public Composite CreateLowbieDeathKnightCombat()
         {
             return new PrioritySelector(
-                CreateSpellCast("Death Coil"),
-                CreateSpellCast("Icy Touch"),
+				CreateEnsureTarget(),
+				CreateLosAndFace(ret => Me.CurrentTarget),
+                CreateSpellCast("Death Coil", ret => Me.CurrentTarget.Distance > 15f, false),
+                CreateSpellCast("Icy Touch", false),
+				CreateRangeAndFace(5f, ret => Me.CurrentTarget),
                 CreateSpellCast("Blood Strike"),
                 CreateSpellCast("Plague Strike")
                 );
@@ -193,9 +196,9 @@ namespace Singular
             return
                 new PrioritySelector(
 					CreateLosAndFace(ret => Me.CurrentTarget),
-					CreateSpellCast("Death Grip"),
-                    CreateSpellCast("Howling Blast"),
-                    CreateSpellCast("Icy Touch"),
+                    CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15, false),
+                    CreateSpellCast("Howling Blast", false),
+                    CreateSpellCast("Icy Touch", false),
 					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
                     );
         }
@@ -215,6 +218,9 @@ namespace Singular
         {
             return
                 new PrioritySelector(
+					CreateSpellBuffOnSelf(
+						"Frost Presence",
+						ret => TalentManager.CurrentSpec == TalentSpec.Lowbie),
                     CreateSpellBuffOnSelf(
                         "Blood Presence",
                         ret => TalentManager.CurrentSpec == TalentSpec.BloodDeathKnight),

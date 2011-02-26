@@ -17,6 +17,7 @@ namespace Singular
 		[Context(WoWContext.All)]
 		public Composite CreateBloodDeathKnightCombat()
 		{
+			NeedTankTargeting = true;
 			return new PrioritySelector(
 				CreateEnsureTarget(),
 				CreateAutoAttack(true),

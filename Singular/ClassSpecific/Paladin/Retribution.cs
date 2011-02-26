@@ -63,6 +63,7 @@ namespace Singular
                 new PrioritySelector(
 					CreateEnsureTarget(),
 					CreateAutoAttack(true),
+					CreateLosAndFace(ret => Me.CurrentTarget),
                     CreateSpellCast("Judgement"),
 					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
                     );

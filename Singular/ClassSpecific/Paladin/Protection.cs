@@ -27,7 +27,6 @@ namespace Singular
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
         [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinCombat()
         {
@@ -70,6 +69,7 @@ namespace Singular
                 new PrioritySelector(
 					CreateEnsureTarget(),
 					CreateAutoAttack(true),
+					CreateLosAndFace(ret => Me.CurrentTarget),
                     CreateSpellCast("Avenger's Shield"),
                     CreateSpellCast("Judgement"),
 					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
@@ -119,6 +119,7 @@ namespace Singular
                         ret => !Me.HasAura("Blessing of Kings") ||
                                Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
                     CreateSpellBuffOnSelf("Seal of Truth"),
+					CreateSpellBuffOnSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth")),
                     CreateSpellBuffOnSelf("Devotion Aura"),
                     CreateSpellBuffOnSelf("Righteous Fury")
                     );

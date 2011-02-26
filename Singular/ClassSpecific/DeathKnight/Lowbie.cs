@@ -20,6 +20,7 @@ namespace Singular
 			return new PrioritySelector(
 				CreateEnsureTarget(),
 				CreateLosAndFace(ret => Me.CurrentTarget, 70),
+				CreateAutoAttack(true),
 				CreateSpellCast("Death Coil", false),
 				CreateSpellCast("Icy Touch", false),
 				CreateRangeAndFace(5f, ret => Me.CurrentTarget),

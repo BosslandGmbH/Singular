@@ -49,6 +49,7 @@ namespace Singular
 		{
 			return
 				new PrioritySelector(
+					CreateSpellCastOnSelf("Word of Glory", ret => Me.HealthPercent < 50),
 					CreateSpellCastOnSelf("Holy Light", ret => Me.HealthPercent < 40)
 				);
 		}
@@ -61,7 +62,8 @@ namespace Singular
 		{
 			return
 				new PrioritySelector(
-					CreateSpellBuffOnSelf("Seal of Righteousness")
+					CreateSpellBuffOnSelf("Seal of Righteousness"),
+					CreateSpellBuffOnSelf("Devotion Aura")
 				);
 		}
 
@@ -73,7 +75,8 @@ namespace Singular
 		{
 			return
 				new PrioritySelector(
-					CreateSpellBuffOnSelf("Seal of Righteousness")
+					CreateSpellBuffOnSelf("Seal of Righteousness"),
+					CreateSpellBuffOnSelf("Devotion Aura")
 				);
 		}
 	}

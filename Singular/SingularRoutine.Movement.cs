@@ -57,7 +57,7 @@ namespace Singular
                     ret => unitToCheck(ret) != null,
                     new PrioritySelector(
                         new Decorator(
-                            ret => !unitToCheck(ret).InLineOfSightOCD,
+                            ret => !unitToCheck(ret).InLineOfSightOCD && unitToCheck(ret).Distance > 4f,
                             new Action(ret => Navigator.MoveTo(unitToCheck(ret).Location))),
                         new Decorator(
 							ret => Me.CurrentTarget != null && Me.CurrentTarget.IsAlive && !Me.IsSafelyFacing(Me.CurrentTarget, coneDegree),

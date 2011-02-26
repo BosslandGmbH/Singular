@@ -19,9 +19,9 @@ namespace Singular
 		{
 			return new PrioritySelector(
 				CreateEnsureTarget(),
+				CreateAutoAttack(true),
 				//Make sure we're in range, and facing the damned target. (LOS check as well)
 				CreateRangeAndFace(5f, ret => Me.CurrentTarget),
-				CreateAutoAttack(true),
 				CreateSpellCast("Raise Dead", ret => !Me.GotAlivePet),
 				CreateSpellCast("Rune Strike"),
 				CreateSpellCast("Mind Freeze", ret => Me.CurrentTarget.IsCasting || Me.CurrentTarget.ChanneledCastingSpellId != 0),

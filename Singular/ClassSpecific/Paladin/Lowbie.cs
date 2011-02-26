@@ -20,8 +20,8 @@ namespace Singular
 			return
 				new PrioritySelector(
 					CreateEnsureTarget(),
-					CreateRangeAndFace(5f, ret => Me.CurrentTarget),
 					CreateAutoAttack(true),
+					CreateRangeAndFace(5f, ret => Me.CurrentTarget),
 					CreateSpellCast("Crusader Strike"),
 					CreateSpellCast("Judgement")
 				);

@@ -59,6 +59,9 @@ namespace Singular
                         new Decorator(
                             ret => !unitToCheck(ret).InLineOfSightOCD && unitToCheck(ret).Distance > 4f,
                             new Action(ret => Navigator.MoveTo(unitToCheck(ret).Location))),
+						new Decorator(
+							ret => Me.IsMoving && unitToCheck(ret).Distance < 5f,
+							new Action(ret => Navigator.PlayerMover.MoveStop())),
                         new Decorator(
 							ret => Me.CurrentTarget != null && Me.CurrentTarget.IsAlive && !Me.IsSafelyFacing(Me.CurrentTarget, coneDegree),
 							new Action(ret => Me.CurrentTarget.Face()))

@@ -92,7 +92,15 @@ namespace Singular
 						ret => Me.CurrentTarget == null || Me.CurrentTarget.Dead,
 						new PrioritySelector(
 							// Set our context to the RaF leaders target, or the first in the target list.
-							ctx => RaFHelper.Leader != null && RaFHelper.Leader.Combat ? RaFHelper.Leader.CurrentTarget : Targeting.Instance.FirstUnit,
+							ctx => RaFHelper.Leader != null && RaFHelper.Leader.Combat 
+										? 
+											RaFHelper.Leader.CurrentTarget 
+										: 
+											Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.Combat
+											?
+												Targeting.Instance.FirstUnit
+											:
+												null,
 							// Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
 							new Decorator(
 								ret => ret != null,

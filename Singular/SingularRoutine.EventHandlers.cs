@@ -68,7 +68,7 @@ namespace Singular
                     }
 
                     // Force a wait for all summoned minions. This prevents double-casting it.
-                    if (Class == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
+                    if (myClass == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
                     {
                         StyxWoW.SleepForLagDuration();
                     }
@@ -90,15 +90,11 @@ namespace Singular
 
         private void Player_OnMapChanged(BotEvents.Player.MapChangedEventArgs args)
         {
-			//We shall not create behavior while we are on loading screen
-			if (Me.BaseAddress == 0)
-				return;
-
 			//Why would we create same behaviors all over ?
 			if (lastContext == CurrentWoWContext)
 				return;
 
-            Logger.Write("Map changed. New context: " + CurrentWoWContext + ". Rebuilding behaviors.");
+            Logger.Write("Context changed. New context: " + CurrentWoWContext + ". Rebuilding behaviors.");
             CreateBehaviors();
         }
     }

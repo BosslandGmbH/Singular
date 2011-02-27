@@ -27,6 +27,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
+using Styx.Helpers;
 
 namespace Singular
 {
@@ -55,6 +56,8 @@ namespace Singular
         public override bool WantButton { get { return true; } }
 
         public LocalPlayer Me { get { return StyxWoW.Me; } }
+
+		public WoWClass myClass { get; set; }
 
 		public SingularRoutine()
 		{
@@ -144,10 +147,23 @@ namespace Singular
 				HealTargeting.Instance.Pulse();
 			if (NeedTankTargeting && (Me.IsInParty || Me.IsInRaid))
 				TankTargeting.Instance.Pulse();
+
+			//This is here to support character changes while HB is running :)
+			if (Class != myClass && Class != WoWClass.None)
+			{
+				myClass = Class;
+				Logger.Write("Character changed. New character: " + myClass.ToString() + ". Rebuilding behaviors");			
+				TalentManager.Update();
+				CharacterSettings.Instance.Load();
+				CreateBehaviors();
+			}
         }
 
         public override void Initialize()
         {
+			//Caching current class here to avoid issues with loading screens where Class return None and we cant build behaviors
+			myClass = Me.Class;
+
             Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
             AttachEventHandlers();
             Logger.Write("Determining talent spec.");
@@ -217,12 +233,12 @@ namespace Singular
         private bool EnsureComposite(bool error, BehaviorType type, out Composite composite)
         {
             Logger.WriteDebug("Creating " + type + " behavior.");
-            composite = CompositeBuilder.GetComposite(this, Class, TalentManager.CurrentSpec, type, CurrentWoWContext);
+            composite = CompositeBuilder.GetComposite(this, myClass, TalentManager.CurrentSpec, type, CurrentWoWContext);
             if (composite == null && error)
             {
                 StopBot(
                     string.Format(
-                        "Singular currently does not support {0} for this class/spec combination, in this context! [{1}, {2}, {3}]", type, Class,
+                        "Singular currently does not support {0} for this class/spec combination, in this context! [{1}, {2}, {3}]", type, myClass,
                         TalentManager.CurrentSpec, CurrentWoWContext));
                 return false;
             }

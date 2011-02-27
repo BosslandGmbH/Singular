@@ -96,7 +96,7 @@ namespace Singular
 										? 
 											RaFHelper.Leader.CurrentTarget 
 										: 
-											Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.Aggro
+											Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.Combat
 											?
 												Targeting.Instance.FirstUnit
 											:

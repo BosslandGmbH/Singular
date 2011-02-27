@@ -49,7 +49,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Honorbuddy\fasmdll_managed.dll</HintPath>
     </Reference>
-    <Reference Include="Honorbuddy">
+    <Reference Include="Honorbuddy, Version=2.0.0.4066, Culture=neutral, PublicKeyToken=50a565ab5c01ae50, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <ExecutableExtension>.exe</ExecutableExtension>
       <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
     </Reference>
     <Reference Include="System" />

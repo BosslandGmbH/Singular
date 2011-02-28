@@ -17,6 +17,7 @@ using System.Linq;
 using CommonBehaviors.Actions;
 
 using Singular.Composites;
+using Singular.Settings;
 
 using Styx;
 using Styx.Logic;
@@ -128,6 +129,23 @@ namespace Singular
 					ret => includePet && Me.GotAlivePet && !Me.Pet.IsAutoAttacking,
 					new Action(delegate { PetManager.CastPetAction(PetAction.Attack); return RunStatus.Failure; }))
 				);
+        }
+
+        public Composite CreateUseTrinketsBehavior()
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => SingularSettings.Instance.UseFirstTrinket,
+                    new Decorator(
+                        ret => Miscellaneous.UseTrinket(true),
+                        new ActionAlwaysSucceed())),
+
+                new Decorator(
+                    ret => SingularSettings.Instance.UseSecondTrinket,
+                    new Decorator(
+                        ret => Miscellaneous.UseTrinket(false),
+                        new ActionAlwaysSucceed()))
+                );
         }
 
         private void CastWithLog(string spellName, WoWUnit onTarget)

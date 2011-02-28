@@ -111,6 +111,7 @@
     </Compile>
     <Compile Include="HealTargeting.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="Miscellaneous.cs" />
     <Compile Include="PetManager.cs" />
     <Compile Include="Settings\DeathKnightSettings.cs" />
     <Compile Include="Settings\DruidSettings.cs" />

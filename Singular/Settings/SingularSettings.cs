@@ -53,6 +53,47 @@ namespace Singular.Settings
         [Description("Ignore healing targets when their health is above this value.")]
         public int IgnoreHealTargetsAboveHealth { get; set; }
 
+        #region Trinkets
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Trinkets")]
+        [DisplayName("Use First Trinket")]
+        public bool UseFirstTrinket { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Trinkets")]
+        [DisplayName("Use Second Trinket")]
+        public bool UseSecondTrinket { get; set; }
+
+        [Setting]
+        [DefaultValue(TrinketUsage.Never)]
+        [Category("Trinkets")]
+        [DisplayName("First Trinket Usage")]
+        public TrinketUsage FirstTrinketUsage { get; set; }
+
+        [Setting]
+        [DefaultValue(TrinketUsage.Never)]
+        [Category("Trinkets")]
+        [DisplayName("Second Trinket Usage")]
+        public TrinketUsage SecondTrinketUsage { get; set; }
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Trinkets")]
+        [DisplayName("First Trinket Use At Percent")]
+        [Description("The percent of health, or mana, to use this trinket at. Only taken into account when First Trinket Usage is 'LowHealth' or 'LowPower'")]
+        public int FirstTrinketUseAtPercent { get; set; }
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Trinkets")]
+        [DisplayName("Second Trinket Use At Percent")]
+        [Description("The percent of health, or mana, to use this trinket at. Only taken into account when Second Trinket Usage is 'LowHealth' or 'LowPower'")]
+        public int SecondTrinketUseAtPercent { get; set; }
+
+        #endregion
+
         #region Class Late-Loading Wrappers
 
         // Do not change anything within this region.

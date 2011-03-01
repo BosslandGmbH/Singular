@@ -59,7 +59,7 @@ namespace Singular
 		            ctx => HealTargeting.Instance.FirstUnit,
 		            CreateWaitForCast(),
 		            // Ensure we're in range of the unit to heal, and it's in LOS.
-		            CreateRangeAndFace(35f, ret => (WoWUnit)ret),
+					//CreateRangeAndFace(35f, ret => (WoWUnit)ret),
 		            //Cast Lifebloom on tank if
 		            //1- Tank doesn't have lifebloom
 		            //2- Tank has less then 3 stacks of lifebloom

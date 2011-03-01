@@ -75,7 +75,7 @@ namespace Singular
                     ctx => HealTargeting.Instance.FirstUnit,
                     CreateWaitForCast(),
                     // Ensure we're in range of the unit to heal, and it's in LOS.
-                    CreateRangeAndFace(35f, ret => (WoWUnit)ret),
+					//CreateRangeAndFace(35f, ret => (WoWUnit)ret),
                     //CreateSpellBuff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
                     CreateSpellBuff("Power Word: Shield", ret => !((WoWUnit)ret).HasAura("Weakened Soul") && ((WoWUnit)ret).Combat, ret => (WoWUnit)ret),
                     new Decorator(

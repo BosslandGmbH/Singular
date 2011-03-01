@@ -146,7 +146,7 @@ namespace Singular
                 }
 
                 // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
-                if (tanks.Equals(p.Guid))
+                if (tanks.Equals(p.Guid) && p.HealthPercent != 100)
                 {
                     //Logger.Write(p.Name + " is a tank!");
                     prio.Score += 100f;

@@ -15,12 +15,17 @@ using CommonBehaviors.Actions;
 
 using Singular.Composites;
 
+using System.Linq;
+
 using Styx;
 using Styx.Logic;
 using Styx.Logic.Inventory;
 using Styx.Logic.Pathing;
 
 using TreeSharp;
+using Styx.Logic.Combat;
+using Styx.WoWInternals.WoWObjects;
+using Styx.WoWInternals;
 
 namespace Singular
 {
@@ -39,6 +44,26 @@ namespace Singular
 				new Decorator(
 					ret => Me.HasAura("Resurrection Sickness"),
 					new ActionAlwaysSucceed()),
+
+				// Wait while cannibalizing
+				new Decorator(
+					ret => Me.CastingSpell != null && Me.CastingSpell.Name == "Cannibalize" && 
+						   (Me.HealthPercent < 95 || (Me.PowerType == WoWPowerType.Mana && Me.ManaPercent < 95)),
+					new Sequence(
+						new ActionLogMessage(false, "Waiting for Cannibalize"),
+						new ActionAlwaysSucceed())),
+
+				// Cannibalize support goes before drinking/eating
+				new Decorator(
+					ret => (Me.HealthPercent <= minHealth || (Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= minMana)) && 
+						   CanCast("Cannibalize", Me, false) && CorpseAround,
+					new Sequence(
+						new Action(ret => Navigator.PlayerMover.MoveStop()),
+						new Action(ret => StyxWoW.SleepForLagDuration()),
+						new Action(ret => SpellManager.Cast("Cannibalize")),
+						new Action(ret => StyxWoW.SleepForLagDuration()))),
+						   
+
 				// Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.
 				new Decorator(
 					ret => Me.HealthPercent <= minHealth && !Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
@@ -80,5 +105,15 @@ namespace Singular
 
 				);
         }
+
+		private bool CorpseAround
+		{
+			get
+			{
+				return ObjectManager.GetObjectsOfType<WoWUnit>(true, false).Any(
+					u => u.Distance < 5 && u.Dead && 
+						 (u.CreatureType == WoWCreatureType.Humanoid || u.CreatureType == WoWCreatureType.Undead));
+			}
+		}
     }
 }

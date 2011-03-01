@@ -22,6 +22,7 @@ namespace Singular
     {
         [Class(WoWClass.Warlock)]
         [Spec(TalentSpec.DemonologyWarlock)]
+		[Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
@@ -37,7 +38,7 @@ namespace Singular
                 CreateSpellBuffOnSelf("Soulburn", ret => SpellManager.HasSpell("Soul Fire") || Me.HealthPercent < 70),
                 CreateSpellCast("Life Tap", ret => Me.ManaPercent < 50 && Me.HealthPercent > 70),
                 CreateSpellCast("Drain Life", ret => Me.HealthPercent < 70),
-                CreateSpellCast("Health Funnel", ret => Me.Pet.HealthPercent < 70),
+                CreateSpellCast("Health Funnel", ret => Me.GotAlivePet && Me.Pet.HealthPercent < 70),
                 new Decorator(
                     ret => Me.CurrentTarget.Fleeing,
                     CreateCastPetAction(PetAction.AxeToss, true)),

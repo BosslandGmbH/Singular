@@ -26,6 +26,7 @@ namespace Singular
         [Spec(TalentSpec.AfflictionWarlock)]
         [Spec(TalentSpec.DemonologyWarlock)]
         [Spec(TalentSpec.DestructionWarlock)]
+		[Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public Composite CreateWarlockBuffs()

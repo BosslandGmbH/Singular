@@ -37,7 +37,8 @@ namespace Singular
             return new PrioritySelector(
 				CreateSpellCast(
                     "Mark of the Wild",
-                    ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastMotWOn(u)))
+                    ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastMotWOn(u)),
+					ret => Me)
                 // TODO: Have it buff MotW when nearby party/raid members are missing the buff.
                 );
         }

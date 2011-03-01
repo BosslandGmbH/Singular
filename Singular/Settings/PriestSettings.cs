@@ -100,8 +100,8 @@ namespace Singular.Settings
 		[Setting]
 		[DefaultValue(70)]
 		[Category("Discipline")]
-		[DisplayName("Smite Mana")]
-		[Description("Use Smite while mana is above this value (Used while in a party)")]
-		public int SmiteMana { get; set; }
+		[DisplayName("Dps Mana")]
+		[Description("Dps while mana is above this value (Used while in a party)")]
+		public int DpsMana { get; set; }
     }
 }

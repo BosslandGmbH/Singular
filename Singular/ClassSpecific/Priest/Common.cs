@@ -37,7 +37,8 @@ namespace Singular
                 CreateSpellBuffOnSelf("Fear Ward"),
                 CreateSpellCast(
                     "Power Word: Fortitude",
-                    ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastFortitudeOn(u))),
+                    ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastFortitudeOn(u)),
+					ret => Me),
                 CreateSpellBuffOnSelf("Shadowform"),
                 CreateSpellBuffOnSelf("Vampiric Embrace")
                 );

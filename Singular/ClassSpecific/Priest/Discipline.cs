@@ -23,19 +23,30 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
+using System;
+
+using Action = TreeSharp.Action;
 
 namespace Singular
 {
     partial class SingularRoutine
     {
-        public List<WoWPlayer> ResurrectablePlayers { get { return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(p => !p.IsMe && p.Dead && p.IsFriendly && p.IsInMyPartyOrRaid && p.DistanceSqr < 40 * 40).ToList(); } }
+        public List<WoWPlayer> ResurrectablePlayers 
+		{ 
+			get 
+			{ 
+				return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(
+					p => !p.IsMe && p.Dead && p.IsFriendly && p.IsInMyPartyOrRaid && 
+						  p.DistanceSqr < 40 * 40 && !Blacklist.Contains(p.Guid)).ToList(); 
+			} 
+		}
 
         [Class(WoWClass.Priest)]
         [Spec(TalentSpec.DisciplineHealingPriest)]
 		[Spec(TalentSpec.DisciplinePriest)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
-        public Composite CreatDiscHealRest()
+        public Composite CreateDiscHealRest()
         {
             return new PrioritySelector(
                 CreateWaitForCast(),
@@ -46,7 +57,10 @@ namespace Singular
                 // Can we res people?
                 new Decorator(
                     ret => ResurrectablePlayers.Count != 0,
-                    CreateSpellCast("Resurrection", ret => true, ret => ResurrectablePlayers.FirstOrDefault()))
+					new Sequence(
+						CreateSpellCast("Resurrection", ret => true, ret => ResurrectablePlayers.FirstOrDefault()),
+						new Action(ret => Blacklist.Add(ResurrectablePlayers.FirstOrDefault().Guid, TimeSpan.FromSeconds(15)))
+						))
                 );
         }
 
@@ -123,7 +137,7 @@ namespace Singular
                     new PrioritySelector(
                         CreateEnsureTarget(),
                         CreateRangeAndFace(39f, ret => Me.CurrentTarget),
-                        CreateSpellBuff("Shadow Word: Pain"),
+						CreateSpellBuff("Shadow Word: Pain", ret => !Me.IsInParty || Me.ManaPercent >= SingularSettings.Instance.Priest.DpsMana),
 						//Solo combat rotation
 						new Decorator(
 							ret => !Me.IsInParty,
@@ -131,7 +145,7 @@ namespace Singular
 								CreateSpellCast("Holy Fire"),
 								CreateSpellCast("Penance"))),
 						//Don't smite while mana is below the setting while in a party (default 70)
-                        CreateSpellCast("Smite", ret => !Me.IsInParty || Me.ManaPercent >= SingularSettings.Instance.Priest.SmiteMana)
+                        CreateSpellCast("Smite", ret => !Me.IsInParty || Me.ManaPercent >= SingularSettings.Instance.Priest.DpsMana)
                         )),
                 // No combat... check for resurrectable people!
                 new Decorator(

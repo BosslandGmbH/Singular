@@ -172,6 +172,7 @@ namespace Singular
 			return new Decorator(
 				ret => extra(ret) && unitSelector(ret) != null && CanCast(spellName, unitSelector(ret), checkMoving),
 				new PrioritySelector(
+					CreateApproachToCast(spellName, unitSelector),
 					new Decorator(
 						ret => !checkMoving && Me.IsMoving && SpellManager.Spells[spellName].CastTime > 0,
 						new Sequence(
@@ -249,7 +250,7 @@ namespace Singular
         {
             // BUGFIX: HB currently doesn't check ActiveAuras in the spell manager. So this'll break on new spell procs
             return CreateSpellCast(
-                spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 0, unitSelector(ret)), unitSelector);
+                spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 0, unitSelector(ret)), unitSelector, false);
         }
 
         public Composite CreateSpellBuff(string spellName)
@@ -327,6 +328,20 @@ namespace Singular
 
 		#endregion
 
+		#region ApproachToCast
+
+		public Composite CreateApproachToCast(string spellName, UnitSelectionDelegate unitSelector)
+		{
+			return
+				new Decorator(
+					ret => SpellManager.Spells[spellName].MaxRange != 0 &&
+						   (unitSelector(ret).Distance > SpellManager.Spells[spellName].MaxRange - 2f ||
+							!unitSelector(ret).InLineOfSightOCD),
+					new Action(ret => Navigator.MoveTo(unitSelector(ret).Location)));
+		}
+
+		#endregion
+
 		#region CanCast
 
 		public bool CanCast(string spellName, WoWUnit onUnit, bool checkMoving)
@@ -337,23 +352,14 @@ namespace Singular
 
 			WoWSpell spell = SpellManager.Spells[spellName];
 
-			// Use default CanCast if checkmoving is false
+			// Use default CanCast if checkmoving is true
 			if (checkMoving)
 			{
-				if (spell.MaxRange == 0)
-					return SpellManager.CanCast(spellName, onUnit);
-				else
-				    return SpellManager.CanCast(spellName, onUnit, true);
+				return SpellManager.CanCast(spellName, onUnit);
 			}
 
 			// is spell in CD?
 			if (spell.Cooldown)
-			{
-				return false;
-			}
-
-			// Are we further away from MaxRange ?
-			if (onUnit.Distance > spell.MaxRange && (spell.MaxRange != 0 || onUnit.Distance > 5f || onUnit == Me))
 			{
 				return false;
 			}

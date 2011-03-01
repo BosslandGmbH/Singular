@@ -30,14 +30,14 @@ namespace Singular
         {
 			return new PrioritySelector(
                 // Don't rest if the leader is in combat. Ever.
-                new Decorator(ret=>Me.IsInParty,
-                    new Decorator(ret=>RaFHelper.Leader != null && RaFHelper.Leader.Combat,
-                        new ActionAlwaysFail())),
+				//new Decorator(ret=> Me.IsInParty,
+				//    new Decorator(ret=>RaFHelper.Leader != null && RaFHelper.Leader.Combat,
+				//        new ActionAlwaysFail())),
 
 				// Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
 				// At least try to do something if we are in combat :)
 				new Decorator(
-					ret => Me.HasAura("Resurrection Sickness") && !Me.Combat,
+					ret => Me.HasAura("Resurrection Sickness"),
 					new ActionAlwaysSucceed()),
 				// Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.
 				new Decorator(

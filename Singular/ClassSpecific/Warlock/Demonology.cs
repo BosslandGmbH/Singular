@@ -42,7 +42,7 @@ namespace Singular
                     ret => Me.CurrentTarget.Fleeing,
                     CreateCastPetAction(PetAction.AxeToss, true)),
                 new Decorator(
-                    ret => CurrentTargetIsEliteOrBoss,
+                    ret => CurrentTargetIsElite,
                     new PrioritySelector(
                         CreateSpellBuffOnSelf("Metamorphosis"),
                         CreateSpellBuffOnSelf("Demon Soul"),
@@ -50,7 +50,7 @@ namespace Singular
                         CreateSpellCast("Shadowflame", ret => Me.CurrentTarget.Distance < 5)
                         )),
                 CreateSpellBuff("Immolate", ret => !Me.CurrentTarget.HasAura("Immolate")),
-                CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss && !Me.CurrentTarget.HasAura("Bane of Doom")),
+                CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsElite && !Me.CurrentTarget.HasAura("Bane of Doom")),
                 CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Agony") && !Me.CurrentTarget.HasAura("Bane of Doom")),
                 CreateSpellBuff("Corruption", ret => !Me.CurrentTarget.HasAura("Corruption")),
                 CreateSpellCast("Hand of Gul'dan"),

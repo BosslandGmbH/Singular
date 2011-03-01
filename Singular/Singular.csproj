@@ -75,6 +75,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes.cs" />
+    <Compile Include="BossList.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Blood.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Frost.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Lowbie.cs" />

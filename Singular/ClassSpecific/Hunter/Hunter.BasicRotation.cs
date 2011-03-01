@@ -36,7 +36,7 @@ namespace Singular
                 // Heal pet when below 70
                 CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
                 //Rapid fire on elite 
-                CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsEliteOrBoss),
+                CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsElite),
                 CreateSpellBuff("Serpent Sting", ret => !Me.CurrentTarget.HasAura("Serpent Sting")),
                 // Ignore these two when our pet is raging
                 CreateSpellCast("Focus Fire", ret => !Me.Pet.HasAura("Bestial Wrath")),
@@ -67,7 +67,7 @@ namespace Singular
                 // Heal pet when below 70
                 CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
                 //Rapid fire on elite 
-                CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsEliteOrBoss),
+                CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsElite),
                 //Cast when mob Hp below 20
                 CreateSpellCast("Kill Shot", ret => Me.CurrentTarget.HealthPercent < 19),
                 new Decorator(

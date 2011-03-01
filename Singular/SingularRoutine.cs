@@ -116,7 +116,9 @@ namespace Singular
             }
         }
 
-        public bool CurrentTargetIsEliteOrBoss { get { return Me.CurrentTarget.Elite; } }
+        public bool CurrentTargetIsElite { get { return Me.CurrentTarget.Elite; } }
+
+		public bool CurrentTargetIsBoss { get { return BossIds.Contains(Me.CurrentTarget.Entry); } }
 
         public bool IsMounted
         {
@@ -265,6 +267,82 @@ namespace Singular
                       a.Spell.Mechanic == WoWSpellMechanic.Banished ||
                       a.Spell.Mechanic == WoWSpellMechanic.Sapped));
         }
+
+		/// <summary>
+		/// Checks if there is an aura created by you on the target. Useful for DoTs.
+		/// 	
+		/// Warning: This only checks your own auras on the unit !
+		/// </summary>
+		/// <param name="aura">Name of the spell</param>
+		/// <param name="unit">Unit to check</param>
+		/// <returns></returns>
+		public bool HasMyAura(string aura, WoWUnit unit)
+		{
+			return HasMyAura(aura, unit, TimeSpan.Zero, 0);
+		}
+
+		/// <summary>
+		/// Checks if there is an aura created by you on the target. Useful for DoTs.
+		/// This will return false even while you have the aura on the unit but the timeleft is lower then the expire time.
+		/// Useful to cast DoTs before expiring
+		/// 
+		/// Warning: This only checks your own auras on the unit !
+		/// </summary>
+		/// <param name="aura">Name of the spell</param>
+		/// <param name="unit">Unit to check</param>
+		/// <param name="timeLeft">Time left for the aura.</param>
+		/// <returns></returns>
+		public bool HasMyAura(string aura, WoWUnit unit, TimeSpan timeLeft)
+		{
+			return HasMyAura(aura, unit, timeLeft, 0);
+		}
+
+		/// <summary>
+		/// Checks if there is an aura created by you on the target. Useful for DoTs.
+		/// This will return false even while you have the aura on the unit but the stackcount is lower then provided value.
+		/// Useful to stack more aura on the unit
+		/// </summary>
+		/// <param name="aura">Name of the spell</param>
+		/// <param name="unit">Unit to check</param>
+		/// <param name="stackCount">Stack count</param>
+		/// <returns></returns>
+		public bool HasMyAura(string aura, WoWUnit unit, int stackCount)
+		{
+			return HasMyAura(aura, unit, TimeSpan.Zero, stackCount);
+		}
+
+		/// <summary>
+		/// Checks if there is an aura created by you on the target. Useful for DoTs.
+		/// This will return false even while you have the aura on the unit but the stackcount is lower then provided value and
+		/// timeleft is lower then the expire time.
+		/// Useful to stack more dots or redot before the aura expires.
+		/// </summary>
+		/// <param name="aura">Name of the spell</param>
+		/// <param name="unit">Unit to check</param>
+		/// <param name="timeLeft">Time left for the aura.</param>
+		/// <param name="stackCount">Stack count</param>
+		/// <returns></returns>
+		public bool HasMyAura(string aura, WoWUnit unit, TimeSpan timeLeft, int stackCount)
+		{
+			// Check for unit being null first, so we don't end up with an exception
+			if (unit == null)
+			{
+				return false;
+			}
+
+			// If the unit has that aura and it has been created by us return true
+			if (unit.ActiveAuras.ContainsKey(aura))
+			{
+				var _aura = unit.ActiveAuras[aura];
+
+				if (_aura.CreatorGuid == Me.Guid && _aura.TimeLeft > timeLeft && _aura.StackCount >= stackCount)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
 
         public bool HasAuraStacks(string aura, int stacks, WoWUnit unit)
         {

@@ -12,8 +12,12 @@
 #endregion
 
 using System.Text;
+using System.Collections.Generic;
+using System.Linq;
 
+using Styx;
 using Styx.WoWInternals.WoWObjects;
+using Styx.Logic.Combat;
 
 namespace Singular
 {

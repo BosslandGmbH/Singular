@@ -130,7 +130,7 @@ namespace Singular
 		                        ((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).HasAura("Wild Growth")),
 		                ret => (WoWUnit)ret),
 
-		            CreateSpellCast(
+		            CreateSpellBuff(
 		                "Rejuvenation",
 		                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Rejuvenation,
 		                ret => (WoWUnit)ret)

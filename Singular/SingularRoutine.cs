@@ -371,5 +371,22 @@ namespace Singular
         {
             return HasAuraStacks(aura, stacks, Me);
         }
+
+		public bool HasWand
+		{
+			get
+			{
+				return Me.Inventory.Equipped.Ranged != null &&
+					   Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Wand;
+			}
+		}
+
+		public bool IsWanding
+		{
+			get
+			{
+				return Me.AutoRepeatingSpellId == 5019;
+			}
+		}
     }
 }

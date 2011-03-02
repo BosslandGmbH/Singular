@@ -82,7 +82,9 @@ namespace Singular
                         Blacklist.Add(e.DestGuid, TimeSpan.FromMinutes(30));
                         if (StyxWoW.Me.CurrentTargetGuid == e.DestGuid)
                             StyxWoW.Me.ClearTarget();
+
                         BotPoi.Clear("Blacklisting evading mob");
+						StyxWoW.SleepForLagDuration();
                     }
                     break;
             }

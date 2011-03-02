@@ -121,15 +121,46 @@ namespace Singular
 
         protected Composite CreateAutoAttack(bool includePet)
         {
+			const int SPELL_ID_AUTO_SHOT = 75;
+
 			return new PrioritySelector(
 				new Decorator(
-					ret => !Me.IsAutoAttacking,
+					ret => !Me.IsAutoAttacking && Me.AutoRepeatingSpellId != SPELL_ID_AUTO_SHOT,
 					new Action(ret => Me.ToggleAttack())),
 				new Decorator(
 					ret => includePet && Me.GotAlivePet && !Me.Pet.IsAutoAttacking,
 					new Action(delegate { PetManager.CastPetAction(PetAction.Attack); return RunStatus.Failure; }))
 				);
         }
+
+		protected Composite CreateHunterBackPedal()
+		{
+			return
+				new Decorator(
+					ret => Me.CurrentTarget.Distance <= 7 && Me.CurrentTarget.IsAlive &&
+						   (Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget != Me),
+					new Action(ret =>
+						{
+							WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(Me.Location, Me.CurrentTarget.Location, 10f);
+							
+							if (Navigator.CanNavigateFully(Me.Location, moveTo))
+								Navigator.MoveTo(moveTo);
+						}));
+		}
+
+		protected Composite CreateUseWand()
+		{
+			return CreateUseWand(ret => true);
+		}
+
+		protected Composite CreateUseWand(SimpleBoolReturnDelegate extra)
+		{
+			return new PrioritySelector(
+				new Decorator(
+					ret => HasWand && !IsWanding && extra(ret),
+					new Action(ret => SpellManager.Cast("Shoot")))
+				);
+		}
 
         public Composite CreateUseTrinketsBehavior()
         {

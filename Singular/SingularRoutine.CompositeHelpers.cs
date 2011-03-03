@@ -179,6 +179,14 @@ namespace Singular
                 );
         }
 
+		public Composite CreateUseEquippedItem(uint slotId)
+		{
+			return new PrioritySelector(
+				new Decorator(
+					ret => Miscellaneous.UseEquippedItem(slotId),
+					new ActionAlwaysSucceed()));
+		}
+
         private void CastWithLog(string spellName, WoWUnit onTarget)
         {
             Logger.Write(string.Format("Casting {0} on {1}", spellName, onTarget.SafeName()));

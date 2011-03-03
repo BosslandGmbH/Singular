@@ -68,5 +68,21 @@ namespace Singular
             }
             return false;
         }
+
+		public static bool UseEquippedItem(uint slotId)
+		{
+			var item = StyxWoW.Me.Inventory.GetItemBySlot(slotId);
+
+			if (item == null)
+				return false;
+
+			if (item.Cooldown != 0)
+				return false;
+
+			if (!item.Usable)
+				return false;
+
+			return item.Use();
+		}
     }
 }

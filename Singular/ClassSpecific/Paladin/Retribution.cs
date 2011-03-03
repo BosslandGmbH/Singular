@@ -49,7 +49,7 @@ namespace Singular
                     CreateSpellCast("Templar's Verdict", ret => Me.HasAura("Hand of Light")),
                     CreateSpellCast("Judgement"),
                     CreateSpellCast("Holy Wrath"),
-                    CreateSpellCast("Consecration")
+                    CreateSpellCast("Consecration", ret => NearbyFriendlyPlayers.Count(u => u.Distance < 8) >= SingularSettings.Instance.Paladin.ConsecrationCount)
                     );
         }
 

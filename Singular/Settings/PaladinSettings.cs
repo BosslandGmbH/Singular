@@ -68,5 +68,12 @@ namespace Singular.Settings
 		[DisplayName("Lay on Hands Health")]
 		[Description("Lay on Hands will be used at this value")]
 		public int LayOnHandsHealthRet { get; set; }
+
+		[Setting]
+		[DefaultValue(3)]
+		[Category("Retribution")]
+		[DisplayName("Consecration Count")]
+		[Description("Consecration will be used when you have more then that many mobs attacking you")]
+		public int ConsecrationCount { get; set; }
     }
 }

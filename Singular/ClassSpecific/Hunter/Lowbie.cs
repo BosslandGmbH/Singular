@@ -21,13 +21,15 @@ namespace Singular
 				CreateHunterBackPedal(),
 				CreateRangeAndFace(35f, ret => Me.CurrentTarget),
 				CreateAutoAttack(true),
+				CreateSpellCast("Raptor Strike", ret => Me.CurrentTarget.DistanceSqr < 5 * 5),
 				// Always keep it up on our target!
 				CreateSpellBuff("Hunter's Mark"),
 				// Heal pet when below 70
 				CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
+				CreateSpellCast("Concussive Shot", 
+					ret => Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me),
 				CreateSpellCast("Arcane Shot"),
-				CreateSpellCast("Steady Shot"),
-				CreateSpellCast("Raptor Strike", ret => Me.CurrentTarget.DistanceSqr < 5 * 5)
+				CreateSpellCast("Steady Shot")
 				);
 		}
 	}

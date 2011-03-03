@@ -58,6 +58,7 @@ namespace Singular
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.SurvivalHunter)]
         [Behavior(BehaviorType.Combat)]
+		[Behavior(BehaviorType.Pull)]
         public Composite CreateSurvivalCombat()
         {
             return new PrioritySelector(

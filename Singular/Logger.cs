@@ -13,19 +13,14 @@
 
 using System.Drawing;
 
+using Singular.Settings;
+
 using Styx.Helpers;
 
 namespace Singular
 {
     internal class Logger
     {
-        static Logger()
-        {
-            WriteDebugMessages = true;
-        }
-
-        public static bool WriteDebugMessages { get; set; }
-
         public static void Write(string message)
         {
             Logging.Write(Color.Green, "[Singular] " + message);
@@ -33,7 +28,7 @@ namespace Singular
 
         public static void WriteDebug(string message)
         {
-            if (!WriteDebugMessages)
+            if (!SingularSettings.Instance.EnableDebugLogging)
             {
                 return;
             }

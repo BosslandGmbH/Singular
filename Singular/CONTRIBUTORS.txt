@@ -7,3 +7,6 @@ raphus - Bunch o shit
 Nuok - Numerous patches & fixes
 strix - Rogue Combat spec rotation.
 markeloff - Death Knight rotations.
+Jon310 - Fury Warrior rotation improvements.
+CptJesus - Shadow Priest rotation.
+Mortal - Warrior improvements.

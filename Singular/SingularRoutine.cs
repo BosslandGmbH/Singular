@@ -11,15 +11,6 @@
 
 #endregion
 
-#region Honorbuddy Compiler Options
-
-// Always keep optimisations on. This improves performance. - If you are DEBUGGING this build, make sure you remove the optimise line!
-//!CompilerOption:Optimise:On
-
-// We'll turn this on when we're comfortable with more people using .NET 4.0. For now, leave this off.
-//~~~~!CompilerOption:Version:v4.0
-
-#endregion
 
 using System;
 using System.Collections.Generic;

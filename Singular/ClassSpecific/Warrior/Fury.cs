@@ -89,7 +89,8 @@ namespace Singular
                 CreateSpellCast("Raging Blow"),
                 CreateSpellCast("Bloodthirst"),
                 CreateSpellCast("Slam", ret => HasAuraStacks("Bloodsurge", 1)),
-                CreateSpellCast("Heroic Strike", ret => Me.RagePercent > 60),
+				//Uses Incite if you are spec'd into it
+                CreateSpellCast("Heroic Strike", ret => Me.RagePercent > 60 || HasAuraStacks("Incite", 1)),
                 CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),
 
                 // Again; movement comes last in melee. We have spells we can use at long-range, and should do so when the opportunity
@@ -146,7 +147,13 @@ namespace Singular
                     CreateSpellCast("Lifeblood", ret => Me.HealthPercent < 70),
                     CreateSpellCast("Gift of the Naaru", ret => Me.HealthPercent < 50),
                     CreateSpellCast("Berserking"),
-                    CreateSpellCast("Recklessness"),
+                    CreateSpellCast("Recklessness",
+							ret=> Me.HasAura("Death Wish")),
+					CreateSpellCast("Inner Rage",
+							ret=> Me.HasAura("Recklessness") ||
+								  Me.HasAura("Death Wish") ||
+								  Me.RagePercent > 80 ),
+
                     CreateSpellBuffOnSelf("Berserker Rage",
                             ret => Me.Auras.Any(
                                 aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing ||
@@ -172,8 +179,14 @@ namespace Singular
                                 aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Slowed ||
                                         aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
                     CreateSpellBuffOnSelf("Death Wish",
-                            ret => !Me.Auras.Any(
-                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
+							ret => (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
+										Me.CurrentTarget.HealthPercent < 95 &&
+										Me.RagePercent > 50) || 
+									(Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
+										Me.HealthPercent > 10)),
+							//Do not need to be enraged
+                            //ret => !Me.Auras.Any(
+                                //aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
                     CreateSpellBuffOnSelf("Berserker Rage",
                             ret => !Me.Auras.Any(
                                 aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),

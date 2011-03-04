@@ -166,8 +166,11 @@ namespace Singular
                 case WoWClass.Hunter:
                     if (SpellManager.CanCast("Call Pet " + petName))
                     {
-                        Logger.Write(string.Format("[Pet] Calling out pet #{0}", petName));
-                        return SpellManager.Cast("Call Pet " + petName);
+                        if (!StyxWoW.Me.GotAlivePet)
+                        {
+                            Logger.Write(string.Format("[Pet] Calling out pet #{0}", petName));
+                            return SpellManager.Cast("Call Pet " + petName);
+                        }
                     }
                     break;
             }

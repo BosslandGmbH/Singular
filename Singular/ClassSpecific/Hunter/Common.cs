@@ -1,4 +1,5 @@
 ﻿using Styx.Helpers;
+using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
 
 using TreeSharp;
@@ -22,5 +23,19 @@ namespace Singular
                     }));
         }
 
+        public Composite CreateHunterBuffs()
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => Me.CastingSpellId != 0 && Me.CastingSpell.Name == "Revive " + WantedPet && Me.GotAlivePet,
+                    new Action(ret => SpellManager.StopCasting())),
+
+                CreateWaitForCast(),
+
+                new Decorator(
+                    ret => !Me.GotAlivePet,
+                    new Action(ret => PetManager.CallPet(WantedPet)))
+                );
+        }
     }
 }

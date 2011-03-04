@@ -28,9 +28,13 @@ namespace Singular
         [Context(WoWContext.All)]
         public Composite CreateBeastMasterCombat()
         {
+            WantedPet = "1";
             return new PrioritySelector(
-				CreateEnsureTarget(),
-				CreateHunterBackPedal(),
+                new Decorator(
+                    ret => !Me.GotAlivePet,
+                    new Action(ret => PetManager.CallPet(WantedPet))),
+                CreateEnsureTarget(),
+                CreateHunterBackPedal(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
@@ -61,7 +65,11 @@ namespace Singular
 		[Behavior(BehaviorType.Pull)]
         public Composite CreateSurvivalCombat()
         {
+            WantedPet = "1";
             return new PrioritySelector(
+                new Decorator(
+                    ret => !Me.GotAlivePet,
+                    new Action(ret => PetManager.CallPet(WantedPet))),
                 CreateEnsureTarget(),
 				CreateHunterBackPedal(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)

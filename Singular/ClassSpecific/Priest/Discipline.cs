@@ -49,7 +49,9 @@ namespace Singular
         public Composite CreateDiscHealRest()
         {
             return new PrioritySelector(
-                CreateWaitForCast(),
+				CreateWaitForCast(),
+				// Heal self before resting. There is no need to eat while we have 100% mana
+				CreateDiscHealOnlyBehavior(true),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 CreateDefaultRestComposite(SingularSettings.Instance.DefaultRestHealth, SingularSettings.Instance.DefaultRestMana),
                 // Make sure we're healing OOC too!
@@ -64,7 +66,12 @@ namespace Singular
                 );
         }
 
-        private Composite CreateDiscHealOnlyBehavior()
+		private Composite CreateDiscHealOnlyBehavior()
+		{
+			return CreateDiscHealOnlyBehavior(false);
+		}
+
+        private Composite CreateDiscHealOnlyBehavior(bool selfOnly)
         {
             // Atonement - Tab 1  index 10 - 1/2 pts
             NeedHealTargeting = true;
@@ -72,7 +79,7 @@ namespace Singular
                 Decorator(
                 ret => HealTargeting.Instance.FirstUnit != null,
                 new PrioritySelector(
-                    ctx => HealTargeting.Instance.FirstUnit,
+                    ctx => selfOnly ? Me : HealTargeting.Instance.FirstUnit,
                     CreateWaitForCast(),
                     // Ensure we're in range of the unit to heal, and it's in LOS.
 					//CreateRangeAndFace(35f, ret => (WoWUnit)ret),

@@ -37,6 +37,8 @@ namespace Singular
 		public Composite CreateRestoDruidHealRest()
 		{
 			return new PrioritySelector(
+				// Heal self before resting. There is no need to eat while we have 100% mana
+				CreateRestoDruidHealOnlyBehavior(true),
 				// Rest up damnit! Do this first, so we make sure we're fully rested.
 				CreateDefaultRestComposite(SingularSettings.Instance.DefaultRestHealth, SingularSettings.Instance.DefaultRestMana),
 				// Make sure we're healing OOC too!
@@ -50,13 +52,19 @@ namespace Singular
 
 		private Composite CreateRestoDruidHealOnlyBehavior()
 		{
+			return CreateRestoDruidHealOnlyBehavior(false);
+		}
+
+		private Composite CreateRestoDruidHealOnlyBehavior(bool selfOnly)
+		{
 		    NeedHealTargeting = true;
 		    const uint MAPLE_SEED_ID = 17034;
+
 		    return new
 		        Decorator(
 		        ret => HealTargeting.Instance.FirstUnit != null,
 		        new PrioritySelector(
-		            ctx => HealTargeting.Instance.FirstUnit,
+		            ctx => selfOnly ? Me : HealTargeting.Instance.FirstUnit,
 		            CreateWaitForCast(),
 		            // Ensure we're in range of the unit to heal, and it's in LOS.
 					//CreateRangeAndFace(35f, ret => (WoWUnit)ret),

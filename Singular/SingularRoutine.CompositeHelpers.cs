@@ -45,6 +45,10 @@ namespace Singular
 
         #endregion
 
+        /// <summary>Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
+        /// 		 going down to lower branches in the tree, while casting.)</summary>
+        /// <remarks>Created 3/4/2011.</remarks>
+        /// <returns>.</returns>
         protected Composite CreateWaitForCast()
         {
             return new Decorator(
@@ -84,7 +88,7 @@ namespace Singular
 							   TankTargeting.Instance.FirstUnit != null && Me.CurrentTarget != TankTargeting.Instance.FirstUnit,
 						new Action(ret =>
 							{
-								Logger.Write("Targeting first unit of TankTargeting");
+								Logger.WriteDebug("Targeting first unit of TankTargeting");
 								TankTargeting.Instance.FirstUnit.Target();
 								StyxWoW.SleepForLagDuration();
 								targetingTimer.Reset();
@@ -132,21 +136,6 @@ namespace Singular
 					new Action(delegate { PetManager.CastPetAction(PetAction.Attack); return RunStatus.Failure; }))
 				);
         }
-
-		protected Composite CreateHunterBackPedal()
-		{
-			return
-				new Decorator(
-					ret => Me.CurrentTarget.Distance <= 7 && Me.CurrentTarget.IsAlive &&
-						   (Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget != Me),
-					new Action(ret =>
-						{
-							WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(Me.Location, Me.CurrentTarget.Location, 10f);
-							
-							if (Navigator.CanNavigateFully(Me.Location, moveTo))
-								Navigator.MoveTo(moveTo);
-						}));
-		}
 
 		protected Composite CreateUseWand()
 		{

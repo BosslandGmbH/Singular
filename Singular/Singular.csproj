@@ -85,6 +85,7 @@
     <Compile Include="ClassSpecific\Druid\Common.cs" />
     <Compile Include="ClassSpecific\Druid\Feral.cs" />
     <Compile Include="ClassSpecific\Druid\Resto.cs" />
+    <Compile Include="ClassSpecific\Hunter\Common.cs" />
     <Compile Include="ClassSpecific\Hunter\Lowbie.cs" />
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
     <Compile Include="ClassSpecific\Paladin\Lowbie.cs" />

@@ -25,14 +25,14 @@ namespace Singular
     {
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.Lowbie)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Normal)]
         [Behavior(BehaviorType.Combat)]
         public Composite CreateLowbieWarriorCombat()
         {
             return new PrioritySelector(
-					CreateEnsureTarget(),
-					CreateAutoAttack(true),
-					CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
+			CreateEnsureTarget(),
+			CreateMoveToAndFace(4f, ret => Me.CurrentTarget),
+			CreateAutoAttack(true),
 				CreateSpellCast("Charge"),
 				CreateSpellCast("Victory Rush"),
 				CreateSpellCast("Strike")
@@ -41,23 +41,22 @@ namespace Singular
 
 		[Class(WoWClass.Warrior)]
 		[Spec(TalentSpec.Lowbie)]
-		[Context(WoWContext.All)]
+		[Context(WoWContext.Normal)]
 		[Behavior(BehaviorType.Pull)]
 		public Composite CreateLowbieWarriorPull()
 		{
 			return 
 					new PrioritySelector(
 					CreateEnsureTarget(),
-					CreateAutoAttack(true),
-					CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
+					CreateMoveToAndFace(4f, ret => Me.CurrentTarget),
 					CreateSpellCast("Charge"),
-					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
+					CreateAutoAttack(true)
 					);
 		}
 
 		[Class(WoWClass.Warrior)]
 		[Spec(TalentSpec.Lowbie)]
-		[Context(WoWContext.All)]
+		[Context(WoWContext.Normal)]
 		[Behavior(BehaviorType.CombatBuffs)]
 		public Composite CreateLowbieWarriorCombatBuffs()
 		{
@@ -77,7 +76,7 @@ namespace Singular
 
 		[Class(WoWClass.Warrior)]
 		[Spec(TalentSpec.Lowbie)]
-		[Context(WoWContext.All)]
+		[Context(WoWContext.Normal)]
 		[Behavior(BehaviorType.PreCombatBuffs)]
 		public Composite CreateLowbieWarriorPreCombatBuffs()
 		{

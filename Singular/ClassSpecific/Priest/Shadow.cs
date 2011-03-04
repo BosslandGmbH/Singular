@@ -33,12 +33,12 @@ namespace Singular
                 CreateWaitForCast(),
                 CreateSpellBuff("Shadow Word: Pain"),
                 CreateSpellBuff("Devouring Plague"),
-                CreateSpellBuff("Vampiric Touch"),
-                CreateSpellBuff("Archangel", ret => HasAuraStacks("Evangelism", 5)),
+                CreateSpellBuff("Vampiric Touch", ret => !Me.IsMoving),
+                CreateSpellBuff("Archangel", ret => HasAuraStacks("Evangelism", 5) && Me.ManaPercent <= 75),
                 CreateSpellCast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent < 25),
-                CreateSpellCast("Shadow Fiend"),
-                CreateSpellCast("Mind Blast"),
-                CreateSpellCast("Mind Flay")
+                CreateSpellCast("Shadow Fiend", ret => Me.ManaPercent < 50),
+                CreateSpellCast("Mind Blast", ret => Me.HasAura("Empowered Shadows")),
+                CreateSpellCast("Mind Flay", ret => !Me.IsMoving)
                 );
         }
     }

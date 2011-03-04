@@ -36,15 +36,18 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
+                CreateMoveToAndFace(ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
-                CreateSpellCast("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
-                                                        Me.CurrentTarget.IsPlayer &&
-                                                        (!Me.CurrentTarget.HasAura("Hamstring") ||
-                                                        !Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                                        !Me.CurrentTarget.HasAura("Slowing Poison"))),
-                CreateSpellCast("Intimidating Shout", ret => Me.CurrentTarget.Distance < 8 &&
-                                                             Me.CurrentTarget.IsPlayer &&
-                                                             Me.CurrentTarget.IsCasting),
+                CreateSpellCast(
+                    "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
+                                            Me.CurrentTarget.IsPlayer &&
+                                            (!Me.CurrentTarget.HasAura("Hamstring") ||
+                                             !Me.CurrentTarget.HasAura("Piercing Howl") ||
+                                             !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                CreateSpellCast(
+                    "Intimidating Shout", ret => Me.CurrentTarget.Distance < 8 &&
+                                                 Me.CurrentTarget.IsPlayer &&
+                                                 Me.CurrentTarget.IsCasting),
                 CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance > 10),
                 CreateSpellCast("Heroic Throw", ret => Me.CurrentTarget.IsPlayer),
                 CreateSpellCast("Enraged Regeneration", ret => Me.HealthPercent < 60),
@@ -52,14 +55,15 @@ namespace Singular
                     ret => SpellManager.CanCast("Heroic Leap") && Me.CurrentTarget.Distance > 13,
                     new Action(
                         ret =>
-                        {
-                            SpellManager.Cast("Heroic Leap");
-                            LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
-                        })),
-                CreateSpellCast("Hamstring", ret => Me.CurrentTarget.IsPlayer &&
-                                                    (!Me.CurrentTarget.HasAura("Hamstring") ||
-                                                    !Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                                    !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                            {
+                                SpellManager.Cast("Heroic Leap");
+                                LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
+                            })),
+                CreateSpellCast(
+                    "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
+                                        (!Me.CurrentTarget.HasAura("Hamstring") ||
+                                         !Me.CurrentTarget.HasAura("Piercing Howl") ||
+                                         !Me.CurrentTarget.HasAura("Slowing Poison"))),
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 3,
                     new PrioritySelector(
@@ -68,7 +72,7 @@ namespace Singular
                         CreateSpellCast("Raging Blow"),
                         CreateSpellCast("Bloodthirst")
                         )),
-               new Decorator(
+                new Decorator(
                     ret =>
                     Me.CurrentTarget.Distance > 5 &&
                     !WoWMathHelper.IsFacing(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, Me.Location, (float)Math.PI) &&
@@ -105,6 +109,7 @@ namespace Singular
                 new PrioritySelector(
                     CreateEnsureTarget(),
                     CreateAutoAttack(true),
+                CreateMoveToAndFace(ret => Me.CurrentTarget),
                     CreateSpellCast("Battle Shout", ret => Me.RagePercent < 20),
                     CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance > 9),
                     CreateSpellCast("Heroic Throw"),

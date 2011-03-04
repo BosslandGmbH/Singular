@@ -1,6 +1,9 @@
 ﻿using Styx.Helpers;
 using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
+using Styx.Combat.CombatRoutine;
+
+using TreeSharp;
 
 using TreeSharp;
 
@@ -8,6 +11,28 @@ namespace Singular
 {
     partial class SingularRoutine
     {
+		[Class(WoWClass.Hunter)]
+        [Spec(TalentSpec.BeastMasteryHunter)]
+        [Spec(TalentSpec.SurvivalHunter)]
+        [Spec(TalentSpec.MarksmanshipHunter)]
+		[Spec(TalentSpec.Lowbie)]
+        [Behavior(BehaviorType.PreCombatBuffs)]
+        [Context(WoWContext.All)]
+        public Composite CreateHunterBuffs()
+        {
+			return new PrioritySelector(
+				new Decorator(
+					ctx => Me.CastingSpell != null && Me.CastingSpell.Name == "Revive " + WantedPet && Me.GotAlivePet,
+					new Action(ctx => SpellManager.StopCasting())),
+
+				CreateWaitForCast(),
+				CreateSpellBuffOnSelf("Aspect of the Hawk", ret => !Me.HasAura("Aspect of the Hawk")),
+				//new ActionLogMessage(false, "Checking for pet"),
+				new Decorator(
+					ret => !Me.GotAlivePet,
+					new Action(ret => PetManager.CallPet(WantedPet)))
+					);
+        }
         protected Composite CreateHunterBackPedal()
         {
             return
@@ -22,20 +47,6 @@ namespace Singular
                             Navigator.MoveTo(moveTo);
                     }));
         }
-
-        public Composite CreateHunterBuffs()
-        {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => Me.CastingSpellId != 0 && Me.CastingSpell.Name == "Revive " + WantedPet && Me.GotAlivePet,
-                    new Action(ret => SpellManager.StopCasting())),
-
-                CreateWaitForCast(),
-
-                new Decorator(
-                    ret => !Me.GotAlivePet,
-                    new Action(ret => PetManager.CallPet(WantedPet)))
-                );
-        }
+	
     }
 }

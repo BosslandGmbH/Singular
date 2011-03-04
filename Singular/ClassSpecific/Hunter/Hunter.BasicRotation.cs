@@ -38,6 +38,9 @@ namespace Singular
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
+				//Intimidation
+				CreateSpellCast("Intimidation", ret => Me.CurrentTarget.IsAlive && Me.GotAlivePet &&
+                    (Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me)),
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),
                 // Heal pet when below 70
@@ -55,7 +58,9 @@ namespace Singular
                     "Cobra Shot",
                     ret => Me.CurrentTarget.HasAura("Serpent Sting") && Me.CurrentTarget.Auras["Serpent Sting"].TimeLeft.TotalSeconds < 3),
                 // Focus dump on arcane shot, unless our pet has bestial wrath, then we use it for better DPS
-                CreateSpellCast("Arcane Shot")
+                CreateSpellCast("Arcane Shot"),
+				// For when we have no Focus
+				CreateSpellCast("Steady Shot")
                 );
         }
 

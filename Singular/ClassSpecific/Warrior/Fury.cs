@@ -36,7 +36,6 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
-                CreateMoveToAndFace(ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
                 CreateSpellCast("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
                                                         Me.CurrentTarget.IsPlayer &&
@@ -87,7 +86,12 @@ namespace Singular
                 CreateSpellCast("Bloodthirst"),
                 CreateSpellCast("Slam", ret => HasAuraStacks("Bloodsurge", 1)),
                 CreateSpellCast("Heroic Strike", ret => Me.RagePercent > 60),
-                CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80)
+                CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),
+
+                // Again; movement comes last in melee. We have spells we can use at long-range, and should do so when the opportunity
+                // presents itself.
+                // If none of our short-range attacks are... in range... then just move forward.
+                CreateMoveToAndFace(ret => Me.CurrentTarget)
                 );
         }
 
@@ -101,7 +105,6 @@ namespace Singular
                 new PrioritySelector(
                     CreateEnsureTarget(),
                     CreateAutoAttack(true),
-                    CreateMoveToAndFace(ret => Me.CurrentTarget),
                     CreateSpellCast("Battle Shout", ret => Me.RagePercent < 20),
                     CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance > 9),
                     CreateSpellCast("Heroic Throw"),
@@ -112,7 +115,9 @@ namespace Singular
                                 {
                                     SpellManager.Cast("Heroic Leap");
                                     LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
-                                }))
+                                })),
+                    // Keep this last, as we want to use spells above to pull with. Only move if we can't use any of them!
+                    CreateMoveToAndFace(ret => Me.CurrentTarget)
                     //,
                     //CreateSpellCast("Throw", 
                     //	ret => Me.Inventory.Equipped.Ranged != null &&

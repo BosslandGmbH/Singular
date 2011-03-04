@@ -37,11 +37,11 @@ namespace Singular
         {
             return
                 new PrioritySelector(
-					CreateLosAndFace(ret => Me.CurrentTarget),
+					CreateMoveToAndFace(ret => Me.CurrentTarget),
                     CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15, false),
                     CreateSpellCast("Howling Blast", false),
                     CreateSpellCast("Icy Touch", false),
-					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
                     );
         }
 

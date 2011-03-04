@@ -19,7 +19,7 @@ namespace Singular
 				CreateEnsureTarget(),
 				CreateWaitForCast(),
 				CreateHunterBackPedal(),
-				CreateRangeAndFace(35f, ret => Me.CurrentTarget),
+				CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
 				CreateAutoAttack(true),
 				CreateSpellCast("Raptor Strike", ret => Me.CurrentTarget.DistanceSqr < 5 * 5),
 				// Always keep it up on our target!

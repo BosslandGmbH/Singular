@@ -67,7 +67,7 @@ namespace Singular
 		            ctx => selfOnly ? Me : HealTargeting.Instance.FirstUnit,
 		            CreateWaitForCast(),
 		            // Ensure we're in range of the unit to heal, and it's in LOS.
-					//CreateRangeAndFace(35f, ret => (WoWUnit)ret),
+					//CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
 		            //Cast Lifebloom on tank if
 		            //1- Tank doesn't have lifebloom
 		            //2- Tank has less then 3 stacks of lifebloom
@@ -160,7 +160,7 @@ namespace Singular
 						ret => !Me.IsInParty,
 						new PrioritySelector(
 							CreateEnsureTarget(),
-							CreateRangeAndFace(35f, ret => Me.CurrentTarget),
+							CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
 							CreateSpellBuff("Moonfire"),
 							CreateSpellCast("Starfire", ret => Me.HasAura("Fury of Stormrage")),
 							CreateSpellCast("Wrath")))

@@ -360,7 +360,7 @@ namespace Singular
 						ret => Me.IsInParty && Me.PartyMembers.Any(p => p.IsAlive && !p.HasAura(spellName)),
 						new PrioritySelector(
 							ctx => Me.PartyMembers.First(p => p.IsAlive && !p.HasAura(spellName)),
-							CreateRangeAndFace(35, ret => (WoWUnit)ret),
+							CreateMoveToAndFace(35, ret => (WoWUnit)ret),
 							CreateSpellCast(spellName, ret => true, ret => (WoWUnit)ret)))
 				);
 		}

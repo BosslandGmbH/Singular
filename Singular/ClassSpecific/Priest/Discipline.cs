@@ -82,7 +82,7 @@ namespace Singular
                     ctx => selfOnly ? Me : HealTargeting.Instance.FirstUnit,
                     CreateWaitForCast(),
                     // Ensure we're in range of the unit to heal, and it's in LOS.
-					//CreateRangeAndFace(35f, ret => (WoWUnit)ret),
+					//CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
                     //CreateSpellBuff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
                     CreateSpellBuff("Power Word: Shield", ret => !((WoWUnit)ret).HasAura("Weakened Soul") && ((WoWUnit)ret).Combat, ret => (WoWUnit)ret),
                     new Decorator(
@@ -137,13 +137,13 @@ namespace Singular
 					new PrioritySelector(
 						CreateSpellCast("Holy Fire", ret => !Me.IsInParty && !Me.Combat),
 						CreateSpellCast("Smite", ret => !Me.IsInParty && !Me.Combat),
-						CreateRangeAndFace(28f, ret => Me.CurrentTarget))),
+						CreateMoveToAndFace(28f, ret => Me.CurrentTarget))),
                 // If we have nothing to heal, and we're in combat (or the leader is)... kill something!
                 new Decorator(
                     ret => Me.Combat || (RaFHelper.Leader != null && RaFHelper.Leader.Combat),
                     new PrioritySelector(
                         CreateEnsureTarget(),
-                        CreateRangeAndFace(39f, ret => Me.CurrentTarget),
+                        CreateMoveToAndFace(39f, ret => Me.CurrentTarget),
 						CreateSpellBuff("Shadow Word: Pain", ret => !Me.IsInParty || Me.ManaPercent >= SingularSettings.Instance.Priest.DpsMana),
 						//Solo combat rotation
 						new Decorator(

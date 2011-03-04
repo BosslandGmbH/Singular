@@ -31,7 +31,7 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
-                CreateRangeAndFace(5f, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 				//Runner target
 				new Decorator(
 					ret => Me.CurrentTarget.Fleeing,
@@ -79,7 +79,7 @@ namespace Singular
 						ret => Me.Inventory.Equipped.Ranged != null &&
                                (Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow ||
                                Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow)),					
-					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
 				);
 		}
 

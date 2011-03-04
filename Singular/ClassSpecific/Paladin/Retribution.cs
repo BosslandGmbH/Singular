@@ -35,7 +35,7 @@ namespace Singular
                 new PrioritySelector(
                     CreateEnsureTarget(),
                     // Make sure we're in range, and facing the damned target. (LOS check as well)
-                    CreateRangeAndFace(5f, ret => Me.CurrentTarget),
+                    CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                     CreateAutoAttack(true),
                     CreateSpellCast("Word of Glory", ret => Me.CurrentHolyPower >= 2 && Me.HealthPercent <= 50),
                     CreateSpellBuffOnSelf("Inquisition", ret => Me.CurrentHolyPower == 3),
@@ -63,9 +63,9 @@ namespace Singular
                 new PrioritySelector(
 					CreateEnsureTarget(),
 					CreateAutoAttack(true),
-					CreateLosAndFace(ret => Me.CurrentTarget),
+					CreateMoveToAndFace(ret => Me.CurrentTarget),
                     CreateSpellCast("Judgement"),
-					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
                     );
         }
 

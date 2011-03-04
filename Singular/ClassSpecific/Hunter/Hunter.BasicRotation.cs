@@ -32,7 +32,7 @@ namespace Singular
 				CreateEnsureTarget(),
 				CreateHunterBackPedal(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
-                CreateRangeAndFace(35f, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),
@@ -65,7 +65,7 @@ namespace Singular
                 CreateEnsureTarget(),
 				CreateHunterBackPedal(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
-                CreateRangeAndFace(35f, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),

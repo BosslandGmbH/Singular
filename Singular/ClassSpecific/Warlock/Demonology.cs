@@ -32,7 +32,7 @@ namespace Singular
 
             return new PrioritySelector(
                 CreateEnsureTarget(),
-                CreateRangeAndFace(35f, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 CreateWaitForCast(),
                 CreateAutoAttack(true),
                 CreateSpellBuffOnSelf("Soulburn", ret => SpellManager.HasSpell("Soul Fire") || Me.HealthPercent < 70),

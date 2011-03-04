@@ -27,7 +27,7 @@ namespace Singular
                 new Decorator(ret=>Me.CurrentTarget.Distance > 8f && Me.CurrentTarget.Distance < 25f,
                     CreateSpellCast("Feral Charge (Bear)")),
 
-                CreateRangeAndFace(4.5f, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(4.5f, ret => Me.CurrentTarget),
                 CreateAutoAttack(false),
 
                 CreateSpellCast("Skull Bash (Bear)", ret => Me.CurrentTarget.IsCasting),

@@ -28,7 +28,7 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
-                CreateRangeAndFace(39, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(39, ret => Me.CurrentTarget),
                 CreateWaitForCast(),
                 CreateSpellCast("Elemental Mastery"),
                 CreateSpellBuff("Flame Shock"),

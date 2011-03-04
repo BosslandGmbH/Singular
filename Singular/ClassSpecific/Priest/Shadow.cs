@@ -29,7 +29,7 @@ namespace Singular
             AddSpellSucceedWait("Vampiric Touch");
             return new PrioritySelector(
                 CreateEnsureTarget(),
-                CreateRangeAndFace(30, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(30, ret => Me.CurrentTarget),
                 CreateWaitForCast(),
                 CreateSpellBuff("Shadow Word: Pain"),
                 CreateSpellBuff("Devouring Plague"),

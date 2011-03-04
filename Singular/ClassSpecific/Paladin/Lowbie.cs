@@ -21,7 +21,7 @@ namespace Singular
 				new PrioritySelector(
 					CreateEnsureTarget(),
 					CreateAutoAttack(true),
-					CreateRangeAndFace(5f, ret => Me.CurrentTarget),
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 					CreateSpellCast("Crusader Strike"),
 					CreateSpellCast("Judgement")
 				);
@@ -35,9 +35,9 @@ namespace Singular
 		{
 			return
 				new PrioritySelector(
-					CreateLosAndFace(ret => Me.CurrentTarget),
+					CreateMoveToAndFace(ret => Me.CurrentTarget),
 					CreateSpellCast("Judgement"),
-					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
 				);
 		}
 

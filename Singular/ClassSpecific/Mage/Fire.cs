@@ -32,7 +32,7 @@ namespace Singular
             return new PrioritySelector(
 			    CreateEnsureTarget(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
-                CreateRangeAndFace(40f, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(40f, ret => Me.CurrentTarget),
 				CreateSpellCast("Evocation", ret => Me.ManaPercent < 40),
                 CreateSpellCast(
                     "Scorch",
@@ -58,7 +58,7 @@ namespace Singular
             return
                 new PrioritySelector(
                     // Make sure we're in range, and facing the damned target. (LOS check as well)
-                    CreateRangeAndFace(40f, ret => Me.CurrentTarget),
+                    CreateMoveToAndFace(40f, ret => Me.CurrentTarget),
                     CreateSpellCast("Fireball")
                     );
         }

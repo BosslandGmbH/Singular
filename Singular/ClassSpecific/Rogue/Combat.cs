@@ -36,7 +36,7 @@ namespace Singular
                 (
                 CreateEnsureTarget(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
-                CreateRangeAndFace(5f, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                 CreateAutoAttack(false),
                 // Kick/Defensive cooldowns/Recuperation
                 CreateCombatRogueDefense(),

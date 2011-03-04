@@ -34,7 +34,7 @@ namespace Singular
 			return
 				new PrioritySelector(
 					CreateEnsureTarget(),
-					CreateRangeAndFace(5f, ret => Me.CurrentTarget),
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 					CreateAutoAttack(true),
 					CreateSpellCast("Heroic Strike", ret => Me.CurrentRage >= 60),
 					CreateSpellCast("Revenge"),
@@ -79,7 +79,7 @@ namespace Singular
 						ret => Me.Inventory.Equipped.Ranged != null &&
 							   (Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow ||
 							   Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow), false),
-					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
 				);
 		}
 

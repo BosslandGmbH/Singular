@@ -20,10 +20,10 @@ namespace Singular
 			return new PrioritySelector(
 				CreateEnsureTarget(),
 				CreateAutoAttack(true),
-				CreateLosAndFace(ret => Me.CurrentTarget),
+				CreateMoveToAndFace(ret => Me.CurrentTarget),
 				CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15),
 				//Make sure we're in range, and facing the damned target. (LOS check as well)
-				CreateRangeAndFace(5f, ret => Me.CurrentTarget),
+				CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 				CreateSpellCast("Raise Dead", ret => !Me.GotAlivePet),
 				CreateSpellCast("Rune Strike"),
 				CreateSpellCast("Mind Freeze", ret => Me.CurrentTarget.IsCasting || Me.CurrentTarget.ChanneledCastingSpellId != 0),

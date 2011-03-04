@@ -34,7 +34,7 @@ namespace Singular
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
-                CreateRangeAndFace(5f, ret => Me.CurrentTarget),
+                CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
                 // Same rotation for both.
                 CreateSpellCast("Hammer of Wrath"),
@@ -69,10 +69,10 @@ namespace Singular
                 new PrioritySelector(
 					CreateEnsureTarget(),
 					CreateAutoAttack(true),
-					CreateLosAndFace(ret => Me.CurrentTarget),
+					CreateMoveToAndFace(ret => Me.CurrentTarget),
                     CreateSpellCast("Avenger's Shield"),
                     CreateSpellCast("Judgement"),
-					CreateRangeAndFace(5f, ret => Me.CurrentTarget)
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
                     );
         }
 

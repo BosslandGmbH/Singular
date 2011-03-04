@@ -46,7 +46,7 @@ namespace Singular
                 CreateSpellCast("Berserk", ret => Me.Fleeing),
                 CreateSpellCast("Survival Instincts", ret => Me.HealthPercent <= 45),
                 CreateSpellBuffOnSelf("Prowl"),
-				CreateLosAndFace(ret => Me.CurrentTarget),
+				CreateMoveToAndFace(ret => Me.CurrentTarget),
 				CreateAutoAttack(false),
                 CreateSpellCast("Feral Charge (Cat)", ret => Me.CurrentTarget.Distance >= 8 && Me.CurrentTarget.Distance <= 25),
                 CreateSpellCast("Skull Bash (Cat)", ret => Me.CurrentTarget.IsCasting),
@@ -95,7 +95,7 @@ namespace Singular
                 CreateSpellBuff("Faerie Fire (Feral)"),
                 // We're putting movement at the bottom. Since we want the stuff above, to happen first. If we're out of range, we'll automatically fall
                 // back to here and get within melee range to fuck shit up.
-                CreateRangeAndFace(4, ret => Me.CurrentTarget)
+                CreateMoveToAndFace(4, ret => Me.CurrentTarget)
                 );
         }
     }

@@ -30,9 +30,9 @@ namespace Singular
         public Composite CreateLowbieWarriorCombat()
         {
             return new PrioritySelector(
-                CreateEnsureTarget(),
-                CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
-				CreateAutoAttack(true),
+					CreateEnsureTarget(),
+					CreateAutoAttack(true),
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 				CreateSpellCast("Charge"),
 				CreateSpellCast("Victory Rush"),
 				CreateSpellCast("Strike")
@@ -46,13 +46,13 @@ namespace Singular
 		public Composite CreateLowbieWarriorPull()
 		{
 			return 
-				new PrioritySelector(
+					new PrioritySelector(
 					CreateEnsureTarget(),
 					CreateAutoAttack(true),
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 					CreateSpellCast("Charge"),
 					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
-
-				);
+					);
 		}
 
 		[Class(WoWClass.Warrior)]

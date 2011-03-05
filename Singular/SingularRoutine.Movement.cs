@@ -4,9 +4,9 @@
 // $Author$
 // $Date$
 // $HeadURL$
-// $LastChangedBy$
+// $LastChangedBy$ nuok
 // $LastChangedDate$
-// $LastChangedRevision$
+// $LastChangedRevision$ 154
 // $Revision$
 
 #endregion
@@ -35,7 +35,7 @@ namespace Singular
                 ret => unit(ret) != null,
                 new PrioritySelector(
                     new Decorator(
-                        ret => !unit(ret).InLineOfSightOCD && unit(ret).Distance > maxRange,
+                        ret => !unit(ret).InLineOfSightOCD || unit(ret).Distance > maxRange,
                         new Action(ret => Navigator.MoveTo(unit(ret).Location))),
                     new Decorator(
                         ret => Me.IsMoving && unit(ret).Distance <= maxRange,

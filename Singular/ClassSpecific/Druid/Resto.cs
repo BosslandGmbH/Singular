@@ -147,7 +147,6 @@ namespace Singular
 
 		[Class(WoWClass.Druid)]
 		[Spec(TalentSpec.RestorationDruid)]
-		[Spec(TalentSpec.Lowbie)]
 		[Behavior(BehaviorType.Combat)]
 		[Context(WoWContext.All)]
 		public Composite CreateRestoDruidCombat()
@@ -169,7 +168,6 @@ namespace Singular
 
 		[Class(WoWClass.Druid)]
 		[Spec(TalentSpec.RestorationDruid)]
-		[Spec(TalentSpec.Lowbie)]
 		[Behavior(BehaviorType.Pull)]
 		[Context(WoWContext.All)]
 		public Composite CreateRestoDruidPull()
@@ -184,7 +182,6 @@ namespace Singular
 
 		[Class(WoWClass.Druid)]
 		[Spec(TalentSpec.RestorationDruid)]
-		[Spec(TalentSpec.Lowbie)]
 		[Behavior(BehaviorType.CombatBuffs)]
 		[Context(WoWContext.All)]
 		public Composite CreateRestoDruidCombatBuffs()

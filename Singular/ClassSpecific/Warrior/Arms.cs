@@ -39,8 +39,8 @@ namespace Singular
 					ret => Me.CurrentTarget.Fleeing,
 					new PrioritySelector(
 						CreateSpellCast("Heroic Throw"),
-						CreateSpellCast("Charge"),
-						CreateSpellCast("Intercept")
+						CreateSpellCast("Charge", ret => Me.CurrentTarget.Distance > 10),
+						CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance > 10)
 						)),
 				//Move to melee
 				CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
@@ -76,7 +76,7 @@ namespace Singular
 				new PrioritySelector(
 					CreateEnsureTarget(),
 					CreateMoveToAndFace(25f, ret => Me.CurrentTarget),
-					CreateSpellCast("Charge"),
+					CreateSpellCast("Charge", ret => Me.CurrentTarget.Distance > 10),
 					CreateSpellCast("Throw", 
 						ret => Me.Inventory.Equipped.Ranged != null &&
                                Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Thrown),

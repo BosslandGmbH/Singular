@@ -39,6 +39,9 @@ namespace Singular
 				//Move to range
                 CreateFaceUnit(),
                 CreateAutoAttack(true),
+                //Make sure you are in the primary DPS stance for fury warriors
+                CreateSpellBuffOnSelf("Berserker Stance", ret => Me.RagePercent > 10 || Me.Combat),
+                CreateSpellCast("Battle Shout", ret => Me.RagePercent < 20 || !Me.HasAura("Battle Shout")),
                 CreateSpellCast(
                     "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
                                             Me.CurrentTarget.IsPlayer &&
@@ -49,7 +52,7 @@ namespace Singular
                     "Intimidating Shout", ret => Me.CurrentTarget.Distance < 8 &&
                                                  Me.CurrentTarget.IsPlayer &&
                                                  Me.CurrentTarget.IsCasting),
-                CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance > 10),
+                CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance >= 9),
                 CreateSpellCast("Heroic Throw", ret => Me.CurrentTarget.IsPlayer),
                 CreateSpellCast("Enraged Regeneration", ret => Me.HealthPercent < 60),
                 new Decorator(
@@ -61,7 +64,7 @@ namespace Singular
                                 LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
                             })),
 				//Move to melee			
-				CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
+				CreateMoveToAndFace(),
                 CreateSpellCast(
                     "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
                                         (!Me.CurrentTarget.HasAura("Hamstring") ||
@@ -113,9 +116,11 @@ namespace Singular
                 new PrioritySelector(
                     CreateEnsureTarget(),
                     CreateAutoAttack(true),
-                CreateMoveToAndFace(25f, ret => Me.CurrentTarget),
+                    CreateFaceUnit(),
+                    //Ensures that you are in the right stance, since you do not need to stay in battle stance
+                    CreateSpellBuffOnSelf("Berserker Stance", ret => Me.RagePercent > 10 || Me.Combat),
                     CreateSpellCast("Battle Shout", ret => Me.RagePercent < 20),
-                    CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance > 9),
+                    CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance >= 9),
                     CreateSpellCast("Heroic Throw"),
                     new Decorator(
                         ret => SpellManager.CanCast("Heroic Leap") && Me.CurrentTarget.Distance > 8,
@@ -126,7 +131,7 @@ namespace Singular
                                     LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
                                 })),
                     // Keep this last, as we want to use spells above to pull with. Only move if we can't use any of them!
-                    CreateMoveToAndFace(ret => Me.CurrentTarget)
+                    CreateMoveToAndFace()
                     //,
                     //CreateSpellCast("Throw", 
                     //	ret => Me.Inventory.Equipped.Ranged != null &&
@@ -151,7 +156,7 @@ namespace Singular
                     CreateSpellCast("Gift of the Naaru", ret => Me.HealthPercent < 50),
                     CreateSpellCast("Berserking"),
                     CreateSpellCast("Recklessness",
-							ret=> Me.HasAura("Death Wish")),
+							ret=> Me.HasAura("Death Wish") && Me.HealthPercent > 20),
 					CreateSpellCast("Inner Rage",
 							ret=> Me.HasAura("Recklessness") ||
 								  Me.HasAura("Death Wish") ||
@@ -186,7 +191,7 @@ namespace Singular
 										Me.CurrentTarget.HealthPercent < 95 &&
 										Me.RagePercent > 50) || 
 									(Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
-										Me.HealthPercent > 10)),
+										Me.HealthPercent > 10 && Me.HealthPercent < 75)),
 							//Do not need to be enraged
                             //ret => !Me.Auras.Any(
                                 //aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
@@ -207,7 +212,8 @@ namespace Singular
         {
             return
                 new PrioritySelector(
-                    CreateSpellBuffOnSelf("Berserker Stance"),
+                    CreateSpellBuffOnSelf("Battle Stance", ret => Me.RagePercent <= 10 && !Me.Combat),
+                    CreateSpellBuffOnSelf("Berserker Stance", ret => Me.RagePercent > 10 || Me.Combat),
                     CreateSpellCast("Battle Shout")
                 );
         }

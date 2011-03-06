@@ -56,7 +56,7 @@ namespace Singular
                         CreateSpellCast("Cleave"),
                         CreateSpellCast("Whirlwind")
                         )),
-                CreateSpellCast("Rend", ret => HasAuraStacks("Overpower", 1)),
+                CreateSpellCast("Rend", ret => !Me.CurrentTarget.HasAura("Rend")),
                 CreateSpellCast("Collossus Smash"),
                 CreateSpellCast("Execute"),
                 CreateSpellCast("Overpower"),

@@ -31,7 +31,9 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
-                CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
+				//Move to range
+                CreateMoveToAndFace(25f, ret => Me.CurrentTarget),
+				CreateAutoAttack(true),
 				//Runner target
 				new Decorator(
 					ret => Me.CurrentTarget.Fleeing,
@@ -40,6 +42,8 @@ namespace Singular
 						CreateSpellCast("Charge"),
 						CreateSpellCast("Intercept")
 						)),
+				//Move to melee
+				CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 				CreateSpellCast("Victory Rush"),
 				CreateSpellCast("Pummel", ret => Me.CurrentTarget.IsCasting),
                 new Decorator(
@@ -71,6 +75,7 @@ namespace Singular
 			return 
 				new PrioritySelector(
 					CreateEnsureTarget(),
+					CreateMoveToAndFace(25f, ret => Me.CurrentTarget),
 					CreateSpellCast("Charge"),
 					CreateSpellCast("Throw", 
 						ret => Me.Inventory.Equipped.Ranged != null &&
@@ -79,6 +84,7 @@ namespace Singular
 						ret => Me.Inventory.Equipped.Ranged != null &&
                                (Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow ||
                                Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow)),					
+					CreateAutoAttack(true),
 					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
 				);
 		}

@@ -36,7 +36,8 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
-                CreateMoveToAndFace(ret => Me.CurrentTarget),
+				//Move to range
+                CreateMoveToAndFace(25, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
                 CreateSpellCast(
                     "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
@@ -59,6 +60,8 @@ namespace Singular
                                 SpellManager.Cast("Heroic Leap");
                                 LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
                             })),
+				//Move to melee			
+				CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                 CreateSpellCast(
                     "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
                                         (!Me.CurrentTarget.HasAura("Hamstring") ||
@@ -110,7 +113,7 @@ namespace Singular
                 new PrioritySelector(
                     CreateEnsureTarget(),
                     CreateAutoAttack(true),
-                CreateMoveToAndFace(ret => Me.CurrentTarget),
+                CreateMoveToAndFace(25f, ret => Me.CurrentTarget),
                     CreateSpellCast("Battle Shout", ret => Me.RagePercent < 20),
                     CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance > 9),
                     CreateSpellCast("Heroic Throw"),

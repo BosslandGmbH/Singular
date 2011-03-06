@@ -29,7 +29,7 @@ namespace Singular
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 CreateMoveToAndFace(39, ret => Me.CurrentTarget),
-                CreateWaitForCast(),
+                CreateWaitForCast(true),
                 CreateSpellCast("Elemental Mastery"),
                 CreateSpellBuff("Flame Shock"),
                 CreateSpellCast("Unleash Elements"),

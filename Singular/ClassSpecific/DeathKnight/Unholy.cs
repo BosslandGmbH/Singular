@@ -20,7 +20,7 @@ namespace Singular
 			return new PrioritySelector(
 				CreateEnsureTarget(),
 				CreateAutoAttack(true),
-				CreateMoveToAndFace(ret => Me.CurrentTarget),
+				CreateFaceUnit(),
 				CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15),
 				//Make sure we're in range, and facing the damned target. (LOS check as well)
 				CreateMoveToAndFace(5f, ret => Me.CurrentTarget),

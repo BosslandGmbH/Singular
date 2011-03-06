@@ -23,7 +23,6 @@ namespace Singular
     {
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.CombatRogue)]
-        [Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Behavior(BehaviorType.PreCombatBuffs)]
@@ -98,6 +97,7 @@ namespace Singular
         public Composite CreateCombatRogueDefense()
         {
             return new PrioritySelector(
+                CreateMoveToAndFace(),
                 CreateSpellCast("Kick", ret => Me.CurrentTarget.IsCasting),
                 CreateSpellCast("Cloak of Shadows", ret => Me.CurrentTarget.IsCasting && Me.CurrentTarget.CurrentTarget == Me),
                 // Recuperate to keep us at high health

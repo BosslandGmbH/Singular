@@ -51,9 +51,25 @@ namespace Singular
         /// <returns>.</returns>
         protected Composite CreateWaitForCast()
         {
-            return new Decorator(
-                ret => Me.IsCasting,
-                new ActionAlwaysSucceed());
+            return CreateWaitForCast(false);
+        }
+
+        /// <summary>Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
+        /// 		 going down to lower branches in the tree, while casting.)</summary>
+        /// <remarks>Created 3/6/2011.</remarks>
+        /// <param name="faceDuring">Whether or not to face during casting</param>
+        /// <returns></returns>
+        protected Composite CreateWaitForCast(bool faceDuring)
+        {
+            return
+                new Decorator(
+                    ret => Me.IsCasting,
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => faceDuring && Me.CurrentTarget != null && !Me.IsSafelyFacing(Me.CurrentTarget, 70),
+                            CreateFaceUnit()),
+                        new ActionAlwaysSucceed()
+                        ));
         }
 
         protected Composite CreateCastPetAction(PetAction action, bool parentIsSelector)

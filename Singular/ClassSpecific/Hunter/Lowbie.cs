@@ -15,9 +15,10 @@ namespace Singular
 		[Context(WoWContext.All)]
 		public Composite CreateLowbieCombat()
 		{
+            WantedPet = "1";
 			return new PrioritySelector(
 				CreateEnsureTarget(),
-				CreateWaitForCast(),
+				CreateWaitForCast(true),
 				CreateHunterBackPedal(),
 				CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
 				CreateAutoAttack(true),

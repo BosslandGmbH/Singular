@@ -37,7 +37,7 @@ namespace Singular
             return new PrioritySelector(
                 CreateEnsureTarget(),
 				//Move to range
-                CreateMoveToAndFace(25, ret => Me.CurrentTarget),
+                CreateFaceUnit(),
                 CreateAutoAttack(true),
                 CreateSpellCast(
                     "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&

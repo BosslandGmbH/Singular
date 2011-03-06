@@ -20,11 +20,11 @@ namespace Singular
 			return new PrioritySelector(
 				CreateEnsureTarget(),
 				CreateAutoAttack(true),
-				CreateMoveToAndFace(ret => Me.CurrentTarget),
+				CreateFaceUnit(),
 				CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15),
-				CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 				CreateSpellCast("Death Coil", false),
 				CreateSpellCast("Icy Touch", false),
+                CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 				CreateSpellCast("Blood Strike"),
 				CreateSpellCast("Plague Strike")
 				);

@@ -32,7 +32,7 @@ namespace Singular
             return new PrioritySelector(
                 CreateEnsureTarget(),
 				//Move to range
-                CreateMoveToAndFace(25f, ret => Me.CurrentTarget),
+                CreateFaceUnit(),
 				CreateAutoAttack(true),
 				//Runner target
 				new Decorator(
@@ -75,7 +75,7 @@ namespace Singular
 			return 
 				new PrioritySelector(
 					CreateEnsureTarget(),
-					CreateMoveToAndFace(25f, ret => Me.CurrentTarget),
+					CreateFaceUnit(),
 					CreateSpellCast("Charge", ret => Me.CurrentTarget.Distance > 10),
 					CreateSpellCast("Throw", 
 						ret => Me.Inventory.Equipped.Ranged != null &&

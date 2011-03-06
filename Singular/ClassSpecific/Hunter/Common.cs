@@ -4,8 +4,8 @@ using Styx.Logic.Pathing;
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
-
-using TreeSharp;
+using CommonBehaviors.Actions;
+using Styx;
 
 namespace Singular
 {
@@ -20,6 +20,7 @@ namespace Singular
         [Context(WoWContext.All)]
         public Composite CreateHunterBuffs()
         {
+            WantedPet = "1";
 			return new PrioritySelector(
 				new Decorator(
 					ctx => Me.CastingSpell != null && Me.CastingSpell.Name == "Revive " + WantedPet && Me.GotAlivePet,
@@ -30,7 +31,11 @@ namespace Singular
 				//new ActionLogMessage(false, "Checking for pet"),
 				new Decorator(
 					ret => !Me.GotAlivePet,
-					new Action(ret => PetManager.CallPet(WantedPet)))
+                    new Sequence(
+                        CreateSpellCast("Revive Pet"),
+                        new Action(ret => StyxWoW.SleepForLagDuration()),
+                        new WaitContinue(10, ret => !Me.IsCasting, new ActionAlwaysSucceed()),
+					    new Action(ret => PetManager.CallPet(WantedPet))))
 					);
         }
         protected Composite CreateHunterBackPedal()

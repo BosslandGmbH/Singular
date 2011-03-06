@@ -23,6 +23,10 @@ namespace Singular
             return new PrioritySelector(
                 CreateEnsureTarget(),
 
+                new Decorator(
+                    ret => Me.Shapeshift != WantedDruidForm,
+                    CreateSpellCast("Bear Form")),
+
                 // Can we charge at the unit? If so... do it
                 new Decorator(ret=>Me.CurrentTarget.Distance > 8f && Me.CurrentTarget.Distance < 25f,
                     CreateSpellCast("Feral Charge (Bear)")),

@@ -28,14 +28,15 @@ namespace Singular
         /// <param name = "maxRange">The maximum range.</param>
         /// <param name = "coneDegrees">The cone in degrees. (If we're facing +/- this many degrees from the target, we will face the target)</param>
         /// <param name = "unit">The unit.</param>
+        /// <param name = "stopMovement"></param>
         /// <returns>.</returns>
-        protected Composite CreateMoveToAndFace(float maxRange, float coneDegrees, UnitSelectionDelegate unit)
+        protected Composite CreateMoveToAndFace(float maxRange, float coneDegrees, UnitSelectionDelegate unit, bool noMovement)
         {
             return new Decorator(
                 ret => unit(ret) != null,
                 new PrioritySelector(
                     new Decorator(
-                        ret => !unit(ret).InLineOfSightOCD || unit(ret).Distance > maxRange,
+                        ret => !unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).Distance > maxRange),
                         new Action(ret => Navigator.MoveTo(unit(ret).Location))),
                     new Decorator(
                         ret => Me.IsMoving && unit(ret).Distance <= maxRange,
@@ -44,6 +45,21 @@ namespace Singular
                         ret => Me.CurrentTarget != null && Me.CurrentTarget.IsAlive && !Me.IsSafelyFacing(Me.CurrentTarget, coneDegrees),
                         new Action(ret => Me.CurrentTarget.Face()))
                     ));
+        }
+
+        /// <summary>
+        ///   Creates a behavior to move within range, within LOS, and keep facing the specified target.
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/4/2011.
+        /// </remarks>
+        /// <param name = "maxRange">The maximum range.</param>
+        /// <param name = "coneDegrees">The cone in degrees. (If we're facing +/- this many degrees from the target, we will face the target)</param>
+        /// <param name = "unit">The unit.</param>
+        /// <returns>.</returns>
+        protected Composite CreateMoveToAndFace(float maxRange, float coneDegrees, UnitSelectionDelegate unit)
+        {
+            return CreateMoveToAndFace(maxRange, coneDegrees, unit, false);
         }
 
         /// <summary>
@@ -71,6 +87,34 @@ namespace Singular
         protected Composite CreateMoveToAndFace(UnitSelectionDelegate unitToCheck)
         {
             return CreateMoveToAndFace(5f, unitToCheck);
+        }
+
+        /// <summary>
+        /// Creates a behavior to move to within LOS, and faces the current target
+        /// </summary>
+        /// <returns></returns>
+        protected Composite CreateMoveToAndFace()
+        {
+            return CreateMoveToAndFace(5f, ret => Me.CurrentTarget);
+        }
+
+        /// <summary>
+        /// Creates a behavior to move to within LOS, and faces the specified target with no distance check
+        /// </summary>
+        /// <param name="unitToCheck">The unit to check.</param>
+        /// <returns></returns>
+        protected Composite CreateFaceUnit(UnitSelectionDelegate unitToCheck)
+        {
+            return CreateMoveToAndFace(5f, 70, unitToCheck, true);
+        }
+
+        /// <summary>
+        /// Creates a behavior to move to within LOS, and faces the current target with no distance check
+        /// </summary>
+        /// <returns></returns>
+        protected Composite CreateFaceUnit()
+        {
+            return CreateFaceUnit(ret => Me.CurrentTarget);
         }
     }
 }

@@ -46,7 +46,7 @@ namespace Singular
                 CreateSpellCast("Berserk", ret => Me.Fleeing),
                 CreateSpellCast("Survival Instincts", ret => Me.HealthPercent <= 45),
                 CreateSpellBuffOnSelf("Prowl"),
-				CreateMoveToAndFace(ret => Me.CurrentTarget),
+                CreateFaceUnit(),
 				CreateAutoAttack(false),
                 CreateSpellCast("Feral Charge (Cat)", ret => Me.CurrentTarget.Distance >= 8 && Me.CurrentTarget.Distance <= 25),
                 CreateSpellCast("Skull Bash (Cat)", ret => Me.CurrentTarget.IsCasting),

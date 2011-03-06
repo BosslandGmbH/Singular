@@ -30,7 +30,7 @@ namespace Singular
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 CreateMoveToAndFace(30, ret => Me.CurrentTarget),
-                CreateWaitForCast(),
+                CreateWaitForCast(true),
                 CreateSpellBuff("Shadow Word: Pain"),
                 CreateSpellBuff("Devouring Plague"),
                 CreateSpellBuff("Vampiric Touch", ret => !Me.IsMoving),

@@ -37,7 +37,7 @@ namespace Singular
         {
             return
                 new PrioritySelector(
-					CreateMoveToAndFace(ret => Me.CurrentTarget),
+					CreateFaceUnit(),
                     CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15, false),
                     CreateSpellCast("Howling Blast", false),
                     CreateSpellCast("Icy Touch", false),

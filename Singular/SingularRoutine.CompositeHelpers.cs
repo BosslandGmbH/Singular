@@ -34,7 +34,7 @@ using Action = TreeSharp.Action;
 namespace Singular
 {
     public delegate WoWPoint LocationRetrievalDelegate(object context);
-
+    
     partial class SingularRoutine
     {
         #region Delegates
@@ -194,7 +194,7 @@ namespace Singular
 
         private void CastWithLog(string spellName, WoWUnit onTarget)
         {
-            Logger.Write(string.Format("Casting {0} on {1}", spellName, onTarget.SafeName()));
+            Logger.Write(string.Format("Casting {0} on {1}", spellName, (onTarget != null ? onTarget.SafeName() : "-Nobody-")));
             SpellManager.Cast(spellName, onTarget);
         }
 
@@ -213,16 +213,18 @@ namespace Singular
 
 		public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector, bool checkMoving)
 		{
-			return new Decorator(
-				ret => extra(ret) && unitSelector(ret) != null && CanCast(spellName, unitSelector(ret), checkMoving),
-				new PrioritySelector(
-					CreateApproachToCast(spellName, unitSelector),
-					new Decorator(
-						ret => !checkMoving && Me.IsMoving && SpellManager.Spells[spellName].CastTime > 0,
-						new Sequence(
-							new Action(ret => Navigator.PlayerMover.MoveStop()),
-							new Action(ret => StyxWoW.SleepForLagDuration()))),
-					new Action(ret => CastWithLog(spellName, unitSelector(ret)))));
+		    return new Decorator(
+		        ret => extra(ret) && unitSelector(ret) != null && CanCast(spellName, unitSelector(ret), checkMoving),
+		        new PrioritySelector(
+		            CreateApproachToCast(spellName, unitSelector),
+		            new Decorator(
+		                ret => !checkMoving && Me.IsMoving && SpellManager.Spells[spellName].CastTime > 0,
+		                new Sequence(
+		                    new Action(ret => Navigator.PlayerMover.MoveStop()),
+		                    new Action(ret => StyxWoW.SleepForLagDuration()))),
+		            // Just logs the spell, and calls SpellManager.Cast(name) - Simply for readability, and to make sure
+		            // manual spell logging is *all* the same.
+		            new Action(ret => CastWithLog(spellName, unitSelector(ret)))));
 		}
 
         public Composite CreateSpellCast(string spellName)
@@ -399,7 +401,8 @@ namespace Singular
 			// Use default CanCast if checkmoving is true
 			if (checkMoving)
 			{
-				return SpellManager.CanCast(spellName, onUnit);
+                if (spell.CastTime != 0 && StyxWoW.Me.IsMoving)
+                    return false;
 			}
 
 			// is spell in CD?
@@ -436,5 +439,14 @@ namespace Singular
 		}
 
 		#endregion
-	}
+
+        private Composite CreateSpellCastOnLocation(string spellName, LocationRetrievalDelegate onLocation)
+        {
+            return new Decorator(
+                ret => CanCast(spellName, null, false),
+                new Sequence(
+                    new Action(ret => CastWithLog(spellName, null)),
+                    new Action(ret => LegacySpellManager.ClickRemoteLocation(onLocation(ret)))));
+        }
+    }
 }

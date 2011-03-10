@@ -345,6 +345,15 @@ namespace Singular
 			return false;
 		}
 
+        public TimeSpan GetAuraTimeLeft(string auraName, WoWUnit onUnit, bool fromMyAura)
+        {
+            var wantedAura = onUnit.GetAllAuras().Where(a => a.Name == auraName && (fromMyAura ? a.CreatorGuid == Me.Guid : true)).FirstOrDefault();
+
+            if (wantedAura!=null)
+                return wantedAura.TimeLeft;
+            return TimeSpan.Zero;
+        }
+
         public bool HasAuraStacks(string aura, int stacks, WoWUnit unit)
         {
             // Active auras first.

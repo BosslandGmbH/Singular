@@ -6,6 +6,7 @@ using Styx.Combat.CombatRoutine;
 using TreeSharp;
 using CommonBehaviors.Actions;
 using Styx;
+using System.Threading;
 
 namespace Singular
 {
@@ -32,10 +33,16 @@ namespace Singular
 				new Decorator(
 					ret => !Me.GotAlivePet,
                     new Sequence(
-                        CreateSpellCast("Revive Pet"),
-                        new Action(ret => StyxWoW.SleepForLagDuration()),
-                        new WaitContinue(10, ret => !Me.IsCasting, new ActionAlwaysSucceed()),
-					    new Action(ret => PetManager.CallPet(WantedPet))))
+					    new Action(ret => PetManager.CallPet(WantedPet)),
+                        new Action(ret => Thread.Sleep(1000)),
+                        new DecoratorContinue(
+                            ret => !Me.GotAlivePet && SpellManager.CanCast("Revive Pet"),
+                            new Sequence(
+                                new Action(ret => SpellManager.Cast("Revive Pet")),
+                                new Action(ret => StyxWoW.SleepForLagDuration()),
+                                new WaitContinue(11,
+                                    ret => !Me.IsCasting,
+                                    new ActionAlwaysSucceed())))))
 					);
         }
         protected Composite CreateHunterBackPedal()

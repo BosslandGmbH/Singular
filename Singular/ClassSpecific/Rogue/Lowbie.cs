@@ -11,7 +11,6 @@ namespace Singular
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public Composite CreateLowbieRogueCombat()
         {
@@ -21,6 +20,19 @@ namespace Singular
                 CreateMoveToAndFace(),
                 CreateSpellCast("Eviscerate", ret => Me.ComboPoints == 5 || Me.CurrentTarget.HealthPercent <= 40 && Me.ComboPoints >= 2),
                 CreateSpellCast("Sinister Strike")
+                );
+        }
+
+        [Class(WoWClass.Rogue)]
+        [Spec(TalentSpec.Lowbie)]
+        [Behavior(BehaviorType.Pull)]
+        [Context(WoWContext.All)]
+        public Composite CreateLowbieRoguePull()
+        {
+            return new PrioritySelector(
+                CreateSpellBuffOnSelf("Stealth"),
+                CreateAutoAttack(true),
+                CreateMoveToAndFace()
                 );
         }
     }

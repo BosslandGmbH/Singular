@@ -26,6 +26,7 @@ using TreeSharp;
 using Styx.Logic.Combat;
 using Styx.WoWInternals.WoWObjects;
 using Styx.WoWInternals;
+using System.Threading;
 
 namespace Singular
 {
@@ -61,7 +62,7 @@ namespace Singular
 						new Action(ret => Navigator.PlayerMover.MoveStop()),
 						new Action(ret => StyxWoW.SleepForLagDuration()),
 						new Action(ret => SpellManager.Cast("Cannibalize")),
-						new Action(ret => StyxWoW.SleepForLagDuration()))),
+						new Action(ret => Thread.Sleep(1000)))),
 						   
 
 				// Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.

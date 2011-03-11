@@ -24,10 +24,7 @@ namespace Singular
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.CombatRogue)]
         [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
         [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.PullBuffs)]
         [Context(WoWContext.All)]
         public Composite CreateCombatRogueCombat()
         {
@@ -35,8 +32,8 @@ namespace Singular
                 (
                 CreateEnsureTarget(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
-                CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                 CreateAutoAttack(false),
+                CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                 // Kick/Defensive cooldowns/Recuperation
                 CreateCombatRogueDefense(),
                 // Redirect if we have CP left
@@ -90,10 +87,6 @@ namespace Singular
                         CreateSpellCast("Slice and Dice", ret => Me.Auras["Slice and Dice"].TimeLeft.TotalSeconds < 0.9))));
         }
 
-        [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
         public Composite CreateCombatRogueDefense()
         {
             return new PrioritySelector(

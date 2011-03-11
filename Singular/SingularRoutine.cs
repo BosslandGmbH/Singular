@@ -148,7 +148,7 @@ namespace Singular
         {
 			if (NeedHealTargeting)
 				HealTargeting.Instance.Pulse();
-			if (NeedTankTargeting && (Me.IsInParty || Me.IsInRaid))
+			if (NeedTankTargeting && CurrentWoWContext != WoWContext.Battlegrounds && (Me.IsInParty || Me.IsInRaid))
 				TankTargeting.Instance.Pulse();
 
 			//This is here to support character changes while HB is running :)

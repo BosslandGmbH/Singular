@@ -32,8 +32,8 @@ namespace Singular
             return new PrioritySelector(
                 CreateSpellBuffOnSelf("Stealth"),
                 new Decorator(
-                    ret => WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 2f).Distance(Me.Location) > 1,
-                    new Action(ret => Navigator.MoveTo(WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 2f)))),
+                    ret => WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f).Distance(Me.Location) > 3f,
+                    new Action(ret => Navigator.MoveTo(WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f)))),
                 CreateFaceUnit(),
                 CreateSpellCast("Ambush"),
                 CreateAutoAttack(true)

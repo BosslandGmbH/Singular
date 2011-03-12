@@ -50,7 +50,8 @@ namespace Singular
                     "Intimidating Shout", ret => Me.CurrentTarget.Distance < 8 &&
                                                  Me.CurrentTarget.IsPlayer &&
                                                  Me.CurrentTarget.IsCasting),
-				CreateSpellCast("Charge", ret => Me.CurrentTarget.Distance >= 9),
+                CreateSpellCast("Charge", ret => Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
+                CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),
 				//Important: Sudden Death (reset Collossus Smash, use it or lose it! Very quick Proc therfore needs to be first)
 				CreateSpellCast("Colossus Smash", Me.HasAura("Sudden Death")),
 				
@@ -100,7 +101,6 @@ namespace Singular
                 CreateSpellCast("Overpower", ret => !HasAuraStacks("Overpower", 1)),
 				CreateSpellCast("Slam", ret => Me.RagePercent > 30 ),
                 CreateSpellCast("Heroic Strike", ret => Me.RagePercent > 75 || HasAuraStacks("Incite", 1)),
-                CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),
 
                 // Again; movement comes last in melee. We have spells we can use at long-range, and should do so when the opportunity
                 // presents itself.

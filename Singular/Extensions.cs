@@ -23,6 +23,11 @@ namespace Singular
 {
     internal static class Extensions
     {
+        public static bool Between(this double distance, double min, double max)
+        {
+            return distance >= min && distance <= max;
+        }
+
         /// <summary>
         ///   A string extension method that turns a Camel-case string into a spaced string. (Example: SomeCamelString -> Some Camel String)
         /// </summary>

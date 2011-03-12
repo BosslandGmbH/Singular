@@ -27,8 +27,12 @@ namespace Singular
             MethodInfo[] methods = createFrom.GetType().GetMethods();
             MethodInfo bestMatch = null;
             foreach (MethodInfo mi in
-                methods.Where(mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(
-                    mi => mi.ReturnType == typeof(Composite) || mi.ReturnType.IsSubclassOf(typeof(Composite))))
+                methods.Where(mi => 
+                    !mi.IsGenericMethod && 
+                    mi.GetParameters().Length == 0)
+                    .Where(mi =>
+                        mi.ReturnType == typeof(Composite) ||
+                        mi.ReturnType.IsSubclassOf(typeof(Composite))))
             {
                 //Logger.WriteDebug("[CompositeBuilder] Checking attributes on " + mi.Name);
                 bool classMatches = false, specMatches = false, behaviorMatches = false, contextMatches = false;
@@ -79,8 +83,8 @@ namespace Singular
                 // If all our attributes match, then mark it as wanted!
                 if (classMatches && specMatches && behaviorMatches && contextMatches)
                 {
-                    Logger.WriteDebug(mi.Name + " is a match!");
-                    Logger.Write("Using " + mi.Name + " for " + spec.ToString().CamelToSpaced() + " " + behavior);
+                    Logger.WriteDebug(string.Format("{0} is a match!", mi.Name));
+                    Logger.Write(string.Format("Using {0} for {1} {2}", mi.Name, spec.ToString().CamelToSpaced(), behavior));
                     bestMatch = mi;
                 }
             }

@@ -34,6 +34,13 @@ namespace Singular
 			return
 				new PrioritySelector(
 					CreateEnsureTarget(),
+
+                    // Note: this will make sure we charge at any unit within proper range. (Like an actual tank would)
+                    // We can cast Charge while in combat if we have the talent. [Notice that I am NOT checking for the talent!]
+                    // chargeSpell.CanCast should return false if we can't cast it.
+                    CreateSpellCast("Charge", ret=>Me.CurrentTarget.Distance.Between(8f,25f)),
+
+
 					CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 					CreateAutoAttack(true),
 					CreateSpellCast("Heroic Strike", ret => Me.CurrentRage >= 60),
@@ -51,12 +58,10 @@ namespace Singular
 					CreateSpellCast("Victory Rush"),
 					CreateSpellCast("Shield Bash", ret => Me.CurrentTarget.IsCasting),
 					CreateSpellCast("Shield Slam"),
-					CreateSpellBuff("Demoralizing Shout", 
-						ret => Me.CurrentRage > 30 &&
-							   Me.CurrentTarget.HealthPercent > 30),
-					new Decorator(
-						ret => !Me.CurrentTarget.HasAura("Sunder Armor") ||
-								Me.CurrentTarget.Auras["Sunder Armor"].StackCount < 3,
+					CreateSpellBuff("Demoralizing Shout", ret => Me.CurrentRage > 30 && Me.CurrentTarget.HealthPercent > 30),
+
+                    // Get sunders up, Devastate if we have it (extra damage) or just plain Sunder.
+					new Decorator(ret => !Me.CurrentTarget.HasAura("Sunder Armor") || Me.CurrentTarget.Auras["Sunder Armor"].StackCount < 3,
 						new PrioritySelector(
 							CreateSpellCast("Devastate"),
 							CreateSpellCast("Sunder Armor")))

@@ -83,7 +83,7 @@ namespace Singular
         static TalentManager()
         {
             Talents = new List<Talent>();
-            Glyphs = new List<string>();
+            Glyphs = new HashSet<string>();
 			Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", UpdateTalentManager);
 			Lua.Events.AttachEvent("GLYPH_UPDATED", UpdateTalentManager);
 			Lua.Events.AttachEvent("ACTIVE_TALENT_GROUP_CHANGED", UpdateTalentManager);
@@ -94,7 +94,7 @@ namespace Singular
 
         public static List<Talent> Talents { get; private set; }
 
-        public static List<string> Glyphs { get; private set; }
+        public static HashSet<string> Glyphs { get; private set; }
 
         public static int GetCount(int tab, int index)
         {

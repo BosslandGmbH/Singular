@@ -33,7 +33,7 @@ namespace Singular
 				CreateSpellCast("Rune Strike"),
 				CreateSpellCast("Mind Freeze", ret => Me.CurrentTarget.IsCasting || Me.CurrentTarget.ChanneledCastingSpellId != 0),
 				CreateSpellCast("Strangulate", ret => Me.CurrentTarget.IsCasting || Me.CurrentTarget.ChanneledCastingSpellId != 0),
-				CreateSpellBuffOnSelf("RuneTap", ret => Me.HealthPercent <= 60),
+				CreateSpellBuffOnSelf("Rune Tap", ret => Me.HealthPercent <= 60),
 				CreateSpellCast(
 					"Pestilence", ret => Me.CurrentTarget.HasAura("Blood Plague") && Me.CurrentTarget.HasAura("Frost Fever") &&
 										 (from add in NearbyUnfriendlyUnits

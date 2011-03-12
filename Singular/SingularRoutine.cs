@@ -121,6 +121,8 @@ namespace Singular
 
 		public bool CurrentTargetIsBoss { get { return BossIds.Contains(Me.CurrentTarget.Entry); } }
 
+        public bool CurrentTargetIsEliteOrBoss { get { return CurrentTargetIsElite || CurrentTargetIsBoss; } }
+
         public bool IsMounted
         {
             get

@@ -100,6 +100,7 @@
     <Compile Include="ClassSpecific\Rogue\Combat.cs" />
     <Compile Include="ClassSpecific\Rogue\Lowbie.cs" />
     <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
+    <Compile Include="ClassSpecific\Warlock\Affliction.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
     <Compile Include="ClassSpecific\Warlock\Lowbie.cs" />

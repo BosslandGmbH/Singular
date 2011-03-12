@@ -75,20 +75,17 @@ namespace Singular
 		[Behavior(BehaviorType.Pull)]
 		public Composite CreateProtectionWarriorPull()
 		{
-			return
-				new PrioritySelector(
-					CreateEnsureTarget(),
-					CreateAutoAttack(true),
-					CreateSpellCast("Charge"),
-					CreateSpellCast("Throw",
-						ret => Me.Inventory.Equipped.Ranged != null &&
-							   Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Thrown, false),
-					CreateSpellCast("Shoot",
-						ret => Me.Inventory.Equipped.Ranged != null &&
-							   (Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow ||
-							   Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow), false),
-					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
-				);
+		    return
+		        new PrioritySelector(
+		            CreateEnsureTarget(),
+		            CreateAutoAttack(true),
+		            CreateSpellCast("Charge"),
+
+                    // Throws a throwing weapon, shoots a bow, gun, crossbow, or wand. (Yes, Wand)
+		            CreateFireRangedWeapon(),
+
+		            CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
+		            );
 		}
 
 		[Class(WoWClass.Warrior)]

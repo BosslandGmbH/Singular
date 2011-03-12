@@ -21,7 +21,11 @@ namespace Singular
 				CreateEnsureTarget(),
 				CreateAutoAttack(true),
 				CreateFaceUnit(),
-				CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15),
+
+                // Note: You should have this in 2 different methods. Hence the reason for WoWContext being a [Flags] enum.
+                // In this case, since its only one spell being changed, we can live with it.
+                CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15 && !Me.IsInInstance),
+
 				//Make sure we're in range, and facing the damned target. (LOS check as well)
 				CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 				CreateSpellCast("Raise Dead", ret => !Me.GotAlivePet),

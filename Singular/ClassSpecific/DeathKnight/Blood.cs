@@ -22,7 +22,11 @@ namespace Singular
 				CreateEnsureTarget(),
 				CreateAutoAttack(true),
 				CreateFaceUnit(),
+
+                // Blood DKs are tanks. NOT DPS. If you're DPSing as blood, go respec right now, because you fail hard.
+                // Death Grip is used at all times in this spec, so don't bother with an instance check, like the other 2 specs.
 				CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15),
+
 				//Make sure we're in range, and facing the damned target. (LOS check as well)
 				CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
 				CreateSpellBuffOnSelf("Bone Shield"),

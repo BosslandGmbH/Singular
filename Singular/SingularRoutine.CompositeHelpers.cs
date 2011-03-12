@@ -469,5 +469,25 @@ namespace Singular
                     new Action(ret => CastWithLog(spellName, null)),
                     new Action(ret => LegacySpellManager.ClickRemoteLocation(onLocation(ret)))));
         }
+
+        /// <summary>Creates a composite to throw a throwing weapon, shoot a bow, crossbow, gun, or wand. If your inventory has such ranged weapon, and you know the skill.</summary>
+        /// <remarks>Created 3/12/2011.</remarks>
+        /// <returns>.</returns>
+        public Composite CreateFireRangedWeapon()
+        {
+            return new PrioritySelector(
+                CreateSpellCast(
+                    "Throw", ret => Me.Inventory.Equipped.Ranged != null &&
+                                    Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Thrown, false),
+                CreateSpellCast(
+                    "Shoot",
+                    ret => Me.Inventory.Equipped.Ranged != null &&
+                           (Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow ||
+                            Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow ||
+                            Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Gun ||
+                            Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Wand), false)
+
+                );
+        }
     }
 }

@@ -39,6 +39,8 @@ namespace Singular
 					CreateSpellCast("Heroic Strike", ret => Me.CurrentRage >= 60),
 					CreateSpellCast("Revenge"),
 					CreateSpellBuff("Rend"),
+                    // To be honest, we should be throwing this whenever its off CD. But we'll use it for the 20% hit speed debuff for now.
+                    CreateSpellBuff("Thunder Clap"),
 					new Decorator(
 						ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 2,
 						new PrioritySelector(

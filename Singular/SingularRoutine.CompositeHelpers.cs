@@ -45,6 +45,11 @@ namespace Singular
 
         #endregion
 
+        /// <summary>
+        /// Dirty hack to prevent double casting spells that have cast time and leaves an aura on target. It is set to true when CreateSpellBuff used.
+        /// </summary>
+        private bool CastedSpellWithAura = false;
+
         /// <summary>Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
         /// 		 going down to lower branches in the tree, while casting.)</summary>
         /// <remarks>Created 3/4/2011.</remarks>
@@ -61,7 +66,7 @@ namespace Singular
         /// <returns></returns>
         protected Composite CreateWaitForCast(bool faceDuring)
         {
-            return
+            return new PrioritySelector(
                 new Decorator(
                     ret => Me.IsCasting,
                     new PrioritySelector(
@@ -69,7 +74,14 @@ namespace Singular
                             ret => faceDuring && Me.CurrentTarget != null && !Me.IsSafelyFacing(Me.CurrentTarget, 70),
                             CreateFaceUnit()),
                         new ActionAlwaysSucceed()
-                        ));
+                        )),
+                new Decorator(
+                    ret => CastedSpellWithAura,
+                    new Action(ret => 
+                        {
+                            StyxWoW.SleepForLagDuration();
+                            CastedSpellWithAura = false;
+                        })));
         }
 
         protected Composite CreateCastPetAction(PetAction action, bool parentIsSelector)
@@ -148,7 +160,7 @@ namespace Singular
 					ret => !Me.IsAutoAttacking && Me.AutoRepeatingSpellId != SPELL_ID_AUTO_SHOT,
 					new Action(ret => Me.ToggleAttack())),
 				new Decorator(
-					ret => includePet && Me.GotAlivePet && !Me.Pet.IsAutoAttacking,
+					ret => includePet && Me.GotAlivePet && (Me.Pet.CurrentTarget == null || Me.Pet.CurrentTarget != Me.CurrentTarget),
 					new Action(delegate { PetManager.CastPetAction(PetAction.Attack); return RunStatus.Failure; }))
 				);
         }
@@ -295,8 +307,11 @@ namespace Singular
         public Composite CreateSpellBuff(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector)
         {
             // BUGFIX: HB currently doesn't check ActiveAuras in the spell manager. So this'll break on new spell procs
-            return CreateSpellCast(
-                spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 0, unitSelector(ret)), unitSelector, false);
+            return 
+                new Sequence(
+                    CreateSpellCast(
+                spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 0, unitSelector(ret)), unitSelector, false),
+                    new Action(ret => CastedSpellWithAura = true));
         }
 
         public Composite CreateSpellBuff(string spellName)
@@ -410,6 +425,12 @@ namespace Singular
 			{
 				return false;
 			}
+
+            // minrange check
+            if (spell.MinRange != 0 && onUnit.DistanceSqr < spell.MinRange * spell.MinRange)
+            {
+                return false;
+            }
 
 			// are we casting or channeling ?
 			if (Me.IsCasting || Me.ChanneledCastingSpellId != 0)

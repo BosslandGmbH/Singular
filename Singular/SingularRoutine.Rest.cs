@@ -41,10 +41,9 @@ namespace Singular
 				//        new ActionAlwaysFail())),
 
 				// Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
-				// At least try to do something if we are in combat :)
 				new Decorator(
 					ret => Me.HasAura("Resurrection Sickness"),
-					new ActionAlwaysSucceed()),
+                    new ActionLogMessage(false, "Waiting for resurrection sickness to fade off")),
 
 				// Wait while cannibalizing
 				new Decorator(

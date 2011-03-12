@@ -86,6 +86,7 @@
     <Compile Include="ClassSpecific\Druid\Common.cs" />
     <Compile Include="ClassSpecific\Druid\Feral.cs" />
     <Compile Include="ClassSpecific\Druid\Resto.cs" />
+    <Compile Include="ClassSpecific\Hunter\BeastMaster.cs" />
     <Compile Include="ClassSpecific\Hunter\Common.cs" />
     <Compile Include="ClassSpecific\Hunter\Lowbie.cs" />
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
@@ -100,6 +101,7 @@
     <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
+    <Compile Include="ClassSpecific\Warlock\Lowbie.cs" />
     <Compile Include="ClassSpecific\Warrior\Arms.cs" />
     <Compile Include="ClassSpecific\Warrior\Fury.cs" />
     <Compile Include="ClassSpecific\Warrior\Protection.cs" />
@@ -144,7 +146,7 @@
     <Content Include="CONTRIBUTORS.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClassSpecific\Hunter\Hunter.BasicRotation.cs" />
+    <Compile Include="ClassSpecific\Hunter\Survival.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="GUI\ConfigurationForm.resx">

@@ -28,7 +28,7 @@ namespace Singular
 					new Action(ctx => SpellManager.StopCasting())),
 
 				CreateWaitForCast(),
-				CreateSpellBuffOnSelf("Aspect of the Hawk", ret => !Me.HasAura("Aspect of the Hawk")),
+				CreateSpellBuffOnSelf("Aspect of the Hawk"),
 				//new ActionLogMessage(false, "Checking for pet"),
 				new Decorator(
 					ret => !Me.GotAlivePet,

@@ -22,7 +22,6 @@ namespace Singular
     {
         [Class(WoWClass.Warlock)]
         [Spec(TalentSpec.DemonologyWarlock)]
-		[Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]

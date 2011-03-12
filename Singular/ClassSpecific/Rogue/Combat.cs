@@ -16,6 +16,8 @@ using System.Linq;
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
+using Styx.Helpers;
+using Styx.Logic.Pathing;
 
 namespace Singular
 {
@@ -23,8 +25,24 @@ namespace Singular
     {
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.CombatRogue)]
-        [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
+        [Context(WoWContext.All)]
+        public Composite CreateCombatRoguePull()
+        {
+            return new PrioritySelector(
+                CreateSpellBuffOnSelf("Stealth"),
+                new Decorator(
+                    ret => WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 2f).Distance(Me.Location) > 1,
+                    new Action(ret => Navigator.MoveTo(WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 2f)))),
+                CreateFaceUnit(),
+                CreateSpellCast("Ambush"),
+                CreateAutoAttack(true)
+                );
+        }
+
+        [Class(WoWClass.Rogue)]
+        [Spec(TalentSpec.CombatRogue)]
+        [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public Composite CreateCombatRogueCombat()
         {
@@ -60,6 +78,8 @@ namespace Singular
                 // CP generators, put em at start, since they're strictly conditional
                 // and will help burning energy on Adrenaline Rush
 
+                CreateSpellCast("Blade Flurry", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) > 1),
+
                 // Sinister Strike till 4 CP
                 CreateSpellCast("Sinister Strike", ret => Me.ComboPoints < 4),
                 // Revealing Strike if we're at 4 CP and target does not have it already
@@ -92,10 +112,10 @@ namespace Singular
             return new PrioritySelector(
                 CreateMoveToAndFace(),
                 CreateSpellCast("Kick", ret => Me.CurrentTarget.IsCasting),
-                CreateSpellCast("Cloak of Shadows", ret => Me.CurrentTarget.IsCasting && Me.CurrentTarget.CurrentTarget == Me),
+                CreateSpellCast("Cloak of Shadows", ret => Me.CurrentTarget.IsCasting),
                 // Recuperate to keep us at high health
                 CreateSpellCast("Recuperate", ret => Me.HealthPercent < 50 && Me.RawComboPoints > 3),
-                CreateSpellCast("Evasion", ret => Me.HealthPercent < 35 && Me.CurrentTarget.CurrentTarget == Me),
+                CreateSpellCast("Evasion", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 *6) > 1),
                 // Recuperate to not let us down
                 CreateSpellCast("Recuperate", ret => Me.HealthPercent < 20 && Me.RawComboPoints > 1),
                 // Cloak of Shadows as really last resort 

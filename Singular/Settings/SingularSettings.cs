@@ -99,6 +99,7 @@ namespace Singular.Settings
         [DisplayName("First Trinket Use At Percent")]
         [Description("The percent of health, or mana, to use this trinket at. Only taken into account when First Trinket Usage is 'LowHealth' or 'LowPower'")]
         public int FirstTrinketUseAtPercent { get; set; }
+
         [Setting]
         [DefaultValue(25)]
         [Category("Trinkets")]

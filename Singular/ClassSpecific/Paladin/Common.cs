@@ -59,7 +59,7 @@ namespace Singular
                             )),
                     // Solo Buffs
                     new Decorator(
-                        ret => !Me.IsInParty || !Me.IsInRaid,
+                        ret => !Me.IsInParty && !Me.IsInRaid,
                         new PrioritySelector(
                             CreateSpellBuffOnSelf(
                                 "Blessing of Might", ret =>

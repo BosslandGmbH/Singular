@@ -79,7 +79,7 @@ namespace Singular
                 // and will help burning energy on Adrenaline Rush
 
                 CreateSpellCast("Blade Flurry", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) > 1),
-
+                CreateSpellCast("Eviscerate", ret => !CurrentTargetIsElite && Me.CurrentTarget.HealthPercent < 40 && Me.ComboPoints >= 3),
                 // Sinister Strike till 4 CP
                 CreateSpellCast("Sinister Strike", ret => Me.ComboPoints < 4),
                 // Revealing Strike if we're at 4 CP and target does not have it already

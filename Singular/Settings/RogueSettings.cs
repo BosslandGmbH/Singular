@@ -26,5 +26,19 @@ namespace Singular.Settings
             : base(SingularSettings.SettingsPath + "_Rogue.xml")
         {
         }
+
+        [Setting]
+        [DefaultValue(PoisonType.Instant)]
+        [Category("Common")]
+        [DisplayName("Main Hand Poison")]
+        [Description("Main Hand Poison")]
+        public PoisonType MHPoison { get; set; }
+
+        [Setting]
+        [DefaultValue(PoisonType.Instant)]
+        [Category("Common")]
+        [DisplayName("Off Hand Poison")]
+        [Description("Off Hand Poison")]
+        public PoisonType OHPoison { get; set; }
     }
 }

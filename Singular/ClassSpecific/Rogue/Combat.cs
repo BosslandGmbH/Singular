@@ -30,12 +30,13 @@ namespace Singular
         public Composite CreateCombatRoguePull()
         {
             return new PrioritySelector(
+                CreateSpellBuffOnSelf("Sprint", ret => Me.IsMoving && Me.HasAura("Stealth")),
                 CreateSpellBuffOnSelf("Stealth"),
                 new Decorator(
                     ret => WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f).Distance(Me.Location) > 3f,
                     new Action(ret => Navigator.MoveTo(WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f)))),
                 CreateFaceUnit(),
-                CreateSpellCast("Ambush"),
+                CreateSpellCast("Ambush", ret => Me.IsStealthed),
                 CreateAutoAttack(true)
                 );
         }
@@ -112,6 +113,7 @@ namespace Singular
             return new PrioritySelector(
                 CreateMoveToAndFace(),
                 CreateSpellCast("Kick", ret => Me.CurrentTarget.IsCasting),
+                CreateSpellCast("Gouge", ret => Me.CurrentTarget.IsCasting),
                 CreateSpellCast("Cloak of Shadows", ret => Me.CurrentTarget.IsCasting),
                 // Recuperate to keep us at high health
                 CreateSpellCast("Recuperate", ret => Me.HealthPercent < 50 && Me.RawComboPoints > 3),

@@ -10,11 +10,11 @@ namespace Singular
 	{
 		#region Boss Entries
 
-		private uint[] BossIds
+		private HashSet<uint> BossIds
 		{
 			get
 			{
-				return new uint[] {
+				return new HashSet<uint>() {
 					//Ragefire Chasm
 					11517, //Oggleflint
 					11520, //Taragaman the Hungerer

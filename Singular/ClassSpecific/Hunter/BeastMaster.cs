@@ -33,6 +33,13 @@ namespace Singular
                     (Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me)),
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),
+                new Decorator(
+                    ret => Me.CurrentTarget.DistanceSqr < 5 * 5,
+                    new PrioritySelector(
+                        CreateSpellBuffOnSelf("Disengage"),
+                        CreateSpellCast("Raptor Strike")
+                
+                        )),
                 // Heal pet when below 70
                 CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
                 CreateSpellCast("Concussive Shot",
@@ -53,7 +60,6 @@ namespace Singular
                 CreateSpellCast("Arcane Shot"),
                 // For when we have no Focus
                 CreateSpellCast("Steady Shot"),
-                CreateSpellCast("Raptor Strike", ret => Me.CurrentTarget.DistanceSqr < 5 * 5),
                 CreateAutoAttack(true)
                 );
         }

@@ -89,7 +89,10 @@
     <Compile Include="ClassSpecific\Hunter\BeastMaster.cs" />
     <Compile Include="ClassSpecific\Hunter\Common.cs" />
     <Compile Include="ClassSpecific\Hunter\Lowbie.cs" />
+    <Compile Include="ClassSpecific\Mage\Common.cs" />
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
+    <Compile Include="ClassSpecific\Mage\Frost.cs" />
+    <Compile Include="ClassSpecific\Mage\Lowbie.cs" />
     <Compile Include="ClassSpecific\Paladin\Common.cs" />
     <Compile Include="ClassSpecific\Paladin\Lowbie.cs" />
     <Compile Include="ClassSpecific\Paladin\Protection.cs" />

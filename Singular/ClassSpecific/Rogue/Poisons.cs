@@ -42,15 +42,15 @@ namespace Singular
                 switch (SingularSettings.Instance.Rogue.MHPoison)
                 {
                     case PoisonType.Instant:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => InstantPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => InstantPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Crippling:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => CripplingPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => CripplingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.MindNumbing:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => MindNumbingPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Deadly:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => DeadlyPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => DeadlyPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Wound:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => WoundPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => WoundPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     default:
                         return null;
                 }
@@ -64,29 +64,29 @@ namespace Singular
                 switch (SingularSettings.Instance.Rogue.OHPoison)
                 {
                     case PoisonType.Instant:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => InstantPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => InstantPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Crippling:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => CripplingPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => CripplingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.MindNumbing:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => MindNumbingPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Deadly:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => DeadlyPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => DeadlyPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Wound:
-                        return StyxWoW.Me.CarriedItems.FirstOrDefault(i => WoundPoisons.Contains(i.Entry));
+                        return StyxWoW.Me.CarriedItems.Where(i => WoundPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     default:
                         return null;
                 }
             }
         }
 
-        private static HashSet<uint> InstantPoisons = new HashSet<uint>() { 6947, 6949, 6950, 8926, 8927, 8928, 21927, 43230, 43231 };
+        private static HashSet<uint> InstantPoisons = new HashSet<uint>() { 6947, 43231 };
 
         private static HashSet<uint> CripplingPoisons = new HashSet<uint>() { 3775 };
 
         private static HashSet<uint> MindNumbingPoisons = new HashSet<uint>() { 5237 };
 
-        private static HashSet<uint> DeadlyPoisons = new HashSet<uint>() { 2892, 2893, 8984, 8985, 20844, 22053, 22054, 43232, 43233 };
+        private static HashSet<uint> DeadlyPoisons = new HashSet<uint>() { 2892, 43233 };
 
-        private static HashSet<uint> WoundPoisons = new HashSet<uint>() { 10918, 10920, 10921, 10922, 22055, 43234, 43235 };
+        private static HashSet<uint> WoundPoisons = new HashSet<uint>() { 10918, 43235 };
     }
 }

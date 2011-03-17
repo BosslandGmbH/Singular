@@ -76,7 +76,7 @@ namespace Singular
                 */
 
                 // Always keep Slice and Dice up
-                CreateSpellBuff("Slice and Dice", ret => Me.RawComboPoints > 0),
+                CreateSpellBuffOnSelf("Slice and Dice", ret => Me.RawComboPoints > 0),
                 // CP generators, put em at start, since they're strictly conditional
                 // and will help burning energy on Adrenaline Rush
 

@@ -29,6 +29,21 @@ namespace Singular
                 );
         }
 
+        [Class(WoWClass.Rogue)]
+        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.AssasinationRogue)]
+        [Spec(TalentSpec.SubtletyRogue)]
+        [Spec(TalentSpec.Lowbie)]
+        [Behavior(BehaviorType.Rest)]
+        [Context(WoWContext.All)]
+        public Composite CreateRogueRest()
+        {
+            return new PrioritySelector(
+                CreateSpellBuffOnSelf("Stealth", ret => Me.HasAura("Food")),
+                CreateDefaultRestComposite(60,0)
+                );
+        }
+
         protected Composite CreateApplyPoisons()
         {
             return new PrioritySelector(

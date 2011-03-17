@@ -36,6 +36,7 @@ namespace Singular
                     ret => WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f).Distance(Me.Location) > 3f,
                     new Action(ret => Navigator.MoveTo(WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f)))),
                 CreateFaceUnit(),
+                CreateSpellCast("Cheap Shot"),
                 CreateSpellCast("Sinister Strike"),
                 CreateAutoAttack(true)
                 );

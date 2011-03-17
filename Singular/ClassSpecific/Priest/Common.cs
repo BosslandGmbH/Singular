@@ -27,6 +27,7 @@ namespace Singular
         [Spec(TalentSpec.DisciplinePriest)]
         [Spec(TalentSpec.HolyPriest)]
         [Spec(TalentSpec.ShadowPriest)]
+        [Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public Composite CreatePriestCombatBuffs()

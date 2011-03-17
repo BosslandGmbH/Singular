@@ -69,7 +69,7 @@ namespace Singular
                 new PrioritySelector(
 					CreateEnsureTarget(),
 					CreateAutoAttack(true),
-					CreateMoveToAndFace(ret => Me.CurrentTarget),
+					CreateFaceUnit(ret => Me.CurrentTarget),
                     CreateSpellCast("Avenger's Shield"),
                     CreateSpellCast("Judgement"),
 					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)

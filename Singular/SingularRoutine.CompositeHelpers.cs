@@ -31,6 +31,7 @@ using System;
 
 using Action = TreeSharp.Action;
 using System.Threading;
+using Styx.WoWInternals;
 
 namespace Singular
 {
@@ -134,7 +135,11 @@ namespace Singular
 											?
 												Targeting.Instance.FirstUnit
 											:
-												null,
+                                                Me.Combat && ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any(p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70)
+                                                ?
+                                                    ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70).OrderBy(u => u.DistanceSqr).FirstOrDefault()
+                                                :
+                                                    null,
 							// Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
 							new Decorator(
 								ret => ret != null,

@@ -36,7 +36,7 @@ namespace Singular
                     ret => WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f).Distance(Me.Location) > 3f,
                     new Action(ret => Navigator.MoveTo(WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f)))),
                 CreateFaceUnit(),
-                CreateSpellCast("Ambush", ret => Me.IsStealthed),
+                CreateSpellCast("Sinister Strike"),
                 CreateAutoAttack(true)
                 );
         }
@@ -75,7 +75,7 @@ namespace Singular
                 */
 
                 // Always keep Slice and Dice up
-                CreateSpellCast("Slice and Dice", ret => Me.RawComboPoints > 0 && !Me.HasAura("Slice and Dice")),
+                CreateSpellBuff("Slice and Dice", ret => Me.RawComboPoints > 0),
                 // CP generators, put em at start, since they're strictly conditional
                 // and will help burning energy on Adrenaline Rush
 
@@ -112,14 +112,17 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateMoveToAndFace(),
-                CreateSpellCast("Kick", ret => Me.CurrentTarget.IsCasting),
-                CreateSpellCast("Gouge", ret => Me.CurrentTarget.IsCasting),
-                CreateSpellCast("Cloak of Shadows", ret => Me.CurrentTarget.IsCasting),
+                new Decorator(
+                    ret => Me.CurrentTarget.IsCasting,
+                    new PrioritySelector(
+                        CreateSpellCast("Kick"),
+                        CreateSpellCast("Gouge"),
+                        CreateSpellCast("Cloak of Shadows"))),
                 // Recuperate to keep us at high health
-                CreateSpellCast("Recuperate", ret => Me.HealthPercent < 50 && Me.RawComboPoints > 3),
-                CreateSpellCast("Evasion", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 *6) > 1),
+                //CreateSpellCast("Recuperate", ret => Me.HealthPercent < 50 && Me.RawComboPoints > 3),
+                CreateSpellCast("Evasion", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 *6) > 1 || Me.HealthPercent < 50),
                 // Recuperate to not let us down
-                CreateSpellCast("Recuperate", ret => Me.HealthPercent < 20 && Me.RawComboPoints > 1),
+                //CreateSpellCast("Recuperate", ret => Me.HealthPercent < 20 && Me.RawComboPoints > 1),
                 // Cloak of Shadows as really last resort 
                 CreateSpellCast("Cloak of Shadows", ret => Me.HealthPercent < 10)
                 );

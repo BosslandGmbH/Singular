@@ -41,7 +41,7 @@ namespace Singular
                 
                         )),
                 // Heal pet when below 70
-                CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
+                CreateSpellCast("Mend Pet", ret => (Me.Pet.HealthPercent < 70 || (Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !Me.Pet.HasAura("Mend Pet")),
                 CreateSpellCast("Concussive Shot",
                     ret => Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me),
                 //Rapid fire on elite 

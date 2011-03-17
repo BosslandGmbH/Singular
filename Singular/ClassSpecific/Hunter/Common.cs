@@ -29,7 +29,7 @@ namespace Singular
 
 				CreateWaitForCast(),
 				CreateSpellBuffOnSelf("Aspect of the Hawk"),
-				//new ActionLogMessage(false, "Checking for pet"),
+                //new ActionLogMessage(false, "Checking for pet"),
 				new Decorator(
 					ret => !Me.GotAlivePet,
                     new Sequence(
@@ -42,7 +42,8 @@ namespace Singular
                                 new Action(ret => StyxWoW.SleepForLagDuration()),
                                 new WaitContinue(11,
                                     ret => !Me.IsCasting,
-                                    new ActionAlwaysSucceed())))))
+                                    new ActionAlwaysSucceed()))))),
+                CreateSpellCast("Mend Pet", ret => (Me.Pet.HealthPercent < 70 || (Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !Me.Pet.HasAura("Mend Pet"))
 					);
         }
         protected Composite CreateHunterBackPedal()

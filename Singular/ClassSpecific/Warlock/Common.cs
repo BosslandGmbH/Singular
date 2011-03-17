@@ -55,7 +55,8 @@ namespace Singular
         public Composite CreateWarlockRest()
         {
             return new PrioritySelector(
-                CreateSpellBuffOnSelf("Life Tap", ret => Me.ManaPercent < 90 && Me.HealthPercent > 20),
+                CreateWaitForCast(),
+                CreateSpellBuffOnSelf("Life Tap", ret => Me.ManaPercent < 80 && Me.HealthPercent > 20),
                 CreateSpellBuffOnSelf("Soul Harvest", ret => Me.CurrentSoulShards < 2 || Me.HealthPercent <= 55),
                 CreateDefaultRestComposite(40,0)
                 );

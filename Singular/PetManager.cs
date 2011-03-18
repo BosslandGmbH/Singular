@@ -104,14 +104,14 @@ namespace Singular
         public static void CastPetAction(string action)
         {
             Logger.Write(string.Format("[Pet] Casting {0}", action));
-            Lua.DoString("CastPetAction({0})", _petSpells.First(p => p.ToString() == action).ActionBarIndex);
+            Lua.DoString("CastPetAction({0})", _petSpells.First(p => p.ToString() == action).ActionBarIndex+1);
         }
 
         public static void CastPetAction(string action, WoWUnit on)
         {
             Logger.Write(string.Format("[Pet] Casting {0} on {1}", action, on.SafeName()));
             StyxWoW.Me.SetFocus(on);
-            Lua.DoString("CastPetAction({0}, 'focus')", _petSpells.First(p => p.ToString() == action).ActionBarIndex);
+            Lua.DoString("CastPetAction({0}, 'focus')", _petSpells.First(p => p.ToString() == action).ActionBarIndex+1);
             StyxWoW.Me.SetFocus(0);
         }
 

@@ -74,26 +74,15 @@ namespace Singular
                         )));
         }
 
-        protected Composite CreateCastPetAction(string action, bool parentIsSelector)
+        protected Composite CreateCastPetAction(string action)
         {
-            return CreateCastPetActionOn(action, parentIsSelector, ret => Me.CurrentTarget);
+            return CreateCastPetActionOn(action, ret => Me.CurrentTarget);
         }
 
-        protected Composite CreateCastPetActionOn(string action, bool parentIsSelector, UnitSelectionDelegate onUnit)
+        protected Composite CreateCastPetActionOn(string action, UnitSelectionDelegate onUnit)
         {
-            return new Decorator(
-                ret => PetManager.CanCastPetAction(action), new Action(
-                    delegate(object context)
-                        {
-                            PetManager.CastPetAction(action, onUnit(context));
-
-                            // Purposely fail here, we want to 'skip' down the tree.
-                            if (parentIsSelector)
-                            {
-                                return RunStatus.Failure;
-                            }
-                            return RunStatus.Success;
-                        }));
+            return new Decorator(ret => PetManager.CanCastPetAction(action), 
+                new Action(ret => PetManager.CastPetAction(action, onUnit(ret))));
         }
 
 		private static WaitTimer targetingTimer = new WaitTimer(TimeSpan.FromSeconds(2));

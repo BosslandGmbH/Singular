@@ -13,6 +13,8 @@
 
 using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
+using System.Linq.Expressions;
+using System.Linq;
 
 using TreeSharp;
 using Styx;
@@ -39,7 +41,11 @@ namespace Singular
                 CreateSpellCast("Life Tap", ret => Me.ManaPercent < 50 && Me.HealthPercent > 70),
                 new Decorator(
                     ret => Me.CurrentTarget.Fleeing,
-                    CreateCastPetAction("Axe Toss", true)),
+                    CreateCastPetAction("Axe Toss")),
+                new Decorator(
+                    ret => NearbyUnfriendlyUnits.Count > 1,
+                    CreateCastPetAction("Felstorm")),
+
                 new Decorator(
                     ret => CurrentTargetIsElite,
                     new PrioritySelector(
@@ -49,8 +55,17 @@ namespace Singular
                         CreateSpellCast("Shadowflame", ret => Me.CurrentTarget.Distance < 5)
                         )),
                 CreateSpellBuff("Immolate", true),
-                CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsElite),
+                CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss),
                 CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom")),
+
+                // Use the infernal if we have a few mobs around us, and it's off CD. Otherwise, just use the Doomguard.
+                // Its a 10min CD, with a 1-1.2min uptime on the minion. Hey, any extra DPS is fine in my book!
+                // Make sure these 2 summons are AFTER the banes above.
+                new Decorator(
+                    ret => NearbyUnfriendlyUnits.Count(u => u.Distance <= 10) > 2,
+                    CreateSpellCastOnLocation("Summon Infernal", ret => Me.CurrentTarget.Location)
+                    ),
+                CreateSpellCast("Summon Doomguard"),
                 CreateSpellBuff("Corruption"),
                 CreateSpellCast("Drain Life", ret => Me.HealthPercent < 70),
                 CreateSpellCast("Health Funnel", ret => Me.GotAlivePet && Me.Pet.HealthPercent < 70),

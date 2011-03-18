@@ -75,13 +75,13 @@ namespace Singular
                 ),
                 */
 
-                // Always keep Slice and Dice up
-                CreateSpellBuffOnSelf("Slice and Dice", ret => Me.RawComboPoints > 0),
                 // CP generators, put em at start, since they're strictly conditional
                 // and will help burning energy on Adrenaline Rush
 
                 CreateSpellCast("Blade Flurry", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) > 1),
-                CreateSpellCast("Eviscerate", ret => !CurrentTargetIsElite && Me.CurrentTarget.HealthPercent < 40 && Me.ComboPoints >= 3),
+                CreateSpellCast("Eviscerate", ret => !CurrentTargetIsElite && Me.CurrentTarget.HealthPercent <= 40 && Me.ComboPoints >= 3),
+                // Always keep Slice and Dice up
+                CreateSpellBuffOnSelf("Slice and Dice", ret => Me.RawComboPoints > 0),
                 // Sinister Strike till 4 CP
                 CreateSpellCast("Sinister Strike", ret => Me.ComboPoints < 4),
                 // Revealing Strike if we're at 4 CP and target does not have it already
@@ -121,7 +121,7 @@ namespace Singular
                         CreateSpellCast("Cloak of Shadows"))),
                 // Recuperate to keep us at high health
                 //CreateSpellCast("Recuperate", ret => Me.HealthPercent < 50 && Me.RawComboPoints > 3),
-                CreateSpellCast("Evasion", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 *6) > 1 || Me.HealthPercent < 50),
+                CreateSpellCast("Evasion", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) > 1 || Me.HealthPercent < 50),
                 // Recuperate to not let us down
                 //CreateSpellCast("Recuperate", ret => Me.HealthPercent < 20 && Me.RawComboPoints > 1),
                 // Cloak of Shadows as really last resort 

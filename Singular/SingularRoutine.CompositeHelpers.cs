@@ -47,11 +47,6 @@ namespace Singular
 
         #endregion
 
-        /// <summary>
-        /// Dirty hack to prevent double casting spells that have cast time and leaves an aura on target. It is set to true when CreateSpellBuff used.
-        /// </summary>
-        private bool CastedSpellWithAura = false;
-
         /// <summary>Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
         /// 		 going down to lower branches in the tree, while casting.)</summary>
         /// <remarks>Created 3/4/2011.</remarks>
@@ -76,14 +71,7 @@ namespace Singular
                             ret => faceDuring && Me.CurrentTarget != null && !Me.IsSafelyFacing(Me.CurrentTarget, 70),
                             CreateFaceUnit()),
                         new ActionAlwaysSucceed()
-                        )),
-                new Decorator(
-                    ret => CastedSpellWithAura,
-                    new Action(ret => 
-                        {
-                            StyxWoW.SleepForLagDuration();
-                            CastedSpellWithAura = false;
-                        })));
+                        )));
         }
 
         protected Composite CreateCastPetAction(PetAction action, bool parentIsSelector)
@@ -313,21 +301,42 @@ namespace Singular
         public Composite CreateSpellBuff(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector)
         {
             // BUGFIX: HB currently doesn't check ActiveAuras in the spell manager. So this'll break on new spell procs
-            return 
+            return CreateSpellBuff(spellName, extra, unitSelector, false);
+        }
+
+        public Composite CreateSpellBuff(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector, bool waitForDebuff)
+        {
+            // BUGFIX: HB currently doesn't check ActiveAuras in the spell manager. So this'll break on new spell procs
+            return
                 new Sequence(
                     CreateSpellCast(
                 spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 0, unitSelector(ret)), unitSelector, false),
-                    new Action(ret => CastedSpellWithAura = true));
+                    new DecoratorContinue(
+                        ret => waitForDebuff,
+                        new Sequence(
+                            new Action(ret => StyxWoW.SleepForLagDuration()),
+                            new Action(ret => Thread.Sleep(100)),
+                            new WaitContinue(3, ret => !Me.IsCasting, new Action(ret => StyxWoW.SleepForLagDuration())))));
         }
 
         public Composite CreateSpellBuff(string spellName)
         {
-            return CreateSpellBuff(spellName, ret => true);
+            return CreateSpellBuff(spellName, false);
+        }
+
+        public Composite CreateSpellBuff(string spellName, bool waitForDebuff)
+        {
+            return CreateSpellBuff(spellName, ret => true, waitForDebuff);
         }
 
         public Composite CreateSpellBuff(string spellName, SimpleBoolReturnDelegate extra)
         {
-            return CreateSpellBuff(spellName, extra, ret => Me.CurrentTarget);
+            return CreateSpellBuff(spellName, extra, false);
+        }
+
+        public Composite CreateSpellBuff(string spellName, SimpleBoolReturnDelegate extra, bool waitForDebuff)
+        {
+            return CreateSpellBuff(spellName, extra, ret => Me.CurrentTarget, waitForDebuff);
         }
 
         public Composite CreateSpellBuffOnSelf(string spellName)
@@ -493,6 +502,54 @@ namespace Singular
                             Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Gun ||
                             Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Wand), false)
 
+                );
+        }
+
+        /// <summary>
+        /// Creates a composite to use potions and healthstone.
+        /// </summary>
+        /// <param name="healthPercent">Healthpercent to use health potions and healthstone</param>
+        /// <param name="manaPercent">Manapercent to use mana potions</param>
+        /// <returns></returns>
+        public Composite CreateUsePotionAndHealthstone(double healthPercent, double manaPercent)
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => Me.HealthPercent < healthPercent,
+                    new PrioritySelector(
+                        ctx => Me.CarriedItems.
+                                    Where(i => 
+                                        i.Cooldown == 0 && 
+                                        i.ItemInfo.RequiredLevel <= Me.Level &&
+                                        i.ItemSpells.Count > 0 &&
+                                        i.ItemSpells.Any(s => 
+                                                s.ActualSpell.Name == "Healthstone" ||
+                                                s.ActualSpell.Name == "Healing Potion")).
+                                    OrderBy(i => i.ItemInfo.Level).FirstOrDefault(),
+                        new Decorator(
+                            ret => ret != null,
+                            new Sequence(
+                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                new Action(ret => StyxWoW.SleepForLagDuration())))
+                        )),
+                new Decorator(
+                    ret => Me.ManaPercent < manaPercent,
+                    new PrioritySelector(
+                        ctx => Me.CarriedItems.
+                                    Where(i =>
+                                        i.Cooldown == 0 &&
+                                        i.ItemInfo.RequiredLevel <= Me.Level &&
+                                        i.ItemSpells.Count > 0 &&
+                                        i.ItemSpells.Any(s =>
+                                                s.ActualSpell.Name == "Restore Mana")).
+                                    OrderBy(i => i.ItemInfo.Level).FirstOrDefault(),
+                        new Decorator(
+                            ret => ret != null,
+                            new Sequence(
+                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                new Action(ret => StyxWoW.SleepForLagDuration())))))
                 );
         }
     }

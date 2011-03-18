@@ -30,7 +30,6 @@ namespace Singular
         public Composite CreateDemonologyCombat()
         {
             WantedPet = "Felguard";
-
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
@@ -49,10 +48,7 @@ namespace Singular
                         CreateSpellCast("Immolation Aura", ret => Me.CurrentTarget.Distance < 5f),
                         CreateSpellCast("Shadowflame", ret => Me.CurrentTarget.Distance < 5)
                         )),
-                new Sequence(
-                    CreateSpellBuff("Immolate"),
-                    new Action(ret => StyxWoW.SleepForLagDuration()),
-                    new WaitContinue(3, ret => !Me.IsCasting, new Action(ret => Thread.Sleep(500)))),
+                CreateSpellBuff("Immolate", true),
                 CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsElite),
                 CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom")),
                 CreateSpellBuff("Corruption"),

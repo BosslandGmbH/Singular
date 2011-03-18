@@ -9,6 +9,7 @@ using Styx.WoWInternals;
 using CommonBehaviors.Actions;
 using Singular.Composites;
 using System.Threading;
+using System.Linq;
 
 namespace Singular
 {
@@ -25,7 +26,22 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateApplyPoisons(),
-                CreateSpellBuffOnSelf("Recuperate", ret => Me.RawComboPoints > 0)
+                CreateSpellBuffOnSelf("Recuperate", ret => Me.RawComboPoints > 0 && Me.HealthPercent < 70)
+                );
+        }
+
+        [Class(WoWClass.Rogue)]
+        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.AssasinationRogue)]
+        [Spec(TalentSpec.SubtletyRogue)]
+        [Spec(TalentSpec.Lowbie)]
+        [Behavior(BehaviorType.CombatBuffs)]
+        [Context(WoWContext.All)]
+        public Composite CreateRogueCombatBuffs()
+        {
+            return new PrioritySelector(
+                CreateUsePotionAndHealthstone(30, 0),
+                CreateSpellBuffOnSelf("Vanish", ret => Me.HealthPercent < 10 && NearbyUnfriendlyUnits.Count(u => u.Aggro) > 0)
                 );
         }
 

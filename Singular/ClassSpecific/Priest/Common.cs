@@ -30,7 +30,7 @@ namespace Singular
         [Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
-        public Composite CreatePriestCombatBuffs()
+        public Composite CreatePriestPreCombatBuffs()
         {
             return new PrioritySelector(
                 CreateSpellBuffOnSelf("Power Word: Fortitude", ret => CanCastFortitudeOn(Me)),
@@ -42,6 +42,21 @@ namespace Singular
 					ret => Me),
                 CreateSpellBuffOnSelf("Shadowform"),
                 CreateSpellBuffOnSelf("Vampiric Embrace")
+                );
+        }
+
+        [Class(WoWClass.Priest)]
+        [Spec(TalentSpec.DisciplineHealingPriest)]
+        [Spec(TalentSpec.DisciplinePriest)]
+        [Spec(TalentSpec.HolyPriest)]
+        [Spec(TalentSpec.ShadowPriest)]
+        [Spec(TalentSpec.Lowbie)]
+        [Behavior(BehaviorType.CombatBuffs)]
+        [Context(WoWContext.All)]
+        public Composite CreatePriestCombatBuffs()
+        {
+            return new PrioritySelector(
+                CreateUsePotionAndHealthstone(10,10)
                 );
         }
 

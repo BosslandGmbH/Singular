@@ -29,6 +29,7 @@ namespace Singular
 
 				CreateWaitForCast(),
 				CreateSpellBuffOnSelf("Aspect of the Hawk"),
+                CreateSpellBuffOnSelf("Track Hidden"),
                 //new ActionLogMessage(false, "Checking for pet"),
 				new Decorator(
 					ret => !Me.GotAlivePet,

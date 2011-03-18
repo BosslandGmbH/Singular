@@ -26,18 +26,18 @@ namespace Singular
         [Context(WoWContext.All)]
         public Composite CreateShadowPriestCombat()
         {
-            AddSpellSucceedWait("Vampiric Touch");
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 CreateMoveToAndFace(30, ret => Me.CurrentTarget),
                 CreateWaitForCast(true),
+                CreateDiscHealOnlyBehavior(true),
                 CreateSpellBuff("Shadow Word: Pain"),
                 CreateSpellBuff("Devouring Plague"),
-                CreateSpellBuff("Vampiric Touch", ret => !Me.IsMoving),
+                CreateSpellBuff("Vampiric Touch", ret => !Me.IsMoving, true),
                 CreateSpellBuff("Archangel", ret => HasAuraStacks("Evangelism", 5) && Me.ManaPercent <= 75),
                 CreateSpellCast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent < 25),
                 CreateSpellCast("Shadow Fiend", ret => Me.ManaPercent < 50),
-                CreateSpellCast("Mind Blast", ret => Me.HasAura("Empowered Shadows")),
+                CreateSpellCast("Mind Blast", ret => Me.HasAura("Shadow Orb") && !Me.HasAura("Empowered Shadow")),
                 CreateSpellCast("Mind Flay", ret => !Me.IsMoving)
                 );
         }

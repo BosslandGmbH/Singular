@@ -34,10 +34,6 @@ namespace Singular
         public Composite CreateWarlockPreCombatBuffs()
         {
             return new PrioritySelector(
-                new Decorator(
-                    ctx => Me.CastingSpell != null && Me.CastingSpell.Name == "Summon " + WantedPet && Me.GotAlivePet,
-                    new Action(ctx => SpellManager.StopCasting())),
-
                 CreateWaitForCast(),
                 CreateSpellBuffOnSelf("Create Healthstone", ret => NeedToCreateHealthStone),
                 CreateSpellBuffOnSelf("Demon Armor", ret => !Me.HasAura("Demon Armor") && !SpellManager.HasSpell("Fel Armor")),
@@ -74,6 +70,9 @@ namespace Singular
         public Composite CreateWarlockRest()
         {
             return new PrioritySelector(
+                new Decorator(
+                    ctx => Me.CastingSpell != null && Me.CastingSpell.Name == "Summon " + WantedPet && Me.GotAlivePet,
+                    new Action(ctx => SpellManager.StopCasting())),
                 CreateWaitForCast(),
                 CreateSpellBuffOnSelf("Life Tap", ret => Me.ManaPercent < 80 && Me.HealthPercent > 40),
                 CreateSpellBuffOnSelf("Soul Harvest", ret => Me.CurrentSoulShards < 2 || Me.HealthPercent <= 55),

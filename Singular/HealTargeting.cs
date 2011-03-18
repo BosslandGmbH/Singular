@@ -15,6 +15,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
+using Singular.Settings;
+
 using Styx;
 using Styx.Helpers;
 using Styx.Logic;
@@ -107,7 +109,7 @@ namespace Singular
                     continue;
                 }
 
-                if (p.HealthPercent >= Settings.SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
+                if (p.HealthPercent >= SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
                 {
                     units.RemoveAt(i);
                     continue;
@@ -115,9 +117,10 @@ namespace Singular
             }
 
             // A little bit of a hack, but this ensures 'Me' is in the list.
-            if (!units.Any(o => o.IsMe) && StyxWoW.Me.HealthPercent < Settings.SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
+            if (!units.Any(o => o.IsMe) && StyxWoW.Me.HealthPercent < SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
+            {
                 units.Add(StyxWoW.Me);
-
+            }
         }
 
         protected override void DefaultTargetWeight(List<TargetPriority> units)

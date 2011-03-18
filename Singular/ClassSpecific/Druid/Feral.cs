@@ -47,7 +47,7 @@ namespace Singular
                 CreateSpellCast("Survival Instincts", ret => Me.HealthPercent <= 45),
                 CreateSpellBuffOnSelf("Prowl"),
                 CreateFaceUnit(),
-				CreateAutoAttack(false),
+                CreateAutoAttack(false),
                 CreateSpellCast("Feral Charge (Cat)", ret => Me.CurrentTarget.Distance >= 8 && Me.CurrentTarget.Distance <= 25),
                 CreateSpellCast("Skull Bash (Cat)", ret => Me.CurrentTarget.IsCasting),
                 // Kudos to regecksqt for the dash/stampeding roar logic. Slightly changed for reading purposes.

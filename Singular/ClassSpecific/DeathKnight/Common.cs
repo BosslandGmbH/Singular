@@ -11,12 +11,7 @@
 
 #endregion
 
-using System.Linq;
-
-using Singular.Composites;
-
 using Styx.Combat.CombatRoutine;
-using Styx.Logic.Combat;
 
 using TreeSharp;
 
@@ -29,20 +24,20 @@ namespace Singular
         // All DKs should be throwing death grip when not in intances. It just speeds things up, and makes a mess for PVP :)
         [Class(WoWClass.DeathKnight)]
         [Behavior(BehaviorType.Pull)]
-		[Spec(TalentSpec.BloodDeathKnight)]
-		[Spec(TalentSpec.FrostDeathKnight)]
+        [Spec(TalentSpec.BloodDeathKnight)]
+        [Spec(TalentSpec.FrostDeathKnight)]
         [Spec(TalentSpec.UnholyDeathKnight)]
-		[Spec(TalentSpec.Lowbie)]
-        [Context(WoWContext.Battlegrounds|WoWContext.Normal)]
+        [Spec(TalentSpec.Lowbie)]
+        [Context(WoWContext.Battlegrounds | WoWContext.Normal)]
         public Composite CreateDeathKnightPvpNormalPull()
         {
             return
                 new PrioritySelector(
-					CreateFaceUnit(),
+                    CreateFaceUnit(),
                     CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15, false),
                     CreateSpellCast("Howling Blast", false),
                     CreateSpellCast("Icy Touch", false),
-					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
+                    CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
                     );
         }
 
@@ -86,33 +81,33 @@ namespace Singular
 
         #region PreCombatBuffs
 
-		[Class(WoWClass.DeathKnight)]
-		[Behavior(BehaviorType.PreCombatBuffs)]
-		[Spec(TalentSpec.BloodDeathKnight)]
-		[Spec(TalentSpec.FrostDeathKnight)]
-		[Spec(TalentSpec.UnholyDeathKnight)]
-		[Spec(TalentSpec.Lowbie)]
-		[Context(WoWContext.All)]
-		public Composite CreateDeathKnightPreCombatBuffs()
-		{
+        [Class(WoWClass.DeathKnight)]
+        [Behavior(BehaviorType.PreCombatBuffs)]
+        [Spec(TalentSpec.BloodDeathKnight)]
+        [Spec(TalentSpec.FrostDeathKnight)]
+        [Spec(TalentSpec.UnholyDeathKnight)]
+        [Spec(TalentSpec.Lowbie)]
+        [Context(WoWContext.All)]
+        public Composite CreateDeathKnightPreCombatBuffs()
+        {
             // Note: This is one of few places where this is slightly more valid than making multiple functions.
             // Since this type of stuff is shared, we are safe to do this. Jus leave as-is.
-			return
-				new PrioritySelector(
-					CreateSpellBuffOnSelf(
-						"Frost Presence",
-						ret => TalentManager.CurrentSpec == TalentSpec.Lowbie),
-					CreateSpellBuffOnSelf(
-					    "Blood Presence",
-					    ret => TalentManager.CurrentSpec == TalentSpec.BloodDeathKnight),
-					CreateSpellBuffOnSelf(
-					    "Unholy Presence",
-					    ret => TalentManager.CurrentSpec == TalentSpec.UnholyDeathKnight || TalentManager.CurrentSpec == TalentSpec.FrostDeathKnight),
-					CreateSpellBuffOnSelf(
-					    "Horn of Winter",
-					    ret => !Me.HasAura("Horn of Winter") && !Me.HasAura("Battle Shout") && !Me.HasAura("Roar of Courage"))
-					);
-		}
+            return
+                new PrioritySelector(
+                    CreateSpellBuffOnSelf(
+                        "Frost Presence",
+                        ret => TalentManager.CurrentSpec == TalentSpec.Lowbie),
+                    CreateSpellBuffOnSelf(
+                        "Blood Presence",
+                        ret => TalentManager.CurrentSpec == TalentSpec.BloodDeathKnight),
+                    CreateSpellBuffOnSelf(
+                        "Unholy Presence",
+                        ret => TalentManager.CurrentSpec == TalentSpec.UnholyDeathKnight || TalentManager.CurrentSpec == TalentSpec.FrostDeathKnight),
+                    CreateSpellBuffOnSelf(
+                        "Horn of Winter",
+                        ret => !Me.HasAura("Horn of Winter") && !Me.HasAura("Battle Shout") && !Me.HasAura("Roar of Courage"))
+                    );
+        }
 
         #endregion
     }

@@ -39,7 +39,7 @@ namespace Singular
                 CreateSpellCast(
                     "Power Word: Fortitude",
                     ret => NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastFortitudeOn(u)),
-					ret => Me),
+                    ret => Me),
                 CreateSpellBuffOnSelf("Shadowform"),
                 CreateSpellBuffOnSelf("Vampiric Embrace")
                 );
@@ -56,7 +56,7 @@ namespace Singular
         public Composite CreatePriestCombatBuffs()
         {
             return new PrioritySelector(
-                CreateUsePotionAndHealthstone(10,10)
+                CreateUsePotionAndHealthstone(10, 10)
                 );
         }
 

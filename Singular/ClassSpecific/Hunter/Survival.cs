@@ -14,8 +14,6 @@
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
-using Styx.Logic.Pathing;
-using Styx.Helpers;
 
 namespace Singular
 {
@@ -24,7 +22,7 @@ namespace Singular
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.SurvivalHunter)]
         [Behavior(BehaviorType.Combat)]
-		[Behavior(BehaviorType.Pull)]
+        [Behavior(BehaviorType.Pull)]
         public Composite CreateSurvivalCombat()
         {
             WantedPet = "1";
@@ -33,14 +31,15 @@ namespace Singular
                     ret => !Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(WantedPet))),
                 CreateEnsureTarget(),
-				CreateHunterBackPedal(),
+                CreateHunterBackPedal(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),
                 // Heal pet when below 70
-                CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")), 
-                CreateSpellCast("Concussive Shot",
+                CreateSpellCast("Mend Pet", ret => Me.Pet.HealthPercent < 70 && !Me.Pet.HasAura("Mend Pet")),
+                CreateSpellCast(
+                    "Concussive Shot",
                     ret => Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me),
                 //Rapid fire on elite 
                 CreateSpellBuff("Rapid Fire", ret => CurrentTargetIsElite),
@@ -61,7 +60,7 @@ namespace Singular
                 CreateSpellCast("Black Arrow"),
                 // Main DPS filler
                 CreateSpellCast("Steady Shot"),
-				CreateSpellCast("Arcane Shot"),
+                CreateSpellCast("Arcane Shot"),
                 CreateAutoAttack(true)
                 );
         }

@@ -1,15 +1,29 @@
-﻿
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System.Linq;
+using System.Threading;
+
+using CommonBehaviors.Actions;
+
+using Singular.Composites;
+
+using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic.Pathing;
+using Styx.WoWInternals;
 
 using TreeSharp;
-using Styx;
-using Styx.Logic.Pathing;
-
-using Styx.WoWInternals;
-using CommonBehaviors.Actions;
-using Singular.Composites;
-using System.Threading;
-using System.Linq;
 
 namespace Singular
 {
@@ -56,7 +70,7 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateSpellBuffOnSelf("Stealth", ret => Me.HasAura("Food")),
-                CreateDefaultRestComposite(60,0)
+                CreateDefaultRestComposite(60, 0)
                 );
         }
 
@@ -75,7 +89,6 @@ namespace Singular
                         new Action(ret => StyxWoW.SleepForLagDuration()),
                         new WaitContinue(10, ret => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
                         new Action(ret => Thread.Sleep(1000)))),
-
                 new Decorator(
                     ret => Poisons.OffHandNeedsPoison && Poisons.OffHandPoison != null,
                     new Sequence(
@@ -88,7 +101,6 @@ namespace Singular
                         new Action(ret => StyxWoW.SleepForLagDuration()),
                         new WaitContinue(10, ret => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
                         new Action(ret => Thread.Sleep(1000))))
-
                 );
         }
     }

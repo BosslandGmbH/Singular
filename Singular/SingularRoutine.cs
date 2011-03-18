@@ -11,7 +11,6 @@
 
 #endregion
 
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +20,7 @@ using Singular.GUI;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Helpers;
 using Styx.Logic;
 using Styx.Logic.BehaviorTree;
 using Styx.Logic.Combat;
@@ -28,7 +28,6 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
-using Styx.Helpers;
 
 namespace Singular
 {
@@ -48,7 +47,12 @@ namespace Singular
 
         private Composite _restBehavior;
 
-		public static SingularRoutine Instance { get; set; }
+        public SingularRoutine()
+        {
+            Instance = this;
+        }
+
+        public static SingularRoutine Instance { get; set; }
 
         public override string Name { get { return "Singular $Revision$"; } }
 
@@ -58,12 +62,7 @@ namespace Singular
 
         public LocalPlayer Me { get { return StyxWoW.Me; } }
 
-		public WoWClass myClass { get; set; }
-
-		public SingularRoutine()
-		{
-			Instance = this;
-		}
+        public WoWClass myClass { get; set; }
 
         public WoWContext CurrentWoWContext
         {
@@ -119,7 +118,7 @@ namespace Singular
 
         public bool CurrentTargetIsElite { get { return Me.CurrentTarget.Elite; } }
 
-		public bool CurrentTargetIsBoss { get { return BossIds.Contains(Me.CurrentTarget.Entry); } }
+        public bool CurrentTargetIsBoss { get { return BossIds.Contains(Me.CurrentTarget.Entry); } }
 
         public bool CurrentTargetIsEliteOrBoss { get { return CurrentTargetIsElite || CurrentTargetIsBoss; } }
 
@@ -137,38 +136,54 @@ namespace Singular
             }
         }
 
+        public bool NeedHealTargeting { get; set; }
+
+        public bool NeedTankTargeting { get; set; }
+        private WoWContext lastContext { get; set; }
+
+        public bool HasWand
+        {
+            get
+            {
+                return Me.Inventory.Equipped.Ranged != null &&
+                       Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Wand;
+            }
+        }
+
+        public bool IsWanding { get { return Me.AutoRepeatingSpellId == 5019; } }
+
         public override void OnButtonPress()
         {
             new ConfigurationForm().ShowDialog();
         }
 
-        public bool NeedHealTargeting { get; set; }
-
-        public bool NeedTankTargeting { get; set; }
-
         public override void Pulse()
         {
             PetManager.Pulse();
-			if (NeedHealTargeting)
-				HealTargeting.Instance.Pulse();
-			if (NeedTankTargeting && CurrentWoWContext != WoWContext.Battlegrounds && (Me.IsInParty || Me.IsInRaid))
-				TankTargeting.Instance.Pulse();
+            if (NeedHealTargeting)
+            {
+                HealTargeting.Instance.Pulse();
+            }
+            if (NeedTankTargeting && CurrentWoWContext != WoWContext.Battlegrounds && (Me.IsInParty || Me.IsInRaid))
+            {
+                TankTargeting.Instance.Pulse();
+            }
 
-			//This is here to support character changes while HB is running :)
-			if (Class != myClass && Class != WoWClass.None)
-			{
-				myClass = Class;
-				Logger.Write("Character changed. New character: " + myClass.ToString() + ". Rebuilding behaviors");			
-				TalentManager.Update();
-				CharacterSettings.Instance.Load();
-				CreateBehaviors();
-			}
+            //This is here to support character changes while HB is running :)
+            if (Class != myClass && Class != WoWClass.None)
+            {
+                myClass = Class;
+                Logger.Write("Character changed. New character: " + myClass + ". Rebuilding behaviors");
+                TalentManager.Update();
+                CharacterSettings.Instance.Load();
+                CreateBehaviors();
+            }
         }
 
         public override void Initialize()
         {
-			//Caching current class here to avoid issues with loading screens where Class return None and we cant build behaviors
-			myClass = Me.Class;
+            //Caching current class here to avoid issues with loading screens where Class return None and we cant build behaviors
+            myClass = Me.Class;
 
             Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
             AttachEventHandlers();
@@ -190,12 +205,10 @@ namespace Singular
             Logger.Write("Behaviors created!");
         }
 
-		private WoWContext lastContext { get; set; }
-
         public bool CreateBehaviors()
         {
-			//Caching the context to not recreate same behaviors repeatedly.
-			lastContext = CurrentWoWContext;
+            //Caching the context to not recreate same behaviors repeatedly.
+            lastContext = CurrentWoWContext;
 
             NeedHealTargeting = false;
             NeedTankTargeting = false;
@@ -229,9 +242,13 @@ namespace Singular
             // Since we can be lazy, we're going to fix a bug right here and now.
             // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
             if (_preCombatBuffsBehavior != null)
+            {
                 _preCombatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport, _preCombatBuffsBehavior);
+            }
             if (_combatBuffsBehavior != null)
-				_combatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport, _combatBuffsBehavior);
+            {
+                _combatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport, _combatBuffsBehavior);
+            }
 
             return true;
         }
@@ -272,88 +289,91 @@ namespace Singular
                       a.Spell.Mechanic == WoWSpellMechanic.Sapped));
         }
 
-		/// <summary>
-		/// Checks if there is an aura created by you on the target. Useful for DoTs.
-		/// 	
-		/// Warning: This only checks your own auras on the unit !
-		/// </summary>
-		/// <param name="aura">Name of the spell</param>
-		/// <param name="unit">Unit to check</param>
-		/// <returns></returns>
-		public bool HasMyAura(string aura, WoWUnit unit)
-		{
-			return HasMyAura(aura, unit, TimeSpan.Zero, 0);
-		}
+        /// <summary>
+        ///   Checks if there is an aura created by you on the target. Useful for DoTs.
+        /// 	
+        ///   Warning: This only checks your own auras on the unit !
+        /// </summary>
+        /// <param name = "aura">Name of the spell</param>
+        /// <param name = "unit">Unit to check</param>
+        /// <returns></returns>
+        public bool HasMyAura(string aura, WoWUnit unit)
+        {
+            return HasMyAura(aura, unit, TimeSpan.Zero, 0);
+        }
 
-		/// <summary>
-		/// Checks if there is an aura created by you on the target. Useful for DoTs.
-		/// This will return false even while you have the aura on the unit but the timeleft is lower then the expire time.
-		/// Useful to cast DoTs before expiring
-		/// 
-		/// Warning: This only checks your own auras on the unit !
-		/// </summary>
-		/// <param name="aura">Name of the spell</param>
-		/// <param name="unit">Unit to check</param>
-		/// <param name="timeLeft">Time left for the aura.</param>
-		/// <returns></returns>
-		public bool HasMyAura(string aura, WoWUnit unit, TimeSpan timeLeft)
-		{
-			return HasMyAura(aura, unit, timeLeft, 0);
-		}
+        /// <summary>
+        ///   Checks if there is an aura created by you on the target. Useful for DoTs.
+        ///   This will return false even while you have the aura on the unit but the timeleft is lower then the expire time.
+        ///   Useful to cast DoTs before expiring
+        /// 
+        ///   Warning: This only checks your own auras on the unit !
+        /// </summary>
+        /// <param name = "aura">Name of the spell</param>
+        /// <param name = "unit">Unit to check</param>
+        /// <param name = "timeLeft">Time left for the aura.</param>
+        /// <returns></returns>
+        public bool HasMyAura(string aura, WoWUnit unit, TimeSpan timeLeft)
+        {
+            return HasMyAura(aura, unit, timeLeft, 0);
+        }
 
-		/// <summary>
-		/// Checks if there is an aura created by you on the target. Useful for DoTs.
-		/// This will return false even while you have the aura on the unit but the stackcount is lower then provided value.
-		/// Useful to stack more aura on the unit
-		/// </summary>
-		/// <param name="aura">Name of the spell</param>
-		/// <param name="unit">Unit to check</param>
-		/// <param name="stackCount">Stack count</param>
-		/// <returns></returns>
-		public bool HasMyAura(string aura, WoWUnit unit, int stackCount)
-		{
-			return HasMyAura(aura, unit, TimeSpan.Zero, stackCount);
-		}
+        /// <summary>
+        ///   Checks if there is an aura created by you on the target. Useful for DoTs.
+        ///   This will return false even while you have the aura on the unit but the stackcount is lower then provided value.
+        ///   Useful to stack more aura on the unit
+        /// </summary>
+        /// <param name = "aura">Name of the spell</param>
+        /// <param name = "unit">Unit to check</param>
+        /// <param name = "stackCount">Stack count</param>
+        /// <returns></returns>
+        public bool HasMyAura(string aura, WoWUnit unit, int stackCount)
+        {
+            return HasMyAura(aura, unit, TimeSpan.Zero, stackCount);
+        }
 
-		/// <summary>
-		/// Checks if there is an aura created by you on the target. Useful for DoTs.
-		/// This will return false even while you have the aura on the unit but the stackcount is lower then provided value and
-		/// timeleft is lower then the expire time.
-		/// Useful to stack more dots or redot before the aura expires.
-		/// </summary>
-		/// <param name="aura">Name of the spell</param>
-		/// <param name="unit">Unit to check</param>
-		/// <param name="timeLeft">Time left for the aura.</param>
-		/// <param name="stackCount">Stack count</param>
-		/// <returns></returns>
-		public bool HasMyAura(string aura, WoWUnit unit, TimeSpan timeLeft, int stackCount)
-		{
-			// Check for unit being null first, so we don't end up with an exception
-			if (unit == null)
-			{
-				return false;
-			}
+        /// <summary>
+        ///   Checks if there is an aura created by you on the target. Useful for DoTs.
+        ///   This will return false even while you have the aura on the unit but the stackcount is lower then provided value and
+        ///   timeleft is lower then the expire time.
+        ///   Useful to stack more dots or redot before the aura expires.
+        /// </summary>
+        /// <param name = "aura">Name of the spell</param>
+        /// <param name = "unit">Unit to check</param>
+        /// <param name = "timeLeft">Time left for the aura.</param>
+        /// <param name = "stackCount">Stack count</param>
+        /// <returns></returns>
+        public bool HasMyAura(string aura, WoWUnit unit, TimeSpan timeLeft, int stackCount)
+        {
+            // Check for unit being null first, so we don't end up with an exception
+            if (unit == null)
+            {
+                return false;
+            }
 
-			// If the unit has that aura and it has been created by us return true
-			if (unit.ActiveAuras.ContainsKey(aura))
-			{
-				var _aura = unit.ActiveAuras[aura];
+            // If the unit has that aura and it has been created by us return true
+            if (unit.ActiveAuras.ContainsKey(aura))
+            {
+                WoWAura _aura = unit.ActiveAuras[aura];
 
-				if (_aura.CreatorGuid == Me.Guid && _aura.TimeLeft > timeLeft && _aura.StackCount >= stackCount)
-				{
-					return true;
-				}
-			}
+                if (_aura.CreatorGuid == Me.Guid && _aura.TimeLeft > timeLeft && _aura.StackCount >= stackCount)
+                {
+                    return true;
+                }
+            }
 
-			return false;
-		}
+            return false;
+        }
 
         public TimeSpan GetAuraTimeLeft(string auraName, WoWUnit onUnit, bool fromMyAura)
         {
-            var wantedAura = onUnit.GetAllAuras().Where(a => a.Name == auraName && (fromMyAura ? a.CreatorGuid == Me.Guid : true)).FirstOrDefault();
+            WoWAura wantedAura =
+                onUnit.GetAllAuras().Where(a => a.Name == auraName && (fromMyAura ? a.CreatorGuid == Me.Guid : true)).FirstOrDefault();
 
-            if (wantedAura!=null)
+            if (wantedAura != null)
+            {
                 return wantedAura.TimeLeft;
+            }
             return TimeSpan.Zero;
         }
 
@@ -384,22 +404,5 @@ namespace Singular
         {
             return HasAuraStacks(aura, stacks, Me);
         }
-
-		public bool HasWand
-		{
-			get
-			{
-				return Me.Inventory.Equipped.Ranged != null &&
-					   Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Wand;
-			}
-		}
-
-		public bool IsWanding
-		{
-			get
-			{
-				return Me.AutoRepeatingSpellId == 5019;
-			}
-		}
     }
 }

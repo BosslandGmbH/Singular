@@ -1,7 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System;
 using System.Linq;
-using System.Text;
 
 using CommonBehaviors.Actions;
 
@@ -45,7 +56,6 @@ namespace Singular
                     new Decorator(
                         ret => Miscellaneous.UseTrinket(true),
                         new ActionAlwaysSucceed())),
-
                 new Decorator(
                     ret => SingularSettings.Instance.UseSecondTrinket,
                     new Decorator(
@@ -63,10 +73,10 @@ namespace Singular
         }
 
         /// <summary>
-        /// Creates a composite to use potions and healthstone.
+        ///   Creates a composite to use potions and healthstone.
         /// </summary>
-        /// <param name="healthPercent">Healthpercent to use health potions and healthstone</param>
-        /// <param name="manaPercent">Manapercent to use mana potions</param>
+        /// <param name = "healthPercent">Healthpercent to use health potions and healthstone</param>
+        /// <param name = "manaPercent">Manapercent to use mana potions</param>
         /// <returns></returns>
         public Composite CreateUsePotionAndHealthstone(double healthPercent, double manaPercent)
         {

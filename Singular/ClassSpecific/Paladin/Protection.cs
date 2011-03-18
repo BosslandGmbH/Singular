@@ -13,12 +13,12 @@
 
 using System.Linq;
 
-using Styx.Combat.CombatRoutine;
-
 using Singular.Settings;
 
-using TreeSharp;
+using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
+
+using TreeSharp;
 
 namespace Singular
 {
@@ -45,7 +45,7 @@ namespace Singular
                     ret => NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1,
                     new PrioritySelector(
                         CreateSpellCast("Hammer of the Righteous"),
-						CreateSpellCast("Crusader Strike"),
+                        CreateSpellCast("Crusader Strike"),
                         CreateSpellCast("Consecration"),
                         CreateSpellCast("Holy Wrath"),
                         CreateSpellCast("Judgement"))),
@@ -67,12 +67,12 @@ namespace Singular
         {
             return
                 new PrioritySelector(
-					CreateEnsureTarget(),
-					CreateAutoAttack(true),
-					CreateFaceUnit(ret => Me.CurrentTarget),
+                    CreateEnsureTarget(),
+                    CreateAutoAttack(true),
+                    CreateFaceUnit(ret => Me.CurrentTarget),
                     CreateSpellCast("Avenger's Shield"),
                     CreateSpellCast("Judgement"),
-					CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
+                    CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
                     );
         }
 
@@ -84,20 +84,22 @@ namespace Singular
         {
             return
                 new PrioritySelector(
-					CreateSpellCast("Hand of Reckoning", ret => TankTargeting.Instance.NeedToTaunt.Count != 0, ret => TankTargeting.Instance.NeedToTaunt.FirstOrDefault()),
+                    CreateSpellCast(
+                        "Hand of Reckoning", ret => TankTargeting.Instance.NeedToTaunt.Count != 0,
+                        ret => TankTargeting.Instance.NeedToTaunt.FirstOrDefault()),
                     CreateSpellBuffOnSelf("Avenging Wrath"),
                     CreateSpellBuffOnSelf(
                         "Lay on Hands",
                         ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealthProt && !Me.HasAura("Forbearance")),
                     CreateSpellBuffOnSelf(
                         "Guardian of Ancient Kings",
-						ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.GoAKHealth),
+                        ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.GoAKHealth),
                     CreateSpellBuffOnSelf(
                         "Ardent Defender",
-						ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.ArdentDefenderHealth),
+                        ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.ArdentDefenderHealth),
                     CreateSpellBuffOnSelf(
                         "Divine Protection",
-						ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt)
+                        ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt)
                     );
         }
 
@@ -119,7 +121,7 @@ namespace Singular
                         ret => !Me.HasAura("Blessing of Kings") ||
                                Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
                     CreateSpellBuffOnSelf("Seal of Truth"),
-					CreateSpellBuffOnSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth")),
+                    CreateSpellBuffOnSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth")),
                     CreateSpellBuffOnSelf("Devotion Aura"),
                     CreateSpellBuffOnSelf("Righteous Fury")
                     );

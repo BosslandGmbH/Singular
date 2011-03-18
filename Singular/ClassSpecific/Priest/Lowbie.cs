@@ -1,18 +1,21 @@
-﻿using System.Collections.Generic;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
 using System.Linq;
 
-using Singular.Settings;
-
 using Styx.Combat.CombatRoutine;
-using Styx.Logic;
-using Styx.Logic.Combat;
-using Styx.WoWInternals;
-using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
-using System;
-
-using Action = TreeSharp.Action;
 
 namespace Singular
 {
@@ -25,7 +28,7 @@ namespace Singular
         [Context(WoWContext.All)]
         public Composite CreateLowbiePriestCombat()
         {
-           return new PrioritySelector(
+            return new PrioritySelector(
                 CreateDiscHealOnlyBehavior(),
                 CreateEnsureTarget(),
                 CreateMoveToAndFace(28f, ret => Me.CurrentTarget),

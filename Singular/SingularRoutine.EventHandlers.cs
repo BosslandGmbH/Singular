@@ -16,7 +16,6 @@ using System.Collections.Generic;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Helpers;
 using Styx.Logic;
 using Styx.Logic.POI;
 using Styx.WoWInternals;
@@ -35,16 +34,23 @@ namespace Singular
             // This ensures we only capture certain combat log events, not all of them.
             // This saves on performance, and possible memory leaks. (Leaks due to Lua table issues.)
             Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
-            if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED' or args[2] == 'SPELL_MISSED'"))
+            if (
+                !Lua.Events.AddFilter(
+                    "COMBAT_LOG_EVENT_UNFILTERED",
+                    "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED' or args[2] == 'SPELL_MISSED'"))
             {
                 Logger.Write("ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
             }
         }
 
-        /// <summary>Adds a spell to the succeed wait list. When this spell is successfully cast, the event log handler will forcibly sleep the thread
-        /// 		 for your lag duration. (This is mostly to prevent double-casts due to slow updating of buffs.)</summary>
-        /// <remarks>Created 3/4/2011.</remarks>
-        /// <param name="spellName">Name of the spell.</param>
+        /// <summary>
+        ///   Adds a spell to the succeed wait list. When this spell is successfully cast, the event log handler will forcibly sleep the thread
+        ///   for your lag duration. (This is mostly to prevent double-casts due to slow updating of buffs.)
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/4/2011.
+        /// </remarks>
+        /// <param name = "spellName">Name of the spell.</param>
         protected void AddSpellSucceedWait(string spellName)
         {
             if (!_sleepAfterSuccessSpells.Contains(spellName))
@@ -88,10 +94,12 @@ namespace Singular
                         Logger.Write("Mob is evading. Blacklisting it!");
                         Blacklist.Add(e.DestGuid, TimeSpan.FromMinutes(30));
                         if (StyxWoW.Me.CurrentTargetGuid == e.DestGuid)
+                        {
                             StyxWoW.Me.ClearTarget();
+                        }
 
                         BotPoi.Clear("Blacklisting evading mob");
-						StyxWoW.SleepForLagDuration();
+                        StyxWoW.SleepForLagDuration();
                     }
                     break;
             }
@@ -99,9 +107,11 @@ namespace Singular
 
         private void Player_OnMapChanged(BotEvents.Player.MapChangedEventArgs args)
         {
-			//Why would we create same behaviors all over ?
-			if (lastContext == CurrentWoWContext)
-				return;
+            //Why would we create same behaviors all over ?
+            if (lastContext == CurrentWoWContext)
+            {
+                return;
+            }
 
             Logger.Write("Context changed. New context: " + CurrentWoWContext + ". Rebuilding behaviors.");
             CreateBehaviors();

@@ -4,9 +4,9 @@
 // $Author$
 // $Date$
 // $HeadURL$
-// $LastChangedBy$ nuok
+// $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$ 154
+// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -90,7 +90,7 @@ namespace Singular
         }
 
         /// <summary>
-        /// Creates a behavior to move to within LOS, and faces the current target
+        ///   Creates a behavior to move to within LOS, and faces the current target
         /// </summary>
         /// <returns></returns>
         protected Composite CreateMoveToAndFace()
@@ -99,9 +99,9 @@ namespace Singular
         }
 
         /// <summary>
-        /// Creates a behavior to move to within LOS, and faces the specified target with no distance check
+        ///   Creates a behavior to move to within LOS, and faces the specified target with no distance check
         /// </summary>
-        /// <param name="unitToCheck">The unit to check.</param>
+        /// <param name = "unitToCheck">The unit to check.</param>
         /// <returns></returns>
         protected Composite CreateFaceUnit(UnitSelectionDelegate unitToCheck)
         {
@@ -109,7 +109,7 @@ namespace Singular
         }
 
         /// <summary>
-        /// Creates a behavior to move to within LOS, and faces the current target with no distance check
+        ///   Creates a behavior to move to within LOS, and faces the current target with no distance check
         /// </summary>
         /// <returns></returns>
         protected Composite CreateFaceUnit()

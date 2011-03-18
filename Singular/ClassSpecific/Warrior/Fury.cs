@@ -11,18 +11,16 @@
 
 #endregion
 
-using System.Linq;
-using Styx.Combat.CombatRoutine;
-using Singular.Settings;
-using TreeSharp;
-using Styx;
-using Styx.Logic.Combat;
-using Styx.WoWInternals;
-using Styx.WoWInternals.WoWObjects;
-using Styx.Helpers;
 using System;
-using Action = TreeSharp.Action;
+using System.Linq;
 
+using Styx.Combat.CombatRoutine;
+using Styx.Helpers;
+using Styx.Logic.Combat;
+
+using TreeSharp;
+
+using Action = TreeSharp.Action;
 
 namespace Singular
 {
@@ -36,7 +34,7 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
-				//Move to range
+                //Move to range
                 CreateFaceUnit(),
                 CreateAutoAttack(true),
                 //Make sure you are in the primary DPS stance for fury warriors
@@ -63,8 +61,8 @@ namespace Singular
                                 SpellManager.Cast("Heroic Leap");
                                 LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
                             })),
-				//Move to melee			
-				CreateMoveToAndFace(),
+                //Move to melee			
+                CreateMoveToAndFace(),
                 CreateSpellCast(
                     "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
                                         (!Me.CurrentTarget.HasAura("Hamstring") ||
@@ -95,10 +93,9 @@ namespace Singular
                 CreateSpellCast("Raging Blow"),
                 CreateSpellCast("Bloodthirst"),
                 CreateSpellCast("Slam", ret => HasAuraStacks("Bloodsurge", 1)),
-				//Uses Incite if you are spec'd into it
+                //Uses Incite if you are spec'd into it
                 CreateSpellCast("Heroic Strike", ret => Me.RagePercent > 60 || HasAuraStacks("Incite", 1)),
                 CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),
-
                 // Again; movement comes last in melee. We have spells we can use at long-range, and should do so when the opportunity
                 // presents itself.
                 // If none of our short-range attacks are... in range... then just move forward.
@@ -155,53 +152,61 @@ namespace Singular
                     CreateSpellCast("Lifeblood", ret => Me.HealthPercent < 70),
                     CreateSpellCast("Gift of the Naaru", ret => Me.HealthPercent < 50),
                     CreateSpellCast("Berserking"),
-                    CreateSpellCast("Recklessness",
-							ret=> Me.HasAura("Death Wish") && Me.HealthPercent > 20),
-					CreateSpellCast("Inner Rage",
-							ret=> Me.HasAura("Recklessness") ||
-								  Me.HasAura("Death Wish") ||
-								  Me.RagePercent > 80 ),
-
-                    CreateSpellBuffOnSelf("Berserker Rage",
-                            ret => Me.Auras.Any(
-                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing ||
-                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Sapped ||
-                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
-                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Horrified)),
+                    CreateSpellCast(
+                        "Recklessness",
+                        ret => Me.HasAura("Death Wish") && Me.HealthPercent > 20),
+                    CreateSpellCast(
+                        "Inner Rage",
+                        ret => Me.HasAura("Recklessness") ||
+                               Me.HasAura("Death Wish") ||
+                               Me.RagePercent > 80),
+                    CreateSpellBuffOnSelf(
+                        "Berserker Rage",
+                        ret => Me.Auras.Any(
+                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing ||
+                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Sapped ||
+                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
+                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Horrified)),
                     CreateSpellBuffOnSelf("Stoneform", ret => Me.HealthPercent < 60),
                     CreateSpellBuffOnSelf("Shadowmeld", ret => Me.HealthPercent < 20),
                     CreateSpellBuffOnSelf("Blood Fury"),
-                    CreateSpellBuffOnSelf("Every Man for Himself",
-                            ret => Me.Auras.Any(
-                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Asleep ||
-                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Stunned ||
-                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
-                    CreateSpellBuffOnSelf("Will of the Forsaken",
-                            ret => Me.Auras.Any(
-                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Charmed ||
-                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Asleep ||
-                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Horrified ||
-                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing)),
-                    CreateSpellBuffOnSelf("Escape Artist",
-                            ret => Me.Auras.Any(
-                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Slowed ||
-                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
-                    CreateSpellBuffOnSelf("Death Wish",
-							ret => (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
-										Me.CurrentTarget.HealthPercent < 95 &&
-										Me.RagePercent > 50) || 
-									(Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
-										Me.HealthPercent > 10 && Me.HealthPercent < 75)),
-							//Do not need to be enraged
-                            //ret => !Me.Auras.Any(
-                                //aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
-                    CreateSpellBuffOnSelf("Berserker Rage",
-                            ret => !Me.Auras.Any(
-                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
-                    CreateSpellBuffOnSelf("Battle Shout", ret => !Me.HasAura("Horn of the Winter") &&
-                                                                 !Me.HasAura("Roar of Courage") &&
-                                                                 !Me.HasAura("Strength of Earth Totem"))
-                );
+                    CreateSpellBuffOnSelf(
+                        "Every Man for Himself",
+                        ret => Me.Auras.Any(
+                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Asleep ||
+                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Stunned ||
+                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
+                    CreateSpellBuffOnSelf(
+                        "Will of the Forsaken",
+                        ret => Me.Auras.Any(
+                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Charmed ||
+                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Asleep ||
+                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Horrified ||
+                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing)),
+                    CreateSpellBuffOnSelf(
+                        "Escape Artist",
+                        ret => Me.Auras.Any(
+                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Slowed ||
+                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
+                    CreateSpellBuffOnSelf(
+                        "Death Wish",
+                        ret => (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
+                                Me.CurrentTarget.HealthPercent < 95 &&
+                                Me.RagePercent > 50) ||
+                               (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
+                                Me.HealthPercent > 10 && Me.HealthPercent < 75)),
+                    //Do not need to be enraged
+                    //ret => !Me.Auras.Any(
+                    //aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
+                    CreateSpellBuffOnSelf(
+                        "Berserker Rage",
+                        ret => !Me.Auras.Any(
+                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
+                    CreateSpellBuffOnSelf(
+                        "Battle Shout", ret => !Me.HasAura("Horn of the Winter") &&
+                                               !Me.HasAura("Roar of Courage") &&
+                                               !Me.HasAura("Strength of Earth Totem"))
+                    );
         }
 
         [Class(WoWClass.Warrior)]
@@ -215,7 +220,7 @@ namespace Singular
                     CreateSpellBuffOnSelf("Battle Stance", ret => Me.RagePercent <= 10 && !Me.Combat),
                     CreateSpellBuffOnSelf("Berserker Stance", ret => Me.RagePercent > 10 || Me.Combat),
                     CreateSpellCast("Battle Shout")
-                );
+                    );
         }
     }
 }

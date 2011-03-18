@@ -11,11 +11,7 @@
 
 #endregion
 
-using System.Linq;
-
 using Styx.Combat.CombatRoutine;
-
-using Singular.Settings;
 
 using TreeSharp;
 
@@ -23,33 +19,32 @@ namespace Singular
 {
     partial class SingularRoutine
     {
-		[Class(WoWClass.Mage)]
+        [Class(WoWClass.Mage)]
         [Spec(TalentSpec.FireMage)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public Composite CreateFireMageCombat()
         {
             return new PrioritySelector(
-			    CreateEnsureTarget(),
+                CreateEnsureTarget(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateMoveToAndFace(40f, ret => Me.CurrentTarget),
-				CreateSpellCast("Evocation", ret => Me.ManaPercent < 40),
+                CreateSpellCast("Evocation", ret => Me.ManaPercent < 40),
                 CreateSpellCast(
                     "Scorch",
                     ret =>
                     !Me.CurrentTarget.HasAura("Critical Mass") || Me.CurrentTarget.Auras["Critical Mass"].TimeLeft.TotalSeconds < 3 ||
                     // If we have the Firestarter buff, we can cast scorch on the move. Do so please!
                     (Me.IsMoving && TalentManager.GetCount(2, 15) != 0)
-					&& LastSpellCast != "Scorch"),
+                    && LastSpellCast != "Scorch"),
                 CreateSpellCast("Pyroblast", ret => Me.HasAura("Hot Streak") && Me.Auras["Hot Streak"].TimeLeft.TotalSeconds > 1),
                 CreateSpellCast("Fire Blast", ret => Me.HasAura("Impact")),
                 CreateSpellBuff("Living Bomb", ret => !Me.CurrentTarget.HasAura("Living Bomb")),
                 CreateSpellCast("Fireball")
                 );
         }
-    
-	
-		[Class(WoWClass.Mage)]
+
+        [Class(WoWClass.Mage)]
         [Spec(TalentSpec.FireMage)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
@@ -62,8 +57,8 @@ namespace Singular
                     CreateSpellCast("Fireball")
                     );
         }
-		
-		[Class(WoWClass.Mage)]
+
+        [Class(WoWClass.Mage)]
         [Spec(TalentSpec.FireMage)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
@@ -71,16 +66,15 @@ namespace Singular
         {
             return
                 new PrioritySelector(
-                    CreateSpellBuffOnSelf("Arcane Brilliance",
+                    CreateSpellBuffOnSelf(
+                        "Arcane Brilliance",
                         ret => (!Me.HasAura("Arcane Brilliance") &&
-                               !Me.HasAura("Fel Intelligence"))),
-						
+                                !Me.HasAura("Fel Intelligence"))),
                     CreateSpellBuffOnSelf(
                         "Molten Armor",
                         ret => (!Me.HasAura("Molten Armor"))
-                    )
-					);
-					
-	}
-	}
+                        )
+                    );
+        }
+    }
 }

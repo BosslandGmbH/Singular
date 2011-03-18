@@ -40,34 +40,8 @@ namespace Singular
     {
         private static readonly WaitTimer CallPetTimer = WaitTimer.OneSecond;
 
-        private static ulong _petGuid = 0;
-        private static List<WoWPetSpell> _petSpells = new List<WoWPetSpell>();
-        internal static void Pulse()
-        {
-            // TODO: Remove this stuff upon the next HB release.
-            if (!StyxWoW.Me.GotAlivePet)
-            {
-                _petSpells.Clear();
-                return;
-            }
-
-            if (_petGuid != StyxWoW.Me.Pet.Guid)
-            {
-                Logger.Write("Pet changed. Rebuilding actions mapping.");
-                _petGuid = StyxWoW.Me.Pet.Guid;
-
-                // Too lazy to rebase to 0x1000
-                const uint PET_SPELLS_PTR = 0x00E0A388 - 0x400000; // lua_GetPetActionInfo - 2nd DWORD - used as an array of vals
-                _petSpells.Clear();
-                var spellMasks = ObjectManager.Wow.ReadStructArrayRelative<uint>(PET_SPELLS_PTR, 10);
-                for (int i = 0; i < 10; i++)
-                {
-                    var spell = new WoWPetSpell(spellMasks[i], i);
-                    Logger.Write("Adding pet spell " + spell + " at button #" + spell.ActionBarIndex);
-                    _petSpells.Add(spell);
-                }
-            }
-        }
+        private static ulong _petGuid;
+        private static readonly List<WoWPetSpell> _petSpells = new List<WoWPetSpell>();
 
         static PetManager()
         {
@@ -92,11 +66,40 @@ namespace Singular
 
         public static bool HavePet { get { return StyxWoW.Me.GotAlivePet; } }
 
+        internal static void Pulse()
+        {
+            // TODO: Remove this stuff upon the next HB release.
+            if (!StyxWoW.Me.GotAlivePet)
+            {
+                _petSpells.Clear();
+                return;
+            }
+
+            if (_petGuid != StyxWoW.Me.Pet.Guid)
+            {
+                Logger.Write("Pet changed. Rebuilding actions mapping.");
+                _petGuid = StyxWoW.Me.Pet.Guid;
+
+                // Too lazy to rebase to 0x1000
+                const uint PET_SPELLS_PTR = 0x00E0A388 - 0x400000; // lua_GetPetActionInfo - 2nd DWORD - used as an array of vals
+                _petSpells.Clear();
+                uint[] spellMasks = ObjectManager.Wow.ReadStructArrayRelative<uint>(PET_SPELLS_PTR, 10);
+                for (int i = 0; i < 10; i++)
+                {
+                    var spell = new WoWPetSpell(spellMasks[i], i);
+                    Logger.Write("Adding pet spell " + spell + " at button #" + spell.ActionBarIndex);
+                    _petSpells.Add(spell);
+                }
+            }
+        }
+
         public static bool CanCastPetAction(string action)
         {
-            var spell = _petSpells.First(p => p.ToString() == action);
+            WoWPetSpell spell = _petSpells.First(p => p.ToString() == action);
             if (spell == null)
+            {
                 return false;
+            }
 
             return !spell.Cooldown;
         }
@@ -104,14 +107,14 @@ namespace Singular
         public static void CastPetAction(string action)
         {
             Logger.Write(string.Format("[Pet] Casting {0}", action));
-            Lua.DoString("CastPetAction({0})", _petSpells.First(p => p.ToString() == action).ActionBarIndex+1);
+            Lua.DoString("CastPetAction({0})", _petSpells.First(p => p.ToString() == action).ActionBarIndex + 1);
         }
 
         public static void CastPetAction(string action, WoWUnit on)
         {
             Logger.Write(string.Format("[Pet] Casting {0} on {1}", action, on.SafeName()));
             StyxWoW.Me.SetFocus(on);
-            Lua.DoString("CastPetAction({0}, 'focus')", _petSpells.First(p => p.ToString() == action).ActionBarIndex+1);
+            Lua.DoString("CastPetAction({0}, 'focus')", _petSpells.First(p => p.ToString() == action).ActionBarIndex + 1);
             StyxWoW.Me.SetFocus(0);
         }
 
@@ -162,25 +165,21 @@ namespace Singular
             return false;
         }
     }
-
-
 }
 
 #region TO BE REMOVED IN THE NEXT HB RELEASE
 
 namespace Styx.Logic.Combat
 {
-    /// <summary>Defines a pet "action" spell. (From the action bar. All known pet actions.)</summary>
-    /// <remarks>Created 3/18/2011.</remarks>
+    /// <summary>
+    ///   Defines a pet "action" spell. (From the action bar. All known pet actions.)
+    /// </summary>
+    /// <remarks>
+    ///   Created 3/18/2011.
+    /// </remarks>
     public class WoWPetSpell
     {
-        public enum PetSpellType
-        {
-            Unknown,
-            Spell,
-            Action,
-            Stance
-        }
+        #region PetAction enum
 
         public enum PetAction
         {
@@ -192,6 +191,22 @@ namespace Styx.Logic.Combat
             MoveTo
         }
 
+        #endregion
+
+        #region PetSpellType enum
+
+        public enum PetSpellType
+        {
+            Unknown,
+            Spell,
+            Action,
+            Stance
+        }
+
+        #endregion
+
+        #region PetStance enum
+
         public enum PetStance
         {
             None = -1,
@@ -200,29 +215,7 @@ namespace Styx.Logic.Combat
             Aggressive = 2,
         }
 
-        /// <summary>Gets the actual spell, if SpellType is "Spell"</summary>
-        /// <value>The spell.</value>
-        public WoWSpell Spell { get; private set; }
-
-        /// <summary>Returns the type of spell this <see cref="WoWPetSpell"/> is for.</summary>
-        /// <value>The type of the spell.</value>
-        public PetSpellType SpellType { get; private set; }
-
-        /// <summary>Gets the action type.</summary>
-        /// <value>The action.</value>
-        public PetAction Action { get; private set; }
-
-        /// <summary>Gets the stance this spell sets the pet into..</summary>
-        /// <value>The stance.</value>
-        public PetStance Stance { get; private set; }
-
-        /// <summary>Gets a value indicating whether the spell is on cooldown. Only valid if SpellType is "Spell".</summary>
-        /// <value>true if cooldown, false if not.</value>
-        public bool Cooldown { get { return Spell != null && !Spell.Cooldown; } }
-
-        /// <summary>Gets the zero-based index of the action bar, where this spell resides.</summary>
-        /// <value>The action bar index.</value>
-        public int ActionBarIndex { get; private set; }
+        #endregion
 
         private WoWPetSpell()
         {
@@ -231,11 +224,12 @@ namespace Styx.Logic.Combat
             Action = PetAction.None;
             Stance = PetStance.None;
         }
+
         internal WoWPetSpell(uint spellMask, int index)
             : this()
         {
             ActionBarIndex = index;
-            var spellId = spellMask & 0xFFFFFF;
+            uint spellId = spellMask & 0xFFFFFF;
             switch ((spellMask >> 24) & 0x3F)
             {
                 case 1u:
@@ -268,6 +262,42 @@ namespace Styx.Logic.Combat
             }
         }
 
+        /// <summary>
+        ///   Gets the actual spell, if SpellType is "Spell"
+        /// </summary>
+        /// <value>The spell.</value>
+        public WoWSpell Spell { get; private set; }
+
+        /// <summary>
+        ///   Returns the type of spell this <see cref = "WoWPetSpell" /> is for.
+        /// </summary>
+        /// <value>The type of the spell.</value>
+        public PetSpellType SpellType { get; private set; }
+
+        /// <summary>
+        ///   Gets the action type.
+        /// </summary>
+        /// <value>The action.</value>
+        public PetAction Action { get; private set; }
+
+        /// <summary>
+        ///   Gets the stance this spell sets the pet into..
+        /// </summary>
+        /// <value>The stance.</value>
+        public PetStance Stance { get; private set; }
+
+        /// <summary>
+        ///   Gets a value indicating whether the spell is on cooldown. Only valid if SpellType is "Spell".
+        /// </summary>
+        /// <value>true if cooldown, false if not.</value>
+        public bool Cooldown { get { return Spell != null && !Spell.Cooldown; } }
+
+        /// <summary>
+        ///   Gets the zero-based index of the action bar, where this spell resides.
+        /// </summary>
+        /// <value>The action bar index.</value>
+        public int ActionBarIndex { get; private set; }
+
         public override string ToString()
         {
             switch (SpellType)
@@ -280,7 +310,9 @@ namespace Styx.Logic.Combat
                     break;
                 case PetSpellType.Action:
                     if (Action == PetAction.MoveTo)
+                    {
                         return "Move To";
+                    }
                     return Action.ToString();
                     break;
                 case PetSpellType.Stance:

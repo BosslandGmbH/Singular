@@ -27,10 +27,12 @@ namespace Singular
             MethodInfo[] methods = createFrom.GetType().GetMethods();
             MethodInfo bestMatch = null;
             foreach (MethodInfo mi in
-                methods.Where(mi => 
-                    !mi.IsGenericMethod && 
+                methods.Where(
+                    mi =>
+                    !mi.IsGenericMethod &&
                     mi.GetParameters().Length == 0)
-                    .Where(mi =>
+                    .Where(
+                        mi =>
                         mi.ReturnType == typeof(Composite) ||
                         mi.ReturnType.IsSubclassOf(typeof(Composite))))
             {

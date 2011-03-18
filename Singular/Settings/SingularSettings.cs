@@ -35,7 +35,7 @@ namespace Singular.Settings
         #region Misc
 
         [Setting]
-        [DefaultValue(false)]
+        [Styx.Helpers.DefaultValue(false)]
         [Category("Misc")]
         [DisplayName("Debug Logging")]
         [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
@@ -51,28 +51,32 @@ namespace Singular.Settings
         #endregion
 
         #region Resting
+
         [Setting]
         [DefaultValue(50)]
-		[Category("Rest")]
-		[DisplayName("Rest Health")]
-		[Description("Your character will eat when your health drops below this value")]
+        [Category("Rest")]
+        [DisplayName("Rest Health")]
+        [Description("Your character will eat when your health drops below this value")]
         public int DefaultRestHealth { get; set; }
 
         [Setting]
         [DefaultValue(50)]
-		[Category("Rest")]
-		[DisplayName("Rest Mana")]
-		[Description("Your character will drink when your mana drops below this value")]
+        [Category("Rest")]
+        [DisplayName("Rest Mana")]
+        [Description("Your character will drink when your mana drops below this value")]
         public int DefaultRestMana { get; set; }
+
         #endregion
 
         #region Targeting
+
         [Setting]
         [DefaultValue(95)]
         [Category("Healing")]
         [DisplayName("Ignore Targets Health")]
         [Description("Ignore healing targets when their health is above this value.")]
         public int IgnoreHealTargetsAboveHealth { get; set; }
+
         #endregion
 
         #region Trinkets
@@ -105,14 +109,16 @@ namespace Singular.Settings
         [DefaultValue(25)]
         [Category("Trinkets")]
         [DisplayName("First Trinket Use At Percent")]
-        [Description("The percent of health, or mana, to use this trinket at. Only taken into account when First Trinket Usage is 'LowHealth' or 'LowPower'")]
+        [Description(
+            "The percent of health, or mana, to use this trinket at. Only taken into account when First Trinket Usage is 'LowHealth' or 'LowPower'")]
         public int FirstTrinketUseAtPercent { get; set; }
 
         [Setting]
         [DefaultValue(25)]
         [Category("Trinkets")]
         [DisplayName("Second Trinket Use At Percent")]
-        [Description("The percent of health, or mana, to use this trinket at. Only taken into account when Second Trinket Usage is 'LowHealth' or 'LowPower'")]
+        [Description(
+            "The percent of health, or mana, to use this trinket at. Only taken into account when Second Trinket Usage is 'LowHealth' or 'LowPower'")]
         public int SecondTrinketUseAtPercent { get; set; }
 
         #endregion
@@ -142,36 +148,35 @@ namespace Singular.Settings
         private WarlockSettings _warlockSettings;
 
         private WarriorSettings _warriorSettings;
-        
 
         [Browsable(false)]
         public DeathKnightSettings DeathKnight { get { return _dkSettings ?? (_dkSettings = new DeathKnightSettings()); } }
 
-		[Browsable(false)]
+        [Browsable(false)]
         public DruidSettings Druid { get { return _druidSettings ?? (_druidSettings = new DruidSettings()); } }
 
-		[Browsable(false)]
+        [Browsable(false)]
         public HunterSettings Hunter { get { return _hunterSettings ?? (_hunterSettings = new HunterSettings()); } }
 
-		[Browsable(false)]
+        [Browsable(false)]
         public MageSettings Mage { get { return _mageSettings ?? (_mageSettings = new MageSettings()); } }
 
-		[Browsable(false)]
+        [Browsable(false)]
         public PaladinSettings Paladin { get { return _pallySettings ?? (_pallySettings = new PaladinSettings()); } }
 
-		[Browsable(false)]
+        [Browsable(false)]
         public PriestSettings Priest { get { return _priestSettings ?? (_priestSettings = new PriestSettings()); } }
 
-		[Browsable(false)]
+        [Browsable(false)]
         public RogueSettings Rogue { get { return _rogueSettings ?? (_rogueSettings = new RogueSettings()); } }
 
-		[Browsable(false)]
+        [Browsable(false)]
         public ShamanSettings Shaman { get { return _shamanSettings ?? (_shamanSettings = new ShamanSettings()); } }
 
-		[Browsable(false)]
+        [Browsable(false)]
         public WarlockSettings Warlock { get { return _warlockSettings ?? (_warlockSettings = new WarlockSettings()); } }
 
-		[Browsable(false)]
+        [Browsable(false)]
         public WarriorSettings Warrior { get { return _warriorSettings ?? (_warriorSettings = new WarriorSettings()); } }
 
         #endregion

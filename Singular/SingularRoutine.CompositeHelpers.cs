@@ -11,32 +11,30 @@
 
 #endregion
 
-
+using System;
 using System.Linq;
+using System.Threading;
 
 using CommonBehaviors.Actions;
 
 using Singular.Composites;
-using Singular.Settings;
 
 using Styx;
+using Styx.Helpers;
 using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
-using Styx.Helpers;
-using System;
 
 using Action = TreeSharp.Action;
-using System.Threading;
-using Styx.WoWInternals;
 
 namespace Singular
 {
     public delegate WoWPoint LocationRetrievalDelegate(object context);
-    
+
     partial class SingularRoutine
     {
         #region Delegates
@@ -47,19 +45,29 @@ namespace Singular
 
         #endregion
 
-        /// <summary>Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
-        /// 		 going down to lower branches in the tree, while casting.)</summary>
-        /// <remarks>Created 3/4/2011.</remarks>
+        private static readonly WaitTimer targetingTimer = new WaitTimer(TimeSpan.FromSeconds(2));
+
+        /// <summary>
+        ///   Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
+        ///   going down to lower branches in the tree, while casting.)
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/4/2011.
+        /// </remarks>
         /// <returns>.</returns>
         protected Composite CreateWaitForCast()
         {
             return CreateWaitForCast(false);
         }
 
-        /// <summary>Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
-        /// 		 going down to lower branches in the tree, while casting.)</summary>
-        /// <remarks>Created 3/6/2011.</remarks>
-        /// <param name="faceDuring">Whether or not to face during casting</param>
+        /// <summary>
+        ///   Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
+        ///   going down to lower branches in the tree, while casting.)
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/6/2011.
+        /// </remarks>
+        /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <returns></returns>
         protected Composite CreateWaitForCast(bool faceDuring)
         {
@@ -81,89 +89,90 @@ namespace Singular
 
         protected Composite CreateCastPetActionOn(string action, UnitSelectionDelegate onUnit)
         {
-            return new Decorator(ret => PetManager.CanCastPetAction(action), 
+            return new Decorator(
+                ret => PetManager.CanCastPetAction(action),
                 new Action(ret => PetManager.CastPetAction(action, onUnit(ret))));
         }
-
-		private static WaitTimer targetingTimer = new WaitTimer(TimeSpan.FromSeconds(2));
 
         protected Composite CreateEnsureTarget()
         {
             return
-				new PrioritySelector(
-					new Decorator(
-						ret => NeedTankTargeting && targetingTimer.IsFinished && Me.Combat &&
-							   TankTargeting.Instance.FirstUnit != null && Me.CurrentTarget != TankTargeting.Instance.FirstUnit,
-						new Action(ret =>
-							{
-								Logger.WriteDebug("Targeting first unit of TankTargeting");
-								TankTargeting.Instance.FirstUnit.Target();
-								StyxWoW.SleepForLagDuration();
-								targetingTimer.Reset();
-							})),
-					new Decorator(
-						ret => Me.CurrentTarget == null || Me.CurrentTarget.Dead,
-						new PrioritySelector(
-							// Set our context to the RaF leaders target, or the first in the target list.
-							ctx => RaFHelper.Leader != null && RaFHelper.Leader.Combat 
-										? 
-											RaFHelper.Leader.CurrentTarget 
-										: 
-											Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.Combat
-											?
-												Targeting.Instance.FirstUnit
-											:
-                                                Me.Combat && ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any(p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70)
-                                                ?
-                                                    ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70).OrderBy(u => u.DistanceSqr).FirstOrDefault()
-                                                :
-                                                    null,
-							// Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
-							new Decorator(
-								ret => ret != null,
-								new Sequence(
-									new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).Name + "!")),
-									new Action(ret => ((WoWUnit)ret).Target()))),
-							// In order to resolve getting "stuck" on a target, we'll clear it if there's nothing viable.
-							new Action(
-								ret =>
-									{
-										Me.ClearTarget();
-										// Force a failure, just so we can move down the branch.
-										return RunStatus.Failure;
-									}),
-							new ActionLogMessage(false, "No viable target! NOT GOOD!"))));
+                new PrioritySelector(
+                    new Decorator(
+                        ret => NeedTankTargeting && targetingTimer.IsFinished && Me.Combat &&
+                               TankTargeting.Instance.FirstUnit != null && Me.CurrentTarget != TankTargeting.Instance.FirstUnit,
+                        new Action(
+                            ret =>
+                                {
+                                    Logger.WriteDebug("Targeting first unit of TankTargeting");
+                                    TankTargeting.Instance.FirstUnit.Target();
+                                    StyxWoW.SleepForLagDuration();
+                                    targetingTimer.Reset();
+                                })),
+                    new Decorator(
+                        ret => Me.CurrentTarget == null || Me.CurrentTarget.Dead,
+                        new PrioritySelector(
+                            // Set our context to the RaF leaders target, or the first in the target list.
+                            ctx => RaFHelper.Leader != null && RaFHelper.Leader.Combat
+                                       ? RaFHelper.Leader.CurrentTarget
+                                       : Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.Combat
+                                             ? Targeting.Instance.FirstUnit
+                                             : Me.Combat &&
+                                               ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any(
+                                                   p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70)
+                                                   ? ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
+                                                       p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70).OrderBy(
+                                                           u => u.DistanceSqr).FirstOrDefault()
+                                                   : null,
+                            // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
+                            new Decorator(
+                                ret => ret != null,
+                                new Sequence(
+                                    new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).Name + "!")),
+                                    new Action(ret => ((WoWUnit)ret).Target()))),
+                            // In order to resolve getting "stuck" on a target, we'll clear it if there's nothing viable.
+                            new Action(
+                                ret =>
+                                    {
+                                        Me.ClearTarget();
+                                        // Force a failure, just so we can move down the branch.
+                                        return RunStatus.Failure;
+                                    }),
+                            new ActionLogMessage(false, "No viable target! NOT GOOD!"))));
         }
 
         protected Composite CreateAutoAttack(bool includePet)
         {
-			const int SPELL_ID_AUTO_SHOT = 75;
+            const int SPELL_ID_AUTO_SHOT = 75;
 
-			return new PrioritySelector(
-				new Decorator(
-					ret => !Me.IsAutoAttacking && Me.AutoRepeatingSpellId != SPELL_ID_AUTO_SHOT,
-					new Action(ret => Me.ToggleAttack())),
-				new Decorator(
-					ret => includePet && Me.GotAlivePet && (Me.Pet.CurrentTarget == null || Me.Pet.CurrentTarget != Me.CurrentTarget),
-					new Action(delegate { PetManager.CastPetAction("Attack"); return RunStatus.Failure; }))
-				);
+            return new PrioritySelector(
+                new Decorator(
+                    ret => !Me.IsAutoAttacking && Me.AutoRepeatingSpellId != SPELL_ID_AUTO_SHOT,
+                    new Action(ret => Me.ToggleAttack())),
+                new Decorator(
+                    ret => includePet && Me.GotAlivePet && (Me.Pet.CurrentTarget == null || Me.Pet.CurrentTarget != Me.CurrentTarget),
+                    new Action(
+                        delegate
+                            {
+                                PetManager.CastPetAction("Attack");
+                                return RunStatus.Failure;
+                            }))
+                );
         }
 
-		protected Composite CreateUseWand()
-		{
-			return CreateUseWand(ret => true);
-		}
+        protected Composite CreateUseWand()
+        {
+            return CreateUseWand(ret => true);
+        }
 
-		protected Composite CreateUseWand(SimpleBoolReturnDelegate extra)
-		{
-			return new PrioritySelector(
-				new Decorator(
-					ret => HasWand && !IsWanding && extra(ret),
-					new Action(ret => SpellManager.Cast("Shoot")))
-				);
-		}
-
-
+        protected Composite CreateUseWand(SimpleBoolReturnDelegate extra)
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => HasWand && !IsWanding && extra(ret),
+                    new Action(ret => SpellManager.Cast("Shoot")))
+                );
+        }
 
         private void CastWithLog(string spellName, WoWUnit onTarget)
         {
@@ -177,48 +186,80 @@ namespace Singular
             SpellManager.Cast(spellId, onTarget);
         }
 
+        private Composite CreateSpellCastOnLocation(string spellName, LocationRetrievalDelegate onLocation)
+        {
+            return new Decorator(
+                ret => CanCast(spellName, null, false),
+                new Sequence(
+                    new Action(ret => CastWithLog(spellName, null)),
+                    new Action(ret => LegacySpellManager.ClickRemoteLocation(onLocation(ret)))));
+        }
+
+        /// <summary>
+        ///   Creates a composite to throw a throwing weapon, shoot a bow, crossbow, gun, or wand. If your inventory has such ranged weapon, and you know the skill.
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/12/2011.
+        /// </remarks>
+        /// <returns>.</returns>
+        public Composite CreateFireRangedWeapon()
+        {
+            return new PrioritySelector(
+                CreateSpellCast(
+                    "Throw", ret => Me.Inventory.Equipped.Ranged != null &&
+                                    Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Thrown, false),
+                CreateSpellCast(
+                    "Shoot",
+                    ret => Me.Inventory.Equipped.Ranged != null &&
+                           (Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow ||
+                            Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow ||
+                            Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Gun ||
+                            Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Wand), false)
+                );
+        }
+
         #region Cast By Name
 
         public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector)
         {
-			return CreateSpellCast(spellName, extra, unitSelector, true);
+            return CreateSpellCast(spellName, extra, unitSelector, true);
         }
 
-		public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector, bool checkMoving)
-		{
-		    return new Decorator(
-		        ret => extra(ret) && unitSelector(ret) != null && CanCast(spellName, unitSelector(ret), checkMoving),
-		        new PrioritySelector(
-		            CreateApproachToCast(spellName, unitSelector),
-		            new Decorator(
-		                ret => !checkMoving && Me.IsMoving && SpellManager.Spells[spellName].CastTime > 0,
-		                new Sequence(
-		                    new Action(ret => Navigator.PlayerMover.MoveStop()),
-		                    new Action(ret => StyxWoW.SleepForLagDuration()))),
-		            // Just logs the spell, and calls SpellManager.Cast(name) - Simply for readability, and to make sure
-		            // manual spell logging is *all* the same.
-		            new Action(ret => CastWithLog(spellName, unitSelector(ret)))));
-		}
+        public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, UnitSelectionDelegate unitSelector, bool checkMoving)
+        {
+            return new Decorator(
+                ret => extra(ret) && unitSelector(ret) != null && CanCast(spellName, unitSelector(ret), checkMoving),
+                new PrioritySelector(
+                    CreateApproachToCast(spellName, unitSelector),
+                    new Decorator(
+                        ret => !checkMoving && Me.IsMoving && SpellManager.Spells[spellName].CastTime > 0,
+                        new Sequence(
+                            new Action(ret => Navigator.PlayerMover.MoveStop()),
+                            new Action(ret => StyxWoW.SleepForLagDuration()))),
+                    // Just logs the spell, and calls SpellManager.Cast(name) - Simply for readability, and to make sure
+                    // manual spell logging is *all* the same.
+                    new Action(ret => CastWithLog(spellName, unitSelector(ret)))));
+        }
 
         public Composite CreateSpellCast(string spellName)
         {
-			return CreateSpellCast(spellName, true);
+            return CreateSpellCast(spellName, true);
         }
 
-		public Composite CreateSpellCast(string spellName, bool checkMoving)
-		{
-			return CreateSpellCast(spellName, ret => true, checkMoving);
-		}
+        public Composite CreateSpellCast(string spellName, bool checkMoving)
+        {
+            return CreateSpellCast(spellName, ret => true, checkMoving);
+        }
 
         public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra)
         {
-			return CreateSpellCast(spellName, extra, true);
+            return CreateSpellCast(spellName, extra, true);
         }
 
-		public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, bool checkMoving)
-		{
-			return CreateSpellCast(spellName, extra, ret => Me.CurrentTarget, checkMoving);
-		}
+        public Composite CreateSpellCast(string spellName, SimpleBoolReturnDelegate extra, bool checkMoving)
+        {
+            return CreateSpellCast(spellName, extra, ret => Me.CurrentTarget, checkMoving);
+        }
 
         public Composite CreateSpellCastOnSelf(string spellName)
         {
@@ -277,17 +318,20 @@ namespace Singular
             return
                 new Sequence(
                     CreateSpellCast(
-                spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 0, unitSelector(ret)), unitSelector, false),
+                        spellName, ret => extra(ret) && unitSelector(ret) != null && !HasAuraStacks(spellName, 0, unitSelector(ret)), unitSelector,
+                        false),
                     new DecoratorContinue(
                         ret => waitForDebuff,
                         new Sequence(
                             new Action(ret => StyxWoW.SleepForLagDuration()),
-                            new WaitContinue(3, ret => !Me.IsCasting,
-                                new Action(ret =>
-                                    {
-                                        StyxWoW.SleepForLagDuration();
-                                        Thread.Sleep(100);
-                                    })))));
+                            new WaitContinue(
+                                3, ret => !Me.IsCasting,
+                                new Action(
+                                    ret =>
+                                        {
+                                            StyxWoW.SleepForLagDuration();
+                                            Thread.Sleep(100);
+                                        })))));
         }
 
         public Composite CreateSpellBuff(string spellName)
@@ -353,64 +397,68 @@ namespace Singular
 
         #endregion
 
-		#region Party Buff By Name
+        #region Party Buff By Name
 
-		/// <summary>
-		/// To cast buffs on party members like Dampen Magic and such.
-		/// </summary>
-		/// <param name="spellName">Name of the buff</param>
-		/// <returns></returns>
-		public Composite CreateSpellPartyBuff(string spellName)
-		{
-			return
-				new PrioritySelector(
-					new Decorator(
-						ret => Me.IsInParty && Me.PartyMembers.Any(p => p.IsAlive && !p.HasAura(spellName)),
-						new PrioritySelector(
-							ctx => Me.PartyMembers.First(p => p.IsAlive && !p.HasAura(spellName)),
-							CreateMoveToAndFace(35, ret => (WoWUnit)ret),
-							CreateSpellCast(spellName, ret => true, ret => (WoWUnit)ret)))
-				);
-		}
+        /// <summary>
+        ///   To cast buffs on party members like Dampen Magic and such.
+        /// </summary>
+        /// <param name = "spellName">Name of the buff</param>
+        /// <returns></returns>
+        public Composite CreateSpellPartyBuff(string spellName)
+        {
+            return
+                new PrioritySelector(
+                    new Decorator(
+                        ret => Me.IsInParty && Me.PartyMembers.Any(p => p.IsAlive && !p.HasAura(spellName)),
+                        new PrioritySelector(
+                            ctx => Me.PartyMembers.First(p => p.IsAlive && !p.HasAura(spellName)),
+                            CreateMoveToAndFace(35, ret => (WoWUnit)ret),
+                            CreateSpellCast(spellName, ret => true, ret => (WoWUnit)ret)))
+                    );
+        }
 
-		#endregion
+        #endregion
 
-		#region ApproachToCast
+        #region ApproachToCast
 
-		public Composite CreateApproachToCast(string spellName, UnitSelectionDelegate unitSelector)
-		{
-			return
-				new Decorator(
-					ret => SpellManager.Spells[spellName].MaxRange != 0 &&
-						   (unitSelector(ret).Distance > SpellManager.Spells[spellName].MaxRange - 2f ||
-							!unitSelector(ret).InLineOfSightOCD),
-					new Action(ret => Navigator.MoveTo(unitSelector(ret).Location)));
-		}
+        public Composite CreateApproachToCast(string spellName, UnitSelectionDelegate unitSelector)
+        {
+            return
+                new Decorator(
+                    ret => SpellManager.Spells[spellName].MaxRange != 0 &&
+                           (unitSelector(ret).Distance > SpellManager.Spells[spellName].MaxRange - 2f ||
+                            !unitSelector(ret).InLineOfSightOCD),
+                    new Action(ret => Navigator.MoveTo(unitSelector(ret).Location)));
+        }
 
-		#endregion
+        #endregion
 
-		#region CanCast
+        #region CanCast
 
-		public bool CanCast(string spellName, WoWUnit onUnit, bool checkMoving)
-		{
-			// Do we have spell?
-			if (!SpellManager.HasSpell(spellName))
-				return false;
+        public bool CanCast(string spellName, WoWUnit onUnit, bool checkMoving)
+        {
+            // Do we have spell?
+            if (!SpellManager.HasSpell(spellName))
+            {
+                return false;
+            }
 
-			WoWSpell spell = SpellManager.Spells[spellName];
+            WoWSpell spell = SpellManager.Spells[spellName];
 
-			// Use default CanCast if checkmoving is true
-			if (checkMoving)
-			{
+            // Use default CanCast if checkmoving is true
+            if (checkMoving)
+            {
                 if (spell.CastTime != 0 && StyxWoW.Me.IsMoving)
+                {
                     return false;
-			}
+                }
+            }
 
-			// is spell in CD?
-			if (spell.Cooldown)
-			{
-				return false;
-			}
+            // is spell in CD?
+            if (spell.Cooldown)
+            {
+                return false;
+            }
 
             // minrange check
             if (spell.MinRange != 0 && onUnit.DistanceSqr < spell.MinRange * spell.MinRange)
@@ -418,64 +466,33 @@ namespace Singular
                 return false;
             }
 
-			// are we casting or channeling ?
-			if (Me.IsCasting || Me.ChanneledCastingSpellId != 0)
-			{
-				return false;
-			}
+            // are we casting or channeling ?
+            if (Me.IsCasting || Me.ChanneledCastingSpellId != 0)
+            {
+                return false;
+            }
 
-			// do we have enough power?
-			if (Me.GetCurrentPower(spell.PowerType) < spell.PowerCost)
-			{
-				return false;
-			}
+            // do we have enough power?
+            if (Me.GetCurrentPower(spell.PowerType) < spell.PowerCost)
+            {
+                return false;
+            }
 
-			// GCD check
-			if (StyxWoW.GlobalCooldown)
-			{
-				return false;
-			}
+            // GCD check
+            if (StyxWoW.GlobalCooldown)
+            {
+                return false;
+            }
 
-			// lua
-			if (!spell.CanCast)
-			{
-				return false;
-			}
+            // lua
+            if (!spell.CanCast)
+            {
+                return false;
+            }
 
-			return true;
-		}
-
-		#endregion
-
-        private Composite CreateSpellCastOnLocation(string spellName, LocationRetrievalDelegate onLocation)
-        {
-            return new Decorator(
-                ret => CanCast(spellName, null, false),
-                new Sequence(
-                    new Action(ret => CastWithLog(spellName, null)),
-                    new Action(ret => LegacySpellManager.ClickRemoteLocation(onLocation(ret)))));
+            return true;
         }
 
-        /// <summary>Creates a composite to throw a throwing weapon, shoot a bow, crossbow, gun, or wand. If your inventory has such ranged weapon, and you know the skill.</summary>
-        /// <remarks>Created 3/12/2011.</remarks>
-        /// <returns>.</returns>
-        public Composite CreateFireRangedWeapon()
-        {
-            return new PrioritySelector(
-                CreateSpellCast(
-                    "Throw", ret => Me.Inventory.Equipped.Ranged != null &&
-                                    Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Thrown, false),
-                CreateSpellCast(
-                    "Shoot",
-                    ret => Me.Inventory.Equipped.Ranged != null &&
-                           (Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow ||
-                            Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow ||
-                            Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Gun ||
-                            Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Wand), false)
-
-                );
-        }
-
-
+        #endregion
     }
 }

@@ -24,6 +24,19 @@ namespace Singular
     {
         public string WantedPet { get; set; }
 
+        protected bool NeedToCreateHealthStone
+        {
+            get
+            {
+                if (Me.CarriedItems.Any(i => i.ItemSpells.Any(s => s.ActualSpell.Name == "Healthstone")))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
         [Class(WoWClass.Warlock)]
         [Spec(TalentSpec.AfflictionWarlock)]
         [Spec(TalentSpec.DemonologyWarlock)]
@@ -56,7 +69,7 @@ namespace Singular
         public Composite CreateWarlockCombatBuffs()
         {
             return new PrioritySelector(
-                CreateUsePotionAndHealthstone(50,10)
+                CreateUsePotionAndHealthstone(50, 10)
                 );
         }
 
@@ -76,21 +89,8 @@ namespace Singular
                 CreateWaitForCast(),
                 CreateSpellBuffOnSelf("Life Tap", ret => Me.ManaPercent < 80 && Me.HealthPercent > 40),
                 CreateSpellBuffOnSelf("Soul Harvest", ret => Me.CurrentSoulShards < 2 || Me.HealthPercent <= 55),
-                CreateDefaultRestComposite(40,0)
+                CreateDefaultRestComposite(40, 0)
                 );
-        }
-
-        protected bool NeedToCreateHealthStone
-        {
-            get
-            {
-                if (Me.CarriedItems.Any(i => i.ItemSpells.Any(s => s.ActualSpell.Name == "Healthstone")))
-                {
-                    return false;
-                }
-
-                return true;
-            }
         }
     }
 }

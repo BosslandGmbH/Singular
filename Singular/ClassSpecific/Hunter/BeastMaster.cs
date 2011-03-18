@@ -1,12 +1,19 @@
-﻿using Styx.Helpers;
-using Styx.Logic.Combat;
-using Styx.Logic.Pathing;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
-using CommonBehaviors.Actions;
-using Styx;
-using System.Threading;
 
 namespace Singular
 {
@@ -29,8 +36,9 @@ namespace Singular
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 //Intimidation
-                CreateSpellCast("Intimidation", ret => Me.CurrentTarget.IsAlive && Me.GotAlivePet &&
-                    (Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me)),
+                CreateSpellCast(
+                    "Intimidation", ret => Me.CurrentTarget.IsAlive && Me.GotAlivePet &&
+                                           (Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me)),
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),
                 new Decorator(
@@ -38,11 +46,14 @@ namespace Singular
                     new PrioritySelector(
                         CreateSpellBuffOnSelf("Disengage"),
                         CreateSpellCast("Raptor Strike")
-                
                         )),
                 // Heal pet when below 70
-                CreateSpellCast("Mend Pet", ret => (Me.Pet.HealthPercent < 70 || (Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !Me.Pet.HasAura("Mend Pet")),
-                CreateSpellCast("Concussive Shot",
+                CreateSpellCast(
+                    "Mend Pet",
+                    ret =>
+                    (Me.Pet.HealthPercent < 70 || (Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !Me.Pet.HasAura("Mend Pet")),
+                CreateSpellCast(
+                    "Concussive Shot",
                     ret => Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me),
                 //Rapid fire on elite 
                 CreateSpellBuffOnSelf("Rapid Fire", ret => CurrentTargetIsElite),
@@ -64,5 +75,4 @@ namespace Singular
                 );
         }
     }
-
 }

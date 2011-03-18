@@ -12,12 +12,8 @@
 #endregion
 
 using System.Text;
-using System.Collections.Generic;
-using System.Linq;
 
-using Styx;
 using Styx.WoWInternals.WoWObjects;
-using Styx.Logic.Combat;
 
 namespace Singular
 {
@@ -53,13 +49,19 @@ namespace Singular
         public static string SafeName(this WoWObject obj)
         {
             if (obj.IsMe)
+            {
                 return "Myself";
+            }
 
             if (obj is WoWPlayer)
+            {
                 return "Player";
+            }
 
             if (obj is WoWUnit && obj.ToUnit().IsPet)
+            {
                 return "a Pet";
+            }
 
             return obj.Name;
         }

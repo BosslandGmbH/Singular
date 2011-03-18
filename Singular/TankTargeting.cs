@@ -20,7 +20,6 @@ using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
-
 namespace Singular
 {
     /*
@@ -42,6 +41,7 @@ namespace Singular
         }
 
         public new static TankTargeting Instance { get; set; }
+        public List<WoWUnit> NeedToTaunt { get; private set; }
 
         protected override List<WoWObject> GetInitialObjectList()
         {
@@ -52,12 +52,12 @@ namespace Singular
         {
             for (int i = units.Count - 1; i >= 0; i--)
             {
-				if (!units[i].IsValid)
-				{
-					units.RemoveAt(i);
-					continue;
-				}
-					
+                if (!units[i].IsValid)
+                {
+                    units.RemoveAt(i);
+                    continue;
+                }
+
                 WoWUnit u = units[i].ToUnit();
 
                 if (u.IsFriendly || u.Dead || u.IsPet() || !u.Combat || IsCrowdControlled(u))
@@ -68,7 +68,7 @@ namespace Singular
 
                 if (u.CurrentTarget != null)
                 {
-                    var tar = u.CurrentTarget;
+                    WoWUnit tar = u.CurrentTarget;
                     if (tar.IsPlayer && tar.IsHostile)
                     {
                         units.RemoveAt(i);
@@ -86,8 +86,6 @@ namespace Singular
             }
         }
 
-        public List<WoWUnit> NeedToTaunt { get; private set; }
-
         protected override void DefaultTargetWeight(List<TargetPriority> units)
         {
             NeedToTaunt.Clear();
@@ -100,29 +98,32 @@ namespace Singular
                 // I have 1M threat -> nearest has 400k -> Leaves 600k difference -> subtract 600k
                 // The further the difference, the less the unit is weighted.
                 // If they have MORE threat than I do, the number is -10k -> which subtracted = +10k weight.
-                var aggroDiff = GetAggroDifferenceFor(u, members);
+                int aggroDiff = GetAggroDifferenceFor(u, members);
                 p.Score -= aggroDiff;
 
                 // If we have NO threat on the mob. Taunt the fucking thing.
-				// Don't taunt fleeing mobs!
+                // Don't taunt fleeing mobs!
                 if (aggroDiff < 0 && !u.Fleeing)
+                {
                     NeedToTaunt.Add(u);
+                }
             }
         }
 
-		private bool IsCrowdControlled(WoWUnit unit)
-		{
-			var auras = unit.Auras.Values;
+        private bool IsCrowdControlled(WoWUnit unit)
+        {
+            Dictionary<string, WoWAura>.ValueCollection auras = unit.Auras.Values;
 
-		    return auras.Any(a => a.Spell.Mechanic == WoWSpellMechanic.Banished ||
-		                          a.Spell.Mechanic == WoWSpellMechanic.Charmed ||
-		                          a.Spell.Mechanic == WoWSpellMechanic.Horrified ||
-		                          a.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
-		                          a.Spell.Mechanic == WoWSpellMechanic.Polymorphed ||
-		                          a.Spell.Mechanic == WoWSpellMechanic.Sapped ||
-		                          a.Spell.Mechanic == WoWSpellMechanic.Shackled ||
-		                          a.Spell.Mechanic == WoWSpellMechanic.Asleep);
-		}
+            return auras.Any(
+                a => a.Spell.Mechanic == WoWSpellMechanic.Banished ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Charmed ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Horrified ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Polymorphed ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Sapped ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Shackled ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Asleep);
+        }
 
         private int GetAggroDifferenceFor(WoWUnit unit, IEnumerable<WoWPlayer> partyMembers)
         {
@@ -132,8 +133,8 @@ namespace Singular
                                  orderby tVal descending
                                  select tVal).FirstOrDefault();
 
-			var result = (int)myThreat - (int)highestParty;
-			return result;
+            int result = (int)myThreat - (int)highestParty;
+            return result;
         }
     }
 }

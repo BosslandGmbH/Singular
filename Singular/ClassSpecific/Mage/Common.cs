@@ -70,7 +70,11 @@ namespace Singular
 
         public bool Gotfood()
         {
-            return Me.BagItems.Where(item => item.Entry == 65500 || item.Entry == 65515 || item.Entry == 65516 || item.Entry == 65517 || item.Entry == 43518 || item.Entry == 43523 || item.Entry == 65499).Any();
+            return
+                Me.BagItems.Where(
+                    item =>
+                    item.Entry == 65500 || item.Entry == 65515 || item.Entry == 65516 || item.Entry == 65517 || item.Entry == 43518 ||
+                    item.Entry == 43523 || item.Entry == 65499).Any();
         }
 
         private WoWItem HaveItemCheck(List<int> listId)

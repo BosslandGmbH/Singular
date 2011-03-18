@@ -14,10 +14,10 @@
 using System.Linq;
 
 using Styx.Combat.CombatRoutine;
-
-using TreeSharp;
 using Styx.Helpers;
 using Styx.Logic.Pathing;
+
+using TreeSharp;
 
 namespace Singular
 {

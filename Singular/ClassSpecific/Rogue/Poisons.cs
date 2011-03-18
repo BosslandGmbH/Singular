@@ -1,10 +1,23 @@
-﻿using System;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+
+using Singular.Settings;
+
 using Styx;
 using Styx.WoWInternals.WoWObjects;
-using Singular.Settings;
 
 namespace Singular
 {
@@ -17,23 +30,20 @@ namespace Singular
         Wound
     }
 
-    class Poisons
+    internal class Poisons
     {
-        public static bool MainHandNeedsPoison
-        {
-            get
-            {
-                return StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 0;
-            }
-        }
+        private static readonly HashSet<uint> InstantPoisons = new HashSet<uint> { 6947, 43231 };
 
-        public static bool OffHandNeedsPoison
-        {
-            get
-            {
-                return StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 0;
-            }
-        }
+        private static readonly HashSet<uint> CripplingPoisons = new HashSet<uint> { 3775 };
+
+        private static readonly HashSet<uint> MindNumbingPoisons = new HashSet<uint> { 5237 };
+
+        private static readonly HashSet<uint> DeadlyPoisons = new HashSet<uint> { 2892, 43233 };
+
+        private static readonly HashSet<uint> WoundPoisons = new HashSet<uint> { 10918, 43235 };
+        public static bool MainHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 0; } }
+
+        public static bool OffHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 0; } }
 
         public static WoWItem MainHandPoison
         {
@@ -46,7 +56,8 @@ namespace Singular
                     case PoisonType.Crippling:
                         return StyxWoW.Me.CarriedItems.Where(i => CripplingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.MindNumbing:
-                        return StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
+                        return
+                            StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Deadly:
                         return StyxWoW.Me.CarriedItems.Where(i => DeadlyPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Wound:
@@ -68,7 +79,8 @@ namespace Singular
                     case PoisonType.Crippling:
                         return StyxWoW.Me.CarriedItems.Where(i => CripplingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.MindNumbing:
-                        return StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
+                        return
+                            StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Deadly:
                         return StyxWoW.Me.CarriedItems.Where(i => DeadlyPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
                     case PoisonType.Wound:
@@ -78,15 +90,5 @@ namespace Singular
                 }
             }
         }
-
-        private static HashSet<uint> InstantPoisons = new HashSet<uint>() { 6947, 43231 };
-
-        private static HashSet<uint> CripplingPoisons = new HashSet<uint>() { 3775 };
-
-        private static HashSet<uint> MindNumbingPoisons = new HashSet<uint>() { 5237 };
-
-        private static HashSet<uint> DeadlyPoisons = new HashSet<uint>() { 2892, 43233 };
-
-        private static HashSet<uint> WoundPoisons = new HashSet<uint>() { 10918, 43235 };
     }
 }

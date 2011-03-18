@@ -16,12 +16,13 @@ using TreeSharp;
 namespace Singular.Composites
 {
     public delegate string LogMessageRetriever();
+
     internal class ActionLogMessage : Action
     {
         private readonly bool _debug;
 
-        private LogMessageRetriever _messageGrabber;
         private readonly string _message;
+        private readonly LogMessageRetriever _messageGrabber;
 
         public ActionLogMessage(bool debug, string message)
         {

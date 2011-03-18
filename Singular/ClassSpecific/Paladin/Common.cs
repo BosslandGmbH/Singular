@@ -1,4 +1,17 @@
-﻿using System.Linq;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System.Linq;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
@@ -33,8 +46,6 @@ namespace Singular
                 new PrioritySelector(
                     // This won't run, but it's here for changes in the future. We NEVER run this method if we're mounted.
                     CreateSpellBuffOnSelf("Crusader Aura", ret => Me.Mounted),
-
-
                     // Ghetto Kings Check
                     CreateSpellBuffOnSelf("Blessing of Might", ret => Me.HasAura("Blessing of Forgotten Kings") && !Me.HasAura("Blessing of Might")),
                     //Party Buffs

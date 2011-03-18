@@ -11,14 +11,12 @@
 
 #endregion
 
-using Styx.Combat.CombatRoutine;
-using Styx.Logic.Combat;
-using System.Linq.Expressions;
 using System.Linq;
 
+using Styx.Combat.CombatRoutine;
+using Styx.Logic.Combat;
+
 using TreeSharp;
-using Styx;
-using System.Threading;
 
 namespace Singular
 {
@@ -45,7 +43,6 @@ namespace Singular
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count > 1,
                     CreateCastPetAction("Felstorm")),
-
                 new Decorator(
                     ret => CurrentTargetIsElite,
                     new PrioritySelector(
@@ -57,7 +54,6 @@ namespace Singular
                 CreateSpellBuff("Immolate", true),
                 CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss),
                 CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom")),
-
                 // Use the infernal if we have a few mobs around us, and it's off CD. Otherwise, just use the Doomguard.
                 // Its a 10min CD, with a 1-1.2min uptime on the minion. Hey, any extra DPS is fine in my book!
                 // Make sure these 2 summons are AFTER the banes above.

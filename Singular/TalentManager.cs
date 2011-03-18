@@ -84,10 +84,9 @@ namespace Singular
         {
             Talents = new List<Talent>();
             Glyphs = new HashSet<string>();
-			Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", UpdateTalentManager);
-			Lua.Events.AttachEvent("GLYPH_UPDATED", UpdateTalentManager);
-			Lua.Events.AttachEvent("ACTIVE_TALENT_GROUP_CHANGED", UpdateTalentManager);
-
+            Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", UpdateTalentManager);
+            Lua.Events.AttachEvent("GLYPH_UPDATED", UpdateTalentManager);
+            Lua.Events.AttachEvent("ACTIVE_TALENT_GROUP_CHANGED", UpdateTalentManager);
         }
 
         public static TalentSpec CurrentSpec { get; private set; }
@@ -111,18 +110,18 @@ namespace Singular
             return Glyphs.Count > 0 && Glyphs.Contains(glyphName);
         }
 
-		private static void UpdateTalentManager(object sender, LuaEventArgs args)
-		{
-			var oldSpec = CurrentSpec;
+        private static void UpdateTalentManager(object sender, LuaEventArgs args)
+        {
+            TalentSpec oldSpec = CurrentSpec;
 
-			Update();
+            Update();
 
-			if (CurrentSpec != oldSpec)
-			{
-				Logger.Write("Your spec has been changed. Rebuilding behaviors");
-				SingularRoutine.Instance.CreateBehaviors();
-			}
-		}
+            if (CurrentSpec != oldSpec)
+            {
+                Logger.Write("Your spec has been changed. Rebuilding behaviors");
+                SingularRoutine.Instance.CreateBehaviors();
+            }
+        }
 
         public static void Update()
         {

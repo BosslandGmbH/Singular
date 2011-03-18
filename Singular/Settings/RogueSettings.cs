@@ -13,7 +13,6 @@
 
 using System.ComponentModel;
 
-using Styx;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
@@ -28,7 +27,7 @@ namespace Singular.Settings
         }
 
         [Setting]
-        [DefaultValue(PoisonType.Instant)]
+        [Styx.Helpers.DefaultValue(PoisonType.Instant)]
         [Category("Common")]
         [DisplayName("Main Hand Poison")]
         [Description("Main Hand Poison")]

@@ -139,6 +139,7 @@
     <Compile Include="Settings\SingularSettings.cs" />
     <Compile Include="Settings\WarlockSettings.cs" />
     <Compile Include="Settings\WarriorSettings.cs" />
+    <Compile Include="SingularRoutine.ItemComposites.cs" />
     <Compile Include="SingularRoutine.Movement.cs" />
     <Compile Include="SingularRoutine.CompositeHelpers.cs" />
     <Compile Include="SingularRoutine.cs" />

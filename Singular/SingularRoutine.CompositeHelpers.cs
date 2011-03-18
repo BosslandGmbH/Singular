@@ -173,30 +173,7 @@ namespace Singular
 				);
 		}
 
-        public Composite CreateUseTrinketsBehavior()
-        {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => SingularSettings.Instance.UseFirstTrinket,
-                    new Decorator(
-                        ret => Miscellaneous.UseTrinket(true),
-                        new ActionAlwaysSucceed())),
 
-                new Decorator(
-                    ret => SingularSettings.Instance.UseSecondTrinket,
-                    new Decorator(
-                        ret => Miscellaneous.UseTrinket(false),
-                        new ActionAlwaysSucceed()))
-                );
-        }
-
-		public Composite CreateUseEquippedItem(uint slotId)
-		{
-			return new PrioritySelector(
-				new Decorator(
-					ret => Miscellaneous.UseEquippedItem(slotId),
-					new ActionAlwaysSucceed()));
-		}
 
         private void CastWithLog(string spellName, WoWUnit onTarget)
         {
@@ -505,56 +482,6 @@ namespace Singular
                 );
         }
 
-        /// <summary>
-        /// Creates a composite to use potions and healthstone.
-        /// </summary>
-        /// <param name="healthPercent">Healthpercent to use health potions and healthstone</param>
-        /// <param name="manaPercent">Manapercent to use mana potions</param>
-        /// <returns></returns>
-        public Composite CreateUsePotionAndHealthstone(double healthPercent, double manaPercent)
-        {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => Me.HealthPercent < healthPercent,
-                    new PrioritySelector(
-                        ctx => Me.CarriedItems.
-                                    Where(i => 
-                                        i != null &&
-                                        i.Cooldown == 0 && 
-                                        i.ItemInfo != null &&
-                                        i.ItemInfo.RequiredLevel <= Me.Level &&
-                                        i.ItemSpells != null &&
-                                        i.ItemSpells.Any(s => 
-                                                s.ActualSpell.Name == "Healthstone" ||
-                                                s.ActualSpell.Name == "Healing Potion")).
-                                    OrderBy(i => i.ItemInfo.Level).FirstOrDefault(),
-                        new Decorator(
-                            ret => ret != null,
-                            new Sequence(
-                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                new Action(ret => StyxWoW.SleepForLagDuration())))
-                        )),
-                new Decorator(
-                    ret => Me.ManaPercent < manaPercent,
-                    new PrioritySelector(
-                        ctx => Me.CarriedItems.
-                                    Where(i =>
-                                        i != null &&
-                                        i.Cooldown == 0 &&
-                                        i.ItemInfo != null &&
-                                        i.ItemInfo.RequiredLevel <= Me.Level &&
-                                        i.ItemSpells != null &&
-                                        i.ItemSpells.Any(s =>
-                                                s.ActualSpell.Name == "Restore Mana")).
-                                    OrderBy(i => i.ItemInfo.Level).FirstOrDefault(),
-                        new Decorator(
-                            ret => ret != null,
-                            new Sequence(
-                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                new Action(ret => StyxWoW.SleepForLagDuration())))))
-                );
-        }
+
     }
 }

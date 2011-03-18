@@ -84,5 +84,23 @@ namespace Singular
 
 			return item.Use();
 		}
+
+        public static WoWItem FindFirstUsableItemBySpell(params string[] spellNames)
+        {
+            var carried = StyxWoW.Me.CarriedItems;
+            // Yes, this is a bit of a hack. But the cost of creating an object each call, is negated by the speed of the Contains from a hash set.
+            // So take your optimization bitching elsewhere.
+            var spellNameHashes = new HashSet<string>(spellNames);
+
+            return (from i in carried
+                    let spells = i.ItemSpells
+                    where i.ItemInfo != null && spells != null && spells.Count != 0 &&
+                          i.Usable &&
+                          i.Cooldown == 0 &&
+                          i.ItemInfo.RequiredLevel <= StyxWoW.Me.Level &&
+                          spells.Any(s => s.IsValid && s.ActualSpell != null && spellNameHashes.Contains(s.ActualSpell.Name))
+                    orderby i.ItemInfo.Level descending
+                    select i).FirstOrDefault();
+        }
     }
 }

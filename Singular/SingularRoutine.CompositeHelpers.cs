@@ -519,9 +519,11 @@ namespace Singular
                     new PrioritySelector(
                         ctx => Me.CarriedItems.
                                     Where(i => 
+                                        i != null &&
                                         i.Cooldown == 0 && 
+                                        i.ItemInfo != null &&
                                         i.ItemInfo.RequiredLevel <= Me.Level &&
-                                        i.ItemSpells.Count > 0 &&
+                                        i.ItemSpells != null &&
                                         i.ItemSpells.Any(s => 
                                                 s.ActualSpell.Name == "Healthstone" ||
                                                 s.ActualSpell.Name == "Healing Potion")).
@@ -538,9 +540,11 @@ namespace Singular
                     new PrioritySelector(
                         ctx => Me.CarriedItems.
                                     Where(i =>
+                                        i != null &&
                                         i.Cooldown == 0 &&
+                                        i.ItemInfo != null &&
                                         i.ItemInfo.RequiredLevel <= Me.Level &&
-                                        i.ItemSpells.Count > 0 &&
+                                        i.ItemSpells != null &&
                                         i.ItemSpells.Any(s =>
                                                 s.ActualSpell.Name == "Restore Mana")).
                                     OrderBy(i => i.ItemInfo.Level).FirstOrDefault(),

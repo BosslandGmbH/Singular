@@ -33,7 +33,7 @@ namespace Singular
                 CreateSpellBuffOnSelf("Sprint", ret => Me.IsMoving && Me.HasAura("Stealth")),
                 CreateSpellBuffOnSelf("Stealth"),
                 new Decorator(
-                    ret => WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f).Distance(Me.Location) > 3f,
+                    ret => WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f).Distance2D(Me.Location) > 3f,
                     new Action(ret => Navigator.MoveTo(WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f)))),
                 CreateFaceUnit(),
                 CreateSpellCast("Cheap Shot"),

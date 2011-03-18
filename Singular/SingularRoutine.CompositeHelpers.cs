@@ -74,25 +74,26 @@ namespace Singular
                         )));
         }
 
-        protected Composite CreateCastPetAction(PetAction action, bool parentIsSelector)
+        protected Composite CreateCastPetAction(string action, bool parentIsSelector)
         {
             return CreateCastPetActionOn(action, parentIsSelector, ret => Me.CurrentTarget);
         }
 
-        protected Composite CreateCastPetActionOn(PetAction action, bool parentIsSelector, UnitSelectionDelegate onUnit)
+        protected Composite CreateCastPetActionOn(string action, bool parentIsSelector, UnitSelectionDelegate onUnit)
         {
-            return new Action(
-                delegate(object context)
-                    {
-                        PetManager.CastPetAction(action, onUnit(context));
-
-                        // Purposely fail here, we want to 'skip' down the tree.
-                        if (parentIsSelector)
+            return new Decorator(
+                ret => PetManager.CanCastPetAction(action), new Action(
+                    delegate(object context)
                         {
-                            return RunStatus.Failure;
-                        }
-                        return RunStatus.Success;
-                    });
+                            PetManager.CastPetAction(action, onUnit(context));
+
+                            // Purposely fail here, we want to 'skip' down the tree.
+                            if (parentIsSelector)
+                            {
+                                return RunStatus.Failure;
+                            }
+                            return RunStatus.Success;
+                        }));
         }
 
 		private static WaitTimer targetingTimer = new WaitTimer(TimeSpan.FromSeconds(2));
@@ -155,7 +156,7 @@ namespace Singular
 					new Action(ret => Me.ToggleAttack())),
 				new Decorator(
 					ret => includePet && Me.GotAlivePet && (Me.Pet.CurrentTarget == null || Me.Pet.CurrentTarget != Me.CurrentTarget),
-					new Action(delegate { PetManager.CastPetAction(PetAction.Attack); return RunStatus.Failure; }))
+					new Action(delegate { PetManager.CastPetAction("Attack"); return RunStatus.Failure; }))
 				);
         }
 

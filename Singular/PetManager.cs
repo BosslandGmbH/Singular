@@ -11,6 +11,10 @@
 
 #endregion
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
@@ -21,63 +25,6 @@ using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
-    public enum PetAction
-    {
-        // Yep
-        Attack = 1,
-        Follow = 2,
-        MoveTo = 3,
-
-        // Felguard
-        LegionStrike = 4,
-        Pursuit = 5,
-        AxeToss = 6,
-        Felstorm = 7,
-
-        // Felpup
-        DevourMagic = 4,
-        FelIntelligence = 5,
-        ShadowBite = 6,
-        SpellLock = 7,
-
-        // Succubus
-        LashOfPain = 4,
-        Seduction = 5,
-        Whiplash = 6,
-        LesserInvisibility = 7,
-
-        // Void
-        Sacrifice = 4,
-        Torment = 5,
-        Suffering = 6,
-        ConsumeShadows = 7,
-
-        // Imp
-        Firebolt = 4,
-        BloodPact = 5,
-        Flee = 7,
-
-        // Infernal
-        Immolation = 4, // Needs update
-
-        // Doomguard
-        RainOfFire = 4, // Needs update
-        DispelMagic = 5, // Needs update
-        WarStomp = 6, // Needs update
-        Cripple = 7, // Needs update
-
-        // Water Elemental
-        Freeze = 4,
-        Waterbolt = 5,
-
-        // TODO: Shaman pets
-
-        // Stances
-        Aggressive = 8,
-        Defensive = 9,
-        Passive = 10,
-    }
-
     public enum PetType
     {
         // These are CreatureFamily IDs. See 'CurrentPet' for usage.
@@ -92,6 +39,35 @@ namespace Singular
     internal class PetManager
     {
         private static readonly WaitTimer CallPetTimer = WaitTimer.OneSecond;
+
+        private static ulong _petGuid = 0;
+        private static List<WoWPetSpell> _petSpells = new List<WoWPetSpell>();
+        internal static void Pulse()
+        {
+            // TODO: Remove this stuff upon the next HB release.
+            if (!StyxWoW.Me.GotAlivePet)
+            {
+                _petSpells.Clear();
+                return;
+            }
+
+            if (_petGuid != StyxWoW.Me.Pet.Guid)
+            {
+                Logger.Write("Pet changed. Rebuilding actions mapping.");
+                _petGuid = StyxWoW.Me.Pet.Guid;
+
+                // Too lazy to rebase to 0x1000
+                const uint PET_SPELLS_PTR = 0x00E0A388 - 0x400000; // lua_GetPetActionInfo - 2nd DWORD - used as an array of vals
+                _petSpells.Clear();
+                var spellMasks = ObjectManager.Wow.ReadStructArrayRelative<uint>(PET_SPELLS_PTR, 10);
+                for (int i = 0; i < 10; i++)
+                {
+                    var spell = new WoWPetSpell(spellMasks[i], i);
+                    Logger.Write("Adding pet spell " + spell + " at button #" + spell.ActionBarIndex);
+                    _petSpells.Add(spell);
+                }
+            }
+        }
 
         static PetManager()
         {
@@ -116,17 +92,26 @@ namespace Singular
 
         public static bool HavePet { get { return StyxWoW.Me.GotAlivePet; } }
 
-        public static void CastPetAction(PetAction action)
+        public static bool CanCastPetAction(string action)
         {
-            Logger.Write(string.Format("[Pet] Casting {0}", action.ToString().CamelToSpaced()));
-            Lua.DoString("CastPetAction({0})", (int)action);
+            var spell = _petSpells.First(p => p.ToString() == action);
+            if (spell == null)
+                return false;
+
+            return !spell.Cooldown;
         }
 
-        public static void CastPetAction(PetAction action, WoWUnit on)
+        public static void CastPetAction(string action)
         {
-            Logger.Write(string.Format("[Pet] Casting {0}", action.ToString().CamelToSpaced()));
+            Logger.Write(string.Format("[Pet] Casting {0}", action));
+            Lua.DoString("CastPetAction({0})", _petSpells.First(p => p.ToString() == action).ActionBarIndex);
+        }
+
+        public static void CastPetAction(string action, WoWUnit on)
+        {
+            Logger.Write(string.Format("[Pet] Casting {0} on {1}", action, on.SafeName()));
             StyxWoW.Me.SetFocus(on);
-            Lua.DoString("CastPetAction({0}, 'focus')", (int)action);
+            Lua.DoString("CastPetAction({0}, 'focus')", _petSpells.First(p => p.ToString() == action).ActionBarIndex);
             StyxWoW.Me.SetFocus(0);
         }
 
@@ -177,4 +162,135 @@ namespace Singular
             return false;
         }
     }
+
+
 }
+
+#region TO BE REMOVED IN THE NEXT HB RELEASE
+
+namespace Styx.Logic.Combat
+{
+    /// <summary>Defines a pet "action" spell. (From the action bar. All known pet actions.)</summary>
+    /// <remarks>Created 3/18/2011.</remarks>
+    public class WoWPetSpell
+    {
+        public enum PetSpellType
+        {
+            Unknown,
+            Spell,
+            Action,
+            Stance
+        }
+
+        public enum PetAction
+        {
+            None = -1,
+            Wait = 0,
+            Follow,
+            Attack,
+            Dismiss,
+            MoveTo
+        }
+
+        public enum PetStance
+        {
+            None = -1,
+            Passive = 0,
+            Defensive = 1,
+            Aggressive = 2,
+        }
+
+        /// <summary>Gets the actual spell, if SpellType is "Spell"</summary>
+        /// <value>The spell.</value>
+        public WoWSpell Spell { get; private set; }
+
+        /// <summary>Returns the type of spell this <see cref="WoWPetSpell"/> is for.</summary>
+        /// <value>The type of the spell.</value>
+        public PetSpellType SpellType { get; private set; }
+
+        /// <summary>Gets the action type.</summary>
+        /// <value>The action.</value>
+        public PetAction Action { get; private set; }
+
+        /// <summary>Gets the stance this spell sets the pet into..</summary>
+        /// <value>The stance.</value>
+        public PetStance Stance { get; private set; }
+
+        /// <summary>Gets a value indicating whether the spell is on cooldown. Only valid if SpellType is "Spell".</summary>
+        /// <value>true if cooldown, false if not.</value>
+        public bool Cooldown { get { return Spell != null && !Spell.Cooldown; } }
+
+        /// <summary>Gets the zero-based index of the action bar, where this spell resides.</summary>
+        /// <value>The action bar index.</value>
+        public int ActionBarIndex { get; private set; }
+
+        private WoWPetSpell()
+        {
+            ActionBarIndex = -1;
+            SpellType = PetSpellType.Unknown;
+            Action = PetAction.None;
+            Stance = PetStance.None;
+        }
+        internal WoWPetSpell(uint spellMask, int index)
+            : this()
+        {
+            ActionBarIndex = index;
+            var spellId = spellMask & 0xFFFFFF;
+            switch ((spellMask >> 24) & 0x3F)
+            {
+                case 1u:
+                case 8u:
+                case 9u:
+                case 10u:
+                case 11u:
+                case 12u:
+                case 13u:
+                case 14u:
+                case 15u:
+                case 16u:
+                case 17u:
+                    SpellType = PetSpellType.Spell;
+                    Spell = WoWSpell.FromId((int)spellId);
+                    break;
+
+                case 6u:
+                    SpellType = PetSpellType.Stance;
+                    Stance = (PetStance)(spellMask & 0xFFFFFF);
+                    break;
+
+                case 7u:
+                    SpellType = PetSpellType.Action;
+                    Action = (PetAction)(spellMask & 0xFFFFFF);
+                    break;
+                default:
+                    SpellType = PetSpellType.Unknown;
+                    break;
+            }
+        }
+
+        public override string ToString()
+        {
+            switch (SpellType)
+            {
+                case PetSpellType.Unknown:
+                    return "Unknown";
+                    break;
+                case PetSpellType.Spell:
+                    return Spell != null ? Spell.Name : "Unknown";
+                    break;
+                case PetSpellType.Action:
+                    if (Action == PetAction.MoveTo)
+                        return "Move To";
+                    return Action.ToString();
+                    break;
+                case PetSpellType.Stance:
+                    return Stance.ToString();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
+}
+
+#endregion

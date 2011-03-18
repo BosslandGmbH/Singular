@@ -148,6 +148,7 @@ namespace Singular
 
         public override void Pulse()
         {
+            PetManager.Pulse();
 			if (NeedHealTargeting)
 				HealTargeting.Instance.Pulse();
 			if (NeedTankTargeting && CurrentWoWContext != WoWContext.Battlegrounds && (Me.IsInParty || Me.IsInRaid))

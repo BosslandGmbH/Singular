@@ -39,7 +39,7 @@ namespace Singular
                 CreateSpellCast("Life Tap", ret => Me.ManaPercent < 50 && Me.HealthPercent > 70),
                 new Decorator(
                     ret => Me.CurrentTarget.Fleeing,
-                    CreateCastPetAction(PetAction.AxeToss, true)),
+                    CreateCastPetAction("Axe Toss", true)),
                 new Decorator(
                     ret => CurrentTargetIsElite,
                     new PrioritySelector(

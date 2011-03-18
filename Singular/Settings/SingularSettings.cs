@@ -40,6 +40,14 @@ namespace Singular.Settings
         [DisplayName("Debug Logging")]
         [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
         public bool EnableDebugLogging { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Buffs")]
+        [DisplayName("Use Flask of Enhancement")]
+        [Description("Use the alchemy 'Flask of Enhancement' item for a free hourly buff")]
+        public bool UseAlchemyFlaskOfEnhancement { get; set; }
+
         #endregion
 
         #region Resting
@@ -134,8 +142,9 @@ namespace Singular.Settings
         private WarlockSettings _warlockSettings;
 
         private WarriorSettings _warriorSettings;
+        
 
-		[Browsable(false)]
+        [Browsable(false)]
         public DeathKnightSettings DeathKnight { get { return _dkSettings ?? (_dkSettings = new DeathKnightSettings()); } }
 
 		[Browsable(false)]

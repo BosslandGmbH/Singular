@@ -18,6 +18,24 @@ namespace Singular
 {
     partial class SingularRoutine
     {
+        public Composite CreateUseAlchemyBuffsBehavior()
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret =>
+                    SingularSettings.Instance.UseAlchemyFlaskOfEnhancement && Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 500 &&
+                    !Me.HasAura("Enhanced Agility") && !Me.HasAura("Enhanced Intellect") && !Me.HasAura("Enhanced Strength"),
+                    new PrioritySelector(
+                        ctx => Me.CarriedItems.FirstOrDefault(i => i.Entry == 58149), // Flask of Enhancement
+                        new Decorator(
+                            ret => ret != null,
+                            new Sequence(
+                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                new Action(ret => StyxWoW.SleepForLagDuration())))
+                        ))
+                );
+        }
 
         public Composite CreateUseTrinketsBehavior()
         {

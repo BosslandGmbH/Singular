@@ -304,20 +304,16 @@ namespace Styx.Logic.Combat
             {
                 case PetSpellType.Unknown:
                     return "Unknown";
-                    break;
                 case PetSpellType.Spell:
                     return Spell != null ? Spell.Name : "Unknown";
-                    break;
                 case PetSpellType.Action:
                     if (Action == PetAction.MoveTo)
                     {
                         return "Move To";
                     }
                     return Action.ToString();
-                    break;
                 case PetSpellType.Stance:
                     return Stance.ToString();
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }

@@ -17,6 +17,7 @@ using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
 
 using TreeSharp;
+using Styx;
 
 namespace Singular
 {
@@ -52,8 +53,11 @@ namespace Singular
                         CreateSpellCast("Shadowflame", ret => Me.CurrentTarget.Distance < 5)
                         )),
                 CreateSpellBuff("Immolate", true),
+                CreateSpellBuff("Curse of Tongues", ret => Me.CurrentTarget.PowerType == WoWPowerType.Mana),
+                CreateSpellBuff("Curse of Weakness", ret => Me.CurrentTarget.PowerType != WoWPowerType.Mana),
                 CreateSpellBuff("Bane of Doom", ret => CurrentTargetIsEliteOrBoss),
-                CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom")),
+
+                CreateSpellBuff("Bane of Agony", ret => !Me.CurrentTarget.HasAura("Bane of Doom") && (Me.CurrentTarget.HealthPercent >= 30 || CurrentTargetIsEliteOrBoss)),
                 // Use the infernal if we have a few mobs around us, and it's off CD. Otherwise, just use the Doomguard.
                 // Its a 10min CD, with a 1-1.2min uptime on the minion. Hey, any extra DPS is fine in my book!
                 // Make sure these 2 summons are AFTER the banes above.
@@ -62,7 +66,7 @@ namespace Singular
                     CreateSpellCastOnLocation("Summon Infernal", ret => Me.CurrentTarget.Location)
                     ),
                 CreateSpellCast("Summon Doomguard"),
-                CreateSpellBuff("Corruption"),
+                CreateSpellBuff("Corruption",ret =>  Me.CurrentTarget.HealthPercent >= 30 || CurrentTargetIsElite),
                 CreateSpellCast("Drain Life", ret => Me.HealthPercent < 70),
                 CreateSpellCast("Health Funnel", ret => Me.GotAlivePet && Me.Pet.HealthPercent < 70),
                 CreateSpellCast("Hand of Gul'dan"),

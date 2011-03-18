@@ -323,15 +323,14 @@ namespace Singular
                     new DecoratorContinue(
                         ret => waitForDebuff,
                         new Sequence(
-                            new Action(ret => StyxWoW.SleepForLagDuration()),
-                            new WaitContinue(
-                                3, ret => !Me.IsCasting,
-                                new Action(
-                                    ret =>
-                                        {
-                                            StyxWoW.SleepForLagDuration();
-                                            Thread.Sleep(100);
-                                        })))));
+                            new WaitContinue(1, ret => Me.IsCasting,
+                                new ActionAlwaysSucceed()),
+                            new WaitContinue(3, ret => !Me.IsCasting && !StyxWoW.GlobalCooldown,
+                                new Action(ret =>
+                                    {
+                                        StyxWoW.SleepForLagDuration();
+                                        Thread.Sleep(100);
+                                    })))));
         }
 
         public Composite CreateSpellBuff(string spellName)

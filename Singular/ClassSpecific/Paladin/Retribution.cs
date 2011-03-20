@@ -36,6 +36,8 @@ namespace Singular
                 new PrioritySelector(
                     CreateEnsureTarget(),
                     CreateAutoAttack(true),
+					//mele
+					CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                     CreateRetributionPaladinCombatBuffs(),
                     CreateFaceUnit(ret=>Me.CurrentTarget),
                     //Interrupts
@@ -125,6 +127,8 @@ namespace Singular
         {
             return
                 new PrioritySelector(
+					//Better make sure were facing and in range to cast judgement
+					CreateMoveToAndFace(30f, ret => Me.CurrentTarget),
                     CreateSpellCast("Judgement"),
                     // Make sure we're in range, and facing the damned target. (LOS check as well)
                     CreateMoveToAndFace(5f, ret => Me.CurrentTarget)

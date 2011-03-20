@@ -38,7 +38,7 @@ namespace Singular
                 ret => unit(ret) != null,
                 new PrioritySelector(
                     new Decorator(
-                        ret => !SingularSettings.Instance.DisableAllMovement && !unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).Distance > maxRange),
+                        ret => !SingularSettings.Instance.DisableAllMovement && (!unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).Distance > maxRange)),
                         new Action(ret => Navigator.MoveTo(unit(ret).Location))),
                     new Decorator(
                         ret => !SingularSettings.Instance.DisableAllMovement && Me.IsMoving && unit(ret).Distance <= maxRange,

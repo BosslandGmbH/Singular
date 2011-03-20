@@ -116,5 +116,12 @@ namespace Singular.Settings
         [DisplayName("Barkskin Health")]
         [Description("Barkskin will be used at this value")]
         public int Barkskin { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Feral Tanking")]
+        [DisplayName("Feral Charge")]
+        [Description("Use Feral Charge to close gaps.")]
+        public bool UseFeralChargeBear { get; set; }
     }
 }

@@ -13,6 +13,8 @@
 
 using System.Linq;
 
+using Singular.Settings;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 
@@ -38,10 +40,13 @@ namespace Singular
                     CreateSpellCast("Bear Form")),
                 // Can we charge at the unit? If so... do it
                 new Decorator(
-                    ret => Me.CurrentTarget.Distance > 8f && Me.CurrentTarget.Distance < 25f,
+                    ret => SingularSettings.Instance.Druid.UseFeralChargeBear && Me.CurrentTarget.Distance > 8f && Me.CurrentTarget.Distance < 25f,
                     CreateSpellCast("Feral Charge (Bear)")),
                 CreateMoveToAndFace(4.5f, ret => Me.CurrentTarget),
                 CreateAutoAttack(false),
+                CreateSpellBuffOnSelf("Barkskin"),
+                CreateSpellBuffOnSelf("Survival Instincts", ret => Me.HealthPercent < 60),
+                CreateSpellBuffOnSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30),
                 CreateSpellCast("Skull Bash (Bear)", ret => Me.CurrentTarget.IsCasting),
                 CreateSpellBuff("Faerie Fire (Feral)"),
                 CreateSpellBuff("Demoralizing Roar"),

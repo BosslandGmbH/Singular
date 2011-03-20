@@ -48,6 +48,13 @@ namespace Singular.Settings
         [Description("Use the alchemy 'Flask of Enhancement' item for a free hourly buff")]
         public bool UseAlchemyFlaskOfEnhancement { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Movement")]
+        [DisplayName("Disable Movement")]
+        [Description("Disable all movement within the CC. This will NOT stop it from facing units, charging, etc. Only moving towards units will be disabled.")]
+        public bool DisableAllMovement { get; set; }
+
         #endregion
 
         #region Resting

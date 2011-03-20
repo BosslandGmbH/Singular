@@ -11,6 +11,8 @@
 
 #endregion
 
+using Singular.Settings;
+
 using Styx.Logic.Pathing;
 
 using TreeSharp;
@@ -28,7 +30,7 @@ namespace Singular
         /// <param name = "maxRange">The maximum range.</param>
         /// <param name = "coneDegrees">The cone in degrees. (If we're facing +/- this many degrees from the target, we will face the target)</param>
         /// <param name = "unit">The unit.</param>
-        /// <param name = "stopMovement"></param>
+        /// <param name="noMovement"></param>
         /// <returns>.</returns>
         protected Composite CreateMoveToAndFace(float maxRange, float coneDegrees, UnitSelectionDelegate unit, bool noMovement)
         {
@@ -36,10 +38,10 @@ namespace Singular
                 ret => unit(ret) != null,
                 new PrioritySelector(
                     new Decorator(
-                        ret => !unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).Distance > maxRange),
+                        ret => !SingularSettings.Instance.DisableAllMovement && !unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).Distance > maxRange),
                         new Action(ret => Navigator.MoveTo(unit(ret).Location))),
                     new Decorator(
-                        ret => Me.IsMoving && unit(ret).Distance <= maxRange,
+                        ret => !SingularSettings.Instance.DisableAllMovement && Me.IsMoving && unit(ret).Distance <= maxRange,
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
                     new Decorator(
                         ret => Me.CurrentTarget != null && Me.CurrentTarget.IsAlive && !Me.IsSafelyFacing(Me.CurrentTarget, coneDegrees),

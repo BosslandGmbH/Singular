@@ -37,6 +37,7 @@ namespace Singular
                     CreateEnsureTarget(),
                     CreateAutoAttack(true),
                     CreateRetributionPaladinCombatBuffs(),
+                    CreateFaceUnit(ret=>Me.CurrentTarget),
                     //Interrupts
                     new Decorator(
                         ret => Me.CurrentTarget.IsCasting,

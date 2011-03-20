@@ -55,7 +55,7 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateUsePotionAndHealthstone(30, 0),
-                CreateSpellBuffOnSelf("Vanish", ret => Me.HealthPercent < 10 && NearbyUnfriendlyUnits.Count(u => u.Aggro) > 0)
+                CreateSpellBuffOnSelf("Vanish", ret => Me.HealthPercent < 20 && NearbyUnfriendlyUnits.Count(u => u.Aggro) > 0)
                 );
         }
 

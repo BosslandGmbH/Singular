@@ -18,6 +18,7 @@ using Singular.Settings;
 
 using Styx;
 using Styx.WoWInternals.WoWObjects;
+using Styx.WoWInternals;
 
 namespace Singular
 {
@@ -30,8 +31,18 @@ namespace Singular
         Wound
     }
 
-    internal class Poisons
+    internal static class Poisons
     {
+        static Poisons()
+        {
+            Lua.Events.AttachEvent("END_BOUND_TRADEABLE", HandleEndBoundTradeable);
+        }
+
+        private static void HandleEndBoundTradeable(object sender, LuaEventArgs args)
+        {
+            Lua.DoString("EndBoundTradeable(" + args.Args[0].ToString() + ")");
+        }
+
         private static readonly HashSet<uint> InstantPoisons = new HashSet<uint> { 6947, 43231 };
 
         private static readonly HashSet<uint> CripplingPoisons = new HashSet<uint> { 3775 };
@@ -41,6 +52,7 @@ namespace Singular
         private static readonly HashSet<uint> DeadlyPoisons = new HashSet<uint> { 2892, 43233 };
 
         private static readonly HashSet<uint> WoundPoisons = new HashSet<uint> { 10918, 43235 };
+
         public static bool MainHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 0; } }
 
         public static bool OffHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 0; } }

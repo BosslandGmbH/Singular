@@ -122,7 +122,9 @@ namespace Singular
                      a.Spell.Mechanic == WoWSpellMechanic.Polymorphed ||
                      a.Spell.Mechanic == WoWSpellMechanic.Sapped ||
                      a.Spell.Mechanic == WoWSpellMechanic.Shackled ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Asleep);
+                     a.Spell.Mechanic == WoWSpellMechanic.Asleep ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Frozen
+                     );
         }
 
         private int GetAggroDifferenceFor(WoWUnit unit, IEnumerable<WoWPlayer> partyMembers)

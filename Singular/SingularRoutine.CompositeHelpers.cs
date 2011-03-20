@@ -112,18 +112,33 @@ namespace Singular
                     new Decorator(
                         ret => Me.CurrentTarget == null || Me.CurrentTarget.Dead,
                         new PrioritySelector(
-                            // Set our context to the RaF leaders target, or the first in the target list.
-                            ctx => RaFHelper.Leader != null && RaFHelper.Leader.Combat
-                                       ? RaFHelper.Leader.CurrentTarget
-                                       : Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.Combat
-                                             ? Targeting.Instance.FirstUnit
-                                             : Me.Combat &&
-                                               ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any(
-                                                   p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70)
-                                                   ? ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
-                                                       p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70).OrderBy(
-                                                           u => u.DistanceSqr).FirstOrDefault()
-                                                   : null,
+                            ctx =>
+                                {
+                                    // If we have a RaF leader, then use its target.
+                                    if (RaFHelper.Leader != null && RaFHelper.Leader.Combat)
+                                    {
+                                        return RaFHelper.Leader.CurrentTarget;
+                                    }
+
+                                    // Does the target list have anything in it? And is the unit in combat?
+                                    // Make sure we only check target combat, if we're NOT in a BG. (Inside BGs, all targets are valid!!)
+                                    if (Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.Combat)
+                                    {
+                                        return Targeting.Instance.FirstUnit;
+                                    }
+                                    // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
+                                    var units =
+                                        ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
+                                            p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70);
+                                    if (Me.Combat && units.Any())
+                                    {
+                                        // Return the closest one to us
+                                        return units.OrderBy(u => u.DistanceSqr).FirstOrDefault();
+                                    }
+
+                                    // And there's nothing left, so just return null, kthx.
+                                    return null;
+                                },
                             // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
                             new Decorator(
                                 ret => ret != null,
@@ -135,7 +150,7 @@ namespace Singular
                                 ret =>
                                     {
                                         Me.ClearTarget();
-                                        // Force a failure, just so we can move down the branch.
+                                        // Force a failure, just so we can move down the branch. to the log message
                                         return RunStatus.Failure;
                                     }),
                             new ActionLogMessage(false, "No viable target! NOT GOOD!"))));

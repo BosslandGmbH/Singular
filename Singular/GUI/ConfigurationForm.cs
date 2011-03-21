@@ -12,6 +12,7 @@
 #endregion
 
 using System;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
@@ -33,6 +34,7 @@ namespace Singular.GUI
 
         private void ConfigurationForm_Load(object sender, EventArgs e)
         {
+            lblVersion.Text = string.Format("v{0}", Assembly.GetExecutingAssembly().GetName().Version) + " [$Revision$]";
             //HealTargeting.Instance.OnTargetListUpdateFinished += new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished);
             pgGeneral.SelectedObject = SingularSettings.Instance;
             SingularSettings main = SingularSettings.Instance;

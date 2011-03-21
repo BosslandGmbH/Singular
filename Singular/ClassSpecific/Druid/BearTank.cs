@@ -54,10 +54,12 @@ namespace Singular
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1,
                     new PrioritySelector(
-                        CreateSpellCast("Swipe (Bear)"),
-                        CreateSpellCast("Thrash")
+                        CreateSpellCast("Swipe (Bear)")
                         )),
-                CreateSpellCast("Maul"),
+
+                // Thrash is on a 6s CD, and lasts for 6s. Its a bleed, so it helps for threat and damage overall. Keep it up as much as possible.
+                CreateSpellCast("Thrash"),
+                CreateSpellCast("Maul", ret => Me.RagePercent > 60),
                 CreateSpellCast("Mangle (Bear)"),
                 CreateSpellCast("Pulverize", ret => HasAuraStacks("Lacerate", 3, Me.CurrentTarget)),
                 CreateSpellCast("Lacerate", ret => !HasAuraStacks("Lacerate", 3, Me.CurrentTarget))

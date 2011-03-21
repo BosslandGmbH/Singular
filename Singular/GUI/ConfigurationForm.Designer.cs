@@ -154,7 +154,7 @@
             this.groupBox1.Controls.Add(this.lblHealTargets);
             this.groupBox1.Location = new System.Drawing.Point(8, 6);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(313, 157);
+            this.groupBox1.Size = new System.Drawing.Size(313, 104);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Heal Targeting";

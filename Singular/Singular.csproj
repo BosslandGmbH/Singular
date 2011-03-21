@@ -97,6 +97,7 @@
     <Compile Include="ClassSpecific\Paladin\Lowbie.cs" />
     <Compile Include="ClassSpecific\Paladin\Protection.cs" />
     <Compile Include="ClassSpecific\Paladin\Retribution.cs" />
+    <Compile Include="ClassSpecific\Paladin\RetributionPvP.cs" />
     <Compile Include="ClassSpecific\Priest\Common.cs" />
     <Compile Include="ClassSpecific\Priest\Discipline.cs" />
     <Compile Include="ClassSpecific\Priest\Lowbie.cs" />

@@ -57,7 +57,7 @@ namespace Singular
                                 LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
                             })),
                 CreateSpellCast("Icy Touch"),
-                CreateSpellCast("Plague Strike", ret => Me.CurrentTarget.HasAura("Blood Plague")),
+                CreateSpellCast("Plague Strike", ret => !Me.CurrentTarget.HasAura("Blood Plague")),
                 CreateSpellCast("Death Strike", ret => Me.HealthPercent < 80),
                 CreateSpellCast("Blood Boil", ret => NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1),
                 CreateSpellCast("Heart Strike"),

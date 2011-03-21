@@ -45,7 +45,7 @@ namespace Singular
                 CreateSpellCast("Death Strike", ret => Me.HealthPercent < 80),
                 CreateSpellCast("Outbreak", ret => Me.CurrentTarget.HasAura("Frost Fever") || Me.CurrentTarget.HasAura("Blood Plague")),
                 CreateSpellCast("Icy Touch"),
-                CreateSpellCast("Plague Strike", ret => Me.CurrentTarget.HasAura("Blood Plague")),
+                CreateSpellCast("Plague Strike", ret => !Me.CurrentTarget.HasAura("Blood Plague")),
                 CreateSpellCast(
                     "Pestilence", ret => Me.CurrentTarget.HasAura("Blood Plague") && Me.CurrentTarget.HasAura("Frost Fever") &&
                                          (NearbyUnfriendlyUnits.Where(

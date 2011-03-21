@@ -29,7 +29,7 @@ namespace Singular
         [Spec(TalentSpec.RetributionPaladin)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances | WoWContext.Normal)]
         public Composite CreateRetributionPaladinCombat()
         {
             return
@@ -122,7 +122,7 @@ namespace Singular
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.RetributionPaladin)]
         [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances | WoWContext.Normal)]
         public Composite CreateRetributionPaladinPull()
         {
             return
@@ -142,7 +142,7 @@ namespace Singular
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.RetributionPaladin)]
         [Behavior(BehaviorType.CombatBuffs)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances | WoWContext.Normal)]
         public Composite CreateRetributionPaladinCombatBuffs()
         {
             return
@@ -164,7 +164,7 @@ namespace Singular
         [Spec(TalentSpec.RetributionPaladin)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances | WoWContext.Normal)]
         public Composite CreateRetributionPaladinPreCombatBuffs()
         {
             return

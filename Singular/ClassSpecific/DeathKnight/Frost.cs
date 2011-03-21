@@ -58,7 +58,7 @@ namespace Singular
                                 LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
                             })),
                 CreateSpellCast("Outbreak", ret => Me.CurrentTarget.HasAura("Frost Fever") || Me.CurrentTarget.HasAura("Blood Plague")),
-                CreateSpellCast("Plague Strike", ret => Me.CurrentTarget.HasAura("Blood Plague")),
+                CreateSpellCast("Plague Strike", ret => !Me.CurrentTarget.HasAura("Blood Plague")),
                 CreateSpellCast(
                     "Obliterate",
                     ret => (Me.FrostRuneCount == 2 && Me.UnholyRuneCount == 2) || Me.DeathRuneCount == 2 || Me.HasAura("Killing Machine")),

@@ -10,3 +10,4 @@ markeloff - Death Knight rotations.
 Jon310 - Fury Warrior rotation improvements.
 CptJesus - Shadow Priest rotation.
 Mortal - Warrior improvements.
+moachi - PvP Ret Paladin

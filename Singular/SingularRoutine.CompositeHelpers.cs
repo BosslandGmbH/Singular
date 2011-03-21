@@ -129,7 +129,7 @@ namespace Singular
                                     // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
                                     var units =
                                         ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
-                                            p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70);
+                                            p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70 && p.Combat);
                                     if (Me.Combat && units.Any())
                                     {
                                         // Return the closest one to us

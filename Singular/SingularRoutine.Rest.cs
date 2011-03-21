@@ -71,7 +71,7 @@ namespace Singular
                         new Action(ret => Thread.Sleep(1000)))),
                 // Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.
                 new Decorator(
-                    ret => Me.HealthPercent <= minHealth && !Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
+                    ret => !Me.IsSwimming && Me.HealthPercent <= minHealth && !Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
                     new PrioritySelector(
                         new ActionLogMessage(true, "Checking movement for food."),
                         new Decorator(
@@ -86,8 +86,7 @@ namespace Singular
                         )),
                 // Make sure we're a class with mana, if not, just ignore drinking all together! Other than that... same for food.
                 new Decorator(
-                    ret =>
-                    Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= minMana && !Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
+                    ret => !Me.IsSwimming && Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= minMana && !Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
                     new PrioritySelector(
                         new ActionLogMessage(true, "Checking movement for water."),
                         new Decorator(

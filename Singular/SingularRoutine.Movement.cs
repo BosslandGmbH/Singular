@@ -40,29 +40,14 @@ namespace Singular
                     new Decorator(
                         ret =>
                         !SingularSettings.Instance.DisableAllMovement &&
-                        (!unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).Distance > maxRange)),
-                        new Action(
-                            ret =>
-                                {
-                                    Navigator.MoveTo(unit(ret).Location);
-                                    return RunStatus.Failure;
-                                })),
+                        (!unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).DistanceSqr > maxRange * maxRange)),
+                        new Action(ret => Navigator.MoveTo(unit(ret).Location))),
                     new Decorator(
-                        ret => !SingularSettings.Instance.DisableAllMovement && Me.IsMoving && unit(ret).Distance <= maxRange,
-                        new Action(
-                            ret =>
-                                {
-                                    Navigator.PlayerMover.MoveStop();
-                                    return RunStatus.Failure;
-                                })),
+                        ret => !SingularSettings.Instance.DisableAllMovement && Me.IsMoving && unit(ret).DistanceSqr <= maxRange * maxRange,
+                        new Action(ret => Navigator.PlayerMover.MoveStop())),
                     new Decorator(
                         ret => Me.CurrentTarget != null && Me.CurrentTarget.IsAlive && !Me.IsSafelyFacing(Me.CurrentTarget, coneDegrees),
-                        new Action(
-                            ret =>
-                                {
-                                    Me.CurrentTarget.Face();
-                                    return RunStatus.Failure;
-                                }))
+                        new Action(ret => Me.CurrentTarget.Face()))
                     ));
         }
 

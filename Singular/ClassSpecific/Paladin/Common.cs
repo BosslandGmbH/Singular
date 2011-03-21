@@ -91,7 +91,7 @@ namespace Singular
                     CreateSpellBuffOnSelf(
                         "Seal of Righteousness",
                         ret =>
-                        (!SpellManager.HasSpell("Seal of Truth") || !SpellManager.HasSpell("Seal of Insight")) && !Me.HasAura("Seal of Righteousness"))
+                        !SpellManager.HasSpell("Seal of Truth") && !SpellManager.HasSpell("Seal of Insight") && !Me.HasAura("Seal of Righteousness") && !Me.HasAura("Seal of Insight"))
                     );
         }
     }

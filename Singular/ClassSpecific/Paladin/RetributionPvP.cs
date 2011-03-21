@@ -115,7 +115,7 @@ namespace Singular
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.RetributionPaladin)]
         [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Battlegrounds)]
         public Composite CreateRetributionPaladinBattlegroundsPull()
         {
             return

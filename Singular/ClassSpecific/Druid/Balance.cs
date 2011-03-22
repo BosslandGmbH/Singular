@@ -78,7 +78,10 @@ namespace Singular
         {
             WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(
-                new ActionLogMessage(false, () => "Eclipse Percent: " + CurrentEclipse),
+                // Make sure we're in cat form first, period.
+                new Decorator(
+                    ret => Me.Shapeshift != WantedDruidForm,
+                    CreateSpellCast("Moonkin Form")),
                 CreateEnsureTarget(),
                 CreateMoveToAndFace(35, ret => Me.CurrentTarget),
                 // Ensure we do /petattack if we have treants up.

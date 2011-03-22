@@ -41,5 +41,16 @@ namespace Singular
                 CreateSpellCast("Mind Flay", ret => !Me.IsMoving)
                 );
         }
+
+        [Class(WoWClass.Priest)]
+        [Spec(TalentSpec.ShadowPriest)]
+        [Behavior(BehaviorType.PullBuffs)]
+        [Context(WoWContext.All)]
+        public Composite CreateShadowPriestPullBuffs()
+        {
+            return new PrioritySelector(
+                CreateSpellBuffOnSelf("Power Word: Shield", ret=> !HasAuraStacks("Weakened Soul", 1))
+                );
+        }
     }
 }

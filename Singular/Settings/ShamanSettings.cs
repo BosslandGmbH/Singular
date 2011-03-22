@@ -11,6 +11,10 @@
 
 #endregion
 
+using System.ComponentModel;
+
+using Styx.Helpers;
+
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings

@@ -68,7 +68,6 @@ namespace Singular
 
         internal static void Pulse()
         {
-            // TODO: Remove this stuff upon the next HB release.
             if (!StyxWoW.Me.GotAlivePet)
             {
                 _petSpells.Clear();
@@ -80,6 +79,7 @@ namespace Singular
                 Logger.Write("Pet changed. Rebuilding actions mapping.");
                 _petGuid = StyxWoW.Me.Pet.Guid;
                 _petSpells.Clear();
+                // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
                 _petSpells.AddRange(StyxWoW.Me.PetSpells);
             }
         }

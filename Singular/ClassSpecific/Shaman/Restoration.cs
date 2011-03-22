@@ -163,21 +163,21 @@ namespace Singular
                      where o is WoWPlayer && healTarget.Location.Distance(o.Location) < 12
                      let p = o.ToPlayer()
                      where p != null
-                         && p.IsHorde == Me.IsHorde
-                         && !p.IsPet
-                         && p != healTarget
-                         && p.IsAlive
-                         && p.HealthPercent < threshhold
+                           && p.IsHorde == Me.IsHorde
+                           && !p.IsPet
+                           && p != healTarget
+                           && p.IsAlive
+                           && p.HealthPercent < threshhold
                      let c = (from oo in ObjectManager.ObjectList
                               where oo is WoWPlayer && p.Location.Distance(oo.Location) < 12
                               let pp = oo.ToPlayer()
                               where pp != null
-                                  && pp.IsHorde == p.IsHorde
-                                  && !pp.IsPet
-                                  && pp.IsAlive
-                                  && pp.HealthPercent < threshhold
+                                    && pp.IsHorde == p.IsHorde
+                                    && !pp.IsPet
+                                    && pp.IsAlive
+                                    && pp.HealthPercent < threshhold
                               select pp).Count()
-                     orderby c descending, p.Distance ascending
+                     orderby c descending , p.Distance ascending
                      select new { Player = p, Count = c }).FirstOrDefault();
 
             if (t == null || t.Count < 3)

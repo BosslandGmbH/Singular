@@ -30,6 +30,9 @@ namespace Singular
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateMoveToAndFace(40f, ret => Me.CurrentTarget),
                 CreateSpellCast("Evocation", ret => Me.ManaPercent < 40),
+				//Armour swaping for low or high mana when evo on cd
+				CreateSpellBuffOnSelf("Molten Armor", ret => !Me.HasAura("Molten Armor") && Me.ManaPercent > 50),
+				CreateSpellBuffOnSelf("Mage Armor", ret => !Me.HasAura("Mage Armor") && Me.ManaPercent < 30),
                 CreateSpellCast(
                     "Scorch",
                     ret =>

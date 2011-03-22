@@ -5,13 +5,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Singular", "Singular\Singul
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Bobby53|Any CPU = Bobby53|Any CPU
 		Debug|Any CPU = Debug|Any CPU
+		Jim|Any CPU = Jim|Any CPU
 		Raphus|Any CPU = Raphus|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}.Bobby53|Any CPU.ActiveCfg = Bobby53|Any CPU
+		{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}.Bobby53|Any CPU.Build.0 = Bobby53|Any CPU
 		{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}.Jim|Any CPU.ActiveCfg = Jim|Any CPU
+		{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}.Jim|Any CPU.Build.0 = Jim|Any CPU
 		{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}.Raphus|Any CPU.ActiveCfg = Raphus|Any CPU
 		{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}.Raphus|Any CPU.Build.0 = Raphus|Any CPU
 		{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}.Release|Any CPU.ActiveCfg = Release|Any CPU

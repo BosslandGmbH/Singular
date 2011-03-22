@@ -9,10 +9,6 @@ using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
 
-using Styx.Combat.CombatRoutine;
-
-using TreeSharp;
-
 namespace Singular
 {
     partial class SingularRoutine
@@ -38,11 +34,14 @@ namespace Singular
 				//Move to range for spells
 				CreateMoveToAndFace(40f, ret => Me.CurrentTarget),
 				//Healing if needed in combat
-				CreateSpellBuff("Rejuvenation", ret => Me.HealthPercent <= 60 && !Me.HasAura("Rejuvenation")),
+				CreateSpellBuffOnSelf("Rejuvenation", ret => Me.HealthPercent <= 60),
                 CreateAutoAttack(true),
-				CreateSpellCast("Rake", ret => (!Me.CurrentTarget.HasAura("Rake") || Me.CurrentTarget.GetAuraByName("Rake").CreatorGuid != Me.Guid) && SpellManager.HasSpell("Cat Form")),
-				CreateSpellCast("Ferocious Bite", ret => Me.ComboPoints > 4 && SpellManager.HasSpell("Cat Form")),
-				CreateSpellCast("Claw", ret=> SpellManager.HasSpell("Cat Form")),
+                new Decorator(
+                    ret => Me.Shapeshift == ShapeshiftForm.Cat,
+                    new PrioritySelector(
+				        CreateSpellCast("Rake", ret => !Me.CurrentTarget.HasAura("Rake") || Me.CurrentTarget.GetAuraByName("Rake").CreatorGuid != Me.Guid),
+				        CreateSpellCast("Ferocious Bite", ret => Me.ComboPoints > 4 || Me.ComboPoints > 0 && Me.CurrentTarget.HealthPercent < 40),
+				        CreateSpellCast("Claw"))),
 				//Pre Cat spells
 				CreateSpellCast("Moonfire", ret=> !Me.HasAura("Cat Form") && !Me.CurrentTarget.HasAura("Moonfire")),
 				CreateSpellCast("Wrath", ret=> !Me.HasAura("Cat Form"))

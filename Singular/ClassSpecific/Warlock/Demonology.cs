@@ -66,7 +66,7 @@ namespace Singular
                     CreateSpellCastOnLocation("Summon Infernal", ret => Me.CurrentTarget.Location)
                     ),
                 CreateSpellCast("Summon Doomguard"),
-                CreateSpellBuff("Corruption",ret =>  Me.CurrentTarget.HealthPercent >= 30 || CurrentTargetIsElite),
+                CreateSpellBuff("Corruption", ret =>  Me.CurrentTarget.HealthPercent >= 30 || CurrentTargetIsElite),
                 CreateSpellCast("Drain Life", ret => Me.HealthPercent < 70),
                 CreateSpellCast("Health Funnel", ret => Me.GotAlivePet && Me.Pet.HealthPercent < 70),
                 CreateSpellCast("Hand of Gul'dan"),

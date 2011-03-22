@@ -74,9 +74,8 @@ namespace Singular
                 return;
             }
 
-            if (_petGuid != StyxWoW.Me.Pet.Guid)
+            if (StyxWoW.Me.Pet != null && _petGuid != StyxWoW.Me.Pet.Guid)
             {
-                Logger.Write("Pet changed. Rebuilding actions mapping.");
                 _petGuid = StyxWoW.Me.Pet.Guid;
                 _petSpells.Clear();
                 // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
@@ -86,7 +85,7 @@ namespace Singular
 
         public static bool CanCastPetAction(string action)
         {
-            WoWPetSpell spell = _petSpells.First(p => p.ToString() == action);
+            WoWPetSpell spell = _petSpells.FirstOrDefault(p => p.ToString() == action);
             if (spell == null)
             {
                 return false;

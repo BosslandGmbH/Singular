@@ -75,7 +75,7 @@ namespace Singular
                     new Action(
                         ret =>
                             {
-                                WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(Me.Location, Me.CurrentTarget.Location, 10f);
+                                WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(Me.Location, Me.CurrentTarget.Location, Me.CurrentTarget.CombatReach + 10f);
 
                                 if (Navigator.CanNavigateFully(Me.Location, moveTo))
                                 {

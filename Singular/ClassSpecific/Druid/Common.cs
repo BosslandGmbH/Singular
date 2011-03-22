@@ -31,6 +31,7 @@ namespace Singular
         [Spec(TalentSpec.FeralDruid)]
         [Spec(TalentSpec.FeralTankDruid)]
         [Spec(TalentSpec.RestorationDruid)]
+        [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         public Composite CreateDruidBuffComposite()
         {

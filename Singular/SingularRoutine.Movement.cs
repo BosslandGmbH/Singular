@@ -42,9 +42,15 @@ namespace Singular
                         !SingularSettings.Instance.DisableAllMovement &&
                         (!unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).DistanceSqr > maxRange * maxRange)),
                         new Action(ret => Navigator.MoveTo(unit(ret).Location))),
+                    //Returning failure for movestop for smoother movement
+                    //Rest should return success !
                     new Decorator(
                         ret => !SingularSettings.Instance.DisableAllMovement && Me.IsMoving && unit(ret).DistanceSqr <= maxRange * maxRange,
-                        new Action(ret => Navigator.PlayerMover.MoveStop())),
+                        new Action(delegate
+                            {
+                                Navigator.PlayerMover.MoveStop();
+                                return RunStatus.Failure;
+                            })),
                     new Decorator(
                         ret => Me.CurrentTarget != null && Me.CurrentTarget.IsAlive && !Me.IsSafelyFacing(Me.CurrentTarget, coneDegrees),
                         new Action(ret => Me.CurrentTarget.Face()))

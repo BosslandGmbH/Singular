@@ -33,41 +33,50 @@ namespace Singular
         public Composite CreateWarriorFuryCombat()
         {
             return new PrioritySelector(
+                // Make sure you have target
                 CreateEnsureTarget(),
-                //Move to range
+                //Face target if not facing already
                 CreateFaceUnit(),
+                //Move to range
+
+                //Face target if not facing already
+                CreateFaceUnit(),
+                //autoattack
                 CreateAutoAttack(true),
-                //Make sure you are in the primary DPS stance for fury warriors
-                CreateSpellBuffOnSelf("Berserker Stance", ret => Me.RagePercent > 10 || Me.Combat),
-                CreateSpellCast("Battle Shout", ret => Me.RagePercent < 20 || !Me.HasAura("Battle Shout")),
-                CreateSpellCast(
-                    "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
-                                            Me.CurrentTarget.IsPlayer &&
-                                            (!Me.CurrentTarget.HasAura("Hamstring") ||
-                                             !Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                             !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                //Ranged Attack if pvping
+                CreateSpellCast("Heroic Throw", ret => Me.CurrentTarget.IsPlayer),             
+                //Use fear to interupt casters at range
                 CreateSpellCast(
                     "Intimidating Shout", ret => Me.CurrentTarget.Distance < 8 &&
                                                  Me.CurrentTarget.IsPlayer &&
                                                  Me.CurrentTarget.IsCasting),
-                CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance >= 9),
-                CreateSpellCast("Heroic Throw", ret => Me.CurrentTarget.IsPlayer),
-                CreateSpellCast("Enraged Regeneration", ret => Me.HealthPercent < 60),
+                //Close Gap to target
+                CreateFuryCloseGap(),
+                //Worgen Racial
+                CreateSpellCast("Darkflight", ret => Me.CurrentTarget.IsPlayer && Me.CurrentTarget.Distance > 15),
+                //Rocketboots!
                 new Decorator(
-                    ret => SpellManager.CanCast("Heroic Leap") && Me.CurrentTarget.Distance > 13,
-                    new Action(
-                        ret =>
-                            {
-                                SpellManager.Cast("Heroic Leap");
-                                LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
-                            })),
-                //Move to melee			
-                CreateMoveToAndFace(),
+                    ret =>
+                        Me.CurrentTarget.IsPlayer && Me.CurrentTarget.Distance > 20,
+                        new PrioritySelector(
+                            CreateUseEquippedItem(12)
+                        )),
+                //Slow Players at range
                 CreateSpellCast(
-                    "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
-                                        (!Me.CurrentTarget.HasAura("Hamstring") ||
-                                         !Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                         !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                    "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
+                                            Me.CurrentTarget.IsPlayer &&
+                                            (!Me.CurrentTarget.HasAura("Hamstring") ||
+                                            !Me.CurrentTarget.HasAura("Piercing Howl") ||
+                                            !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                //Move to melee			
+				CreateMoveToAndFace(),
+                //Slow Players once in mele range
+                CreateSpellCast(
+                   "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
+                                       (!Me.CurrentTarget.HasAura("Hamstring") ||
+                                       !Me.CurrentTarget.HasAura("Piercing Howl") ||
+                                       !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                //Aoe when more than 3 around
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 3,
                     new PrioritySelector(
@@ -76,29 +85,26 @@ namespace Singular
                         CreateSpellCast("Raging Blow"),
                         CreateSpellCast("Bloodthirst")
                         )),
-                new Decorator(
-                    ret =>
-                    Me.CurrentTarget.Distance > 5 &&
-                    !WoWMathHelper.IsFacing(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, Me.Location, (float)Math.PI) &&
-                    Me.CurrentTarget.IsMoving && Me.CurrentTarget.MovementInfo.RunSpeed > Me.MovementInfo.RunSpeed,
-                    new PrioritySelector(
-                        CreateSpellCast("Darkflight")
-                        )),
-                CreateSpellCast("War Stomp", ret => Me.CurrentTarget.IsCasting),
+                //Interupts
                 CreateSpellCast("Pummel", ret => Me.CurrentTarget.IsCasting),
                 CreateSpellCast("Arcane Torrent", ret => Me.CurrentTarget.IsCasting),
-                CreateSpellCast("Colossus Smash"),
+                CreateSpellCast("War Stomp", ret => Me.CurrentTarget.IsCasting),
+                //Heal up in mele
+				CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),
+                //Use Incite or dump rage
+				CreateSpellCast(
+                    "Heroic Strike", ret => Me.RagePercent > 60 || 
+                                                        HasAuraStacks("Incite", 1)),
+                //Use Engineering Gloves
                 CreateUseEquippedItem(9),
+                //Rotation under 20%
+                CreateSpellCast("Colossus Smash"),
                 CreateSpellCast("Execute", ret => Me.CurrentTarget.HealthPercent < 20),
+                //Rotation over 20%
                 CreateSpellCast("Raging Blow"),
                 CreateSpellCast("Bloodthirst"),
                 CreateSpellCast("Slam", ret => HasAuraStacks("Bloodsurge", 1)),
-                //Uses Incite if you are spec'd into it
-                CreateSpellCast("Heroic Strike", ret => Me.RagePercent > 60 || HasAuraStacks("Incite", 1)),
-                CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),
-                // Again; movement comes last in melee. We have spells we can use at long-range, and should do so when the opportunity
-                // presents itself.
-                // If none of our short-range attacks are... in range... then just move forward.
+                //Mele range check
                 CreateMoveToAndFace(ret => Me.CurrentTarget)
                 );
         }
@@ -111,102 +117,155 @@ namespace Singular
         {
             return
                 new PrioritySelector(
+                    //Make sure we have a target
                     CreateEnsureTarget(),
+                    //Start autoattack
                     CreateAutoAttack(true),
+                    //face target
                     CreateFaceUnit(),
-                    //Ensures that you are in the right stance, since you do not need to stay in battle stance
-                    CreateSpellBuffOnSelf("Berserker Stance", ret => Me.RagePercent > 10 || Me.Combat),
+                    //Buff up
                     CreateSpellCast("Battle Shout", ret => Me.RagePercent < 20),
-                    CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance >= 9),
-                    CreateSpellCast("Heroic Throw"),
-                    new Decorator(
-                        ret => SpellManager.CanCast("Heroic Leap") && Me.CurrentTarget.Distance > 8,
-                        new Action(
-                            ret =>
-                                {
-                                    SpellManager.Cast("Heroic Leap");
-                                    LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
-                                })),
-                    // Keep this last, as we want to use spells above to pull with. Only move if we can't use any of them!
-                    CreateMoveToAndFace()
-                    //,
-                    //CreateSpellCast("Throw", 
-                    //	ret => Me.Inventory.Equipped.Ranged != null &&
-                    //        Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Thrown),
-                    //CreateSpellCast("Shoot",
-                    //	ret => Me.Inventory.Equipped.Ranged != null &&
-                    //       (Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow ||
-                    //        Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Crossbow ||
-                    //		Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Gun)),
+                    //Close gap
+                    CreateFuryCloseGap(),
+                    //Move to mele and face
+                    CreateMoveToAndFace(ret => Me.CurrentTarget)
                     );
         }
 
+        //Instance Combat Buffs
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.FuryWarrior)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.CombatBuffs)]
+        public Composite CreateWarriorFuryInstanceCombatBuffs()
+        {
+            return
+                new PrioritySelector(
+                    //Check Heal
+                    CreateFuryHeal(),
+                    //Troll Racial
+                    CreateSpellCast("Berserking"),
+                    //Recklessness if low on hp or have Deathwish up
+                    CreateSpellCast("Recklessness",
+                            ret => Me.HasAura("Death Wish") && Me.HealthPercent > 20),
+                    //Inner rage with recklessness, deathwish or dump rage
+                    CreateSpellCast("Inner Rage",
+                            ret => Me.HasAura("Recklessness") ||
+                                  Me.HasAura("Death Wish") ||
+                                  Me.RagePercent > 90),
+                    //Remove Croud Control Effects
+                    CreateFuryRemoveCC(),
+                    //Dwarf Racial
+                    CreateSpellBuffOnSelf("Stoneform", ret => Me.HealthPercent < 60),
+                    //Night Elf Racial
+                    CreateSpellBuffOnSelf("Shadowmeld", ret => Me.HealthPercent < 20),
+                    //Orc Racial
+                    CreateSpellBuffOnSelf("Blood Fury"),
+                    //Deathwish
+                    CreateSpellBuffOnSelf(
+                        "Death Wish", ret => (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
+                                        Me.CurrentTarget.HealthPercent < 95 &&
+                                        Me.RagePercent > 50) ||
+                                        (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
+                                        Me.HealthPercent > 10 && Me.HealthPercent < 75)),
+                    //Berserker rage to stay enraged(Key to good dps btw)
+                    CreateSpellBuffOnSelf("Berserker Rage",
+                            ret => !Me.Auras.Any(
+                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
+                    //Battleshout Check
+                    CreateSpellBuffOnSelf(
+                        "Battle Shout", ret => !Me.HasAura("Horn of the Winter") &&
+                                               !Me.HasAura("Roar of Courage") &&
+                                               !Me.HasAura("Strength of Earth Totem") ||
+                                               Me.RagePercent < 20)
+                );
+        }
+
+        //BG Combat Buffs
+        [Class(WoWClass.Warrior)]
+        [Spec(TalentSpec.FuryWarrior)]
+        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.CombatBuffs)]
+        public Composite CreateWarriorFuryBGCombatBuffs()
+        {
+            return
+                new PrioritySelector(
+                    //Check Heal
+                    CreateFuryHeal(),
+                    //Troll Racial
+                    CreateSpellCast("Berserking"),
+                    //Recklessness on CD
+                    CreateSpellCast("Recklessness"),
+                    //Remove Croud Control Effects
+                    CreateFuryRemoveCC(),
+                    //Dwarf Racial
+                    CreateSpellBuffOnSelf("Stoneform", ret => Me.HealthPercent < 60),
+                    //Night Elf Racial
+                    CreateSpellBuffOnSelf("Shadowmeld", ret => Me.HealthPercent < 20),
+                    //Orc Racial
+                    CreateSpellBuffOnSelf("Blood Fury"),
+                    //Deathwish whenever its up
+                    CreateSpellBuffOnSelf("Death Wish"),
+                    //Berserker rage to stay enraged(Key to good dps)
+                    CreateSpellBuffOnSelf("Berserker Rage",
+                            ret => !Me.Auras.Any(
+                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
+                    //Battleshout Check
+                    CreateSpellBuffOnSelf(
+                        "Battle Shout", ret => !Me.HasAura("Horn of the Winter") &&
+                                               !Me.HasAura("Roar of Courage") &&
+                                               !Me.HasAura("Strength of Earth Totem"))
+                );
+        }
+
+        //Normal Combat Buffs
+        [Class(WoWClass.Warrior)]
+        [Spec(TalentSpec.FuryWarrior)]
+        [Context(WoWContext.Normal)]
         [Behavior(BehaviorType.CombatBuffs)]
         public Composite CreateWarriorFuryCombatBuffs()
         {
             return
                 new PrioritySelector(
-                    CreateSpellCast("Lifeblood", ret => Me.HealthPercent < 70),
-                    CreateSpellCast("Gift of the Naaru", ret => Me.HealthPercent < 50),
+                    //Check Heal
+                    CreateFuryHeal(),
+                    //Troll Racial
                     CreateSpellCast("Berserking"),
-                    CreateSpellCast(
-                        "Recklessness",
-                        ret => Me.HasAura("Death Wish") && Me.HealthPercent > 20),
-                    CreateSpellCast(
-                        "Inner Rage",
-                        ret => Me.HasAura("Recklessness") ||
-                               Me.HasAura("Death Wish") ||
-                               Me.RagePercent > 80),
-                    CreateSpellBuffOnSelf(
-                        "Berserker Rage",
-                        ret => Me.Auras.Any(
-                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing ||
-                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Sapped ||
-                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
-                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Horrified)),
+                    //Recklessness if low on hp or have Deathwish up or as gank protection
+                    CreateSpellCast("Recklessness",
+                            ret => Me.HasAura("Death Wish") && Me.HealthPercent > 20 ||
+                                   Me.CurrentTarget.IsPlayer),
+                    //Inner rage with recklessness, deathwish or dump rage
+                    CreateSpellCast("Inner Rage",
+                            ret => Me.HasAura("Recklessness") ||
+                                  Me.HasAura("Death Wish") ||
+                                  Me.RagePercent > 90),
+                    //Remove Croud Control Effects
+                    CreateFuryRemoveCC(),
+                    //Dwarf Racial
                     CreateSpellBuffOnSelf("Stoneform", ret => Me.HealthPercent < 60),
+                    //Night Elf Racial
                     CreateSpellBuffOnSelf("Shadowmeld", ret => Me.HealthPercent < 20),
+                    //Orc Racial
                     CreateSpellBuffOnSelf("Blood Fury"),
+                    //Deathwish, for both grinding and gank protection
                     CreateSpellBuffOnSelf(
-                        "Every Man for Himself",
-                        ret => Me.Auras.Any(
-                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Asleep ||
-                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Stunned ||
-                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
-                    CreateSpellBuffOnSelf(
-                        "Will of the Forsaken",
-                        ret => Me.Auras.Any(
-                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Charmed ||
-                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Asleep ||
-                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Horrified ||
-                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing)),
-                    CreateSpellBuffOnSelf(
-                        "Escape Artist",
-                        ret => Me.Auras.Any(
-                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Slowed ||
-                                    aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
-                    CreateSpellBuffOnSelf(
-                        "Death Wish",
-                        ret => (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
-                                Me.CurrentTarget.HealthPercent < 95 &&
-                                Me.RagePercent > 50) ||
-                               (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
-                                Me.HealthPercent > 10 && Me.HealthPercent < 75)),
-                    //Do not need to be enraged
-                    //ret => !Me.Auras.Any(
-                    //aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
-                    CreateSpellBuffOnSelf(
-                        "Berserker Rage",
-                        ret => !Me.Auras.Any(
-                            aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
+                        "Death Wish", ret => (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
+                                        Me.CurrentTarget.HealthPercent < 95 &&
+                                        Me.RagePercent > 50) ||
+                                        (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
+                                        Me.HealthPercent > 10 && Me.HealthPercent < 75) ||
+                                        Me.CurrentTarget.IsPlayer),
+                    //Berserker rage to stay enraged(Key to good dps btw)
+                    CreateSpellBuffOnSelf("Berserker Rage",
+                            ret => !Me.Auras.Any(
+                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
+                    //Battleshout Check
                     CreateSpellBuffOnSelf(
                         "Battle Shout", ret => !Me.HasAura("Horn of the Winter") &&
                                                !Me.HasAura("Roar of Courage") &&
                                                !Me.HasAura("Strength of Earth Totem"))
-                    );
+                );
         }
 
         [Class(WoWClass.Warrior)]
@@ -217,10 +276,85 @@ namespace Singular
         {
             return
                 new PrioritySelector(
-                    CreateSpellBuffOnSelf("Battle Stance", ret => Me.RagePercent <= 10 && !Me.Combat),
-                    CreateSpellBuffOnSelf("Berserker Stance", ret => Me.RagePercent > 10 || Me.Combat),
+                    //Keep Proper stance
+                    CreateSpellBuffOnSelf("Berserker Stance"),
+                    //Buff up
                     CreateSpellCast("Battle Shout")
                     );
         }
+
+        public Composite CreateFuryCloseGap()
+        {
+            return
+                new PrioritySelector(
+                    //Moves to target if you are too close(Fixes pull bug)
+                    new Decorator(
+                    ret => Me.CurrentTarget.Distance < 10 || Me.CurrentTarget.Distance > 40,
+                    new PrioritySelector(
+                        CreateMoveToAndFace(ret => Me.CurrentTarget)
+                        )),
+                    //Heroic Leap
+                    new Decorator(
+                    ret => SpellManager.CanCast("Heroic Leap") && Me.CurrentTarget.Distance > 9 && !Me.CurrentTarget.HasAura("Intercept"),
+                    new Action(
+                            ret =>
+                            {
+                                SpellManager.Cast("Heroic Leap");
+                                LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
+                            })),
+                    //PvP Intercept
+                    CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance >= 10),
+                    //Heroic Throw if not already Intercepting
+                    CreateSpellCast("Heroic Throw", ret => !Me.CurrentTarget.HasAura("Intercept")),
+                    //Move to mele and face
+                    CreateMoveToAndFace(ret => Me.CurrentTarget)
+                    );
+        }
+
+        public Composite CreateFuryHeal()
+        {
+            return
+                new PrioritySelector(
+                    //Herbalist Heal
+                    CreateSpellCast("Lifeblood", ret => Me.HealthPercent < 70),
+                    //Draenai Heal
+                    CreateSpellCast("Gift of the Naaru", ret => Me.HealthPercent < 50),
+                    //Heal
+                    CreateSpellCast("Enraged Regeneration", ret => Me.HealthPercent < 60)
+                    );
+        }
+
+        public Composite CreateFuryRemoveCC()
+        {
+            return
+                new PrioritySelector(
+                    //Human Racial
+                    CreateSpellBuffOnSelf(
+                        "Every Man for Himself", ret => Me.Auras.Any(
+                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Asleep ||
+                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Stunned ||
+                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
+                    //Undead Racial
+                    CreateSpellBuffOnSelf(
+                        "Will of the Forsaken", ret => Me.Auras.Any(
+                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Charmed ||
+                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Asleep ||
+                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Horrified ||
+                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing)),
+                    //Gnome Racial
+                    CreateSpellBuffOnSelf(
+                        "Escape Artist", ret => Me.Auras.Any(
+                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Slowed ||
+                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
+                    //Get out of fear
+                    CreateSpellBuffOnSelf(
+                        "Berserker Rage", ret => Me.Auras.Any(
+                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Fleeing ||
+                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Sapped ||
+                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
+                                        aura.Value.Spell.Mechanic == WoWSpellMechanic.Horrified))
+                    );
+        }
+
     }
 }

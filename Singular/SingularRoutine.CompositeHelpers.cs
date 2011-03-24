@@ -12,6 +12,7 @@
 #endregion
 
 using System;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 
@@ -26,6 +27,8 @@ using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+
+using Singular.Settings;
 
 using TreeSharp;
 
@@ -80,6 +83,58 @@ namespace Singular
                             CreateFaceUnit()),
                         new ActionAlwaysSucceed()
                         )));
+        }
+
+        /// <summary>
+        ///   Creates a composite that will return a success, so long as you are currently casting. Will also 
+        ///   check spell target health and if >= SingularSettings.Instance.IgnoreHealTargetsAboveHealth
+        ///   will stop the cast if its a heal.  Note: will cancel only heals cast using CreateSpellCast()
+        ///   or a variant, or CastWithLog()
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/23/2011.
+        /// </remarks>
+        /// <param name = "faceDuring">Whether or not to face during casting</param>
+        /// <returns></returns>
+        protected Composite CreateWaitForCastWithCancel()
+        {
+            return CreateWaitForCastWithCancel( SingularSettings.Instance.IgnoreHealTargetsAboveHealth);
+        }
+
+        /// <summary>
+        ///   Creates a composite that will return a success, so long as you are currently casting. Will also 
+        ///   check spell target health and if >= minHealth will stop the cast if its a heal.  Note: will cancel 
+        ///   only heals cast using CreateSpellCast() or a variant, or CastWithLog()
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/23/2011.
+        /// </remarks>
+        /// <param name = "faceDuring">Whether or not to face during casting</param>
+        /// <returns></returns>
+        protected Composite CreateWaitForCastWithCancel(int minHealth)
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => Me.IsCasting,
+                    new PrioritySelector(
+                        new Decorator(
+                            ret =>  CastingSpellTarget == null
+                                ||  (CastingSpellTarget is WoWPlayer && Me.IsHorde != ((WoWPlayer)CastingSpellTarget).IsHorde)
+                                ||  (CastingSpellTarget is WoWUnit && !CastingSpellTarget.IsFriendly)
+                                ||  CastingSpellTarget.HealthPercent < minHealth
+                                ||  Me.CastingSpell == null
+                                ||  Me.CastingSpell.SpellEffect1 == null
+                                ||  Me.CastingSpell.SpellEffect1.EffectType != WoWSpellEffectType.Heal,
+                            new ActionAlwaysSucceed()),
+                        new Action( delegate 
+                            {
+                                string spellName = Me.CastingSpell.Name;
+                                double healthPct = CastingSpellTarget.HealthPercent;
+                                SpellManager.StopCasting();
+                                Logging.Write(Color.Orange, "[Singular] /cancelled {0} on {1} at {2:F0}%", spellName, CastingSpellTarget.SafeName(), healthPct);
+                            }))
+                    )
+                );
         }
 
         protected Composite CreateCastPetAction(string action)
@@ -189,15 +244,17 @@ namespace Singular
                 );
         }
 
-        private void CastWithLog(string spellName, WoWUnit onTarget)
+        protected void CastWithLog(string spellName, WoWUnit onTarget)
         {
+            CastingSpellTarget = onTarget; // save current spell target, reset by SPELL_CAST_SUCCESS event
             Logger.Write(string.Format("Casting {0} on {1}", spellName, (onTarget != null ? onTarget.SafeName() : "-Nobody-")));
             SpellManager.Cast(spellName, onTarget);
         }
 
-        private void CastWithLog(int spellId, WoWUnit onTarget)
+        protected void CastWithLog(int spellId, WoWUnit onTarget)
         {
-            Logger.Write(string.Format("Casting {0} on {1}", WoWSpell.FromId(spellId).Name, onTarget.SafeName()));
+            CastingSpellTarget = onTarget; // save current spell target, reset by SPELL_CAST_SUCCESS event
+            Logger.Write(string.Format("Casting {0} on {1}", WoWSpell.FromId(spellId).Name, (onTarget != null ? onTarget.SafeName() : "-Nobody-")));
             SpellManager.Cast(spellId, onTarget);
         }
 

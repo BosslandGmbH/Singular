@@ -82,6 +82,8 @@ namespace Singular
 
         public string LastSpellCast { get; set; }
 
+        public WoWUnit CastingSpellTarget { get; set; }
+
         public override Composite CombatBehavior { get { return _combatBehavior; } }
 
         public override Composite CombatBuffBehavior { get { return _combatBuffsBehavior; } }

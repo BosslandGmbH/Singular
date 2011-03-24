@@ -19,6 +19,7 @@ using Styx.Combat.CombatRoutine;
 using Styx.Logic;
 using Styx.Logic.POI;
 using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
@@ -71,6 +72,10 @@ namespace Singular
                     {
                         return;
                     }
+
+                    // reset target of current spell since complete
+                    CastingSpellTarget = null;
+
                     // Update the last spell we cast. So certain classes can 'switch' their logic around.
                     LastSpellCast = e.SpellName;
                     Logger.WriteDebug("Successfully cast " + LastSpellCast);

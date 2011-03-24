@@ -18,6 +18,8 @@ using Styx.Helpers;
 using Styx.Logic.Pathing;
 
 using TreeSharp;
+using Styx.WoWInternals;
+using Styx;
 
 namespace Singular
 {
@@ -63,26 +65,16 @@ namespace Singular
                 CreateSpellCast(
                     "Redirect", ret => Me.RawComboPoints > 0 &&
                                        Me.ComboPoints < 1),
-                /*
-                // Blade Flurry
-                CreateSpellCast("Blade Flurry", ret => NearbyUnfriendlyUnits.Count(a => a.Distance < 5) > 1 &&
-                                                       !Me.HasAura("Blade Flurry")
-                               ),
-                new DecoratorContinue
-                (
-                    ret => NearbyUnfriendlyUnits.Count(a => a.Distance < 5) < 2,
-		            new PrioritySelector
-                    (
-                        new TreeSharp.Action(ctx => Lua.DoString("RunMacroText(\"/cancelaura Blade Flurry\""))
-                    )
-                ),
-                */
 
                 // CP generators, put em at start, since they're strictly conditional
                 // and will help burning energy on Adrenaline Rush
-
+                new Decorator(
+                    ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) <= 1 && Me.HasAura("Blade Flurry"),
+                    new Sequence(
+                        new Action(ret => Lua.DoString("RunMacroText(\"/cancelaura Blade Flurry\")")),
+                        new Action(ret => StyxWoW.SleepForLagDuration()))),
                 CreateSpellCast("Blade Flurry", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) > 1),
-                CreateSpellCast("Eviscerate", ret => !CurrentTargetIsElite && Me.CurrentTarget.HealthPercent <= 40 && Me.ComboPoints >= 3),
+                CreateSpellCast("Eviscerate", ret => !CurrentTargetIsElite && Me.CurrentTarget.HealthPercent <= 40 && Me.ComboPoints > 2),
                 // Always keep Slice and Dice up
                 CreateSpellBuffOnSelf("Slice and Dice", ret => Me.RawComboPoints > 0),
                 // Sinister Strike till 4 CP

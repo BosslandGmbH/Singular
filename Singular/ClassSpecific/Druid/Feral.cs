@@ -43,6 +43,7 @@ namespace Singular
                     ret => Me.Shapeshift != WantedDruidForm,
                     CreateSpellCast("Cat Form")),
                 CreateEnsureTarget(),
+                CreateSpellBuffOnSelf("Rejuvenation", ret => !Me.IsInParty && !Me.IsInRaid && Me.HealthPercent < 60),
                 CreateSpellCast("Berserk", ret => Me.Fleeing),
                 CreateSpellCast("Survival Instincts", ret => Me.HealthPercent <= 45),
                 CreateSpellBuffOnSelf("Prowl"),
@@ -53,8 +54,8 @@ namespace Singular
                 // Kudos to regecksqt for the dash/stampeding roar logic. Slightly changed for reading purposes.
                 new Decorator(
                     ret =>
-                    Me.CurrentTarget.Distance > 5 &&
-                    !WoWMathHelper.IsFacing(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, Me.Location, (float)Math.PI) &&
+                    Me.CurrentTarget.Distance > 5 && Me.Combat &&
+                    !Me.CurrentTarget.IsSafelyFacing(Me.Location) &&
                     Me.CurrentTarget.IsMoving && Me.CurrentTarget.MovementInfo.RunSpeed > Me.MovementInfo.RunSpeed,
                     new PrioritySelector(
                         CreateSpellCast("Dash"),
@@ -71,7 +72,7 @@ namespace Singular
                         CreateSpellCast("Barkskin", ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 5) > 0),
                         CreateSpellCast("Tiger's Fury", ret => Me.CurrentEnergy <= 50),
                         new Decorator(
-                            ret => Me.ComboPoints == 5,
+                            ret => Me.ComboPoints == 5 || Me.ComboPoints > 2 && Me.CurrentTarget.HealthPercent < 40 && !CurrentTargetIsElite,
                             new PrioritySelector(
                                 CreateSpellBuffOnSelf("Savage Roar", ret => Me.HealthPercent >= 75),
                                 CreateSpellCast("Maim", ret => !Me.CurrentTarget.Stunned),

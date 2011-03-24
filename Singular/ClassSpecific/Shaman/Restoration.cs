@@ -60,50 +60,53 @@ namespace Singular
             NeedHealTargeting = true;
 
             return new
-                Decorator(
-                ret => HealTargeting.Instance.FirstUnit != null,
-                new PrioritySelector(
-                    ctx => selfOnly ? Me : HealTargeting.Instance.FirstUnit,
-                    CreateWaitForCast(),
+                PrioritySelector(
+                    CreateWaitForCastWithCancel(SingularSettings.Instance.IgnoreHealTargetsAboveHealth),
 
-                    CreateSpellCast(
-                        "Earth Shield",
-                        ret => RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader
-                           && (!RaFHelper.Leader.HasAura("Earth Shield") || RaFHelper.Leader.Auras["Earth Shield"].StackCount < (Me.Combat ? 1 : 4)),
-                        ret => RaFHelper.Leader),
+                    new Decorator(
+                        ret => HealTargeting.Instance.FirstUnit != null,
+                        new PrioritySelector(
+                            ctx => selfOnly ? Me : HealTargeting.Instance.FirstUnit,
 
-                    CreateSpellCast(
-                        "Water Shield",
-                        ret => !Me.HasAura("Earth Shield") 
-                           && (!Me.Auras.ContainsKey("Water Shield") || Me.Auras["Water Shield"].StackCount < (Me.Combat ? 1 : 3)),
-                        ret => Me),
+                            CreateSpellCast(
+                                "Earth Shield",
+                                ret => RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader
+                                   && (!RaFHelper.Leader.HasAura("Earth Shield") || RaFHelper.Leader.Auras["Earth Shield"].StackCount < (Me.Combat ? 1 : 4)),
+                                ret => RaFHelper.Leader),
 
-                    CreateSpellCast(
-                        "Healing Surge",
-                        ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_HealingSurge_Health,
-                        ret => (WoWUnit)ret),
+                            CreateSpellCast(
+                                "Water Shield",
+                                ret => !Me.HasAura("Earth Shield") 
+                                   && (!Me.Auras.ContainsKey("Water Shield") || Me.Auras["Water Shield"].StackCount < (Me.Combat ? 1 : 3)),
+                                ret => Me),
 
-                    CreateSpellCast(
-                        "Greater Healing Wave",
-                        ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_GreaterHealingWave_Health,
-                        ret => (WoWUnit)ret),
+                            CreateSpellCast(
+                                "Healing Surge",
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_HealingSurge_Health,
+                                ret => (WoWUnit)ret),
 
-                    CreateSpellCast(
-                        "Chain Heal",
-                        ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_ChainHeal_Health && WillChainHealHop((WoWUnit) ret),
-                        ret => (WoWUnit)ret),
+                            CreateSpellCast(
+                                "Greater Healing Wave",
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_GreaterHealingWave_Health,
+                                ret => (WoWUnit)ret),
 
-                    CreateSpellCast(
-                        "Riptide",
-                        ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_Riptide_Health,
-                        ret => (WoWUnit)ret),
+                            CreateSpellCast(
+                                "Chain Heal",
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_ChainHeal_Health && WillChainHealHop((WoWUnit) ret),
+                                ret => (WoWUnit)ret),
 
-                    CreateSpellCast(
-                        "Healing Wave",
-                        ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_HealingWave_Health,
-                        ret => (WoWUnit)ret)
-                )
-            );
+                            CreateSpellCast(
+                                "Riptide",
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_Riptide_Health,
+                                ret => (WoWUnit)ret),
+
+                            CreateSpellCast(
+                                "Healing Wave",
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_HealingWave_Health,
+                                ret => (WoWUnit)ret)
+                        )
+                    )
+                );
         }
 
         [Class(WoWClass.Shaman)]

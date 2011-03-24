@@ -37,8 +37,6 @@ namespace Singular
                 CreateEnsureTarget(),
                 //Face target if not facing already
                 CreateFaceUnit(),
-                //Move to range
-
                 //Face target if not facing already
                 CreateFaceUnit(),
                 //autoattack
@@ -53,7 +51,9 @@ namespace Singular
                 //Close Gap to target
                 CreateFuryCloseGap(),
                 //Worgen Racial
-                CreateSpellCast("Darkflight", ret => Me.CurrentTarget.IsPlayer && Me.CurrentTarget.Distance > 15),
+                CreateSpellCast(
+                    "Darkflight", ret => Me.CurrentTarget.IsPlayer && 
+                                         Me.CurrentTarget.Distance > 15),
                 //Rocketboots!
                 new Decorator(
                     ret =>
@@ -94,7 +94,7 @@ namespace Singular
                 //Use Incite or dump rage
 				CreateSpellCast(
                     "Heroic Strike", ret => Me.RagePercent > 60 || 
-                                                        HasAuraStacks("Incite", 1)),
+                                            HasAuraStacks("Incite", 1)),
                 //Use Engineering Gloves
                 CreateUseEquippedItem(9),
                 //Rotation under 20%
@@ -149,10 +149,10 @@ namespace Singular
                     CreateSpellCast("Recklessness",
                             ret => Me.HasAura("Death Wish") && Me.HealthPercent > 20),
                     //Inner rage with recklessness, deathwish or dump rage
-                    CreateSpellCast("Inner Rage",
-                            ret => Me.HasAura("Recklessness") ||
-                                  Me.HasAura("Death Wish") ||
-                                  Me.RagePercent > 90),
+                    CreateSpellCast(
+                        "Inner Rage", ret => Me.HasAura("Recklessness") ||
+                                             Me.HasAura("Death Wish") ||
+                                             Me.RagePercent > 90),
                     //Remove Croud Control Effects
                     CreateFuryRemoveCC(),
                     //Dwarf Racial
@@ -168,7 +168,7 @@ namespace Singular
                                         Me.RagePercent > 50) ||
                                         (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
                                         Me.HealthPercent > 10 && Me.HealthPercent < 75)),
-                    //Berserker rage to stay enraged(Key to good dps btw)
+                    //Berserker rage to stay enraged(Key to good dps)
                     CreateSpellBuffOnSelf("Berserker Rage",
                             ret => !Me.Auras.Any(
                                 aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
@@ -177,7 +177,7 @@ namespace Singular
                         "Battle Shout", ret => !Me.HasAura("Horn of the Winter") &&
                                                !Me.HasAura("Roar of Courage") &&
                                                !Me.HasAura("Strength of Earth Totem") ||
-                                               Me.RagePercent < 20)
+                                               Me.RagePercent < 15)
                 );
         }
 
@@ -293,6 +293,8 @@ namespace Singular
                     new PrioritySelector(
                         CreateMoveToAndFace(ret => Me.CurrentTarget)
                         )),
+                    //Intercept
+                    CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance >= 10),
                     //Heroic Leap
                     new Decorator(
                     ret => SpellManager.CanCast("Heroic Leap") && Me.CurrentTarget.Distance > 9 && !Me.CurrentTarget.HasAura("Intercept"),
@@ -302,8 +304,6 @@ namespace Singular
                                 SpellManager.Cast("Heroic Leap");
                                 LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
                             })),
-                    //PvP Intercept
-                    CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance >= 10),
                     //Heroic Throw if not already Intercepting
                     CreateSpellCast("Heroic Throw", ret => !Me.CurrentTarget.HasAura("Intercept")),
                     //Move to mele and face

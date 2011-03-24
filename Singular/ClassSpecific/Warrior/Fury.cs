@@ -50,10 +50,6 @@ namespace Singular
                                                  Me.CurrentTarget.IsCasting),
                 //Close Gap to target
                 CreateFuryCloseGap(),
-                //Worgen Racial
-                CreateSpellCast(
-                    "Darkflight", ret => Me.CurrentTarget.IsPlayer && 
-                                         Me.CurrentTarget.Distance > 15),
                 //Rocketboots!
                 new Decorator(
                     ret =>
@@ -94,7 +90,7 @@ namespace Singular
                 //Use Incite or dump rage
 				CreateSpellCast(
                     "Heroic Strike", ret => Me.RagePercent > 60 || 
-                                            HasAuraStacks("Incite", 1)),
+                                            HasAuraStacks("Incite", 1)),                
                 //Use Engineering Gloves
                 CreateUseEquippedItem(9),
                 //Rotation under 20%
@@ -306,6 +302,10 @@ namespace Singular
                             })),
                     //Heroic Throw if not already Intercepting
                     CreateSpellCast("Heroic Throw", ret => !Me.CurrentTarget.HasAura("Intercept")),
+                    //Worgen Racial
+                    CreateSpellCast(
+                        "Darkflight", ret => Me.CurrentTarget.IsPlayer &&
+                                             Me.CurrentTarget.Distance > 15),
                     //Move to mele and face
                     CreateMoveToAndFace(ret => Me.CurrentTarget)
                     );

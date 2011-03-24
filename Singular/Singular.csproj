@@ -186,6 +186,7 @@
   <ItemGroup>
     <EmbeddedResource Include="GUI\ConfigurationForm.resx">
       <DependentUpon>ConfigurationForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -197,7 +198,7 @@ if $(ConfigurationName) == Raphus (
 )
 
 if $(ConfigurationName) == Bobby53 (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\HB\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\HB\CustomClasses\Singular\" /i /f /s /v /y
 )
 ECHO Copied</PostBuildEvent>
   </PropertyGroup>

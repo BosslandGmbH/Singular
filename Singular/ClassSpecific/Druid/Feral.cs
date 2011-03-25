@@ -22,6 +22,8 @@ using Styx.Logic.Combat;
 using TreeSharp;
 
 using Action = TreeSharp.Action;
+using Singular.Settings;
+using Styx.Logic.Pathing;
 
 namespace Singular
 {
@@ -29,7 +31,6 @@ namespace Singular
     {
         [Class(WoWClass.Druid)]
         [Context(WoWContext.All)]
-        [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Spec(TalentSpec.FeralDruid)]
         public Composite CreateFeralCatCombat()
@@ -46,7 +47,6 @@ namespace Singular
                 CreateSpellBuffOnSelf("Rejuvenation", ret => !Me.IsInParty && !Me.IsInRaid && Me.HealthPercent < 60),
                 CreateSpellCast("Berserk", ret => Me.Fleeing),
                 CreateSpellCast("Survival Instincts", ret => Me.HealthPercent <= 45),
-                CreateSpellBuffOnSelf("Prowl"),
                 CreateFaceUnit(),
                 CreateAutoAttack(false),
                 CreateSpellCast("Feral Charge (Cat)", ret => Me.CurrentTarget.Distance >= 8 && Me.CurrentTarget.Distance <= 25),
@@ -68,7 +68,6 @@ namespace Singular
                         //    // We use the player mover, since people can override it. This lets us support their stuff.
                         //    new Action(ret => Navigator.PlayerMover.MoveStop())),
 
-                        CreateSpellCast("Pounce", ret => Me.HasAura("Prowl")),
                         CreateSpellCast("Barkskin", ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 5) > 0),
                         CreateSpellCast("Tiger's Fury", ret => Me.CurrentEnergy <= 50),
                         new Decorator(
@@ -93,10 +92,58 @@ namespace Singular
                         CreateSpellCast("Swipe (Cat)", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 5 * 5) >= 2),
                         //new ActionLog("Mangle"),
                         CreateSpellCast("Mangle (Cat)"))),
-                CreateSpellBuff("Faerie Fire (Feral)"),
+                CreateSpellBuff("Faerie Fire (Feral)", ret => !Me.HasAura("Prowl")),
                 // We're putting movement at the bottom. Since we want the stuff above, to happen first. If we're out of range, we'll automatically fall
                 // back to here and get within melee range to fuck shit up.
                 CreateMoveToAndFace(4, ret => Me.CurrentTarget)
+                );
+        }
+
+        [Class(WoWClass.Druid)]
+        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Pull)]
+        [Spec(TalentSpec.FeralDruid)]
+        public Composite CreateFeralCatPull()
+        {
+            return new PrioritySelector(
+                // Make sure we're in cat form first, period.
+                new Decorator(
+                    ret => Me.Shapeshift != WantedDruidForm,
+                    CreateSpellCast("Cat Form")),
+                CreateEnsureTarget(),
+                CreateSpellBuffOnSelf("Dash", ret => Me.IsMoving && Me.HasAura("Prowl")),
+                CreateSpellBuffOnSelf("Prowl"),
+                new PrioritySelector(
+                    ret => WoWMathHelper.CalculatePointBehind(Me.CurrentTarget.Location, Me.CurrentTarget.Rotation, 1f),
+                    new Decorator(
+                        ret => ((WoWPoint)ret).Distance2D(Me.Location) > 3f && Navigator.CanNavigateFully(Me.Location, ((WoWPoint)ret)),
+                        new Action(ret => Navigator.MoveTo(((WoWPoint)ret)))),
+                    CreateMoveToAndFace()),
+                new Decorator(
+                    ret => Me.HasAura("Prowl"),
+                    new PrioritySelector(
+                        CreateSpellCast("Pounce"),
+                        CreateSpellCast("Ravage", ret => Me.CurrentTarget.MeIsSafelyBehind))),
+                CreateSpellCast("Mangle (Cat)"),
+                CreateAutoAttack(true)
+                );
+        }
+
+        [Class(WoWClass.Druid)]
+        [Spec(TalentSpec.FeralDruid)]
+        [Behavior(BehaviorType.Rest)]
+        [Context(WoWContext.All)]
+        public Composite CreateFeralCatRest()
+        {
+            return new PrioritySelector(
+                // Heal self before resting. There is no need to eat while we have 100% mana
+                CreateRestoDruidHealOnlyBehavior(true),
+                // Rest up damnit! Do this first, so we make sure we're fully rested.
+                CreateDefaultRestComposite(SingularSettings.Instance.DefaultRestHealth, SingularSettings.Instance.DefaultRestMana),
+                // Can we res people?
+                new Decorator(
+                    ret => ResurrectablePlayers.Count != 0,
+                    CreateSpellCast("Revive", ret => true, ret => ResurrectablePlayers.FirstOrDefault()))
                 );
         }
     }

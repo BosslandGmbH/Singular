@@ -242,7 +242,8 @@ namespace Singular
                                         // Force a failure, just so we can move down the branch. to the log message
                                         return RunStatus.Failure;
                                     }),
-                            new ActionLogMessage(false, "No viable target! NOT GOOD!"))));
+                            new ActionLogMessage(false, "No viable target! NOT GOOD!"),
+                            new ActionAlwaysSucceed())));
         }
 
         protected Composite CreateAutoAttack(bool includePet)

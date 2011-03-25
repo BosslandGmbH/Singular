@@ -43,7 +43,7 @@ namespace Singular
                 // Can we res people?
                 new Decorator(
                     ret => ResurrectablePlayers.Count != 0,
-                    CreateSpellCast("Resurrection", ret => true, ret => ResurrectablePlayers.FirstOrDefault()))
+                    CreateSpellCast("Revive", ret => true, ret => ResurrectablePlayers.FirstOrDefault()))
                 );
         }
 

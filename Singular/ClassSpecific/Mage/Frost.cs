@@ -11,12 +11,15 @@
 
 #endregion
 
+using System.Linq;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.Logic.Pathing;
 
 using TreeSharp;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
@@ -33,7 +36,7 @@ namespace Singular
                 CreateEnsureTarget(),
                 //Move away from frozen targets
                 new Decorator(
-                    ret => Me.CurrentTarget.HasAura("Frost Nova") && Me.CurrentTarget.DistanceSqr < 5 * 5,
+                    ret => (Me.CurrentTarget.HasAura("Frost Nova") || Me.CurrentTarget.HasAura("Freeze")) && Me.CurrentTarget.DistanceSqr < 5 * 5,
                     new Action(
                         ret =>
                             {
@@ -46,8 +49,16 @@ namespace Singular
                                 }
                             })),
                 CreateMoveToAndFace(34f, ret => Me.CurrentTarget),
-                CreateSpellBuff("Frost Nova", ret => Me.CurrentTarget.DistanceSqr <= 8 * 8),
                 CreateWaitForCast(true),
+                CreateCastPetActionOnLocation("Freeze", ret => !Me.CurrentTarget.HasAura("Frost Nova")),
+                CreateSpellBuff("Frost Nova", ret => NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
+                new PrioritySelector(
+                    ctx => NearbyUnfriendlyUnits.FirstOrDefault(u => 
+                            u.Aggro && u != Me.CurrentTarget && 
+                            (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)),
+                    new Decorator(
+                        ret => ret != null,
+                        CreateSpellBuff("Polymorph", ret => NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1, ret => (WoWUnit)ret, true))),
                 new Decorator(
                     ret => !Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(WantedPet))),

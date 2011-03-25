@@ -139,14 +139,48 @@ namespace Singular
 
         protected Composite CreateCastPetAction(string action)
         {
-            return CreateCastPetActionOn(action, ret => Me.CurrentTarget);
+            return CreateCastPetAction(action, ret => true);
+        }
+
+        protected Composite CreateCastPetAction(string action, SimpleBoolReturnDelegate extra)
+        {
+            return CreateCastPetActionOn(action, ret => Me.CurrentTarget, extra);
         }
 
         protected Composite CreateCastPetActionOn(string action, UnitSelectionDelegate onUnit)
         {
+            return CreateCastPetActionOn(action, onUnit, ret => true);
+        }
+
+        protected Composite CreateCastPetActionOn(string action, UnitSelectionDelegate onUnit, SimpleBoolReturnDelegate extra)
+        {
             return new Decorator(
-                ret => PetManager.CanCastPetAction(action),
+                ret => extra(ret) && PetManager.CanCastPetAction(action),
                 new Action(ret => PetManager.CastPetAction(action, onUnit(ret))));
+        }
+
+        protected Composite CreateCastPetActionOnLocation(string action)
+        {
+            return CreateCastPetActionOnLocation(action, ret => true);
+        }
+
+        protected Composite CreateCastPetActionOnLocation(string action, SimpleBoolReturnDelegate extra)
+        {
+            return CreateCastPetActionOnLocation(action, ret => Me.CurrentTarget.Location, extra);
+        }
+
+        protected Composite CreateCastPetActionOnLocation(string action, LocationRetrievalDelegate location)
+        {
+            return CreateCastPetActionOnLocation(action, location, ret => true);
+        }
+
+        protected Composite CreateCastPetActionOnLocation(string action, LocationRetrievalDelegate location, SimpleBoolReturnDelegate extra)
+        {
+            return new Decorator(
+                ret =>  extra(ret) && PetManager.CanCastPetAction(action),
+                new Sequence(
+                    new Action(ret => PetManager.CastPetAction(action)),
+                    new Action(ret => LegacySpellManager.ClickRemoteLocation(location(ret)))));
         }
 
         protected Composite CreateEnsureTarget()

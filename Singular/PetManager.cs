@@ -85,13 +85,13 @@ namespace Singular
 
         public static bool CanCastPetAction(string action)
         {
-            WoWPetSpell spell = _petSpells.FirstOrDefault(p => p.ToString() == action);
-            if (spell == null)
+            WoWPetSpell petAction = _petSpells.FirstOrDefault(p => p.ToString() == action);
+            if (petAction == null || petAction.Spell == null)
             {
                 return false;
             }
 
-            return !spell.Cooldown;
+            return !petAction.Spell.Cooldown;
         }
 
         public static void CastPetAction(string action)

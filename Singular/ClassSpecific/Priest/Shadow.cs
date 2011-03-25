@@ -32,7 +32,7 @@ namespace Singular
                 CreateWaitForCast(true),
                 CreateDiscHealOnlyBehavior(true),
                 CreateSpellCast("Mind Blast", ret => Me.CurrentTarget.CreatureType == Styx.WoWCreatureType.Totem),
-                CreateSpellBuff("Vampiric Touch", ret => !Me.IsMoving, true),
+                CreateSpellBuff("Vampiric Touch", true),
                 CreateSpellBuff("Devouring Plague"),
                 CreateSpellBuff("Shadow Word: Pain"),
                 CreateSpellBuff("Archangel", ret => HasAuraStacks("Evangelism", 5) && Me.ManaPercent <= 75),

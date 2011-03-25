@@ -194,7 +194,7 @@
     <PostBuildEvent>%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
 
 if $(ConfigurationName) == Raphus (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Dodo\Desktop\HB\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Dodo\Desktop\WoW\HB\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
 )
 
 if $(ConfigurationName) == Bobby53 (

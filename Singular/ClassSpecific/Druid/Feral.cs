@@ -30,9 +30,20 @@ namespace Singular
     partial class SingularRoutine
     {
         [Class(WoWClass.Druid)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances)]
         [Behavior(BehaviorType.Combat)]
         [Spec(TalentSpec.FeralDruid)]
+        public Composite CreateFeralCatInstanceCombat()
+        {
+            return CreateFeralCatCombat();
+        }
+
+
+        [Class(WoWClass.Druid)]
+        [Context(WoWContext.Battlegrounds | WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat)]
+        [Spec(TalentSpec.FeralDruid)]
+        [Spec(TalentSpec.FeralTankDruid)]
         public Composite CreateFeralCatCombat()
         {
             // Get us in cat form pl0x
@@ -100,9 +111,10 @@ namespace Singular
         }
 
         [Class(WoWClass.Druid)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Battlegrounds|WoWContext.Normal)]
         [Behavior(BehaviorType.Pull)]
         [Spec(TalentSpec.FeralDruid)]
+        [Spec(TalentSpec.FeralTankDruid)]
         public Composite CreateFeralCatPull()
         {
             return new PrioritySelector(
@@ -131,6 +143,7 @@ namespace Singular
 
         [Class(WoWClass.Druid)]
         [Spec(TalentSpec.FeralDruid)]
+        [Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public Composite CreateFeralCatRest()

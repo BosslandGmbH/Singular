@@ -26,7 +26,7 @@ namespace Singular
     {
         [Spec(TalentSpec.FeralTankDruid)]
         [Class(WoWClass.Druid)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         public Composite CreateBearTankCombat()
@@ -68,7 +68,7 @@ namespace Singular
 
         [Spec(TalentSpec.FeralTankDruid)]
         [Class(WoWClass.Druid)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances)]
         [Behavior(BehaviorType.CombatBuffs)]
         public Composite CreateBearTankCombatBuffs()
         {

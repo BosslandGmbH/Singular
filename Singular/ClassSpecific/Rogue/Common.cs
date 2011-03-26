@@ -24,6 +24,7 @@ using Styx.Logic.Pathing;
 using Styx.WoWInternals;
 
 using TreeSharp;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
@@ -102,6 +103,16 @@ namespace Singular
                         new WaitContinue(10, ret => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
                         new Action(ret => Thread.Sleep(1000))))
                 );
+        }
+
+        protected Composite CreateRogueBlindOnAddBehavior()
+        {
+            return new PrioritySelector(
+                    ctx => NearbyUnfriendlyUnits.FirstOrDefault(u =>
+                            u.IsTargetingMeOrPet && u != Me.CurrentTarget),
+                    new Decorator(
+                        ret => ret != null,
+                        CreateSpellBuff("Blind", ret => NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1, ret => (WoWUnit)ret, true)));
         }
     }
 }

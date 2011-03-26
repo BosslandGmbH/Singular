@@ -69,11 +69,13 @@ namespace Singular
                 // CP generators, put em at start, since they're strictly conditional
                 // and will help burning energy on Adrenaline Rush
                 new Decorator(
-                    ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) <= 1 && Me.HasAura("Blade Flurry"),
+                    ret => (NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) <= 1 || 
+                            NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 6 * 6 && u.HasAura("Blind"))) && Me.HasAura("Blade Flurry"),
                     new Sequence(
                         new Action(ret => Lua.DoString("RunMacroText(\"/cancelaura Blade Flurry\")")),
                         new Action(ret => StyxWoW.SleepForLagDuration()))),
-                CreateSpellCast("Blade Flurry", ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) > 1),
+                CreateRogueBlindOnAddBehavior(),
+                CreateSpellCast("Blade Flurry", ret => !NearbyUnfriendlyUnits.Any(u => u.HasAura("Blind")) && NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) > 1),
                 CreateSpellCast("Eviscerate", ret => !CurrentTargetIsElite && Me.CurrentTarget.HealthPercent <= 40 && Me.ComboPoints > 2),
                 // Always keep Slice and Dice up
                 CreateSpellBuffOnSelf("Slice and Dice", ret => Me.RawComboPoints > 0),

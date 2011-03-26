@@ -128,6 +128,19 @@ namespace Singular.Settings
             "The percent of health, or mana, to use this trinket at. Only taken into account when Second Trinket Usage is 'LowHealth' or 'LowPower'")]
         public int SecondTrinketUseAtPercent { get; set; }
 
+        [Setting]
+        [DefaultValue(PvPTrinketSlot.None)]
+        [Category("PVP")]
+        [DisplayName("PVP Trinket slot")]
+        public PvPTrinketSlot PvPTrinketSlot { get; set; }
+
+        [Setting]
+        [DefaultValue(PvPTrinketSlot.None)]
+        [Category("PVP")]
+        [DisplayName("PVP Damage Trinket slot")]
+        [Description("Defines slot with trinket that greatly increase damage, will be used in sequence with such CD abilitites like Paladin's Avenging Wrath")]
+        public PvPTrinketSlot PvPDamageTrinketSlot { get; set; }
+
         #endregion
 
         #region Class Late-Loading Wrappers

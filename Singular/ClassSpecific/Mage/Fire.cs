@@ -22,13 +22,14 @@ namespace Singular
         [Class(WoWClass.Mage)]
         [Spec(TalentSpec.FireMage)]
         [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances | WoWContext.Normal)]
         public Composite CreateFireMageCombat()
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateMoveToAndFace(40f, ret => Me.CurrentTarget),
+				CreateWaitForCast(true),
                 CreateSpellCast("Evocation", ret => Me.ManaPercent < 40),
 				//Armour swaping for low or high mana when evo on cd
 				CreateSpellBuffOnSelf("Molten Armor", ret => !Me.HasAura("Molten Armor") && Me.ManaPercent > 50),
@@ -50,13 +51,14 @@ namespace Singular
         [Class(WoWClass.Mage)]
         [Spec(TalentSpec.FireMage)]
         [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances | WoWContext.Normal)]
         public Composite CreateFireMagePull()
         {
             return
                 new PrioritySelector(
                     // Make sure we're in range, and facing the damned target. (LOS check as well)
                     CreateMoveToAndFace(40f, ret => Me.CurrentTarget),
+					CreateWaitForCast(true),
                     CreateSpellCast("Fireball")
                     );
         }
@@ -64,7 +66,7 @@ namespace Singular
         [Class(WoWClass.Mage)]
         [Spec(TalentSpec.FireMage)]
         [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances | WoWContext.Normal)]
         public Composite CreateFireMagePreCombatBuffs()
         {
             return

@@ -114,6 +114,7 @@
     <Compile Include="ClassSpecific\Hunter\Lowbie.cs" />
     <Compile Include="ClassSpecific\Mage\Common.cs" />
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
+    <Compile Include="ClassSpecific\Mage\FirePvP.cs" />
     <Compile Include="ClassSpecific\Mage\Frost.cs" />
     <Compile Include="ClassSpecific\Mage\Lowbie.cs" />
     <Compile Include="ClassSpecific\Paladin\Common.cs" />
@@ -170,6 +171,7 @@
     <Compile Include="SingularRoutine.CompositeHelpers.cs" />
     <Compile Include="SingularRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SingularRoutine.PVPHelpers.cs" />
     <Compile Include="TalentManager.cs" />
     <Compile Include="TankTargeting.cs" />
   </ItemGroup>

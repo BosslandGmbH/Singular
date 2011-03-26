@@ -44,6 +44,7 @@ namespace Singular
             return
                 new PrioritySelector(
                     CreateFaceUnit(),
+                    CreateAutoAttack(true),
                     CreateSpellCast("Judgement"),
                     CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
                     );

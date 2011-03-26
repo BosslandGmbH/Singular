@@ -23,6 +23,7 @@ using Styx.WoWInternals.WoWObjects;
 using TreeSharp;
 
 using Action = TreeSharp.Action;
+using Styx;
 
 namespace Singular
 {
@@ -120,6 +121,17 @@ namespace Singular
             {
                 Lua.DoString("UseItemByName(\"" + ManaGem.Name + "\")");
             }
+        }
+
+        protected Composite CreateMagePolymorphOnAddBehavior()
+        {
+            return new PrioritySelector(
+                    ctx => NearbyUnfriendlyUnits.FirstOrDefault(u =>
+                            u.IsTargetingMeOrPet && u != Me.CurrentTarget &&
+                            (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)),
+                    new Decorator(
+                        ret => ret != null,
+                        CreateSpellBuff("Polymorph", ret => NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1, ret => (WoWUnit)ret, true)));
         }
     }
 }

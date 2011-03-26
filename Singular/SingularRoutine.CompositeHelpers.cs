@@ -283,14 +283,20 @@ namespace Singular
         {
             CastingSpellTarget = onTarget; // save current spell target, reset by SPELL_CAST_SUCCESS event
             Logger.Write(string.Format("Casting {0} on {1}", spellName, (onTarget != null ? onTarget.SafeName() : "-Nobody-")));
-            SpellManager.Cast(spellName, onTarget);
+            if (onTarget == null)
+                SpellManager.Cast(spellName);
+            else
+                SpellManager.Cast(spellName, onTarget);
         }
 
         protected void CastWithLog(int spellId, WoWUnit onTarget)
         {
             CastingSpellTarget = onTarget; // save current spell target, reset by SPELL_CAST_SUCCESS event
             Logger.Write(string.Format("Casting {0} on {1}", WoWSpell.FromId(spellId).Name, (onTarget != null ? onTarget.SafeName() : "-Nobody-")));
-            SpellManager.Cast(spellId, onTarget);
+            if (onTarget == null)
+                SpellManager.Cast(spellId);
+            else
+                SpellManager.Cast(spellId, onTarget);
         }
 
         private Composite CreateSpellCastOnLocation(string spellName, LocationRetrievalDelegate onLocation)
@@ -299,6 +305,7 @@ namespace Singular
                 ret => CanCast(spellName, null, false),
                 new Sequence(
                     new Action(ret => CastWithLog(spellName, null)),
+                    new Action(ret => StyxWoW.SleepForLagDuration()),
                     new Action(ret => LegacySpellManager.ClickRemoteLocation(onLocation(ret)))));
         }
 
@@ -567,7 +574,7 @@ namespace Singular
             }
 
             // minrange check
-            if (spell.MinRange != 0 && onUnit.DistanceSqr < spell.MinRange * spell.MinRange)
+            if (spell.MinRange != 0 && onUnit != null && onUnit.DistanceSqr < spell.MinRange * spell.MinRange)
             {
                 return false;
             }

@@ -12,6 +12,7 @@
 #endregion
 
 using System.Threading;
+using System.Linq;
 
 using CommonBehaviors.Actions;
 
@@ -22,6 +23,8 @@ using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
 
 using TreeSharp;
+using Styx.WoWInternals.WoWObjects;
+using Styx.WoWInternals;
 
 namespace Singular
 {
@@ -82,6 +85,20 @@ namespace Singular
                                     Navigator.MoveTo(moveTo);
                                 }
                             }));
+        }
+
+        protected Composite CreateHunterTrapOnAddBehavior()
+        {
+            return new PrioritySelector(
+                    ctx => NearbyUnfriendlyUnits.FirstOrDefault(u =>
+                            u.IsTargetingMeOrPet && u != Me.CurrentTarget),
+                    new Decorator(
+                        ret => ret != null && CanCast("Freezing Trap", (WoWUnit)ret, false),
+                        new PrioritySelector(
+                            CreateSpellBuffOnSelf("Trap Launcher"),
+                            new Sequence(
+                                new Action(ret => Lua.DoString("RunMacroText(\"/cast Freezing Trap\")")),
+                                new Action(ret => LegacySpellManager.ClickRemoteLocation(((WoWUnit)ret).Location))))));
         }
     }
 }

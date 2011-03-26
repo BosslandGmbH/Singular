@@ -26,7 +26,6 @@ namespace Singular
     {
         private string _oldDps = "Wrath";
 
-        private int oldEclipse;
         private int StarfallRange { get { return TalentManager.HasGlyph("Focus") ? 20 : 40; } }
 
         private int CurrentEclipse { get { return BitConverter.ToInt32(BitConverter.GetBytes(Me.CurrentEclipse), 0); } }

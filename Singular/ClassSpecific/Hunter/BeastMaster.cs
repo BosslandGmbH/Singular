@@ -11,9 +11,14 @@
 
 #endregion
 
+using System.Linq;
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
+using Styx;
+using Styx.WoWInternals.WoWObjects;
+using Styx.Logic.Combat;
+using Styx.WoWInternals;
 
 namespace Singular
 {
@@ -41,6 +46,7 @@ namespace Singular
                                            (Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me)),
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),
+                CreateHunterTrapOnAddBehavior(),
                 new Decorator(
                     ret => Me.CurrentTarget.DistanceSqr < 5 * 5,
                     new PrioritySelector(

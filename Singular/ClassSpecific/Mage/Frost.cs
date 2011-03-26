@@ -52,13 +52,7 @@ namespace Singular
                 CreateWaitForCast(true),
                 CreateCastPetActionOnLocation("Freeze", ret => !Me.CurrentTarget.HasAura("Frost Nova")),
                 CreateSpellBuff("Frost Nova", ret => NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
-                new PrioritySelector(
-                    ctx => NearbyUnfriendlyUnits.FirstOrDefault(u => 
-                            u.Aggro && u != Me.CurrentTarget && 
-                            (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)),
-                    new Decorator(
-                        ret => ret != null,
-                        CreateSpellBuff("Polymorph", ret => NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1, ret => (WoWUnit)ret, true))),
+                CreateMagePolymorphOnAddBehavior(),
                 new Decorator(
                     ret => !Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(WantedPet))),

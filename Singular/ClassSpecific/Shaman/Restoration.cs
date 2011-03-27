@@ -73,13 +73,7 @@ namespace Singular
                                 ret => RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader
                                    && (!RaFHelper.Leader.HasAura("Earth Shield") || RaFHelper.Leader.Auras["Earth Shield"].StackCount < (Me.Combat ? 1 : 4)),
                                 ret => RaFHelper.Leader),
-
-                            CreateSpellCast(
-                                "Water Shield",
-                                ret => !Me.HasAura("Earth Shield") 
-                                   && (!Me.Auras.ContainsKey("Water Shield") || Me.Auras["Water Shield"].StackCount < (Me.Combat ? 1 : 3)),
-                                ret => Me),
-
+                                
                             CreateSpellCast(
                                 "Healing Surge",
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_HealingSurge_Health,
@@ -106,6 +100,23 @@ namespace Singular
                                 ret => (WoWUnit)ret)
                         )
                     )
+                );
+        }
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.RestorationShaman)]
+        [Behavior(BehaviorType.CombatBuffs)]
+        [Context(WoWContext.All)]
+        public Composite CreateRestoShamanCombatBuffs()
+        {
+            return new PrioritySelector(
+                
+                            CreateSpellCast(
+                                "Water Shield",
+                                ret => !Me.HasAura("Earth Shield") 
+                                   && (!Me.Auras.ContainsKey("Water Shield") || Me.Auras["Water Shield"].StackCount < (Me.Combat ? 1 : 3)),
+                                ret => Me)
+
                 );
         }
 

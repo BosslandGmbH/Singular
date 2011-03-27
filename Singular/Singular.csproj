@@ -132,6 +132,8 @@
     <Compile Include="ClassSpecific\Rogue\Poisons.cs" />
     <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
     <Compile Include="ClassSpecific\Shaman\Restoration.cs" />
+    <Compile Include="ClassSpecific\Shaman\TotemManager.cs" />
+    <Compile Include="ClassSpecific\Shaman\WoWTotemInfo.cs" />
     <Compile Include="ClassSpecific\Warlock\Affliction.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />

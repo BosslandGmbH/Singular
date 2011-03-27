@@ -158,9 +158,10 @@ namespace Singular
         {
             new ConfigurationForm().ShowDialog();
         }
-
+        
         public override void Pulse()
         {
+
             PetManager.Pulse();
             if (NeedHealTargeting)
             {

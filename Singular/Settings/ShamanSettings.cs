@@ -14,6 +14,7 @@
 using System.ComponentModel;
 
 using Styx.Helpers;
+using Styx.WoWInternals.WoWObjects;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
@@ -134,6 +135,29 @@ namespace Singular.Settings
         #endregion 
 #endregion
 
+        #region Totems
 
+        [Setting]
+        [DefaultValue(WoWTotem.None)]
+        [Category("Totems")]
+        [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
+        public WoWTotem FireTotem { get; set; }
+        [Setting]
+        [DefaultValue(WoWTotem.None)]
+        [Category("Totems")]
+        [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
+        public WoWTotem EarthTotem { get; set; }
+        [Setting]
+        [DefaultValue(WoWTotem.None)]
+        [Category("Totems")]
+        [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
+        public WoWTotem WaterTotem { get; set; }
+        [Setting]
+        [DefaultValue(WoWTotem.None)]
+        [Category("Totems")]
+        [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
+        public WoWTotem AirTotem { get; set; }
+
+        #endregion
     }
 }

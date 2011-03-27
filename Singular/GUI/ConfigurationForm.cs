@@ -14,13 +14,16 @@
 using System;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
+using Singular.ClassSpecific.Shaman;
 using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.GUI
@@ -114,6 +117,13 @@ namespace Singular.GUI
                 sb.AppendLine(u.Name + " - " + u.HealthPercent);
             }
             lblHealTargets.Text = sb.ToString();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            ObjectManager.Update();
+            //TotemManager.RecallTotems();
+            Logger.Write(TotemManager.TotemsInRange + " totems in range.");
         }
     }
 }

@@ -11,7 +11,11 @@
 
 #endregion
 
+using Singular.ClassSpecific.Shaman;
+using Singular.Settings;
+
 using Styx.Combat.CombatRoutine;
+using Styx.Logic.Combat;
 
 using TreeSharp;
 
@@ -30,6 +34,13 @@ namespace Singular
                 CreateEnsureTarget(),
                 CreateMoveToAndFace(39, ret => Me.CurrentTarget),
                 CreateWaitForCast(true),
+
+                new Decorator(
+                    ret => TotemManager.TotemsInRange == 0,
+                    new Sequence(
+                        new Action(ret => TotemManager.SetupTotemBar()),
+                        new Action(ret => TotemManager.CallTotems()))),
+
                 CreateSpellCast("Elemental Mastery"),
                 CreateSpellBuff("Flame Shock"),
                 CreateSpellCast("Unleash Elements"),
@@ -47,7 +58,30 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateSpellBuffOnSelf("Lightning Shield"),
-                CreateSpellCast("Flametongue Weapon", ret => Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Name != "Flametongue Weapon")
+                new Decorator(
+                    ret => !Me.HasAura("Flametongue Weapon (Passive)") && SpellManager.CanCast("Flametongue Weapon"),
+                    new Action(ret => CastWithLog("Flametongue Weapon", Me)))
+                );
+        }
+
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
+        [Spec(TalentSpec.RestorationShaman)]
+        [Spec(TalentSpec.EnhancementShaman)]
+        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest)]
+        public Composite CreateShamanRest()
+        {
+            return new PrioritySelector(
+
+                new Decorator(
+                    ret => TotemManager.NeedToRecallTotems,
+                    new Action(ret => TotemManager.RecallTotems())),
+
+                CreateRestoShamanHealOnlyBehavior(true),
+                CreateDefaultRestComposite(SingularSettings.Instance.DefaultRestHealth, SingularSettings.Instance.DefaultRestMana)
+
                 );
         }
     }

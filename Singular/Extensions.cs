@@ -11,6 +11,7 @@
 
 #endregion
 
+using System;
 using System.Text;
 
 using Styx.WoWInternals.WoWObjects;
@@ -19,6 +20,15 @@ namespace Singular
 {
     internal static class Extensions
     {
+        /// <summary>A ulong extension method that converts a WoW performance counter to a DateTime object. </summary>
+        /// <remarks>Created 3/26/2011.</remarks>
+        /// <param name="performanceCounter">The performanceCounter to act on.</param>
+        /// <returns>.</returns>
+        public static DateTime PerformanceCounterToDateTime(this ulong performanceCounter)
+        {
+            return DateTime.Now.Subtract(TimeSpan.FromMilliseconds(Environment.TickCount)).AddMilliseconds(performanceCounter);
+        }
+
         public static bool Between(this double distance, double min, double max)
         {
             return distance >= min && distance <= max;

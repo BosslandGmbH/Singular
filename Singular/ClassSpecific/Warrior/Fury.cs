@@ -125,9 +125,7 @@ namespace Singular
                     new Decorator(
                         ret => Me.CurrentTarget.IsFlying,
                         new PrioritySelector(
-                            CreateSpellCast("Heroic Throw"),
-                            CreateSpellCast("Shoot"),
-                            CreateSpellCast("Throw")
+                            CreateFireRangedWeapon()
                         )),
                     //Buff up
                     CreateSpellCast("Battle Shout", ret => Me.RagePercent < 20),

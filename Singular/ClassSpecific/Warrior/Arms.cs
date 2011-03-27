@@ -44,8 +44,21 @@ namespace Singular
                     "Intimidating Shout", ret => Me.CurrentTarget.Distance < 8 &&
                                                  Me.CurrentTarget.IsPlayer &&
                                                  Me.CurrentTarget.IsCasting),
+                // Dispel Bubbles
+                CreateSpellCast(
+                    "Shattering Throw", ret => Me.CurrentTarget.IsPlayer &&
+                                               (Me.CurrentTarget.HasAura("Ice Block") ||
+                                               Me.CurrentTarget.HasAura("Hand of Protection") ||
+                                               Me.CurrentTarget.HasAura("Divine Shield"))),
                 // close gap
                 CreateArmsCloseGap(),
+                //Rocket belt!
+                new Decorator(
+                    ret =>
+                        Me.CurrentTarget.IsPlayer && Me.CurrentTarget.Distance > 20,
+                        new PrioritySelector(
+                            CreateUseEquippedItem(10)
+                        )),
                 //Ranged Attack if pvping
                 CreateSpellCast("Heroic Throw", ret => Me.CurrentTarget.IsPlayer), 
                 // ranged slow
@@ -54,7 +67,8 @@ namespace Singular
                                             Me.CurrentTarget.IsPlayer &&
                                             (!Me.CurrentTarget.HasAura("Hamstring") ||
                                              !Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                             !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                                             !Me.CurrentTarget.HasAura("Slowing Poison") ||
+                                             !Me.CurrentTarget.HasAura("Hand of Freedom"))),
 
                 //Move to melee			
                 CreateMoveToAndFace(ret => Me.CurrentTarget),
@@ -65,7 +79,8 @@ namespace Singular
                     "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
                                         (!Me.CurrentTarget.HasAura("Hamstring") ||
                                          !Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                         !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                                         !Me.CurrentTarget.HasAura("Slowing Poison") ||
+                                         !Me.CurrentTarget.HasAura("Hand of Freedom"))),
                 // AOE
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 3,
@@ -123,6 +138,14 @@ namespace Singular
                     CreateAutoAttack(true),
                     //Face target
                     CreateFaceUnit(),
+                    //Shoot flying targets
+                    new Decorator(
+                        ret => Me.CurrentTarget.IsFlying,
+                        new PrioritySelector(
+                            CreateSpellCast("Heroic Throw"),
+                            CreateSpellCast("Shoot"),
+                            CreateSpellCast("Throw")
+                        )),
                     //close gap
                     CreateArmsCloseGap(),
                     //move to melee
@@ -231,6 +254,8 @@ namespace Singular
                     CreateSpellCast("Lifeblood", ret => Me.HealthPercent < 70),
                     //Draenai Heal
                     CreateSpellCast("Gift of the Naaru", ret => Me.HealthPercent < 50),
+                    //Get enraged so we can use enraged regen
+                    CreateSpellCast("Berserker Rage", ret => Me.HealthPercent < 65),
                     //Heal
                     CreateSpellCast("Enraged Regeneration", ret => Me.HealthPercent < 60)
                     );

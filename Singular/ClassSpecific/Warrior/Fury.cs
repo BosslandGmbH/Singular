@@ -50,28 +50,30 @@ namespace Singular
                                                  Me.CurrentTarget.IsCasting),
                 //Close Gap to target
                 CreateFuryCloseGap(),
-                //Rocketboots!
+                //Rocket belt!
                 new Decorator(
                     ret =>
                         Me.CurrentTarget.IsPlayer && Me.CurrentTarget.Distance > 20,
                         new PrioritySelector(
-                            CreateUseEquippedItem(12)
+                            CreateUseEquippedItem(10)
                         )),
                 //Slow Players at range
                 CreateSpellCast(
                     "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
                                             Me.CurrentTarget.IsPlayer &&
                                             (!Me.CurrentTarget.HasAura("Hamstring") ||
-                                            !Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                            !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                                             !Me.CurrentTarget.HasAura("Piercing Howl") ||
+                                             !Me.CurrentTarget.HasAura("Slowing Poison") ||
+                                             !Me.CurrentTarget.HasAura("Hand of Freedom"))),
                 //Move to melee			
 				CreateMoveToAndFace(),
                 //Slow Players once in mele range
                 CreateSpellCast(
-                   "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
-                                       (!Me.CurrentTarget.HasAura("Hamstring") ||
-                                       !Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                       !Me.CurrentTarget.HasAura("Slowing Poison"))),
+                    "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
+                                        (!Me.CurrentTarget.HasAura("Hamstring") ||
+                                         !Me.CurrentTarget.HasAura("Piercing Howl") ||
+                                         !Me.CurrentTarget.HasAura("Slowing Poison") ||
+                                         !Me.CurrentTarget.HasAura("Hand of Freedom"))),
                 //Aoe when more than 3 around
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 3,
@@ -119,6 +121,14 @@ namespace Singular
                     CreateAutoAttack(true),
                     //face target
                     CreateFaceUnit(),
+                    //Shoot flying targets
+                    new Decorator(
+                        ret => Me.CurrentTarget.IsFlying,
+                        new PrioritySelector(
+                            CreateSpellCast("Heroic Throw"),
+                            CreateSpellCast("Shoot"),
+                            CreateSpellCast("Throw")
+                        )),
                     //Buff up
                     CreateSpellCast("Battle Shout", ret => Me.RagePercent < 20),
                     //Close gap

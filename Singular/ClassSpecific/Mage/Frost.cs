@@ -80,6 +80,12 @@ namespace Singular
                      Me.CurrentTarget.ActiveAuras.ContainsKey("Freeze"))),
                 //CreateSpellCast("Fireball", Me.ActiveAuras.ContainsKey("Brain Freeze")),
                 CreateSpellCast("Arcane Missiles", ret => Me.ActiveAuras.ContainsKey("Arcane Missiles!")),
+                new Decorator(
+                    ret => Me.ActiveAuras.ContainsKey("Brain Freeze"),
+                    new PrioritySelector(
+                        CreateSpellCast("Frostfire Bolt"),
+                        CreateSpellCast("Fireball")
+                        )),
                 CreateSpellBuff("Fire Blast", ret => Me.CurrentTarget.HealthPercent < 10),
                 CreateSpellCast("Frostbolt")
                 );

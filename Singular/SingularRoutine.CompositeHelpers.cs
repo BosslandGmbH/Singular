@@ -592,7 +592,7 @@ namespace Singular
             }
 
             // GCD check
-            if (StyxWoW.GlobalCooldown)
+            if (StyxWoW.GlobalCooldown && !Me.HasAura("Adrenaline Rush"))
             {
                 return false;
             }

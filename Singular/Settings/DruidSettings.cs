@@ -32,6 +32,42 @@ namespace Singular.Settings
         [DisplayName("Innervate Mana")]
         [Description("Innervate will be used when your mana drops below this value")]
         public int InnervateMana { get; set; }
+		
+		[Setting]
+        [DefaultValue(false)]
+        [Category("Balance")]
+        [DisplayName("Starfall")]
+        [Description("Use Starfall.")]
+        public bool UseStarfall { get; set; }
+		
+		[Setting]
+        [DefaultValue(false)]
+        [Category("Balance")]
+        [DisplayName("Diable Healing")]
+        [Description("Disables Balance healing, is auto disabled in a party.")]
+        public bool NoHealBalance { get; set; }
+		
+		[Setting]
+        [DefaultValue(40)]
+        [Category("Balance")]
+        [DisplayName("Healing Touch")]
+        [Description("Healing Touch will be used at this value.")]
+        public int HealingTouchBalance { get; set; }
+		
+		
+	    [Setting]
+        [DefaultValue(70)]
+        [Category("Balance")]
+        [DisplayName("Rejuvenation Health")]
+        [Description("Rejuvenation will be used at this value")]
+        public int RejuvenationBalance { get; set; }
+		
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Balance")]
+        [DisplayName("Regrowth Health")]
+        [Description("Regrowth will be used at this value")]
+        public int RegrowthBalance { get; set; }
 
         [Setting]
         [DefaultValue(60)]

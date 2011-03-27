@@ -14,6 +14,8 @@
 using System;
 
 using Singular.Composites;
+using Singular.Settings;
+
 
 using Styx;
 using Styx.Combat.CombatRoutine;
@@ -77,7 +79,31 @@ namespace Singular
         {
             WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(
-                // Make sure we're in cat form first, period.
+				CreateWaitForCast(),
+				//Heals, will not heal if in a party or if disabled via setting
+				CreateSpellBuff(
+                    "Regrowth",
+                    ret => (Me.HealthPercent <= SingularSettings.Instance.Druid.RegrowthBalance
+					&& !SingularSettings.Instance.Druid.NoHealBalance
+					&& !Me.IsInParty
+					&& !Me.HasAura("Regrowth"))),
+                CreateSpellBuff(
+                    "Rejuvenation",
+                    ret => (Me.HealthPercent <= SingularSettings.Instance.Druid.RejuvenationBalance
+					&& !SingularSettings.Instance.Druid.NoHealBalance
+					&& !Me.IsInParty
+					&& !Me.HasAura("Rejuvenation"))),
+				CreateSpellCast(
+                    "Healing Touch",
+                    ret => (Me.HealthPercent <= SingularSettings.Instance.Druid.HealingTouchBalance
+					&& !SingularSettings.Instance.Druid.NoHealBalance
+					&& !Me.IsInParty)),
+				//Inervate
+				CreateSpellBuff(
+                        "Innervate",
+						ret =>
+						Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
+                // Make sure we're in moonkin form first, period.
                 new Decorator(
                     ret => Me.Shapeshift != WantedDruidForm,
                     CreateSpellCast("Moonkin Form")),
@@ -85,7 +111,7 @@ namespace Singular
                 CreateMoveToAndFace(35, ret => Me.CurrentTarget),
                 // Ensure we do /petattack if we have treants up.
                 CreateAutoAttack(true),
-                CreateSpellCast("Starfall"),
+                CreateSpellCast("Starfall", ret => SingularSettings.Instance.Druid.UseStarfall),
                 CreateSpellCastOnLocation("Force of Nature", ret => Me.CurrentTarget.Location),
                 CreateSpellCast("Solar Beam", ret => Me.CurrentTarget.IsCasting),
                 CreateSpellCast("Starsurge"),

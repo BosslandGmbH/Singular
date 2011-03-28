@@ -37,7 +37,7 @@ namespace Singular
 				//Healing Basic
 				CreateSpellCast("Healing Surge", ret => (Me.HealthPercent <= SingularSettings.Instance.Shaman.Elemental_HealingSurge_Health)),
 				//Interupt spell casters
-				CreateSpellCast("Wind Shear", ret => Me.CurrentTarget.IsCasting || Me.CurrentTarget.ChanneledCastingSpellId != null),
+				CreateSpellCast("Wind Shear", ret => Me.CurrentTarget.IsCasting),
 				
                 new Decorator(
                     ret => TotemManager.TotemsInRange == 0,

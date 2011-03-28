@@ -31,6 +31,7 @@ namespace Singular
                 CreateMoveToAndFace(30, ret => Me.CurrentTarget),
                 CreateWaitForCast(true),
                 CreateDiscHealOnlyBehavior(true),
+				CreateSpellBuffOnSelf("Shadowform"),
                 CreateSpellCast("Mind Blast", ret => Me.CurrentTarget.CreatureType == Styx.WoWCreatureType.Totem),
                 CreateSpellBuff("Vampiric Touch", true),
                 CreateSpellBuff("Devouring Plague"),

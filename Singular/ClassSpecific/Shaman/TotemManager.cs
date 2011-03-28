@@ -100,6 +100,11 @@ namespace Singular.ClassSpecific.Shaman
             }
         }
 
+        public static int TotemsInRangeOf(WoWUnit unit)
+        {
+            return StyxWoW.Me.Totems().Where(t => t.Unit != null).Count(t => unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem));
+        }
+
         public static bool NeedToRecallTotems
         {
             get { return TotemsInRange == 0 && StyxWoW.Me.Totems().Count(t => t.Unit != null) != 0; }

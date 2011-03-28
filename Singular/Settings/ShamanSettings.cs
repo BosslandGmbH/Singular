@@ -91,7 +91,7 @@ namespace Singular.Settings
         public int RAF_HealingWave_Health { get; set; }
 
         [Setting]
-        [DefaultValue(89)]
+        [DefaultValue(0)]
         [Category("RAF Group Heal")]
         [DisplayName("Riptide Health")]
         [Description("Health % ")]
@@ -105,14 +105,14 @@ namespace Singular.Settings
         public int RAF_ChainHeal_Health { get; set; }
 
         [Setting]
-        [DefaultValue(75)]
+        [DefaultValue(70)]
         [Category("RAF Group Heal")]
         [DisplayName("Greater Healing Wave Health")]
         [Description("Health % ")]
         public int RAF_GreaterHealingWave_Health { get; set; }
 
         [Setting]
-        [DefaultValue(74)]
+        [DefaultValue(69)]
         [Category("RAF Group Heal")]
         [DisplayName("Unleash Elements Health")]
         [Description("Health % ")]

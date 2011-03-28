@@ -11,9 +11,11 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using Singular.ClassSpecific.Shaman;
 using Singular.Settings;
 
 using Styx;
@@ -24,7 +26,8 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
-using System;
+
+using Action = TreeSharp.Action;
 
 namespace Singular
 {
@@ -64,6 +67,17 @@ namespace Singular
                     CreateWaitForCastWithCancel(SingularSettings.Instance.IgnoreHealTargetsAboveHealth),
 
                     new Decorator(
+                        ret => SpellManager.HasSpell("Call of the Elements")
+                            && RaFHelper.Leader != null
+                            && TotemManager.TotemsInRangeOf(RaFHelper.Leader) == 0
+                            && (Me.Combat || RaFHelper.Leader.Combat),
+                        new Sequence(
+                            new DecoratorContinue(ret => (Me.Totems().Count(t => t.Unit != null) != 0),
+                                new Action(ret => TotemManager.RecallTotems())),
+                            new Action(ret => TotemManager.SetupTotemBar()),
+                            new Action(ret => TotemManager.CallTotems()))),
+
+                    new Decorator(
                         ret => HealTargeting.Instance.FirstUnit != null,
                         new PrioritySelector(
                             ctx => selfOnly ? Me : HealTargeting.Instance.FirstUnit,
@@ -73,16 +87,29 @@ namespace Singular
                                 ret => RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader
                                    && (!RaFHelper.Leader.HasAura("Earth Shield") || RaFHelper.Leader.Auras["Earth Shield"].StackCount < (Me.Combat ? 1 : 4)),
                                 ret => RaFHelper.Leader),
-                                
+
                             CreateSpellCast(
                                 "Healing Surge",
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_HealingSurge_Health,
                                 ret => (WoWUnit)ret),
 
                             CreateSpellCast(
-                                "Greater Healing Wave",
-                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_GreaterHealingWave_Health,
+                                "Riptide",
+                                ret => !HasAuraStacks("Tidal Waves", 1, Me),
                                 ret => (WoWUnit)ret),
+
+                            new Decorator(ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Shaman.RAF_GreaterHealingWave_Health,
+                                new Sequence(
+                                    CreateSpellCast(
+                                        "Unleash Elements",
+                                        ret => true,
+                                        ret => (WoWUnit)ret),
+                                    CreateSpellCast(
+                                        "Greater Healing Wave",
+                                        ret => true,
+                                        ret => (WoWUnit)ret)
+                                    )
+                                ),
 
                             CreateSpellCast(
                                 "Chain Heal",
@@ -159,44 +186,5 @@ namespace Singular
                 );
         }
 
-        /// <summary>
-        /// WillChainHealHop()
-        /// Tests whether casting Chain Lightning on 'healTarget' results in a minimum 
-        /// of 2 hops (3 people healed.) 
-        /// </summary>
-        /// <param name="healTarget"></param>
-        /// <returns></returns>
-        private bool WillChainHealHop(WoWUnit healTarget)
-        {
-            double threshhold = SingularSettings.Instance.Shaman.RAF_ChainHeal_Health ;
-
-            if (healTarget == null)
-                return false;
-
-            var t = (from o in ObjectManager.ObjectList
-                     where o is WoWPlayer && healTarget.Location.Distance(o.Location) < 12
-                     let p = o.ToPlayer()
-                     where p != null
-                           && p.IsHorde == Me.IsHorde
-                           && !p.IsPet
-                           && p != healTarget
-                           && p.IsAlive
-                           && p.HealthPercent < threshhold
-                     let c = (from oo in ObjectManager.ObjectList
-                              where oo is WoWPlayer && p.Location.Distance(oo.Location) < 12
-                              let pp = oo.ToPlayer()
-                              where pp != null
-                                    && pp.IsHorde == p.IsHorde
-                                    && !pp.IsPet
-                                    && pp.IsAlive
-                                    && pp.HealthPercent < threshhold
-                              select pp).Count()
-                     orderby c descending , p.Distance ascending
-                     select new { Player = p, Count = c }).FirstOrDefault();
-
-            if (t == null || t.Count < 3)
-                return false;
-            return true;
-        }
     }
 }

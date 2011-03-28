@@ -56,7 +56,9 @@ namespace Singular
         public Composite CreatePriestCombatBuffs()
         {
             return new PrioritySelector(
-                CreateUsePotionAndHealthstone(10, 10)
+                CreateUsePotionAndHealthstone(10, 10),
+                CreateSpellBuffOnSelf("Shadowform"),
+                CreateSpellBuffOnSelf("Vampiric Embrace")
                 );
         }
 

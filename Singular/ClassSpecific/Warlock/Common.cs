@@ -28,7 +28,7 @@ namespace Singular
         {
             get
             {
-                if (Me.CarriedItems.Any(i => i.ItemSpells.Any(s => s.ActualSpell.Name == "Healthstone")))
+                if (Me.CarriedItems.Any(i => i.ItemSpells.Any(s => s.ActualSpell != null && s.ActualSpell.Name == "Healthstone")))
                 {
                     return false;
                 }

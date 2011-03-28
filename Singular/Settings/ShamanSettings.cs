@@ -159,5 +159,16 @@ namespace Singular.Settings
         public WoWTotem AirTotem { get; set; }
 
         #endregion
+		
+		#region Elemental
+		
+		[Setting]
+        [DefaultValue(50)]
+        [Category("Elemental")]
+        [DisplayName("Healing Surge Health")]
+        [Description("Health % ")]
+        public int Elemental_HealingSurge_Health { get; set; }
+		
+		#endregion
     }
 }

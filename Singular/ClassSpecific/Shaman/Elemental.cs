@@ -27,14 +27,18 @@ namespace Singular
         [Spec(TalentSpec.ElementalShaman)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Pull)]
         public Composite CreateElementalShamanCombat()
         {
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 CreateMoveToAndFace(39, ret => Me.CurrentTarget),
                 CreateWaitForCast(true),
-
+				
+				//Healing Basic
+				CreateSpellCast("Healing Surge", ret => (Me.HealthPercent <= SingularSettings.Instance.Shaman.Elemental_HealingSurge_Health)),
+				//Interupt spell casters
+				CreateSpellCast("Wind Shear", ret => Me.CurrentTarget.IsCasting || Me.CurrentTarget.ChanneledCastingSpellId != null),
+				
                 new Decorator(
                     ret => TotemManager.TotemsInRange == 0,
                     new Sequence(
@@ -46,10 +50,31 @@ namespace Singular
                 CreateSpellCast("Unleash Elements"),
                 CreateSpellCast("Lava Burst"),
                 CreateSpellCast("Earth Shock", ret => HasAuraStacks("Lightning Shield", 6)),
+				CreateSpellBuffOnSelf("Lightning Shield"),
                 CreateSpellCast("Lightning Bolt")
                 );
         }
-
+		
+		[Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
+        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Pull)]
+        public Composite CreateElementalShamanPull()
+		{
+            return new PrioritySelector(
+			CreateEnsureTarget(),
+            CreateMoveToAndFace(40, ret => Me.CurrentTarget),
+            CreateWaitForCast(true),
+			//Totems
+                new Decorator(
+                    ret => TotemManager.TotemsInRange == 0,
+                    new Sequence(
+                        new Action(ret => TotemManager.SetupTotemBar()),
+                        new Action(ret => TotemManager.CallTotems()))),
+			CreateSpellCast("Lightning Bolt")
+            );
+        }
+		
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.ElementalShaman)]
         [Context(WoWContext.All)]

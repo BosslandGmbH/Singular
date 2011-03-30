@@ -98,6 +98,7 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="BossList.cs" />
+    <Compile Include="CataHeroicDpsList.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Blood.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Frost.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Lowbie.cs" />
@@ -156,6 +157,7 @@
     </Compile>
     <Compile Include="HealTargeting.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="Logout.cs" />
     <Compile Include="Miscellaneous.cs" />
     <Compile Include="PetManager.cs" />
     <Compile Include="Settings\DeathKnightSettings.cs" />

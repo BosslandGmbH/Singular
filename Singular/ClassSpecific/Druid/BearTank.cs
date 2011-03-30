@@ -48,21 +48,28 @@ namespace Singular
                 CreateSpellBuffOnSelf("Survival Instincts", ret => Me.HealthPercent < 60),
                 CreateSpellBuffOnSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30),
                 CreateSpellCast("Skull Bash (Bear)", ret => Me.CurrentTarget.IsCasting),
-                CreateSpellBuff("Faerie Fire (Feral)"),
-                CreateSpellBuff("Demoralizing Roar"),
-                CreateSpellBuffOnSelf("Berserk"),
+
+                CreateSpellCast("Berserk", ret => CurrentTargetIsBoss),
+
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1,
                     new PrioritySelector(
+                        CreateSpellBuffOnSelf("Berserk"),
                         CreateSpellCast("Swipe (Bear)")
                         )),
 
-                // Thrash is on a 6s CD, and lasts for 6s. Its a bleed, so it helps for threat and damage overall. Keep it up as much as possible.
-                CreateSpellCast("Thrash"),
-                CreateSpellCast("Maul", ret => Me.RagePercent > 60),
+                CreateSpellCast("Maul", ret => Me.RagePercent >= 50),
                 CreateSpellCast("Mangle (Bear)"),
-                CreateSpellCast("Pulverize", ret => HasAuraStacks("Lacerate", 3, Me.CurrentTarget)),
-                CreateSpellCast("Lacerate", ret => !HasAuraStacks("Lacerate", 3, Me.CurrentTarget))
+                CreateSpellBuff("Demoralizing Roar"),
+                // Thrash is a giant help in threat gen, so lets keep it on CD. Kthx.
+                CreateSpellBuff("Thrash"),
+                CreateSpellCast("Lacerate", ret => !HasAuraStacks("Lacerate", 3, Me.CurrentTarget)),
+                CreateSpellCast(
+                    "Pulverize", ret => HasAuraStacks("Lacerate", 3, Me.CurrentTarget) && GetAuraTimeLeft("Pulverize", Me, true).TotalSeconds < 3),
+                CreateSpellCast("Faerie Fire (Feral)"),
+                // Lacerate is a filler, kthx.
+                CreateSpellCast("Lacerate")
+
                 );
         }
 

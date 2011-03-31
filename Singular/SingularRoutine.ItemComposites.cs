@@ -34,10 +34,11 @@ namespace Singular
             return new PrioritySelector(
                 new Decorator(
                     ret =>
-                    SingularSettings.Instance.UseAlchemyFlaskOfEnhancement && Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 500 &&
+                    SingularSettings.Instance.UseAlchemyFlaskOfEnhancement && Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 &&
                     !Me.HasAura("Enhanced Agility") && !Me.HasAura("Enhanced Intellect") && !Me.HasAura("Enhanced Strength"),
                     new PrioritySelector(
-                        ctx => Me.CarriedItems.FirstOrDefault(i => i.Entry == 58149), // Flask of Enhancement
+                        ctx => Me.CarriedItems.FirstOrDefault(i => i.Entry == 58149) ?? Me.CarriedItems.FirstOrDefault(i => i.Entry == 47499),
+                        // Flask of Enhancement / Flask of the North
                         new Decorator(
                             ret => ret != null,
                             new Sequence(

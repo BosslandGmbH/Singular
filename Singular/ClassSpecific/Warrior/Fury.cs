@@ -37,8 +37,6 @@ namespace Singular
                 CreateEnsureTarget(),
                 //Face target if not facing already
                 CreateFaceUnit(),
-                //Face target if not facing already
-                CreateFaceUnit(),
                 //autoattack
                 CreateAutoAttack(true),
                 //Ranged Attack if pvping
@@ -121,6 +119,9 @@ namespace Singular
                     CreateAutoAttack(true),
                     //face target
                     CreateFaceUnit(),
+                    //Dismount
+                    new Decorator(ret => IsMounted,
+                        new Action(o => Styx.Logic.Mount.Dismount())),
                     //Shoot flying targets
                     new Decorator(
                         ret => Me.CurrentTarget.IsFlying,

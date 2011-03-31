@@ -138,6 +138,9 @@ namespace Singular
                     CreateAutoAttack(true),
                     //Face target
                     CreateFaceUnit(),
+                    //Dismount
+                    new Decorator(ret => IsMounted,
+                        new Action(o => Styx.Logic.Mount.Dismount())),
                     //Shoot flying targets
                     new Decorator(
                         ret => Me.CurrentTarget.IsFlying,
@@ -218,7 +221,7 @@ namespace Singular
                 new PrioritySelector(
                     //Moves to target if you are too close(Fixes pull bug)
                     new Decorator(
-                    ret => Me.CurrentTarget.Distance < 10 || Me.CurrentTarget.Distance > 40,
+                    ret => Me.CurrentTarget.Distance < 10 || Me.CurrentTarget.Distance > 25,
                     new PrioritySelector(
                         CreateMoveToAndFace(ret => Me.CurrentTarget)
                         )),

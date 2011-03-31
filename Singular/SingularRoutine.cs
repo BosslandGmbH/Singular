@@ -17,6 +17,7 @@ using System.Linq;
 using System.Reflection;
 
 using Singular.GUI;
+using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
@@ -246,11 +247,21 @@ namespace Singular
             // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
             if (_preCombatBuffsBehavior != null)
             {
-                _preCombatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport, _preCombatBuffsBehavior);
+                _preCombatBuffsBehavior = new Decorator(
+                    ret => !IsMounted && !Me.IsOnTransport, new PrioritySelector(
+                        // Use flask of enhancement/the north
+                        CreateUseAlchemyBuffsBehavior(),
+                        _preCombatBuffsBehavior));
             }
             if (_combatBuffsBehavior != null)
             {
-                _combatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport, _combatBuffsBehavior);
+                _combatBuffsBehavior = new Decorator(
+                    ret => !IsMounted && !Me.IsOnTransport,
+
+                    new PrioritySelector(
+                        CreateUseTrinketsBehavior(),
+                        _combatBuffsBehavior)
+                    );
             }
 
             return true;

@@ -28,7 +28,7 @@ namespace Singular
     {
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.FuryWarrior)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Normal | WoWContext.Instances)]
         [Behavior(BehaviorType.Combat)]
         public Composite CreateWarriorFuryCombat()
         {
@@ -107,7 +107,7 @@ namespace Singular
 
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.FuryWarrior)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Normal | WoWContext.Instances)]
         [Behavior(BehaviorType.Pull)]
         public Composite CreateWarriorFuryPull()
         {
@@ -186,43 +186,6 @@ namespace Singular
                 );
         }
 
-        //BG Combat Buffs
-        [Class(WoWClass.Warrior)]
-        [Spec(TalentSpec.FuryWarrior)]
-        [Context(WoWContext.Battlegrounds)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        public Composite CreateWarriorFuryBGCombatBuffs()
-        {
-            return
-                new PrioritySelector(
-                    //Check Heal
-                    CreateFuryHeal(),
-                    //Troll Racial
-                    CreateSpellCast("Berserking"),
-                    //Recklessness on CD
-                    CreateSpellCast("Recklessness"),
-                    //Remove Croud Control Effects
-                    CreateFuryRemoveCC(),
-                    //Dwarf Racial
-                    CreateSpellBuffOnSelf("Stoneform", ret => Me.HealthPercent < 60),
-                    //Night Elf Racial
-                    CreateSpellBuffOnSelf("Shadowmeld", ret => Me.HealthPercent < 20),
-                    //Orc Racial
-                    CreateSpellBuffOnSelf("Blood Fury"),
-                    //Deathwish whenever its up
-                    CreateSpellBuffOnSelf("Death Wish"),
-                    //Berserker rage to stay enraged(Key to good dps)
-                    CreateSpellBuffOnSelf("Berserker Rage",
-                            ret => !Me.Auras.Any(
-                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
-                    //Battleshout Check
-                    CreateSpellBuffOnSelf(
-                        "Battle Shout", ret => !Me.HasAura("Horn of the Winter") &&
-                                               !Me.HasAura("Roar of Courage") &&
-                                               !Me.HasAura("Strength of Earth Totem"))
-                );
-        }
-
         //Normal Combat Buffs
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.FuryWarrior)]
@@ -275,7 +238,7 @@ namespace Singular
 
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.FuryWarrior)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Normal | WoWContext.Instances)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         public Composite CreateWarriorFuryPreCombatBuffs()
         {
@@ -288,7 +251,7 @@ namespace Singular
                     );
         }
 
-        public Composite CreateFuryCloseGap()
+        private Composite CreateFuryCloseGap()
         {
             return
                 new PrioritySelector(
@@ -320,7 +283,7 @@ namespace Singular
                     );
         }
 
-        public Composite CreateFuryHeal()
+        private Composite CreateFuryHeal()
         {
             return
                 new PrioritySelector(
@@ -333,7 +296,7 @@ namespace Singular
                     );
         }
 
-        public Composite CreateFuryRemoveCC()
+        private Composite CreateFuryRemoveCC()
         {
             return
                 new PrioritySelector(

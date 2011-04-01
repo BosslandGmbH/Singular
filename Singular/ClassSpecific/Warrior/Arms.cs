@@ -28,7 +28,7 @@ namespace Singular
     {
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.ArmsWarrior)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Normal | WoWContext.Instances)]
         [Behavior(BehaviorType.Combat)]
         public Composite CreateArmsWarriorCombat()
         {
@@ -59,8 +59,6 @@ namespace Singular
                         new PrioritySelector(
                             CreateUseEquippedItem(10)
                         )),
-                //Ranged Attack if pvping
-                CreateSpellCast("Heroic Throw", ret => Me.CurrentTarget.IsPlayer), 
                 // ranged slow
                 CreateSpellCast(
                     "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
@@ -72,8 +70,8 @@ namespace Singular
 
                 //Move to melee			
                 CreateMoveToAndFace(ret => Me.CurrentTarget),
-                //Important: Sudden Death (reset Collossus Smash, use it or lose it! Very quick Proc therfore needs to be first)
-                CreateSpellCast("Colossus Smash", Me.HasAura("Sudden Death")),
+                //use it or lose it
+                CreateSpellCast("Colossus Smash", ret => Me.HasAura("Sudden Death")),
                 // Mele slow
                 CreateSpellCast(
                     "Hamstring", ret => Me.CurrentTarget.IsPlayer &&
@@ -126,7 +124,7 @@ namespace Singular
 
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.ArmsWarrior)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Normal | WoWContext.Instances)]
         [Behavior(BehaviorType.Pull)]
         public Composite CreateArmsWarriorPull()
         {
@@ -156,7 +154,7 @@ namespace Singular
 
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.ArmsWarrior)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Normal | WoWContext.Instances)]
         [Behavior(BehaviorType.CombatBuffs)]
         public Composite CreateArmsWarriorCombatBuffs()
         {
@@ -202,7 +200,7 @@ namespace Singular
 
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.ArmsWarrior)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Normal | WoWContext.Instances)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         public Composite CreateArmsWarriorPreCombatBuffs()
         {
@@ -215,7 +213,7 @@ namespace Singular
                     );
         }
 
-        public Composite CreateArmsCloseGap()
+        private Composite CreateArmsCloseGap()
         {
             return
                 new PrioritySelector(
@@ -247,7 +245,7 @@ namespace Singular
                     );
         }
 
-        public Composite CreateArmsHeal()
+        private Composite CreateArmsHeal()
         {
             return
                 new PrioritySelector(
@@ -262,7 +260,7 @@ namespace Singular
                     );
         }
 
-        public Composite CreateArmsRemoveCC()
+        private Composite CreateArmsRemoveCC()
         {
             return
                 new PrioritySelector(

@@ -211,7 +211,7 @@ namespace Singular
 
                                     // Does the target list have anything in it? And is the unit in combat?
                                     // Make sure we only check target combat, if we're NOT in a BG. (Inside BGs, all targets are valid!!)
-                                    if (Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.Combat)
+                                    if (Targeting.Instance.FirstUnit != null && Me.Combat)
                                     {
                                         return Targeting.Instance.FirstUnit;
                                     }
@@ -219,6 +219,7 @@ namespace Singular
                                     var units =
                                         ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
                                             p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70 && p.Combat);
+
                                     if (Me.Combat && units.Any())
                                     {
                                         // Return the closest one to us

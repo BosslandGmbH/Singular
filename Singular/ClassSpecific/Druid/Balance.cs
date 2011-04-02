@@ -12,14 +12,11 @@
 #endregion
 
 using System;
-
-using Singular.Composites;
 using Singular.Settings;
 
 
 using Styx;
 using Styx.Combat.CombatRoutine;
-
 using TreeSharp;
 
 namespace Singular

@@ -73,7 +73,7 @@ namespace Singular
         {
             return
                 new Decorator(
-                    ret => Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach <= 7 && Me.CurrentTarget.IsAlive &&
+                    ret => Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach <= 8 && Me.CurrentTarget.IsAlive &&
                            (Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget != Me),
                     new Action(
                         ret =>
@@ -91,7 +91,7 @@ namespace Singular
         {
             return new PrioritySelector(
                     ctx => NearbyUnfriendlyUnits.FirstOrDefault(u =>
-                            u.IsTargetingMeOrPet && u != Me.CurrentTarget),
+                            u.IsTargetingMeOrPet && u != Me.CurrentTarget && !u.IsMoving),
                     new Decorator(
                         ret => ret != null && CanCast("Freezing Trap", (WoWUnit)ret, false),
                         new PrioritySelector(

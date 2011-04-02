@@ -17,11 +17,9 @@ using System.Linq;
 using System.Reflection;
 
 using Singular.GUI;
-using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Helpers;
 using Styx.Logic;
 using Styx.Logic.BehaviorTree;
 using Styx.Logic.Combat;
@@ -171,16 +169,6 @@ namespace Singular
             if (NeedTankTargeting && CurrentWoWContext != WoWContext.Battlegrounds && (Me.IsInParty || Me.IsInRaid))
             {
                 TankTargeting.Instance.Pulse();
-            }
-
-            //This is here to support character changes while HB is running :)
-            if (Class != myClass && Class != WoWClass.None)
-            {
-                myClass = Class;
-                Logger.Write("Character changed. New character: " + myClass + ". Rebuilding behaviors");
-                TalentManager.Update();
-                CharacterSettings.Instance.Load();
-                CreateBehaviors();
             }
         }
 

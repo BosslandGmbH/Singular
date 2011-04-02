@@ -41,7 +41,7 @@ namespace Singular
         {
             return new PrioritySelector(
                 CreateApplyPoisons(),
-                CreateSpellBuffOnSelf("Recuperate", ret => Me.RawComboPoints > 0 && Me.HealthPercent < 70)
+                CreateSpellBuffOnSelf("Recuperate", ret => Me.RawComboPoints > 0 && Me.HealthPercent < 80)
                 );
         }
 

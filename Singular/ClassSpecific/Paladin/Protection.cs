@@ -33,13 +33,14 @@ namespace Singular
             NeedTankTargeting = true;
             return new PrioritySelector(
                 CreateEnsureTarget(),
+                CreateFaceUnit(),
+                CreateSpellCast("Hammer of Wrath", false),
+                CreateSpellCast("Avenger's Shield", false),
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                 CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
                 // Same rotation for both.
-                CreateSpellCast("Hammer of Wrath"),
                 CreateSpellCast("Shield of the Righteous", ret => Me.CurrentHolyPower == 3),
-                CreateSpellCast("Avenger's Shield"),
                 //Multi target
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1,
@@ -70,8 +71,8 @@ namespace Singular
                     CreateEnsureTarget(),
                     CreateAutoAttack(true),
                     CreateFaceUnit(ret => Me.CurrentTarget),
-                    CreateSpellCast("Avenger's Shield"),
-                    CreateSpellCast("Judgement"),
+                    CreateSpellCast("Avenger's Shield", false),
+                    CreateSpellCast("Judgement", false),
                     CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
                     );
         }

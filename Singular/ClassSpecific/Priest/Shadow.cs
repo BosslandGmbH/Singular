@@ -26,7 +26,6 @@ namespace Singular
         [Context(WoWContext.All)]
         public Composite CreateShadowPriestCombat()
         {
-            AddSpellSucceedWait("Vampiric Touch");
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 CreateMoveToAndFace(30, ret => Me.CurrentTarget),

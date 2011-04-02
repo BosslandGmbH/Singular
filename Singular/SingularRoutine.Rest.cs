@@ -51,7 +51,8 @@ namespace Singular
 
                 // Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
                 new Decorator(
-                    ret => Me.HasAura("Resurrection Sickness"),
+                    //Hackish way to avoid waiting for rez sickness at An End to All Things quest in DK zone
+                    ret => Me.HasAura("Resurrection Sickness") && !Me.QuestLog.ContainsQuest(12779),
                     new ActionLogMessage(false, "Waiting for resurrection sickness to fade off")),
                 // Wait while cannibalizing
                 new Decorator(

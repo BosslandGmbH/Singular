@@ -21,6 +21,7 @@ using Styx.Logic.Combat;
 using TreeSharp;
 
 using Action = TreeSharp.Action;
+using Styx;
 
 namespace Singular
 {
@@ -79,6 +80,12 @@ namespace Singular
                                          !Me.CurrentTarget.HasAura("Piercing Howl") ||
                                          !Me.CurrentTarget.HasAura("Slowing Poison") ||
                                          !Me.CurrentTarget.HasAura("Hand of Freedom"))),
+                // slow runners
+                new Decorator(
+                    ret => Me.CurrentTarget.IsPlayerBehind || Me.CurrentTarget.Mounted,
+                        new PrioritySelector(
+                            CreateSpellCast("Hamstring", ret => !Me.CurrentTarget.IsPlayer &&
+                                                                !Me.CurrentTarget.HasAura("Hamstring")))),
                 // AOE
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 3,
@@ -90,12 +97,39 @@ namespace Singular
                         CreateSpellCast("Retaliation"),
                         CreateSpellCast("Cleave")
                         )),
+                // Fury of angerforge
+                new Decorator(
+                    ret => HasAuraStacks("Raw Fury", 5) && 
+                           StyxWoW.Me.Inventory.Equipped.Trinket1 != null && 
+                           StyxWoW.Me.Inventory.Equipped.Trinket1.Name.Contains("Fury of Angerforge") &&
+                           StyxWoW.Me.Inventory.Equipped.Trinket1.Cooldown <= 0,
+                    new Action(
+                        ret =>
+                        {
+                            StyxWoW.Me.Inventory.Equipped.Trinket1.Use();                        
+                        })),
+                new Decorator(
+                    ret => HasAuraStacks("Raw Fury", 5) &&
+                           StyxWoW.Me.Inventory.Equipped.Trinket2 != null && 
+                           StyxWoW.Me.Inventory.Equipped.Trinket2.Name.Contains("Fury of Angerforge") &&
+                           StyxWoW.Me.Inventory.Equipped.Trinket2.Cooldown <= 0,
+                    new Action(
+                        ret =>
+                        {
+                            StyxWoW.Me.Inventory.Equipped.Trinket2.Use();
+                        })),
                 //Mele Heal
                 CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),
                 //Interupts
-                CreateSpellCast("Pummel", ret => Me.CurrentTarget.IsCasting),
-                CreateSpellCast("War Stomp", ret => Me.CurrentTarget.IsCasting),                
-                CreateSpellCast("Arcane Torrent", ret => Me.CurrentTarget.IsCasting),
+                CreateSpellCast(
+                    "Pummel", ret => Me.CurrentTarget.IsCasting ||
+                                     Me.CurrentTarget.ChanneledCastingSpellId != 0),
+                CreateSpellCast(
+                    "Arcane Torrent", ret => Me.CurrentTarget.IsCasting ||
+                                             Me.CurrentTarget.ChanneledCastingSpellId != 0),
+                CreateSpellCast(
+                    "War Stomp", ret => Me.CurrentTarget.IsCasting ||
+                                        Me.CurrentTarget.ChanneledCastingSpellId != 0),
                 //Interupt / Stun elite / knockdown player
                 CreateSpellCast(
                     "Throwdown", ret => CurrentTargetIsElite || 

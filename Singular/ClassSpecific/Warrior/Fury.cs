@@ -21,6 +21,7 @@ using Styx.Logic.Combat;
 using TreeSharp;
 
 using Action = TreeSharp.Action;
+using Styx;
 
 namespace Singular
 {
@@ -72,6 +73,12 @@ namespace Singular
                                          !Me.CurrentTarget.HasAura("Piercing Howl") ||
                                          !Me.CurrentTarget.HasAura("Slowing Poison") ||
                                          !Me.CurrentTarget.HasAura("Hand of Freedom"))),
+                // slow runners
+                new Decorator(
+                    ret => Me.CurrentTarget.IsPlayerBehind || Me.CurrentTarget.Mounted,
+                        new PrioritySelector(
+                            CreateSpellCast("Hamstring", ret => !Me.CurrentTarget.IsPlayer &&
+                                                                !Me.CurrentTarget.HasAura("Hamstring")))),
                 //Aoe when more than 3 around
                 new Decorator(
                     ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 3,
@@ -81,10 +88,37 @@ namespace Singular
                         CreateSpellCast("Raging Blow"),
                         CreateSpellCast("Bloodthirst")
                         )),
+                // Fury of angerforge
+                new Decorator(
+                    ret => HasAuraStacks("Raw Fury", 5) &&
+                           StyxWoW.Me.Inventory.Equipped.Trinket1 != null &&
+                           StyxWoW.Me.Inventory.Equipped.Trinket1.Name.Contains("Fury of Angerforge") &&
+                           StyxWoW.Me.Inventory.Equipped.Trinket1.Cooldown <= 0,
+                    new Action(
+                        ret =>
+                        {
+                            StyxWoW.Me.Inventory.Equipped.Trinket1.Use();
+                        })),
+                new Decorator(
+                    ret => HasAuraStacks("Raw Fury", 5) &&
+                           StyxWoW.Me.Inventory.Equipped.Trinket2 != null &&
+                           StyxWoW.Me.Inventory.Equipped.Trinket2.Name.Contains("Fury of Angerforge") &&
+                           StyxWoW.Me.Inventory.Equipped.Trinket2.Cooldown <= 0,
+                    new Action(
+                        ret =>
+                        {
+                            StyxWoW.Me.Inventory.Equipped.Trinket2.Use();
+                        })),
                 //Interupts
-                CreateSpellCast("Pummel", ret => Me.CurrentTarget.IsCasting),
-                CreateSpellCast("Arcane Torrent", ret => Me.CurrentTarget.IsCasting),
-                CreateSpellCast("War Stomp", ret => Me.CurrentTarget.IsCasting),
+                CreateSpellCast(
+                    "Pummel", ret => Me.CurrentTarget.IsCasting || 
+                                     Me.CurrentTarget.ChanneledCastingSpellId != 0),
+                CreateSpellCast(
+                    "Arcane Torrent", ret => Me.CurrentTarget.IsCasting || 
+                                             Me.CurrentTarget.ChanneledCastingSpellId != 0),
+                CreateSpellCast(
+                    "War Stomp", ret => Me.CurrentTarget.IsCasting || 
+                                        Me.CurrentTarget.ChanneledCastingSpellId != 0),
                 //Heal up in mele
 				CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),
                 //Use Incite or dump rage
@@ -203,11 +237,8 @@ namespace Singular
                     CreateSpellCast("Recklessness",
                             ret => Me.HasAura("Death Wish") && Me.HealthPercent > 20 ||
                                    Me.CurrentTarget.IsPlayer),
-                    //Inner rage with recklessness, deathwish or dump rage
-                    CreateSpellCast("Inner Rage",
-                            ret => Me.HasAura("Recklessness") ||
-                                  Me.HasAura("Death Wish") ||
-                                  Me.RagePercent > 90),
+                    //Inner rage to dump rage
+                    CreateSpellCast("Inner Rage", ret => Me.RagePercent > 80),
                     //Remove Croud Control Effects
                     CreateFuryRemoveCC(),
                     //Dwarf Racial
@@ -261,6 +292,8 @@ namespace Singular
                     new PrioritySelector(
                         CreateMoveToAndFace(ret => Me.CurrentTarget)
                         )),
+                    // Heroic fury
+                    CreateSpellCast("Heroic Fury", ret => SpellManager.Spells["Intercept"].Cooldown),
                     //Intercept
                     CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance >= 10),
                     //Heroic Leap
@@ -300,6 +333,10 @@ namespace Singular
         {
             return
                 new PrioritySelector(
+                    // Heroic Fury
+                    CreateSpellBuffOnSelf(
+                        "Heroic Fury", ret => Me.Auras.Any(
+                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted)),
                     //Human Racial
                     CreateSpellBuffOnSelf(
                         "Every Man for Himself", ret => Me.Auras.Any(

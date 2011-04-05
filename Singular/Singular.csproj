@@ -111,6 +111,7 @@
     <Compile Include="ClassSpecific\Druid\Lowbie.cs" />
     <Compile Include="ClassSpecific\Druid\Resto.cs" />
     <Compile Include="ClassSpecific\Hunter\BeastMaster.cs" />
+	<Compile Include="ClassSpecific\Hunter\Marks.cs" />
     <Compile Include="ClassSpecific\Hunter\Common.cs" />
     <Compile Include="ClassSpecific\Hunter\Lowbie.cs" />
     <Compile Include="ClassSpecific\Mage\Common.cs" />

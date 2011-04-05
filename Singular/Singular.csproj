@@ -114,6 +114,7 @@
 	<Compile Include="ClassSpecific\Hunter\Marks.cs" />
     <Compile Include="ClassSpecific\Hunter\Common.cs" />
     <Compile Include="ClassSpecific\Hunter\Lowbie.cs" />
+	<Compile Include="ClassSpecific\Mage\Arcane.cs" />
     <Compile Include="ClassSpecific\Mage\Common.cs" />
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
     <Compile Include="ClassSpecific\Mage\FirePvP.cs" />

@@ -32,10 +32,13 @@ namespace Singular
                 CreateMoveToAndFace(30f, ret => Me.CurrentTarget),
                 CreateAutoAttack(true),
                 CreateWaitForCast(true),
+                new Decorator(ret => (!SheepTimer.IsRunning || SheepTimer.Elapsed.Seconds > 5) && NeedToSheep() && !Me.IsInInstance && !Styx.Logic.Battlegrounds.IsInsideBattleground,
+                   new Action(ctx => SheepLogic())),
                 CreateSpellCast("Arcane Missiles", ret => Me.Auras.ContainsKey("Arcane Missiles!")),
                 CreateSpellCast("Fireball", ret => !SpellManager.HasSpell("Frostbolt")),
                 CreateSpellBuff("Fire Blast", ret => SpellManager.CanCast("Fire Blast") && Me.CurrentTarget.HealthPercent < 10),
-                CreateSpellCast("Frostbolt")
+                CreateSpellCast("Frostbolt"),
+                CreateSpellCast("Shoot", ret=> IsNotWanding) //Wand if all else fails.
                 );
         }
     }

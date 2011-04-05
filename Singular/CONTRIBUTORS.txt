@@ -12,3 +12,4 @@ CptJesus - Shadow Priest rotation.
 Mortal - Warrior improvements.
 moachi - PvP Ret Paladin
 Bobby53 - Shamans
+CodenameG - Mages

@@ -38,21 +38,28 @@ namespace Singular
                     // We can cast Charge while in combat if we have the talent. [Notice that I am NOT checking for the talent!]
                     // chargeSpell.CanCast should return false if we can't cast it.
                     CreateSpellCast("Charge", ret => Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
+                    CreateSpellCast("Intercept", ret => Me.CurrentTarget.Distance.Between(8f, 25f)),
                     CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                     CreateAutoAttack(true),
                     CreateSpellCast("Heroic Strike", ret => Me.CurrentRage >= 60),
                     CreateSpellCast("Revenge"),
+
+                    // If we have Blood and Thunder talented, then try and apply Rend via tclap. (This will apply rend to all targets!)
+                    CreateSpellCast(
+                        "Thunder Clap", ret => NearbyUnfriendlyUnits.Any(u => HasAuraStacks("Rend", 1, u)) && TalentManager.GetCount(3, 3) != 0),
                     CreateSpellBuff("Rend"),
                     // To be honest, we should be throwing this whenever its off CD. But we'll use it for the 20% hit speed debuff for now.
-                    CreateSpellBuff("Thunder Clap"),
+                    CreateSpellCast("Thunder Clap"),
                     new Decorator(
                         ret => NearbyUnfriendlyUnits.Count(u => u.Distance < 6) > 2,
                         new PrioritySelector(
+                            CreateSpellCast("War Stomp"),
                             CreateSpellCast("Thunder Clap"),
                             CreateSpellCast("Shockwave"),
                             CreateSpellCast("Shield Block")
                             )),
                     CreateSpellCast("Victory Rush"),
+                    CreateSpellCast("Arcane Torrent", ret => Me.CurrentTarget.IsCasting),
                     CreateSpellCast("Shield Bash", ret => Me.CurrentTarget.IsCasting),
                     CreateSpellCast("Shield Slam"),
                     CreateSpellBuff("Demoralizing Shout", ret => Me.CurrentRage > 30 && Me.CurrentTarget.HealthPercent > 30),

@@ -37,6 +37,8 @@ namespace Singular
                 CreateSpellCast(
                     "Concussive Shot",
                     ret => Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me),
+				// Cast only when close to mob	to try and gain aggro with pet
+				CreateSpellCast("Kill Command", ret => Me.CurrentTarget.DistanceSqr < 5 * 5),
 				CreateSpellBuff("Serpent Sting"),
 				CreateSpellCast("Chimera Shot", ret => Me.CurrentTarget.HasAura("Serpent Sting")),
 				CreateSpellCast("Aimed Shot", ret => Me.CurrentTarget.HealthPercent > 80 || Me.HasAura("Ready, Set, Aim...")),

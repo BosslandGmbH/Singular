@@ -11,6 +11,7 @@ using Styx.Helpers;
 using Styx.WoWInternals.WoWObjects;
 using Styx.WoWInternals;
 using Styx.Logic.Pathing;
+using Styx.Logic.POI;
 namespace Singular
 {
     public enum PvPTrinketSlot
@@ -64,7 +65,7 @@ namespace Singular
                 return;
 
             // Cycle trough target auras
-            foreach (KeyValuePair<string, WoWAura> aura in player.ActiveAuras)
+            foreach (KeyValuePair<string, WoWAura> aura in player.Auras)
             {
                 if (aura.Key.Equals("Sap") ||
                     aura.Key.Equals("Polymorph") ||
@@ -85,7 +86,9 @@ namespace Singular
                 }
                 else if (aura.Value.Spell.Mechanic == WoWSpellMechanic.Stunned ||
                     aura.Key.Equals("Deep Freeze") || 
-                    aura.Key.Equals("Hammer of Justice"))
+                    aura.Key.Equals("Hammer of Justice") ||
+                    aura.Key.Equals("Pounce") ||
+                    aura.Key.Equals("Maim"))
                 {
                     Stunned = true;
                     Logger.Write("Target is stunned: " + aura.Key);
@@ -97,7 +100,10 @@ namespace Singular
                     aura.Key.Equals("Aftermath") ||
                     aura.Key.Equals("Permafrost") || 
                     aura.Key.Equals("Piercing Chill") ||
-                    aura.Key.Equals("Hamstring"))
+                    aura.Key.Equals("Hamstring") ||
+                    aura.Key.Equals("Typhoon") ||
+                    aura.Key.Equals("Frost Shock") ||
+                    aura.Key.Equals("Frozen Power"))
                 {
                     Slowed = true;
                     Logger.Write("Target is slowed: " + aura.Key);
@@ -189,7 +195,7 @@ namespace Singular
                     MeSlowed = false;
 
                     // Cycle trough my auras
-                    foreach (KeyValuePair<string, WoWAura> aura in Me.ActiveAuras)
+                    foreach (KeyValuePair<string, WoWAura> aura in Me.Auras)
                     {
                         if (aura.Key.Equals("Polymorh") ||
                             aura.Key.Equals("Ring of Frost") ||
@@ -209,7 +215,10 @@ namespace Singular
                             Logger.Write("I'm under FEAR like control: " + aura.Key);
                         }
                         else if (aura.Value.Spell.Mechanic == WoWSpellMechanic.Stunned ||
-                            aura.Key.Equals("Deep Freeze"))
+                            aura.Key.Equals("Deep Freeze") || 
+                            aura.Key.Equals("Pounce") ||
+                            aura.Key.Equals("Maim") ||
+                            aura.Key.Equals("Hammer of Justice"))
                         {
                             MeUnderStunLikeControl = true;
                             Logger.Write("I'm under STUN like control: " + aura.Key);
@@ -221,14 +230,17 @@ namespace Singular
                             aura.Key.Equals("Aftermath") ||
                             aura.Key.Equals("Permafrost") ||
                             aura.Key.Equals("Piercing Chill") ||
-                            aura.Key.Equals("Hamstring"))
+                            aura.Key.Equals("Hamstring") ||
+                            aura.Key.Equals("Typhoon") ||
+                            aura.Key.Equals("Frost Shock"))
                         {
                             MeSlowed = true;
                             Logger.Write("I'm SLOWED: " + aura.Key);
                         }
                         else if (aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted ||
                             aura.Key.Equals("Improved Cone of Cold") ||
-                            aura.Key.Equals("Frost Nova"))
+                            aura.Key.Equals("Frost Nova") ||
+                            aura.Key.Equals("Frozen Power"))
                         {
                             MeRooted = true;
                             Logger.Write("I'm ROOTED: " + aura.Key);
@@ -329,7 +341,7 @@ namespace Singular
                                 if (unit != null)
                                 {
                                     Logger.Write("[Melee timer timeout] Found more suitable unit: " + unit.Name);
-                                    unit.Target();
+                                    TargetUnit(unit);
                                     targetAwayFromMeleeGuid = unit.Guid;
                                     targetAwayFromMeleeTimer.Reset();
                                     return RunStatus.Success;
@@ -355,7 +367,7 @@ namespace Singular
                                 if (unit != null)
                                 {
                                     Logger.Write("[Invalid target] Found new target: " + unit.Name);
-                                    unit.Target();
+                                    TargetUnit(unit);
                                     targetAwayFromMeleeGuid = unit.Guid;
                                     targetAwayFromMeleeTimer.Reset();
                                     return RunStatus.Success;
@@ -403,7 +415,7 @@ namespace Singular
                         if (unit != null)
                         {
                             targetSwitchTimer.Reset();
-                            unit.Target();
+                            TargetUnit(unit);
                             Logger.Write("[Invalid target] Found new target: " + unit.Name);
                             return RunStatus.Success;
                         }
@@ -436,7 +448,7 @@ namespace Singular
                             if (unit != null)
                             {
                                 targetSwitchTimer.Reset();
-                                unit.Target();
+                                TargetUnit(unit);
                                 Logger.Write("[Invalid target] Found new target: " + unit.Name + " I: "+ i);
                                 return RunStatus.Success;
                             }
@@ -449,6 +461,16 @@ namespace Singular
 
                     return RunStatus.Failure;
                 });
+        }
+
+        #endregion
+
+        #region Helper targeting functions
+
+        protected void TargetUnit(WoWUnit unit)
+        {
+            BotPoi.Current = new BotPoi(unit, PoiType.Kill);
+            unit.Target();
         }
 
         #endregion

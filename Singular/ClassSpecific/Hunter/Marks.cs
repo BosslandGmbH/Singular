@@ -30,6 +30,8 @@ namespace Singular
                 CreateHunterBackPedal(),
                 CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 CreateSpellCast("Raptor Strike", ret => Me.CurrentTarget.DistanceSqr < 5 * 5),
+				//Interupt
+				CreateSpellCast("Silencing Shot", ret => Me.CurrentTarget.IsCasting),
                 // Always keep it up on our target!
                 CreateSpellBuff("Hunter's Mark"),
                 // Heal pet when below 70
@@ -41,7 +43,7 @@ namespace Singular
 				CreateSpellCast("Kill Command", ret => Me.CurrentTarget.DistanceSqr < 5 * 5),
 				CreateSpellBuff("Serpent Sting"),
 				CreateSpellCast("Chimera Shot", ret => Me.CurrentTarget.HasAura("Serpent Sting")),
-				CreateSpellCast("Aimed Shot", ret => Me.CurrentTarget.HealthPercent > 80 || Me.HasAura("Ready, Set, Aim...")),
+				CreateSpellCast("Aimed Shot", ret => Me.CurrentTarget.HealthPercent > 80 || Me.Auras["Ready, Set, Aim..."].StackCount == 5),
 				CreateSpellCast("Arcane Shot"),
                 CreateSpellCast("Steady Shot")
                 );

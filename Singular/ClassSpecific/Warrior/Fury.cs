@@ -40,6 +40,15 @@ namespace Singular
                 CreateFaceUnit(),
                 //autoattack
                 CreateAutoAttack(true),
+                //low level support
+                new Decorator(
+                    ret => Me.Level < 30,
+                    new PrioritySelector(
+                        CreateSpellCast("Charge"),
+                        CreateSpellCast("Victory Rush"),
+                        CreateSpellCast("Rend", ret => !Me.CurrentTarget.HasAura("Rend")),
+                        CreateSpellCast("Bloodthirst"),
+                        CreateMoveToAndFace(ret => Me.CurrentTarget))),
                 //Ranged Attack if pvping
                 CreateSpellCast("Heroic Throw", ret => Me.CurrentTarget.IsPlayer),             
                 //Use fear to interupt casters at range
@@ -153,6 +162,12 @@ namespace Singular
                     CreateAutoAttack(true),
                     //face target
                     CreateFaceUnit(),
+                    //low level support
+                    new Decorator(
+                        ret => Me.Level < 30,
+                        new PrioritySelector(
+                            CreateSpellCast("Charge", ret => Me.CurrentTarget.Distance > 10),
+                            CreateMoveToAndFace(ret => Me.CurrentTarget))),
                     //Dismount
                     new Decorator(ret => IsMounted,
                         new Action(o => Styx.Logic.Mount.Dismount())),
@@ -276,7 +291,10 @@ namespace Singular
             return
                 new PrioritySelector(
                     //Keep Proper stance
-                    CreateSpellBuffOnSelf("Berserker Stance"),
+                    new Decorator(
+                        ret => Me.Level > 30,
+                        new PrioritySelector(
+                            CreateSpellBuffOnSelf("Berserker Stance"))),
                     //Buff up
                     CreateSpellCast("Battle Shout")
                     );

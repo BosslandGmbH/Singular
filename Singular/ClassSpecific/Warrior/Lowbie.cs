@@ -31,12 +31,15 @@ namespace Singular
         {
             return new PrioritySelector(
 			CreateEnsureTarget(),
-			CreateMoveToAndFace(4f, ret => Me.CurrentTarget),
+			CreateFaceUnit(),
 			CreateAutoAttack(true),
-				CreateSpellCast("Charge"),
-				CreateSpellCast("Victory Rush"),
-				CreateSpellCast("Strike")
-                );
+			CreateSpellCast("Charge"),
+			CreateSpellCast("Victory Rush"),
+            CreateSpellCast("Rend", ret => !Me.CurrentTarget.HasAura("Rend")),
+			CreateSpellCast("Strike"),
+            CreateSpellCast("Thunder Clap"),
+            CreateMoveToAndFace(4f, ret => Me.CurrentTarget)
+            );
         }
 
 		[Class(WoWClass.Warrior)]
@@ -48,8 +51,9 @@ namespace Singular
 			return 
 					new PrioritySelector(
 					CreateEnsureTarget(),
-					CreateMoveToAndFace(4f, ret => Me.CurrentTarget),
-					CreateSpellCast("Charge"),
+                    CreateFaceUnit(),
+					CreateSpellCast("Charge", ret => Me.CurrentTarget.Distance > 10),
+                    CreateMoveToAndFace(4f, ret => Me.CurrentTarget),
 					CreateAutoAttack(true)
 					);
 		}

@@ -31,10 +31,11 @@ namespace Singular
                 CreateFaceUnit(),
                 CreateSpellCast("Death Grip", ret => Me.CurrentTarget.Distance > 15),
                 CreateSpellCast("Death Coil", false),
-                CreateSpellCast("Icy Touch", false),
+                CreateSpellCast("Icy Touch", ret => !Me.CurrentTarget.HasAura("Frost Fever")),
+				CreateSpellCast("Plague Strike", ret => !Me.CurrentTarget.HasAura("Blood Plague")),
                 CreateMoveToAndFace(5f, ret => Me.CurrentTarget),
                 CreateSpellCast("Blood Strike"),
-                CreateSpellCast("Plague Strike")
+				CreateSpellCast("Icy Touch")
                 );
         }
     }

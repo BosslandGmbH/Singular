@@ -30,7 +30,6 @@ namespace Singular
             return new PrioritySelector(
                 CreateEnsureTarget(),
                 CreateWaitForCast(true),
-				CreateAutoAttack(true),
                 CreateHunterBackPedal(),
                 CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 CreateSpellCast("Raptor Strike", ret => Me.CurrentTarget.DistanceSqr < 5 * 5),
@@ -42,7 +41,8 @@ namespace Singular
                     "Concussive Shot",
                     ret => Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget == Me),
                 CreateSpellCast("Arcane Shot"),
-                CreateSpellCast("Steady Shot")
+                CreateSpellCast("Steady Shot"),
+				CreateAutoAttack(true)
                 );
         }
     }

@@ -11,6 +11,7 @@
 
 #endregion
 
+using System.Linq;
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
@@ -50,13 +51,12 @@ namespace Singular
                 CreateSpellBuffOnSelf("Ice Block", ret => Me.HealthPercent < 10 && !Me.ActiveAuras.ContainsKey("Hypothermia")),
                 new Decorator(ret => Me.ActiveAuras.ContainsKey("Ice Block"),
                    new ActionIdle()),
-                CreateSpellBuff("Frost Nova", ret => !Me.IsInInstance && !GotSheep && Me.CurrentTarget.DistanceSqr <= 8 * 8),
+                CreateSpellBuff("Frost Nova", ret => NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
                 CreateSpellCast("Evocation", ret => Me.ManaPercent < 20),
                 new Decorator(ret => HaveManaGem() && Me.ManaPercent <= 30,
                    new Action(ctx => UseManaGem())),
                 CreateSpellBuffOnSelf("Mana Shield", ret => !Me.Auras.ContainsKey("Mana Shield") && Me.HealthPercent <= 75),
-                new Decorator(ret => (!SheepTimer.IsRunning || SheepTimer.Elapsed.Seconds > 5) && NeedToSheep() && !Me.IsInInstance && !Styx.Logic.Battlegrounds.IsInsideBattleground,
-                   new Action(ctx => SheepLogic())),
+                CreateMagePolymorphOnAddBehavior(),
                 CreateSpellCast("Counterspell", ret => Me.CurrentTarget.IsCasting),
                 CreateSpellCast("Mirror Image", ret => Me.CurrentTarget.HealthPercent > 20),
                 CreateSpellCast("Time Warp", ret => Me.CurrentTarget.HealthPercent > 20),
@@ -73,7 +73,7 @@ namespace Singular
                 CreateSpellBuff("Living Bomb", ret => !Me.CurrentTarget.HasAura("Living Bomb")),
                 CreateSpellCast("Combustion", ret=> Me.CurrentTarget.ActiveAuras.ContainsKey("Living Bomb") && Me.CurrentTarget.ActiveAuras.ContainsKey("Ignite") && Me.CurrentTarget.ActiveAuras.ContainsKey("Pyroblast!")),
                 CreateSpellCast("Fireball"),
-                CreateSpellCast("Shoot", ret=> IsNotWanding) //Wand if all else fails
+                CreateFireRangedWeapon()
                 );
         }
 

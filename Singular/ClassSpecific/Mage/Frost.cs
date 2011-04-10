@@ -11,13 +11,15 @@
 
 #endregion
 
+using System.Linq;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.Logic.Pathing;
 
 using TreeSharp;
-using CommonBehaviors.Actions;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
@@ -34,7 +36,7 @@ namespace Singular
                 CreateEnsureTarget(),
                 //Move away from frozen targets
                 new Decorator(
-                    ret => Me.CurrentTarget.HasAura("Frost Nova") && Me.CurrentTarget.DistanceSqr < 5 * 5,
+                    ret => (Me.CurrentTarget.HasAura("Frost Nova") || Me.CurrentTarget.HasAura("Freeze")) && Me.CurrentTarget.DistanceSqr < 5 * 5,
                     new Action(
                         ret =>
                             {
@@ -47,24 +49,17 @@ namespace Singular
                                 }
                             })),
                 CreateMoveToAndFace(34f, ret => Me.CurrentTarget),
-                CreateSpellBuffOnSelf("Ice Block", ret => Me.HealthPercent < 10 && !Me.ActiveAuras.ContainsKey("Hypothermia")),
-                new Decorator(ret => Me.ActiveAuras.ContainsKey("Ice Block"),
-                   new ActionIdle()),
-                CreateSpellBuff("Frost Nova", ret => !Me.IsInInstance && !GotSheep && Me.CurrentTarget.DistanceSqr <= 8 * 8),
                 CreateWaitForCast(true),
+                CreateCastPetActionOnLocation("Freeze", ret => !Me.CurrentTarget.HasAura("Frost Nova")),
+                CreateSpellBuff("Frost Nova", ret => NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
+                CreateMagePolymorphOnAddBehavior(),
                 new Decorator(
                     ret => !Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(WantedPet))),
                 CreateSpellCast("Evocation", ret => Me.ManaPercent < 20),
-                new Decorator(ret => HaveManaGem() && Me.ManaPercent <= 30,
-                   new Action(ctx => UseManaGem())),
-                new Decorator(ret => (!SheepTimer.IsRunning || SheepTimer.Elapsed.Seconds > 5) && NeedToSheep() && !Me.IsInInstance && !Styx.Logic.Battlegrounds.IsInsideBattleground,
-                   new Action(ctx => SheepLogic())),
                 CreateSpellCast("Counterspell", ret => Me.CurrentTarget.IsCasting),
-                CreateSpellCast("Cold Snap", ret => ColdSnapCheck()),
-                CreateSpellCast("Mirror Image", ret => Me.CurrentTarget.HealthPercent > 20),
-                CreateSpellCast("Time Warp", ret => Me.CurrentTarget.HealthPercent > 20),
-                CreateSpellCast("Icy Viens", ret => Me.CurrentTarget.HealthPercent > 20),
+                CreateSpellCast("Mirror Image"),
+                CreateSpellCast("Time Warp"),
                 new Decorator(
                     ret => Me.CurrentTarget.HealthPercent > 50,
                     new Sequence(
@@ -83,11 +78,16 @@ namespace Singular
                     ret =>
                     (Me.ActiveAuras.ContainsKey("Fingers of Frost") || Me.CurrentTarget.ActiveAuras.ContainsKey("Frost Nova") ||
                      Me.CurrentTarget.ActiveAuras.ContainsKey("Freeze"))),
-                CreateSpellCast("Fireball",ret => Me.ActiveAuras.ContainsKey("Brain Freeze")),
+                //CreateSpellCast("Fireball", Me.ActiveAuras.ContainsKey("Brain Freeze")),
                 CreateSpellCast("Arcane Missiles", ret => Me.ActiveAuras.ContainsKey("Arcane Missiles!")),
+                new Decorator(
+                    ret => Me.ActiveAuras.ContainsKey("Brain Freeze"),
+                    new PrioritySelector(
+                        CreateSpellCast("Frostfire Bolt"),
+                        CreateSpellCast("Fireball")
+                        )),
                 CreateSpellBuff("Fire Blast", ret => Me.CurrentTarget.HealthPercent < 10),
-                CreateSpellCast("Frostbolt"),
-                CreateSpellCast("Shoot", ret=> IsNotWanding) //Wand if all else fails.
+                CreateSpellCast("Frostbolt")
                 );
         }
 

@@ -27,6 +27,7 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(TalentSpec.HolyPaladin)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.Instances | WoWContext.Normal)]
@@ -121,15 +122,18 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(TalentSpec.HolyPaladin)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Instances | WoWContext.Normal)]
         public Composite CreateRetributionPaladinPull()
         {
             return
                 new PrioritySelector(
+                    CreateEnsureTarget(),
 					//Better make sure were facing and in range to cast judgement
-					CreateMoveToAndFace(30f, ret => Me.CurrentTarget),
-                    CreateSpellCast("Judgement"),
+				    CreateFaceUnit(),
+                    CreateSpellCast("Judgement", false),
+                    CreateAutoAttack(true),
                     // Make sure we're in range, and facing the damned target. (LOS check as well)
                     CreateMoveToAndFace(5f, ret => Me.CurrentTarget)
                     );
@@ -141,6 +145,7 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(TalentSpec.HolyPaladin)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.Instances | WoWContext.Normal)]
         public Composite CreateRetributionPaladinCombatBuffs()
@@ -162,6 +167,7 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(TalentSpec.HolyPaladin)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.Instances | WoWContext.Normal)]

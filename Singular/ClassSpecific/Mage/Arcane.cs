@@ -11,6 +11,8 @@
 
 #endregion
 
+using System.Linq;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
@@ -50,13 +52,12 @@ namespace Singular
                 CreateSpellBuffOnSelf("Ice Block", ret => Me.HealthPercent < 10 && !Me.ActiveAuras.ContainsKey("Hypothermia")),
                 new Decorator(ret => Me.ActiveAuras.ContainsKey("Ice Block"),
                    new ActionIdle()),
-                CreateSpellBuff("Frost Nova", ret => !Me.IsInInstance && !GotSheep && Me.CurrentTarget.DistanceSqr <= 8 * 8),
+                CreateSpellBuff("Frost Nova", ret => NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
                 CreateWaitForCast(true),
                 CreateSpellCast("Evocation", ret => Me.ManaPercent < 20),
                 new Decorator(ret => HaveManaGem() && Me.ManaPercent <= 30,
                    new Action(ctx => UseManaGem())),
-                new Decorator(ret => (!SheepTimer.IsRunning || SheepTimer.Elapsed.Seconds > 5) && NeedToSheep() && !Me.IsInInstance && !Styx.Logic.Battlegrounds.IsInsideBattleground,
-                   new Action(ctx => SheepLogic())),
+                CreateMagePolymorphOnAddBehavior(),
                 CreateSpellCast("Counterspell", ret => Me.CurrentTarget.IsCasting),
                 CreateSpellCast("Mirror Image", ret => Me.CurrentTarget.HealthPercent > 20),
                 CreateSpellCast("Time Warp", ret => Me.CurrentTarget.HealthPercent > 20),
@@ -73,7 +74,7 @@ namespace Singular
                 CreateSpellCast("Arcane Barrage", ret => Me.ActiveAuras.ContainsKey("Arcane Blast") && Me.ActiveAuras["Arcane Blast"].StackCount >= 3 ),
                 CreateSpellBuffOnSelf("Presence of Mind"),
                 CreateSpellCast("Arcane Blast"),
-                CreateSpellCast("Shoot", ret=> IsNotWanding)//Wand if all else fails
+                CreateFireRangedWeapon()
                 );
         }
 

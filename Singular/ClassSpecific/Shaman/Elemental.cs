@@ -25,6 +25,7 @@ namespace Singular
     {
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.ElementalShaman)]
+        [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Combat)]
         public Composite CreateElementalShamanCombat()
@@ -39,8 +40,9 @@ namespace Singular
 				//Interupt spell casters
 				CreateSpellCast("Wind Shear", ret => Me.CurrentTarget.IsCasting),
 				
+                //For low levels we are avoiding this.
                 new Decorator(
-                    ret => TotemManager.TotemsInRange == 0,
+                    ret => TotemManager.TotemsInRange == 0 && SpellManager.HasSpell("Call of the Elements"),
                     new Sequence(
                         new Action(ret => TotemManager.SetupTotemBar()),
                         new Action(ret => TotemManager.CallTotems()))),
@@ -49,7 +51,7 @@ namespace Singular
                 CreateSpellBuff("Flame Shock"),
                 CreateSpellCast("Unleash Elements"),
                 CreateSpellCast("Lava Burst"),
-                CreateSpellCast("Earth Shock", ret => HasAuraStacks("Lightning Shield", 6)),
+                CreateSpellCast("Earth Shock", ret => HasAuraStacks("Lightning Shield", 6) || TalentManager.GetCount(1,8) == 0),
 				CreateSpellBuffOnSelf("Lightning Shield"),
                 CreateSpellCast("Lightning Bolt")
                 );
@@ -57,6 +59,7 @@ namespace Singular
 		
 		[Class(WoWClass.Shaman)]
         [Spec(TalentSpec.ElementalShaman)]
+        [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Pull)]
         public Composite CreateElementalShamanPull()
@@ -67,7 +70,7 @@ namespace Singular
             CreateWaitForCast(true),
 			//Totems
                 new Decorator(
-                    ret => TotemManager.TotemsInRange == 0,
+                    ret => TotemManager.TotemsInRange == 0 && SpellManager.HasSpell("Call of the Elements"),
                     new Sequence(
                         new Action(ret => TotemManager.SetupTotemBar()),
                         new Action(ret => TotemManager.CallTotems()))),
@@ -77,6 +80,7 @@ namespace Singular
 		
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.ElementalShaman)]
+        [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         public Composite CreateElementalShamanBuffs()
@@ -94,6 +98,7 @@ namespace Singular
         [Spec(TalentSpec.ElementalShaman)]
         [Spec(TalentSpec.RestorationShaman)]
         [Spec(TalentSpec.EnhancementShaman)]
+        [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Rest)]
         public Composite CreateShamanRest()

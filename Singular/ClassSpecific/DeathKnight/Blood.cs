@@ -56,24 +56,12 @@ namespace Singular
                                 SpellManager.Cast("Death and Decay");
                                 LegacySpellManager.ClickRemoteLocation(Me.CurrentTarget.Location);
                             })),
-                CreateSpellCast("Icy Touch", ret => !Me.CurrentTarget.HasAura("Frost Fever")),
+                CreateSpellCast("Icy Touch"),
                 CreateSpellCast("Plague Strike", ret => !Me.CurrentTarget.HasAura("Blood Plague")),
-				CreateSpellCast("Death Strike"),
+                CreateSpellCast("Death Strike", ret => Me.HealthPercent < 80),
                 CreateSpellCast("Blood Boil", ret => NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1),
                 CreateSpellCast("Heart Strike"),
-                CreateSpellCast("Death Coil")
-				);
+                CreateSpellCast("Death Coil"));
         }
-        [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.BloodDeathKnight)]
-        [Context(WoWContext.Instances)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        public Composite CreateBloodTankTaunts()
-        {
-            return new PrioritySelector(
-                CreateSpellCast("Dark Command", ret => TankTargeting.Instance.NeedToTaunt.Count != 0, ret => TankTargeting.Instance.NeedToTaunt.FirstOrDefault()),
-                CreateSpellCast("Death Grip", ret => TankTargeting.Instance.NeedToTaunt.Count != 0, ret => TankTargeting.Instance.NeedToTaunt.FirstOrDefault())
-                );
-        }
-    }		
+    }
 }

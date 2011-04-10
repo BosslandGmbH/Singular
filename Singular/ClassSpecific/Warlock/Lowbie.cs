@@ -35,7 +35,7 @@ namespace Singular
                 CreateWaitForCast(true),
                 CreateSpellCast("Life Tap", ret => Me.ManaPercent < 50 && Me.HealthPercent > 70),
                 CreateSpellCast("Drain Life", ret => Me.HealthPercent < 70),
-                CreateSpellBuff("Immolate"),
+                CreateSpellBuff("Immolate", true),
                 CreateSpellBuff("Corruption"),
                 CreateSpellCast("Shadow Bolt")
                 );

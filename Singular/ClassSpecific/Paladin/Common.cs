@@ -38,7 +38,6 @@ namespace Singular
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Spec(TalentSpec.RetributionPaladin)]
         [Spec(TalentSpec.HolyPaladin)]
-        [Spec(TalentSpec.ProtectionPaladin)]
         [Context(WoWContext.All)]
         public Composite CreatePaladinBuffComposite()
         {

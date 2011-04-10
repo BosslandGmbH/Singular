@@ -60,7 +60,8 @@ namespace Singular
                 CreateWaitForCast(true),
                 CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
                 CreateSpellBuff("Hunter's Mark"),
-				CreateSpellCast("Aimed Shot")		
+				CreateSpellCast("Aimed Shot"),
+		        CreateAutoAttack(true)
                 );
         }			
     }

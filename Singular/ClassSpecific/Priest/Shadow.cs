@@ -11,9 +11,12 @@
 
 #endregion
 
+using System.Linq;
+
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
+using Singular.Settings;
 
 namespace Singular
 {
@@ -31,7 +34,10 @@ namespace Singular
                 CreateMoveToAndFace(30, ret => Me.CurrentTarget),
                 CreateWaitForCast(true),
                 CreateDiscHealOnlyBehavior(true),
-				CreateSpellBuffOnSelf("Shadowform"),
+                CreateSpellBuffOnSelf("Shadowform"),
+                CreateSpellCast("Shadowfiend",
+                    ret => Me.Combat && Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana &&
+                           (Me.CurrentTarget.HealthPercent > 60 || NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1)),
                 CreateSpellCast("Mind Blast", ret => Me.CurrentTarget.CreatureType == Styx.WoWCreatureType.Totem),
                 CreateSpellBuff("Vampiric Touch", true),
                 CreateSpellBuff("Devouring Plague"),

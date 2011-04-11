@@ -27,11 +27,18 @@ namespace Singular.Settings
         }
 
         [Setting]
-        [Styx.Helpers.DefaultValue(30)]
+        [DefaultValue(30)]
         [Category("Discipline")]
         [DisplayName("Penance Health")]
         [Description("Penance will be used at this value")]
         public int Penance { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Common")]
+        [DisplayName("Shadowfiend Mana")]
+        [Description("Shadowfiend will be used at this value")]
+        public int ShadowfiendMana { get; set; }
 
         [Setting]
         [DefaultValue(40)]

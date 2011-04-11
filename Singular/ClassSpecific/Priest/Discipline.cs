@@ -139,13 +139,18 @@ namespace Singular
             return new PrioritySelector(
                 // Firstly, deal with healing people!
                 CreateDiscHealOnlyBehavior(),
+                CreateSpellCast("Shadowfiend",
+                    ret => Me.Combat && Me.CurrentTarget != null && Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana &&
+                           (Me.CurrentTarget.HealthPercent > 60 || NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1)),
                 //Pull stuff
                 new Decorator(
                     ret => !Me.IsInParty && !Me.Combat,
                     new PrioritySelector(
+                        CreateEnsureTarget(),
+                        CreateMoveToAndFace(28f, ret => Me.CurrentTarget),
                         CreateSpellCast("Holy Fire", ret => !Me.IsInParty && !Me.Combat),
-                        CreateSpellCast("Smite", ret => !Me.IsInParty && !Me.Combat),
-                        CreateMoveToAndFace(28f, ret => Me.CurrentTarget))),
+                        CreateSpellCast("Smite", ret => !Me.IsInParty && !Me.Combat)
+                        )),
                 // If we have nothing to heal, and we're in combat (or the leader is)... kill something!
                 new Decorator(
                     ret => Me.Combat || (RaFHelper.Leader != null && RaFHelper.Leader.Combat),

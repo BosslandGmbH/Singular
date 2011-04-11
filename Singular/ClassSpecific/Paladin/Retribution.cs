@@ -160,23 +160,6 @@ namespace Singular
 
         #endregion
 
-        #region Pre-Combat Buffs
-
-        [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.RetributionPaladin)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.Instances | WoWContext.Normal)]
-        public Composite CreateRetributionPaladinPreCombatBuffs()
-        {
-            return
-                new PrioritySelector(
-                    CreatePaladinBuffComposite()
-                    );
-        }
-
-        #endregion
-
         /* Priority of Spells - Retribution
 
                  Single 

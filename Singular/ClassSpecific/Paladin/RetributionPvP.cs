@@ -196,8 +196,7 @@ namespace Singular
                         ret => !Me.HasAura("Zealotry"),
                         new Sequence(
                             CreateSpellBuffOnSelf("Avenging Wrath"),
-                            CreateUsePvPDamageIncreaseAbility(),
-                            new Action(ret => { return RunStatus.Success; }))),
+                            CreateUsePvPDamageIncreaseAbility())),
                     CreateSpellBuffOnSelf("Zealotry", ret => !Me.HasAura("Avenging Wrath") && Me.HealthPercent > 80),
                     CreateSpellBuffOnSelf("Guardian of Ancient Kings", ret => !Me.HasAura("Zealotry") && !Me.HasAura("Avenging Wrath") && Me.HealthPercent > 70),
                     CreateSpellBuffOnSelf("Lay on Hands", ret => Me.HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealthRet && !Me.HasAura("Forbearance")),
@@ -221,7 +220,7 @@ namespace Singular
                         ret => Me.HealthPercent <= 80 &&
                                (Me.CurrentHolyPower >= 2 || 
                                Me.HasAura("Divine Purpose"))),
-                    CreatePaladinBuffComposite(),
+                    CreatePaladinPreCombatBuffs(),
                     CreateSpellBuffOnSelf("Inquisition", ret => Me.CurrentHolyPower == 3 || Me.HasAura("Divine Purpose")),
                     CreateSpellBuffOnSelf("Divine Plea", ret => Me.HealthPercent > 50 && Me.ManaPercent < 40)
                     );

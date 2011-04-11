@@ -106,30 +106,6 @@ namespace Singular
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
-        public Composite CreateProtectionPaladinPreCombatBuffs()
-        {
-            return
-                new PrioritySelector(
-                    CreateSpellBuffOnSelf(
-                        "Blessing of Kings",
-                        ret => (!Me.HasAura("Blessing of Might") || Me.Auras["Blessing of Might"].CreatorGuid != Me.Guid) &&
-                               !Me.HasAura("Embrace of the Shale Spider") &&
-                               !Me.HasAura("Mark of the Wild")),
-                    CreateSpellBuffOnSelf(
-                        "Blessing of Might",
-                        ret => !Me.HasAura("Blessing of Kings") ||
-                               Me.Auras["Blessing of Kings"].CreatorGuid != Me.Guid),
-                    CreateSpellBuffOnSelf("Seal of Truth"),
-                    CreateSpellBuffOnSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth")),
-                    CreateSpellBuffOnSelf("Devotion Aura"),
-                    CreateSpellBuffOnSelf("Righteous Fury")
-                    );
-        }
-
-        [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.ProtectionPaladin)]
         [Behavior(BehaviorType.PullBuffs)]
         [Context(WoWContext.All)]
         public Composite CreateProtectionPaladinPullBuffs()

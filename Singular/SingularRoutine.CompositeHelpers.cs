@@ -120,7 +120,7 @@ namespace Singular
                         new Decorator(
                             ret =>  CastingSpellTarget == null
                                 ||  (CastingSpellTarget is WoWPlayer && Me.IsHorde != ((WoWPlayer)CastingSpellTarget).IsHorde)
-                                ||  (CastingSpellTarget is WoWUnit && !CastingSpellTarget.IsFriendly)
+                                ||  !CastingSpellTarget.IsFriendly
                                 ||  CastingSpellTarget.HealthPercent < minHealth
                                 ||  Me.CastingSpell == null
                                 ||  Me.CastingSpell.SpellEffect1 == null

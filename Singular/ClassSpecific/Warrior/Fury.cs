@@ -23,6 +23,9 @@ using TreeSharp;
 using Action = TreeSharp.Action;
 using Styx;
 
+
+
+
 namespace Singular
 {
     partial class SingularRoutine
@@ -49,6 +52,8 @@ namespace Singular
                         CreateSpellCast("Rend", ret => !Me.CurrentTarget.HasAura("Rend")),
                         CreateSpellCast("Bloodthirst"),
                         CreateMoveToAndFace(ret => Me.CurrentTarget))),
+                //30-50 support
+                CreateSpellBuffOnSelf("Berserker Stance", ret => Me.Level > 30 && Me.Level < 50),
                 //Ranged Attack if pvping
                 CreateSpellCast("Heroic Throw", ret => Me.CurrentTarget.IsPlayer),             
                 //Use fear to interupt casters at range
@@ -168,6 +173,12 @@ namespace Singular
                         new PrioritySelector(
                             CreateSpellCast("Charge", ret => Me.CurrentTarget.Distance > 10),
                             CreateMoveToAndFace(ret => Me.CurrentTarget))),
+                    //30-50 support
+                    new Decorator(
+                        ret => Me.Level > 30 && Me.Level < 50,
+                        new PrioritySelector(
+                            CreateSpellBuffOnSelf("Battle Stance"),
+                            CreateSpellCast("Charge"))),
                     //Dismount
                     new Decorator(ret => IsMounted,
                         new Action(o => Styx.Logic.Mount.Dismount())),
@@ -186,59 +197,10 @@ namespace Singular
                     );
         }
 
-        //Instance Combat Buffs
-        [Class(WoWClass.Warrior)]
-        [Spec(TalentSpec.FuryWarrior)]
-        [Context(WoWContext.Instances)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        public Composite CreateWarriorFuryInstanceCombatBuffs()
-        {
-            return
-                new PrioritySelector(
-                    //Check Heal
-                    CreateFuryHeal(),
-                    //Troll Racial
-                    CreateSpellCast("Berserking"),
-                    //Recklessness if low on hp or have Deathwish up
-                    CreateSpellCast("Recklessness",
-                            ret => Me.HasAura("Death Wish") && Me.HealthPercent > 20),
-                    //Inner rage with recklessness, deathwish or dump rage
-                    CreateSpellCast(
-                        "Inner Rage", ret => Me.HasAura("Recklessness") ||
-                                             Me.HasAura("Death Wish") ||
-                                             Me.RagePercent > 90),
-                    //Remove Croud Control Effects
-                    CreateFuryRemoveCC(),
-                    //Dwarf Racial
-                    CreateSpellBuffOnSelf("Stoneform", ret => Me.HealthPercent < 60),
-                    //Night Elf Racial
-                    CreateSpellBuffOnSelf("Shadowmeld", ret => Me.HealthPercent < 20),
-                    //Orc Racial
-                    CreateSpellBuffOnSelf("Blood Fury"),
-                    //Deathwish
-                    CreateSpellBuffOnSelf(
-                        "Death Wish", ret => (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
-                                        Me.CurrentTarget.HealthPercent < 95 &&
-                                        Me.RagePercent > 50) ||
-                                        (Me.CurrentTarget.MaxHealth > Me.MaxHealth &&
-                                        Me.HealthPercent > 10 && Me.HealthPercent < 75)),
-                    //Berserker rage to stay enraged(Key to good dps)
-                    CreateSpellBuffOnSelf("Berserker Rage",
-                            ret => !Me.Auras.Any(
-                                aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Enraged)),
-                    //Battleshout Check
-                    CreateSpellBuffOnSelf(
-                        "Battle Shout", ret => !Me.HasAura("Horn of the Winter") &&
-                                               !Me.HasAura("Roar of Courage") &&
-                                               !Me.HasAura("Strength of Earth Totem") ||
-                                               Me.RagePercent < 15)
-                );
-        }
-
         //Normal Combat Buffs
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.FuryWarrior)]
-        [Context(WoWContext.Normal)]
+        [Context(WoWContext.Normal | WoWContext.Instances)]
         [Behavior(BehaviorType.CombatBuffs)]
         public Composite CreateWarriorFuryCombatBuffs()
         {
@@ -292,9 +254,9 @@ namespace Singular
                 new PrioritySelector(
                     //Keep Proper stance
                     new Decorator(
-                        ret => Me.Level > 30,
+                        ret => Me.Level > 50,
                         new PrioritySelector(
-                            CreateSpellBuffOnSelf("Berserker Stance"))),
+                            CreateSpellBuffOnSelf("Berserker Stance"))),                    
                     //Buff up
                     CreateSpellCast("Battle Shout")
                     );

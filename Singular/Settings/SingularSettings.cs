@@ -60,6 +60,13 @@ namespace Singular.Settings
         #region Resting
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("Rest")]
+        [DisplayName("Wait for R. Sickness")]
+        [Description("If true, your character will 'sit still' while Resurrection Sickness is active.")]
+        public bool WaitForResSickness { get; set; }
+
+        [Setting]
         [DefaultValue(50)]
         [Category("Rest")]
         [DisplayName("Rest Health")]

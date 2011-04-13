@@ -17,6 +17,7 @@ using System.Threading;
 using CommonBehaviors.Actions;
 
 using Singular.Composites;
+using Singular.Settings;
 
 using Styx;
 using Styx.Logic.Combat;
@@ -52,7 +53,7 @@ namespace Singular
                 // Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
                 new Decorator(
                     //Hackish way to avoid waiting for rez sickness at An End to All Things quest in DK zone
-                    ret => Me.HasAura("Resurrection Sickness") && !Me.QuestLog.ContainsQuest(12779),
+                    ret =>SingularSettings.Instance.WaitForResSickness && Me.HasAura("Resurrection Sickness") && !Me.QuestLog.ContainsQuest(12779),
                     new ActionLogMessage(false, "Waiting for resurrection sickness to fade off")),
                 // Wait while cannibalizing
                 new Decorator(

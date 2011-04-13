@@ -282,22 +282,39 @@ namespace Singular
 
         protected void CastWithLog(string spellName, WoWUnit onTarget)
         {
-            CastingSpellTarget = onTarget; // save current spell target, reset by SPELL_CAST_SUCCESS event
-            Logger.Write(string.Format("Casting {0} on {1}", spellName, (onTarget != null ? onTarget.SafeName() : "-Nobody-")));
-            if (onTarget == null)
-                SpellManager.Cast(spellName);
+            WoWSpell spell = !SpellManager.HasSpell(spellName) ? null : SpellManager.Spells[spellName];
+            if (spell != null)
+                CastWithLog(spell, onTarget);
             else
-                SpellManager.Cast(spellName, onTarget);
+            {
+                Logger.Write(Color.Red, string.Format("attempt to cast unknown spell '{0}'", spellName));
+                throw new Exception();
+            }
         }
 
         protected void CastWithLog(int spellId, WoWUnit onTarget)
         {
+            CastWithLog(WoWSpell.FromId(spellId), onTarget);
+        }
+
+        protected void CastWithLog(WoWSpell spell, WoWUnit onTarget)
+        {
             CastingSpellTarget = onTarget; // save current spell target, reset by SPELL_CAST_SUCCESS event
-            Logger.Write(string.Format("Casting {0} on {1}", WoWSpell.FromId(spellId).Name, (onTarget != null ? onTarget.SafeName() : "-Nobody-")));
             if (onTarget == null)
-                SpellManager.Cast(spellId);
+            {
+                Logger.Write(string.Format("Casting {0}", spell.Name));
+                SpellManager.Cast(spell);
+            }
+            else if (spell.Mechanic == WoWSpellMechanic.Healing)
+            {
+                Logger.Write(string.Format("Casting {0} on {1} @ {2:F1}%", spell.Name, onTarget.SafeName(), onTarget.HealthPercent));
+                SpellManager.Cast(spell, onTarget);
+            }
             else
-                SpellManager.Cast(spellId, onTarget);
+            {
+                Logger.Write(string.Format("Casting {0} on {1}", spell.Name, onTarget.SafeName()));
+                SpellManager.Cast(spell, onTarget);
+            }
         }
 
         private Composite CreateSpellCastOnLocation(string spellName, LocationRetrievalDelegate onLocation)

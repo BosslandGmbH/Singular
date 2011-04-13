@@ -14,6 +14,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using Singular;
 using Singular.Settings;
 
 using Styx;
@@ -30,6 +31,31 @@ namespace Singular
 {
     partial class SingularRoutine
     {
+        // note:  Singular TalentManager does -1 on WOW Tab and Index values
+        public static bool HaveTalentFulmination
+        {
+            get{ return TalentManager.Talents.Where(t => t.Tab == 0 && t.Index == 12).Any(); }
+        }
+
+        // note:  Singular TalentManager does -1 on WOW Tab and Index values
+        public static bool HaveTalentFocusedInsight
+        {
+            get { return TalentManager.Talents.Where(t => t.Tab == 2 && t.Index == 5).Any(); }
+        }
+
+        /// <summary>
+        /// Tests whether currently in an RAF operating mode
+        /// </summary>
+        /// <param name="healTarget"></param>
+        /// <returns></returns>
+        public static bool IsRAF
+        {
+            get
+            {
+                return (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) && RaFHelper.Leader != null && RaFHelper.Leader != StyxWoW.Me;
+            }
+        }
+
         /// <summary>
         /// WillChainHealHop()
         /// Tests whether casting Chain Lightning on 'healTarget' results in a minimum 
@@ -37,7 +63,7 @@ namespace Singular
         /// </summary>
         /// <param name="healTarget"></param>
         /// <returns></returns>
-        private bool WillChainHealHop(WoWUnit healTarget)
+        public static bool WillChainHealHop(WoWUnit healTarget)
         {
             double threshhold = SingularSettings.Instance.Shaman.RAF_ChainHeal_Health;
 
@@ -48,7 +74,7 @@ namespace Singular
                      where o is WoWPlayer && healTarget.Location.Distance(o.Location) < 12
                      let p = o.ToPlayer()
                      where p != null
-                           && p.IsHorde == Me.IsHorde
+                           && p.IsHorde == StyxWoW.Me.IsHorde
                            && !p.IsPet
                            && p != healTarget
                            && p.IsAlive
@@ -71,29 +97,40 @@ namespace Singular
         }
 
         /// <summary>
-        /// WillChainHealHop()
-        /// Tests whether casting Chain Lightning on 'healTarget' results in a minimum 
+        /// WillChainLightningHop()
+        /// Tests whether casting Chain Lightning on 'Current Target' results in a minimum 
         /// of 2 hops (3 people healed.) 
         /// </summary>
         /// <param name="healTarget"></param>
         /// <returns></returns>
-        private bool WillChainLightningHop()
+        public static bool WillChainLightningHop()
         {
-            if (Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.IsHorde != ((WoWPlayer)Me.CurrentTarget).IsHorde )
+            if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.IsHorde != ((WoWPlayer)StyxWoW.Me.CurrentTarget).IsHorde )
             {
                 return  (from o in ObjectManager.ObjectList
-                         where o is WoWPlayer 
-                            && o != Me.CurrentTarget
-                            && Me.CurrentTarget.Location.Distance(o.Location) < 12
-                         let p = o.ToPlayer()
-                         where p != null
-                            && p.IsHorde != Me.IsHorde
-                            && !p.IsPet
-                            && p.IsAlive
-                         select p).Any();
+                         where o is WoWUnit
+                            && o != StyxWoW.Me.CurrentTarget
+                            && StyxWoW.Me.CurrentTarget.Location.Distance(o.Location) < 12
+                         let u = o.ToUnit()
+                         where u.Attackable 
+                            && !u.IsPet
+                            && u.CurrentHealth > 1
+                            && ((!u.IsPlayer && u.IsHostile) || (u.IsPlayer && u.ToPlayer().IsHorde != StyxWoW.Me.IsHorde))
+                         select u).Any();
             }
 
             return false;
+        }
+
+        public Composite CreateBestShockCast()
+        {
+            return new Decorator( ret => Me.GotTarget && Me.CurrentTarget.IsHostile,
+                new PrioritySelector(
+                    CreateSpellCast("Frost Shock", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAura("Frost Shock")),
+                    CreateSpellCast("Flame Shock", ret => !HasMyAura("Flame Shock", Me.CurrentTarget, TimeSpan.FromSeconds(2), 1)),
+                    CreateSpellCast("Earth Shock")
+                    )
+                );
         }
     }
 }

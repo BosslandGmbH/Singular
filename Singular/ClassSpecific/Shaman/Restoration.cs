@@ -72,7 +72,7 @@ namespace Singular
                             && TotemManager.TotemsInRangeOf(RaFHelper.Leader) == 0
                             && (Me.Combat || RaFHelper.Leader.Combat),
                         new Sequence(
-                            new DecoratorContinue(ret => (Me.Totems().Count(t => t.Unit != null) != 0),
+                            new DecoratorContinue(ret => (Me.Totems.Count(t => t.Unit != null) != 0),
                                 new Action(ret => TotemManager.RecallTotems())),
                             new Action(ret => TotemManager.SetupTotemBar()),
                             new Action(ret => TotemManager.CallTotems()))),

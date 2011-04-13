@@ -451,7 +451,7 @@ namespace Singular.ClassSpecific.Shaman
         /// <returns>The totem information.</returns>
         public static WoWTotemInfo GetTotemInfo(WoWTotemType type)
         {
-            return StyxWoW.Me.Totems.FirstOrDefault(t => t.Type == type);
+            return StyxWoW.Me.Totems.FirstOrDefault(t => t.Type == type && t.Unit != null);
         }
 
         public static bool CanPlaceTotem(WoWTotem totem)

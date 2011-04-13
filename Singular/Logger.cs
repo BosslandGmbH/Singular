@@ -23,7 +23,12 @@ namespace Singular
     {
         public static void Write(string message)
         {
-            Logging.Write(Color.Green, "[Singular] " + message);
+            Write( Color.Green, message);
+        }
+
+        public static void Write( System.Drawing.Color clr, string message)
+        {
+            Logging.Write( clr, "[Singular] " + message);
         }
 
         public static void WriteDebug(string message)

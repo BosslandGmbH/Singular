@@ -15,6 +15,7 @@ using System;
 using System.Text;
 
 using Styx.WoWInternals.WoWObjects;
+using Styx.Logic;
 
 namespace Singular
 {
@@ -63,17 +64,24 @@ namespace Singular
                 return "Myself";
             }
 
+            string name;
             if (obj is WoWPlayer)
             {
-                return "Player";
-            }
+                if (RaFHelper.Leader == obj)
+                    return "Tank";
 
-            if (obj is WoWUnit && obj.ToUnit().IsPet)
+                name = ((WoWPlayer)obj).Class.ToString();
+            }
+            else if (obj is WoWUnit && obj.ToUnit().IsPet)
             {
-                return "a Pet";
+                name = "Pet";
+            }
+            else
+            {
+                name = obj.Name;
             }
 
-            return obj.Name;
+            return name;
         }
 
         public static bool IsPet(this WoWUnit unit)

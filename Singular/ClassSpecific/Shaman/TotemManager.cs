@@ -7,10 +7,29 @@ using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
+using TreeSharp;
+
+using Action = TreeSharp.Action;
+
 namespace Singular.ClassSpecific.Shaman
 {
     class TotemManager
     {
+        public static Composite CreateCallTotems()
+        {
+            return new PrioritySelector(
+                new Decorator(ret=>TotemsInRange == 0, 
+                    new Action(ret=>CallTotems())),
+
+
+                new Decorator(ret=>GetTotemDistance(StyxWoW.Me.CurrentTarget, WoWTotemType.Fire) > 15,
+                    new Action(ret=>CallTotem(GetTotemForSpec(WoWTotemType.Fire))))
+
+                
+                );
+        }
+
+
         /// <summary>A small enum to make specifying specific totem bar slots easier.</summary>
         /// <remarks>Created 3/26/2011.</remarks>
         internal enum MultiCastSlot
@@ -74,6 +93,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static void CallTotems(WoWTotem fire, WoWTotem earth, WoWTotem air, WoWTotem water)
         {
+            SetupTotemBar();
             SetTotemBarSlot(MultiCastSlot.ElementsFire, fire);
             SetTotemBarSlot(MultiCastSlot.ElementsAir, air);
             SetTotemBarSlot(MultiCastSlot.ElementsWater, water);
@@ -83,12 +103,105 @@ namespace Singular.ClassSpecific.Shaman
             _totemsSet = false;
         }
 
+        public static float GetTotemDistance(WoWUnit from, WoWTotemType type)
+        {
+            var info = GetTotemInfo(type);
+            if (info == null)
+                return -1;
+
+            return info.Unit.Location.Distance(from.Location);
+        }
+
+        public static string GetTotemSpellName(WoWTotem totem)
+        {
+            string totemName = string.Empty;
+            switch (totem)
+            {
+                case WoWTotem.None:
+                    break;
+                case WoWTotem.StrengthOfEarth:
+                    totemName = "Strength of Earth Totem";
+                    break;
+                case WoWTotem.Earthbind:
+                    totemName = "Earthbind Totem";
+                    break;
+                case WoWTotem.Stoneskin:
+                    totemName = "Stoneskin Totem";
+                    break;
+                case WoWTotem.Tremor:
+                    totemName = "Tremor Totem";
+                    break;
+                case WoWTotem.EarthElemental:
+                    totemName = "Earth Elemental Totem";
+                    break;
+                case WoWTotem.Stoneclaw:
+                    totemName = "Stoneclaw Totem";
+                    break;
+                case WoWTotem.Searing:
+                    totemName = "Searing Totem";
+                    break;
+                case WoWTotem.Flametongue:
+                    totemName = "Flametongue Totem";
+                    break;
+                case WoWTotem.Magma:
+                    totemName = "Magma Totem";
+                    break;
+                case WoWTotem.FireElemental:
+                    totemName = "Fire Elemental Totem";
+                    break;
+                case WoWTotem.HealingStream:
+                    totemName = "Healing Stream Totem";
+                    break;
+                case WoWTotem.ManaSpring:
+                    totemName = "Mana Spring Totem";
+                    break;
+                case WoWTotem.ElementalResistance:
+                    totemName = "Elemental Resistance Totem";
+                    break;
+                case WoWTotem.TranquilMind:
+                    totemName = "Totem of the Tranquil Mind";
+                    break;
+                case WoWTotem.ManaTide:
+                    totemName = "Mana Tide Totem";
+                    break;
+                case WoWTotem.Windfury:
+                    totemName = "Windfury Totem";
+                    break;
+                case WoWTotem.Grounding:
+                    totemName = "Grounding Totem";
+                    break;
+                case WoWTotem.WrathOfAir:
+                    totemName = "Wrath of Air Totem";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("totem");
+            }
+            return totemName;
+        }
+
+        public static void CallTotem(WoWTotem totem)
+        {
+            string spell = GetTotemSpellName(totem);
+            if (SpellManager.CanCast(spell))
+            {
+                Logger.Write("[TOTEMS] Calling " + spell);
+                SpellManager.Cast(spell);
+            }
+        }
+
         public static void CallTotems()
         {
-            if (SpellManager.CanCast("Call of the Elements"))
+            SetupTotemBar();
+            if (TotemsInRange == 0 && SpellManager.CanCast("Call of the Elements"))
             {
                 Logger.Write("Calling totems!");
                 SpellManager.Cast("Call of the Elements");
+            }
+            else
+            {
+                var fire = GetTotemInfo(WoWTotemType.Fire);
+                if (fire == null || GetTotemRange(fire.WoWTotem) / 2 > fire.Unit.Distance)
+                    CallTotem(GetTotemForSpec(WoWTotemType.Fire));
             }
         }
 
@@ -96,18 +209,18 @@ namespace Singular.ClassSpecific.Shaman
         {
             get
             {
-                return StyxWoW.Me.Totems().Where(t => t.Unit != null).Count(t => t.Unit.Distance < GetTotemRange(t.WoWTotem));
+                return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => t.Unit.Distance < GetTotemRange(t.WoWTotem));
             }
         }
 
         public static int TotemsInRangeOf(WoWUnit unit)
         {
-            return StyxWoW.Me.Totems().Where(t => t.Unit != null).Count(t => unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem));
+            return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem));
         }
 
         public static bool NeedToRecallTotems
         {
-            get { return TotemsInRange == 0 && StyxWoW.Me.Totems().Count(t => t.Unit != null) != 0; }
+            get { return TotemsInRange == 0 && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0; }
         }
 
         /// <summary>Finds the max range of a specific totem, where you'll still receive the buff.</summary>
@@ -313,7 +426,7 @@ namespace Singular.ClassSpecific.Shaman
                 return;
             }
 
-            var totems = StyxWoW.Me.Totems();
+            var totems = StyxWoW.Me.Totems;
             foreach (var t in totems)
             {
                 if (t != null && t.Unit != null)
@@ -338,7 +451,7 @@ namespace Singular.ClassSpecific.Shaman
         /// <returns>The totem information.</returns>
         public static WoWTotemInfo GetTotemInfo(WoWTotemType type)
         {
-            return StyxWoW.Me.Totems().FirstOrDefault(t => t.Type == type);
+            return StyxWoW.Me.Totems.FirstOrDefault(t => t.Type == type);
         }
 
         public static bool CanPlaceTotem(WoWTotem totem)

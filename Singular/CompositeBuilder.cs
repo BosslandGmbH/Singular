@@ -26,9 +26,8 @@ namespace Singular
     {
         public static Composite GetComposite(object createFrom, WoWClass wowClass, TalentSpec spec, BehaviorType behavior, WoWContext context)
         {
-            Random rand = new Random();
             MethodInfo[] methods = createFrom.GetType().GetMethods();
-            var matchedMethods = new Dictionary<int, RandomSelector>();
+            var matchedMethods = new Dictionary<int, PrioritySelector>();
             foreach (MethodInfo mi in
                 methods.Where(
                     mi =>
@@ -96,14 +95,24 @@ namespace Singular
                 {
                     Logger.WriteDebug(string.Format("{0} is a match!", mi.Name));
                     Logger.Write(string.Format("Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority));
-                    var matched = (Composite)mi.Invoke(createFrom, null);
-                    if (matchedMethods.ContainsKey(thePriority))
+                    Composite matched = null;
+                    try
                     {
-                        matchedMethods[thePriority].AddChild(matched);
+                        matched = (Composite) mi.Invoke(createFrom, null);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Write("ERROR Creating composite: " + mi.Name);
+                        Logger.Write(e.StackTrace);
+                        continue;
+                    }
+                    if (!matchedMethods.ContainsKey(thePriority))
+                    {
+                        matchedMethods.Add(thePriority, new PrioritySelector(matched));
                     }
                     else
                     {
-                        matchedMethods.Add(thePriority, new RandomSelector(matched));
+                        matchedMethods[thePriority].AddChild(matched);
                     }
                 }
             }
@@ -112,8 +121,7 @@ namespace Singular
             {
                 return null;
             }
-            // Create 
-            // Return a sorted list of our randomselectors
+            // Return a sorted list of our created composites
             return new PrioritySelector(matchedMethods.OrderByDescending(mm => mm.Key).Select(mm => mm.Value).ToArray());
         }
     }

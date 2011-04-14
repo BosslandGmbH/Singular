@@ -86,6 +86,22 @@ namespace Singular
                 );
         }
 
+        [Class(WoWClass.Priest)]
+        [Spec(TalentSpec.DisciplineHealingPriest)]
+        [Spec(TalentSpec.DisciplinePriest)]
+        [Spec(TalentSpec.HolyPriest)]
+        [Spec(TalentSpec.ShadowPriest)]
+        [Spec(TalentSpec.Lowbie)]
+        [Behavior(BehaviorType.PullBuffs)]
+        [Context(WoWContext.All)]
+        [Priority(999)]
+        public Composite CreateShadowPriestPullBuffs()
+        {
+            return new PrioritySelector(
+                CreateSpellBuffOnSelf("Power Word: Shield", ret => SingularSettings.Instance.Priest.UseShieldPrePull && !HasAuraStacks("Weakened Soul", 0))
+                );
+        }
+
         public bool CanCastFortitudeOn(WoWUnit unit)
         {
             //return !unit.HasAura("Blood Pact") &&

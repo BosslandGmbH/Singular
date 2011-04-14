@@ -152,7 +152,6 @@
     <Compile Include="CompositeBuilder.cs" />
     <Compile Include="Composites\ActionEventFire.cs" />
     <Compile Include="Composites\ActionLogMessage.cs" />
-    <Compile Include="Composites\RandomSelector.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GUI\ConfigurationForm.cs">
       <SubType>Form</SubType>

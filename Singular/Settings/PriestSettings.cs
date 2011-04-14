@@ -36,6 +36,13 @@ namespace Singular.Settings
         public bool DevouringPlageuFirst { get; set; }
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("Shadow")]
+        [DisplayName("Archangel on 5")]
+        [Description("Always archangel on 5 dark evangelism, ignoring mana %")]
+        public bool AlwaysArchangel5 { get; set; }
+
+        [Setting]
         [DefaultValue(20)]
         [Category("Shadow")]
         [DisplayName("Dispersion Mana")]
@@ -73,6 +80,13 @@ namespace Singular.Settings
         #endregion
 
         #region Common
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Shield Pre-Pull")]
+        [Description("Use PW:Shield pre-pull")]
+        public bool UseShieldPrePull { get; set; }
 
         [Setting]
         [DefaultValue(true)]

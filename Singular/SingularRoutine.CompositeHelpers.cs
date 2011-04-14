@@ -76,7 +76,7 @@ namespace Singular
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => Me.IsCasting,
+                    ret => Me.IsCasting && !IsWanding,
                     new PrioritySelector(
                         new Decorator(
                             ret => faceDuring && Me.CurrentTarget != null && !Me.IsSafelyFacing(Me.CurrentTarget, 70),

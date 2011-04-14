@@ -26,12 +26,95 @@ namespace Singular.Settings
         {
         }
 
+        #region Shadow
+
         [Setting]
-        [DefaultValue(30)]
-        [Category("Discipline")]
-        [DisplayName("Penance Health")]
-        [Description("Penance will be used at this value")]
-        public int Penance { get; set; }
+        [DefaultValue(false)]
+        [Category("Shadow")]
+        [DisplayName("Devouring Plague First")]
+        [Description("Casts devouring plague before anything else, useful for farming low hp mobs")]
+        public bool DevouringPlageuFirst { get; set; }
+
+        [Setting]
+        [DefaultValue(20)]
+        [Category("Shadow")]
+        [DisplayName("Dispersion Mana")]
+        [Description("Dispersion will be used when mana percentage is less than this value")]
+        public int DispersionMana { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Shadow")]
+        [DisplayName("Healing Spells Health")]
+        [Description("Won't attempt to use healing spells unless below this health percent")]
+        public int DontHealPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Shadow")]
+        [DisplayName("No Shadowform Below Heal")]
+        [Description("Won't attempt to re-enter shadowform while below healing spells health threshold")]
+        public bool DontShadowFormHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Shadow")]
+        [DisplayName("Psychic Horror Adds")]
+        [Description("Attempt to psychic horror adds")]
+        public bool UsePsychicHorrorAdds { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Shadow")]
+        [DisplayName("Psychic Horror Interrupt")]
+        [Description("Attempt to psychic horror target as interrupt (on top of silence)")]
+        public bool UsePsychicHorrorInterrupt { get; set; }
+
+        #endregion
+
+        #region Common
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Shadow Protection")]
+        [Description("Use Shadow Protection buff")]
+        public bool UseShadowProtection { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Psychic Scream")]
+        [Description("Use Psychic Scream")]
+        public bool UsePsychicScream { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Common")]
+        [DisplayName("Use Psychic Scream Count")]
+        [Description("Uses Psychic Scream when there's >= these number of adds (not including current target)")]
+        public int PsychicScreamAddCount { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Fear Ward")]
+        [Description("Use Fear Ward buff")]
+        public bool UseFearWard { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Inner Fire")]
+        [Description("Use Inner Fire, otherwise uses Inner Will")]
+        public bool UseInnerFire { get; set; }
+
+        [Setting]
+        [DefaultValue(75)]
+        [Category("Common")]
+        [DisplayName("Archangel Mana")]
+        [Description("Archangel will be used at this value")]
+        public int ArchangelMana { get; set; }
 
         [Setting]
         [DefaultValue(50)]
@@ -39,6 +122,31 @@ namespace Singular.Settings
         [DisplayName("Shadowfiend Mana")]
         [Description("Shadowfiend will be used at this value")]
         public int ShadowfiendMana { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Common")]
+        [DisplayName("Hymn of Hope Mana")]
+        [Description("Hymn of Hope will be used at this value")]
+        public int HymnofHopeMana { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Wand")]
+        [Description("Uses wand if we're oom")]
+        public bool UseWand { get; set; }
+
+        #endregion
+
+        #region Discipline
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Discipline")]
+        [DisplayName("Penance Health")]
+        [Description("Penance will be used at this value")]
+        public int Penance { get; set; }
 
         [Setting]
         [DefaultValue(40)]
@@ -109,5 +217,8 @@ namespace Singular.Settings
         [DisplayName("Dps Mana")]
         [Description("Dps while mana is above this value (Used while in a party)")]
         public int DpsMana { get; set; }
+
+        #endregion
+
     }
 }

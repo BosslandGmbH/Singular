@@ -35,7 +35,7 @@ namespace Singular
                 new Decorator(
                     ret =>
                     SingularSettings.Instance.UseAlchemyFlaskOfEnhancement && Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 &&
-                    !Me.HasAura("Enhanced Agility") && !Me.HasAura("Enhanced Intellect") && !Me.HasAura("Enhanced Strength"),
+                    !Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")), // don't try to use the flask if we already have or if we're using a better one
                     new PrioritySelector(
                         ctx => Me.CarriedItems.FirstOrDefault(i => i.Entry == 58149) ?? Me.CarriedItems.FirstOrDefault(i => i.Entry == 47499),
                         // Flask of Enhancement / Flask of the North

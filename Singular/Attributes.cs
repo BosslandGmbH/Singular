@@ -39,6 +39,17 @@ namespace Singular
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    internal sealed class PriorityAttribute : Attribute
+    {
+        public PriorityAttribute(int thePriority)
+        {
+            PriorityLevel = thePriority;
+        }
+
+        public int PriorityLevel { get; private set; }
+    }
+
+    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     internal sealed class ClassAttribute : Attribute
     {
         public ClassAttribute(WoWClass specificClass)

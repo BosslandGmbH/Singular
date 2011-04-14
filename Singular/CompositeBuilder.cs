@@ -11,6 +11,8 @@
 
 #endregion
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -24,8 +26,9 @@ namespace Singular
     {
         public static Composite GetComposite(object createFrom, WoWClass wowClass, TalentSpec spec, BehaviorType behavior, WoWContext context)
         {
+            Random rand = new Random();
             MethodInfo[] methods = createFrom.GetType().GetMethods();
-            MethodInfo bestMatch = null;
+            var matchedMethods = new Dictionary<int, RandomSelector>();
             foreach (MethodInfo mi in
                 methods.Where(
                     mi =>
@@ -38,6 +41,7 @@ namespace Singular
             {
                 //Logger.WriteDebug("[CompositeBuilder] Checking attributes on " + mi.Name);
                 bool classMatches = false, specMatches = false, behaviorMatches = false, contextMatches = false;
+                int thePriority = 0;
                 foreach (object ca in mi.GetCustomAttributes(false))
                 {
                     if (ca is ClassAttribute)
@@ -80,22 +84,37 @@ namespace Singular
                         //Logger.WriteDebug(mi.Name + " has my context");
                         contextMatches = true;
                     }
+                    else if (ca is PriorityAttribute)
+                    {
+                        var attrib = ca as PriorityAttribute;
+                        thePriority = attrib.PriorityLevel;
+                    }
                 }
 
                 // If all our attributes match, then mark it as wanted!
                 if (classMatches && specMatches && behaviorMatches && contextMatches)
                 {
                     Logger.WriteDebug(string.Format("{0} is a match!", mi.Name));
-                    Logger.Write(string.Format("Using {0} for {1} {2}", mi.Name, spec.ToString().CamelToSpaced(), behavior));
-                    bestMatch = mi;
+                    Logger.Write(string.Format("Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority));
+                    var matched = (Composite)mi.Invoke(createFrom, null);
+                    if (matchedMethods.ContainsKey(thePriority))
+                    {
+                        matchedMethods[thePriority].AddChild(matched);
+                    }
+                    else
+                    {
+                        matchedMethods.Add(thePriority, new RandomSelector(matched));
+                    }
                 }
             }
-            if (bestMatch == null)
+            // If we found no methods, rofls!
+            if (matchedMethods.Count <= 0)
             {
                 return null;
             }
-
-            return (Composite)bestMatch.Invoke(createFrom, null);
+            // Create 
+            // Return a sorted list of our randomselectors
+            return new PrioritySelector(matchedMethods.OrderByDescending(mm => mm.Key).Select(mm => mm.Value).ToArray());
         }
     }
 }

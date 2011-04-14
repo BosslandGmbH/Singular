@@ -29,6 +29,20 @@ namespace Singular.Settings
         #region Shadow
 
         [Setting]
+        [DefaultValue(15)]
+        [Category("Shadow")]
+        [DisplayName("Mind Blast Timer")]
+        [Description("Casts mind blast anyway after this many seconds if we haven't got 3 shadow orbs")]
+        public int MindBlastTimer { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Shadow")]
+        [DisplayName("Mind Blast Orbs")]
+        [Description("Casts mind blast once we get (at least) this many shadow orbs")]
+        public int MindBlastOrbs { get; set; }
+
+        [Setting]
         [DefaultValue(false)]
         [Category("Shadow")]
         [DisplayName("Devouring Plague First")]

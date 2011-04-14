@@ -82,7 +82,7 @@ namespace Singular
                 CreateSpellBuff("Shadow Word: Pain"),
 
                 // blast for shadow orbs or timer
-                new Decorator(ret => ((HasAuraStacks("Shadow Orb", 3) && !HasAuraStacks("Empowered Shadow", 0)) || _lastMindBlast + TimeSpan.FromSeconds(15) < DateTime.Now),
+                new Decorator(ret => ((HasAuraStacks("Shadow Orb", SingularSettings.Instance.Priest.MindBlastOrbs) && !HasAuraStacks("Empowered Shadow", 0)) || _lastMindBlast + TimeSpan.FromSeconds(SingularSettings.Instance.Priest.MindBlastTimer) < DateTime.Now),
                     new Sequence(
                         new Action(ret => _lastMindBlast = DateTime.Now),
                         CreateSpellCast("Mind Blast"))),

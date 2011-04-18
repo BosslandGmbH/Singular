@@ -89,7 +89,9 @@ namespace Singular
                                          !Me.CurrentTarget.HasAura("Hand of Freedom"))),
                 // slow runners
                 new Decorator(
-                    ret => Me.CurrentTarget.IsPlayerBehind || Me.CurrentTarget.Mounted,
+                    ret => (Me.CurrentTarget.IsPlayerBehind && 
+                            Me.CurrentTarget.IsHumanoid) || 
+                            Me.CurrentTarget.Mounted,
                         new PrioritySelector(
                             CreateSpellCast("Hamstring", ret => !Me.CurrentTarget.IsPlayer &&
                                                                 !Me.CurrentTarget.HasAura("Hamstring")))),

@@ -9,6 +9,7 @@
 #endregion
 
 using Styx.Combat.CombatRoutine;
+using Styx.Logic.Combat;
 
 using TreeSharp;
 
@@ -55,14 +56,16 @@ namespace Singular
         public Composite CreateMarksmanshipPull()
 		{
             WantedPet = "1";
-            return new PrioritySelector(
-                CreateEnsureTarget(),
-                CreateWaitForCast(true),
-                CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
-                CreateSpellBuff("Hunter's Mark"),
-				CreateSpellCast("Aimed Shot"),
-		        CreateAutoAttack(true)
-                );
-        }			
+		    return new PrioritySelector(
+		        CreateEnsureTarget(),
+		        CreateWaitForCast(true),
+		        CreateMoveToAndFace(35f, ret => Me.CurrentTarget),
+		        CreateSpellBuff("Hunter's Mark"),
+		        new Decorator(
+		            ret => !SpellManager.CanCast("Aimed Shot"),
+		            CreateAutoAttack(true)),
+		        CreateSpellCast("Aimed Shot")
+		        );
+		}			
     }
 }

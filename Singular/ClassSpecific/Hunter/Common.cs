@@ -16,6 +16,8 @@ using System.Linq;
 
 using CommonBehaviors.Actions;
 
+using Singular.Settings;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
@@ -73,7 +75,7 @@ namespace Singular
         {
             return
                 new Decorator(
-                    ret => Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach <= 8 && Me.CurrentTarget.IsAlive &&
+                    ret =>!SingularSettings.Instance.DisableAllMovement&& Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach <= 8 && Me.CurrentTarget.IsAlive &&
                            (Me.CurrentTarget.CurrentTarget == null || Me.CurrentTarget.CurrentTarget != Me),
                     new Action(
                         ret =>

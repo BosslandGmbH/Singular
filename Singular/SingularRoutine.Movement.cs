@@ -35,17 +35,15 @@ namespace Singular
         protected Composite CreateMoveToAndFace(float maxRange, float coneDegrees, UnitSelectionDelegate unit, bool noMovement)
         {
             return new Decorator(
-                ret => unit(ret) != null,
+                ret =>!SingularSettings.Instance.DisableAllMovement&& unit(ret) != null,
                 new PrioritySelector(
                     new Decorator(
-                        ret =>
-                        !SingularSettings.Instance.DisableAllMovement &&
-                        (!unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).DistanceSqr > maxRange * maxRange)),
+                        ret =>(!unit(ret).InLineOfSightOCD || (!noMovement && unit(ret).DistanceSqr > maxRange * maxRange)),
                         new Action(ret => Navigator.MoveTo(unit(ret).Location))),
                     //Returning failure for movestop for smoother movement
                     //Rest should return success !
                     new Decorator(
-                        ret => !SingularSettings.Instance.DisableAllMovement && Me.IsMoving && unit(ret).DistanceSqr <= maxRange * maxRange,
+                        ret =>Me.IsMoving && unit(ret).DistanceSqr <= maxRange * maxRange,
                         new Action(delegate
                             {
                                 Navigator.PlayerMover.MoveStop();

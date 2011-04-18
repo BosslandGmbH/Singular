@@ -52,7 +52,7 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Movement")]
         [DisplayName("Disable Movement")]
-        [Description("Disable all movement within the CC. This will NOT stop it from facing units, charging, etc. Only moving towards units will be disabled.")]
+        [Description("Disable all movement within the CC. This will NOT stop it from charging, blinking, etc. Only moving towards units, and facing will be disabled.")]
         public bool DisableAllMovement { get; set; }
 
         #endregion

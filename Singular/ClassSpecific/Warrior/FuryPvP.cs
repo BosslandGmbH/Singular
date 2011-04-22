@@ -63,13 +63,17 @@ namespace Singular
                 // ranged slow
                 CreateSpellCast(
                     "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
-                                            !TargetState.Slowed && 
+                                            (!Me.CurrentTarget.HasAura("Hamstring") ||
+                                            !Me.CurrentTarget.HasAura("Piercing Howl")) &&
+                                            !TargetState.Slowed &&
                                             !TargetState.Invulnerable),
                 //Make sure were attacking
                 CreateAutoAttack(true),
                 // Mele slow
                 CreateSpellCast(
-                    "Hamstring", ret => !TargetState.Slowed &&
+                    "Hamstring", ret => (!Me.CurrentTarget.HasAura("Hamstring") ||
+                                        !Me.CurrentTarget.HasAura("Piercing Howl")) &&
+                                        !TargetState.Slowed &&
                                         !TargetState.Invulnerable),
                                                                                             
                 //Mele Heal

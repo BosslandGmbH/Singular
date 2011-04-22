@@ -71,6 +71,8 @@ namespace Singular
                 // ranged slow
                 CreateSpellCast(
                     "Piercing Howl", ret => Me.CurrentTarget.Distance < 10 &&
+                                            (!Me.CurrentTarget.HasAura("Hamstring") ||
+                                            !Me.CurrentTarget.HasAura("Piercing Howl")) &&
                                             !TargetState.Slowed && 
                                             !TargetState.Invulnerable),
                 //Make sure were attacking
@@ -81,7 +83,9 @@ namespace Singular
                                                          !TargetState.Incapacitated)),
                 // Mele slow
                 CreateSpellCast(
-                    "Hamstring", ret => !TargetState.Slowed &&
+                    "Hamstring", ret => (!Me.CurrentTarget.HasAura("Hamstring") ||
+                                        !Me.CurrentTarget.HasAura("Piercing Howl")) && 
+                                        !TargetState.Slowed &&
                                         !TargetState.Invulnerable),
                 //Mele Heal
                 CreateSpellCast("Victory Rush", ret => Me.HealthPercent < 80),

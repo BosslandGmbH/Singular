@@ -32,7 +32,7 @@ namespace Singular
 
         public string Event { get { return Args[1].ToString(); } }
 
-        public ulong SourceGuid { get { return ulong.Parse(Args[2].ToString().Replace("0x", ""), NumberStyles.HexNumber); } }
+        public ulong SourceGuid { get { return ulong.Parse(Args[3].ToString().Replace("0x", ""), NumberStyles.HexNumber); } }
 
         public WoWUnit SourceUnit
         {
@@ -44,11 +44,11 @@ namespace Singular
             }
         }
 
-        public string SourceName { get { return Args[3].ToString(); } }
+        public string SourceName { get { return Args[4].ToString(); } }
 
-        public int SourceFlags { get { return (int)(double)Args[4]; } }
+        public int SourceFlags { get { return (int)(double)Args[5]; } }
 
-        public ulong DestGuid { get { return ulong.Parse(Args[5].ToString().Replace("0x", ""), NumberStyles.HexNumber); } }
+        public ulong DestGuid { get { return ulong.Parse(Args[6].ToString().Replace("0x", ""), NumberStyles.HexNumber); } }
 
         public WoWUnit DestUnit
         {
@@ -60,17 +60,17 @@ namespace Singular
             }
         }
 
-        public string DestName { get { return Args[6].ToString(); } }
+        public string DestName { get { return Args[7].ToString(); } }
 
-        public int DestFlags { get { return (int)(double)Args[7]; } }
+        public int DestFlags { get { return (int)(double)Args[8]; } }
 
-        public int SpellId { get { return (int)(double)Args[8]; } }
+        public int SpellId { get { return (int)(double)Args[9]; } }
 
         public WoWSpell Spell { get { return WoWSpell.FromId(SpellId); } }
 
-        public string SpellName { get { return Args[9].ToString(); } }
+        public string SpellName { get { return Args[10].ToString(); } }
 
-        public WoWSpellSchool SpellSchool { get { return (WoWSpellSchool)(int)(double)Args[10]; } }
+        public WoWSpellSchool SpellSchool { get { return (WoWSpellSchool)(int)(double)Args[11]; } }
 
         public object[] SuffixParams
         {

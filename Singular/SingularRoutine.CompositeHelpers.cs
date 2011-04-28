@@ -569,7 +569,7 @@ namespace Singular
         public bool CanCast(string spellName, WoWUnit onUnit, bool checkMoving)
         {
             // Do we have spell?
-            if (!SpellManager.HasSpell(spellName))
+            if (!SpellManager.Spells.ContainsKey(spellName))
             {
                 return false;
             }

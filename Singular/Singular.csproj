@@ -99,58 +99,8 @@
     <Compile Include="Attributes.cs" />
     <Compile Include="BossList.cs" />
     <Compile Include="CataHeroicDpsList.cs" />
-    <Compile Include="ClassSpecific\DeathKnight\Blood.cs" />
-    <Compile Include="ClassSpecific\DeathKnight\Frost.cs" />
-    <Compile Include="ClassSpecific\DeathKnight\Lowbie.cs" />
-    <Compile Include="ClassSpecific\DeathKnight\Common.cs" />
-    <Compile Include="ClassSpecific\DeathKnight\Unholy.cs" />
-    <Compile Include="ClassSpecific\Druid\Balance.cs" />
-    <Compile Include="ClassSpecific\Druid\BearTank.cs" />
-    <Compile Include="ClassSpecific\Druid\Common.cs" />
-    <Compile Include="ClassSpecific\Druid\Feral.cs" />
-    <Compile Include="ClassSpecific\Druid\Lowbie.cs" />
-    <Compile Include="ClassSpecific\Druid\Resto.cs" />
-    <Compile Include="ClassSpecific\Hunter\BeastMaster.cs" />
-    <Compile Include="ClassSpecific\Hunter\Marks.cs" />
-    <Compile Include="ClassSpecific\Hunter\Common.cs" />
-    <Compile Include="ClassSpecific\Hunter\Lowbie.cs" />
-    <Compile Include="ClassSpecific\Mage\Arcane.cs" />
-    <Compile Include="ClassSpecific\Mage\Common.cs" />
-    <Compile Include="ClassSpecific\Mage\Fire.cs" />
-    <Compile Include="ClassSpecific\Mage\FirePvP.cs" />
-    <Compile Include="ClassSpecific\Mage\Frost.cs" />
-    <Compile Include="ClassSpecific\Mage\Lowbie.cs" />
-    <Compile Include="ClassSpecific\Paladin\Common.cs" />
-    <Compile Include="ClassSpecific\Paladin\Holy.cs" />
-    <Compile Include="ClassSpecific\Paladin\Lowbie.cs" />
-    <Compile Include="ClassSpecific\Paladin\Protection.cs" />
-    <Compile Include="ClassSpecific\Paladin\Retribution.cs" />
-    <Compile Include="ClassSpecific\Paladin\RetributionPvP.cs" />
-    <Compile Include="ClassSpecific\Priest\Common.cs" />
-    <Compile Include="ClassSpecific\Priest\Discipline.cs" />
-    <Compile Include="ClassSpecific\Priest\Lowbie.cs" />
-    <Compile Include="ClassSpecific\Priest\Shadow.cs" />
-    <Compile Include="ClassSpecific\Rogue\Combat.cs" />
-    <Compile Include="ClassSpecific\Rogue\Common.cs" />
-    <Compile Include="ClassSpecific\Rogue\Lowbie.cs" />
-    <Compile Include="ClassSpecific\Rogue\Poisons.cs" />
-    <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
-    <Compile Include="ClassSpecific\Shaman\Restoration.cs" />
-    <Compile Include="ClassSpecific\Shaman\Shaman.cs" />
-    <Compile Include="ClassSpecific\Shaman\TotemManager.cs" />
-    <Compile Include="ClassSpecific\Warlock\Affliction.cs" />
-    <Compile Include="ClassSpecific\Warlock\Common.cs" />
-    <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
-    <Compile Include="ClassSpecific\Warlock\Lowbie.cs" />
-    <Compile Include="ClassSpecific\Warrior\Arms.cs" />
-    <Compile Include="ClassSpecific\Warrior\ArmsPvP.cs" />
-    <Compile Include="ClassSpecific\Warrior\FuryPvP.cs" />
-    <Compile Include="ClassSpecific\Warrior\Fury.cs" />
-    <Compile Include="ClassSpecific\Warrior\Lowbie.cs" />
-    <Compile Include="ClassSpecific\Warrior\Protection.cs" />
     <Compile Include="CombatLog.cs" />
     <Compile Include="CompositeBuilder.cs" />
-    <Compile Include="Composites\ActionEventFire.cs" />
     <Compile Include="Composites\ActionLogMessage.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GUI\ConfigurationForm.cs">
@@ -161,7 +111,6 @@
     </Compile>
     <Compile Include="HealTargeting.cs" />
     <Compile Include="Logger.cs" />
-    <Compile Include="Logout.cs" />
     <Compile Include="Miscellaneous.cs" />
     <Compile Include="PetManager.cs" />
     <Compile Include="Settings\DeathKnightSettings.cs" />
@@ -175,24 +124,13 @@
     <Compile Include="Settings\SingularSettings.cs" />
     <Compile Include="Settings\WarlockSettings.cs" />
     <Compile Include="Settings\WarriorSettings.cs" />
-    <Compile Include="SingularRoutine.ItemComposites.cs" />
-    <Compile Include="SingularRoutine.Movement.cs" />
-    <Compile Include="SingularRoutine.CompositeHelpers.cs" />
     <Compile Include="SingularRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SingularRoutine.PVPHelpers.cs" />
     <Compile Include="TalentManager.cs" />
     <Compile Include="TankTargeting.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SingularRoutine.EventHandlers.cs" />
-    <Compile Include="SingularRoutine.Rest.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="CONTRIBUTORS.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="ClassSpecific\Hunter\Survival.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="GUI\ConfigurationForm.resx">

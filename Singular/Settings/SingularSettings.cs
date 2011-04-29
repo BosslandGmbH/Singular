@@ -52,7 +52,9 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Movement")]
         [DisplayName("Disable Movement")]
-        [Description("Disable all movement within the CC. This will NOT stop it from charging, blinking, etc. Only moving towards units, and facing will be disabled.")]
+        [Description(
+            "Disable all movement within the CC. This will NOT stop it from charging, blinking, etc. Only moving towards units, and facing will be disabled."
+            )]
         public bool DisableAllMovement { get; set; }
 
         #endregion
@@ -134,19 +136,6 @@ namespace Singular.Settings
         [Description(
             "The percent of health, or mana, to use this trinket at. Only taken into account when Second Trinket Usage is 'LowHealth' or 'LowPower'")]
         public int SecondTrinketUseAtPercent { get; set; }
-
-        [Setting]
-        [DefaultValue(PvPTrinketSlot.None)]
-        [Category("PVP")]
-        [DisplayName("PVP Trinket slot")]
-        public PvPTrinketSlot PvPTrinketSlot { get; set; }
-
-        [Setting]
-        [DefaultValue(PvPTrinketSlot.None)]
-        [Category("PVP")]
-        [DisplayName("PVP Damage Trinket slot")]
-        [Description("Defines slot with trinket that greatly increase damage, will be used in sequence with such CD abilitites like Paladin's Avenging Wrath")]
-        public PvPTrinketSlot PvPDamageTrinketSlot { get; set; }
 
         #endregion
 

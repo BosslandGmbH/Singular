@@ -17,7 +17,6 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-using Singular.ClassSpecific.Shaman;
 using Singular.Settings;
 
 using Styx;
@@ -123,7 +122,6 @@ namespace Singular.GUI
         {
             ObjectManager.Update();
             //TotemManager.RecallTotems();
-            Logger.Write(TotemManager.TotemsInRange + " totems in range.");
         }
     }
 }

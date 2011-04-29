@@ -17,7 +17,7 @@ using Styx.Combat.CombatRoutine;
 
 namespace Singular
 {
-    public partial class SingularRoutine : CombatRoutine
+    public class BossList
     {
         #region Boss Entries
 

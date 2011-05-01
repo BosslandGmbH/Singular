@@ -32,6 +32,9 @@ namespace Singular
 
         public string Event { get { return Args[1].ToString(); } }
 
+        // Is this a string? bool? what? What the hell is it even used for?
+        public string HideCaster { get { return Args[2].ToString(); } }
+
         public ulong SourceGuid { get { return ulong.Parse(Args[3].ToString().Replace("0x", ""), NumberStyles.HexNumber); } }
 
         public WoWUnit SourceUnit
@@ -77,7 +80,7 @@ namespace Singular
             get
             {
                 var args = new List<object>();
-                for (int i = 10; i < Args.Length; i++)
+                for (int i = 11; i < Args.Length; i++)
                 {
                     if (Args[i] != null)
                     {

@@ -35,19 +35,19 @@ namespace Singular
      *
      */
 
-    internal class HealTargeting : Targeting
+    internal class HealerManager : Targeting
     {
         private static readonly WaitTimer _tankReset = WaitTimer.ThirtySeconds;
 
         private static ulong _tankGuid;
 
-        static HealTargeting()
+        static HealerManager()
         {
             // Make sure we have a singleton instance!
-            Instance = new HealTargeting();
+            Instance = new HealerManager();
         }
 
-        public new static HealTargeting Instance { get; private set; }
+        public new static HealerManager Instance { get; private set; }
 
         public List<WoWPlayer> HealList { get { return ObjectList.ConvertAll(o => o.ToPlayer()); } }
 

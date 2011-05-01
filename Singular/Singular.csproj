@@ -97,6 +97,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Dynamics\Attributes.cs" />
+    <Compile Include="Dynamics\SessionState.cs" />
+    <Compile Include="Movement.cs" />
     <Compile Include="Utilities\BossList.cs" />
     <Compile Include="Utilities\CataHeroicDpsList.cs" />
     <Compile Include="CombatLog.cs" />
@@ -109,7 +111,7 @@
     <Compile Include="GUI\ConfigurationForm.Designer.cs">
       <DependentUpon>ConfigurationForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Managers\HealTargeting.cs" />
+    <Compile Include="Managers\HealerManager.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Miscellaneous.cs" />
     <Compile Include="Managers\PetManager.cs" />
@@ -127,7 +129,7 @@
     <Compile Include="SingularRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Managers\TalentManager.cs" />
-    <Compile Include="Managers\TankTargeting.cs" />
+    <Compile Include="Managers\TankManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="CONTRIBUTORS.txt" />

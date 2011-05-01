@@ -32,15 +32,15 @@ namespace Singular
      *
      */
 
-    internal class TankTargeting : Targeting
+    internal class TankManager : Targeting
     {
-        static TankTargeting()
+        static TankManager()
         {
-            Instance = new TankTargeting();
+            Instance = new TankManager();
             Instance.NeedToTaunt = new List<WoWUnit>();
         }
 
-        public new static TankTargeting Instance { get; set; }
+        public new static TankManager Instance { get; set; }
         public List<WoWUnit> NeedToTaunt { get; private set; }
 
         protected override List<WoWObject> GetInitialObjectList()

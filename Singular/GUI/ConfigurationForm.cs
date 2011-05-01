@@ -91,7 +91,7 @@ namespace Singular.GUI
             }
 
             var sb = new StringBuilder();
-            foreach (WoWPlayer u in HealTargeting.Instance.HealList)
+            foreach (WoWPlayer u in HealerManager.Instance.HealList)
             {
                 sb.AppendLine(u.Name + " - " + u.HealthPercent);
             }
@@ -111,7 +111,7 @@ namespace Singular.GUI
         private void timer1_Tick(object sender, EventArgs e)
         {
             var sb = new StringBuilder();
-            foreach (WoWPlayer u in HealTargeting.Instance.HealList.ToArray())
+            foreach (WoWPlayer u in HealerManager.Instance.HealList.ToArray())
             {
                 sb.AppendLine(u.Name + " - " + u.HealthPercent);
             }

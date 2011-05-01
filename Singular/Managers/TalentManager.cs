@@ -76,7 +76,7 @@ namespace Singular
         ProtectionWarrior = ((int)WoWClass.Warrior << 8) + 2,
     }
 
-    internal class TalentManager
+    internal static class TalentManager
     {
         public const int TALENT_FLAG_ISEXTRASPEC = 0x10000;
 

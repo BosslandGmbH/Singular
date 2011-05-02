@@ -11,6 +11,8 @@
 
 #endregion
 
+using System.Linq;
+
 using Styx;
 using Styx.Logic.Combat;
 using Styx.WoWInternals.WoWObjects;
@@ -164,6 +166,140 @@ namespace Singular
                             SpellManager.Cast(spellId);
                         })
                 );
+        }
+
+        #endregion
+
+        #region Buff - by name
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name on current target. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name="name">The name of the buff</param>
+        /// <returns></returns>
+        public static Composite Buff(string name)
+        {
+            return Buff(name, ret => true);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name, with special requirements, on current target. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name="name">The name of the buff</param>
+        /// <param name="requirements">The requirements.</param>
+        /// <returns></returns>
+        public static Composite Buff(string name, SimpleBooleanDelegate requirements)
+        {
+            return Buff(name, ret => StyxWoW.Me.CurrentTarget, requirements);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name on a specific unit. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name="name">The name of the buff</param>
+        /// <param name="onUnit">The on unit</param>
+        /// <returns></returns>
+        public static Composite Buff(string name, UnitSelectionDelegate onUnit)
+        {
+            return Buff(name, onUnit, ret => true);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name, with special requirements, on a specific unit. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name="name">The name of the buff</param>
+        /// <param name="onUnit">The on unit</param>
+        /// <param name="requirements">The requirements.</param>
+        /// <returns></returns>
+        public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return 
+                new Decorator(
+                    ret => onUnit(ret) != null && !onUnit(ret).HasAura(name),
+                    Cast(name, onUnit, requirements));
+        }
+
+        #endregion
+
+        #region Buff - by ID
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name on current target. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name="spellId">The ID of the buff</param>
+        /// <returns></returns>
+        public static Composite Buff(int spellId)
+        {
+            return Buff(spellId, ret => true);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name, with special requirements, on current target. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name="spellId">The ID of the buff</param>
+        /// <param name="requirements">The requirements.</param>
+        /// <returns></returns>
+        public static Composite Buff(int spellId, SimpleBooleanDelegate requirements)
+        {
+            return Buff(spellId, ret => StyxWoW.Me.CurrentTarget, requirements);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name on a specific unit. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name="spellId">The ID of the buff</param>
+        /// <param name="onUnit">The on unit</param>
+        /// <returns></returns>
+        public static Composite Buff(int spellId, UnitSelectionDelegate onUnit)
+        {
+            return Buff(spellId, onUnit, ret => true);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name, with special requirements, on a specific unit. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name="spellId">The ID of the buff</param>
+        /// <param name="onUnit">The on unit</param>
+        /// <param name="requirements">The requirements.</param>
+        /// <returns></returns>
+        public static Composite Buff(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return
+                new Decorator(
+                    ret => onUnit(ret) != null && !onUnit(ret).Auras.Values.Any(a => a.SpellId == spellId),
+                    Cast(spellId, onUnit, requirements));
         }
 
         #endregion

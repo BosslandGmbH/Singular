@@ -23,7 +23,7 @@ using Styx.Logic;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
-namespace Singular
+namespace Singular.Managers
 {
     /*
      * Targeting works like so, in order of being called

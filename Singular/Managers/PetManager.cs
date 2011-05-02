@@ -11,7 +11,6 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -23,7 +22,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWCache;
 using Styx.WoWInternals.WoWObjects;
 
-namespace Singular
+namespace Singular.Managers
 {
     public enum PetType
     {

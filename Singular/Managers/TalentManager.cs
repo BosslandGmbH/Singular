@@ -20,7 +20,7 @@ using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
 using Styx.WoWInternals;
 
-namespace Singular
+namespace Singular.Managers
 {
     public enum TalentSpec
     {

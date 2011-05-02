@@ -16,13 +16,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+using Singular.Managers;
+
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
 
-namespace Singular
+namespace Singular.Dynamics
 {
-    public class CompositeBuilder
+    public static class CompositeBuilder
     {
         public static Composite GetComposite(object createFrom, WoWClass wowClass, TalentSpec spec, BehaviorType behavior, WoWContext context)
         {

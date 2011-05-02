@@ -17,6 +17,7 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
+using Singular.Managers;
 using Singular.Settings;
 
 using Styx;

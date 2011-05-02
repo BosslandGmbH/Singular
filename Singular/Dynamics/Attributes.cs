@@ -13,9 +13,11 @@
 
 using System;
 
+using Singular.Managers;
+
 using Styx.Combat.CombatRoutine;
 
-namespace Singular
+namespace Singular.Dynamics
 {
     [Flags]
     public enum WoWContext

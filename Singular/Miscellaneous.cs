@@ -21,6 +21,7 @@ using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
+    /*
     public enum TrinketUsage
     {
         Never,
@@ -132,5 +133,5 @@ namespace Singular
                     orderby i.ItemInfo.Level descending
                     select i).FirstOrDefault();
         }
-    }
+    }*/
 }

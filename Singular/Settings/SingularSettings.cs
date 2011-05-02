@@ -32,14 +32,22 @@ namespace Singular.Settings
 
         public static SingularSettings Instance { get { return _instance ?? (_instance = new SingularSettings()); } }
 
-        #region Misc
-
         [Setting]
         [Styx.Helpers.DefaultValue(false)]
         [Category("Misc")]
         [DisplayName("Debug Logging")]
         [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
         public bool EnableDebugLogging { get; set; }
+
+        [Setting]
+        [DefaultValue(95)]
+        [Category("Healing")]
+        [DisplayName("Ignore Targets Health")]
+        [Description("Ignore healing targets when their health is above this value.")]
+        public int IgnoreHealTargetsAboveHealth { get; set; }
+
+        /*
+        #region Misc
 
         [Setting]
         [DefaultValue(true)]
@@ -86,13 +94,6 @@ namespace Singular.Settings
 
         #region Targeting
 
-        [Setting]
-        [DefaultValue(95)]
-        [Category("Healing")]
-        [DisplayName("Ignore Targets Health")]
-        [Description("Ignore healing targets when their health is above this value.")]
-        public int IgnoreHealTargetsAboveHealth { get; set; }
-
         #endregion
 
         #region Trinkets
@@ -138,6 +139,8 @@ namespace Singular.Settings
         public int SecondTrinketUseAtPercent { get; set; }
 
         #endregion
+        
+        */
 
         #region Class Late-Loading Wrappers
 

@@ -25,7 +25,7 @@ namespace Singular
         /// <remarks>Created 3/26/2011.</remarks>
         /// <param name="performanceCounter">The performanceCounter to act on.</param>
         /// <returns>.</returns>
-        public static DateTime PerformanceCounterToDateTime(this ulong performanceCounter)
+        /*public static DateTime PerformanceCounterToDateTime(this ulong performanceCounter)
         {
             return DateTime.Now.Subtract(TimeSpan.FromMilliseconds(Environment.TickCount)).AddMilliseconds(performanceCounter);
         }
@@ -33,7 +33,7 @@ namespace Singular
         public static bool Between(this double distance, double min, double max)
         {
             return distance >= min && distance <= max;
-        }
+        }*/
 
         /// <summary>
         ///   A string extension method that turns a Camel-case string into a spaced string. (Example: SomeCamelString -> Some Camel String)
@@ -82,11 +82,6 @@ namespace Singular
             }
 
             return name;
-        }
-
-        public static bool IsPet(this WoWUnit unit)
-        {
-            return unit.SummonedByUnitGuid != 0 || unit.CharmedByUnitGuid != 0;
         }
     }
 }

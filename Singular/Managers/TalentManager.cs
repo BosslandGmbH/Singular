@@ -26,6 +26,8 @@ namespace Singular.Managers
     {
         // Just a 'spec' for low levels
         Lowbie = 0,
+        // A value representing any spec
+        Any = int.MaxValue,
         // Here's how this works
         // In the 2nd byte we store the class for the spec
         // Low byte stores the index of the spec. (0-2 for a total of 3)

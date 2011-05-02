@@ -26,12 +26,22 @@ namespace Singular.Dynamics
 {
     public static class CompositeBuilder
     {
-        public static Composite GetComposite(object createFrom, WoWClass wowClass, TalentSpec spec, BehaviorType behavior, WoWContext context)
+        private static List<MethodInfo> _methods = new List<MethodInfo>();
+
+        public static Composite GetComposite(WoWClass wowClass, TalentSpec spec, BehaviorType behavior, WoWContext context)
         {
-            MethodInfo[] methods = createFrom.GetType().GetMethods();
+            if (_methods.Count <= 0)
+            {
+                Logger.Write("Building method list");
+                foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
+                {
+                    _methods.AddRange(type.GetMethods(BindingFlags.Static | BindingFlags.Public));
+                }
+                Logger.Write("Added " + _methods.Count + " methods");
+            }
             var matchedMethods = new Dictionary<int, PrioritySelector>();
             foreach (MethodInfo mi in
-                methods.Where(
+                _methods.Where(
                     mi =>
                     !mi.IsGenericMethod &&
                     mi.GetParameters().Length == 0)
@@ -48,7 +58,7 @@ namespace Singular.Dynamics
                     if (ca is ClassAttribute)
                     {
                         var attrib = ca as ClassAttribute;
-                        if (attrib.SpecificClass != wowClass)
+                        if (attrib.SpecificClass != WoWClass.None && attrib.SpecificClass != wowClass)
                         {
                             continue;
                         }
@@ -58,7 +68,7 @@ namespace Singular.Dynamics
                     else if (ca is SpecAttribute)
                     {
                         var attrib = ca as SpecAttribute;
-                        if (attrib.SpecificSpec != spec)
+                        if (attrib.SpecificSpec != TalentSpec.Any && attrib.SpecificSpec != spec)
                         {
                             continue;
                         }
@@ -100,7 +110,7 @@ namespace Singular.Dynamics
                     Composite matched = null;
                     try
                     {
-                        matched = (Composite) mi.Invoke(createFrom, null);
+                        matched = (Composite) mi.Invoke(null, null);
                     }
                     catch (Exception e)
                     {

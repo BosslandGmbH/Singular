@@ -99,6 +99,7 @@
     <Compile Include="Dynamics\Attributes.cs" />
     <Compile Include="Dynamics\SessionState.cs" />
     <Compile Include="Movement.cs" />
+    <Compile Include="Spell.cs" />
     <Compile Include="Utilities\BossList.cs" />
     <Compile Include="Utilities\CataHeroicDpsList.cs" />
     <Compile Include="CombatLog.cs" />

@@ -156,12 +156,51 @@ namespace Singular
         public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return new Decorator(
-                ret => requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(spellId, onUnit(ret), true),
+                ret => requirements != null && requirements(ret) && onUnit != null && onUnit(ret) != null && SpellManager.CanCast(spellId, onUnit(ret), true),
                 new Action(
                     ret =>
                         {
                             Logger.Write("Casting " + spellId + " on " + onUnit(ret).SafeName());
                             SpellManager.Cast(spellId);
+                        })
+                );
+        }
+
+        #endregion
+
+        #region CastOnGround - placeable spell casting
+
+        /// <summary>
+        /// Creates a behavior to cast a spell by name, on the ground at the specified location. Returns
+        /// RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>Created 5/2/2011.</remarks>
+        /// <param name="spell">The spell.</param>
+        /// <param name="onLocation">The on location.</param>
+        /// <returns>.</returns>
+        public static Composite CastOnGround(string spell, LocationRetriever onLocation)
+        {
+            return CastOnGround(spell, onLocation, ret => true);
+        }
+
+        /// <summary>Creates a behavior to cast a spell by name, on the ground at the specified location. Returns RunStatus.Success if successful, RunStatus.Failure otherwise. </summary>
+        /// <remarks>Created 5/2/2011.</remarks>
+        /// <param name="spell">The spell.</param>
+        /// <param name="onLocation">The on location.</param>
+        /// <param name="requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite CastOnGround(string spell, LocationRetriever onLocation, SimpleBooleanDelegate requirements)
+        {
+            return new Decorator(
+                ret =>
+                requirements(ret) && onLocation != null && SpellManager.CanCast(spell) &&
+                SpellManager.Spells[spell].MaxRange < StyxWoW.Me.Location.Distance(onLocation(ret)),
+                new Action(
+                    ret =>
+                        {
+                            Logger.Write("Casting " + spell + " at location " + onLocation(ret));
+                            SpellManager.Cast(spell);
+                            LegacySpellManager.ClickRemoteLocation(onLocation(ret));
                         })
                 );
         }

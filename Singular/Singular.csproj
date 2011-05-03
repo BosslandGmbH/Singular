@@ -98,6 +98,7 @@
   <ItemGroup>
     <Compile Include="Dynamics\Attributes.cs" />
     <Compile Include="Dynamics\SessionState.cs" />
+    <Compile Include="Helpers\Clusters.cs" />
     <Compile Include="Movement.cs" />
     <Compile Include="Spell.cs" />
     <Compile Include="Utilities\BossList.cs" />

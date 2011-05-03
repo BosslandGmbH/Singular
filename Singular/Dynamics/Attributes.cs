@@ -22,6 +22,7 @@ namespace Singular.Dynamics
     [Flags]
     public enum WoWContext
     {
+        None = 0,
         Normal = 0x1,
         Instances = 0x2,
         Battlegrounds = 0x4,

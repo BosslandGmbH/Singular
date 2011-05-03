@@ -54,9 +54,6 @@ namespace Singular.Helpers
 
         private static int GetChainedClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float chainRange)
         {
-
-
-
             var unitCounters = otherUnits.Select(u => GetUnitsChainWillJumpTo(target, otherUnits.ToList(), chainRange).Count);
 
             return unitCounters.Max() + 1;

@@ -100,23 +100,19 @@
     <Compile Include="Dynamics\SessionState.cs" />
     <Compile Include="Helpers\Clusters.cs" />
     <Compile Include="Helpers\Dispelling.cs" />
-    <Compile Include="Movement.cs" />
-    <Compile Include="Spell.cs" />
-    <Compile Include="Utilities\BossList.cs" />
-    <Compile Include="Utilities\CataHeroicDpsList.cs" />
-    <Compile Include="CombatLog.cs" />
     <Compile Include="Dynamics\CompositeBuilder.cs" />
     <Compile Include="Composites\ActionLogMessage.cs" />
-    <Compile Include="Extensions.cs" />
     <Compile Include="GUI\ConfigurationForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="GUI\ConfigurationForm.Designer.cs">
       <DependentUpon>ConfigurationForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\Movement.cs" />
+    <Compile Include="Helpers\Spell.cs" />
+    <Compile Include="Lists\BossList.cs" />
+    <Compile Include="Lists\CataHeroicDpsList.cs" />
     <Compile Include="Managers\HealerManager.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="Miscellaneous.cs" />
     <Compile Include="Managers\PetManager.cs" />
     <Compile Include="Settings\DeathKnightSettings.cs" />
     <Compile Include="Settings\DruidSettings.cs" />
@@ -133,6 +129,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Managers\TalentManager.cs" />
     <Compile Include="Managers\TankManager.cs" />
+    <Compile Include="Utilities\CombatLog.cs" />
+    <Compile Include="Utilities\Extensions.cs" />
+    <Compile Include="Utilities\Logger.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="CONTRIBUTORS.txt" />
@@ -143,10 +142,14 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ClassSpecific\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
-
+    <PostBuildEvent>if $(ConfigurationName) == Jim (
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
+)
 if $(ConfigurationName) == Raphus (
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Dodo\Desktop\WoW\HB\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
 )

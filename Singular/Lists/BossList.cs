@@ -13,9 +13,8 @@
 
 using System.Collections.Generic;
 
-using Styx.Combat.CombatRoutine;
 
-namespace Singular
+namespace Singular.Lists
 {
     public class BossList
     {

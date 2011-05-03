@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
-namespace Singular
+namespace Singular.Lists
 {
     // This just contains a list for Catacylsm dungeon adds that NEED to be killed immediately.
     class CataHeroicDpsList

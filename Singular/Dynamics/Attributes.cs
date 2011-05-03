@@ -39,6 +39,7 @@ namespace Singular.Dynamics
         Heal,
         CombatBuffs,
         Combat,
+        All,
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]

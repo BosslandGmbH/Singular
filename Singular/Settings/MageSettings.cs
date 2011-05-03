@@ -11,7 +11,6 @@
 
 #endregion
 
-using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {

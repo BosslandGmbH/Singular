@@ -78,7 +78,7 @@ namespace Singular.Dynamics
                     else if (ca is BehaviorAttribute)
                     {
                         var attrib = ca as BehaviorAttribute;
-                        if (attrib.Type != behavior)
+                        if (attrib.Type != BehaviorType.All && attrib.Type != behavior)
                         {
                             continue;
                         }

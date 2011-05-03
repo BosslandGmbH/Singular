@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 using Styx.WoWInternals.WoWObjects;
 
@@ -10,7 +9,8 @@ namespace Singular.Helpers
     public enum ClusterType
     {
         Radius,
-        Chained
+        Chained,
+        Cone
     }
 
     public static class Clusters
@@ -23,6 +23,8 @@ namespace Singular.Helpers
                     return GetRadiusClusterCount(target, otherUnits, clusterRange);
                 case ClusterType.Chained:
                     return GetChainedClusterCount(target, otherUnits, clusterRange);
+                case ClusterType.Cone:
+                    return GetConeClusterCount(target, otherUnits, clusterRange);
                 default:
                     throw new ArgumentOutOfRangeException("type");
             }
@@ -40,11 +42,17 @@ namespace Singular.Helpers
                     return (from u in units
                             select new { Count = GetChainedClusterCount(u, units, clusterRange), Unit = u }).OrderByDescending(a => a.Count).
                         FirstOrDefault().Unit;
+                // coned doesn't have a best unit, since we are the source
                 default:
                     throw new ArgumentOutOfRangeException("type");
             }
         }
 
+        private static int GetConeClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
+        {
+            var targetLoc = target.Location;
+            return otherUnits.Count(u => target.IsSafelyFacing(u, 90f) && u.Location.Distance(targetLoc) <= distance); // most (if not all) cone spells are 90 degrees
+        }
 
         private static int GetRadiusClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float radius)
         {

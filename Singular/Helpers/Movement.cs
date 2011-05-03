@@ -17,7 +17,7 @@ using Styx.Logic.Pathing;
 
 using TreeSharp;
 
-namespace Singular
+namespace Singular.Helpers
 {
     public static class Movement
     {

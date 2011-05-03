@@ -19,7 +19,7 @@ using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
 
-namespace Singular
+namespace Singular.Helpers
 {
     public delegate WoWUnit UnitSelectionDelegate(object context);
 

@@ -33,6 +33,7 @@ namespace Singular
         public string Event { get { return Args[1].ToString(); } }
 
         // Is this a string? bool? what? What the hell is it even used for?
+        // it's a boolean, and it doesn't look like it has any real impact codewise apart from maybe to break old addons? - exemplar 4.1
         public string HideCaster { get { return Args[2].ToString(); } }
 
         public ulong SourceGuid { get { return ulong.Parse(Args[3].ToString().Replace("0x", ""), NumberStyles.HexNumber); } }

@@ -26,7 +26,7 @@ namespace Singular
             Write( Color.Green, message);
         }
 
-        public static void Write( System.Drawing.Color clr, string message)
+        public static void Write( Color clr, string message)
         {
             Logging.Write( clr, "[Singular] " + message);
         }

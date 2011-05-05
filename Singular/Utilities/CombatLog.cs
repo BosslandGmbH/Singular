@@ -36,7 +36,7 @@ namespace Singular
         // it's a boolean, and it doesn't look like it has any real impact codewise apart from maybe to break old addons? - exemplar 4.1
         public string HideCaster { get { return Args[2].ToString(); } }
 
-        public ulong SourceGuid { get { return ulong.Parse(Args[3].ToString().Replace("0x", ""), NumberStyles.HexNumber); } }
+        public ulong SourceGuid { get { return ulong.Parse(Args[3].ToString().Replace("0x", string.Empty), NumberStyles.HexNumber); } }
 
         public WoWUnit SourceUnit
         {
@@ -52,7 +52,7 @@ namespace Singular
 
         public int SourceFlags { get { return (int)(double)Args[5]; } }
 
-        public ulong DestGuid { get { return ulong.Parse(Args[6].ToString().Replace("0x", ""), NumberStyles.HexNumber); } }
+        public ulong DestGuid { get { return ulong.Parse(Args[6].ToString().Replace("0x", string.Empty), NumberStyles.HexNumber); } }
 
         public WoWUnit DestUnit
         {

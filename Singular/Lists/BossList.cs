@@ -20,7 +20,7 @@ namespace Singular.Lists
     {
         #region Boss Entries
 
-        private HashSet<uint> BossIds
+        public static HashSet<uint> BossIds
         {
             get
             {

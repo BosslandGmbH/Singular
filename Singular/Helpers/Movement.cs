@@ -45,7 +45,7 @@ namespace Singular.Helpers
         public static Composite CreateFaceTargetBehavior()
         {
             return new Decorator(
-                ret => !StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 70f),
+                ret => !StyxWoW.Me.IsMoving && !StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 70f),
                 new Action(ret => StyxWoW.Me.CurrentTarget.Face()));
         }
 

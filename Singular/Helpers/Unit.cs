@@ -38,25 +38,10 @@ namespace Singular.Helpers
 
         public static bool HasAura(WoWUnit unit, string aura, int stacks)
         {
-            // Active auras first.
-            if (unit.ActiveAuras.ContainsKey(aura))
-            {
-                return unit.ActiveAuras[aura].StackCount >= stacks;
-            }
-
-            // Check passive shit. (Yep)
-            if (unit.Auras.ContainsKey(aura))
-            {
-                return unit.Auras[aura].StackCount >= stacks;
-            }
-
-            // Try just plain old auras...
-            if (stacks == 0)
-            {
-                return unit.HasAura(aura);
-            }
-
-            return false;
+            var auras = unit.GetAllAuras();
+            return (from a in auras
+                    where a.Name == aura
+                    select a.StackCount >= stacks).FirstOrDefault();
         }
     }
 }

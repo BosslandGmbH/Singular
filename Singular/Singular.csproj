@@ -140,7 +140,7 @@
     <Compile Include="Managers\TankManager.cs" />
     <Compile Include="Utilities\CombatLog.cs" />
     <Compile Include="Utilities\Enumeration.cs" />
-    <Compile Include="Utilities\Extensions.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="Utilities\Logger.cs" />
   </ItemGroup>
   <ItemGroup>

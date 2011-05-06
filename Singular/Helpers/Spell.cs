@@ -158,7 +158,8 @@ namespace Singular.Helpers
         public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return new Decorator(
-                ret => requirements != null && requirements(ret) && onUnit != null && onUnit(ret) != null && SpellManager.CanCast(spellId, onUnit(ret), true),
+                ret =>
+                requirements != null && requirements(ret) && onUnit != null && onUnit(ret) != null && SpellManager.CanCast(spellId, onUnit(ret), true),
                 new Action(
                     ret =>
                         {
@@ -179,7 +180,7 @@ namespace Singular.Helpers
         /// <remarks>
         ///   Created 5/2/2011.
         /// </remarks>
-        /// <param name="name">The name of the buff</param>
+        /// <param name = "name">The name of the buff</param>
         /// <returns></returns>
         public static Composite Buff(string name)
         {
@@ -193,8 +194,8 @@ namespace Singular.Helpers
         /// <remarks>
         ///   Created 5/2/2011.
         /// </remarks>
-        /// <param name="name">The name of the buff</param>
-        /// <param name="requirements">The requirements.</param>
+        /// <param name = "name">The name of the buff</param>
+        /// <param name = "requirements">The requirements.</param>
         /// <returns></returns>
         public static Composite Buff(string name, SimpleBooleanDelegate requirements)
         {
@@ -208,8 +209,8 @@ namespace Singular.Helpers
         /// <remarks>
         ///   Created 5/2/2011.
         /// </remarks>
-        /// <param name="name">The name of the buff</param>
-        /// <param name="onUnit">The on unit</param>
+        /// <param name = "name">The name of the buff</param>
+        /// <param name = "onUnit">The on unit</param>
         /// <returns></returns>
         public static Composite Buff(string name, UnitSelectionDelegate onUnit)
         {
@@ -223,16 +224,49 @@ namespace Singular.Helpers
         /// <remarks>
         ///   Created 5/2/2011.
         /// </remarks>
-        /// <param name="name">The name of the buff</param>
-        /// <param name="onUnit">The on unit</param>
-        /// <param name="requirements">The requirements.</param>
+        /// <param name = "name">The name of the buff</param>
+        /// <param name = "onUnit">The on unit</param>
+        /// <param name = "requirements">The requirements.</param>
         /// <returns></returns>
         public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
-            return 
+            return
                 new Decorator(
                     ret => onUnit(ret) != null && !onUnit(ret).HasAura(name),
                     Cast(name, onUnit, requirements));
+        }
+
+        #endregion
+
+        #region BuffSelf - by name
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name on yourself. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/6/2011.
+        /// </remarks>
+        /// <param name = "name">The buff name.</param>
+        /// <returns>.</returns>
+        public static Composite BuffSelf(string name)
+        {
+            return Buff(name, ret => true);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name on yourself with special requirements. Returns RunStatus.Success if
+        ///   successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/6/2011.
+        /// </remarks>
+        /// <param name = "name">The buff name.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite BuffSelf(string name, SimpleBooleanDelegate requirements)
+        {
+            return Buff(name, ret => StyxWoW.Me, requirements);
         }
 
         #endregion
@@ -246,7 +280,7 @@ namespace Singular.Helpers
         /// <remarks>
         ///   Created 5/2/2011.
         /// </remarks>
-        /// <param name="spellId">The ID of the buff</param>
+        /// <param name = "spellId">The ID of the buff</param>
         /// <returns></returns>
         public static Composite Buff(int spellId)
         {
@@ -260,8 +294,8 @@ namespace Singular.Helpers
         /// <remarks>
         ///   Created 5/2/2011.
         /// </remarks>
-        /// <param name="spellId">The ID of the buff</param>
-        /// <param name="requirements">The requirements.</param>
+        /// <param name = "spellId">The ID of the buff</param>
+        /// <param name = "requirements">The requirements.</param>
         /// <returns></returns>
         public static Composite Buff(int spellId, SimpleBooleanDelegate requirements)
         {
@@ -275,8 +309,8 @@ namespace Singular.Helpers
         /// <remarks>
         ///   Created 5/2/2011.
         /// </remarks>
-        /// <param name="spellId">The ID of the buff</param>
-        /// <param name="onUnit">The on unit</param>
+        /// <param name = "spellId">The ID of the buff</param>
+        /// <param name = "onUnit">The on unit</param>
         /// <returns></returns>
         public static Composite Buff(int spellId, UnitSelectionDelegate onUnit)
         {
@@ -290,9 +324,9 @@ namespace Singular.Helpers
         /// <remarks>
         ///   Created 5/2/2011.
         /// </remarks>
-        /// <param name="spellId">The ID of the buff</param>
-        /// <param name="onUnit">The on unit</param>
-        /// <param name="requirements">The requirements.</param>
+        /// <param name = "spellId">The ID of the buff</param>
+        /// <param name = "onUnit">The on unit</param>
+        /// <param name = "requirements">The requirements.</param>
         /// <returns></returns>
         public static Composite Buff(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
@@ -304,26 +338,65 @@ namespace Singular.Helpers
 
         #endregion
 
+        #region BufSelf - by ID
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by ID on yourself. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/6/2011.
+        /// </remarks>
+        /// <param name = "spellId">The buff ID.</param>
+        /// <returns>.</returns>
+        public static Composite BuffSelf(int spellId)
+        {
+            return Buff(spellId, ret => true);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by ID on yourself with special requirements. Returns RunStatus.Success if
+        ///   successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/6/2011.
+        /// </remarks>
+        /// <param name = "spellId">The buff ID.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite BuffSelf(int spellId, SimpleBooleanDelegate requirements)
+        {
+            return Buff(spellId, ret => StyxWoW.Me, requirements);
+        }
+
+        #endregion
+
         #region CastOnGround - placeable spell casting
 
         /// <summary>
-        /// Creates a behavior to cast a spell by name, on the ground at the specified location. Returns
-        /// RunStatus.Success if successful, RunStatus.Failure otherwise.
+        ///   Creates a behavior to cast a spell by name, on the ground at the specified location. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
         /// </summary>
-        /// <remarks>Created 5/2/2011.</remarks>
-        /// <param name="spell">The spell.</param>
-        /// <param name="onLocation">The on location.</param>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "spell">The spell.</param>
+        /// <param name = "onLocation">The on location.</param>
         /// <returns>.</returns>
         public static Composite CastOnGround(string spell, LocationRetriever onLocation)
         {
             return CastOnGround(spell, onLocation, ret => true);
         }
 
-        /// <summary>Creates a behavior to cast a spell by name, on the ground at the specified location. Returns RunStatus.Success if successful, RunStatus.Failure otherwise. </summary>
-        /// <remarks>Created 5/2/2011.</remarks>
-        /// <param name="spell">The spell.</param>
-        /// <param name="onLocation">The on location.</param>
-        /// <param name="requirements">The requirements.</param>
+        /// <summary>
+        ///   Creates a behavior to cast a spell by name, on the ground at the specified location. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "spell">The spell.</param>
+        /// <param name = "onLocation">The on location.</param>
+        /// <param name = "requirements">The requirements.</param>
         /// <returns>.</returns>
         public static Composite CastOnGround(string spell, LocationRetriever onLocation, SimpleBooleanDelegate requirements)
         {

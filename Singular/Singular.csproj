@@ -97,6 +97,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassSpecific\Druid\FeralCat.cs" />
+    <Compile Include="ClassSpecific\Generic.cs" />
+    <Compile Include="ClassSpecific\Priest\Shadow.cs" />
     <Compile Include="Dynamics\Attributes.cs" />
     <Compile Include="Dynamics\SessionState.cs" />
     <Compile Include="Helpers\Clusters.cs" />
@@ -109,7 +111,9 @@
     <Compile Include="GUI\ConfigurationForm.Designer.cs">
       <DependentUpon>ConfigurationForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\Item.cs" />
     <Compile Include="Helpers\Movement.cs" />
+    <Compile Include="Helpers\PVP.cs" />
     <Compile Include="Helpers\Spell.cs" />
     <Compile Include="Lists\BossList.cs" />
     <Compile Include="Lists\CataHeroicDpsList.cs" />
@@ -131,6 +135,7 @@
     <Compile Include="Managers\TalentManager.cs" />
     <Compile Include="Managers\TankManager.cs" />
     <Compile Include="Utilities\CombatLog.cs" />
+    <Compile Include="Utilities\Enumeration.cs" />
     <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Utilities\Logger.cs" />
   </ItemGroup>

@@ -19,29 +19,6 @@ using Styx.Combat.CombatRoutine;
 
 namespace Singular.Dynamics
 {
-    [Flags]
-    public enum WoWContext
-    {
-        None = 0,
-        Normal = 0x1,
-        Instances = 0x2,
-        Battlegrounds = 0x4,
-
-        All = Normal | Instances | Battlegrounds,
-    }
-
-    public enum BehaviorType
-    {
-        Rest,
-        PreCombatBuffs,
-        PullBuffs,
-        Pull,
-        Heal,
-        CombatBuffs,
-        Combat,
-        All,
-    }
-
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     internal sealed class PriorityAttribute : Attribute
     {
@@ -62,6 +39,17 @@ namespace Singular.Dynamics
         }
 
         public WoWClass SpecificClass { get; private set; }
+    }
+
+    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
+    internal sealed class IgnoreBehaviorCountAttribute : Attribute
+    {
+        public IgnoreBehaviorCountAttribute(BehaviorType type)
+        {
+            Type = type;
+        }
+
+        public BehaviorType Type { get; private set; }
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]

@@ -188,8 +188,9 @@ namespace Singular
         private bool EnsureComposite(bool error, BehaviorType type, out Composite composite)
         {
             Logger.WriteDebug("Creating " + type + " behavior.");
-            composite = CompositeBuilder.GetComposite(_myClass, TalentManager.CurrentSpec, type, CurrentWoWContext);
-            if (composite == null && error)
+            int count = 0;
+            composite = CompositeBuilder.GetComposite(_myClass, TalentManager.CurrentSpec, type, CurrentWoWContext, out count);
+            if ((composite == null || count <= 0) && error)
             {
                 StopBot(
                     string.Format(

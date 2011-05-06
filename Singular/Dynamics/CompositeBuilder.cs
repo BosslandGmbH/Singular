@@ -28,8 +28,9 @@ namespace Singular.Dynamics
     {
         private static List<MethodInfo> _methods = new List<MethodInfo>();
 
-        public static Composite GetComposite(WoWClass wowClass, TalentSpec spec, BehaviorType behavior, WoWContext context)
+        public static Composite GetComposite(WoWClass wowClass, TalentSpec spec, BehaviorType behavior, WoWContext context, out int behaviourCount)
         {
+            behaviourCount = 0;
             if (_methods.Count <= 0)
             {
                 Logger.Write("Building method list");
@@ -51,8 +52,10 @@ namespace Singular.Dynamics
                         mi.ReturnType.IsSubclassOf(typeof(Composite))))
             {
                 //Logger.WriteDebug("[CompositeBuilder] Checking attributes on " + mi.Name);
-                bool classMatches = false, specMatches = false, behaviorMatches = false, contextMatches = false;
+                bool classMatches = false, specMatches = false, behaviorMatches = false, contextMatches = false, hasIgnore = false;
                 int thePriority = 0;
+                var theBehaviourType = BehaviorType.All;
+                var theIgnoreType = BehaviorType.All;
                 foreach (object ca in mi.GetCustomAttributes(false))
                 {
                     if (ca is ClassAttribute)
@@ -78,11 +81,12 @@ namespace Singular.Dynamics
                     else if (ca is BehaviorAttribute)
                     {
                         var attrib = ca as BehaviorAttribute;
-                        if (attrib.Type != BehaviorType.All && attrib.Type != behavior)
+                        if ((attrib.Type & behavior) == 0)
                         {
                             continue;
                         }
                         //Logger.WriteDebug(mi.Name + " has my behavior");
+                        behaviourCount++;
                         behaviorMatches = true;
                     }
                     else if (ca is ContextAttribute)
@@ -100,13 +104,27 @@ namespace Singular.Dynamics
                         var attrib = ca as PriorityAttribute;
                         thePriority = attrib.PriorityLevel;
                     }
+                    else if (ca is IgnoreBehaviorCountAttribute)
+                    {
+                        var attrib = ca as IgnoreBehaviorCountAttribute;
+                        hasIgnore = true;
+                        theIgnoreType = attrib.Type;
+                    }
+                }
+
+                if (behaviorMatches && hasIgnore && theBehaviourType == theIgnoreType)
+                {
+                    behaviourCount--;
                 }
 
                 // If all our attributes match, then mark it as wanted!
                 if (classMatches && specMatches && behaviorMatches && contextMatches)
                 {
                     Logger.WriteDebug(string.Format("{0} is a match!", mi.Name));
-                    Logger.Write(string.Format("Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority));
+                    if (!hasIgnore)
+                    {
+                        Logger.Write(string.Format(" Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority));
+                    }
                     Composite matched = null;
                     try
                     {

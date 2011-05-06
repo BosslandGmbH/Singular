@@ -46,6 +46,41 @@ namespace Singular.Settings
         [Description("Ignore healing targets when their health is above this value.")]
         public int IgnoreHealTargetsAboveHealth { get; set; }
 
+        #region Category: Items
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Items")]
+        [DisplayName("Use Flasks")]
+        [Description("Uses Flask of the North or Flask of Enhancement.")]
+        public bool UseFlasks { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Items")]
+        [DisplayName("Use First Trinket")]
+        public bool Trinket1 { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Items")]
+        [DisplayName("Use Second Trinket")]
+        public bool Trinket2 { get; set; }
+
+        [Setting]
+        [DefaultValue(TrinketUsage.Never)]
+        [Category("Items")]
+        [DisplayName("Trinket 1 Usage")]
+        public TrinketUsage Trinket1Usage { get; set; }
+
+        [Setting]
+        [DefaultValue(TrinketUsage.Never)]
+        [Category("Items")]
+        [DisplayName("Trinket 2 Usage")]
+        public TrinketUsage Trinket2Usage { get; set; }
+
+        #endregion
+
         #region Class Late-Loading Wrappers
 
         // Do not change anything within this region.

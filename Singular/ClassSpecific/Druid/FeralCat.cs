@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.Druid
         [Class(WoWClass.Druid)]
         [Priority(500)]
         [Context(WoWContext.Normal | WoWContext.Instances)]
-        public static Composite CreateCombat()
+        public static Composite CreateFeralCatCombat()
         {
             return new PrioritySelector(
                 new Decorator(

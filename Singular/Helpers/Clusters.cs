@@ -6,13 +6,6 @@ using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Helpers
 {
-    public enum ClusterType
-    {
-        Radius,
-        Chained,
-        Cone
-    }
-
     public static class Clusters
     {
         public static int GetClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, ClusterType type, float clusterRange)

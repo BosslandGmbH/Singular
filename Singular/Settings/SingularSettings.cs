@@ -32,12 +32,43 @@ namespace Singular.Settings
 
         public static SingularSettings Instance { get { return _instance ?? (_instance = new SingularSettings()); } }
 
+        #region Category: General
+
         [Setting]
-        [Styx.Helpers.DefaultValue(false)]
+        [DefaultValue(true)]
+        [Category("General")]
+        [DisplayName("Wait For Res Sickness")]
+        [Description("Wait for resurrection sickness to wear off.")]
+        public bool WaitForResSickness { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("General")]
+        [DisplayName("Min Health")]
+        [Description("Minimum health to eat at.")]
+        public int MinHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("General")]
+        [DisplayName("Min Mana")]
+        [Description("Minimum mana to drink at.")]
+        public int MinMana { get; set; }
+
+        #endregion
+
+        #region Category: Misc
+
+        [Setting]
+        [DefaultValue(false)]
         [Category("Misc")]
         [DisplayName("Debug Logging")]
         [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
         public bool EnableDebugLogging { get; set; }
+
+        #endregion
+
+        #region Category: Healing
 
         [Setting]
         [DefaultValue(95)]
@@ -45,6 +76,8 @@ namespace Singular.Settings
         [DisplayName("Ignore Targets Health")]
         [Description("Ignore healing targets when their health is above this value.")]
         public int IgnoreHealTargetsAboveHealth { get; set; }
+
+        #endregion
 
         #region Category: Items
 

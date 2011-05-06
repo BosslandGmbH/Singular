@@ -98,13 +98,13 @@
   <ItemGroup>
     <Compile Include="ClassSpecific\Druid\FeralCat.cs" />
     <Compile Include="ClassSpecific\Generic.cs" />
+    <Compile Include="ClassSpecific\Priest\Common.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
     <Compile Include="Dynamics\Attributes.cs" />
     <Compile Include="Dynamics\SessionState.cs" />
     <Compile Include="Helpers\Clusters.cs" />
     <Compile Include="Helpers\Dispelling.cs" />
     <Compile Include="Dynamics\CompositeBuilder.cs" />
-    <Compile Include="Composites\ActionLogMessage.cs" />
     <Compile Include="GUI\ConfigurationForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -113,8 +113,12 @@
     </Compile>
     <Compile Include="Helpers\Item.cs" />
     <Compile Include="Helpers\Movement.cs" />
+    <Compile Include="Helpers\Object.cs" />
     <Compile Include="Helpers\PVP.cs" />
+    <Compile Include="Helpers\Rest.cs" />
     <Compile Include="Helpers\Spell.cs" />
+    <Compile Include="Helpers\Unit.cs" />
+    <Compile Include="Helpers\Wait.cs" />
     <Compile Include="Lists\BossList.cs" />
     <Compile Include="Lists\CataHeroicDpsList.cs" />
     <Compile Include="Managers\HealerManager.cs" />

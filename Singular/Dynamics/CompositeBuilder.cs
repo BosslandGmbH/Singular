@@ -120,10 +120,14 @@ namespace Singular.Dynamics
                 // If all our attributes match, then mark it as wanted!
                 if (classMatches && specMatches && behaviorMatches && contextMatches)
                 {
-                    Logger.WriteDebug(string.Format("{0} is a match!", mi.Name));
+                    Logger.WriteDebug("{0} is a match!", mi.Name);
                     if (!hasIgnore)
                     {
-                        Logger.Write(string.Format(" Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority));
+                        Logger.Write(" Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority);
+                    }
+                    else
+                    {   
+                        Logger.WriteDebug(" Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority);
                     }
                     Composite matched = null;
                     try
@@ -132,8 +136,7 @@ namespace Singular.Dynamics
                     }
                     catch (Exception e)
                     {
-                        Logger.Write("ERROR Creating composite: " + mi.Name);
-                        Logger.Write(e.StackTrace);
+                        Logger.Write("ERROR Creating composite: {0}\n{1}", mi.Name, e.StackTrace);
                         continue;
                     }
                     if (!matchedMethods.ContainsKey(thePriority))

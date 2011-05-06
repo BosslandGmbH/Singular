@@ -1,15 +1,15 @@
-﻿using Singular.Dynamics;
+﻿using System.Linq;
+using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
-using Styx.Combat.CombatRoutine;
-using Styx.Logic.Inventory;
-using TreeSharp;
 using Styx;
-using System.Linq;
+using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
+using Styx.Logic.Inventory;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using TreeSharp;
 
 namespace Singular.ClassSpecific
 {
@@ -20,7 +20,7 @@ namespace Singular.ClassSpecific
         [Class(WoWClass.None)]
         [Priority(999)]
         [Context(WoWContext.All)]
-        [IgnoreBehaviorCount(BehaviorType.Combat)]
+        [IgnoreBehaviorCount(BehaviorType.Combat), IgnoreBehaviorCount(BehaviorType.Rest)]
         public static Composite CreateFlasksBehaviour()
         {
             return new Decorator(
@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific
         [Class(WoWClass.None)]
         [Priority(999)]
         [Context(WoWContext.All)]
-        [IgnoreBehaviorCount(BehaviorType.Combat)]
+        [IgnoreBehaviorCount(BehaviorType.Combat), IgnoreBehaviorCount(BehaviorType.Rest)]
         public static Composite CreateTrinketBehaviour()
         {
             return new PrioritySelector(
@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific
         [Class(WoWClass.None)]
         [Priority(999)]
         [Context(WoWContext.All)]
-        [IgnoreBehaviorCount(BehaviorType.Combat)]
+        [IgnoreBehaviorCount(BehaviorType.Combat), IgnoreBehaviorCount(BehaviorType.Rest)]
         public static Composite CreateRacialBehaviour()
         {
             return new Decorator(
@@ -68,13 +68,13 @@ namespace Singular.ClassSpecific
                             a.Spell.Mechanic == WoWSpellMechanic.Snared),
                         Spell.Cast("Escape Artist")),
                     new Decorator(
-                        ret => SpellManager.CanCast("Escape Artist") && PVP.IsCrowdControlled(StyxWoW.Me),
-                        Spell.Cast("Escape Artist")),
+                        ret => SpellManager.CanCast("Every Man for Himself") && PVP.IsCrowdControlled(StyxWoW.Me),
+                        Spell.Cast("Every Man for Himself")),
                     new Decorator(
                         ret => SpellManager.CanCast("Gift of the Naaru") && StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP,
                         Spell.Cast("Gift of the Naaru")),
                     new Decorator(
-                        ret => SpellManager.CanCast("Shadowmeld") && SingularSettings.Instance.ShadowmeldThreatDrop && (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) &&
+                        ret => SingularSettings.Instance.ShadowmeldThreatDrop && SpellManager.CanCast("Shadowmeld") && (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) &&
                             !StyxWoW.Me.PartyMemberInfos.Any(pm => pm.Guid == StyxWoW.Me.Guid && pm.Role == WoWPartyMember.GroupRole.Tank) &&
                             ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any(unit => unit.CurrentTargetGuid == StyxWoW.Me.Guid),
                         Spell.Cast("Shadowmeld"))

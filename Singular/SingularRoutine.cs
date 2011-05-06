@@ -151,15 +151,13 @@ namespace Singular
             if (!EnsureComposite(false, BehaviorType.Rest, out _restBehavior))
             {
                 Logger.Write("Using default rest behavior.");
-                // By default, eat/drink at 50%
-                //_restBehavior = CreateDefaultRestComposite(50, 50);
+                _restBehavior = Singular.Helpers.Rest.CreateDefaultRestBehaviour();
             }
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
             EnsureComposite(false, BehaviorType.CombatBuffs, out _combatBuffsBehavior);
             EnsureComposite(false, BehaviorType.Heal, out _healBehavior);
             EnsureComposite(false, BehaviorType.PullBuffs, out _pullBuffsBehavior);
-
             EnsureComposite(false, BehaviorType.PreCombatBuffs, out _preCombatBuffsBehavior);
 
             // Since we can be lazy, we're going to fix a bug right here and now.
@@ -168,8 +166,6 @@ namespace Singular
             {
                 _preCombatBuffsBehavior = new Decorator(
                     ret => !IsMounted && !Me.IsOnTransport, new PrioritySelector(
-                        // Use flask of enhancement/the north
-                        //CreateUseAlchemyBuffsBehavior(),
                         _preCombatBuffsBehavior));
             }
             if (_combatBuffsBehavior != null)
@@ -177,7 +173,6 @@ namespace Singular
                 _combatBuffsBehavior = new Decorator(
                     ret => !IsMounted && !Me.IsOnTransport,
                     new PrioritySelector(
-                        //CreateUseTrinketsBehavior(),
                         _combatBuffsBehavior)
                     );
             }

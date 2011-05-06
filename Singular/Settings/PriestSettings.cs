@@ -11,8 +11,11 @@
 
 #endregion
 
+using System.ComponentModel;
 
+using Styx.Helpers;
 
+using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
@@ -22,5 +25,26 @@ namespace Singular.Settings
             : base(SingularSettings.SettingsPath + "_Priest.xml")
         {
         }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Shadow Protection")]
+        [Description("Use Shadow Protection buff")]
+        public bool UseShadowProtection { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Fear Ward")]
+        [Description("Use Fear Ward buff")]
+        public bool UseFearWard { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Inner Fire")]
+        [Description("Use Inner Fire, otherwise uses Inner Will")]
+        public bool UseInnerFire { get; set; }
     }
 }

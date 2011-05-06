@@ -86,6 +86,7 @@ namespace Singular.Dynamics
                             continue;
                         }
                         //Logger.WriteDebug(mi.Name + " has my behavior");
+                        theBehaviourType = attrib.Type;
                         behaviourCount++;
                         behaviorMatches = true;
                     }

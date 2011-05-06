@@ -41,8 +41,8 @@ namespace Singular
         PullBuffs = 0x2,
         Pull = 0x4,
         Heal = 0x8,
-        CombatBuffs = 0x16,
-        Combat = 0x32,
+        CombatBuffs = 0x10,
+        Combat = 0x20,
 
         // this is no guarantee that the bot is in combat
         InCombat = Heal | CombatBuffs | Combat,

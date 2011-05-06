@@ -23,7 +23,7 @@ namespace Singular
     {
         public static void Write(string message)
         {
-            Write(Color.Green, message, null);
+            Write(Color.Green, message);
         }
 
         public static void Write(string message, params object[] args)
@@ -38,7 +38,7 @@ namespace Singular
 
         public static void WriteDebug(string message)
         {
-            WriteDebug(Color.Green, message, null);
+            WriteDebug(Color.Green, message);
         }
 
         public static void WriteDebug(string message, params object[] args)

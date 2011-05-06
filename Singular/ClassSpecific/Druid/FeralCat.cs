@@ -13,10 +13,12 @@ namespace Singular.ClassSpecific.Druid
     public static class FeralCat
     {
         [Spec(TalentSpec.FeralDruid)]
+        [Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]
+        [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Druid)]
         [Priority(500)]
-        [Context(WoWContext.Normal | WoWContext.Instances)]
+        [Context(WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateFeralCatCombat()
         {
             return new PrioritySelector(
@@ -26,7 +28,8 @@ namespace Singular.ClassSpecific.Druid
 
                 // Ensure we're facing the target. Kthx.
                 Movement.CreateFaceTargetBehavior(),
-                Spell.Buff("Faerie Fire (Feral)"),
+                //Spell.Cast("Faerie Fire (Feral)", ret=>!Unit.HasAura(StyxWoW.Me.CurrentTarget, "Faerie Fire", 3)),
+                //new Action(ret=>Logger.WriteDebug("Done with FF Going into boss check")),
 
                 new Decorator(
                     ret => BossList.BossIds.Contains(StyxWoW.Me.CurrentTarget.Entry),
@@ -48,10 +51,17 @@ namespace Singular.ClassSpecific.Druid
                 // TODO: Add targeting helpers (NearbyEnemyUnits)
                 // TODO: Add simple wrappers for elites, bosses, etc
 
+                //new Action(ret => Logger.WriteDebug("Trying FB - " + StyxWoW.Me.ComboPoints)),
                 // For normal 'around town' grinding, this is all we really need.
                 Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints >= 4),
+
+                //new Action(ret => Logger.WriteDebug("Trying Berserk")),
                 Spell.Cast("Berserk"),
+
+                //new Action(ret => Logger.WriteDebug("Trying Rake")),
                 Spell.Buff("Rake"),
+
+                //new Action(ret => Logger.WriteDebug("Trying Mangle(Cat)")),
                 Spell.Cast("Mangle (Cat)"),
                 // Since we can't get 'behind' mobs, just do this, kaythanks
                 Movement.CreateMoveToTargetBehavior(true, 4f)

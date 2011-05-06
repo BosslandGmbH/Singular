@@ -15,7 +15,7 @@ namespace Singular.ClassSpecific.Priest
         [Spec(TalentSpec.Any)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
-        public Composite CreatePriestPreCombatBuffs()
+        public static Composite CreatePriestPreCombatBuffs()
         {
             return new PrioritySelector(
                 Spell.Buff("Power Word: Fortitude", ret => Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && CanCastFortitudeOn(u))),

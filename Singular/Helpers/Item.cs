@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Styx;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using TreeSharp;
 using System.Collections;
@@ -22,7 +23,7 @@ namespace Singular.Helpers
         public static Composite UseItem(uint id)
         {
             return new PrioritySelector(
-                ctx => StyxWoW.Me.Inventory.Items.FirstOrDefault(item => item.Entry == id),
+                ctx => ObjectManager.GetObjectsOfType<WoWItem>().FirstOrDefault(item => item.Entry == id),
                 new Decorator(
                     ctx => ctx != null && CanUseItem((WoWItem)ctx),
                     new Action(ctx => UseItem((WoWItem)ctx))));

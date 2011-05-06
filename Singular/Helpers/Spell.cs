@@ -86,7 +86,15 @@ namespace Singular.Helpers
         public static Composite Cast(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return new Decorator(
-                ret => requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret), true),
+                ret =>
+                    {
+                        //Logger.WriteDebug("Casting spell: " + name);
+                        //Logger.WriteDebug("Requirements: " + requirements(ret));
+                        //Logger.WriteDebug("OnUnit: " + onUnit(ret));
+                        //Logger.WriteDebug("CanCast: " + SpellManager.CanCast(name, onUnit(ret), false));
+
+                        return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret), false);
+                    },
                 new Action(
                     ret =>
                         {

@@ -40,10 +40,15 @@ namespace Singular.Helpers
 
         public static bool HasAura(WoWUnit unit, string aura, int stacks)
         {
+            Logger.WriteDebug("Looking for aura: " + aura);
             var auras = unit.GetAllAuras();
-            return (from a in auras
-                    where a.Name == aura
-                    select a.StackCount >= stacks).FirstOrDefault();
+            foreach(var a in auras)
+            {
+                Logger.WriteDebug("Aura name: " + a.Name + " - " + a.StackCount);
+                if (a.Name == aura)
+                    return a.StackCount >= stacks;
+            }
+            return false;
         }
 
         public static bool HasAnyAura(WoWUnit unit, params string[] auraNames)

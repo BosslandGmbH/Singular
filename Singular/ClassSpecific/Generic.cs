@@ -64,8 +64,7 @@ namespace Singular.ClassSpecific
                             a.Spell.DispelType == WoWDispelType.Poison),
                         Spell.Cast("Stoneform")),
                     new Decorator(
-                        ret => SpellManager.CanCast("Escape Artist") && StyxWoW.Me.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Rooted ||
-                            a.Spell.Mechanic == WoWSpellMechanic.Snared),
+                        ret => SpellManager.CanCast("Escape Artist") && Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared),
                         Spell.Cast("Escape Artist")),
                     new Decorator(
                         ret => SpellManager.CanCast("Every Man for Himself") && PVP.IsCrowdControlled(StyxWoW.Me),

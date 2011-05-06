@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+
+using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
@@ -42,6 +44,17 @@ namespace Singular.Helpers
             return (from a in auras
                     where a.Name == aura
                     select a.StackCount >= stacks).FirstOrDefault();
+        }
+
+        public static bool HasAuraWithMechanic(WoWUnit unit, params WoWSpellMechanic[] mechanics)
+        {
+            var auras = unit.GetAllAuras();
+            foreach (var a in auras)
+            {
+                if (mechanics.Contains(a.Spell.Mechanic))
+                    return true;
+            }
+            return false;
         }
     }
 }

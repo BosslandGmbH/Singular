@@ -81,6 +81,30 @@ namespace Singular.Settings
 
         #endregion
 
+        #region Category: Racials
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Racials")]
+        [DisplayName("Use Racials")]
+        public bool UseRacials { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Racials")]
+        [DisplayName("Gift of the Naaru HP")]
+        [Description("Uses Gift of the Naaru when HP falls below this %.")]
+        public int GiftNaaruHP { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Racials")]
+        [DisplayName("Shadowmeld Threat Drop")]
+        [Description("When in a group (and not a tank), uses shadowmeld as a threat drop.")]
+        public bool ShadowmeldThreatDrop { get; set; }
+        
+        #endregion
+
         #region Class Late-Loading Wrappers
 
         // Do not change anything within this region.

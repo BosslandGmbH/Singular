@@ -46,15 +46,17 @@ namespace Singular.Helpers
                     select a.StackCount >= stacks).FirstOrDefault();
         }
 
+        public static bool HasAnyAura(WoWUnit unit, params string[] auraNames)
+        {
+            var auras = unit.GetAllAuras();
+            var hashes = new HashSet<string>(auraNames);
+            return auras.Any(a => hashes.Contains(a.Name));
+        }
+
         public static bool HasAuraWithMechanic(WoWUnit unit, params WoWSpellMechanic[] mechanics)
         {
             var auras = unit.GetAllAuras();
-            foreach (var a in auras)
-            {
-                if (mechanics.Contains(a.Spell.Mechanic))
-                    return true;
-            }
-            return false;
+            return auras.Any(a => mechanics.Contains(a.Spell.Mechanic));
         }
     }
 }

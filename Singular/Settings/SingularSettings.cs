@@ -86,7 +86,7 @@ namespace Singular.Settings
         [Category("Items")]
         [DisplayName("Use Flasks")]
         [Description("Uses Flask of the North or Flask of Enhancement.")]
-        public bool UseFlasks { get; set; }
+        public bool UseAlchemyFlasks { get; set; }
 
         [Setting]
         [DefaultValue(false)]

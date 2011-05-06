@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific
         public static Composite CreateFlasksBehaviour()
         {
             return new Decorator(
-                ret => SingularSettings.Instance.UseFlasks,
+                ret => SingularSettings.Instance.UseAlchemyFlasks && !Unit.HasAnyAura(StyxWoW.Me, "Enhanced Agility", "Enhanced Intellect", "Enhanced Strength"),
                 new PrioritySelector(
                     Item.UseItem(58149),
                     Item.UseItem(47499)));

@@ -158,7 +158,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Inner rage to dump rage
                 Spell.BuffSelf("Inner Rage", ret => StyxWoW.Me.RagePercent > 80),
                 //Remove Croud Control Effects
-                //FuryRemoveCC(),
+                FuryRemoveCC(),
                 //Dwarf Racial
                 Spell.BuffSelf("Stoneform", ret => StyxWoW.Me.HealthPercent < 60),
                 //Night Elf Racial
@@ -253,17 +253,35 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite FuryRemoveCC()
         {
             return new PrioritySelector(
-                // TODO: Heroic Fury  
-                //Spell.Buff(
-                //    "Every Man for Himself",
-                //    ret => StyxWoW.Me.Auras.Any(
-                //        aura => aura.Value.Spell.Mechanic == WoWSpellMechanic.Asleep ||
-                //                aura.Value.Spell.Mechanic == WoWSpellMechanic.Stunned ||
-                //                aura.Value.Spell.Mechanic == WoWSpellMechanic.Rooted))
-                // TODO: Human Racial
-                // TODO: Undead Racial
-                // TODO: Gnome Racial
-                // TODO: Berserker rage to get out of fear
+                // Heroic Fury
+                Spell.BuffSelf(
+                    "Heroic Fury",
+                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted)),
+                // Human Racial
+                Spell.BuffSelf(
+                    "Every Man for Himself",
+                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Asleep, 
+                                                                WoWSpellMechanic.Stunned, 
+                                                                WoWSpellMechanic.Rooted)),
+                // Undead Racial
+                Spell.BuffSelf(
+                    "Will of the Forsaken", 
+                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Charmed,
+                                                                WoWSpellMechanic.Asleep,
+                                                                WoWSpellMechanic.Horrified,
+                                                                WoWSpellMechanic.Fleeing)),
+                // Gnome Racial
+                Spell.BuffSelf(
+                    "Escape Artist",
+                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Slowed,
+                                                                WoWSpellMechanic.Rooted)),
+                // Fear Remover
+                Spell.BuffSelf(
+                    "Berserker Rage",
+                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Fleeing,
+                                                                WoWSpellMechanic.Sapped,
+                                                                WoWSpellMechanic.Incapacitated,
+                                                                WoWSpellMechanic.Horrified))
                 );
         }
 

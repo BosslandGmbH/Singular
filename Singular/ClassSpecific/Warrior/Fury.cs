@@ -31,7 +31,8 @@ namespace Singular.ClassSpecific.Warrior
                 //ranged deeps
                 Spell.Cast("Heroic Throw", ret => StyxWoW.Me.CurrentTarget.IsPlayer),
                 // ranged slow
-                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.IsPlayer &&
+                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 &&
+                                                   StyxWoW.Me.CurrentTarget.IsPlayer &&
                                                   (!StyxWoW.Me.CurrentTarget.HasAura("Hamstring") ||
                                                    !StyxWoW.Me.CurrentTarget.HasAura("Piercing Howl") ||
                                                    !StyxWoW.Me.CurrentTarget.HasAura("Slowing Poison") ||
@@ -116,8 +117,6 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateFuryPull()
         {
             return new PrioritySelector(
-                //Start autoattack
-                //CreateAutoAttack(true),
                 //face target
                 Movement.CreateFaceTargetBehavior(),
                 //Dismount
@@ -181,10 +180,6 @@ namespace Singular.ClassSpecific.Warrior
                            !Unit.HasAura(StyxWoW.Me, "Death Wish", 1),
                     new PrioritySelector(
                         Spell.BuffSelf("Berserker Rage"))),
-                //Spell.BuffSelf("Berserker Rage",
-                //            ret => !StyxWoW.Me.HasAura("Enrage") &&
-                //                   !StyxWoW.Me.HasAura("Berserker Rage") &&
-                //                   !StyxWoW.Me.HasAura("Death Wish")),
                 //Battleshout Check
                 Spell.BuffSelf(
                     "Battle Shout", ret => !StyxWoW.Me.HasAura("Horn of the Winter") &&
@@ -201,8 +196,6 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateFuryPreCombatBuffs()
         {
             return new PrioritySelector(
-                //Keep Proper stance
-                //Spell.BuffSelf("Berserker Stance"),
                 //Buff up
                 Spell.BuffSelf("Battle Shout")
                 );
@@ -214,7 +207,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite FuryCloseGap()
         {
             return new PrioritySelector(
-                //Moves to target if you are too close(Fixes pull bug)
+                //Moves to target if you are too close or far
                 new Decorator(
                 ret => StyxWoW.Me.CurrentTarget.Distance < 10 || StyxWoW.Me.CurrentTarget.Distance > 40,
                 new PrioritySelector(

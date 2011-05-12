@@ -88,6 +88,15 @@ namespace Singular.ClassSpecific.Warrior
                                         StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
                 //Heal up in mele
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                // AOE
+                new Decorator(
+                    ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
+                    new PrioritySelector(
+                        Spell.BuffSelf("Recklessness"),
+                        Spell.Cast("Whirlwind"),
+                        Spell.Cast("Cleave"),
+                        Spell.Cast("Raging Blow"),
+                        Spell.Cast("Bloodthirst"))),
                 // use incite or dump rage
                 new Decorator(
                     ret => Unit.HasAura(StyxWoW.Me, "Incite", 1) || StyxWoW.Me.RagePercent > 60,

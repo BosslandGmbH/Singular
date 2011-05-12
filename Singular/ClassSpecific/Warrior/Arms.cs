@@ -96,6 +96,15 @@ namespace Singular.ClassSpecific.Warrior
                         })),
                 //Mele Heal
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                // AOE
+                new Decorator(
+                    ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
+                    new PrioritySelector(
+                        // recklessness gets to be used in any stance soon
+                        Spell.BuffSelf("Recklessness"),
+                        Spell.Cast("Bladestorm"),
+                        Spell.Cast("Cleave"),
+                        Spell.Cast("Mortal Strike"))),
                 //Interupts
                 Spell.Cast(
                     "Pummel", ret => StyxWoW.Me.CurrentTarget.IsCasting ||

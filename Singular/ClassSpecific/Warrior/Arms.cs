@@ -142,7 +142,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Overpower"),
                 Spell.Cast("Slam", ret => StyxWoW.Me.RagePercent > 40),
                 //ensure were in melee
-                Movement.CreateMoveToTargetBehavior(true, 4f)
+                Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
         }
 
@@ -171,7 +171,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Close gap
                 ArmsCloseGap(),
                 //Move to mele and face
-                Movement.CreateMoveToTargetBehavior(true, 4f)
+                Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
         }
 
@@ -242,9 +242,9 @@ namespace Singular.ClassSpecific.Warrior
             return new PrioritySelector(
                 //Moves to target if you are too close or far
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 10 || StyxWoW.Me.CurrentTarget.Distance > 40,
+                    ret => StyxWoW.Me.CurrentTarget.Distance < 10 || StyxWoW.Me.CurrentTarget.Distance > 25,
                     new PrioritySelector(
-                        Movement.CreateMoveToTargetBehavior(true, 4f)
+                        Movement.CreateMoveToTargetBehavior(true, 5f)
                         )),
                 //Charge
                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 9 &&
@@ -268,7 +268,7 @@ namespace Singular.ClassSpecific.Warrior
                      "Darkflight", ret => StyxWoW.Me.CurrentTarget.IsPlayer &&
                                           StyxWoW.Me.CurrentTarget.Distance > 15),
                  //Move to mele and face
-                 Movement.CreateMoveToTargetBehavior(true, 4f)
+                 Movement.CreateMoveToTargetBehavior(true, 5f)
               );
         }
 

@@ -114,7 +114,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret => Unit.HasAura(StyxWoW.Me, "Bloodsurge", 1),
                     new PrioritySelector(
                         Spell.Cast("Slam"))),
-                Movement.CreateMoveToTargetBehavior(true, 4f)
+                Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
         }
 
@@ -143,7 +143,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Close gap
                 FuryCloseGap(),
                 //Move to mele and face
-                Movement.CreateMoveToTargetBehavior(true, 4f)
+                Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
         }
 
@@ -220,7 +220,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                 ret => StyxWoW.Me.CurrentTarget.Distance < 10 || StyxWoW.Me.CurrentTarget.Distance > 40,
                 new PrioritySelector(
-                    Movement.CreateMoveToTargetBehavior(true, 4f)
+                    Movement.CreateMoveToTargetBehavior(true, 5f)
                     )),
                 // Heroic fury
                 Spell.Cast("Heroic Fury", ret => SpellManager.Spells["Intercept"].Cooldown),
@@ -243,7 +243,7 @@ namespace Singular.ClassSpecific.Warrior
                     "Darkflight", ret => StyxWoW.Me.CurrentTarget.IsPlayer &&
                                          StyxWoW.Me.CurrentTarget.Distance > 15),
                 //Move to mele and face
-                Movement.CreateMoveToTargetBehavior(true, 4f)
+                Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
         }
 

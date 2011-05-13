@@ -23,6 +23,15 @@ namespace Singular.ClassSpecific.Warrior
             return new PrioritySelector(
                 // face target
                 Movement.CreateFaceTargetBehavior(),
+                // Auto Attack
+                new Decorator(
+                    ret => !StyxWoW.Me.IsAutoAttacking,
+                    new Action(ret => StyxWoW.Me.ToggleAttack())),
+                // clear target
+                new Decorator(
+                    ret => !StyxWoW.Me.CurrentTarget.IsAlive &&
+                            StyxWoW.Me.IsActuallyInCombat,
+                    new Action(ret => StyxWoW.Me.ClearTarget())),
                 // Ranged interupt on players
                 Spell.Buff(
                     "Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 &&
@@ -159,6 +168,10 @@ namespace Singular.ClassSpecific.Warrior
                 //Dismount
                 new Decorator(ret => StyxWoW.Me.Mounted,
                     new Action(o => Styx.Logic.Mount.Dismount())),
+                // Auto Attack
+                new Decorator(
+                    ret => !StyxWoW.Me.IsAutoAttacking,
+                    new Action(ret => StyxWoW.Me.ToggleAttack())),
                 //Shoot flying targets
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying,

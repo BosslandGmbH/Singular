@@ -22,7 +22,40 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 // face target
-                Movement.CreateFaceTargetBehavior(),                
+                Movement.CreateFaceTargetBehavior(),
+                // Auto Attack
+                new Decorator(
+                    ret => !StyxWoW.Me.IsAutoAttacking,
+                    new Action(ret => StyxWoW.Me.ToggleAttack())),
+                // clear target
+                new Decorator(
+                    ret => !StyxWoW.Me.CurrentTarget.IsAlive &&
+                            StyxWoW.Me.IsActuallyInCombat,
+                    new Action(ret => StyxWoW.Me.ClearTarget())),
+                // Low level support
+                new Decorator(
+                    ret => StyxWoW.Me.Level < 30,
+                    new PrioritySelector(
+                        // move to casters
+                        new Decorator(
+                            ret => StyxWoW.Me.CurrentTarget.Distance > 6 && 
+                                   StyxWoW.Me.IsActuallyInCombat &&
+                                  !StyxWoW.Me.CurrentTarget.IsTargetingMeOrPet,
+                            new PrioritySelector(
+                                Movement.CreateMoveToTargetBehavior(true, 5f))),
+                        //combat
+                        Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 25),
+                        Spell.Cast("Victory Rush"),
+                        Spell.Cast("Execute"),
+                        Spell.Cast("Rend", ret => !StyxWoW.Me.CurrentTarget.HasAura("Rend")),
+                        Spell.Cast("Overpower"),
+                        Spell.Cast("Bloodthirst"),
+                        //rage dump
+                        Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) > 3),
+                        Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60),
+                        Movement.CreateMoveToTargetBehavior(true, 5f))),
+                //30-50 support
+                Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.Level > 30 && StyxWoW.Me.Level < 50),
                 // ranged interupt
                 Spell.Buff(
                     "Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 &&
@@ -55,6 +88,13 @@ namespace Singular.ClassSpecific.Warrior
                             SpellManager.Cast("Heroic Leap");
                             LegacySpellManager.ClickRemoteLocation(StyxWoW.Me.CurrentTarget.Location);
                         })),
+                // move to casters
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.Distance > 6 &&
+                           StyxWoW.Me.IsActuallyInCombat &&
+                           StyxWoW.Me.CurrentTarget.IsTargetingMeOrPet,
+                    new PrioritySelector(
+                        Movement.CreateMoveToTargetBehavior(true, 5f))),
                 // Fury of angerforge
                 new Decorator(
                     ret => Unit.HasAura(StyxWoW.Me, "Raw Fury", 5) &&
@@ -131,13 +171,31 @@ namespace Singular.ClassSpecific.Warrior
                 //Dismount
                 new Decorator(ret => StyxWoW.Me.Mounted,
                     new Action(o => Styx.Logic.Mount.Dismount())),
+                // Auto Attack
+                new Decorator(
+                    ret => !StyxWoW.Me.IsAutoAttacking,
+                    new Action(ret => StyxWoW.Me.ToggleAttack())),
                 //Shoot flying targets
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying,
                     new PrioritySelector(
+                        Spell.Cast("Heroic Throw"),
                         Spell.Cast("Shoot"),
                         Spell.Cast("Throw")
                     )),
+                //low level support
+                new Decorator(
+                    ret => StyxWoW.Me.Level < 30,
+                    new PrioritySelector(
+                        Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 25),
+                        Spell.Cast("Heroic Throw", ret => StyxWoW.Me.CurrentTarget.HasAura("Charge Stun")),
+                        Movement.CreateMoveToTargetBehavior(true, 5f))),
+                //30-50 support
+                new Decorator(
+                    ret => StyxWoW.Me.Level > 30 && StyxWoW.Me.Level < 50,
+                    new PrioritySelector(
+                        Spell.BuffSelf("Battle Stance"),
+                        Spell.Cast("Charge"))),
                 //Buff up
                 Spell.BuffSelf("Battle Shout", ret => StyxWoW.Me.RagePercent < 20),
                 //Close gap

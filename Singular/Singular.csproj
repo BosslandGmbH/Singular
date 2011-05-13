@@ -102,6 +102,7 @@
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
     <Compile Include="ClassSpecific\Warrior\Arms.cs" />
     <Compile Include="ClassSpecific\Warrior\Fury.cs" />
+    <Compile Include="ClassSpecific\Warrior\Lowbie.cs" />
     <Compile Include="Dynamics\Attributes.cs" />
     <Compile Include="Dynamics\SessionState.cs" />
     <Compile Include="Helpers\Clusters.cs" />

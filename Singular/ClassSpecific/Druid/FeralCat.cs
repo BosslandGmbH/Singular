@@ -14,6 +14,16 @@ namespace Singular.ClassSpecific.Druid
     public static class FeralCat
     {
         [Spec(TalentSpec.FeralDruid)]
+        [Behavior(BehaviorType.Combat)]
+        [Behavior(BehaviorType.Pull)]
+        [Class(WoWClass.Druid)]
+        [Priority(500)]
+        [Context(WoWContext.All)]
+        public static Composite CreateFeralCatInstanceCombat()
+        {
+            return CreateFeralCatCombat();
+        }
+
         [Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
@@ -66,24 +76,6 @@ namespace Singular.ClassSpecific.Druid
 
                 // Since we can't get 'behind' mobs, just do this, kaythanks
                 Movement.CreateMoveToTargetBehavior(true, 4f)
-                );
-        }
-
-        private static Composite CreateFlyingBehavior()
-        {
-            return new PrioritySelector(
-
-                new Decorator(
-                    ret => StyxWoW.Me.Class == WoWClass.Druid && (StyxWoW.Me.Shapeshift != ShapeshiftForm.FlightForm && StyxWoW.Me.Shapeshift != ShapeshiftForm.EpicFlightForm),
-                    new PrioritySelector(
-                        new Decorator(
-                            ret => SpellManager.CanCast("Swift Flight Form"),
-                            new Action(ret => SpellManager.Cast("Swift Flight Form"))),
-                        new Decorator(
-                            ret => SpellManager.CanCast("Flight Form"),
-                            new Action(ret => SpellManager.Cast("Flight Form")))
-                        )
-                    )
                 );
         }
     }

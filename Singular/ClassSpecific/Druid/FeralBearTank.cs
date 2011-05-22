@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 
 using Styx;
+using Styx.Combat.CombatRoutine;
 using Styx.Logic;
 using Styx.WoWInternals.WoWObjects;
 
@@ -16,6 +18,11 @@ namespace Singular.ClassSpecific.Druid
 {
     class FeralBearTank
     {
+        [Spec(TalentSpec.FeralTankDruid)]
+        [Behavior(BehaviorType.Combat)]
+        [Behavior(BehaviorType.Pull)]
+        [Context(WoWContext.Instances)]
+        [Class(WoWClass.Druid)]
         public static Composite CreateBearTankCombat()
         {
             return new PrioritySelector(
@@ -23,6 +30,8 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => StyxWoW.Me.Shapeshift != ShapeshiftForm.Bear,
                     Spell.Cast("Bear Form")),
+
+                Movement.CreateFaceTargetBehavior(),
 
                 // Defensive CDs are hard to 'roll' from this type of logic, so we'll simply use them more as 'oh shit' buttons, than anything.
                 // Barkskin should be kept on CD, regardless of what we're tanking

@@ -13,6 +13,7 @@ namespace Singular.ClassSpecific.Warrior
 {
     public static class Arms
     {
+        private static string[] _slows;
         [Spec(TalentSpec.ArmsWarrior)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
@@ -20,6 +21,7 @@ namespace Singular.ClassSpecific.Warrior
         [Context(WoWContext.Normal | WoWContext.Instances)]
         public static Composite CreateArmsCombat()
         {
+            _slows = new[] { "Hamstring", "Piercing Howl", "Slowing Poison", "Hand of Freedom" };
             return new PrioritySelector(
                 // face target
                 Movement.CreateFaceTargetBehavior(),
@@ -33,78 +35,47 @@ namespace Singular.ClassSpecific.Warrior
                             StyxWoW.Me.IsActuallyInCombat,
                     new Action(ret => StyxWoW.Me.ClearTarget())),
                 // Ranged interupt on players
-                Spell.Buff(
-                    "Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 &&
-                                                 StyxWoW.Me.CurrentTarget.IsPlayer &&
-                                                 StyxWoW.Me.CurrentTarget.IsCasting),
+                Spell.Buff("Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.IsCasting),
+
                 // Dispel Bubbles
-                Spell.Cast(
-                    "Shattering Throw", ret => StyxWoW.Me.CurrentTarget.IsPlayer &&
-                                               (StyxWoW.Me.CurrentTarget.HasAura("Ice Block") ||
-                                               StyxWoW.Me.CurrentTarget.HasAura("Hand of Protection") ||
-                                               StyxWoW.Me.CurrentTarget.HasAura("Divine Shield"))),
+                Spell.Cast("Shattering Throw", ret => StyxWoW.Me.CurrentTarget.IsPlayer && Unit.HasAnyAura(StyxWoW.Me.CurrentTarget, "Ice Block", "Hand of Protection", "Divine Shield")),
+
                 //Rocket belt!
-                new Decorator(
-                    ret =>
-                        StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 20,
-                        new PrioritySelector(
-                            Item.UseEquippedItem(10)
-                        )),
+                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 20, 
+                    Item.UseEquippedItem(10)),
+
                 // ranged slow
                 Spell.Buff(
-                    "Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 &&
-                                            StyxWoW.Me.CurrentTarget.IsPlayer &&
-                                            (!StyxWoW.Me.CurrentTarget.HasAura("Hamstring") ||
-                                             !StyxWoW.Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                             !StyxWoW.Me.CurrentTarget.HasAura("Slowing Poison") ||
-                                             !StyxWoW.Me.CurrentTarget.HasAura("Hand of Freedom"))),
+                    "Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !Unit.HasAnyAura(StyxWoW.Me.CurrentTarget, _slows)),
                 //Charge
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 &&
-                                            StyxWoW.Me.CurrentTarget.Distance <= 25),
+                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25),
                 //Heroic Leap
-                new Decorator(
-                    ret => SpellManager.CanCast("Heroic Leap") && StyxWoW.Me.CurrentTarget.Distance > 9 && !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun", 1),
-                    new Action(
-                            ret =>
-                            {
-                                SpellManager.Cast("Heroic Leap");
-                                LegacySpellManager.ClickRemoteLocation(StyxWoW.Me.CurrentTarget.Location);
-                            })),
+                Spell.CastOnGround("Heroic Leap",ret=>StyxWoW.Me.CurrentTarget.Location,ret=>StyxWoW.Me.CurrentTarget.Distance > 9 && !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun", 1)),
+
                 //use it or lose it
-                new Decorator(
-                    ret => Unit.HasAura(StyxWoW.Me, "Sudden Death", 1),
-                    new PrioritySelector(
-                        Spell.Cast("Colossus Smash"))),
-                // Mele slow
-                Spell.Cast(
-                    "Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer &&
-                                        (!StyxWoW.Me.CurrentTarget.HasAura("Hamstring") ||
-                                         !StyxWoW.Me.CurrentTarget.HasAura("Piercing Howl") ||
-                                         !StyxWoW.Me.CurrentTarget.HasAura("Slowing Poison") ||
-                                         !StyxWoW.Me.CurrentTarget.HasAura("Hand of Freedom"))),
+                Spell.Cast("Colossus Smash", ret => Unit.HasAura(StyxWoW.Me, "Sudden Death", 1)),
+
+                // Melee slow
+                Spell.Cast("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !Unit.HasAnyAura(StyxWoW.Me.CurrentTarget, _slows)),
+
                 // Fury of angerforge
+                // NOTE: These won't work on non-english clients. item names are NOT localized. Use them by ID.
                 new Decorator(
                     ret => Unit.HasAura(StyxWoW.Me, "Raw Fury", 5) && 
                            StyxWoW.Me.Inventory.Equipped.Trinket1 != null && 
                            StyxWoW.Me.Inventory.Equipped.Trinket1.Name.Contains("Fury of Angerforge") &&
                            StyxWoW.Me.Inventory.Equipped.Trinket1.Cooldown <= 0,
-                    new Action(
-                        ret =>
-                        {
-                            StyxWoW.Me.Inventory.Equipped.Trinket1.Use();                        
-                        })),
+                    new Action(ret => StyxWoW.Me.Inventory.Equipped.Trinket1.Use())),
                 new Decorator(
                     ret => Unit.HasAura(StyxWoW.Me, "Raw Fury", 5) &&
                            StyxWoW.Me.Inventory.Equipped.Trinket2 != null && 
                            StyxWoW.Me.Inventory.Equipped.Trinket2.Name.Contains("Fury of Angerforge") &&
                            StyxWoW.Me.Inventory.Equipped.Trinket2.Cooldown <= 0,
-                    new Action(
-                        ret =>
-                        {
-                            StyxWoW.Me.Inventory.Equipped.Trinket2.Use();
-                        })),
+                    new Action(ret => StyxWoW.Me.Inventory.Equipped.Trinket2.Use())),
+
                 //Mele Heal
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+
                 // AOE
                 new Decorator(
                     ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
@@ -114,36 +85,28 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Bladestorm"),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
+
                 //Interupts
-                Spell.Cast(
-                    "Pummel", ret => StyxWoW.Me.CurrentTarget.IsCasting ||
-                                     StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
-                Spell.Cast(
-                    "Arcane Torrent", ret => StyxWoW.Me.CurrentTarget.IsCasting ||
-                                             StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
-                Spell.Cast(
-                    "War Stomp", ret => StyxWoW.Me.CurrentTarget.IsCasting ||
-                                        StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
-                //Interupt / Stun elite / knockdown player
-                Spell.Cast(
-                    "Throwdown", ret => StyxWoW.Me.CurrentTarget.Elite || 
-                                        StyxWoW.Me.CurrentTarget.IsPlayer || 
-                                        StyxWoW.Me.CurrentTarget.IsCasting),
+                new Decorator(ret=>StyxWoW.Me.CurrentTarget.IsCasting,
+                    new PrioritySelector(
+                        Spell.Cast("Pummel"),
+                        Spell.Cast("Arcane Torrent"),
+                        Spell.Cast("War Stomp"),
+                        // Only pop TD on elites/players
+                        Spell.Cast("Throwdown", ret=>StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite)
+                      )),
                 //Rage Dump
                 // use incite or dump rage
-                new Decorator(
-                    ret => Unit.HasAura(StyxWoW.Me, "Incite", 1) || StyxWoW.Me.RagePercent > 60,
-                    new PrioritySelector(
-                        Spell.Cast("Heroic Strike"))),
+                Spell.Cast("Heroic Strike", ret => Unit.HasAura(StyxWoW.Me, "Incite", 1) || StyxWoW.Me.RagePercent > 60),
+
                 //Use Engineering Gloves
                 Item.UseEquippedItem(9),
+
                 //Execute under 20%
                 Spell.Cast("Execute", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
+
                 //Default Rotatiom
-                new Decorator(
-                    ret => !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Rend", 1),
-                    new PrioritySelector(
-                        Spell.Buff("Rend"))),
+                Spell.Buff("Rend"),
                 Spell.Cast("Colossus Smash"),                
                 Spell.Cast("Mortal Strike"),
                 //Bladestorm after dots and MS if against player

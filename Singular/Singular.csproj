@@ -96,6 +96,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClassSpecific\Druid\FeralBearTank.cs" />
     <Compile Include="ClassSpecific\Druid\FeralCat.cs" />
     <Compile Include="ClassSpecific\Generic.cs" />
     <Compile Include="ClassSpecific\Priest\Common.cs" />

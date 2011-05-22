@@ -26,6 +26,8 @@ namespace Singular.Lists
             {
                 return new HashSet<uint>
                     {
+                        31146, // Raider's Training Dummy
+
                         //Ragefire Chasm
                         11517, //Oggleflint
                         11520, //Taragaman the Hungerer

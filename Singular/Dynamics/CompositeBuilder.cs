@@ -130,7 +130,7 @@ namespace Singular.Dynamics
                     {   
                         Logger.WriteDebug(" Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority);
                     }
-                    Composite matched = null;
+                    Composite matched;
                     try
                     {
                         matched = (Composite) mi.Invoke(null, null);

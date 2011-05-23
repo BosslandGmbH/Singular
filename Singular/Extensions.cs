@@ -12,6 +12,7 @@
 #endregion
 
 using System.Text;
+using Styx;
 using Styx.Logic;
 using Styx.WoWInternals.WoWObjects;
 
@@ -66,6 +67,16 @@ namespace Singular
             }
 
             return name;
+        }
+
+        public static bool IsBoss(this WoWUnit unit)
+        {
+            return Lists.BossList.BossIds.Contains(unit.Entry);
+        }
+
+        public static bool IsWanding(this LocalPlayer me)
+        {
+            return StyxWoW.Me.AutoRepeatingSpellId == 5019;
         }
     }
 }

@@ -13,11 +13,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
-
-
+using System.Threading;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
+using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWCache;
@@ -41,12 +41,20 @@ namespace Singular.Managers
         private static readonly WaitTimer CallPetTimer = WaitTimer.OneSecond;
 
         private static ulong _petGuid;
-        private static readonly List<WoWPetSpell> _petSpells = new List<WoWPetSpell>();
+        private static readonly List<WoWPetSpell> PetSpells = new List<WoWPetSpell>();
 
         static PetManager()
         {
             // NOTE: This is a bit hackish. This fires VERY OFTEN in major cities. But should prevent us from summoning right after dismounting.
             Lua.Events.AttachEvent("COMPANION_UPDATE", (s, e) => CallPetTimer.Reset());
+            // Note: To be changed to OnDismount with new release
+            Mount.OnMountUp += (s, e) =>
+                                   {
+                                       if (StyxWoW.Me.Class == WoWClass.Warlock || StyxWoW.Me.PetNumber > 0)
+                                       {
+                                           Thread.Sleep(1000);
+                                       }
+                                   };
         }
 
         public static PetType CurrentPetType
@@ -70,22 +78,22 @@ namespace Singular.Managers
         {
             if (!StyxWoW.Me.GotAlivePet)
             {
-                _petSpells.Clear();
+                PetSpells.Clear();
                 return;
             }
 
             if (StyxWoW.Me.Pet != null && _petGuid != StyxWoW.Me.Pet.Guid)
             {
                 _petGuid = StyxWoW.Me.Pet.Guid;
-                _petSpells.Clear();
+                PetSpells.Clear();
                 // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
-                _petSpells.AddRange(StyxWoW.Me.PetSpells);
+                PetSpells.AddRange(StyxWoW.Me.PetSpells);
             }
         }
 
         public static bool CanCastPetAction(string action)
         {
-            WoWPetSpell petAction = _petSpells.FirstOrDefault(p => p.ToString() == action);
+            WoWPetSpell petAction = PetSpells.FirstOrDefault(p => p.ToString() == action);
             if (petAction == null || petAction.Spell == null)
             {
                 return false;
@@ -96,7 +104,7 @@ namespace Singular.Managers
 
         public static void CastPetAction(string action)
         {
-            var spell = _petSpells.FirstOrDefault(p => p.ToString() == action);
+            var spell = PetSpells.FirstOrDefault(p => p.ToString() == action);
             if (spell == null)
                 return;
 
@@ -106,7 +114,7 @@ namespace Singular.Managers
 
         public static void CastPetAction(string action, WoWUnit on)
         {
-            var spell = _petSpells.FirstOrDefault(p => p.ToString() == action);
+            var spell = PetSpells.FirstOrDefault(p => p.ToString() == action);
             if (spell == null)
                 return;
 
@@ -137,7 +145,10 @@ namespace Singular.Managers
                     if (SpellManager.CanCast("Summon " + petName))
                     {
                         Logger.Write(string.Format("[Pet] Calling out my {0}", petName));
-                        return SpellManager.Cast("Summon " + petName);
+                        bool result = SpellManager.Cast("Summon " + petName);
+                        if (result)
+                            StyxWoW.SleepForLagDuration();
+                        return result;
                     }
                     break;
 
@@ -145,7 +156,10 @@ namespace Singular.Managers
                     if (SpellManager.CanCast("Summon Water Elemental"))
                     {
                         Logger.Write("[Pet] Calling out Water Elemental");
-                        return SpellManager.Cast("Summon Water Elemental");
+                        bool result = SpellManager.Cast("Summon Water Elemental");
+                        if (result)
+                            StyxWoW.SleepForLagDuration();
+                        return result;
                     }
                     break;
 
@@ -155,7 +169,10 @@ namespace Singular.Managers
                         if (!StyxWoW.Me.GotAlivePet)
                         {
                             Logger.Write(string.Format("[Pet] Calling out pet #{0}", petName));
-                            return SpellManager.Cast("Call Pet " + petName);
+                            bool result = SpellManager.Cast("Call Pet " + petName);
+                            if (result)
+                                StyxWoW.SleepForLagDuration();
+                            return result;
                         }
                     }
                     break;

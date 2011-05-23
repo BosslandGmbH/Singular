@@ -4,7 +4,7 @@ using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Helpers
 {
-    public static class PVP
+    internal static class PVP
     {
         public static bool IsCrowdControlled(WoWUnit unit)
         {

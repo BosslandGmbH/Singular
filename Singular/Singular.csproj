@@ -43,6 +43,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+    <DocumentationFile>
+    </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Bobby53|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -101,12 +103,17 @@
     <Compile Include="ClassSpecific\Generic.cs" />
     <Compile Include="ClassSpecific\Priest\Common.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
+    <Compile Include="ClassSpecific\Warlock\Affliction.cs" />
+    <Compile Include="ClassSpecific\Warlock\Common.cs" />
+    <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
+    <Compile Include="ClassSpecific\Warlock\Lowbie.cs" />
     <Compile Include="ClassSpecific\Warrior\Arms.cs" />
     <Compile Include="ClassSpecific\Warrior\Fury.cs" />
     <Compile Include="ClassSpecific\Warrior\Lowbie.cs" />
     <Compile Include="Dynamics\Attributes.cs" />
     <Compile Include="Dynamics\SessionState.cs" />
     <Compile Include="Helpers\Clusters.cs" />
+    <Compile Include="Helpers\Common.cs" />
     <Compile Include="Helpers\Dispelling.cs" />
     <Compile Include="Dynamics\CompositeBuilder.cs" />
     <Compile Include="GUI\ConfigurationForm.cs">
@@ -117,12 +124,13 @@
     </Compile>
     <Compile Include="Helpers\Item.cs" />
     <Compile Include="Helpers\Movement.cs" />
-    <Compile Include="Helpers\Object.cs" />
+    <Compile Include="Helpers\Pet.cs" />
     <Compile Include="Helpers\PVP.cs" />
     <Compile Include="Helpers\Rest.cs" />
+    <Compile Include="Helpers\Safers.cs" />
     <Compile Include="Helpers\Spell.cs" />
     <Compile Include="Helpers\Unit.cs" />
-    <Compile Include="Helpers\Wait.cs" />
+    <Compile Include="Helpers\Waiters.cs" />
     <Compile Include="Lists\BossList.cs" />
     <Compile Include="Lists\CataHeroicDpsList.cs" />
     <Compile Include="Managers\HealerManager.cs" />
@@ -156,14 +164,16 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="ClassSpecific\Paladin\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) == Jim (
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
 )
 if $(ConfigurationName) == Raphus (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Dodo\Desktop\WoW\HB\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Dodo\Desktop\Styx\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
 )
 
 if $(ConfigurationName) == Bobby53 (

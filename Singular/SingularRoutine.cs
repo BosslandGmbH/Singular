@@ -13,17 +13,15 @@
 
 using System;
 using System.Reflection;
-
 using Singular.Dynamics;
 using Singular.GUI;
+using Singular.Helpers;
 using Singular.Managers;
-
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
 using Styx.Logic.BehaviorTree;
 using Styx.WoWInternals.WoWObjects;
-
 using TreeSharp;
 
 namespace Singular
@@ -151,7 +149,7 @@ namespace Singular
             if (!EnsureComposite(false, BehaviorType.Rest, out _restBehavior))
             {
                 Logger.Write("Using default rest behavior.");
-                _restBehavior = Singular.Helpers.Rest.CreateDefaultRestBehaviour();
+                _restBehavior = Helpers.Rest.CreateDefaultRestBehaviour();
             }
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
@@ -175,6 +173,15 @@ namespace Singular
                     new PrioritySelector(
                         _combatBuffsBehavior)
                     );
+            }
+
+            // There are some classes that uses spells in rest behavior. Basicly we don't want Rest to be called while flying.
+            if (_restBehavior != null)
+            {
+                _restBehavior = new Decorator(
+                    ret => !Me.IsFlying,
+                    new PrioritySelector(
+                        _restBehavior));
             }
 
             return true;

@@ -35,7 +35,7 @@ namespace Singular.Helpers
         All = Curse | Disease | Poison | Magic
     }
 
-    public class Dispelling
+    internal static class Dispelling
     {
         /// <summary>Gets the dispel capabilities of the current player.</summary>
         /// <value>The capabilities.</value>

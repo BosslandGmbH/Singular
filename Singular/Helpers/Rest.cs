@@ -4,6 +4,7 @@ using System.Threading;
 using CommonBehaviors.Actions;
 
 using Singular.Settings;
+using Singular.Dynamics;
 
 using Styx;
 using Styx.Logic.Combat;
@@ -13,10 +14,12 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
+using Singular.Managers;
+using Styx.Combat.CombatRoutine;
 
 namespace Singular.Helpers
 {
-    public static class Rest
+    internal static class Rest
     {
 
         private static bool CorpseAround

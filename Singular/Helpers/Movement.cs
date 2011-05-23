@@ -19,8 +19,23 @@ using TreeSharp;
 
 namespace Singular.Helpers
 {
-    public static class Movement
+    internal static class Movement
     {
+        /// <summary>
+        ///  Creates a behavior that does nothing more than check if we're in Line of Sight of the target; and if not, move towards the target.
+        /// </summary>
+        /// <remarks>
+        ///  Created 23/5/2011
+        /// </remarks>
+        /// <returns>.</returns>
+        public static Composite CreateMoveToLosBehavior()
+        {
+            return new Decorator(
+                ret => !StyxWoW.Me.CurrentTarget.InLineOfSightOCD,
+                new Action(ret => Navigator.PlayerMover.MoveTowards(StyxWoW.Me.CurrentTarget.Location)));
+
+        }
+
         /// <summary>
         ///   Creates the ensure movement stopped behavior. Will return RunStatus.Success if it has stopped any movement, RunStatus.Failure otherwise.
         /// </summary>
@@ -45,7 +60,7 @@ namespace Singular.Helpers
         public static Composite CreateFaceTargetBehavior()
         {
             return new Decorator(
-                ret => !StyxWoW.Me.IsMoving && !StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 70f),
+                ret => !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 70f),
                 new Action(ret => StyxWoW.Me.CurrentTarget.Face()));
         }
 

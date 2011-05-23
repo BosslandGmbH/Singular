@@ -11,10 +11,12 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 using Styx;
+using Styx.Helpers;
 using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.WoWInternals;
@@ -36,12 +38,14 @@ namespace Singular.Managers
     {
         static TankManager()
         {
-            Instance = new TankManager();
-            Instance.NeedToTaunt = new List<WoWUnit>();
+            Instance = new TankManager {NeedToTaunt = new List<WoWUnit>()};
         }
 
         public new static TankManager Instance { get; set; }
         public List<WoWUnit> NeedToTaunt { get; private set; }
+
+        public static readonly WaitTimer TargetingTimer = new WaitTimer(TimeSpan.FromSeconds(1));
+        public static bool NeedTankTargeting { get; set; }
 
         protected override List<WoWObject> GetInitialObjectList()
         {
@@ -66,15 +70,15 @@ namespace Singular.Managers
                     continue;
                 }
 
-                if (u.CurrentTarget != null)
-                {
-                    WoWUnit tar = u.CurrentTarget;
-                    if (tar.IsPlayer && tar.IsHostile)
-                    {
-                        units.RemoveAt(i);
-                        continue;
-                    }
-                }
+                if (u.CurrentTarget == null) 
+                    continue;
+
+                WoWUnit tar = u.CurrentTarget;
+                if (!tar.IsPlayer || !tar.IsHostile) 
+                    continue;
+
+                units.RemoveAt(i);
+                continue;
             }
         }
 
@@ -127,7 +131,7 @@ namespace Singular.Managers
                      );
         }
 
-        private int GetAggroDifferenceFor(WoWUnit unit, IEnumerable<WoWPlayer> partyMembers)
+        private static int GetAggroDifferenceFor(WoWUnit unit, IEnumerable<WoWPlayer> partyMembers)
         {
             uint myThreat = unit.ThreatInfo.ThreatValue;
             uint highestParty = (from p in partyMembers

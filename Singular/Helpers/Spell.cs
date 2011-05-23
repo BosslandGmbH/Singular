@@ -25,7 +25,7 @@ namespace Singular.Helpers
 
     public delegate bool SimpleBooleanDelegate(object context);
 
-    internal class Spell
+    internal static class Spell
     {
         #region Cast - by name
 
@@ -99,7 +99,7 @@ namespace Singular.Helpers
                     ret =>
                         {
                             Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());
-                            SpellManager.Cast(name);
+                            SpellManager.Cast(name, onUnit(ret));
                         })
                 );
         }

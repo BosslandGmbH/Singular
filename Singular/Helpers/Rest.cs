@@ -40,7 +40,7 @@ namespace Singular.Helpers
                 // Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
                 new Decorator(
                     ret => SingularSettings.Instance.WaitForResSickness && StyxWoW.Me.HasAura("Resurrection Sickness"),
-                    new Action(ret => Logger.Write("Waiting for resurrection sickness to fade off"))),
+                    new Action(ret => {})),
                 // Wait while cannibalizing
                 new Decorator(
                     ret => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Cannibalize" &&
@@ -61,7 +61,6 @@ namespace Singular.Helpers
                 new Decorator(
                     ret => !StyxWoW.Me.IsSwimming && StyxWoW.Me.HealthPercent <= SingularSettings.Instance.MinHealth && !StyxWoW.Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
                     new PrioritySelector(
-                        new Action(ret => Logger.Write("Checking movement for food.")),
                         new Decorator(
                             ret => StyxWoW.Me.IsMoving,
                             new Action(ret => Navigator.PlayerMover.MoveStop())),
@@ -76,7 +75,6 @@ namespace Singular.Helpers
                 new Decorator(
                     ret => !StyxWoW.Me.IsSwimming && StyxWoW.Me.PowerType == WoWPowerType.Mana && StyxWoW.Me.ManaPercent <= SingularSettings.Instance.MinMana && !StyxWoW.Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
                     new PrioritySelector(
-                        new Action(ret => Logger.Write("Checking movement for water.")),
                         new Decorator(
                             ret => StyxWoW.Me.IsMoving,
                             new Action(ret => Navigator.PlayerMover.MoveStop())),

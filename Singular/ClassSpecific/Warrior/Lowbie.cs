@@ -21,31 +21,18 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateLowbieWarriorCombat()
         {
             return new PrioritySelector(
+                // Ensure Target
+                Safers.EnsureTarget(),
                 // face target
                 Movement.CreateFaceTargetBehavior(),
+                // LOS Check
+                Movement.CreateMoveToLosBehavior(),
                 // Auto Attack
-                new Decorator(
-                    ret => !StyxWoW.Me.IsAutoAttacking,
-                    new Action(ret => StyxWoW.Me.ToggleAttack())),
-                // clear target
-                new Decorator(
-                    ret => !StyxWoW.Me.CurrentTarget.IsAlive &&
-                            StyxWoW.Me.IsActuallyInCombat,
-                    new Action(ret => StyxWoW.Me.ClearTarget())),
-                // charge
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance < 25),
-                // move to melee
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance > 6,
-                    new PrioritySelector(
-                        Movement.CreateMoveToTargetBehavior(true, 5f))),
+                Common.CreateAutoAttack(false),
                 // Heal
                 Spell.Cast("Victory Rush"),
                 //rend
-                new Decorator(
-                    ret => !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Rend", 1) && StyxWoW.Me.CurrentTarget.HealthPercent > 50,
-                    new PrioritySelector(
-                        Spell.Buff("Rend"))),
+                Spell.Buff("Rend"),
                 // AOE
                 new Decorator(
                     ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 2,
@@ -69,12 +56,14 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateLowbieWarriorPull()
         {
             return new PrioritySelector(
+                // Ensure Target
+                Safers.EnsureTarget(),
                 // face target
                 Movement.CreateFaceTargetBehavior(),
+                // LOS
+                Movement.CreateMoveToLosBehavior(),
                 // Auto Attack
-                new Decorator(
-                    ret => !StyxWoW.Me.IsAutoAttacking,
-                    new Action(ret => StyxWoW.Me.ToggleAttack())),
+                Common.CreateAutoAttack(false),
                 // charge
                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance < 25),
                 // move to melee

@@ -16,7 +16,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Druid
 {
-    class FeralBearTank
+    public static class FeralBearTank
     {
         [Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]

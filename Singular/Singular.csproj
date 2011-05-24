@@ -98,11 +98,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClassSpecific\DeathKnight\Blood.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\Common.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\Frost.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\Lowbie.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\Unholy.cs" />
     <Compile Include="ClassSpecific\Druid\FeralBearTank.cs" />
     <Compile Include="ClassSpecific\Druid\FeralCat.cs" />
     <Compile Include="ClassSpecific\Generic.cs" />
     <Compile Include="ClassSpecific\Priest\Common.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
+    <Compile Include="ClassSpecific\Rogue\Combat.cs" />
+    <Compile Include="ClassSpecific\Rogue\Common.cs" />
+    <Compile Include="ClassSpecific\Rogue\Lowbie.cs" />
+    <Compile Include="ClassSpecific\Rogue\Poisons.cs" />
     <Compile Include="ClassSpecific\Warlock\Affliction.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />

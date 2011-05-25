@@ -15,6 +15,8 @@ using System.ComponentModel;
 using Singular.ClassSpecific.Rogue;
 using Styx.Helpers;
 
+using DefaultValue = Styx.Helpers.DefaultValueAttribute;
+
 namespace Singular.Settings
 {
     internal class RogueSettings : Styx.Helpers.Settings
@@ -25,14 +27,14 @@ namespace Singular.Settings
         }
 
         [Setting]
-        [Styx.Helpers.DefaultValue(PoisonType.Instant)]
+        [DefaultValue(PoisonType.Instant)]
         [Category("Common")]
         [DisplayName("Main Hand Poison")]
         [Description("Main Hand Poison")]
         public PoisonType MHPoison { get; set; }
 
         [Setting]
-        [System.ComponentModel.DefaultValue(PoisonType.Instant)]
+        [DefaultValue(PoisonType.Instant)]
         [Category("Common")]
         [DisplayName("Off Hand Poison")]
         [Description("Off Hand Poison")]

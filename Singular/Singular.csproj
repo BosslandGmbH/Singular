@@ -103,8 +103,12 @@
     <Compile Include="ClassSpecific\DeathKnight\Frost.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Lowbie.cs" />
     <Compile Include="ClassSpecific\DeathKnight\Unholy.cs" />
+    <Compile Include="ClassSpecific\Druid\Balance.cs" />
+    <Compile Include="ClassSpecific\Druid\Common.cs" />
     <Compile Include="ClassSpecific\Druid\FeralBearTank.cs" />
     <Compile Include="ClassSpecific\Druid\FeralCat.cs" />
+    <Compile Include="ClassSpecific\Druid\Lowbie.cs" />
+    <Compile Include="ClassSpecific\Druid\Resto.cs" />
     <Compile Include="ClassSpecific\Generic.cs" />
     <Compile Include="ClassSpecific\Priest\Common.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />

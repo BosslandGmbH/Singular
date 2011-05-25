@@ -49,6 +49,8 @@ namespace Singular.Managers
 
         public new static HealerManager Instance { get; private set; }
 
+        public static bool NeedHealTargeting { get; set; }
+
         public List<WoWPlayer> HealList { get { return ObjectList.ConvertAll(o => o.ToPlayer()); } }
 
         protected override List<WoWObject> GetInitialObjectList()

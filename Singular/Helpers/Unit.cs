@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-
+using Styx;
+using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -87,6 +89,38 @@ namespace Singular.Helpers
         {
             var auras = unit.GetAllAuras();
             return auras.Any(a => mechanics.Contains(a.Spell.Mechanic));
+        }
+
+        /// <summary>
+        ///  Returns the timeleft of an aura by TimeSpan. Return TimeSpan.Zero if the aura doesn't exist.
+        /// </summary>
+        /// <param name="auraName"> The name of the aura in English. </param>
+        /// <param name="onUnit"> The unit to check the aura for. </param>
+        /// <param name="fromMyAura"> Check for only self or all buffs</param>
+        /// <returns></returns>
+        public static TimeSpan GetAuraTimeLeft(string auraName, WoWUnit onUnit, bool fromMyAura)
+        {
+            WoWAura wantedAura =
+                onUnit.GetAllAuras().Where(a => a.Name == auraName && (fromMyAura ? a.CreatorGuid == StyxWoW.Me.Guid : true)).FirstOrDefault();
+
+            if (wantedAura != null)
+            {
+                return wantedAura.TimeLeft;
+            }
+            return TimeSpan.Zero;
+        }
+
+        /// <summary>
+        /// Returns a list of resurrectable players in a 40 yard radius
+        /// </summary>
+        public static List<WoWPlayer> ResurrectablePlayers
+        {
+            get
+            {
+                return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(
+                    p => !p.IsMe && p.Dead && p.IsFriendly && p.IsInMyPartyOrRaid &&
+                         p.DistanceSqr < 40 * 40 && !Blacklist.Contains(p.Guid)).ToList();
+            }
         }
     }
 }

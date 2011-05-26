@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Warlock
         [Priority(500)]
         public static Composite CreateAfflictionCombat()
         {
-            WantedPet = "Succubus";
+            PetManager.WantedPet = "Succubus";
 
             return new PrioritySelector(
                 Safers.EnsureTarget(),

@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.Warlock
         [Behavior(BehaviorType.Pull)]
         public static Composite CreateLowbieWarlockCombat()
         {
-            WantedPet = "Imp";
+            PetManager.WantedPet = "Imp";
 
             return new PrioritySelector(
                 Safers.EnsureTarget(),

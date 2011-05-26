@@ -11,8 +11,6 @@ namespace Singular.ClassSpecific.Warlock
 {
     partial class SingularRoutine
     {
-        private static string WantedPet { get; set; }
-
         private static bool NeedToCreateHealthStone
         {
             get
@@ -36,7 +34,7 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.BuffSelf("Demon Armor", ret => !StyxWoW.Me.HasAura("Demon Armor") && !SpellManager.HasSpell("Fel Armor")),
                 Spell.BuffSelf("Fel Armor", ret => !StyxWoW.Me.HasAura("Fel Armor")),
                 Spell.BuffSelf("Soul Link", ret => !StyxWoW.Me.HasAura("Soul Link") && StyxWoW.Me.GotAlivePet),
-                Pet.CreateSummonPet(WantedPet),
+                Pet.CreateSummonPet(PetManager.WantedPet),
                 Spell.BuffSelf("Health Funnel", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.HealthPercent < 60 && StyxWoW.Me.HealthPercent > 40)
                 );
         }
@@ -66,7 +64,7 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new PrioritySelector(
                 new Decorator(
-                    ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Summon " + WantedPet && StyxWoW.Me.GotAlivePet,
+                    ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Summon " + PetManager.WantedPet && StyxWoW.Me.GotAlivePet,
                     new Action(ctx => SpellManager.StopCasting())),
                 Waiters.WaitForCast(true),
                 Spell.BuffSelf("Life Tap", ret => StyxWoW.Me.ManaPercent < 80 && StyxWoW.Me.HealthPercent > 40),

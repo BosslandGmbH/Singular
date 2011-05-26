@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Warlock
         [Behavior(BehaviorType.Pull)]
         public static Composite CreateDemonologyCombat()
         {
-            WantedPet = "Felguard";
+            PetManager.WantedPet = "Felguard";
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),

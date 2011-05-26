@@ -35,6 +35,13 @@ namespace Singular.Settings
         #region Category: General
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("Movement")]
+        [DisplayName("Disable Movement")]
+        [Description("Disable all movement within the CC. This will NOT stop it from charging, blinking, etc. Only moving towards units, and facing will be disabled.")]
+        public bool DisableAllMovement { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("General")]
         [DisplayName("Wait For Res Sickness")]

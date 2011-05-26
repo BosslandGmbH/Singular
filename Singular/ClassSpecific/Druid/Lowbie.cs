@@ -38,7 +38,10 @@ namespace Singular.ClassSpecific.Druid
                 //Pre Cat spells
                 Spell.Cast("Moonfire", ret => !StyxWoW.Me.HasAura("Cat Form") && !StyxWoW.Me.CurrentTarget.HasAura("Moonfire")),
                 Spell.Cast("Wrath", ret => !StyxWoW.Me.HasAura("Cat Form")),
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                new Decorator(
+                    ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat,
+                    Movement.CreateMoveToTargetBehavior(true, 5f)),
+                Movement.CreateMoveToTargetBehavior(true, 20f)
                 );
         }
 

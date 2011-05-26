@@ -110,6 +110,11 @@
     <Compile Include="ClassSpecific\Druid\Lowbie.cs" />
     <Compile Include="ClassSpecific\Druid\Resto.cs" />
     <Compile Include="ClassSpecific\Generic.cs" />
+    <Compile Include="ClassSpecific\Hunter\BeastMaster.cs" />
+    <Compile Include="ClassSpecific\Hunter\Common.cs" />
+    <Compile Include="ClassSpecific\Hunter\Lowbie.cs" />
+    <Compile Include="ClassSpecific\Hunter\Marksman.cs" />
+    <Compile Include="ClassSpecific\Hunter\Survival.cs" />
     <Compile Include="ClassSpecific\Priest\Common.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
     <Compile Include="ClassSpecific\Rogue\Combat.cs" />

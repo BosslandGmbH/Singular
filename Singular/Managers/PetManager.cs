@@ -74,6 +74,8 @@ namespace Singular.Managers
 
         public static bool HavePet { get { return StyxWoW.Me.GotAlivePet; } }
 
+        public static string WantedPet { get; set; }
+
         internal static void Pulse()
         {
             if (!StyxWoW.Me.GotAlivePet)

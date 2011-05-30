@@ -12,7 +12,7 @@ using Action = TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Rogue
 {
-    public static class Combat
+    public class Combat
     {
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.CombatRogue)]

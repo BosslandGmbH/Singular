@@ -9,7 +9,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Priest
 {
-    public static class Common
+    public class Common
     {
         [Class(WoWClass.Priest)]
         [Spec(TalentSpec.Any)]

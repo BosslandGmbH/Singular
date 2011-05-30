@@ -11,7 +11,7 @@ using Styx.Logic.Combat;
 
 namespace Singular.ClassSpecific.Warrior
 {
-    public static class Lowbie
+    public class Lowbie
     {
         [Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.Combat)]

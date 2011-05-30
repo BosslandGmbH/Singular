@@ -7,7 +7,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Rogue
 {
-    public static class Lowbie
+    public class Lowbie
     {
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.Lowbie)]

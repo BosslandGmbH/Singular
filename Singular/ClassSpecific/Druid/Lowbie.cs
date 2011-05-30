@@ -8,7 +8,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Druid
 {
-    public static class Lowbie
+    public class Lowbie
     {
         [Spec(TalentSpec.Lowbie)]
         [Class(WoWClass.Druid)]

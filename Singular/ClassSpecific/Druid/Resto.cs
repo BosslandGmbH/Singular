@@ -12,7 +12,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Druid
 {
-    public static class Resto
+    public class Resto
     {
         [Class(WoWClass.Druid)]
         [Spec(TalentSpec.RestorationDruid)]

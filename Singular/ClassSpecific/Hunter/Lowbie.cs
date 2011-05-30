@@ -7,7 +7,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Hunter
 {
-    public static class Lowbie
+    public class Lowbie
     {
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.Lowbie)]

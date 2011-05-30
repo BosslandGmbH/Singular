@@ -12,7 +12,7 @@ using Styx.Logic.Combat;
 
 namespace Singular.ClassSpecific.Warlock
 {
-    partial class SingularRoutine
+    public class Affliction
     {
         [Class(WoWClass.Warlock)]
         [Spec(TalentSpec.AfflictionWarlock)]
@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Waiters.WaitForCast(true),
-                Common.CreateAutoAttack(true),
+                Helpers.Common.CreateAutoAttack(true),
                 // Emergencies
                 new Decorator(
                     ret => StyxWoW.Me.HealthPercent < 20,

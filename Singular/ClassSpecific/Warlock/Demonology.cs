@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Singular.ClassSpecific.Warlock
 {
-    partial class SingularRoutine
+    public class Demonology
     {
         [Class(WoWClass.Warlock)]
         [Spec(TalentSpec.DemonologyWarlock)]
@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Waiters.WaitForCast(true),
-                Common.CreateAutoAttack(true),
+                Helpers.Common.CreateAutoAttack(true),
                 Spell.BuffSelf("Soulburn", ret => SpellManager.HasSpell("Soul Fire") || StyxWoW.Me.HealthPercent < 70),
                 Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
                 new Decorator(

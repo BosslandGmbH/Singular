@@ -9,7 +9,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Warlock
 {
-    partial class SingularRoutine
+    public class Common
     {
         private static bool NeedToCreateHealthStone
         {

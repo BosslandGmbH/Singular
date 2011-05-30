@@ -7,7 +7,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Priest
 {
-    public static class Shadow
+    public class Shadow
     {
         [Spec(TalentSpec.ShadowPriest)]
         [Behavior(BehaviorType.Combat | BehaviorType.Pull)]

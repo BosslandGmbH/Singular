@@ -11,7 +11,7 @@ using Styx.Logic.Combat;
 
 namespace Singular.ClassSpecific.Warrior
 {
-    public static class Arms
+    public class Arms
     {
         private static string[] _slows;
         [Spec(TalentSpec.ArmsWarrior)]

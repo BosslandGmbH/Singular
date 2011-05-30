@@ -8,7 +8,7 @@ using Action = TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Hunter
 {
-    public static class BeastMaster
+    public class BeastMaster
     {
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.BeastMasteryHunter)]

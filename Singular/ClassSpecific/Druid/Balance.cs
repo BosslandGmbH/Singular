@@ -9,7 +9,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Druid
 {
-    public static class Balance
+    public class Balance
     {
         private static string _oldDps = "Wrath";
 

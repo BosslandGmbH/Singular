@@ -8,7 +8,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Warlock
 {
-    partial class SingularRoutine
+    public class Lowbie
     {
         [Class(WoWClass.Warlock)]
         [Spec(TalentSpec.Lowbie)]
@@ -23,7 +23,7 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Common.CreateAutoAttack(true),
+                Helpers.Common.CreateAutoAttack(true),
                 Waiters.WaitForCast(true),
                 Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
                 Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),

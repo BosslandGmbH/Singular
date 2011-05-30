@@ -17,7 +17,7 @@ using Action = TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Hunter
 {
-    public static class Common
+    public class Common
     {
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.BeastMasteryHunter)]

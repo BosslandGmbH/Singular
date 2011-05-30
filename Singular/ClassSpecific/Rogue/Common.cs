@@ -14,7 +14,7 @@ using Action = TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Rogue
 {
-    public static class Common
+    public class Common
     {
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.CombatRogue)]

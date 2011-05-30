@@ -10,7 +10,7 @@ using Action = TreeSharp.Action;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
-    public static class Blood
+    public class Blood
     {
         [Class(WoWClass.DeathKnight)]
         [Spec(TalentSpec.BloodDeathKnight)]

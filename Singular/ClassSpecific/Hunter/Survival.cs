@@ -8,7 +8,7 @@ using Action = TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Hunter
 {
-    public static class Survival
+    public class Survival
     {
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.SurvivalHunter)]

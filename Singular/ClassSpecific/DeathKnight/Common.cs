@@ -7,7 +7,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
-    public static class Common
+    public class Common
     {
         #region Pull
 

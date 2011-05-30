@@ -12,7 +12,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Druid
 {
-    public static class Common
+    public class Common
     {
         public static ShapeshiftForm WantedDruidForm { get; set; }
 

@@ -15,7 +15,7 @@ namespace Singular.ClassSpecific.Mage
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
-        public Composite CreateLowbieMageCombat()
+        public static Composite CreateLowbieMageCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

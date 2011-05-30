@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.Mage
         [Spec(TalentSpec.FrostMage)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
-        public Composite CreateFrostMageCombat()
+        public static Composite CreateFrostMageCombat()
         {
             PetManager.WantedPet = "Water Elemental";
             return new PrioritySelector(
@@ -86,7 +86,7 @@ namespace Singular.ClassSpecific.Mage
         [Spec(TalentSpec.FrostMage)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
-        public Composite CreateFrostMagePull()
+        public static Composite CreateFrostMagePull()
         {
             return
                 new PrioritySelector(

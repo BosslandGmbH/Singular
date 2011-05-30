@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Mage
         [Spec(TalentSpec.FireMage)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
-        public Composite CreateFireMageCombat()
+        public static Composite CreateFireMageCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -76,7 +76,7 @@ namespace Singular.ClassSpecific.Mage
         [Spec(TalentSpec.FireMage)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
-        public Composite CreateFireMagePull()
+        public static Composite CreateFireMagePull()
         {
             return
                 new PrioritySelector(
@@ -92,7 +92,7 @@ namespace Singular.ClassSpecific.Mage
         [Spec(TalentSpec.FireMage)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
-        public Composite CreateFireMagePreCombatBuffs()
+        public static Composite CreateFireMagePreCombatBuffs()
         {
             return
                 new PrioritySelector(

@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Mage
         [Spec(TalentSpec.ArcaneMage)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
-        public Composite CreateArcaneMageCombat()
+        public static Composite CreateArcaneMageCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -73,7 +73,7 @@ namespace Singular.ClassSpecific.Mage
         [Spec(TalentSpec.ArcaneMage)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
-        public Composite CreateArcaneMagePull()
+        public static Composite CreateArcaneMagePull()
         {
             return
                 new PrioritySelector(

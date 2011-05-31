@@ -64,7 +64,7 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.Cast("Soul Fire", ret => StyxWoW.Me.HasAura("Improved Soul Fire") || StyxWoW.Me.HasAura("Soulburn")),
                 Spell.Cast("Soul Fire", ret => StyxWoW.Me.HasAura("Decimation")),
                 Spell.Cast("Incinerate", ret => StyxWoW.Me.HasAura("Molten Core")),
-                Spell.Cast("Shadow Bolt"),
+                Spell.Cast("Shadow Bolt"),````````
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

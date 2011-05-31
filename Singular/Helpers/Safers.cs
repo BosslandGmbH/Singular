@@ -68,7 +68,7 @@ namespace Singular.Helpers
                             new Decorator(
                                 ret => ret != null,
                                 new Sequence(
-                                    new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).Name + "!")),
+                                    new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
                                     new Action(ret => ((WoWUnit)ret).Target()))),
                             // In order to resolve getting "stuck" on a target, we'll clear it if there's nothing viable.
                             new Action(

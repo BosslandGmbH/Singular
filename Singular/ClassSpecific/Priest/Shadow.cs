@@ -1,22 +1,99 @@
-﻿using Singular.Dynamics;
+﻿using System;
+using System.Linq;
+using CommonBehaviors.Actions;
+using Singular.Dynamics;
+using Singular.Helpers;
 using Singular.Managers;
-
+using Singular.Settings;
+using Styx;
 using Styx.Combat.CombatRoutine;
-
+using Styx.Logic.Combat;
 using TreeSharp;
+using Action = TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Priest
 {
     public class Shadow
     {
-        [Spec(TalentSpec.ShadowPriest)]
-        [Behavior(BehaviorType.Combat | BehaviorType.Pull)]
+        private static DateTime _lastMindBlast = DateTime.Now;
+
         [Class(WoWClass.Priest)]
-        [Priority(500)]
+        [Spec(TalentSpec.ShadowPriest)]
+        [Behavior(BehaviorType.Combat)]
+        [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
-        public static Composite CreatePriestShadowCombat()
+        public static Composite CreateShadowPriestCombat()
         {
-            return new PrioritySelector();
+            return new PrioritySelector(
+                // targetting behaviours
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Waiters.WaitForCast(true),
+                // cast devouring plague first if option is set
+                Spell.Buff("Devouring Plague", ret => SingularSettings.Instance.Priest.DevouringPlageuFirst),
+
+                // don't attempt to heal unless below a certain percentage health
+                new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.DontHealPercent,
+                    Discipline.CreateDiscHealOnlyBehavior(true)),
+
+                // always try to be in shadow form, but not if we're below the above health % (stops in and out shadowform spam)
+                Spell.BuffSelf("Shadowform", ret => SingularSettings.Instance.Priest.DontShadowFormHealth && StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.DontHealPercent),
+
+                // finish the guy off first if we can
+                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 25),
+
+                // if we've got 2+ unfriendly units beating on us, psychic horror on one
+                Spell.Cast("Psychic Horror",
+                    ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(unit => StyxWoW.Me.CurrentTargetGuid != unit.Guid && unit.Aggro && SpellManager.CanCast("Psychic Horror", unit, false)),
+                    ret => SingularSettings.Instance.Priest.UsePsychicHorrorAdds && Unit.NearbyUnfriendlyUnits.Count(unit => unit.Aggro && SpellManager.CanCast("Psychic Horror", unit, false)) >= 2),
+
+                // stop person casting
+                Spell.Cast("Silence", ret => StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.CastingSpell != null),
+                Spell.Cast("Psychic Horror", ret => SingularSettings.Instance.Priest.UsePsychicHorrorInterrupt && StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.CastingSpell != null),
+
+                // use dispersion if we can
+                Spell.Cast("Dispersion", ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Priest.DispersionMana),
+                new Decorator(ret => Unit.HasAura(StyxWoW.Me, "Dispersion", 0),
+                    new ActionAlwaysSucceed()),
+
+                Spell.Cast("Archangel", ret => SingularSettings.Instance.Priest.AlwaysArchangel5 && Unit.HasAura("Dark Evangelism", 5)),
+
+                // open with spike or if its a totem
+                Spell.Cast("Mind Spike", 
+                            ret => !Unit.HasMyAura("Mind Trauma") && 
+                                   (StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Totem || !StyxWoW.Me.Combat)),
+                // use mind blast after 2+ spikes, or if orbs, 
+                Spell.Cast("Mind Blast", ret => Unit.HasMyAura("Mind Spike", 2)),
+                // use spike a second time if we can, either after pull or after dots have run out for whatever reason
+                Spell.Cast("Mind Spike", ret => !Unit.HasMyAura("Mind Trauma") && !Unit.HasMyAura("Vampiric Touch") && !Unit.HasMyAura("Devouring Plague") && !Unit.HasMyAura("Shadow Word: Pain")),
+
+                // start up with the dots
+                Spell.Buff("Vampiric Touch"),
+                Spell.Buff("Devouring Plague"),
+                Spell.Buff("Shadow Word: Pain"),
+
+                // blast for shadow orbs or timer
+                new Decorator(ret => ((Unit.HasAura("Shadow Orb", SingularSettings.Instance.Priest.MindBlastOrbs) && !Unit.HasAura("Empowered Shadow", 0)) || _lastMindBlast + TimeSpan.FromSeconds(SingularSettings.Instance.Priest.MindBlastTimer) < DateTime.Now),
+                    new Sequence(
+                        new Action(ret => _lastMindBlast = DateTime.Now),
+                        Spell.Cast("Mind Blast"))),
+
+                // attempt to cast shield before flay, if we need to
+                Spell.BuffSelf("Power Word: Shield", ret => !Unit.HasAura("Weakened Soul", 0) && Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == StyxWoW.Me.Guid) > 0),
+                // flay if we have shield or if no one's beating on us
+                Spell.Cast("Mind Flay", ret => !StyxWoW.Me.IsMoving && (Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == StyxWoW.Me.Guid) <= 0 || Unit.HasAura("Power Word: Shield", 0))),
+                // maybe try a spike if there's none of our dots on it
+                Spell.Cast("Mind Spike", ret => !Unit.HasMyAura("Vampiric Touch") && !Unit.HasMyAura("Devouring Plague") && !Unit.HasMyAura("Shadow Word: Pain")),
+
+                // finally, no mana?, try to use archangel if we have _any_ stacks of evangelism
+                Spell.Cast("Archangel", ret => Unit.HasAura("Dark Evangelism") && StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ArchangelMana),
+
+                // try to do _something_
+                Spell.Cast("Mind Blast"),
+                // use wand
+                Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand)
+                );
         }
     }
 }

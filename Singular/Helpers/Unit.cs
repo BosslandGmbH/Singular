@@ -11,6 +11,12 @@ namespace Singular.Helpers
 {
     internal static class Unit
     {
+        public static bool IsUndeadOrDemon(WoWUnit unit)
+        {
+            return unit.CreatureType == WoWCreatureType.Undead 
+                    || unit.CurrentTarget.CreatureType == WoWCreatureType.Demon;
+        }
+
         /// <summary>
         ///   Gets the nearby friendly players within 40 yards.
         /// </summary>
@@ -36,6 +42,27 @@ namespace Singular.Helpers
         }
 
         /// <summary>
+        ///  Checks the aura by the name on yourself.
+        /// </summary>
+        /// <param name="aura"> The name of the aura in English. </param>
+        /// <returns></returns>
+        public static bool HasAura(string aura)
+        {
+            return HasAura(StyxWoW.Me, aura, 0);
+        }
+
+        /// <summary>
+        ///  Checks the aura by the name on yourself.
+        /// </summary>
+        /// <param name="aura"> The name of the aura in English. </param>
+        /// <param name="stacks"> The stack count of the aura to return true. </param>
+        /// <returns></returns>
+        public static bool HasAura(string aura, int stacks)
+        {
+            return HasAura(StyxWoW.Me, aura, stacks);
+        }
+
+        /// <summary>
         ///  Checks the aura by the name on specified unit.
         /// </summary>
         /// <param name="unit"> The unit to check auras for. </param>
@@ -55,13 +82,62 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static bool HasAura(WoWUnit unit, string aura, int stacks)
         {
+            return HasAura(unit, aura, stacks, null);
+        }
+
+        /// <summary>
+        ///  Check the aura thats created by yourself by the name on current target
+        /// </summary>
+        /// <param name="aura"> The name of the aura in English. </param>
+        /// <returns></returns>
+        public static bool HasMyAura(string aura)
+        {
+            return HasMyAura(aura, StyxWoW.Me.CurrentTarget);
+        }
+
+        /// <summary>
+        ///  Check the aura count thats created by yourself by the name on current target
+        /// </summary>
+        /// <param name="aura"> The name of the aura in English. </param>
+        /// <param name="stacks"> The stack count of the aura to return true. </param>
+        /// <returns></returns>
+        public static bool HasMyAura(string aura, int stacks)
+        {
+            return HasMyAura(aura, StyxWoW.Me.CurrentTarget, stacks);
+        }
+
+        /// <summary>
+        ///  Check the aura count thats created by yourself by the name on specified unit
+        /// </summary>
+        /// <param name="aura"> The name of the aura in English. </param>
+        /// <param name="unit"> The unit to check auras for. </param>
+        /// <returns></returns>
+        public static bool HasMyAura(string aura, WoWUnit unit)
+        {
+            return HasMyAura(aura, unit, 0);
+        }
+
+        /// <summary>
+        ///  Check the aura count thats created by yourself by the name on specified unit
+        /// </summary>
+        /// <param name="aura"> The name of the aura in English. </param>
+        /// <param name="unit"> The unit to check auras for. </param>
+        /// <param name="stacks"> The stack count of the aura to return true. </param>
+        /// <returns></returns>
+        public static bool HasMyAura(string aura, WoWUnit unit, int stacks)
+        {
+            return HasAura(unit, aura, stacks, StyxWoW.Me);
+        }
+
+        private static bool HasAura(WoWUnit unit, string aura, int stacks, WoWUnit creator)
+        {
             Logger.WriteDebug("Looking for aura: " + aura);
             var auras = unit.GetAllAuras();
-            foreach(var a in auras)
+            foreach (var a in auras)
             {
                 Logger.WriteDebug("Aura name: " + a.Name + " - " + a.StackCount);
                 if (a.Name == aura)
-                    return a.StackCount >= stacks;
+                    return a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid);
             }
             return false;
         }

@@ -21,6 +21,8 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateCombatRoguePull()
         {
             return new PrioritySelector(
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
                 Spell.BuffSelf("Sprint", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth")),
                 Spell.BuffSelf("Stealth"),
                 new PrioritySelector(

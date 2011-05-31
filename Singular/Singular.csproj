@@ -120,7 +120,14 @@
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
     <Compile Include="ClassSpecific\Mage\Frost.cs" />
     <Compile Include="ClassSpecific\Mage\Lowbie.cs" />
+    <Compile Include="ClassSpecific\Paladin\Common.cs" />
+    <Compile Include="ClassSpecific\Paladin\Holy.cs" />
+    <Compile Include="ClassSpecific\Paladin\Lowbie.cs" />
+    <Compile Include="ClassSpecific\Paladin\Protection.cs" />
+    <Compile Include="ClassSpecific\Paladin\Retribution.cs" />
     <Compile Include="ClassSpecific\Priest\Common.cs" />
+    <Compile Include="ClassSpecific\Priest\Discipline.cs" />
+    <Compile Include="ClassSpecific\Priest\Lowbie.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
     <Compile Include="ClassSpecific\Rogue\Combat.cs" />
     <Compile Include="ClassSpecific\Rogue\Common.cs" />
@@ -188,9 +195,7 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ClassSpecific\Paladin\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) == Jim (

@@ -33,6 +33,8 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateLowbieRoguePull()
         {
             return new PrioritySelector(
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
                 Spell.BuffSelf("Stealth"),
                 Helpers.Common.CreateAutoAttack(true),
                 Movement.CreateMoveToTargetBehavior(true, 5f)

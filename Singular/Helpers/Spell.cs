@@ -93,7 +93,7 @@ namespace Singular.Helpers
                         //Logger.WriteDebug("OnUnit: " + onUnit(ret));
                         //Logger.WriteDebug("CanCast: " + SpellManager.CanCast(name, onUnit(ret), false));
 
-                        return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret), false);
+                        return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret));
                     },
                 new Action(
                     ret =>
@@ -259,7 +259,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite BuffSelf(string name)
         {
-            return Buff(name, ret => true);
+            return Buff(name, ret => StyxWoW.Me, ret => true);
         }
 
         /// <summary>

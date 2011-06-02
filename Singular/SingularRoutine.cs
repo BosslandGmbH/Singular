@@ -104,6 +104,12 @@ namespace Singular
         public override void Pulse()
         {
             PetManager.Pulse();
+
+            if (HealerManager.NeedHealTargeting)
+                HealerManager.Instance.Pulse();
+
+            if (TankManager.NeedTankTargeting && CurrentWoWContext != WoWContext.Battlegrounds && (Me.IsInParty || Me.IsInRaid))
+                TankManager.Instance.Pulse();
         }
 
         public override void Initialize()

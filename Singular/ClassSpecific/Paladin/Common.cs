@@ -64,7 +64,8 @@ namespace Singular.ClassSpecific.Paladin
                                                     : new List<WoWPlayer> { StyxWoW.Me };
 
                             var result = players.Any(
-                                p => (!p.HasAura("Blessing of Might") || p.Auras["Blessing of Might"].CreatorGuid != StyxWoW.Me.Guid) &&
+                                p => p.DistanceSqr < 40 * 40 && 
+                                     (!p.HasAura("Blessing of Might") || p.Auras["Blessing of Might"].CreatorGuid != StyxWoW.Me.Guid) &&
                                      ((p.HasAura("Blessing of Kings") && p.Auras["Blessing of Kings"].CreatorGuid != StyxWoW.Me.Guid) ||
                                      p.HasAura("Mark of the Wild") || p.HasAura("Embrace of the Shale Spider")));
 
@@ -81,7 +82,8 @@ namespace Singular.ClassSpecific.Paladin
                                                     : new List<WoWPlayer> { StyxWoW.Me };
 
                             var result = players.Any(
-                                p => (!p.HasAura("Blessing of Kings") || p.Auras["Blessing of Kings"].CreatorGuid != StyxWoW.Me.Guid) &&
+                                p => p.DistanceSqr < 40*40 && 
+                                     (!p.HasAura("Blessing of Kings") || p.Auras["Blessing of Kings"].CreatorGuid != StyxWoW.Me.Guid) &&
                                      !p.HasAura("Mark of the Wild") &&
                                      !p.HasAura("Embrace of the Shale Spider"));
 

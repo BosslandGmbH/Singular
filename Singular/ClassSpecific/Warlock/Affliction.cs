@@ -47,11 +47,11 @@ namespace Singular.ClassSpecific.Warlock
                     "Soul Swap",
                     ret =>
                     !StyxWoW.Me.HasAura("Soul Swap") && StyxWoW.Me.CurrentTarget.HealthPercent < 10 && StyxWoW.Me.CurrentTarget.HasAura("Unstable Affliction") &&
-                    !StyxWoW.Me.CurrentTarget.IsBoss()),
+                    !Unit.IsBoss(StyxWoW.Me.CurrentTarget)),
                 Spell.Cast("Drain Soul", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 10),
                 // Elites
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsBoss(),
+                    ret => Unit.IsBoss(StyxWoW.Me.CurrentTarget),
                     new PrioritySelector(
                         Spell.BuffSelf("Demon Soul"),
                         Spell.Buff("Curse of Elements", ret => !StyxWoW.Me.CurrentTarget.HasAura("Curse of Elements")),
@@ -78,7 +78,7 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.Cast("Shadow Bolt", ret => StyxWoW.Me.HasAura("Shadow Trance")),
                 Spell.Buff("Haunt"),
                 Spell.Cast("Soul Swap", ret => StyxWoW.Me.HasAura("Soul Swap") && StyxWoW.Me.CurrentTarget.HealthPercent > 10),
-                Spell.Buff("Bane of Doom", ret => StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.CurrentTarget.HasAura("Bane of Doom")),
+                Spell.Buff("Bane of Doom", ret => Unit.IsBoss(StyxWoW.Me.CurrentTarget) && !StyxWoW.Me.CurrentTarget.HasAura("Bane of Doom")),
                 Spell.Buff("Bane of Agony", ret => !StyxWoW.Me.CurrentTarget.HasAura("Bane of Agony") && !StyxWoW.Me.CurrentTarget.HasAura("Bane of Doom")),
                 Spell.Buff("Corruption", ret => !StyxWoW.Me.CurrentTarget.HasAura("Corruption") && !StyxWoW.Me.CurrentTarget.HasAura("Seed of Corruption")),
                 Spell.Buff("Unstable Affliction", ret => !StyxWoW.Me.CurrentTarget.HasAura("Unstable Affliction")),

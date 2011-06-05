@@ -215,5 +215,10 @@ namespace Singular.Helpers
                      a.Spell.Mechanic == WoWSpellMechanic.Frozen
                      );
         }
+
+        public static bool IsBoss(WoWUnit unit)
+        {
+            return Lists.BossList.BossIds.Contains(unit.Entry);
+        }
     }
 }

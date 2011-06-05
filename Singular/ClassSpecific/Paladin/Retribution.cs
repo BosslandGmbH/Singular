@@ -133,7 +133,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Spell.BuffSelf("Zealotry", ret => StyxWoW.Me.CurrentTarget.IsBoss()),
+                    Spell.BuffSelf("Zealotry", ret => Unit.IsBoss(StyxWoW.Me.CurrentTarget)),
                     Spell.Cast("Word of Glory", ret => StyxWoW.Me.CurrentHolyPower >= 2 && StyxWoW.Me.HealthPercent <= 75),
                     Spell.BuffSelf("Avenging Wrath"),
                     Spell.BuffSelf(

@@ -198,5 +198,22 @@ namespace Singular.Helpers
                          p.DistanceSqr < 40 * 40 && !Blacklist.Contains(p.Guid)).ToList();
             }
         }
+
+        public static bool IsCrowdControlled(WoWUnit unit)
+        {
+            Dictionary<string, WoWAura>.ValueCollection auras = unit.Auras.Values;
+
+            return auras.Any(
+                a => a.Spell.Mechanic == WoWSpellMechanic.Banished ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Charmed ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Horrified ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Polymorphed ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Sapped ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Shackled ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Asleep ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Frozen
+                     );
+        }
     }
 }

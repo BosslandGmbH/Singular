@@ -14,7 +14,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using Singular.Helpers;
 using Styx;
 using Styx.Helpers;
 using Styx.Logic;
@@ -64,7 +64,7 @@ namespace Singular.Managers
 
                 WoWUnit u = units[i].ToUnit();
 
-                if (u.IsFriendly || u.Dead || u.IsPet || !u.Combat || IsCrowdControlled(u))
+                if (u.IsFriendly || u.Dead || u.IsPet || !u.Combat || Unit.IsCrowdControlled(u))
                 {
                     units.RemoveAt(i);
                     continue;
@@ -112,23 +112,6 @@ namespace Singular.Managers
                     NeedToTaunt.Add(u);
                 }
             }
-        }
-
-        private bool IsCrowdControlled(WoWUnit unit)
-        {
-            Dictionary<string, WoWAura>.ValueCollection auras = unit.Auras.Values;
-
-            return auras.Any(
-                a => a.Spell.Mechanic == WoWSpellMechanic.Banished ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Charmed ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Horrified ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Incapacitated ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Polymorphed ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Sapped ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Shackled ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Asleep ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Frozen
-                     );
         }
 
         private static int GetAggroDifferenceFor(WoWUnit unit, IEnumerable<WoWPlayer> partyMembers)

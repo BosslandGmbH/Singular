@@ -12,6 +12,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
@@ -111,7 +112,7 @@ namespace Singular.GUI
         private void timer1_Tick(object sender, EventArgs e)
         {
             var sb = new StringBuilder();
-            foreach (WoWPlayer u in HealerManager.Instance.HealList.ToArray())
+            foreach (WoWPlayer u in HealerManager.Instance.HealList.Where(p => p!= null && p.IsValid))
             {
                 sb.AppendLine(u.Name + " - " + u.HealthPercent);
             }

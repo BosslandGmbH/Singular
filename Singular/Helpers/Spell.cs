@@ -15,6 +15,7 @@ using System.Linq;
 
 using Styx;
 using Styx.Logic.Combat;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
@@ -92,12 +93,28 @@ namespace Singular.Helpers
                         //Logger.WriteDebug("Requirements: " + requirements(ret));
                         //Logger.WriteDebug("OnUnit: " + onUnit(ret));
                         //Logger.WriteDebug("CanCast: " + SpellManager.CanCast(name, onUnit(ret), false));
+                        //Note: To be changed with CanCast(name, onUnit(ret), true, false) is next release.
+                        WoWSpell spell;
+                        if (!SpellManager.Spells.TryGetValue(name, out spell))
+                        {
+                            spell = SpellManager.RawSpells.FirstOrDefault(s => s.Name == name);
+                            if (spell == null)
+                                return false;
+                        }
+                        //
 
-                        return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret));
+                        return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(spell, onUnit(ret), true, false);
                     },
                 new Action(
                     ret =>
                         {
+                            WoWSpell spell;
+                            if (!SpellManager.Spells.TryGetValue(name, out spell))
+                                spell = SpellManager.RawSpells.FirstOrDefault(s => s.Name == name);
+
+                            if (spell != null && spell.CastTime > 0 && StyxWoW.Me.IsMoving)
+                                WoWMovement.MoveStop();
+
                             Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());
                             SpellManager.Cast(name, onUnit(ret));
                         })

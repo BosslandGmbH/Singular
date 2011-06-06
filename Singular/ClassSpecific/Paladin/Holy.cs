@@ -113,7 +113,7 @@ namespace Singular.ClassSpecific.Paladin
                                        ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealthHoly),
                             Spell.Cast(
                                 "Light of Dawn",
-                                ret => (WoWUnit)ret,
+                                ret => StyxWoW.Me,
                                 ret => StyxWoW.Me.CurrentHolyPower == 3 &&
                                        Unit.NearbyFriendlyPlayers.Count(p =>
                                            p.HealthPercent <= SingularSettings.Instance.Paladin.LightOfDawnHealth && p != StyxWoW.Me &&

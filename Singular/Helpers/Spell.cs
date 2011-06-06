@@ -28,15 +28,6 @@ namespace Singular.Helpers
 
     internal static class Spell
     {
-        private static WoWSpell GetSpellByName(string spellName)
-        {
-            WoWSpell spell;
-            if (!SpellManager.Spells.TryGetValue(spellName, out spell))
-                spell = SpellManager.RawSpells.FirstOrDefault(s => s.Name == spellName);
-
-            return spell;
-        }
-
         #region Cast - by name
 
         /// <summary>
@@ -103,20 +94,11 @@ namespace Singular.Helpers
                         //Logger.WriteDebug("OnUnit: " + onUnit(ret));
                         //Logger.WriteDebug("CanCast: " + SpellManager.CanCast(name, onUnit(ret), false));
 
-                        //Note: To be changed with CanCast(name, onUnit(ret), true, false) is next release.
-
-                        WoWSpell spell = GetSpellByName(name);
-
-                        return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(spell, onUnit(ret), true, false);
+                        return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret), true);
                     },
                 new Action(
                     ret =>
                         {
-                            WoWSpell spell = GetSpellByName(name);
-
-                            if (spell != null && spell.CastTime > 0 && StyxWoW.Me.IsMoving)
-                                WoWMovement.MoveStop();
-
                             Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());
                             SpellManager.Cast(name, onUnit(ret));
                         })

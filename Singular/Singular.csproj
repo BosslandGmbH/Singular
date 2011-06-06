@@ -155,6 +155,7 @@
     </Compile>
     <Compile Include="Helpers\Item.cs" />
     <Compile Include="Helpers\Movement.cs" />
+    <Compile Include="Helpers\Party.cs" />
     <Compile Include="Helpers\Pet.cs" />
     <Compile Include="Helpers\PVP.cs" />
     <Compile Include="Helpers\Rest.cs" />

@@ -52,7 +52,7 @@ namespace Singular
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
-        private static WoWContext CurrentWoWContext
+        internal static WoWContext CurrentWoWContext
         {
             get
             {

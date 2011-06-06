@@ -43,35 +43,33 @@ namespace Singular.ClassSpecific.Mage
                 Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),
                 Spell.Buff("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
                 Common.CreateMagePolymorphOnAddBehavior(),
-                new Decorator(
-                    ret => !StyxWoW.Me.GotAlivePet,
+                new Decorator(ret => !StyxWoW.Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(PetManager.WantedPet))),
+
                 Spell.Cast("Evocation", ret => StyxWoW.Me.ManaPercent < 20),
                 Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting),
                 Spell.Cast("Mirror Image"),
-                Spell.Cast("Time Warp"),
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent > 50,
+                // Debuff is 10min, CD is 5min. Don't recast if its not going to apply.
+                Spell.Cast("Time Warp", ret => !Unit.HasAnyAura(StyxWoW.Me, "Sated", "Temporal Displacement")),
+                new Decorator(ret => StyxWoW.Me.CurrentTarget.HealthPercent > 50,
                     new Sequence(
                         new Action(ctx => StyxWoW.Me.CurrentTarget.Face()),
                         new Action(ctx => StyxWoW.SleepForLagDuration()),
                         new PrioritySelector(Spell.Cast("Flame Orb"))
                         )),
-                Spell.BuffSelf("Ice Barrier", ret => !StyxWoW.Me.Auras.ContainsKey("Mana Shield")),
-                Spell.BuffSelf("Mana Shield", ret => !StyxWoW.Me.Auras.ContainsKey("Ice Barrier") && StyxWoW.Me.HealthPercent <= 50),
-                Spell.Cast(
-                    "Deep Freeze",
-                    ret =>
-                    (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") || StyxWoW.Me.CurrentTarget.HasAura("Freeze"))),
-                Spell.Cast(
-                    "Ice Lance",
-                    ret =>
-                    (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Frost Nova") ||
-                     StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Freeze"))),
-                //Spell.Cast("Fireball", StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze")),
+                // Keep these 2 up, all the time.
+                Spell.BuffSelf("Ice Barrier"),
+                Spell.BuffSelf("Mana Shield"),
+
+                // If we're in a BG, keep Mage Ward up at all times. Period.
+                new Decorator(ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) != 0,
+                    Spell.BuffSelf("Mage Ward")),
+
+                Spell.Cast("Deep Freeze", ret => (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") || StyxWoW.Me.CurrentTarget.HasAura("Freeze"))),
+                Spell.Cast("Ice Lance", ret => (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Frost Nova") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Freeze"))),
+                Spell.Cast("Frostfire Bolt",ret=> StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze")),
                 Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Missiles!")),
-                new Decorator(
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze"),
+                new Decorator(ret => StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze"),
                     new PrioritySelector(
                         Spell.Cast("Frostfire Bolt"),
                         Spell.Cast("Fireball")

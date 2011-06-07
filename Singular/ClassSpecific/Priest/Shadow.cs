@@ -31,7 +31,7 @@ namespace Singular.ClassSpecific.Priest
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 // cast devouring plague first if option is set
-                Spell.Buff("Devouring Plague", ret => SingularSettings.Instance.Priest.DevouringPlageuFirst),
+                Spell.StopAndBuff("Devouring Plague", ret => SingularSettings.Instance.Priest.DevouringPlageuFirst),
 
                 // don't attempt to heal unless below a certain percentage health
                 new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.DontHealPercent,

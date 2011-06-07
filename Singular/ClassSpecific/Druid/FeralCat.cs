@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 new Decorator(
                     ret => StyxWoW.Me.Shapeshift != ShapeshiftForm.Cat,
-                    Spell.Cast("Cat Form")),
+                    Spell.BuffSelf("Cat Form")),
 
                 // Ensure we're facing the target. Kthx.
                 Movement.CreateFaceTargetBehavior(),

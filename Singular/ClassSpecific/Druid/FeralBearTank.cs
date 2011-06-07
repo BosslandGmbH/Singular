@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Druid
                 ctx => TankManager.Instance.FirstUnit,
                 new Decorator(
                     ret => StyxWoW.Me.Shapeshift != ShapeshiftForm.Bear,
-                    Spell.Cast("Bear Form")),
+                    Spell.BuffSelf("Bear Form")),
 
                 Movement.CreateFaceTargetBehavior(),
 

@@ -30,6 +30,86 @@ namespace Singular.Helpers
 
     internal static class Spell
     {
+        private static WoWSpell GetSpellByName(string spellName)
+        {
+            WoWSpell spell;
+            if (!SpellManager.Spells.TryGetValue(spellName, out spell))
+                spell = SpellManager.RawSpells.FirstOrDefault(s => s.Name == spellName);
+
+            return spell;
+        }
+
+        #region StopAndCast
+
+        public static Composite StopAndCast(string name)
+        {
+            return StopAndCast(name, ret => StyxWoW.Me.CurrentTarget);
+        }
+
+        public static Composite StopAndCast(string name, SimpleBooleanDelegate requirements)
+        {
+            return StopAndCast(name, ret => StyxWoW.Me.CurrentTarget, requirements);
+        }
+
+        public static Composite StopAndCast(string name, UnitSelectionDelegate onUnit)
+        {
+            return StopAndCast(name, onUnit, ret => true);
+        }
+
+        public static Composite StopAndCast(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return new Decorator(
+               ret =>
+               {
+                   WoWSpell spell = GetSpellByName(name);
+
+                   return spell != null && requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(spell, onUnit(ret), true, false);
+               },
+               new Action(
+                   ret =>
+                       {
+                           WoWSpell spell = GetSpellByName(name);
+
+                           if (spell.CastTime > 0 && StyxWoW.Me.IsMoving)
+                           {
+                               WoWMovement.MoveStop();
+                           }
+
+                           Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());
+                           SpellManager.Cast(name, onUnit(ret));
+                        })
+               );
+        }
+
+        #endregion
+
+        #region StopAndBuff
+
+        public static Composite StopAndBuff(string name)
+        {
+            return StopAndBuff(name, ret => StyxWoW.Me.CurrentTarget);
+        }
+
+        public static Composite StopAndBuff(string name, SimpleBooleanDelegate requirements)
+        {
+            return StopAndBuff(name, ret => StyxWoW.Me.CurrentTarget, requirements);
+        }
+
+        public static Composite StopAndBuff(string name, UnitSelectionDelegate onUnit)
+        {
+            return StopAndBuff(name, onUnit, ret => true);
+        }
+
+        public static Composite StopAndBuff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return
+                new Decorator(
+                    ret => onUnit(ret) != null && !onUnit(ret).HasAura(name),
+                    StopAndCast(name, onUnit, requirements));
+        }
+
+        #endregion
+
         #region Wait
         /// <summary>
         ///   Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from

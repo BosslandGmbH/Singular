@@ -97,7 +97,7 @@ namespace Singular.ClassSpecific.Paladin
 
             return
                 new PrioritySelector(
-                    Waiters.WaitForCast(),
+                    Spell.WaitForCast(),
                     new Decorator(
                     ret => HealerManager.Instance.FirstUnit != null,
                         new PrioritySelector(

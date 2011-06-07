@@ -24,52 +24,67 @@ namespace Singular.ClassSpecific.Mage
                 Safers.EnsureTarget(),
                 //Move away from frozen targets
                 new Decorator(
-                    ret => (StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") || StyxWoW.Me.CurrentTarget.HasAura("Freeze")) && StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5,
+                    ret =>
+                    (StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") || StyxWoW.Me.CurrentTarget.HasAura("Freeze")) &&
+                    StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5,
                     new Action(
                         ret =>
-                        {
-                            Logger.Write("Getting away from frozen target");
-                            WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, 10f);
-
-                            if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
                             {
-                                Navigator.MoveTo(moveTo);
-                            }
-                        })),
+                                Logger.Write("Getting away from frozen target");
+                                WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, 10f);
+
+                                if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                                {
+                                    Navigator.MoveTo(moveTo);
+                                }
+                            })),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
                 Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),
                 Spell.Buff("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
                 Common.CreateMagePolymorphOnAddBehavior(),
-                new Decorator(ret => !StyxWoW.Me.GotAlivePet,
+                new Decorator(
+                    ret => !StyxWoW.Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(PetManager.WantedPet))),
 
-                Spell.Cast("Evocation", ret => StyxWoW.Me.ManaPercent < 20),
+                // Pop evo if we're low on mana. If we're glyphed, also pop it for health.
+                Spell.Cast("Evocation", ret => StyxWoW.Me.ManaPercent < 20 || (TalentManager.HasGlyph("Evocation") && StyxWoW.Me.HealthPercent < 50)),
+                // Ensure we counterspell anything we can.
                 Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting),
+
+                // We really should only save this for bosses, but this will work fine I suppose.
                 Spell.Cast("Mirror Image"),
                 // Debuff is 10min, CD is 5min. Don't recast if its not going to apply.
-                Spell.Cast("Time Warp", ret => !Unit.HasAnyAura(StyxWoW.Me, "Sated", "Temporal Displacement")),
-                new Decorator(ret => StyxWoW.Me.CurrentTarget.HealthPercent > 50,
+                Spell.Cast("Time Warp", ret => !StyxWoW.Me.HasAnyAura("Sated", "Temporal Displacement")),
+
+                new Decorator(ret=>StyxWoW.Me.CurrentTarget.IsBoss(),
+                    Spell.BuffSelf("Icy Veins")),
+
+                // If the mob is > 50%, or a boss, make sure we pop orbs.
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent > 50 || StyxWoW.Me.CurrentTarget.IsBoss(),
                     new Sequence(
                         new Action(ctx => StyxWoW.Me.CurrentTarget.Face()),
                         new Action(ctx => StyxWoW.SleepForLagDuration()),
                         new PrioritySelector(Spell.Cast("Flame Orb"))
                         )),
-                // Keep these 2 up, all the time.
-                Spell.BuffSelf("Ice Barrier"),
-                Spell.BuffSelf("Mana Shield"),
 
-                // If we're in a BG, keep Mage Ward up at all times. Period.
-                new Decorator(ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) != 0,
-                    Spell.BuffSelf("Mage Ward")),
-
-                Spell.Cast("Deep Freeze", ret => (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") || StyxWoW.Me.CurrentTarget.HasAura("Freeze"))),
-                Spell.Cast("Ice Lance", ret => (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Frost Nova") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Freeze"))),
-                Spell.Cast("Frostfire Bolt",ret=> StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze")),
+                Spell.Cast(
+                    "Deep Freeze",
+                    ret =>
+                    (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") ||
+                     StyxWoW.Me.CurrentTarget.HasAura("Freeze"))),
+                Spell.Cast(
+                    "Ice Lance",
+                    ret =>
+                    (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Frost Nova") ||
+                     StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Freeze"))),
+                Spell.Cast("Frostfire Bolt", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze")),
                 Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Missiles!")),
-                new Decorator(ret => StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze"),
+                new Decorator(
+                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze"),
                     new PrioritySelector(
                         Spell.Cast("Frostfire Bolt"),
                         Spell.Cast("Fireball")

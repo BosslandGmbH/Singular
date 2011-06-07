@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Summon Water Elemental" && StyxWoW.Me.GotAlivePet,
                     new Action(ctx => SpellManager.StopCasting())),
-                Waiters.WaitForCast(),
+                Spell.WaitForCast(),
 
                 Spell.BuffSelf("Arcane Brilliance", ret => (!StyxWoW.Me.HasAura("Arcane Brilliance") && !StyxWoW.Me.HasAura("Fel Intelligence"))),
 

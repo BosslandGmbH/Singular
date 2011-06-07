@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Priest
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 // cast devouring plague first if option is set
                 Spell.Buff("Devouring Plague", ret => SingularSettings.Instance.Priest.DevouringPlageuFirst),
 
@@ -57,16 +57,16 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(ret => Unit.HasAura(StyxWoW.Me, "Dispersion", 0),
                     new ActionAlwaysSucceed()),
 
-                Spell.Cast("Archangel", ret => SingularSettings.Instance.Priest.AlwaysArchangel5 && Unit.HasAura("Dark Evangelism", 5)),
+                Spell.Cast("Archangel", ret => SingularSettings.Instance.Priest.AlwaysArchangel5 && StyxWoW.Me.HasAura("Dark Evangelism", 5)),
 
                 // open with spike or if its a totem
-                Spell.Cast("Mind Spike", 
-                            ret => !Unit.HasMyAura("Mind Trauma") && 
+                Spell.Cast("Mind Spike",
+                            ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Mind Trauma") && 
                                    (StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Totem || !StyxWoW.Me.Combat)),
                 // use mind blast after 2+ spikes, or if orbs, 
-                Spell.Cast("Mind Blast", ret => Unit.HasMyAura("Mind Spike", 2)),
+                Spell.Cast("Mind Blast", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Mind Spike", 2)),
                 // use spike a second time if we can, either after pull or after dots have run out for whatever reason
-                Spell.Cast("Mind Spike", ret => !Unit.HasMyAura("Mind Trauma") && !Unit.HasMyAura("Vampiric Touch") && !Unit.HasMyAura("Devouring Plague") && !Unit.HasMyAura("Shadow Word: Pain")),
+                Spell.Cast("Mind Spike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Mind Trauma") && !StyxWoW.Me.CurrentTarget.HasMyAura("Vampiric Touch") && !StyxWoW.Me.CurrentTarget.HasMyAura("Devouring Plague") && !StyxWoW.Me.CurrentTarget.HasMyAura("Shadow Word: Pain")),
 
                 // start up with the dots
                 Spell.Buff("Vampiric Touch"),
@@ -74,20 +74,20 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Buff("Shadow Word: Pain"),
 
                 // blast for shadow orbs or timer
-                new Decorator(ret => ((Unit.HasAura("Shadow Orb", SingularSettings.Instance.Priest.MindBlastOrbs) && !Unit.HasAura("Empowered Shadow", 0)) || _lastMindBlast + TimeSpan.FromSeconds(SingularSettings.Instance.Priest.MindBlastTimer) < DateTime.Now),
+                new Decorator(ret => ((StyxWoW.Me.HasAura("Shadow Orb", SingularSettings.Instance.Priest.MindBlastOrbs) && !StyxWoW.Me.HasAura("Empowered Shadow", 0)) || _lastMindBlast + TimeSpan.FromSeconds(SingularSettings.Instance.Priest.MindBlastTimer) < DateTime.Now),
                     new Sequence(
                         new Action(ret => _lastMindBlast = DateTime.Now),
                         Spell.Cast("Mind Blast"))),
 
                 // attempt to cast shield before flay, if we need to
-                Spell.BuffSelf("Power Word: Shield", ret => !Unit.HasAura("Weakened Soul", 0) && Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == StyxWoW.Me.Guid) > 0),
+                Spell.BuffSelf("Power Word: Shield", ret => !StyxWoW.Me.HasAura("Weakened Soul", 0) && Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == StyxWoW.Me.Guid) > 0),
                 // flay if we have shield or if no one's beating on us
-                Spell.Cast("Mind Flay", ret => !StyxWoW.Me.IsMoving && (Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == StyxWoW.Me.Guid) <= 0 || Unit.HasAura("Power Word: Shield", 0))),
+                Spell.Cast("Mind Flay", ret => !StyxWoW.Me.IsMoving && (Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == StyxWoW.Me.Guid) <= 0 || StyxWoW.Me.HasAura("Power Word: Shield", 0))),
                 // maybe try a spike if there's none of our dots on it
-                Spell.Cast("Mind Spike", ret => !Unit.HasMyAura("Vampiric Touch") && !Unit.HasMyAura("Devouring Plague") && !Unit.HasMyAura("Shadow Word: Pain")),
+                Spell.Cast("Mind Spike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Vampiric Touch") && !StyxWoW.Me.CurrentTarget.HasMyAura("Devouring Plague") && !StyxWoW.Me.CurrentTarget.HasMyAura("Shadow Word: Pain")),
 
                 // finally, no mana?, try to use archangel if we have _any_ stacks of evangelism
-                Spell.Cast("Archangel", ret => Unit.HasAura("Dark Evangelism") && StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ArchangelMana),
+                Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Dark Evangelism") && StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ArchangelMana),
 
                 // try to do _something_
                 Spell.Cast("Mind Blast"),

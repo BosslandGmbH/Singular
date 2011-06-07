@@ -28,25 +28,27 @@ namespace Singular.ClassSpecific.Mage
                     ret => StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") && StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5,
                     new Action(
                         ret =>
-                        {
-                            Logger.Write("Getting away from frozen target");
-                            WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, 10f);
-
-                            if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
                             {
-                                Navigator.MoveTo(moveTo);
-                            }
-                        })),
+                                Logger.Write("Getting away from frozen target");
+                                WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, 10f);
+
+                                if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                                {
+                                    Navigator.MoveTo(moveTo);
+                                }
+                            })),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                new Decorator(ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
-                   new ActionIdle()),
+                new Decorator(
+                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
+                    new ActionIdle()),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
-                Waiters.WaitForCast(),
+                Spell.WaitForCast(),
                 Spell.Cast("Evocation", ret => StyxWoW.Me.ManaPercent < 20),
-                new Decorator(ret => Common.HaveManaGem() && StyxWoW.Me.ManaPercent <= 30,
-                   new Action(ctx => Common.UseManaGem())),
+                new Decorator(
+                    ret => Common.HaveManaGem() && StyxWoW.Me.ManaPercent <= 30,
+                    new Action(ctx => Common.UseManaGem())),
                 Common.CreateMagePolymorphOnAddBehavior(),
                 Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting),
                 Spell.Cast("Mirror Image", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 20),
@@ -59,9 +61,19 @@ namespace Singular.ClassSpecific.Mage
                         Spell.Cast("Flame Orb")
                         )),
                 Spell.BuffSelf("Mana Shield", ret => !StyxWoW.Me.Auras.ContainsKey("Mana Shield") && StyxWoW.Me.HealthPercent <= 75),
-                Spell.Cast("Slow", ret => TalentManager.GetCount(1, 18) < 2 && !StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Slow") && StyxWoW.Me.CurrentTarget.Distance > 5),
-                Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Missiles!") && StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Blast") && StyxWoW.Me.ActiveAuras["Arcane Blast"].StackCount >= 2),
-                Spell.Cast("Arcane Barrage", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Blast") && StyxWoW.Me.ActiveAuras["Arcane Blast"].StackCount >= 3),
+                Spell.Cast(
+                    "Slow",
+                    ret =>
+                    TalentManager.GetCount(1, 18) < 2 && !StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Slow") &&
+                    StyxWoW.Me.CurrentTarget.Distance > 5),
+                Spell.Cast(
+                    "Arcane Missiles",
+                    ret =>
+                    StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Missiles!") && StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Blast") &&
+                    StyxWoW.Me.ActiveAuras["Arcane Blast"].StackCount >= 2),
+                Spell.Cast(
+                    "Arcane Barrage",
+                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Blast") && StyxWoW.Me.ActiveAuras["Arcane Blast"].StackCount >= 3),
                 Spell.BuffSelf("Presence of Mind"),
                 Spell.Cast("Arcane Blast"),
                 Helpers.Common.CreateUseWand(),

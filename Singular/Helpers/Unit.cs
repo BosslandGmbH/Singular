@@ -11,7 +11,7 @@ namespace Singular.Helpers
 {
     internal static class Unit
     {
-        public static bool IsUndeadOrDemon(WoWUnit unit)
+        public static bool IsUndeadOrDemon(this WoWUnit unit)
         {
             return unit.CreatureType == WoWCreatureType.Undead 
                     || unit.CurrentTarget.CreatureType == WoWCreatureType.Demon;
@@ -42,33 +42,12 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///  Checks the aura by the name on yourself.
-        /// </summary>
-        /// <param name="aura"> The name of the aura in English. </param>
-        /// <returns></returns>
-        public static bool HasAura(string aura)
-        {
-            return HasAura(StyxWoW.Me, aura, 0);
-        }
-
-        /// <summary>
-        ///  Checks the aura by the name on yourself.
-        /// </summary>
-        /// <param name="aura"> The name of the aura in English. </param>
-        /// <param name="stacks"> The stack count of the aura to return true. </param>
-        /// <returns></returns>
-        public static bool HasAura(string aura, int stacks)
-        {
-            return HasAura(StyxWoW.Me, aura, stacks);
-        }
-
-        /// <summary>
         ///  Checks the aura by the name on specified unit.
         /// </summary>
         /// <param name="unit"> The unit to check auras for. </param>
         /// <param name="aura"> The name of the aura in English. </param>
         /// <returns></returns>
-        public static bool HasAura(WoWUnit unit, string aura)
+        public static bool HasAura(this WoWUnit unit, string aura)
         {
             return HasAura(unit, aura, 0);
         }
@@ -80,41 +59,21 @@ namespace Singular.Helpers
         /// <param name="aura"> The name of the aura in English. </param>
         /// <param name="stacks"> The stack count of the aura to return true. </param>
         /// <returns></returns>
-        public static bool HasAura(WoWUnit unit, string aura, int stacks)
+        public static bool HasAura(this WoWUnit unit, string aura, int stacks)
         {
             return HasAura(unit, aura, stacks, null);
         }
 
-        /// <summary>
-        ///  Check the aura thats created by yourself by the name on current target
-        /// </summary>
-        /// <param name="aura"> The name of the aura in English. </param>
-        /// <returns></returns>
-        public static bool HasMyAura(string aura)
-        {
-            return HasMyAura(aura, StyxWoW.Me.CurrentTarget);
-        }
-
-        /// <summary>
-        ///  Check the aura count thats created by yourself by the name on current target
-        /// </summary>
-        /// <param name="aura"> The name of the aura in English. </param>
-        /// <param name="stacks"> The stack count of the aura to return true. </param>
-        /// <returns></returns>
-        public static bool HasMyAura(string aura, int stacks)
-        {
-            return HasMyAura(aura, StyxWoW.Me.CurrentTarget, stacks);
-        }
-
+        
         /// <summary>
         ///  Check the aura count thats created by yourself by the name on specified unit
         /// </summary>
         /// <param name="aura"> The name of the aura in English. </param>
         /// <param name="unit"> The unit to check auras for. </param>
         /// <returns></returns>
-        public static bool HasMyAura(string aura, WoWUnit unit)
+        public static bool HasMyAura(this WoWUnit unit,string aura)
         {
-            return HasMyAura(aura, unit, 0);
+            return HasMyAura(unit,aura, 0);
         }
 
         /// <summary>
@@ -124,12 +83,12 @@ namespace Singular.Helpers
         /// <param name="unit"> The unit to check auras for. </param>
         /// <param name="stacks"> The stack count of the aura to return true. </param>
         /// <returns></returns>
-        public static bool HasMyAura(string aura, WoWUnit unit, int stacks)
+        public static bool HasMyAura(this WoWUnit unit, string aura, int stacks)
         {
             return HasAura(unit, aura, stacks, StyxWoW.Me);
         }
 
-        private static bool HasAura(WoWUnit unit, string aura, int stacks, WoWUnit creator)
+        private static bool HasAura(this WoWUnit unit, string aura, int stacks, WoWUnit creator)
         {
             Logger.WriteDebug("Looking for aura: " + aura);
             var auras = unit.GetAllAuras();
@@ -148,7 +107,7 @@ namespace Singular.Helpers
         /// <param name="unit"> The unit to check auras for. </param>
         /// <param name="auraNames"> Aura names to be checked. </param>
         /// <returns></returns>
-        public static bool HasAnyAura(WoWUnit unit, params string[] auraNames)
+        public static bool HasAnyAura(this WoWUnit unit, params string[] auraNames)
         {
             var auras = unit.GetAllAuras();
             var hashes = new HashSet<string>(auraNames);
@@ -161,7 +120,7 @@ namespace Singular.Helpers
         /// <param name="unit"> The unit to check auras for. </param>
         /// <param name="mechanics"> Mechanics to be checked. </param>
         /// <returns></returns>
-        public static bool HasAuraWithMechanic(WoWUnit unit, params WoWSpellMechanic[] mechanics)
+        public static bool HasAuraWithMechanic(this WoWUnit unit, params WoWSpellMechanic[] mechanics)
         {
             var auras = unit.GetAllAuras();
             return auras.Any(a => mechanics.Contains(a.Spell.Mechanic));
@@ -174,7 +133,7 @@ namespace Singular.Helpers
         /// <param name="onUnit"> The unit to check the aura for. </param>
         /// <param name="fromMyAura"> Check for only self or all buffs</param>
         /// <returns></returns>
-        public static TimeSpan GetAuraTimeLeft(string auraName, WoWUnit onUnit, bool fromMyAura)
+        public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, string auraName, bool fromMyAura)
         {
             WoWAura wantedAura =
                 onUnit.GetAllAuras().Where(a => a.Name == auraName && (fromMyAura ? a.CreatorGuid == StyxWoW.Me.Guid : true)).FirstOrDefault();
@@ -199,7 +158,7 @@ namespace Singular.Helpers
             }
         }
 
-        public static bool IsCrowdControlled(WoWUnit unit)
+        public static bool IsCrowdControlled(this WoWUnit unit)
         {
             Dictionary<string, WoWAura>.ValueCollection auras = unit.Auras.Values;
 
@@ -216,7 +175,7 @@ namespace Singular.Helpers
                      );
         }
 
-        public static bool IsBoss(WoWUnit unit)
+        public static bool IsBoss(this WoWUnit unit)
         {
             return Lists.BossList.BossIds.Contains(unit.Entry);
         }

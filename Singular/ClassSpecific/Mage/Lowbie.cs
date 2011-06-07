@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 Common.CreateMagePolymorphOnAddBehavior(),
                 Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.Auras.ContainsKey("Arcane Missiles!")),
                 Spell.Cast("Fireball", ret => !SpellManager.HasSpell("Frostbolt")),

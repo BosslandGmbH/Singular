@@ -23,7 +23,7 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.BuffSelf("Soulburn", ret => SpellManager.HasSpell("Soul Fire") || StyxWoW.Me.HealthPercent < 70),
                 Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Warlock
                            Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.Pet.Location) < 10*10) > 1,
                     Pet.CreateCastPetAction("Felstorm")),
                 new Decorator(
-                    ret => Unit.IsBoss(StyxWoW.Me.CurrentTarget),
+                    ret => StyxWoW.Me.CurrentTarget.IsBoss(),
                     new PrioritySelector(
                         Spell.BuffSelf("Metamorphosis"),
                         Spell.BuffSelf("Demon Soul"),
@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.Buff("Immolate"),
                 Spell.Buff("Curse of Tongues", ret => StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana),
                 Spell.Buff("Curse of Weakness", ret => StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana),
-                Spell.Buff("Bane of Doom", ret => Unit.IsBoss(StyxWoW.Me.CurrentTarget)),
+                Spell.Buff("Bane of Doom", ret => StyxWoW.Me.CurrentTarget.IsBoss()),
 
                 Spell.Buff("Bane of Agony", ret => !StyxWoW.Me.CurrentTarget.HasAura("Bane of Doom") && (StyxWoW.Me.CurrentTarget.HealthPercent >= 30 || StyxWoW.Me.CurrentTarget.Elite)),
                 // Use the infernal if we have a few mobs around us, and it's off CD. Otherwise, just use the Doomguard.

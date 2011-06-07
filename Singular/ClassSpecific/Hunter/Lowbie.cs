@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateMoveToLosBehavior(),
                 Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
-                Waiters.WaitForCast(),
+                Spell.WaitForCast(),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.Cast("Raptor Strike", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
                 // Always keep it up on our target!

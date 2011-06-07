@@ -49,7 +49,7 @@ namespace Singular.ClassSpecific.Druid
                 ret => HealerManager.Instance.FirstUnit != null,
                 new PrioritySelector(
                     ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
-                    Waiters.WaitForCast(true),
+                    Spell.WaitForCast(true),
                 // Ensure we're in range of the unit to heal, and it's in LOS.
                 //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
                 //Cast Lifebloom on tank if

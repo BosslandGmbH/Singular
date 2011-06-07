@@ -162,7 +162,6 @@
     <Compile Include="Helpers\Safers.cs" />
     <Compile Include="Helpers\Spell.cs" />
     <Compile Include="Helpers\Unit.cs" />
-    <Compile Include="Helpers\Waiters.cs" />
     <Compile Include="Lists\BossList.cs" />
     <Compile Include="Lists\CataHeroicDpsList.cs" />
     <Compile Include="Managers\HealerManager.cs" />

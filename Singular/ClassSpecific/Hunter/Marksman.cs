@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateMoveToLosBehavior(),
                 Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.Cast("Raptor Strike", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
                 //Interupt
@@ -53,7 +53,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             PetManager.WantedPet = "1";
             return new PrioritySelector(
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.Buff("Hunter's Mark"),

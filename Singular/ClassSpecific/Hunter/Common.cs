@@ -33,7 +33,7 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Revive " + PetManager.WantedPet && StyxWoW.Me.GotAlivePet,
                     new Action(ctx => SpellManager.StopCasting())),
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 Spell.BuffSelf("Aspect of the Hawk"),
                 Spell.BuffSelf("Track Hidden"),
                 //new ActionLogMessage(false, "Checking for pet"),

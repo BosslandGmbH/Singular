@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateDiscHealRest()
         {
             return new PrioritySelector(
-                Waiters.WaitForCast(),
+                Spell.WaitForCast(),
                 // Heal self before resting. There is no need to eat while we have 100% mana
                 CreateDiscHealOnlyBehavior(true),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
@@ -55,7 +55,7 @@ namespace Singular.ClassSpecific.Priest
                 ret => HealerManager.Instance.FirstUnit != null,
                 new PrioritySelector(
                     ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
-                    Waiters.WaitForCast(),
+                    Spell.WaitForCast(),
                 // Ensure we're in range of the unit to heal, and it's in LOS.
                 //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
                 //Spell.Buff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),

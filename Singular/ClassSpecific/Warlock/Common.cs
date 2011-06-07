@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockPreCombatBuffs()
         {
             return new PrioritySelector(
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 Spell.BuffSelf("Create Healthstone", ret => NeedToCreateHealthStone),
                 Spell.BuffSelf("Demon Armor", ret => !StyxWoW.Me.HasAura("Demon Armor") && !SpellManager.HasSpell("Fel Armor")),
                 Spell.BuffSelf("Fel Armor", ret => !StyxWoW.Me.HasAura("Fel Armor")),
@@ -66,7 +66,7 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Summon " + PetManager.WantedPet && StyxWoW.Me.GotAlivePet,
                     new Action(ctx => SpellManager.StopCasting())),
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 Spell.BuffSelf("Life Tap", ret => StyxWoW.Me.ManaPercent < 80 && StyxWoW.Me.HealthPercent > 40),
                 Spell.BuffSelf("Soul Harvest", ret => StyxWoW.Me.CurrentSoulShards < 2 || StyxWoW.Me.HealthPercent <= 55),
                 Rest.CreateDefaultRestBehaviour()

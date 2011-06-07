@@ -59,7 +59,7 @@ namespace Singular.ClassSpecific.Druid
                 // If there's a unit that needs taunting, do it.
                 Spell.Cast("Growl", ret => TankManager.Instance.NeedToTaunt.First(), ret => TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
-                Spell.Cast("Pulverize", ret => Unit.HasAura((WoWUnit)ret, "Lacerate", 3)),
+                Spell.Cast("Pulverize", ret => ((WoWUnit)ret).HasAura("Lacerate", 3)),
 
                 Spell.Cast("Demoralizing Roar", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 10 && Unit.HasAura(u, "Demoralizing Roar"))),
                 Spell.Cast("Faerie Fire (Feral)"),

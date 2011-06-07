@@ -64,7 +64,7 @@ namespace Singular.ClassSpecific.Druid
         {
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(
-                Waiters.WaitForCast(true),
+                Spell.WaitForCast(true),
                 //Heals, will not heal if in a party or if disabled via setting
                 Spell.Buff(
                     "Regrowth",
@@ -104,9 +104,9 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast(
                     "Moonfire",
                     ret =>
-                    Unit.GetAuraTimeLeft("Moonfire", StyxWoW.Me.CurrentTarget, true).TotalSeconds < 3 &&
-                    Unit.GetAuraTimeLeft("Sunfire", StyxWoW.Me.CurrentTarget, true).Seconds < 3),
-                Spell.Cast("Insect Swarm", ret => Unit.GetAuraTimeLeft("Insect Swarm", StyxWoW.Me.CurrentTarget, true).TotalSeconds < 3),
+                    StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Moonfire", true).TotalSeconds < 3 &&
+                    StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Sunfire", true).Seconds < 3),
+                Spell.Cast("Insect Swarm", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Insect Swarm", true).TotalSeconds < 3),
                 //Spell.Cast("Wrath", ret => StyxWoW.Me.HasAura("Eclipse (Solar)")),
                 //Spell.Cast("Starfire", ret => StyxWoW.Me.HasAura("Eclipse (Lunar)")),
 

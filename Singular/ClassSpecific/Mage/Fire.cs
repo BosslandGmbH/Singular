@@ -44,7 +44,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
                 new Decorator(ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                    new ActionIdle()),
-                Waiters.WaitForCast(),
+                Spell.WaitForCast(),
                 Spell.Buff("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
                 Spell.Cast("Evocation", ret => StyxWoW.Me.ManaPercent < 20),
                 new Decorator(ret => Common.HaveManaGem() && StyxWoW.Me.ManaPercent <= 30,

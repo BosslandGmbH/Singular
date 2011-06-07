@@ -121,7 +121,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying,
                     new PrioritySelector(
-                        Waiters.WaitForCast(),
+                        Spell.WaitForCast(),
                         Spell.Cast("Heroic Throw"),
                         Spell.Cast("Shoot"),
                         Spell.Cast("Throw")

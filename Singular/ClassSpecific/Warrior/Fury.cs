@@ -49,22 +49,22 @@ namespace Singular.ClassSpecific.Warrior
                 // ranged interupt
                 Spell.Buff("Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.IsCasting),
                 // ranged slow
-                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !Unit.HasAnyAura(StyxWoW.Me.CurrentTarget, _slows)),
+                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows)),
                 // melee slow
-                Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !Unit.HasAnyAura(StyxWoW.Me.CurrentTarget, _slows)),
+                Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows)),
                 // Intercept
                 Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance > 10),
                 //Heroic Leap
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Intercept", 1)),
+                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept", 1)),
                 // Fury of angerforge
                 new Decorator(
-                    ret => Unit.HasAura(StyxWoW.Me, "Raw Fury", 5) &&
+                    ret => StyxWoW.Me.HasAura("Raw Fury", 5) &&
                            StyxWoW.Me.Inventory.Equipped.Trinket1 != null &&
                            StyxWoW.Me.Inventory.Equipped.Trinket1.ItemInfo.Id.Equals(59461) &&
                            StyxWoW.Me.Inventory.Equipped.Trinket1.Cooldown <= 0,
                     new Action(ret => StyxWoW.Me.Inventory.Equipped.Trinket1.Use())),
                 new Decorator(
-                    ret => Unit.HasAura(StyxWoW.Me, "Raw Fury", 5) &&
+                    ret => StyxWoW.Me.HasAura("Raw Fury", 5) &&
                            StyxWoW.Me.Inventory.Equipped.Trinket2 != null &&
                            StyxWoW.Me.Inventory.Equipped.Trinket2.ItemInfo.Id.Equals(59461) &&
                            StyxWoW.Me.Inventory.Equipped.Trinket2.Cooldown <= 0,
@@ -92,10 +92,10 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Colossus Smash"),
                 Spell.Cast("Execute"),
                 //Rotation over 20%
-                Spell.Cast("Heroic Strike", ret => Unit.HasAura(StyxWoW.Me, "Incite", 1) || StyxWoW.Me.RagePercent > 60),
+                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) || StyxWoW.Me.RagePercent > 60),
                 Spell.Cast("Raging Blow"),
                 Spell.Buff("Bloodthirst"),
-                Spell.Cast("Slam", ret => Unit.HasAura(StyxWoW.Me, "Bloodsurge", 1)),
+                Spell.Cast("Slam", ret => StyxWoW.Me.HasAura("Bloodsurge", 1)),
                 //Move to Melee
                 Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
@@ -175,9 +175,9 @@ namespace Singular.ClassSpecific.Warrior
                                           StyxWoW.Me.HealthPercent > 10 && StyxWoW.Me.HealthPercent < 75) ||
                                           StyxWoW.Me.CurrentTarget.IsPlayer),
                 //Berserker rage to stay enraged
-                Spell.BuffSelf("Berserker Rage", ret => !Unit.HasAnyAura(StyxWoW.Me, "Enrage", "Berserker Rage", "Death Wish")),
+                Spell.BuffSelf("Berserker Rage", ret => !StyxWoW.Me.HasAnyAura("Enrage", "Berserker Rage", "Death Wish")),
                 //Battleshout Check
-                Spell.BuffSelf("Battle Shout", ret => !Unit.HasAnyAura(StyxWoW.Me, "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout"))
+                Spell.BuffSelf("Battle Shout", ret => !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout"))
                 );
         }
 
@@ -211,9 +211,9 @@ namespace Singular.ClassSpecific.Warrior
                 //Intercept
                 Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25),
                 //Heroic Leap
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Intercept", 1)),
+                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura( "Intercept", 1)),
                 //Heroic Throw if not already Intercepting
-                Spell.Cast("Heroic Throw", ret => !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Intercept", 1)),
+                Spell.Cast("Heroic Throw", ret => !StyxWoW.Me.CurrentTarget.HasAura("Intercept", 1)),
                 //Worgen Racial
                 Spell.Cast("Darkflight", ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 15),
                 //Move to melee
@@ -239,32 +239,23 @@ namespace Singular.ClassSpecific.Warrior
                 // Heroic Fury
                 Spell.BuffSelf(
                     "Heroic Fury",
-                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted)),
+                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted)),
                 // Human Racial
                 Spell.BuffSelf(
                     "Every Man for Himself",
-                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Asleep, 
-                                                                WoWSpellMechanic.Stunned, 
-                                                                WoWSpellMechanic.Rooted)),
+                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Asleep, WoWSpellMechanic.Stunned, WoWSpellMechanic.Rooted)),
                 // Undead Racial
                 Spell.BuffSelf(
-                    "Will of the Forsaken", 
-                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Charmed,
-                                                                WoWSpellMechanic.Asleep,
-                                                                WoWSpellMechanic.Horrified,
-                                                                WoWSpellMechanic.Fleeing)),
+                    "Will of the Forsaken",
+                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Charmed, WoWSpellMechanic.Asleep, WoWSpellMechanic.Horrified, WoWSpellMechanic.Fleeing)),
                 // Gnome Racial
                 Spell.BuffSelf(
                     "Escape Artist",
-                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Slowed,
-                                                                WoWSpellMechanic.Rooted)),
+                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Slowed, WoWSpellMechanic.Rooted)),
                 // Fear Remover
                 Spell.BuffSelf(
                     "Berserker Rage",
-                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Fleeing,
-                                                                WoWSpellMechanic.Sapped,
-                                                                WoWSpellMechanic.Incapacitated,
-                                                                WoWSpellMechanic.Horrified))
+                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified))
                 );
         }
 

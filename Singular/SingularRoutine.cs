@@ -52,6 +52,10 @@ namespace Singular
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
+        internal static WoWClass MyClass { get; set; }
+
+        internal static WoWContext LastWoWContext { get; set; }
+
         internal static WoWContext CurrentWoWContext
         {
             get
@@ -139,6 +143,7 @@ namespace Singular
         public bool CreateBehaviors()
         {
             //Caching the context to not recreate same behaviors repeatedly.
+            LastWoWContext = CurrentWoWContext;
 
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
             if (!EnsureComposite(true, BehaviorType.Combat, out _combatBehavior))

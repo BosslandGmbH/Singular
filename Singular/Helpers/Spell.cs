@@ -30,6 +30,12 @@ namespace Singular.Helpers
 
     internal static class Spell
     {
+        #region Properties
+
+        internal static string LastSpellCast { get; set; }
+
+        #endregion
+
         private static WoWSpell GetSpellByName(string spellName)
         {
             WoWSpell spell;
@@ -61,9 +67,7 @@ namespace Singular.Helpers
             return new Decorator(
                ret =>
                {
-                   WoWSpell spell = GetSpellByName(name);
-
-                   return spell != null && requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(spell, onUnit(ret), true, false);
+                   return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret), true, false);
                },
                new Action(
                    ret =>

@@ -94,7 +94,8 @@ namespace Singular.ClassSpecific.Rogue
                                 Spell.Cast(
                                     "Rupture", ret => !StyxWoW.Me.CurrentTarget.GetAllAuras().Any(a => a.Name == "Rupture" && a.CreatorGuid == StyxWoW.Me.Guid)),
                                 Spell.Cast("Eviscerate"))),
-                        Spell.Cast("Slice and Dice", ret => StyxWoW.Me.Auras["Slice and Dice"].TimeLeft.TotalSeconds < 0.9))));
+                        Spell.Cast("Slice and Dice", ret => StyxWoW.Me.Auras["Slice and Dice"].TimeLeft.TotalSeconds < 0.9))),
+                Movement.CreateMoveToTargetBehavior(true, 5f));
         }
 
         public static Composite CreateCombatRogueDefense()

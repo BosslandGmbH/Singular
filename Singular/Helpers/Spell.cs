@@ -225,7 +225,7 @@ namespace Singular.Helpers
                         //Logger.WriteDebug("OnUnit: " + onUnit(ret));
                         //Logger.WriteDebug("CanCast: " + SpellManager.CanCast(name, onUnit(ret), false));
 
-                        return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret), true);
+                        return requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret), true);
                     },
                 new Action(
                     ret =>

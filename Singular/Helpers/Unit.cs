@@ -90,11 +90,11 @@ namespace Singular.Helpers
 
         private static bool HasAura(this WoWUnit unit, string aura, int stacks, WoWUnit creator)
         {
-            Logger.WriteDebug("Looking for aura: " + aura);
+            //Logger.WriteDebug("Looking for aura: " + aura);
             var auras = unit.GetAllAuras();
             foreach (var a in auras)
             {
-                Logger.WriteDebug("Aura name: " + a.Name + " - " + a.StackCount);
+                //Logger.WriteDebug("Aura name: " + a.Name + " - " + a.StackCount);
                 if (a.Name == aura)
                     return a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid);
             }

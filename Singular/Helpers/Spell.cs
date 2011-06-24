@@ -147,6 +147,7 @@ namespace Singular.Helpers
                 // Note: This needs testing.
                         new Decorator(
                             ret => StyxWoW.Me.CurrentTarget != null &&
+                                   StyxWoW.Me.NonChanneledCastingSpellId == StyxWoW.Me.CastingSpellId &&
                                    StyxWoW.Me.CurrentTarget.Auras.Any(a =>
                                        a.Value.SpellId == StyxWoW.Me.CastingSpellId &&
                                        a.Value.CreatorGuid == StyxWoW.Me.Guid),

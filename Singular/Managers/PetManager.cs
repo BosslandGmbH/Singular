@@ -46,7 +46,7 @@ namespace Singular.Managers
         static PetManager()
         {
             // NOTE: This is a bit hackish. This fires VERY OFTEN in major cities. But should prevent us from summoning right after dismounting.
-            Lua.Events.AttachEvent("COMPANION_UPDATE", (s, e) => CallPetTimer.Reset());
+            // Lua.Events.AttachEvent("COMPANION_UPDATE", (s, e) => CallPetTimer.Reset());
             // Note: To be changed to OnDismount with new release
             Mount.OnMountUp += (s, e) =>
                                    {

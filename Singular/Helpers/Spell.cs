@@ -11,6 +11,7 @@
 
 #endregion
 
+using System;
 using System.Linq;
 
 using CommonBehaviors.Actions;
@@ -22,6 +23,8 @@ using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
 
+using Action = TreeSharp.Action;
+
 namespace Singular.Helpers
 {
     public delegate WoWUnit UnitSelectionDelegate(object context);
@@ -30,6 +33,20 @@ namespace Singular.Helpers
 
     internal static class Spell
     {
+        /// <summary>Temporary wrapper for compatibility till next HB release. Returns the cast time left on the currenty casting spell.</summary>
+        /// <value>The current cast time left.</value>
+        private static TimeSpan CurrentCastTimeLeft
+        {
+            get
+            {
+                return
+                    Styx.Helpers.Utilities.PerformanceCounterToDateTime(
+                        ObjectManager.Wow.Read<uint>(StyxWoW.Me.BaseAddress + 0xA44)) -
+                    Styx.Helpers.Utilities.PerformanceCounterToDateTime(StyxWoW.WoWClient.PerformanceCounter());
+            }
+        }
+
+
         #region Properties
 
         internal static string LastSpellCast { get; set; }
@@ -141,14 +158,15 @@ namespace Singular.Helpers
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding(),
+                    ret => StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding() && CurrentCastTimeLeft.TotalMilliseconds > 500,
                     new PrioritySelector(
-                // This is here to avoid double casting spells with dots/debuffs (like Immolate)
-                // Note: This needs testing.
+                        // This is here to avoid double casting spells with dots/debuffs (like Immolate)
+                        // Note: This needs testing.
                         new Decorator(
                             ret => StyxWoW.Me.CurrentTarget != null &&
                                    StyxWoW.Me.NonChanneledCastingSpellId == StyxWoW.Me.CastingSpellId &&
-                                   StyxWoW.Me.CurrentTarget.Auras.Any(a =>
+                                   StyxWoW.Me.CurrentTarget.Auras.Any(
+                                       a =>
                                        a.Value.SpellId == StyxWoW.Me.CastingSpellId &&
                                        a.Value.CreatorGuid == StyxWoW.Me.Guid),
                             new Action(ret => SpellManager.StopCasting())),

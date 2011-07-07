@@ -64,15 +64,30 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 // use our shadowfiend if we're in combat (so not on a pull or resting), if we're below the mana threshold, and our target is okydoky
-                    Spell.Cast("Shadowfiend",
-                        ret => StyxWoW.Me.Combat && StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana &&
-                               (StyxWoW.Me.CurrentTarget.HealthPercent > 60 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1)),
+                Spell.Cast(
+                    "Shadowfiend",
+                    ret =>
+                    StyxWoW.Me.Combat && StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana &&
+                    (StyxWoW.Me.CurrentTarget.HealthPercent > 60 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1)),
                 // use hymn of hope if we're shielded or no one is targetting us
-                    Spell.Cast("Hymn of Hope", ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Priest.HymnofHopeMana && (Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) <= 0 || Unit.HasAura(StyxWoW.Me,"Power Word: Shield", 0))),
+                Spell.Cast(
+                    "Hymn of Hope",
+                    ret =>
+                    StyxWoW.Me.ManaPercent < SingularSettings.Instance.Priest.HymnofHopeMana &&
+                    (Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) <= 0 || Unit.HasAura(StyxWoW.Me, "Power Word: Shield", 0))),
                 // use archangel if we can
-                    Spell.Buff("Archangel", ret => (Unit.HasAura(StyxWoW.Me, "Dark Evangelism", 5) || Unit.HasAura(StyxWoW.Me, "Evangelism", 5)) && StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ArchangelMana),
+                Spell.Buff(
+                    "Archangel",
+                    ret =>
+                    (Unit.HasAura(StyxWoW.Me, "Dark Evangelism", 5) || Unit.HasAura(StyxWoW.Me, "Evangelism", 5)) &&
+                    StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ArchangelMana),
                 // cast psychic scream if it's on
-                    Spell.Cast("Psychic Scream", ret => SingularSettings.Instance.Priest.UsePsychicScream && !StyxWoW.Me.IsInInstance && Unit.NearbyUnfriendlyUnits.Count(unit => unit.Aggro && unit.DistanceSqr <= 8*8) >= SingularSettings.Instance.Priest.PsychicScreamAddCount)
+                Spell.Cast(
+                    "Psychic Scream",
+                    ret =>
+                    SingularSettings.Instance.Priest.UsePsychicScream && !StyxWoW.Me.IsInInstance &&
+                    Unit.NearbyUnfriendlyUnits.Count(unit => unit.Aggro && unit.DistanceSqr <= 8 * 8) >=
+                    SingularSettings.Instance.Priest.PsychicScreamAddCount)
                 );
         }
 

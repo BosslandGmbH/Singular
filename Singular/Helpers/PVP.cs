@@ -20,6 +20,16 @@ namespace Singular.Helpers
                 a.Spell.Mechanic == WoWSpellMechanic.Sapped));
         }
 
+        public static bool IsStunned(this WoWUnit unit)
+        {
+            return unit.HasAuraWithMechanic(WoWSpellMechanic.Stunned, WoWSpellMechanic.Incapacitated);
+        }
+
+        public static bool IsRooted(this WoWUnit unit)
+        {
+            return unit.HasAuraWithMechanic(WoWSpellMechanic.Rooted, WoWSpellMechanic.Shackled);
+        }
+
         public static bool IsSilenced(WoWUnit unit)
         {
             return unit.GetAllAuras().Any(a => a.IsHarmful &&

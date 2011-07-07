@@ -133,6 +133,7 @@
     <Compile Include="ClassSpecific\Rogue\Common.cs" />
     <Compile Include="ClassSpecific\Rogue\Lowbie.cs" />
     <Compile Include="ClassSpecific\Rogue\Poisons.cs" />
+    <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
     <Compile Include="ClassSpecific\Warlock\Affliction.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
@@ -200,7 +201,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) == Jim (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Styx.Bot\bin\x86\Debug\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular v2\" /i /f /s /v /y
 )
 if $(ConfigurationName) == Raphus (
 RD /S /Q "C:\Users\Dodo\Desktop\Styx\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular\"

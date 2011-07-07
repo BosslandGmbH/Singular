@@ -11,6 +11,23 @@ namespace Singular.Helpers
 {
     internal static class Item
     {
+        public static bool HasWeapoinImbue(WoWInventorySlot slot, string imbueName)
+        {
+            //Logger.Write("Checking Weapon Imbue on " + slot + " for " + imbueName);
+            var item = StyxWoW.Me.Inventory.Equipped.GetEquippedItem(slot);
+            if (item == null)
+            {
+                //Logger.Write("We have no " + slot + " equipped!");
+                return false;
+            }
+
+            var enchant = item.TemporaryEnchantment;
+            //if (enchant != null)
+            //    Logger.Write("Enchant: " + enchant.Name + " - " + (enchant.Name == imbueName));
+            return enchant != null && enchant.Name == imbueName;
+        }
+
+
         /// <summary>
         ///  Creates a behavior to use an equipped item.
         /// </summary>

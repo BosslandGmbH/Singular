@@ -44,7 +44,7 @@ namespace Singular
 
         public static SingularRoutine Instance { get; private set; }
 
-        public override string Name { get { return "Singular $Revision$"; } }
+        public override string Name { get { return "Singular v2 $Revision$"; } }
 
         public override WoWClass Class { get { return StyxWoW.Me.Class; } }
 

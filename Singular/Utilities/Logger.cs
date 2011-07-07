@@ -11,11 +11,17 @@
 
 #endregion
 
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 using Singular.Settings;
 
 using Styx.Helpers;
+
+using TreeSharp;
+
+using Action = TreeSharp.Action;
 
 namespace Singular
 {
@@ -56,6 +62,24 @@ namespace Singular
             {
                 Logging.WriteDebug(Color.Green, "[Singular-DEBUG] " + message, args);
             }
+        }
+    }
+
+    public class LogMessage:Action
+    {
+        private string message;
+        public LogMessage(string message)
+        {
+            this.message = message;
+        }
+
+        protected override RunStatus Run(object context)
+        {
+            Logger.Write(message);
+
+            if (Parent is Selector)
+                return RunStatus.Failure;
+            return RunStatus.Success;
         }
     }
 }

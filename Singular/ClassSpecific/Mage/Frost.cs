@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -16,7 +17,8 @@ namespace Singular.ClassSpecific.Mage
         [Class(WoWClass.Mage)]
         [Spec(TalentSpec.FrostMage)]
         [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
+        // All but BGs
+        [Context(WoWContext.All & ~WoWContext.Battlegrounds)]
         public static Composite CreateFrostMageCombat()
         {
             PetManager.WantedPet = "Water Elemental";
@@ -71,16 +73,8 @@ namespace Singular.ClassSpecific.Mage
                         new PrioritySelector(Spell.Cast("Flame Orb"))
                         )),
 
-                Spell.Cast(
-                    "Deep Freeze",
-                    ret =>
-                    (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") ||
-                     StyxWoW.Me.CurrentTarget.HasAura("Freeze"))),
-                Spell.Cast(
-                    "Ice Lance",
-                    ret =>
-                    (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Frost Nova") ||
-                     StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Freeze"))),
+                Spell.Cast("Deep Freeze", ret => (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.HasAnyAura("Freeze", "Frost Nova"))),
+                Spell.Cast("Ice Lance", ret => (StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") || StyxWoW.Me.CurrentTarget.HasAnyAura("Freeze", "Frost Nova"))),
                 Spell.Cast("Frostfire Bolt", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze")),
                 Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Missiles!")),
                 new Decorator(
@@ -110,6 +104,43 @@ namespace Singular.ClassSpecific.Mage
                     Spell.Cast("Frostbolt"),
                     Movement.CreateMoveToTargetBehavior(true, 35f)
                     );
+        }
+
+        [Class(WoWClass.Mage)]
+        [Spec(TalentSpec.FrostMage)]
+        [Behavior(BehaviorType.Combat)]
+        [Context(WoWContext.Battlegrounds)]
+        public static Composite CreateFrostMagePvpCombat()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+
+                // First, deal with any procs we want popping now.
+                new Decorator(
+                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze"),
+                    new PrioritySelector(
+                        Spell.Cast("Frostfire Bolt"),
+                        Spell.Cast("Fireball")
+                        )),
+
+
+                // Now deal with getting out of roots, TODO: Add more shit mages can blink out of.
+                Spell.Cast("Blink", ret => StyxWoW.Me.IsRooted() || StyxWoW.Me.HasAnyAura("Deep Freeze"))
+                );
+        }
+
+        private double GetPreferredPvpRange()
+        {
+            switch (StyxWoW.Me.CurrentTarget.Class)
+            {
+                    // At the moment, hunters are the only ones we want to be 'close' to. Everything else, can go fuck itself.
+                case WoWClass.Hunter:
+                    return 6;
+            }
+            return 35;
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Singular.Helpers
         public static bool IsUndeadOrDemon(this WoWUnit unit)
         {
             return unit.CreatureType == WoWCreatureType.Undead 
-                    || unit.CurrentTarget.CreatureType == WoWCreatureType.Demon;
+                    || unit.CreatureType == WoWCreatureType.Demon;
         }
 
         /// <summary>

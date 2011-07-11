@@ -68,6 +68,7 @@ namespace Singular.ClassSpecific.Priest
                     "Shadowfiend",
                     ret =>
                     StyxWoW.Me.Combat && StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana &&
+                    StyxWoW.Me.CurrentTarget != null &&
                     (StyxWoW.Me.CurrentTarget.HealthPercent > 60 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1)),
                 // use hymn of hope if we're shielded or no one is targetting us
                 Spell.Cast(

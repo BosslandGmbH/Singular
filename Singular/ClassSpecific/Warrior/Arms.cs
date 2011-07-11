@@ -18,10 +18,10 @@ namespace Singular.ClassSpecific.Warrior
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        [Context(WoWContext.Normal | WoWContext.Instances)]
+        [Context(WoWContext.All)]
         public static Composite CreateArmsCombat()
         {
-            _slows = new[] { "Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom" };
+            _slows = new[] { "Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom", "Infected Wounds" };
             return new PrioritySelector(
                 //Ensure Target
                 Safers.EnsureTarget(),
@@ -31,18 +31,16 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateMoveToLosBehavior(),
                 // Auto Attack
                 Common.CreateAutoAttack(false),
+
                 // Ranged interupt on players
                 Spell.Buff("Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.IsCasting),
-
                 // Dispel Bubbles
                 Spell.Cast("Shattering Throw", ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield")),
 
-                //Rocket belt!
-                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 20, 
-                    Item.UseEquippedItem(10)),
-
-                // ranged slow
-                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows)),
+                //Rocket belt! ----- Still Bugged
+                // new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 20, 
+                //     Item.UseEquippedItem((uint)WoWInventorySlot.Waist)),
+                
                 //Charge
                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25),
                 //Heroic Leap
@@ -51,23 +49,10 @@ namespace Singular.ClassSpecific.Warrior
                 //use it or lose it
                 Spell.Cast("Colossus Smash", ret => StyxWoW.Me.HasAura("Sudden Death", 1)),
 
+                // ranged slow
+                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows)),
                 // Melee slow
                 Spell.Cast("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows)),
-
-                // Fury of angerforge
-                // NOTE: Should wortk with non-english clients. Only tested on EN clients.
-                new Decorator(
-                    ret => StyxWoW.Me.HasAura("Raw Fury", 5) && 
-                           StyxWoW.Me.Inventory.Equipped.Trinket1 != null && 
-                           StyxWoW.Me.Inventory.Equipped.Trinket1.ItemInfo.Id.Equals(59461) &&
-                           StyxWoW.Me.Inventory.Equipped.Trinket1.Cooldown <= 0,
-                    new Action(ret => StyxWoW.Me.Inventory.Equipped.Trinket1.Use())),
-                new Decorator(
-                    ret => StyxWoW.Me.HasAura("Raw Fury", 5) &&
-                           StyxWoW.Me.Inventory.Equipped.Trinket2 != null && 
-                           StyxWoW.Me.Inventory.Equipped.Trinket2.ItemInfo.Id.Equals(59461) &&
-                           StyxWoW.Me.Inventory.Equipped.Trinket2.Cooldown <= 0,
-                    new Action(ret => StyxWoW.Me.Inventory.Equipped.Trinket2.Use())),
 
                 //Mele Heal
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
@@ -87,16 +72,14 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(ret=>StyxWoW.Me.CurrentTarget.IsCasting,
                     new PrioritySelector(
                         Spell.Cast("Pummel"),
-                        Spell.Cast("Arcane Torrent"),
-                        Spell.Cast("War Stomp"),
                         // Only pop TD on elites/players
                         Spell.Cast("Throwdown", ret=>StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite))),
 
                 //Rage Dump
                 Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) || StyxWoW.Me.RagePercent > 60),
 
-                //Use Engineering Gloves Bugged if you dont have engineering
-                //Item.UseEquippedItem(9),
+                // Use Engineering Gloves ------ Still Bugged
+                // Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 //Execute under 20%
                 Spell.Cast("Execute", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
@@ -118,7 +101,7 @@ namespace Singular.ClassSpecific.Warrior
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        [Context(WoWContext.Normal | WoWContext.Instances)]
+        [Context(WoWContext.All)]
         public static Composite CreateArmsPull()
         {
             return new PrioritySelector(
@@ -130,6 +113,11 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateMoveToLosBehavior(),
                 // Auto Attack
                 Common.CreateAutoAttack(false),
+
+                //Dismount
+                new Decorator(ret => StyxWoW.Me.Mounted,
+                    new Action(o => Styx.Logic.Mount.Dismount())),
+
                 //Shoot flying targets
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying,
@@ -139,10 +127,19 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Shoot"),
                         Spell.Cast("Throw")
                     )),
+
                 //Buff up
                 Spell.BuffSelf("Battle Shout", ret => StyxWoW.Me.RagePercent < 20),
-                //Close gap
-                ArmsCloseGap()
+
+                //Charge
+                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < 25),
+                //Heroic Leap
+                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1)),
+                //Heroic Throw if not already charging
+                Spell.Cast("Heroic Throw", ret => !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun")),
+
+                // Move to Melee
+                Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
         }
 
@@ -150,35 +147,32 @@ namespace Singular.ClassSpecific.Warrior
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        [Context(WoWContext.Normal | WoWContext.Instances)]
+        [Context(WoWContext.All)]
         public static Composite CreateArmsCombatBuffs()
         {
-            return new PrioritySelector(
-                //Check Heal
-                ArmsHeal(),
-                //Troll Racial
-                Spell.BuffSelf("Berserking"),
-                //Retaliation if fighting elite or targeting player
-                Spell.Buff(
-                    "Retaliation", ret => StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite),
-                //Deadly calm + gank protection
-                Spell.BuffSelf(
-                    "Deadly Calm",
-                        ret => (StyxWoW.Me.CurrentTarget.MaxHealth > StyxWoW.Me.MaxHealth &&
-                                StyxWoW.Me.CurrentTarget.HealthPercent < 95) ||
-                               (StyxWoW.Me.CurrentTarget.HealthPercent > StyxWoW.Me.HealthPercent &&
-                                StyxWoW.Me.HealthPercent > 10 &&
-                                StyxWoW.Me.HealthPercent < 80) || StyxWoW.Me.CurrentTarget.IsPlayer),
+            return new PrioritySelector(                
+                // get enraged to heal up
+                Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HealthPercent < 70),
+                //Herbalist Heal
+                Spell.Buff("Lifeblood", ret => StyxWoW.Me.HealthPercent < 70),
+                //Draenai Heal
+                Spell.Buff("Gift of the Naaru", ret => StyxWoW.Me.HealthPercent < 50),
+                //Heal
+                Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60),
+
+                //Retaliation if fighting elite or targeting player that swings
+                Spell.Buff("Retaliation", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana),
+                // Recklessness if caster or elite
+                Spell.Buff("Recklessness", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana),
+                
+                //Deadly calm if low on rage or during execute phase on bosses
+                Spell.BuffSelf("Deadly Calm", ret => StyxWoW.Me.RagePercent < 10 || StyxWoW.Me.CurrentTarget.CurrentHealth > StyxWoW.Me.CurrentHealth && StyxWoW.Me.CurrentTarget.HealthPercent < 20),
                 //Inner Rage
                 Spell.BuffSelf("Inner Rage", ret => StyxWoW.Me.RagePercent > 90),
-                // Remove cc
-                ArmsRemoveCC(),
-                // Dwarf Racial
-                Spell.BuffSelf("Stoneform", ret => StyxWoW.Me.HealthPercent < 60),
-                //Night elf racial
-                Spell.BuffSelf("Shadowmeld", ret => StyxWoW.Me.HealthPercent < 22),
-                //Orc Racial
-                Spell.BuffSelf("Blood Fury"),
+
+                // Fear Remover
+                Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified)),
+                
                 // Buff up
                 Spell.BuffSelf("Battle Shout", ret => !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout"))
                 );
@@ -188,7 +182,7 @@ namespace Singular.ClassSpecific.Warrior
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        [Context(WoWContext.Normal | WoWContext.Instances)]
+        [Context(WoWContext.All)]
         public static Composite CreateArmsPreCombatBuffs()
         {
             return new PrioritySelector(
@@ -196,68 +190,5 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf("Battle Shout")
                 );
         }
-
-
-
-
-        public static Composite ArmsCloseGap()
-        {
-            return new PrioritySelector(                
-                //Moves to target if you are too close or far
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 10 || StyxWoW.Me.CurrentTarget.Distance > 25,
-                    new PrioritySelector(
-                        Movement.CreateMoveToTargetBehavior(true, 5f)
-                        )),
-                //Charge
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 9 && StyxWoW.Me.CurrentTarget.Distance < 25),
-                //Heroic Leap
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1)),
-                //Heroic Throw if not already charging
-                Spell.Cast("Heroic Throw", ret => !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun")),
-                //Worgen Racial
-                Spell.BuffSelf("Darkflight", ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 15),
-                //Move to mele and face
-                Movement.CreateMoveToTargetBehavior(true, 5f)
-                );
-        }
-
-        public static Composite ArmsHeal()
-        {
-            return new PrioritySelector(
-                // get enraged to heal up
-                Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HealthPercent < 70),
-                //Herbalist Heal
-                Spell.Buff("Lifeblood", ret => StyxWoW.Me.HealthPercent < 70),
-                //Draenai Heal
-                Spell.Buff("Gift of the Naaru", ret => StyxWoW.Me.HealthPercent < 50),
-                //Heal
-                Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60)
-                );
-        }
-
-        public static Composite ArmsRemoveCC()
-        {
-            return new PrioritySelector(
-                // Human Racial
-                Spell.BuffSelf(
-                    "Every Man for Himself",
-                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Asleep, WoWSpellMechanic.Stunned, WoWSpellMechanic.Rooted)),
-                // Undead Racial
-                Spell.BuffSelf(
-                    "Will of the Forsaken",
-                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Charmed, WoWSpellMechanic.Asleep, WoWSpellMechanic.Horrified, WoWSpellMechanic.Fleeing)),
-                // Gnome Racial
-                Spell.BuffSelf(
-                    "Escape Artist",
-                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Slowed, WoWSpellMechanic.Rooted)),
-                // Fear Remover
-                Spell.BuffSelf(
-                    "Berserker Rage",
-                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified))
-                );
-        }
-
-
     }
 }

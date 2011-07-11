@@ -75,7 +75,7 @@ namespace Singular.Managers
             for (int i = units.Count - 1; i >= 0; i--)
             {
                 WoWObject o = units[i];
-                if (!(o is WoWPlayer) && !(o is LocalPlayer))
+                if (!(o is WoWPlayer))
                 {
                     units.RemoveAt(i);
                     continue;

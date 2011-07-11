@@ -16,7 +16,7 @@ using System.Collections.Generic;
 
 namespace Singular.Lists
 {
-    public class BossList
+    public static class BossList
     {
         #region Boss Entries
 

@@ -15,7 +15,6 @@ using System;
 using System.Reflection;
 using Singular.Dynamics;
 using Singular.GUI;
-using Singular.Helpers;
 using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;

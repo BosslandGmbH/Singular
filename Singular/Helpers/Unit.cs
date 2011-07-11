@@ -21,7 +21,7 @@ namespace Singular.Helpers
         ///   Gets the nearby friendly players within 40 yards.
         /// </summary>
         /// <value>The nearby friendly players.</value>
-        public static List<WoWPlayer> NearbyFriendlyPlayers
+        public static IEnumerable<WoWPlayer> NearbyFriendlyPlayers
         {
             get
             {
@@ -33,7 +33,7 @@ namespace Singular.Helpers
         ///   Gets the nearby unfriendly units within 40 yards.
         /// </summary>
         /// <value>The nearby unfriendly units.</value>
-        public static List<WoWUnit> NearbyUnfriendlyUnits
+        public static IEnumerable<WoWUnit> NearbyUnfriendlyUnits
         {
             get
             {
@@ -92,13 +92,9 @@ namespace Singular.Helpers
         {
             //Logger.WriteDebug("Looking for aura: " + aura);
             var auras = unit.GetAllAuras();
-            foreach (var a in auras)
-            {
-                //Logger.WriteDebug("Aura name: " + a.Name + " - " + a.StackCount);
-                if (a.Name == aura)
-                    return a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid);
-            }
-            return false;
+            return (from a in auras
+                    where a.Name == aura
+                    select a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid)).FirstOrDefault();
         }
 
         /// <summary>
@@ -138,11 +134,7 @@ namespace Singular.Helpers
             WoWAura wantedAura =
                 onUnit.GetAllAuras().Where(a => a.Name == auraName && (fromMyAura ? a.CreatorGuid == StyxWoW.Me.Guid : true)).FirstOrDefault();
 
-            if (wantedAura != null)
-            {
-                return wantedAura.TimeLeft;
-            }
-            return TimeSpan.Zero;
+            return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }
 
         /// <summary>

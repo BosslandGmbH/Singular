@@ -18,7 +18,6 @@ using Singular.Helpers;
 using Styx;
 using Styx.Helpers;
 using Styx.Logic;
-using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
@@ -64,7 +63,7 @@ namespace Singular.Managers
 
                 WoWUnit u = units[i].ToUnit();
 
-                if (u.IsFriendly || u.Dead || u.IsPet || !u.Combat || Unit.IsCrowdControlled(u))
+                if (u.IsFriendly || u.Dead || u.IsPet || !u.Combat || u.IsCrowdControlled())
                 {
                     units.RemoveAt(i);
                     continue;

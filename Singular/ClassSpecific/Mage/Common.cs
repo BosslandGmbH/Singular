@@ -1,8 +1,4 @@
-﻿
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -20,7 +16,6 @@ namespace Singular.ClassSpecific.Mage
     public class Common
     {
         private static WoWItem _manaGem;
-        private static string[] Armors = new[]{"Frost Armor", "Mage Armor", "Molten Armor"};
 
         [Class(WoWClass.Mage)]
         [Spec(TalentSpec.FireMage)]
@@ -77,11 +72,6 @@ namespace Singular.ClassSpecific.Mage
                     item =>
                     item.Entry == 65500 || item.Entry == 65515 || item.Entry == 65516 || item.Entry == 65517 || item.Entry == 43518 ||
                     item.Entry == 43523 || item.Entry == 65499).Any();
-        }
-
-        private static WoWItem HaveItemCheck(List<int> listId)
-        {
-            return ObjectManager.GetObjectsOfType<WoWItem>(false).FirstOrDefault(item => listId.Contains(Convert.ToInt32(item.Entry)));
         }
 
         public static bool HaveManaGem()

@@ -1,13 +1,11 @@
 ﻿using Singular.Dynamics;
 using Singular.Helpers;
-using Singular.Lists;
 using Singular.Managers;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
-using Styx.Logic.Combat;
 
 namespace Singular.ClassSpecific.Warrior
 {

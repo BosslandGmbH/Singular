@@ -1,5 +1,4 @@
 ﻿using Singular.Managers;
-using Singular.Settings;
 using Styx;
 using Styx.Logic.Combat;
 using TreeSharp;

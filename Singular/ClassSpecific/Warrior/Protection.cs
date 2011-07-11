@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -10,8 +6,6 @@ using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
-using Styx.WoWInternals.WoWObjects;
-
 using TreeSharp;
 
 namespace Singular.ClassSpecific.Warrior

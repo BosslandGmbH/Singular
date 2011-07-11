@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -130,17 +129,6 @@ namespace Singular.ClassSpecific.Mage
                 // Now deal with getting out of roots, TODO: Add more shit mages can blink out of.
                 Spell.Cast("Blink", ret => StyxWoW.Me.IsRooted() || StyxWoW.Me.HasAnyAura("Deep Freeze"))
                 );
-        }
-
-        private double GetPreferredPvpRange()
-        {
-            switch (StyxWoW.Me.CurrentTarget.Class)
-            {
-                    // At the moment, hunters are the only ones we want to be 'close' to. Everything else, can go fuck itself.
-                case WoWClass.Hunter:
-                    return 6;
-            }
-            return 35;
         }
     }
 }

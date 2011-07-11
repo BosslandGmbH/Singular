@@ -4,9 +4,7 @@ using Singular.Helpers;
 using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic.Combat;
 using TreeSharp;
-using Action = TreeSharp.Action;
 
 namespace Singular.ClassSpecific.DeathKnight
 {

@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Singular.Helpers;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
 using Styx.Logic.POI;
 using Styx.WoWInternals;
-
-using Singular;
 
 namespace Singular.Utilities
 {

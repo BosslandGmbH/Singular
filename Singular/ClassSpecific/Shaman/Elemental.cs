@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -14,8 +10,6 @@ using Styx.Logic.Combat;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
-
-using Action = TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Shaman
 {

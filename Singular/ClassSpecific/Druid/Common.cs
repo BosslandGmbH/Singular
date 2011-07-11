@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;

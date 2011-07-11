@@ -22,6 +22,7 @@ using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Helpers;
 using Styx.Logic;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -81,6 +82,9 @@ namespace Singular.GUI
             {
                 pgClass.SelectedObject = toSelect;
             }
+
+            if (!timer1.Enabled)
+                timer1.Start();
         }
 
         private void Instance_OnTargetListUpdateFinished(object context)
@@ -112,17 +116,23 @@ namespace Singular.GUI
         private void timer1_Tick(object sender, EventArgs e)
         {
             var sb = new StringBuilder();
-            foreach (WoWPlayer u in HealerManager.Instance.HealList.Where(p => p!= null && p.IsValid))
+            foreach (WoWPlayer u in HealerManager.Instance.HealList.Where(p => p != null && p.IsValid))
             {
                 sb.AppendLine(u.Name + " - " + u.HealthPercent);
             }
             lblHealTargets.Text = sb.ToString();
+            Logging.Write("Singular GUI timer tick");
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             ObjectManager.Update();
             //TotemManager.RecallTotems();
+        }
+
+        private void ConfigurationForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            timer1.Stop();
         }
     }
 }

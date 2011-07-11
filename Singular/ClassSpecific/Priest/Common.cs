@@ -87,7 +87,10 @@ namespace Singular.ClassSpecific.Priest
                     ret =>
                     SingularSettings.Instance.Priest.UsePsychicScream && !StyxWoW.Me.IsInInstance &&
                     Unit.NearbyUnfriendlyUnits.Count(unit => unit.Aggro && unit.DistanceSqr <= 8 * 8) >=
-                    SingularSettings.Instance.Priest.PsychicScreamAddCount)
+                    SingularSettings.Instance.Priest.PsychicScreamAddCount),
+                new Decorator(
+                    ret => !StyxWoW.Me.Combat,
+                    Rest.CreateDefaultRestBehaviour())
                 );
         }
 

@@ -23,6 +23,7 @@ namespace Singular.ClassSpecific.Paladin
             return
                 new PrioritySelector(
                     Safers.EnsureTarget(),
+                    Holy.CreatePaladinHealBehavior(true),
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateAutoAttack(true),
@@ -58,7 +59,7 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
                             Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower > 2 || StyxWoW.Me.ActiveAuras.ContainsKey("Hand of Light")),
                             Spell.Cast("Judgement"),
-                            Spell.Cast("Consecration", ret => StyxWoW.Me.ManaPercent > 50),
+                            Spell.Cast("Consecration", ret => StyxWoW.Me.ManaPercent > 50 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) >= SingularSettings.Instance.Paladin.ConsecrationCount),
                             Spell.Cast("Holy Wrath", ret => StyxWoW.Me.ManaPercent > 50)
                             )),
                 // Undead Routine
@@ -73,7 +74,7 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower > 2 || StyxWoW.Me.ActiveAuras.ContainsKey("Hand of Light")),
                             Spell.Cast("Judgement"),
                             Spell.Cast("Holy Wrath", ret => StyxWoW.Me.ManaPercent > 50),
-                            Spell.Cast("Consecration", ret => StyxWoW.Me.ManaPercent > 50)
+                            Spell.Cast("Consecration", ret => StyxWoW.Me.ManaPercent > 50 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) >= SingularSettings.Instance.Paladin.ConsecrationCount)
                             )),
                 // Single Routine - See AoE notes.
                     new Decorator(
@@ -86,7 +87,7 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower > 2 || StyxWoW.Me.ActiveAuras.ContainsKey("Hand of Light")),
                             Spell.Cast("Judgement"),
                             Spell.Cast("Holy Wrath", ret => StyxWoW.Me.ManaPercent > 50),
-                            Spell.Cast("Consecration", ret => StyxWoW.Me.ManaPercent > 50)
+                            Spell.Cast("Consecration", ret => StyxWoW.Me.ManaPercent > 50 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) >= SingularSettings.Instance.Paladin.ConsecrationCount)
                             )),
                 //Bot Control
                     Movement.CreateMoveToTargetBehavior(true,5f)
@@ -134,10 +135,7 @@ namespace Singular.ClassSpecific.Paladin
             return
                 new PrioritySelector(
                     Spell.BuffSelf("Zealotry", ret => Unit.IsBoss(StyxWoW.Me.CurrentTarget)),
-                    Spell.Cast("Word of Glory", ret => StyxWoW.Me.CurrentHolyPower >= 2 && StyxWoW.Me.HealthPercent <= 75),
                     Spell.BuffSelf("Avenging Wrath"),
-                    Spell.BuffSelf(
-                        "Lay on Hands", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealthRet && !StyxWoW.Me.HasAura("Forbearance")),
                     Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthRet)
                     );
         }

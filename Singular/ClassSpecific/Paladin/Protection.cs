@@ -79,7 +79,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Avenging Wrath"),
                     Spell.BuffSelf(
                         "Lay on Hands",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealthProt && !StyxWoW.Me.HasAura("Forbearance")),
+                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealth && !StyxWoW.Me.HasAura("Forbearance")),
                     Spell.BuffSelf(
                         "Guardian of Ancient Kings",
                         ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.GoAKHealth),

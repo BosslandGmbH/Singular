@@ -86,12 +86,12 @@ namespace Singular.ClassSpecific.Paladin
                 );
         }
 
-        private static Composite CreatePaladinHealBehavior()
+        internal static Composite CreatePaladinHealBehavior()
         {
             return CreatePaladinHealBehavior(false);
         }
 
-        private static Composite CreatePaladinHealBehavior(bool selfOnly)
+        internal static Composite CreatePaladinHealBehavior(bool selfOnly)
         {
             HealerManager.NeedHealTargeting = true;
 
@@ -110,7 +110,7 @@ namespace Singular.ClassSpecific.Paladin
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,
                                 ret => StyxWoW.Me.Combat && !((WoWUnit)ret).HasAura("Forbearance") &&
-                                       ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealthHoly),
+                                       ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealth),
                             Spell.Cast(
                                 "Light of Dawn",
                                 ret => StyxWoW.Me,
@@ -125,7 +125,7 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.Cast(
                                 "Holy Shock",
                                 ret => (WoWUnit)ret,
-                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyLightHealth),
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyShockHealth),
                             Spell.Cast(
                                 "Flash of Light",
                                 ret => (WoWUnit)ret,

@@ -28,13 +28,6 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(40)]
         [Category("Protection")]
-        [DisplayName("Lay on Hands Health")]
-        [Description("Lay on Hands will be used at this value")]
-        public int LayOnHandsHealthProt { get; set; }
-
-        [Setting]
-        [DefaultValue(40)]
-        [Category("Protection")]
         [DisplayName("Guardian of Ancient Kings Health")]
         [Description("Guardian of Ancient Kings will be used at this value")]
         public int GoAKHealth { get; set; }
@@ -61,13 +54,6 @@ namespace Singular.Settings
         public int DivineProtectionHealthRet { get; set; }
 
         [Setting]
-        [DefaultValue(30)]
-        [Category("Retribution")]
-        [DisplayName("Lay on Hands Health")]
-        [Description("Lay on Hands will be used at this value")]
-        public int LayOnHandsHealthRet { get; set; }
-
-        [Setting]
         [DefaultValue(3)]
         [Category("Retribution")]
         [DisplayName("Consecration Count")]
@@ -76,10 +62,10 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(30)]
-        [Category("Holy")]
+        [Category("Common")]
         [DisplayName("Lay on Hand Health")]
         [Description("Lay on Hands will be used at this value")]
-        public int LayOnHandsHealthHoly { get; set; }
+        public int LayOnHandsHealth { get; set; }
 
         [Setting]
         [DefaultValue(80)]
@@ -97,7 +83,7 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(65)]
-        [Category("Holy")]
+        [Category("Common")]
         [DisplayName("Word of Glory Health")]
         [Description("Word of Glory will be used at this value")]
         public int WordOfGloryHealth { get; set; }
@@ -111,7 +97,7 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(50)]
-        [Category("Holy")]
+        [Category("Common")]
         [DisplayName("Flash of Light Health")]
         [Description("Flash of Light will be used at this value")]
         public int FlashOfLightHealth { get; set; }
@@ -125,7 +111,7 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(90)]
-        [Category("Holy")]
+        [Category("Common")]
         [DisplayName("Holy Light Health")]
         [Description("Holy Light will be used at this value")]
         public int HolyLightHealth { get; set; }

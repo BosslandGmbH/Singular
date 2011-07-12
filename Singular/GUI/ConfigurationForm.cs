@@ -121,7 +121,6 @@ namespace Singular.GUI
                 sb.AppendLine(u.Name + " - " + u.HealthPercent);
             }
             lblHealTargets.Text = sb.ToString();
-            Logging.Write("Singular GUI timer tick");
         }
 
         private void button1_Click(object sender, EventArgs e)

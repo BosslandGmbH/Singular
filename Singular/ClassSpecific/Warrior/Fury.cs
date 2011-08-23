@@ -85,7 +85,8 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) || StyxWoW.Me.RagePercent > 60),
                 Spell.Cast("Raging Blow"),
                 Spell.Buff("Bloodthirst"),
-                Spell.Cast("Slam", ret => StyxWoW.Me.HasAura("Bloodsurge")),
+                // slam
+                Spell.Cast("Slam", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Bloodsurge")),
                 //Move to Melee
                 Movement.CreateMoveToTargetBehavior(true, 5f)
                 );

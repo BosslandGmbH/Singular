@@ -20,6 +20,7 @@ namespace Singular.ClassSpecific.Warrior
         [Priority(500)]
         public static Composite CreateProtectionWarriorCombat()
         {
+            TankManager.NeedTankTargeting = true;
             return new PrioritySelector(
                 ctx => TankManager.Instance.FirstUnit,
 
@@ -37,7 +38,8 @@ namespace Singular.ClassSpecific.Warrior
                 //Defensive Cooldowns
 
                 //Close cap on target
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 12 && StyxWoW.Me.CurrentTarget.Distance <= 25),
+                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
+                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f)),
                 Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40),
 
                 //Interupt or reflect

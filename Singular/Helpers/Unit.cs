@@ -64,7 +64,12 @@ namespace Singular.Helpers
             return HasAura(unit, aura, stacks, null);
         }
 
-        
+
+        public static bool HasAllMyAuras(this WoWUnit unit, params string[] auras)
+        {
+            return auras.All(unit.HasMyAura);
+        }
+
         /// <summary>
         ///  Check the aura count thats created by yourself by the name on specified unit
         /// </summary>

@@ -11,11 +11,16 @@
 
 #endregion
 
+using System.Linq;
+
 using Singular.Settings;
 
 using Styx;
 using Styx.Helpers;
+using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
+using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
 
@@ -118,7 +123,7 @@ namespace Singular.Helpers
             // Specifying a range of, 2 or so, will ensure we're constantly running to the target. Specifying 0 will cause us to spin in circles around the target
             // or chase it down like mad. (PVP oriented behavior)
             return
-                new Decorator(
+                new Decorator( 
                     // Don't run if the movement is disabled.
                     ret => !SingularSettings.Instance.DisableAllMovement,
                     new PrioritySelector(

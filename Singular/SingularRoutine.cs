@@ -15,6 +15,7 @@ using System;
 using System.Reflection;
 using Singular.Dynamics;
 using Singular.GUI;
+using Singular.Helpers;
 using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
@@ -104,8 +105,30 @@ namespace Singular
             new ConfigurationForm().ShowDialog();
         }
 
+        private ulong _lastTargetGuid=0;
+
         public override void Pulse()
         {
+            if (_lastTargetGuid != StyxWoW.Me.CurrentTargetGuid)
+            {
+                _lastTargetGuid = StyxWoW.Me.CurrentTargetGuid;
+                // Don't print this shit if we don't need to. Kthx.
+                if (_lastTargetGuid != 0)
+                {
+                    // Add other target switch info stuff here.
+
+                    Logger.WriteDebug("Switched targets!");
+                    Logger.WriteDebug("Melee Distance: " + Spell.MeleeRange);
+                    Logger.WriteDebug("Health: " + StyxWoW.Me.CurrentTarget.MaxHealth);
+                    Logger.WriteDebug("Level: " + StyxWoW.Me.CurrentTarget.Level);
+                }
+            }
+
+            if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsCasting)
+            {
+                Logger.WriteDebug("Target is casting " + StyxWoW.Me.CurrentTarget.CastingSpell.Name + " - Can I interrupt? " + !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast);
+            }
+
             PetManager.Pulse();
 
             if (HealerManager.NeedHealTargeting)

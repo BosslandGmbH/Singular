@@ -14,12 +14,19 @@
 using System.Text;
 using Styx;
 using Styx.Logic;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
     internal static class Extensions
     {
+
+        public static bool Between(this double distance, double min, double max)
+        {
+            return distance >= min && distance <= max;
+        }
+
         /// <summary>
         ///   A string extension method that turns a Camel-case string into a spaced string. (Example: SomeCamelString -> Some Camel String)
         /// </summary>
@@ -72,6 +79,12 @@ namespace Singular
         public static bool IsWanding(this LocalPlayer me)
         {
             return StyxWoW.Me.AutoRepeatingSpellId == 5019;
+        }
+
+        //0x9F8+4
+        public static bool CanInterrupt(this WoWUnit u)
+        {
+            return (ObjectManager.Wow.Read<uint>(u.BaseAddress + 0x9F8 + 0x4) & 8) != 0;
         }
     }
 }

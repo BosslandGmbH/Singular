@@ -53,7 +53,7 @@ namespace Singular.ClassSpecific.Mage
                 Common.CreateMagePolymorphOnAddBehavior(),
                 Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting),
                 Spell.Cast("Mirror Image", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 20),
-                Spell.Cast("Time Warp", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 20),
+                Spell.Cast("Time Warp", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 20 && StyxWoW.Me.CurrentTarget.IsBoss()),
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.HealthPercent > 50,
                     new Sequence(
@@ -61,15 +61,31 @@ namespace Singular.ClassSpecific.Mage
                         new Action(ctx => StyxWoW.SleepForLagDuration()),
                         new PrioritySelector(Spell.Cast("Flame Orb"))
                         )),
-                //Spell.Cast("Scorch", ret => (!StyxWoW.Me.CurrentTarget.HasAura("Critical Mass") || StyxWoW.Me.CurrentTarget.Auras["Critical Mass"].TimeLeft.TotalSeconds < 3) && TalentManager.GetCount(2, 20) != 0 && LastSpellCast != "Scorch"),
+                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.GetCount(2, 20) != 0),
                 Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Hot Streak") && StyxWoW.Me.ActiveAuras["Hot Streak"].TimeLeft.TotalSeconds > 1),
-                Spell.Cast("Fire Blast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact")),
+                // Don't bother pushing dots around w/o ignite up. Kthx.
+                Spell.Cast("Fire Blast", ret => CanImpactAoe()),
                 Spell.Buff("Living Bomb", ret => !StyxWoW.Me.CurrentTarget.HasAura("Living Bomb")),
                 Spell.Cast("Combustion", ret => StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Living Bomb") && StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ignite") && StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Pyroblast!")),
                 Spell.Cast("Fireball"),
-                Helpers.Common.CreateUseWand(),
+                //Helpers.Common.CreateUseWand(),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
+        }
+
+        private static bool CanImpactAoe()
+        {
+            if (StyxWoW.Me.ActiveAuras.ContainsKey("Impact"))
+            {
+                var loc = StyxWoW.Me.CurrentTarget.Location;
+                // Impact spreads dots to 12yds away. Not effective unless 3+ mobs are around.
+                if (Unit.NearbyUnfriendlyUnits.Count(u=>u.Location.DistanceSqr(loc) <= 12*12) > 2)
+                {
+                    // Now that we know its even worth spreading dots, lets make sure the current target has dots worth spreading!
+                    return StyxWoW.Me.CurrentTarget.HasAllMyAuras("Ignite", "Combustion");
+                }
+            }
+            return false;
         }
 
         [Class(WoWClass.Mage)]

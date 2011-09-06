@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Warlock
         [Priority(500)]
         public static Composite CreateAfflictionCombat()
         {
-            PetManager.WantedPet = "Succubus";
+            PetManager.WantedPet = "Felhunter";
 
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -85,6 +85,7 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.Cast("Drain Soul", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 25),
                 Spell.Cast("Shadowflame", ret => StyxWoW.Me.CurrentTarget.Distance < 5),
                 Spell.BuffSelf("Demon Soul"),
+                Spell.Buff("Curse of the Elements", ret=>!StyxWoW.Me.CurrentTarget.IsPlayer),
                 Spell.Buff("Curse of Weakness", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAura("Curse of Weakness")),
                 Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
                 Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),

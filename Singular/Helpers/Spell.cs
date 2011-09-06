@@ -158,7 +158,7 @@ namespace Singular.Helpers
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding() && CurrentCastTimeLeft.TotalMilliseconds > 500,
+                    ret => StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding() && (CurrentCastTimeLeft.TotalMilliseconds > 500 && StyxWoW.Me.ChanneledCastingSpellId == 0),
                     new PrioritySelector(
                         // This is here to avoid double casting spells with dots/debuffs (like Immolate)
                         // Note: This needs testing.
@@ -244,7 +244,15 @@ namespace Singular.Helpers
                         //Logger.WriteDebug("OnUnit: " + onUnit(ret));
                         //Logger.WriteDebug("CanCast: " + SpellManager.CanCast(name, onUnit(ret), false));
 
-                        return requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret), true);
+                        var minReqs = requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null;
+                        if (minReqs)
+                        {
+                            var canCast = SpellManager.CanCast(name, onUnit(ret), true);
+                            Logger.WriteDebug("MinReqs: " + minReqs + " - CanCast: " + canCast);
+                        }
+
+
+                        return minReqs;
                     },
                 new Action(
                     ret =>
@@ -574,5 +582,22 @@ namespace Singular.Helpers
         }
 
         #endregion
+
+        public static float MeleeRange
+        {
+            get
+            {
+                // If we have no target... then give nothing.
+                if (StyxWoW.Me.CurrentTargetGuid == 0)
+                    return 0f;
+
+                float reach = StyxWoW.Me.CombatReach + 1.3333334f + StyxWoW.Me.CurrentTarget.CombatReach;
+                if (reach < 5f)
+                {
+                    reach = 5.0f;
+                }
+                return reach;
+            }
+        }
     }
 }

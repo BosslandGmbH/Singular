@@ -24,6 +24,7 @@ using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.Logic;
+using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
@@ -123,9 +124,15 @@ namespace Singular.GUI
             lblHealTargets.Text = sb.ToString();
         }
 
+        private int lastTried = 0;
+
         private void button1_Click(object sender, EventArgs e)
         {
             ObjectManager.Update();
+            Logging.Write(SpellManager.Spells["Sinister Strike"].MaxRange.ToString());
+            //var val = Enum.GetValues(typeof(WoWMovement.ClickToMoveType)).GetValue(lastTried++);
+            //WoWMovement.ClickToMove(StyxWoW.Me.CurrentTargetGuid, (WoWMovement.ClickToMoveType)val);
+            //Logging.Write("Trying " + val);
             //TotemManager.RecallTotems();
         }
 

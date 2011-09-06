@@ -53,8 +53,8 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Spell.WaitForCast(true),
                 CreateElementalPullBuffs(),
-                Spell.Cast("Call of the Elements", ret => StyxWoW.Me.Totems.Count(t =>t != null && t.Unit != null && t.Unit.Distance < 20) == 0),
-                Spell.Cast("Wind Shear", ret => StyxWoW.Me.CurrentTarget.IsCasting),
+                Spell.Cast("Call of the Elements", ret => StyxWoW.Me.Totems.Count(t =>t != null && t.Unit != null && t.Unit.Distance < 25) != 4),
+                Spell.Cast("Wind Shear", ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
 
                 Spell.Cast("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) > 2),
                 Spell.Cast("Thunderstorm", ret => StyxWoW.Me.ManaPercent < 40),
@@ -70,7 +70,10 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Fire Nova", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) > 2),
 
                 Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && !LavaBurst.Cooldown),
+
+                // Not sure why EM doesn't want to be cast. I'll have to debug this further.
                 Spell.Cast("Elemental Mastery", ret=> StyxWoW.Me.IsMoving && !LavaBurst.Cooldown),
+
                 // Pretty much no matter what it is, just use on CD
                 Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 

@@ -35,6 +35,10 @@ namespace Singular.ClassSpecific.Warlock
                            Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.Pet.Location) < 10*10) > 1,
                     Pet.CreateCastPetAction("Felstorm")),
                 new Decorator(
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) > 1,
+                    Spell.BuffSelf("Hellfire")
+                    ),
+                new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsBoss(),
                     new PrioritySelector(
                         Spell.BuffSelf("Metamorphosis"),
@@ -62,7 +66,7 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.Cast("Hand of Gul'dan"),
                 // TODO: Make this cast Soulburn if it's available
                 Spell.Cast("Soul Fire", ret => StyxWoW.Me.HasAura("Improved Soul Fire") || StyxWoW.Me.HasAura("Soulburn")),
-                Spell.Cast("Soul Fire", ret => StyxWoW.Me.HasAura("Decimation")),
+                //Spell.Cast("Soul Fire", ret => StyxWoW.Me.HasAura("Decimation")),
                 Spell.Cast("Incinerate", ret => StyxWoW.Me.HasAura("Molten Core")),
                 Spell.Cast("Shadow Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)

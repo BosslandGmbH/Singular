@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -98,7 +99,7 @@ namespace Singular.ClassSpecific.Rogue
                             new PrioritySelector(
                                 // Check for >our own< Rupture debuff on target since there may be more rogues in party/raid!
                                 // NOTE: Rupture is only a DPS increase if there's a bleed debuff on the target (Mangle, etc) Otherwise just stick to evisc
-                                Spell.Cast("Rupture",ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && StyxWoW.Me.CurrentTarget.HasAnyAura("Mangle", "Trauma", "Hemorrhage")),
+                                Spell.Cast("Rupture",ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && (StyxWoW.Me.CurrentTarget.HasAnyAura("Mangle", "Trauma", "Hemorrhage")||StyxWoW.Me.HasAura("Blood of the Evolved"/* Buff from BRC. Extra damage on bleed ticks. */))),
                                 Spell.Cast("Eviscerate"))),
                         Spell.Cast("Slice and Dice", ret => StyxWoW.Me.Auras["Slice and Dice"].TimeLeft.TotalSeconds < 0.9))),
                 Movement.CreateMoveToTargetBehavior(true, 5f));
@@ -111,25 +112,43 @@ namespace Singular.ClassSpecific.Rogue
                     
                     ));
         }
+        private static readonly WaitTimer _interruptTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
+
+        private static bool PreventDoubleInterrupt
+        {
+            get
+            {
+                var tmp = _interruptTimer.IsFinished;
+                if (tmp)
+                    _interruptTimer.Reset();
+                return tmp;
+            }
+        }
+
         public static Composite CreateCombatRogueDefense()
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsCasting,
+                    ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
                     new PrioritySelector(
-                        Spell.Cast("Kick"),
-                        Spell.Cast("Gouge"),
-                        Spell.Cast("Cloak of Shadows"))),
+                        Spell.Cast("Kick", ret => PreventDoubleInterrupt),
+                        Spell.Cast("Gouge", ret => !StyxWoW.Me.CurrentTarget.IsPlayerBehind && PreventDoubleInterrupt)
+                        )),
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.IsCasting && !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
+                    Spell.Cast("Cloak of Shadows")),
                 // Recuperate to keep us at high health
                 Spell.Buff("Recuperate", ret => StyxWoW.Me.HealthPercent < 50 && StyxWoW.Me.RawComboPoints > 3),
-                Spell.Cast("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) > 1 || StyxWoW.Me.HealthPercent < 50),
+                Spell.Cast(
+                    "Evasion",
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) > 1 || StyxWoW.Me.HealthPercent < 50),
                 // Recuperate to not let us down
                 //Spell.Cast("Recuperate", ret => StyxWoW.Me.HealthPercent < 20 && StyxWoW.Me.RawComboPoints > 1),
                 // Cloak of Shadows as really last resort 
                 Spell.Cast("Cloak of Shadows", ret => StyxWoW.Me.HealthPercent < 20),
 
                 // Pop vanish if the shit really hits the fan...
-                Spell.Cast("Vanish",ret=>StyxWoW.Me.HealthPercent < 10)
+                Spell.Cast("Vanish", ret => StyxWoW.Me.HealthPercent < 10)
                 );
         }
     }

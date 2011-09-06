@@ -44,23 +44,23 @@ namespace Singular
 
         public static void WriteDebug(string message)
         {
-            WriteDebug(Color.Green, message);
+            WriteDebug(Color.Orange, message);
         }
 
         public static void WriteDebug(string message, params object[] args)
         {
-            WriteDebug(Color.Green, message, args);
+            WriteDebug(Color.Orange, message, args);
         }
 
         public static void WriteDebug(Color clr, string message, params object[] args)
         {
             if (SingularSettings.Instance.EnableDebugLogging)
             {
-                Logging.Write(Color.Green, "[Singular-DEBUG] " + message, args);
+                Logging.Write(clr, "[Singular-DEBUG] " + message, args);
             }
             else
             {
-                Logging.WriteDebug(Color.Green, "[Singular-DEBUG] " + message, args);
+                Logging.WriteDebug(clr, "[Singular-DEBUG] " + message, args);
             }
         }
     }

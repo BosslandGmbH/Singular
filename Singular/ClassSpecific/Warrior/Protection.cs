@@ -40,7 +40,9 @@ namespace Singular.ClassSpecific.Warrior
                 //Close cap on target
                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
                 Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f)),
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40),
+                Spell.CastOnGround(
+                    "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
+                    ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40),
 
                 //Interupt or reflect
                 Spell.Cast("Spell Reflection", ret => StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me && StyxWoW.Me.CurrentTarget.IsCasting),
@@ -65,12 +67,14 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.First(), ret => TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
                 //Single Target
-                Spell.Cast("Victory Rush"),
+                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
                 Spell.Cast("Concussion Blow"),
-                Spell.Cast("Revenge"),
                 Spell.Cast("Shield Slam"),
+                Spell.Cast("Revenge"),
                 Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent >= 50),
                 Spell.Buff("Rend"),
+                // Tclap may not be a giant threat increase, but Blood and Thunder will refresh rend. Which all in all, is a good thing.
+                Spell.Cast("Thunder Clap", ret => TalentManager.GetCount(3, 3) == 2),
                 Spell.Cast("Devastate"),
 
                 Movement.CreateMoveToTargetBehavior(true, 4f)

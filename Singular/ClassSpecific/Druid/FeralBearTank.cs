@@ -38,7 +38,8 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Frenzied Regeneration", ret => StyxWoW.Me.HealthPercent < 30),
 
                 // Make sure we deal with interrupts...
-                Spell.Cast(80964 /*"Skull Bash (Bear)"*/, ret => (WoWUnit)ret, ret => ((WoWUnit)ret).IsCasting),
+                //Spell.Cast(80964 /*"Skull Bash (Bear)"*/, ret => (WoWUnit)ret, ret => ((WoWUnit)ret).IsCasting),
+                Singular.Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 new Decorator(
                     ret => Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 15f) > 1,
@@ -58,16 +59,12 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Pulverize", ret => ((WoWUnit)ret).HasAura("Lacerate", 3)),
 
                 Spell.Cast("Demoralizing Roar", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 10 && Unit.HasAura(u, "Demoralizing Roar"))),
-                Spell.Cast("Faerie Fire (Feral)"),
+                Spell.Cast("Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasAura("Faerie Fire", 3)),
 
-                // Maul is our rage dump... don't pop it unless we have to, or we still have > 2 targets.
-                Spell.Cast(
-                    "Maul",
-                    ret =>
-                    StyxWoW.Me.RagePercent > 60 || (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 6) >= 2 && TalentManager.HasGlyph("Maul"))),
-                Spell.Cast("Thrash", ret => StyxWoW.Me.RagePercent > 60 || Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 6) >= 3),
                 Spell.Cast("Mangle (Bear)"),
-
+                // Maul is our rage dump... don't pop it unless we have to, or we still have > 2 targets.
+                Spell.Cast("Maul", ret => StyxWoW.Me.RagePercent > 60 || (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 6) >= 2 && TalentManager.HasGlyph("Maul"))),
+                Spell.Cast("Thrash"),
                 Spell.Cast("Lacerate")
 
                 );

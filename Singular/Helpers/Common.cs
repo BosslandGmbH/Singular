@@ -1,5 +1,9 @@
-﻿using Singular.Managers;
+﻿using System;
+
+using Singular.Managers;
 using Styx;
+using Styx.Combat.CombatRoutine;
+using Styx.Helpers;
 using Styx.Logic.Combat;
 using TreeSharp;
 using Action = TreeSharp.Action;
@@ -59,6 +63,65 @@ namespace Singular.Helpers
                     ret => Item.HasWand && !StyxWoW.Me.IsWanding() && extra(ret),
                     new Action(ret => SpellManager.Cast("Shoot")))
                 );
+        }
+
+        /// <summary>Creates an interrupt spell cast composite. This will attempt to use racials before any class/spec abilities. It will attempt to stun if possible!</summary>
+        /// <remarks>Created 9/7/2011.</remarks>
+        /// <param name="onUnit">The on unit.</param>
+        /// <returns>.</returns>
+        public static Composite CreateInterruptSpellCast(UnitSelectionDelegate onUnit)
+        {
+            return
+                new Decorator(
+                    // If the target is casting, and can actually be interrupted, AND we've waited out the double-interrupt timer, then find something to interrupt with.
+                    ret => StyxWoW.Me.CurrentTarget.IsCasting && !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast && PreventDoubleInterrupt,
+                    new PrioritySelector(
+
+                        Spell.Cast("Arcane Torrent", onUnit),
+                        // Don't waste stomp on bosses. They can't be stunned 99% of the time!
+                        Spell.Cast("War Stomp", onUnit, ret => !onUnit(ret).IsBoss() && onUnit(ret).Distance < 8),
+
+                        Spell.Cast("Rebuke", onUnit),
+                        Spell.Cast("Avenger's Shield", onUnit),
+                        Spell.Cast("Hammer of Justice", onUnit),
+
+                        Spell.Cast("Kick", onUnit),
+                        Spell.Cast("Gouge", onUnit, ret => !onUnit(ret).IsBoss()), // Can't gouge bosses.
+
+                        Spell.Cast("Counterspell", onUnit),
+
+                        Spell.Cast("Wind Shear", onUnit),
+
+                        Spell.Cast("Pummel", onUnit),
+                        // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
+                        Spell.Cast("Heroic Throw", onUnit, ret => TalentManager.GetCount(3, 7) == 2 && !onUnit(ret).IsBoss()),
+
+                        Spell.Cast("Silence", onUnit),
+
+                        Spell.Cast("Silencing Shot", onUnit),
+
+                        // Can't stun most bosses. So use it on trash, etc.
+                        Spell.Cast("Bash", onUnit, ret => !onUnit(ret).IsBoss()),
+                        Spell.Cast("Skull Bash (Cat)", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat),
+                        Spell.Cast("Skull Bash (Bear)", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear),
+                        Spell.Cast("Solar Beam", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin),
+
+                        Spell.Cast("Strangulate", onUnit),
+                        Spell.Cast("Mind Freeze", onUnit)
+                        ));
+        }
+
+        private static readonly WaitTimer InterruptTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
+
+        private static bool PreventDoubleInterrupt
+        {
+            get
+            {
+                var tmp = InterruptTimer.IsFinished;
+                if (tmp)
+                    InterruptTimer.Reset();
+                return tmp;
+            }
         }
     }
 }

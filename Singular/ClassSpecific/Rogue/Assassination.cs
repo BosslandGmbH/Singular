@@ -1,22 +1,29 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
+using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
 using Styx.WoWInternals;
+
 using TreeSharp;
-using Action = TreeSharp.Action;
+
+using Action = System.Action;
 
 namespace Singular.ClassSpecific.Rogue
 {
-    public class Combat
+    class Assassination
     {
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.AssasinationRogue)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public static Composite CreateCombatRoguePull()
@@ -30,11 +37,11 @@ namespace Singular.ClassSpecific.Rogue
                     ret => WoWMathHelper.CalculatePointBehind(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.Rotation, 1f),
                     new Decorator(
                         ret => ((WoWPoint)ret).Distance2D(StyxWoW.Me.Location) > 3f && Navigator.CanNavigateFully(StyxWoW.Me.Location, ((WoWPoint)ret)),
-                        new Action(ret => Navigator.MoveTo(((WoWPoint)ret))))
+                        new TreeSharp.Action(ret => Navigator.MoveTo(((WoWPoint)ret))))
                     ),
+                // Garrote if we can, SS is kinda meh as an opener.
+                Spell.Cast("Garrote"),
                 Spell.Cast("Cheap Shot"),
-                // Ambush if we can, SS is kinda meh as an opener.
-                Spell.Cast("Ambush"),
                 Spell.Cast("Sinister Strike"),
                 Helpers.Common.CreateAutoAttack(true),
                 Movement.CreateMoveToTargetBehavior(true, 5f)
@@ -42,7 +49,7 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.AssasinationRogue)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public static Composite CreateCombatRogueCombat()
@@ -55,6 +62,14 @@ namespace Singular.ClassSpecific.Rogue
                 Helpers.Common.CreateAutoAttack(true),
                 // Kick/Defensive cooldowns/Recuperation
                 CreateCombatRogueDefense(),
+
+                // Deal with stealth shit first.
+                new Decorator(
+                    ret => StyxWoW.Me.HasAnyAura("Stealth", "Vanish"),
+                    Spell.Cast("Garrote")
+                    ),
+
+
                 // Redirect if we have CP left
                 Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
 
@@ -62,28 +77,44 @@ namespace Singular.ClassSpecific.Rogue
                 // and will help burning energy on Adrenaline Rush
                 new Decorator(
                     ret => (Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) <= 1 ||
-                            Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 6 * 6 && u.HasAura("Blind"))) && StyxWoW.Me.HasAura("Blade Flurry"),
-                    new Sequence(
-                        new Action(ret => Lua.DoString("RunMacroText(\"/cancelaura Blade Flurry\")")),
-                        new Action(ret => StyxWoW.SleepForLagDuration()))),
+                            Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 6 * 6 && u.HasAura("Blind"))),
+                    Spell.Cast("Fank of Knives")),
                 Common.CreateRogueBlindOnAddBehavior(),
+
+                // Only pop Evisc if we don't have Enven.
                 Spell.Cast(
-                    "Blade Flurry",
+                    "Eviscerate",
                     ret =>
-                    !Unit.NearbyUnfriendlyUnits.Any(u => u.HasAura("Blind")) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) > 1),
-                Spell.Cast(
-                    "Eviscerate", ret => !StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints > 2),
+                    !SpellManager.HasSpell("Envenom") && !StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent <= 40 &&
+                    StyxWoW.Me.ComboPoints > 2),
+
                 // Always keep Slice and Dice up
                 Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0),
-                // Sinister Strike till 4 CP
-                Spell.Cast("Sinister Strike", ret => StyxWoW.Me.ComboPoints < 4),
-                // Revealing Strike if we're at 4 CP and target does not have it already
-                Spell.Buff("Revealing Strike", ret => StyxWoW.Me.ComboPoints == 4),
+
+                // Mutliate is our usual DPS filler above 35%
+                Spell.Cast(
+                    "Mutilate",
+                    ret => StyxWoW.Me.ComboPoints < 4 && (StyxWoW.Me.CurrentTarget.HealthPercent > 35 || !StyxWoW.Me.CurrentTarget.MeIsSafelyBehind)),
+                // Backstab when < 35% health for the extra DPS boost
+                Spell.Buff(
+                    "Backstab",
+                    ret => StyxWoW.Me.ComboPoints == 4 && (StyxWoW.Me.CurrentTarget.HealthPercent <= 35 && StyxWoW.Me.CurrentTarget.MeIsSafelyBehind)),
+
                 //
                 // Cooldowns:
 
+                // Vanish -> Garrote+Overkill+Vendetta
+                new Decorator(
+                    ret => StyxWoW.Me.EnergyPercent < 20,
+                    Spell.Cast("Vanish")),
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 || StyxWoW.Me.CurrentTarget.MaxHealth < 500000,
+                    Spell.Cast("Vendetta")),
+
+
                 // Drop aggro if we're in trouble.
-                new Decorator(ret=>(StyxWoW.Me.IsInRaid||StyxWoW.Me.IsInParty)&&StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 50,
+                new Decorator(
+                    ret => (StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty) && StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 50,
                     Spell.Cast("Feint")),
 
                 Spell.BuffSelf("Adrenaline Rush", ret => StyxWoW.Me.CurrentEnergy < 20),
@@ -95,14 +126,25 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
                         // wait out low SnD duration to cast it at it's finish
                         // through not casting other finishers meanwhile and launching SnD below 1 sec duration
-                        new Decorator(ret => StyxWoW.Me.Auras["Slice and Dice"].TimeLeft.TotalSeconds > 5 || StyxWoW.Me.CurrentEnergy > 85,
+                        new Decorator(
+                            ret => StyxWoW.Me.Auras["Slice and Dice"].TimeLeft.TotalSeconds > 5 || StyxWoW.Me.CurrentEnergy > 85,
                             new PrioritySelector(
                                 // Check for >our own< Rupture debuff on target since there may be more rogues in party/raid!
-                                // NOTE: Rupture is only a DPS increase if there's a bleed debuff on the target (Mangle, etc) Otherwise just stick to evisc
-                                Spell.Cast("Rupture",ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && (StyxWoW.Me.CurrentTarget.HasAnyAura("Mangle", "Trauma", "Hemorrhage")||StyxWoW.Me.HasAura("Blood of the Evolved"/* Buff from BRC. Extra damage on bleed ticks. */))),
-                                Spell.Cast("Eviscerate"))),
+                                Spell.Cast("Rupture", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture")),
+                                // Pop CB only before Envenom. Its useless on rupture!
+                                Spell.Cast("Cold Blood"),
+                                Spell.Cast("Envenom"))),
                         Spell.Cast("Slice and Dice", ret => StyxWoW.Me.Auras["Slice and Dice"].TimeLeft.TotalSeconds < 0.9))),
-                Movement.CreateMoveToTargetBehavior(true, 5f));
+
+                // Outside of a party/raid, we don't care where we are. So long as we're in range.
+                new Decorator(
+                    ret => !StyxWoW.Me.IsInRaid && !StyxWoW.Me.IsInParty,
+                    Movement.CreateMoveToTargetBehavior(true, 5f)),
+                // Inside a party/raid, try and get behind.
+                new Decorator(
+                    ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                    Movement.CreateMoveBehindTargetBehavior(5f))
+                );
         }
 
         private static readonly WaitTimer _interruptTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
@@ -132,9 +174,7 @@ namespace Singular.ClassSpecific.Rogue
                     Spell.Cast("Cloak of Shadows")),
                 // Recuperate to keep us at high health
                 Spell.Buff("Recuperate", ret => StyxWoW.Me.HealthPercent < 50 && StyxWoW.Me.RawComboPoints > 3),
-                Spell.Cast(
-                    "Evasion",
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) > 1 || StyxWoW.Me.HealthPercent < 50),
+                Spell.Cast("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) > 1 || StyxWoW.Me.HealthPercent < 50),
                 // Recuperate to not let us down
                 //Spell.Cast("Recuperate", ret => StyxWoW.Me.HealthPercent < 20 && StyxWoW.Me.RawComboPoints > 1),
                 // Cloak of Shadows as really last resort 

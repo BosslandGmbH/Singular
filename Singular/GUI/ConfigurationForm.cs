@@ -129,7 +129,7 @@ namespace Singular.GUI
         private void button1_Click(object sender, EventArgs e)
         {
             ObjectManager.Update();
-            Logging.Write(SpellManager.Spells["Sinister Strike"].MaxRange.ToString());
+            SpellManager.CanCast("Evasion");
             //var val = Enum.GetValues(typeof(WoWMovement.ClickToMoveType)).GetValue(lastTried++);
             //WoWMovement.ClickToMove(StyxWoW.Me.CurrentTargetGuid, (WoWMovement.ClickToMoveType)val);
             //Logging.Write("Trying " + val);

@@ -129,6 +129,7 @@
     <Compile Include="ClassSpecific\Priest\Discipline.cs" />
     <Compile Include="ClassSpecific\Priest\Lowbie.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
+    <Compile Include="ClassSpecific\Rogue\Assassination.cs" />
     <Compile Include="ClassSpecific\Rogue\Combat.cs" />
     <Compile Include="ClassSpecific\Rogue\Common.cs" />
     <Compile Include="ClassSpecific\Rogue\Lowbie.cs" />

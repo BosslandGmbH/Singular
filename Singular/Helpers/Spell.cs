@@ -259,7 +259,7 @@ namespace Singular.Helpers
                         if (minReqs)
                         {
                             var canCast = SpellManager.CanCast(name, onUnit(ret), true);
-                            Logger.WriteDebug("MinReqs: " + minReqs + " - CanCast: " + canCast);
+                            Logger.WriteDebug(name + " MinReqs: " + minReqs + " - CanCast: " + canCast);
                         }
 
 

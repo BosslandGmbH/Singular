@@ -260,6 +260,8 @@ namespace Singular.Helpers
                         {
                             var canCast = SpellManager.CanCast(name, onUnit(ret), true);
                             Logger.WriteDebug(name + " MinReqs: " + minReqs + " - CanCast: " + canCast);
+                            // Make sure we set this.
+                            minReqs = canCast;
                         }
 
 

@@ -1018,6 +1018,7 @@ namespace Singular.Lists
 
                         //Baradin Hold
                         47120, //Argaloth
+                        52363, // Occu'thar
 
                         //Blackrock Mountain: Blackwing Descent
                         41570, //Magmaw
@@ -1080,7 +1081,14 @@ namespace Singular.Lists
                         18401, //Skra'gath
                         18402, //Warmaul Champion
 
-
+                        //Firelands
+                        53691, //Shannox
+                        52558, //Lord Rhyolith
+                        52498, //Beth'tilac
+                        52530, //Alysrazor
+                        53494, //Baleroc
+                        52571, //Majordomo Staghelm
+                        52409, //Ragnaros
 
                         // Training Dummy
                         31146, // Raider's Training Dummy

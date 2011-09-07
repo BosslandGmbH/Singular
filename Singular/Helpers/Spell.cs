@@ -33,6 +33,17 @@ namespace Singular.Helpers
 
     internal static class Spell
     {
+        // Temp wrapper for upcoming HB API
+        public static TimeSpan CooldownTimeLeft(this WoWSpell spell)
+        {
+            var luaTime = Lua.GetReturnVal<double>(string.Format("local x,y=GetSpellCooldown({0}); return x+y-GetTime()", spell.Id), 0);
+            if (luaTime <= 0)
+                return TimeSpan.Zero;
+            return TimeSpan.FromSeconds(luaTime);
+        }
+
+
+
         /// <summary>Temporary wrapper for compatibility till next HB release. Returns the cast time left on the currenty casting spell.</summary>
         /// <value>The current cast time left.</value>
         private static TimeSpan CurrentCastTimeLeft

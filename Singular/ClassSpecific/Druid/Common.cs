@@ -27,16 +27,12 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast(
                     "Mark of the Wild",
                     ret => StyxWoW.Me,
-                    ret => Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && u.IsInMyPartyOrRaid && CanCastMotWOn(u)))
-                // TODO: Have it buff MotW when nearby party/raid members are missing the buff.
+                    ret =>
+                    Unit.NearbyFriendlyPlayers.Any(
+                        unit =>
+                        !unit.Dead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
+                        !unit.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")))
                 );
-        }
-
-        public static bool CanCastMotWOn(WoWUnit unit)
-        {
-            return !unit.HasAura("Mark of the Wild") &&
-                   !unit.HasAura("Embrace of the Shale Spider") &&
-                   !unit.HasAura("Blessing of Kings");
         }
     }
 }

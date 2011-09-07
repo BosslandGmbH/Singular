@@ -36,7 +36,9 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanBuffs()
         {
             return new PrioritySelector(
-                Spell.Cast("Ghost Wolf", ret=> !CharacterSettings.Instance.UseMount && StyxWoW.Me.Shapeshift == ShapeshiftForm.Normal)
+                Spell.Cast("Ghost Wolf", ret=> !CharacterSettings.Instance.UseMount && StyxWoW.Me.Shapeshift == ShapeshiftForm.Normal),
+                new Decorator(ret => Totems.NeedToRecallTotems,
+                    new Action(ret=>Totems.RecallTotems()))
                 );
         }
 
@@ -53,26 +55,27 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Spell.WaitForCast(true),
                 CreateElementalPullBuffs(),
-                Spell.Cast("Call of the Elements", ret => StyxWoW.Me.Totems.Count(t =>t != null && t.Unit != null && t.Unit.Distance < 25) != 4),
-                Spell.Cast("Wind Shear", ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
+                // Only call if we're missing more than 2 totems. 
+                Spell.Cast("Call of the Elements", ret => Totems.TotemsInRange < 3),
+                Common.CreateInterruptSpellCast(ret=>StyxWoW.Me.CurrentTarget),
 
                 Spell.Cast("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) > 2),
                 Spell.Cast("Thunderstorm", ret => StyxWoW.Me.ManaPercent < 40),
 
                 // Ensure Searing is nearby
-                Spell.Cast("Searing Totem", ret => StyxWoW.Me.Totems.Count(t => t.WoWTotem == WoWTotem.Searing && t.Unit.Distance < 13) == 0),
+                Spell.Cast("Searing Totem", ret => StyxWoW.Me.Totems.Count(t => t.WoWTotem == WoWTotem.Searing && t.Unit.Distance < 13) == 0 && !StyxWoW.Me.Totems.Any(t=>t.WoWTotem == WoWTotem.FireElemental)),
+                // Pop the ele on bosses
+                Spell.Cast("Fire Elemental Totem", ret=> StyxWoW.Me.CurrentTarget.IsBoss()),
 
                 Spell.Cast("Earth Shock", ret => StyxWoW.Me.HasAura("Lightning Shield", 9)),
 
                 // Clip the last tick of FS if we can.
                 Spell.Buff("Flame Shock", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 3),
-
-                Spell.Cast("Fire Nova", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) > 2),
-
-                Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && !LavaBurst.Cooldown),
+                
+                Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
 
                 // Not sure why EM doesn't want to be cast. I'll have to debug this further.
-                Spell.Cast("Elemental Mastery", ret=> StyxWoW.Me.IsMoving && !LavaBurst.Cooldown),
+                Spell.Cast("Elemental Mastery"),
 
                 // Pretty much no matter what it is, just use on CD
                 Item.UseEquippedItem((uint)WoWInventorySlot.Hands),

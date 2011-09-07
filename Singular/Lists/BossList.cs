@@ -22,9 +22,10 @@ namespace Singular.Lists
 
         public static HashSet<uint> BossIds
         {
-            get
-            {
-                return new HashSet<uint>
+            get { return _bosses; }
+        }
+
+        private static HashSet<uint> _bosses = new HashSet<uint>
                     {
                         31146, // Raider's Training Dummy
 
@@ -1077,10 +1078,13 @@ namespace Singular.Lists
                         18399, //Murkblood Twin
                         18400, //Rokdar the Sundered Lord
                         18401, //Skra'gath
-                        18402 //Warmaul Champion
+                        18402, //Warmaul Champion
+
+
+
+                        // Training Dummy
+                        31146, // Raider's Training Dummy
                     };
-            }
-        }
 
         #endregion
     }

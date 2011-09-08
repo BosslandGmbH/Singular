@@ -57,6 +57,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("DPS")]
+        [DisplayName("true for Battle Shout, false for Commanding")]
+        [Description("True / False if you would like the cc to use Battleshout/Commanding")]
+        public bool UseWarriorShouts { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("DPS")]
         [DisplayName("Slows")]
         [Description("True / False if you would like the cc to use slows ie. Hammstring, Piercing Howl")]
         public bool UseWarriorSlows { get; set; }
@@ -65,7 +72,7 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("DPS")]
         [DisplayName("Basic Rotation Only")]
-        [Description("True / False if you would like the cc to use just the basic DPS rotation")]
+        [Description("True / False if you would like the cc to use just the basic DPS rotation only")]
         public bool UseWarriorBasicRotation { get; set; }
 
         [Setting]
@@ -74,5 +81,26 @@ namespace Singular.Settings
         [DisplayName("Use AOE")]
         [Description("True / False if you would like the cc to use AOE with more than 3 mobs")]
         public bool UseWarriorAOE { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Fury")]
+        [DisplayName("Use SMF Rotation")]
+        [Description("True / False if you would like the cc to use a SMF rotation")]
+        public bool UseWarriorSMF { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("DPS")]
+        [DisplayName("T12 2-Piece")]
+        [Description("True / False if you have the T12 2-piece set bonus")]
+        public bool UseWarriorT12 { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Arms")]
+        [DisplayName("Improved Slam Talented?")]
+        [Description("True / False if you have Improved Slam Talented")]
+        public bool UseWarriorSlamTalent { get; set; }
     }
 }

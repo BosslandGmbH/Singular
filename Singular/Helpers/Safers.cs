@@ -1,5 +1,8 @@
 ﻿using System.Linq;
 using CommonBehaviors.Actions;
+
+using Singular.Settings;
+
 using Styx;
 using Styx.Logic;
 using Styx.WoWInternals;
@@ -23,7 +26,9 @@ namespace Singular.Helpers
             return
                 new PrioritySelector(
                     new Decorator(
-                        ret => TankManager.NeedTankTargeting && TankManager.TargetingTimer.IsFinished && StyxWoW.Me.Combat &&
+                        // DisableTankTargeting is a user-setting. NeedTankTargeting is an internal one. Make sure both are turned on.
+                        ret => !SingularSettings.Instance.DisableTankTargetSwitching && TankManager.NeedTankTargeting 
+                            && TankManager.TargetingTimer.IsFinished && StyxWoW.Me.Combat &&
                                TankManager.Instance.FirstUnit != null && StyxWoW.Me.CurrentTarget != TankManager.Instance.FirstUnit,
                         new Action(
                             ret =>

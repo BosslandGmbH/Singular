@@ -145,6 +145,16 @@ namespace Singular.Settings
         
         #endregion
 
+        #region Category: Tanking
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Tanking")]
+        [DisplayName("Disable Targeting")]
+        public bool DisableTankTargetSwitching { get; set; }
+
+        #endregion
+
         #region Class Late-Loading Wrappers
 
         // Do not change anything within this region.

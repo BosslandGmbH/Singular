@@ -74,7 +74,8 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast(
                     "Eviscerate", ret => !StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints > 2),
                 // Always keep Slice and Dice up
-                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0),
+                Spell.Cast(
+                    "Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
                 // Sinister Strike till 4 CP
                 Spell.Cast("Sinister Strike", ret => StyxWoW.Me.ComboPoints < 4),
                 // Revealing Strike if we're at 4 CP and target does not have it already
@@ -83,7 +84,8 @@ namespace Singular.ClassSpecific.Rogue
                 // Cooldowns:
 
                 // Drop aggro if we're in trouble.
-                new Decorator(ret=>(StyxWoW.Me.IsInRaid||StyxWoW.Me.IsInParty)&&StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 50,
+                new Decorator(
+                    ret => (StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty) && StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 50,
                     Spell.Cast("Feint")),
 
                 Spell.BuffSelf("Adrenaline Rush", ret => StyxWoW.Me.CurrentEnergy < 20),
@@ -93,15 +95,10 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.ComboPoints > 4,
                     new PrioritySelector(
-                        // wait out low SnD duration to cast it at it's finish
-                        // through not casting other finishers meanwhile and launching SnD below 1 sec duration
-                        new Decorator(ret => StyxWoW.Me.Auras["Slice and Dice"].TimeLeft.TotalSeconds > 5 || StyxWoW.Me.CurrentEnergy > 85,
-                            new PrioritySelector(
-                                // Check for >our own< Rupture debuff on target since there may be more rogues in party/raid!
-                                // NOTE: Rupture is only a DPS increase if there's a bleed debuff on the target (Mangle, etc) Otherwise just stick to evisc
-                                Spell.Cast("Rupture",ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && (StyxWoW.Me.CurrentTarget.HasAnyAura("Mangle", "Trauma", "Hemorrhage")||StyxWoW.Me.HasAura("Blood of the Evolved"/* Buff from BRC. Extra damage on bleed ticks. */))),
-                                Spell.Cast("Eviscerate"))),
-                        Spell.Cast("Slice and Dice", ret => StyxWoW.Me.Auras["Slice and Dice"].TimeLeft.TotalSeconds < 0.9))),
+                        // Check for >our own< Rupture debuff on target since there may be more rogues in party/raid!
+                        // NOTE: Rupture is only a DPS increase if there's a bleed debuff on the target (Mangle, etc) Otherwise just stick to evisc
+                        Spell.Cast("Rupture", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.CurrentHealth > 200000),
+                        Spell.Cast("Eviscerate"))),
                 Movement.CreateMoveToTargetBehavior(true, 5f));
         }
 

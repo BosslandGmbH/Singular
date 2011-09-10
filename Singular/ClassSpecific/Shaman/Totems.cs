@@ -1,4 +1,17 @@
-﻿using System.Collections.Generic;
+﻿#region Revision Info
+
+// This file is part of Singular - A community driven Honorbuddy CC
+// $Author$
+// $Date$
+// $HeadURL$
+// $LastChangedBy$
+// $LastChangedDate$
+// $LastChangedRevision$
+// $Revision$
+
+#endregion
+
+using System.Collections.Generic;
 using System.Linq;
 
 using Singular.Helpers;
@@ -37,8 +50,12 @@ namespace Singular.ClassSpecific.Shaman
             _totemsSet = true;
         }
 
-        /// <summary>Recalls any currently 'out' totems. This will use Totemic Recall if its known, otherwise it will destroy each totem one by one.</summary>
-        /// <remarks>Created 3/26/2011.</remarks>
+        /// <summary>
+        ///   Recalls any currently 'out' totems. This will use Totemic Recall if its known, otherwise it will destroy each totem one by one.
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/26/2011.
+        /// </remarks>
         public static void RecallTotems()
         {
             Logger.Write("Recalling totems!");
@@ -58,9 +75,13 @@ namespace Singular.ClassSpecific.Shaman
             }
         }
 
-        /// <summary>Destroys the totem described by type.</summary>
-        /// <remarks>Created 3/26/2011.</remarks>
-        /// <param name="type">The type.</param>
+        /// <summary>
+        ///   Destroys the totem described by type.
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/26/2011.
+        /// </remarks>
+        /// <param name = "type">The type.</param>
         public static void DestroyTotem(WoWTotemType type)
         {
             if (type == WoWTotemType.None)
@@ -71,10 +92,14 @@ namespace Singular.ClassSpecific.Shaman
             Lua.DoString("DestroyTotem({0})", (int)type);
         }
 
-        /// <summary>Sets a totem bar slot to the specified totem!.</summary>
-        /// <remarks>Created 3/26/2011.</remarks>
-        /// <param name="slot">The slot.</param>
-        /// <param name="totem">The totem.</param>
+        /// <summary>
+        ///   Sets a totem bar slot to the specified totem!.
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/26/2011.
+        /// </remarks>
+        /// <param name = "slot">The slot.</param>
+        /// <param name = "totem">The totem.</param>
         public static void SetTotemBarSlot(MultiCastSlot slot, WoWTotem totem)
         {
             // Make sure we have the totem bars to set. Highest first kthx
@@ -178,25 +203,22 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         #region Helper shit
+
+        public static bool NeedToRecallTotems { get { return TotemsInRange == 0 && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0; } }
+        public static int TotemsInRange { get { return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => t.Unit.Distance < GetTotemRange(t.WoWTotem)); } }
+
         public static int TotemsInRangeOf(WoWUnit unit)
         {
             return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem));
         }
 
-        public static bool NeedToRecallTotems
-        {
-            get { return TotemsInRange == 0 && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0; }
-        }
-        public static int TotemsInRange
-        {
-            get
-            {
-                return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => t.Unit.Distance < GetTotemRange(t.WoWTotem));
-            }
-        }
-        /// <summary>Finds the max range of a specific totem, where you'll still receive the buff.</summary>
-        /// <remarks>Created 3/26/2011.</remarks>
-        /// <param name="totem">The totem.</param>
+        /// <summary>
+        ///   Finds the max range of a specific totem, where you'll still receive the buff.
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/26/2011.
+        /// </remarks>
+        /// <param name = "totem">The totem.</param>
         /// <returns>The calculated totem range.</returns>
         public static float GetTotemRange(WoWTotem totem)
         {
@@ -248,8 +270,12 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Nested type: MultiCastSlot
 
-        /// <summary>A small enum to make specifying specific totem bar slots easier.</summary>
-        /// <remarks>Created 3/26/2011.</remarks>
+        /// <summary>
+        ///   A small enum to make specifying specific totem bar slots easier.
+        /// </summary>
+        /// <remarks>
+        ///   Created 3/26/2011.
+        /// </remarks>
         internal enum MultiCastSlot
         {
             // Enums increment by 1 after the first defined value. So don't touch this. Its the way it is for a reason.

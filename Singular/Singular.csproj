@@ -157,6 +157,7 @@
     <Compile Include="GUI\ConfigurationForm.Designer.cs">
       <DependentUpon>ConfigurationForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\Group.cs" />
     <Compile Include="Helpers\Item.cs" />
     <Compile Include="Helpers\Movement.cs" />
     <Compile Include="Helpers\Party.cs" />

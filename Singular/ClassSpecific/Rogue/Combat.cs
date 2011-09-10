@@ -99,7 +99,7 @@ namespace Singular.ClassSpecific.Rogue
                         // NOTE: Rupture is only a DPS increase if there's a bleed debuff on the target (Mangle, etc) Otherwise just stick to evisc
                         Spell.Cast("Rupture", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.CurrentHealth > 200000),
                         Spell.Cast("Eviscerate"))),
-                Movement.CreateMoveToTargetBehavior(true, 5f));
+                Movement.CreateMoveToMeleeBehavior(true));
         }
 
         private static readonly WaitTimer _interruptTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));

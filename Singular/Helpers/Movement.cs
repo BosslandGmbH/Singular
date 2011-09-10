@@ -86,6 +86,20 @@ namespace Singular.Helpers
         }
 
         /// <summary>
+        ///   Creates a move to melee range behavior. Will return RunStatus.Success if it has reached the location, or stopped in range. Best used at the end of a rotation.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/1/2011.
+        /// </remarks>
+        /// <param name = "stopInRange">true to stop in range.</param>
+        /// <param name = "range">The range.</param>
+        /// <returns>.</returns>
+        public static Composite CreateMoveToMeleeBehavior(bool stopInRange)
+        {
+            return CreateMoveToMeleeBehavior(ret => StyxWoW.Me.CurrentTarget.Location, stopInRange);
+        }
+
+        /// <summary>
         ///   Creates a move behind target behavior. Will return RunStatus.Success if it has reached the location, or stopped in range. Best used at the end of a rotation.
         /// </summary>
         /// <remarks>
@@ -96,7 +110,7 @@ namespace Singular.Helpers
         public static Composite CreateMoveBehindTargetBehavior(float distanceBehind)
         {
             // This should more or less ensure we're at the point.
-            return CreateMoveToLocationBehavior(ret => CalculatePointBehindTarget(distanceBehind), true, 0f);
+            return CreateMoveToLocationBehavior(ret => CalculatePointBehindTarget(distanceBehind), true, 5f);
         }
 
         private static WoWPoint CalculatePointBehindTarget(float distanceBehind)
@@ -140,8 +154,36 @@ namespace Singular.Helpers
                         ));
         }
 
+
+
+        public static Composite CreateMoveToMeleeBehavior(LocationRetriever location, bool stopInRange)
+        {
+            // Do not fuck with this. It will ensure we stop in range if we're supposed to.
+            // Otherwise it'll stick to the targets ass like flies on dog shit.
+            // Specifying a range of, 2 or so, will ensure we're constantly running to the target. Specifying 0 will cause us to spin in circles around the target
+            // or chase it down like mad. (PVP oriented behavior)
+            return
+                new Decorator(
+                // Don't run if the movement is disabled.
+                    ret => !SingularSettings.Instance.DisableAllMovement,
+                    new PrioritySelector(
+                        new Decorator(
+                // Give it a little more than 1/2 a yard buffer to get it right. CTM is never 'exact' on where we land. So don't expect it to be.
+                            ret => stopInRange && StyxWoW.Me.Location.Distance(location(ret)) + 0.6f < Spell.SafeMeleeRange,
+                            new PrioritySelector(
+                                CreateEnsureMovementStoppedBehavior(),
+                // In short; if we're not moving, just 'succeed' here, so we break the tree.
+                                new Action(ret => RunStatus.Success)
+                                )
+                            ),
+                        new Action(ret => Navigator.MoveTo(location(ret)))
+                        ));
+        }
+
         #endregion
     }
 
     public delegate WoWPoint LocationRetriever(object context);
+
+    public delegate float DynamicRangeRetriever(object context);
 }

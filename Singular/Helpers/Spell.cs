@@ -616,13 +616,12 @@ namespace Singular.Helpers
                 if (StyxWoW.Me.CurrentTargetGuid == 0)
                     return 0f;
 
-                float reach = StyxWoW.Me.CombatReach + 1.3333334f + StyxWoW.Me.CurrentTarget.CombatReach;
-                if (reach < 5f)
-                {
-                    reach = 5.0f;
-                }
-                return reach;
+                return Math.Max(5f, StyxWoW.Me.CombatReach + 1.3333334f + StyxWoW.Me.CurrentTarget.CombatReach);
             }
         }
+
+        public static float SafeMeleeRange
+        {
+            get { return Math.Max(MeleeRange - 1f, 5f); } }
     }
 }

@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Shaman
     class Enhancement
     {
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
+        [Spec(TalentSpec.EnhancementShaman)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]

@@ -93,7 +93,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 // AOE
                 new Decorator(
-                    ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) > 3 && SingularSettings.Instance.Warrior.UseWarriorAOE,
+                    ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3 && SingularSettings.Instance.Warrior.UseWarriorAOE,
                     new PrioritySelector(
                         Spell.BuffSelf("Recklessness", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
                         Spell.BuffSelf("Death Wish", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
@@ -107,7 +107,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Colossus Smash"),                
                 Spell.Cast("Execute"),
                 //Rotation over 20%
-                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) || StyxWoW.Me.RagePercent > 60),
+                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) || (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 6) || (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6)),
                 
                 new Decorator(
                     ret => SingularSettings.Instance.Warrior.UseWarriorSMF,

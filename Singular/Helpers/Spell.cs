@@ -262,16 +262,16 @@ namespace Singular.Helpers
 
                             // Make sure we set this.
                             minReqs = canCast;
-
+                            var target = onUnit(ret);
                             if (canCast)
                             {
                                 WoWSpell spell;
                                 if (SpellManager.Spells.TryGetValue(name, out spell))
                                 {
                                     if (spell.MaxRange <= 0)
-                                        minReqs = StyxWoW.Me.CurrentTarget.Distance < MeleeRange;
+                                        minReqs = target.Distance < MeleeRange;
                                     else
-                                        minReqs = StyxWoW.Me.CurrentTarget.Distance < spell.MaxRange;
+                                        minReqs = target.Distance < spell.MaxRange;
                                 }
                             }
                         }

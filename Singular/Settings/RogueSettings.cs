@@ -34,10 +34,40 @@ namespace Singular.Settings
         public PoisonType MHPoison { get; set; }
 
         [Setting]
-        [DefaultValue(PoisonType.Instant)]
+        [DefaultValue(PoisonType.Deadly)]
         [Category("Common")]
         [DisplayName("Off Hand Poison")]
         [Description("Off Hand Poison")]
         public PoisonType OHPoison { get; set; }
+
+        [Setting]
+        [DefaultValue(PoisonType.Wound)]
+        [Category("Common")]
+        [DisplayName("Thrown Poison")]
+        [Description("Thrown Poison")]
+        public PoisonType ThrownPoison { get; set; }
+
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Interrupt Spells")]
+        [Description("Interrupt Spells")]
+        public bool InterruptSpells { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use TotT")]
+        [Description("Use TotT")]
+        public bool UseTricksOfTheTrade { get; set; }
+
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Combat Spec")]
+        [DisplayName("Use Rupture Finisher")]
+        [Description("Use Rupture Finisher")]
+        public bool CombatUseRuptureFinisher { get; set; }
     }
 }

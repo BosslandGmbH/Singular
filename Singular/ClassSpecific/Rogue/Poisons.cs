@@ -42,6 +42,8 @@ namespace Singular.ClassSpecific.Rogue
 
         public static bool OffHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 0; } }
 
+        public static bool ThrownNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.Ranged.IsThrownWeapon && StyxWoW.Me.Inventory.Equipped.Ranged.TemporaryEnchantment.Id == 0; } }
+
         public static WoWItem MainHandPoison
         {
             get
@@ -70,6 +72,29 @@ namespace Singular.ClassSpecific.Rogue
             get
             {
                 switch (SingularSettings.Instance.Rogue.OHPoison)
+                {
+                    case PoisonType.Instant:
+                        return StyxWoW.Me.CarriedItems.Where(i => InstantPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
+                    case PoisonType.Crippling:
+                        return StyxWoW.Me.CarriedItems.Where(i => CripplingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
+                    case PoisonType.MindNumbing:
+                        return
+                            StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
+                    case PoisonType.Deadly:
+                        return StyxWoW.Me.CarriedItems.Where(i => DeadlyPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
+                    case PoisonType.Wound:
+                        return StyxWoW.Me.CarriedItems.Where(i => WoundPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
+                    default:
+                        return null;
+                }
+            }
+        }
+
+        public static WoWItem ThrownPoison
+        {
+            get
+            {
+                switch (SingularSettings.Instance.Rogue.ThrownPoison)
                 {
                     case PoisonType.Instant:
                         return StyxWoW.Me.CarriedItems.Where(i => InstantPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();

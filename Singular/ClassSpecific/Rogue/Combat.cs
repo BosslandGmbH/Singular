@@ -3,6 +3,8 @@ using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
@@ -77,7 +79,11 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast(
                     "Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
                 // Sinister Strike till 4 CP
-                Spell.Cast("Sinister Strike", ret => StyxWoW.Me.ComboPoints < 4),
+                // Sometimes we'll refresh SnD with 5pts (which is after popping RvS) so this will bug out at 4pts since the below wants to buff Rvs
+                // but we really just want to hit 5pts. If we have 4pts, and already have Rvs on the target, just SS for 5pts
+                Spell.Cast(
+                    "Sinister Strike",
+                    ret => StyxWoW.Me.ComboPoints < 4 || (StyxWoW.Me.CurrentTarget.HasMyAura("Revealing Strike") && StyxWoW.Me.ComboPoints == 4)),
                 // Revealing Strike if we're at 4 CP and target does not have it already
                 Spell.Buff("Revealing Strike", ret => StyxWoW.Me.ComboPoints == 4),
                 //
@@ -88,6 +94,9 @@ namespace Singular.ClassSpecific.Rogue
                     ret => (StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty) && StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 50,
                     Spell.Cast("Feint")),
 
+                // WE GOT TRIX! And no, they're not just for kids.
+                Spell.Cast("Tricks of the Trade", ret => Common.BestTricksTarget, ret => SingularSettings.Instance.Rogue.UseTricksOfTheTrade && Common.BestTricksTarget != null),
+
                 Spell.BuffSelf("Adrenaline Rush", ret => StyxWoW.Me.CurrentEnergy < 20),
                 // Killing Spree if we are at highest level of Bandit's Guise ( Shallow Insight / Moderate Insight / Deep Insight )
                 Spell.Cast("Killing Spree", ret => StyxWoW.Me.CurrentEnergy < 30 && StyxWoW.Me.HasAura("Deep Insight")),
@@ -96,8 +105,14 @@ namespace Singular.ClassSpecific.Rogue
                     ret => StyxWoW.Me.ComboPoints > 4,
                     new PrioritySelector(
                         // Check for >our own< Rupture debuff on target since there may be more rogues in party/raid!
-                        // NOTE: Rupture is only a DPS increase if there's a bleed debuff on the target (Mangle, etc) Otherwise just stick to evisc
-                        Spell.Cast("Rupture", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.CurrentHealth > 200000),
+                        // NOTE: Rupture is only a DPS increase if there's a bleed debuff on the target (Mangle, etc) Otherwise just stick to evisc...
+                        // You shouldn't always listen to EJ! Rupture is a DPS increase assuming you can actually let it run its full duration! (Thus; really only useful on bosses, or trash with a bunch
+                        // of health. Obviously, never use it with BF active)
+                        Spell.Cast(
+                            "Rupture",
+                            ret =>
+                            SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") &&
+                            !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.CurrentHealth > 200000),
                         Spell.Cast("Eviscerate"))),
                 Movement.CreateMoveToMeleeBehavior(true));
         }
@@ -119,16 +134,16 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
+                    ret => SingularSettings.Instance.Rogue.InterruptSpells&& StyxWoW.Me.CurrentTarget.IsCasting && !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
                     new PrioritySelector(
-                        Spell.Cast("Kick", ret => PreventDoubleInterrupt),
-                        Spell.Cast("Gouge", ret => !StyxWoW.Me.CurrentTarget.IsPlayerBehind && PreventDoubleInterrupt)
+                        Spell.Cast("Kick"),
+                        Spell.Cast("Gouge")
                         )),
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsCasting && !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
+                    ret => StyxWoW.Me.CurrentTarget.IsCasting && !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast && StyxWoW.Me.CurrentTarget.IsTargetingMeOrPet,
                     Spell.Cast("Cloak of Shadows")),
                 // Recuperate to keep us at high health
-                Spell.Buff("Recuperate", ret => StyxWoW.Me.HealthPercent < 50 && StyxWoW.Me.RawComboPoints > 3),
+                Spell.Buff("Recuperate", ret => StyxWoW.Me.HealthPercent < 70 && StyxWoW.Me.RawComboPoints > 3),
                 Spell.Cast(
                     "Evasion",
                     ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) > 1 || StyxWoW.Me.HealthPercent < 50),
@@ -137,6 +152,7 @@ namespace Singular.ClassSpecific.Rogue
                 // Cloak of Shadows as really last resort 
                 Spell.Cast("Cloak of Shadows", ret => StyxWoW.Me.HealthPercent < 20),
 
+                Spell.Cast("Smoke Bomb", ret=> StyxWoW.Me.HealthPercent < 15),
                 // Pop vanish if the shit really hits the fan...
                 Spell.Cast("Vanish", ret => StyxWoW.Me.HealthPercent < 10)
                 );

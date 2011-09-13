@@ -42,6 +42,13 @@ namespace Singular.Settings
         public bool DisableAllMovement { get; set; }
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("Targeting")]
+        [DisplayName("Disable Targeting")]
+        [Description("Disable all Targeting within the CC. This will NOT stop it from casting spells/heals on units other than your target. Only changing actual targets will be disabled.")]
+        public bool DisableAllTargeting { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("General")]
         [DisplayName("Wait For Res Sickness")]

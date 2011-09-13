@@ -137,7 +137,7 @@ namespace Singular.Helpers
         public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, string auraName, bool fromMyAura)
         {
             WoWAura wantedAura =
-                onUnit.GetAllAuras().Where(a => a.Name == auraName && (fromMyAura ? a.CreatorGuid == StyxWoW.Me.Guid : true)).FirstOrDefault();
+                onUnit.GetAllAuras().Where(a => a.Name == auraName && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }

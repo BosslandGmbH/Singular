@@ -26,11 +26,11 @@ namespace Singular.Helpers
         /// <remarks>Created 9/9/2011.</remarks>
         /// <param name="classes">A variable-length parameters list containing classes.</param>
         /// <returns>The player by class prio.</returns>
-        public static WoWUnit GetPlayerByClassPrio(params WoWClass[] classes)
+        public static WoWUnit GetPlayerByClassPrio(float range, params WoWClass[] classes)
         {
             foreach (var woWClass in classes)
             {
-                var unit = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => p.ToPlayer() != null && p.ToPlayer().Class == woWClass);
+                var unit = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => p.ToPlayer() != null && p.ToPlayer().Distance < range && p.ToPlayer().Class == woWClass);
                 if (unit != null)
                     return unit.ToPlayer();
             }

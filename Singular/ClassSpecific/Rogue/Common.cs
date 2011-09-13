@@ -6,6 +6,7 @@ using Singular.Helpers;
 using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic;
 using Styx.Logic.Pathing;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -87,6 +88,18 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => Lua.DoString("UseInventoryItem(17)")),
                         new Action(ret => StyxWoW.SleepForLagDuration()),
                         new WaitContinue(10, ret => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
+                        new Action(ret => Thread.Sleep(1000)))),
+                new Decorator(
+                    ret => Poisons.ThrownNeedsPoison && Poisons.ThrownPoison != null,
+                    new Sequence(
+                        new Action(ret => Logger.Write(string.Format("Applying {0} to main hand", Poisons.ThrownPoison.Name))),
+                        new Action(ret => Navigator.PlayerMover.MoveStop()),
+                        new Action(ret => StyxWoW.SleepForLagDuration()),
+                        new Action(ret => Poisons.ThrownPoison.UseContainerItem()),
+                        new Action(ret => StyxWoW.SleepForLagDuration()),
+                        new Action(ret => Lua.DoString("UseInventoryItem(18)")),
+                        new Action(ret => StyxWoW.SleepForLagDuration()),
+                        new WaitContinue(10, ret => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
                         new Action(ret => Thread.Sleep(1000))))
                 );
         }
@@ -99,6 +112,35 @@ namespace Singular.ClassSpecific.Rogue
                     new Decorator(
                         ret => ret != null,
                         Spell.Buff("Blind", ret => (WoWUnit)ret, ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1)));
+        }
+
+        public static WoWUnit BestTricksTarget
+        {
+            get
+            {
+                if (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid)
+                    return null;
+
+                // If the player has a focus target set, use it instead. TODO: Add Me.FocusedUnit to the HB API.
+                if (ObjectManager.Wow.ReadRelative<ulong>(0xA98CA0) != 0)
+                    return ObjectManager.GetObjectByGuid<WoWPlayer>(ObjectManager.Wow.ReadRelative<ulong>(0xA98CA0));
+
+                if (StyxWoW.Me.IsInInstance)
+                {
+                    if (RaFHelper.Leader != null && !RaFHelper.Leader.IsMe)
+                    {
+                        // Leader first, always. Otherwise, pick a rogue/DK/War pref. Fall back to others just in case.
+                        return RaFHelper.Leader;
+                    }
+
+                    var bestPlayer = Group.GetPlayerByClassPrio(100f,
+                        WoWClass.Rogue, WoWClass.DeathKnight, WoWClass.Warrior, WoWClass.Mage, WoWClass.Warlock, WoWClass.Shaman, WoWClass.Druid,
+                        WoWClass.Hunter, WoWClass.Paladin, WoWClass.Priest);
+                    return bestPlayer;
+                }
+
+                return null;
+            }
         }
     }
 }

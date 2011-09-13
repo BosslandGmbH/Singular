@@ -107,7 +107,12 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Colossus Smash"),                
                 Spell.Cast("Execute"),
                 //Rotation over 20%
-                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) || (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 6) || (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6)),
+                Spell.Cast("Cleave", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2 || 
+                                            (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2) || 
+                                            (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2)),
+                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2 || 
+                                                   (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2) || 
+                                                   (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2)),
                 
                 new Decorator(
                     ret => SingularSettings.Instance.Warrior.UseWarriorSMF,
@@ -214,10 +219,10 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf("Heroic Fury", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 // Fear Remover
                 Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified)),
-                //Deathwish, for both grinding and gank protection
+                //Deathwish
                 Spell.BuffSelf("Death Wish", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 //Berserker rage to stay enraged
-                Spell.BuffSelf("Berserker Rage", ret => !StyxWoW.Me.HasAnyAura("Enrage", "Berserker Rage", "Death Wish")),
+                Spell.BuffSelf("Berserker Rage", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Enrage") && !StyxWoW.Me.ActiveAuras.ContainsKey("Berserker Rage") && !StyxWoW.Me.ActiveAuras.ContainsKey("Death Wish")),  //!StyxWoW.Me.HasAnyAura("Enrage", "Berserker Rage", "Death Wish")),
                 //Battleshout Check
                 Spell.BuffSelf("Battle Shout", ret => (StyxWoW.Me.RagePercent < 20 || SingularSettings.Instance.Warrior.UseWarriorT12) && SingularSettings.Instance.Warrior.UseWarriorShouts == true),
                 Spell.BuffSelf("Commanding Shout", ret => (StyxWoW.Me.RagePercent < 20 || SingularSettings.Instance.Warrior.UseWarriorT12) && SingularSettings.Instance.Warrior.UseWarriorShouts == false)

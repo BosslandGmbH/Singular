@@ -42,22 +42,6 @@ namespace Singular.Helpers
             return TimeSpan.FromSeconds(luaTime);
         }
 
-
-
-        /// <summary>Temporary wrapper for compatibility till next HB release. Returns the cast time left on the currenty casting spell.</summary>
-        /// <value>The current cast time left.</value>
-        private static TimeSpan CurrentCastTimeLeft
-        {
-            get
-            {
-                return
-                    Styx.Helpers.Utilities.PerformanceCounterToDateTime(
-                        ObjectManager.Wow.Read<uint>(StyxWoW.Me.BaseAddress + 0xA44)) -
-                    Styx.Helpers.Utilities.PerformanceCounterToDateTime(StyxWoW.WoWClient.PerformanceCounter());
-            }
-        }
-
-
         #region Properties
 
         internal static string LastSpellCast { get; set; }
@@ -169,7 +153,7 @@ namespace Singular.Helpers
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding() && (CurrentCastTimeLeft.TotalMilliseconds > 500 && StyxWoW.Me.ChanneledCastingSpellId == 0),
+                    ret => StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding() && (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds > 500 && StyxWoW.Me.ChanneledCastingSpellId == 0),
                     new PrioritySelector(
                         // This is here to avoid double casting spells with dots/debuffs (like Immolate)
                         // Note: This needs testing.

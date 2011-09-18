@@ -65,18 +65,15 @@ namespace Singular.ClassSpecific.Warlock
                                     }))
                         )),
                 // AoE
-                new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 15) >= 5,
+                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 15) >= 5,
                     new PrioritySelector(
                         Spell.BuffSelf("Demon Soul"),
-                        Spell.BuffSelf(
-                            "Soulburn",
-                            ret => !StyxWoW.Me.CurrentTarget.HasAura("Seed of Corruption") && StyxWoW.Me.CurrentSoulShards > 0 && TalentManager.GetCount(1, 15) == 1),
+                        Spell.BuffSelf("Soulburn", ret => !StyxWoW.Me.CurrentTarget.HasAura("Seed of Corruption") && StyxWoW.Me.CurrentSoulShards > 0 && TalentManager.GetCount(1, 15) == 1),
                         Spell.Buff("Seed of Corruption", ret => !StyxWoW.Me.CurrentTarget.HasAura("Seed of Corruption"))
                         )),
                 // Standard Nuking
                 Spell.Cast("Shadow Bolt", ret => StyxWoW.Me.HasAura("Shadow Trance")),
-                Spell.Buff("Haunt"),
+                Spell.Cast("Haunt"),
                 Spell.Cast("Soul Swap", ret => StyxWoW.Me.HasAura("Soul Swap") && StyxWoW.Me.CurrentTarget.HealthPercent > 10),
                 Spell.Buff("Bane of Doom", ret => StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.CurrentTarget.HasAura("Bane of Doom")),
                 Spell.Buff("Bane of Agony", ret => !StyxWoW.Me.CurrentTarget.HasAura("Bane of Agony") && !StyxWoW.Me.CurrentTarget.HasAura("Bane of Doom")),

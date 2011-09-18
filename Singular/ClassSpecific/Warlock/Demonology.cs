@@ -27,19 +27,14 @@ namespace Singular.ClassSpecific.Warlock
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.BuffSelf("Soulburn", ret => SpellManager.HasSpell("Soul Fire") || StyxWoW.Me.HealthPercent < 70),
                 Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Fleeing,
+                new Decorator(ret => StyxWoW.Me.CurrentTarget.Fleeing,
                     Pet.CreateCastPetAction("Axe Toss")),
-                new Decorator(
-                    ret => StyxWoW.Me.GotAlivePet && 
-                           Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.Pet.Location) < 10*10) > 1,
+                new Decorator(ret => StyxWoW.Me.GotAlivePet &&  Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.Pet.Location) < 10*10) > 1,
                     Pet.CreateCastPetAction("Felstorm")),
-                new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) > 1,
+                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) > 1,
                     Spell.BuffSelf("Hellfire")
                     ),
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsBoss(),
+                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsBoss(),
                     new PrioritySelector(
                         Spell.BuffSelf("Metamorphosis"),
                         Spell.BuffSelf("Demon Soul"),
@@ -48,18 +43,17 @@ namespace Singular.ClassSpecific.Warlock
                         )),
                 Spell.Buff("Immolate"),
                 Spell.Buff("Curse of Tongues", ret => StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana),
-                Spell.Buff("Curse of Weakness", ret => StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana),
+                Spell.Buff("Curse of Elements", ret => StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana),
                 Spell.Buff("Bane of Doom", ret => StyxWoW.Me.CurrentTarget.IsBoss()),
 
                 Spell.Buff("Bane of Agony", ret => !StyxWoW.Me.CurrentTarget.HasAura("Bane of Doom") && (StyxWoW.Me.CurrentTarget.HealthPercent >= 30 || StyxWoW.Me.CurrentTarget.Elite)),
                 // Use the infernal if we have a few mobs around us, and it's off CD. Otherwise, just use the Doomguard.
                 // Its a 10min CD, with a 1-1.2min uptime on the minion. Hey, any extra DPS is fine in my book!
                 // Make sure these 2 summons are AFTER the banes above.
-                new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 10) > 2,
+                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 10) > 2,
                     Spell.CastOnGround("Summon Infernal", ret => StyxWoW.Me.CurrentTarget.Location)
                     ),
-                Spell.Cast("Summon Doomguard"),
+                Spell.Cast("Summon Doomguard", ret=> StyxWoW.Me.CurrentTarget.IsBoss()),
                 Spell.Buff("Corruption", ret => StyxWoW.Me.CurrentTarget.HealthPercent >= 30 || StyxWoW.Me.CurrentTarget.Elite),
                 Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),
                 Spell.Cast("Health Funnel", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.HealthPercent < 70),

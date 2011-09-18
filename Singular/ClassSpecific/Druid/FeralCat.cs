@@ -11,23 +11,13 @@ namespace Singular.ClassSpecific.Druid
 {
     public class FeralCat
     {
+
         [Spec(TalentSpec.FeralDruid)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Druid)]
         [Priority(500)]
         [Context(WoWContext.All)]
-        public static Composite CreateFeralCatInstanceCombat()
-        {
-            return CreateFeralCatCombat();
-        }
-
-        [Spec(TalentSpec.FeralTankDruid)]
-        [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Pull)]
-        [Class(WoWClass.Druid)]
-        [Priority(500)]
-        [Context(WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateFeralCatCombat()
         {
             return new PrioritySelector(

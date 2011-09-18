@@ -17,12 +17,13 @@ namespace Singular.ClassSpecific.Druid
         [Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Instances)]
+        [Context(WoWContext.All)]
         [Class(WoWClass.Druid)]
         public static Composite CreateBearTankCombat()
         {
+            TankManager.NeedTankTargeting = true;
             return new PrioritySelector(
-                ctx => TankManager.Instance.FirstUnit,
+                ctx => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
                 new Decorator(
                     ret => StyxWoW.Me.Shapeshift != ShapeshiftForm.Bear,
                     Spell.BuffSelf("Bear Form")),
@@ -31,15 +32,19 @@ namespace Singular.ClassSpecific.Druid
 
                 // Defensive CDs are hard to 'roll' from this type of logic, so we'll simply use them more as 'oh shit' buttons, than anything.
                 // Barkskin should be kept on CD, regardless of what we're tanking
-                Spell.Cast("Barkskin"),
+                Spell.BuffSelf("Barkskin"),
+
+                // Since Enrage no longer makes us take additional damage, just keep it on CD. Its a rage boost, and coupled with King of the Jungle, a DPS boost for more threat.
+                Spell.BuffSelf("Enrage"),
+
                 // Only pop SI if we're taking a bunch of damage.
-                Spell.Cast("Survival Instincts", ret => StyxWoW.Me.HealthPercent < 55),
+                Spell.BuffSelf("Survival Instincts", ret => StyxWoW.Me.HealthPercent < 55),
                 // We only want to pop FR < 30%. Users should not be able to change this value, as FR automatically pushes us to 30% hp.
-                Spell.Cast("Frenzied Regeneration", ret => StyxWoW.Me.HealthPercent < 30),
+                Spell.BuffSelf("Frenzied Regeneration", ret => StyxWoW.Me.HealthPercent < 30),
 
                 // Make sure we deal with interrupts...
                 //Spell.Cast(80964 /*"Skull Bash (Bear)"*/, ret => (WoWUnit)ret, ret => ((WoWUnit)ret).IsCasting),
-                Singular.Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 new Decorator(
                     ret => Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 15f) > 1,
@@ -50,15 +55,13 @@ namespace Singular.ClassSpecific.Druid
                         )),
 
                 // If we have 3+ units not targeting us, and are within 10yds, then pop our AOE taunt. (These are ones we have 'no' threat on, or don't hold solid threat on)
-                Spell.Cast(
-                    "Challenging Roar", ret => TankManager.Instance.NeedToTaunt.First(),
-                    ret => TankManager.Instance.NeedToTaunt.Count(u => u.Distance <= 10) >= 3),
+                Spell.Cast("Challenging Roar", ret => TankManager.Instance.NeedToTaunt.First(), ret => TankManager.Instance.NeedToTaunt.Count(u => u.Distance <= 10) >= 3),
                 // If there's a unit that needs taunting, do it.
                 Spell.Cast("Growl", ret => TankManager.Instance.NeedToTaunt.First(), ret => TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
                 Spell.Cast("Pulverize", ret => ((WoWUnit)ret).HasAura("Lacerate", 3)),
 
-                Spell.Cast("Demoralizing Roar", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 10 && Unit.HasAura(u, "Demoralizing Roar"))),
+                Spell.Cast("Demoralizing Roar", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 10 && !u.HasAnyAura("Demoralizing Roar", "Demoralizing Shout"))),
                 Spell.Cast("Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasAura("Faerie Fire", 3)),
 
                 Spell.Cast("Mangle (Bear)"),
@@ -69,5 +72,19 @@ namespace Singular.ClassSpecific.Druid
 
                 );
         }
+
+
+        // Quick wrapper to make some logic for non-instances. Bear form really sucks outside of them!
+
+        //[Spec(TalentSpec.FeralTankDruid)]
+        //[Behavior(BehaviorType.Combat)]
+        //[Behavior(BehaviorType.Pull)]
+        //[Class(WoWClass.Druid)]
+        //[Priority(500)]
+        //[Context(WoWContext.Normal | WoWContext.Battlegrounds)]
+        //public static Composite CreateFeralCatInstanceCombat()
+        //{
+        //    return FeralCat.CreateFeralCatCombat();
+        //}
     }
 }

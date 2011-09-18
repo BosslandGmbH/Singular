@@ -37,7 +37,7 @@ namespace Singular.Helpers
         {
             get
             {
-                return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet && p.DistanceSqr <= 40 * 40).ToList();
+                return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.DistanceSqr <= 40 * 40).ToList();
             }
         }
 

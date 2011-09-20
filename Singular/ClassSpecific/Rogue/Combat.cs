@@ -106,7 +106,7 @@ namespace Singular.ClassSpecific.Rogue
                     ret => StyxWoW.Me.ComboPoints > 4,
                     new PrioritySelector(
                         // This one is more for a group DPS boost, than anything. (Can be useful for ourselves as well, but its really experimental!)
-                        Spell.Buff("Expose Armor", ret=> StyxWoW.Me.IsInInstance && !StyxWoW.Me.CurrentTarget.HasSunders()),
+                        Spell.Buff("Expose Armor", ret=> StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.CurrentTarget.HasSunders()),
 
 
                         // Check for >our own< Rupture debuff on target since there may be more rogues in party/raid!

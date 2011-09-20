@@ -149,11 +149,13 @@ namespace Singular.Helpers
         /// </remarks>
         /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <returns></returns>
-        public static Composite WaitForCast(bool faceDuring)
+        public static Composite WaitForCast(bool faceDuring, params string[] ignoreSpellsForDoubleCastPrevention)
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding() && (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds > 500 && StyxWoW.Me.ChanneledCastingSpellId == 0),
+                    ret =>
+                    StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding() &&
+                    (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds > 500 && StyxWoW.Me.ChanneledCastingSpellId == 0),
                     new PrioritySelector(
                         // This is here to avoid double casting spells with dots/debuffs (like Immolate)
                         // Note: This needs testing.
@@ -162,6 +164,7 @@ namespace Singular.Helpers
                                    StyxWoW.Me.NonChanneledCastingSpellId == StyxWoW.Me.CastingSpellId &&
                                    StyxWoW.Me.CurrentTarget.Auras.Any(
                                        a =>
+                                       !ignoreSpellsForDoubleCastPrevention.Contains(a.Value.Spell.Name) &&
                                        a.Value.SpellId == StyxWoW.Me.CastingSpellId &&
                                        a.Value.CreatorGuid == StyxWoW.Me.Guid),
                             new Action(ret => SpellManager.StopCasting())),
@@ -271,6 +274,8 @@ namespace Singular.Helpers
                         })
                 );
         }
+
+        private static ulong junk;
 
         #endregion
 

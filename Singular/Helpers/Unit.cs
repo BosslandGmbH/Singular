@@ -180,16 +180,18 @@ namespace Singular.Helpers
         public static bool HasSunders(this WoWUnit unit)
         {
             var auras = unit.GetAllAuras();
-            var tmp = from a in auras
-                      where a.Spell != null && a.Spell.SpellEffect1 != null
-                      let effect = a.Spell.SpellEffect1
-                      // Sunder, Faerie Fire, and another have -4% armor per-stack.
-                      // Expose Armor, and others, have a flat -12%
-                      // Ensure we check MiscValueA for 1, as thats the resistance index for physical (aka; armor)
-                      where effect.AuraType == WoWApplyAuraType.ModResistancePct && effect.MiscValueA == 1 && (effect.BasePoints == -4 || effect.BasePoints == -12)
-                      select a;
+            var tmp = (from a in auras
+                       where a.Spell != null && a.Spell.SpellEffect1 != null
+                       let effect = a.Spell.SpellEffect1
+                       // Sunder, Faerie Fire, and another have -4% armor per-stack.
+                       // Expose Armor, and others, have a flat -12%
+                       // Ensure we check MiscValueA for 1, as thats the resistance index for physical (aka; armor)
+                       where
+                           effect.AuraType == WoWApplyAuraType.ModResistancePct && effect.MiscValueA == 1 &&
+                           (effect.BasePoints == -4 || effect.BasePoints == -12)
+                       select a).Any();
 
-            return tmp.FirstOrDefault() != null;
+            return tmp;
         }
     }
 }

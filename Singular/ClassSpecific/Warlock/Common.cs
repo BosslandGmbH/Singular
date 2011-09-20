@@ -49,6 +49,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockCombatBuffs()
         {
             return new PrioritySelector(
+                Spell.BuffSelf("Life Tap", ret => StyxWoW.Me.ManaPercent < 20 && StyxWoW.Me.HealthPercent > 40),
                 Item.CreateUsePotionAndHealthstone(50, 10)
                 );
         }

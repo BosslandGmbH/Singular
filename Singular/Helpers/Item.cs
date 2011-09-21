@@ -1,5 +1,10 @@
 ﻿using System;
 using System.Linq;
+
+using CommonBehaviors.Actions;
+
+using Singular.Settings;
+
 using Styx;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -133,6 +138,107 @@ namespace Singular.Helpers
                                 new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
                                 new Action(ret => StyxWoW.SleepForLagDuration())))))
+                );
+        }
+
+
+        public static bool UseTrinket(bool firstSlot)
+        {
+            TrinketUsage usage = firstSlot ? SingularSettings.Instance.Trinket1Usage : SingularSettings.Instance.Trinket2Usage;
+
+            // If we're not going to use it, don't bother going any further. Save some performance here.
+            if (usage == TrinketUsage.Never)
+            {
+                return false;
+            }
+
+            WoWItem item = firstSlot ? StyxWoW.Me.Inventory.Equipped.Trinket1 : StyxWoW.Me.Inventory.Equipped.Trinket2;
+            //int percent = firstSlot ? SingularSettings.Instance.FirstTrinketUseAtPercent : SingularSettings.Instance.SecondTrinketUseAtPercent;
+
+            if (item == null)
+            {
+                return false;
+            }
+
+            if (!item.Usable)
+                return false;
+
+            // Its on cooldown, just ignore it.
+            if (item.Cooldown > 0)
+            {
+                return false;
+            }
+
+            bool useIt = false;
+            switch (usage)
+            {
+                case TrinketUsage.OnCooldown:
+                    // We know its off cooldown... so just use it :P
+                    useIt = true;
+                    break;
+                case TrinketUsage.OnCooldownInCombat:
+                    if (StyxWoW.Me.Combat)
+                    {
+                        useIt = true;
+                    }
+                    break;
+                //case TrinketUsage.LowPower:
+                //    // We use the PowerPercent here, since it applies to ALL types of power. (Runic, Mana, Rage, Energy, Focus)
+                //    if (StyxWoW.Me.PowerPercent < percent)
+                //    {
+                //        useIt = true;
+                //    }
+                //    break;
+                //case TrinketUsage.LowHealth:
+                //    if (StyxWoW.Me.HealthPercent < percent)
+                //    {
+                //        useIt = true;
+                //    }
+                    break;
+            }
+
+            if (useIt)
+            {
+                Logger.Write("Popping trinket " + item.Name);
+                item.Use();
+                return true;
+            }
+            return false;
+        }
+        public static Composite CreateUseAlchemyBuffsBehavior()
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret =>
+                    SingularSettings.Instance.UseAlchemyFlasks && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 &&
+                    !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")), // don't try to use the flask if we already have or if we're using a better one
+                    new PrioritySelector(
+                        ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 58149) ?? StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 47499),
+                // Flask of Enhancement / Flask of the North
+                        new Decorator(
+                            ret => ret != null,
+                            new Sequence(
+                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                new Action(ret => StyxWoW.SleepForLagDuration())))
+                        ))
+                );
+        }
+
+
+        public static Composite CreateUseTrinketsBehavior()
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => SingularSettings.Instance.Trinket1,
+                    new Decorator(
+                        ret => UseTrinket(true),
+                        new ActionAlwaysSucceed())),
+                new Decorator(
+                    ret => SingularSettings.Instance.Trinket2,
+                    new Decorator(
+                        ret => UseTrinket(false),
+                        new ActionAlwaysSucceed()))
                 );
         }
     }

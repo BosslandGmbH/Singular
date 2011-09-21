@@ -56,31 +56,53 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.WaitForCast(true),
                 CreateElementalPullBuffs(),
                 // Only call if we're missing more than 2 totems. 
-                Spell.Cast("Call of the Elements", ret => Totems.TotemsInRange < 3),
-                Common.CreateInterruptSpellCast(ret=>StyxWoW.Me.CurrentTarget),
+                Totems.CreateSetTotems(),
+                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 Spell.Cast("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) > 2),
                 Spell.Cast("Thunderstorm", ret => StyxWoW.Me.ManaPercent < 40),
 
                 // Ensure Searing is nearby
-                Spell.Cast("Searing Totem", ret => StyxWoW.Me.Totems.Count(t => t.WoWTotem == WoWTotem.Searing && t.Unit.Distance < 13) == 0 && !StyxWoW.Me.Totems.Any(t=>t.WoWTotem == WoWTotem.FireElemental)),
+                Spell.Cast(
+                    "Searing Totem", ret => StyxWoW.Me,
+                    ret => StyxWoW.Me.Totems.Count(
+                                t =>
+                                t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
+                                t.Unit.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 35 * 35) == 0 &&
+                           !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
                 // Pop the ele on bosses
-                Spell.Cast("Fire Elemental Totem", ret=> StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.Cast("Fire Elemental Totem", ret => StyxWoW.Me, ret => StyxWoW.Me.CurrentTarget.IsBoss()),
 
-                Spell.Cast("Earth Shock", ret => StyxWoW.Me.HasAura("Lightning Shield", 9)),
+                // Don't pop ES if FS is going to fall off soon. Just hold on to it.
+                Spell.Cast(
+                    "Earth Shock",
+                    ret => StyxWoW.Me.HasAura("Lightning Shield", 9) && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),
 
                 // Clip the last tick of FS if we can.
-                Spell.Buff("Flame Shock", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 3),
-                
+                Spell.Cast("Flame Shock", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 3),
+
                 Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
 
                 // Not sure why EM doesn't want to be cast. I'll have to debug this further.
-                Spell.Cast("Elemental Mastery"),
+                Spell.BuffSelf("Elemental Mastery"),
 
                 // Pretty much no matter what it is, just use on CD
                 Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
-                Movement.CreateEnsureMovementStoppedBehavior(),
+                new Decorator(
+                    ret => Unit.UnfriendlyUnitsNearTarget.Count() > 2,
+                    new PrioritySelector(
+                        // Spread shocks
+                        Spell.Cast("Flame Shock", ret => Unit.UnfriendlyUnitsNearTarget.First(u => !u.HasMyAura("Flame Shock")), ret => Unit.UnfriendlyUnitsNearTarget.Count(u => !u.HasMyAura("Flame Shock"))!=0),
+                        // Bomb them with novas
+                        Spell.Cast("Fire Nova"),
+                        // CL for the fun of it. :)
+                        Spell.Cast(
+                            "Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget, ClusterType.Chained, 12),
+                            ret => Unit.UnfriendlyUnitsNearTarget.Count() > 2)
+                        )),
+
+                //Movement.CreateEnsureMovementStoppedBehavior(),
                 Spell.Cast("Lava Burst"),
 
                 // Ignore this, its useless and a DPS loss. Its ont he GCD and gains nothing from our SP, crit, or any other modifiers. 

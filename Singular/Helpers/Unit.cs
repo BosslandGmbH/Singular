@@ -37,7 +37,27 @@ namespace Singular.Helpers
         {
             get
             {
-                return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.DistanceSqr <= 40 * 40).ToList();
+                return
+                    ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
+                        p =>
+                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.IsUnit) || p.IsTrainingDummy()) && p.DistanceSqr <= 40 * 40).
+                        ToList();
+            }
+        }
+
+        /// <summary>
+        ///   Gets the nearby unfriendly units within 40 yards.
+        /// </summary>
+        /// <value>The nearby unfriendly units.</value>
+        public static IEnumerable<WoWUnit> UnfriendlyUnitsNearTarget
+        {
+            get
+            {
+                return
+                    ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
+                        p =>
+                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.IsUnit) || p.IsTrainingDummy())&&
+                        p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 15 * 15).ToList();
             }
         }
 
@@ -175,6 +195,11 @@ namespace Singular.Helpers
         public static bool IsBoss(this WoWUnit unit)
         {
             return Lists.BossList.BossIds.Contains(unit.Entry);
+        }
+
+        public static bool IsTrainingDummy(this WoWUnit unit)
+        {
+            return Lists.BossList.TrainingDummies.Contains(unit.Entry);
         }
 
         public static bool HasSunders(this WoWUnit unit)

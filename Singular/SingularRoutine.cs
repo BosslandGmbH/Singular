@@ -17,6 +17,8 @@ using Singular.Dynamics;
 using Singular.GUI;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
@@ -204,6 +206,9 @@ namespace Singular
                 _combatBuffsBehavior = new Decorator(
                     ret => !IsMounted && !Me.IsOnTransport,
                     new PrioritySelector(
+                        Item.CreateUseAlchemyBuffsBehavior(),
+                        Item.CreateUseTrinketsBehavior(),
+                        Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.MinHealth, SingularSettings.Instance.MinMana),
                         _combatBuffsBehavior)
                     );
             }

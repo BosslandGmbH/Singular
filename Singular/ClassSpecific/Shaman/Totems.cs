@@ -24,11 +24,24 @@ using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
+using TreeSharp;
+
 namespace Singular.ClassSpecific.Shaman
 {
     internal class Totems
     {
         private static bool _totemsSet;
+
+        public static Composite CreateSetTotems()
+        {
+            return new Sequence(
+                new Action(ret => SetupTotemBar()),
+                new Decorator(
+                    ret => TotemsInRange < 3,
+                    Spell.Cast("Call of the Elements", ret=>StyxWoW.Me))
+
+                );
+        }
 
         public static void SetupTotemBar()
         {
@@ -209,11 +222,22 @@ namespace Singular.ClassSpecific.Shaman
         #region Helper shit
 
         public static bool NeedToRecallTotems { get { return TotemsInRange == 0 && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0; } }
-        public static int TotemsInRange { get { return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => t.Unit.Distance < GetTotemRange(t.WoWTotem)); } }
+        public static int TotemsInRange { get { return TotemsInRangeOf(StyxWoW.Me); } }
 
         public static int TotemsInRangeOf(WoWUnit unit)
         {
-            return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem));
+            int count = 0;
+            foreach (WoWTotemInfo t in StyxWoW.Me.Totems)
+            {
+                if (t.Unit != null)
+                {
+                    if (unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem))
+                    {
+                        count++;
+                    }
+                }
+            }
+            return count;
         }
 
         /// <summary>
@@ -251,6 +275,7 @@ namespace Singular.ClassSpecific.Shaman
                 case WoWTotem.Earthbind:
                     return 10f * talentFactor;
 
+                case WoWTotem.Grounding:
                 case WoWTotem.Magma:
                     return 8f * talentFactor;
 
@@ -260,7 +285,6 @@ namespace Singular.ClassSpecific.Shaman
 
                 case WoWTotem.EarthElemental:
                 case WoWTotem.FireElemental:
-                case WoWTotem.Grounding:
                     // Not really sure about these 3.
                     return 20f;
                 case WoWTotem.ManaTide:

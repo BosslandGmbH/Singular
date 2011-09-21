@@ -76,6 +76,7 @@ namespace Singular.ClassSpecific.Mage
                         )),
                 Spell.BuffSelf("Mana Shield", ret => !StyxWoW.Me.Auras.ContainsKey("Mana Shield") && StyxWoW.Me.HealthPercent <= 75),
 
+                // This is our burn rotation. If Evo is coming off CD, make sure we burn as much mana now, as we can. We'll be filling back up soon enough
                 new Decorator(ret=>EvocateCooldown.TotalSeconds < 30 && StyxWoW.Me.ManaPercent > 10,
                     new PrioritySelector(
                         // Sigh... CnG's code for mana gems. I shall shoot thee!

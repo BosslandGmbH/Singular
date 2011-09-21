@@ -20,15 +20,36 @@ namespace Singular.Lists
     {
         #region Boss Entries
 
+        static BossList()
+        {
+            foreach (var bossId in _dummies)
+            {
+                _bosses.Add(bossId);
+            }
+        }
+
         public static HashSet<uint> BossIds
         {
             get { return _bosses; }
         }
 
+        public static HashSet<uint> TrainingDummies{get { return _dummies; }}
+
+        private static HashSet<uint>  _dummies = new HashSet<uint>
+            {
+                31146, // Raider's
+                46647, // 81-85
+                32546, // Ebon Knight's (DK)
+                31144, // 79-80
+                32543, // Veteran's (Eastern Plaguelands)
+                32667, // 70
+                32542, // 65 EPL
+                32666, // 60
+                30527, // ?? Boss one (no idea?)
+            };
+
         private static HashSet<uint> _bosses = new HashSet<uint>
                     {
-                        31146, // Raider's Training Dummy
-
                         //Ragefire Chasm
                         11517, //Oggleflint
                         11520, //Taragaman the Hungerer
@@ -1089,10 +1110,6 @@ namespace Singular.Lists
                         53494, //Baleroc
                         52571, //Majordomo Staghelm
                         52409, //Ragnaros
-
-                        // Training Dummy
-                        31146, // Raider's Training Dummy
-                        46647, // lv85 Training Dummy
                     };
 
         #endregion

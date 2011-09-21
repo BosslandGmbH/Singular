@@ -60,8 +60,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
 
                 Spell.WaitForCast(),
-
-
+                
                 Common.CreateMagePolymorphOnAddBehavior(),
 
                 Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
@@ -79,8 +78,11 @@ namespace Singular.ClassSpecific.Mage
 
                 new Decorator(ret=>EvocateCooldown.TotalSeconds < 30 && StyxWoW.Me.ManaPercent > 10,
                     new PrioritySelector(
+                        // Sigh... CnG's code for mana gems. I shall shoot thee!
                         new Decorator(ret => Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
                             new Action(ctx => Common.UseManaGem())),
+
+                        // AP and Images have 0 range, but aren't melee spells. Ensure the "Target" is ourselves, so the logic knows to automagically ignore range checks.
                         Spell.BuffSelf("Arcane Power"),
                         Spell.BuffSelf("Mirror Image"),
                         Spell.Cast("Flame Orb"),
@@ -94,8 +96,10 @@ namespace Singular.ClassSpecific.Mage
                 Spell.Cast("Arcane Barrage", ret => StyxWoW.Me.HasAura("Arcane Blast", 3)),
                 //Spell.BuffSelf("Presence of Mind"),
                 Spell.Cast("Arcane Blast"),
+
+                // FFS, don't manually cast slow. So stupid.
                 //Spell.Cast("Slow", ret => TalentManager.GetCount(1, 18) < 2 && !StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Slow") && StyxWoW.Me.CurrentTarget.Distance > 5),
-                Helpers.Common.CreateUseWand(),
+                //Helpers.Common.CreateUseWand(), // Really? Who uses a wand anymore?
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

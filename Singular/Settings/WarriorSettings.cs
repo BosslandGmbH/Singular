@@ -102,5 +102,26 @@ namespace Singular.Settings
         [DisplayName("Improved Slam Talented?")]
         [Description("True / False if you have Improved Slam Talented")]
         public bool UseWarriorSlamTalent { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Arms")]
+        [DisplayName("Bladestorm?")]
+        [Description("True / False if you would like the cc to use bladestorm")]
+        public bool UseWarriorBladestorm { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Arms")]
+        [DisplayName("Throwdown?")]
+        [Description("True / False if you would like the cc to use Throwdown")]
+        public bool UseWarriorThrowdown { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("DPS")]
+        [DisplayName("Use Charge/Intercept/Heroic Leap?")]
+        [Description("True / False if you would like the cc to use any gap closers")]
+        public bool UseWarriorCloser { get; set; }
     }
 }

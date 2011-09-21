@@ -50,11 +50,11 @@ namespace Singular.ClassSpecific.Warrior
                 
                 //Charge
                 Movement.CreateFaceTargetBehavior(),
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
                 //Heroic Leap
                 //Spell.CastOnGround("Heroic Leap",ret=>StyxWoW.Me.CurrentTarget.Location,ret=>StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1)),
                 new Decorator(
-                    ret => SpellManager.CanCast("Heroic Leap") && StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
+                    ret => SpellManager.CanCast("Heroic Leap") && StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser,
                     new Action(
                             ret =>
                             {
@@ -78,7 +78,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3 && SingularSettings.Instance.Warrior.UseWarriorAOE,
                     new PrioritySelector(
                         // recklessness gets to be used in any stance soon
-                        Spell.BuffSelf("Recklessness"),
+                        Spell.BuffSelf("Recklessness", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                         Spell.BuffSelf("Sweeping Strikes"),
                         Spell.Cast("Bladestorm"),
                         Spell.Cast("Cleave"),
@@ -90,7 +90,7 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.Cast("Pummel"),
                         // Only pop TD on elites/players
-                        Spell.Cast("Throwdown", ret=>StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite))),
+                        Spell.Cast("Throwdown", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && SingularSettings.Instance.Warrior.UseWarriorThrowdown))),
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.CurrentTarget.HealthPercent <= 25,
                     new PrioritySelector(
@@ -100,7 +100,12 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.CreateMoveToTargetBehavior(true, 30))),
 
                 //Rage Dump
-                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) || StyxWoW.Me.RagePercent > 60),
+                Spell.Cast("Cleave", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2 ||
+                                            (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2) ||
+                                            (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2)),
+                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2 ||
+                                                   (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2) ||
+                                                   (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2)),
 
                 // Use Engineering Gloves ------ Still Bugged
                 // Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
@@ -113,7 +118,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Colossus Smash"),                
                 Spell.Cast("Mortal Strike"),
                 //Bladestorm after dots and MS if against player
-                Spell.Cast("Bladestorm", ret => StyxWoW.Me.CurrentTarget.IsPlayer),
+                Spell.Cast("Bladestorm", ret => StyxWoW.Me.CurrentTarget.IsPlayer && SingularSettings.Instance.Warrior.UseWarriorBladestorm),
                 Spell.Cast("Overpower"),
                 Spell.Cast("Slam", ret => StyxWoW.Me.RagePercent > 40 && SingularSettings.Instance.Warrior.UseWarriorSlamTalent),
                 //ensure were in melee
@@ -157,12 +162,12 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf("Commanding Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == false),
 
                 //Charge
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
                 //Heroic Leap
                 //Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 //Heroic Throw if not already charging
                 new Decorator(
-                    ret => SpellManager.CanCast("Heroic Leap") && StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
+                    ret => SpellManager.CanCast("Heroic Leap") && StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser,
                     new Action(
                             ret =>
                             {

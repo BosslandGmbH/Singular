@@ -64,11 +64,11 @@ namespace Singular.ClassSpecific.Warrior
                         )),
 
                 // Intercept
-                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
                 //Heroic Leap
                 //Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 new Decorator(
-                    ret => SpellManager.CanCast("Heroic Leap") && StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
+                    ret => SpellManager.CanCast("Heroic Leap") && StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser,
                     new Action(
                             ret =>
                             {
@@ -185,11 +185,11 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Heroic Fury", ret => SpellManager.Spells["Intercept"].Cooldown && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 //Intercept
-                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
                 //Heroic Leap
                 //Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura( "Intercept", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 new Decorator(
-                    ret => SpellManager.CanCast("Heroic Leap") && StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
+                    ret => SpellManager.CanCast("Heroic Leap") && StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser,
                     new Action(
                             ret =>
                             {

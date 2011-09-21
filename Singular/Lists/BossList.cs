@@ -1092,6 +1092,7 @@ namespace Singular.Lists
 
                         // Training Dummy
                         31146, // Raider's Training Dummy
+                        46647, // lv85 Training Dummy
                     };
 
         #endregion

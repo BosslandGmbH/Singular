@@ -141,14 +141,14 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret =>
                     SingularSettings.Instance.Rogue.InterruptSpells && StyxWoW.Me.CurrentTarget.IsCasting &&
-                    !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
+                    StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
                     new PrioritySelector(
                         Spell.Cast("Kick"),
                         Spell.Cast("Gouge", ret => !StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget))
                         )),
                 new Decorator(
                     ret =>
-                    StyxWoW.Me.CurrentTarget.IsCasting && !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast &&
+                    StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast &&
                     StyxWoW.Me.CurrentTarget.IsTargetingMeOrPet,
                     Spell.Cast("Cloak of Shadows")),
                 // Recuperate to keep us at high health

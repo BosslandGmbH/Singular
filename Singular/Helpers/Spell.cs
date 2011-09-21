@@ -250,7 +250,8 @@ namespace Singular.Helpers
                             // Make sure we set this.
                             minReqs = canCast;
                             var target = onUnit(ret);
-                            if (canCast)
+                            // We're always in range of ourselves. So just ignore this bit if we're casting it on us
+                            if (canCast && !target.IsMe)
                             {
                                 WoWSpell spell;
                                 if (SpellManager.Spells.TryGetValue(name, out spell))

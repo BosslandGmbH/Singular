@@ -49,24 +49,32 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 15f) > 1,
                     new PrioritySelector(
+                        Spell.Cast("Berserk"),
+                        Spell.Cast("Maul"),
+                        Spell.Cast("Mangle (Bear)", ret => StyxWoW.Me.HasAura("Berserk")),
                         Spell.Cast("Thrash"),
                         Spell.Cast("Swipe (Bear)"),
-                        Spell.Cast("Maul")
+                        Spell.Cast("Mangle (Bear)")
                         )),
 
                 // If we have 3+ units not targeting us, and are within 10yds, then pop our AOE taunt. (These are ones we have 'no' threat on, or don't hold solid threat on)
-                Spell.Cast("Challenging Roar", ret => TankManager.Instance.NeedToTaunt.First(), ret => TankManager.Instance.NeedToTaunt.Count(u => u.Distance <= 10) >= 3),
+                Spell.Cast(
+                    "Challenging Roar", ret => TankManager.Instance.NeedToTaunt.First(),
+                    ret => TankManager.Instance.NeedToTaunt.Count(u => u.Distance <= 10) >= 3),
                 // If there's a unit that needs taunting, do it.
                 Spell.Cast("Growl", ret => TankManager.Instance.NeedToTaunt.First(), ret => TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
-                Spell.Cast("Pulverize", ret => ((WoWUnit)ret).HasAura("Lacerate", 3)),
+                Spell.Cast("Pulverize", ret => ((WoWUnit)ret).HasAura("Lacerate", 3) && !StyxWoW.Me.HasAura("Pulverize")),
 
-                Spell.Cast("Demoralizing Roar", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 10 && !u.HasAnyAura("Demoralizing Roar", "Demoralizing Shout"))),
-                Spell.Cast("Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasAura("Faerie Fire", 3)),
+                Spell.Cast("Demoralizing Roar", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 10 && /*!u.HasAnyAura("Demoralizing Roar", "Demoralizing Shout")*/ !u.HasDemoralizing())),
+                Spell.Cast("Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasSunders()),
 
                 Spell.Cast("Mangle (Bear)"),
                 // Maul is our rage dump... don't pop it unless we have to, or we still have > 2 targets.
-                Spell.Cast("Maul", ret => StyxWoW.Me.RagePercent > 60 || (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 6) >= 2 && TalentManager.HasGlyph("Maul"))),
+                Spell.Cast(
+                    "Maul",
+                    ret =>
+                    StyxWoW.Me.RagePercent > 60 || (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 6) >= 2 && TalentManager.HasGlyph("Maul"))),
                 Spell.Cast("Thrash"),
                 Spell.Cast("Lacerate")
 

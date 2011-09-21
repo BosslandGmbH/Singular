@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -6,6 +7,7 @@ using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
+using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
 using TreeSharp;
 using Action = TreeSharp.Action;
@@ -14,6 +16,18 @@ namespace Singular.ClassSpecific.Mage
 {
     public class Arcane
     {
+        public static TimeSpan EvocateCooldown
+        {
+            get
+            {
+                if (!SpellManager.HasSpell("Evocation"))
+                    return TimeSpan.MaxValue;
+
+                var left = SpellManager.Spells["Evocation"].CooldownTimeLeft();
+                return left;
+            }
+        }
+
         [Class(WoWClass.Mage)]
         [Spec(TalentSpec.ArcaneMage)]
         [Behavior(BehaviorType.Combat)]
@@ -44,38 +58,43 @@ namespace Singular.ClassSpecific.Mage
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                     new ActionIdle()),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
+
                 Spell.WaitForCast(),
-                Spell.Cast("Evocation", ret => StyxWoW.Me.ManaPercent < 20),
-                new Decorator(
-                    ret => Common.HaveManaGem() && StyxWoW.Me.ManaPercent <= 30,
-                    new Action(ctx => Common.UseManaGem())),
+
+
                 Common.CreateMagePolymorphOnAddBehavior(),
-                Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting),
-                Spell.Cast("Mirror Image", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 20),
-                Spell.Cast("Time Warp", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 20),
+
+                Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
+
+                Spell.BuffSelf("Time Warp", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 20 && StyxWoW.Me.CurrentTarget.IsBoss()),
+
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent > 50,
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent > 50 || StyxWoW.Me.CurrentTarget.IsBoss(),
                     new Sequence(
                         new Action(ctx => StyxWoW.Me.CurrentTarget.Face()),
                         new Action(ctx => StyxWoW.SleepForLagDuration()),
                         Spell.Cast("Flame Orb")
                         )),
                 Spell.BuffSelf("Mana Shield", ret => !StyxWoW.Me.Auras.ContainsKey("Mana Shield") && StyxWoW.Me.HealthPercent <= 75),
-                Spell.Cast(
-                    "Slow",
-                    ret =>
-                    TalentManager.GetCount(1, 18) < 2 && !StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Slow") &&
-                    StyxWoW.Me.CurrentTarget.Distance > 5),
-                Spell.Cast(
-                    "Arcane Missiles",
-                    ret =>
-                    StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Missiles!") && StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Blast") &&
-                    StyxWoW.Me.ActiveAuras["Arcane Blast"].StackCount >= 2),
-                Spell.Cast(
-                    "Arcane Barrage",
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Blast") && StyxWoW.Me.ActiveAuras["Arcane Blast"].StackCount >= 3),
-                Spell.BuffSelf("Presence of Mind"),
+
+                new Decorator(ret=>EvocateCooldown.TotalSeconds < 30 && StyxWoW.Me.ManaPercent > 10,
+                    new PrioritySelector(
+                        new Decorator(ret => Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
+                            new Action(ctx => Common.UseManaGem())),
+                        Spell.BuffSelf("Arcane Power"),
+                        Spell.BuffSelf("Mirror Image"),
+                        Spell.Cast("Flame Orb"),
+                        Spell.Cast("Arcane Blast")
+                        )),
+
+                // Gets skipped for some odd reason.
+                Spell.Cast("Evocation", ret=>StyxWoW.Me, ret => StyxWoW.Me.ManaPercent < 20),
+
+                Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Missiles!") && StyxWoW.Me.HasAura("Arcane Blast", 3)),
+                Spell.Cast("Arcane Barrage", ret => StyxWoW.Me.HasAura("Arcane Blast", 3)),
+                //Spell.BuffSelf("Presence of Mind"),
                 Spell.Cast("Arcane Blast"),
+                //Spell.Cast("Slow", ret => TalentManager.GetCount(1, 18) < 2 && !StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Slow") && StyxWoW.Me.CurrentTarget.Distance > 5),
                 Helpers.Common.CreateUseWand(),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );

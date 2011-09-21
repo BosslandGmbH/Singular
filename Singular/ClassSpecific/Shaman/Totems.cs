@@ -37,6 +37,7 @@ namespace Singular.ClassSpecific.Shaman
                 return;
             }
 
+            // If the user has given specific totems to use, then use them. Otherwise, fall back to our automagical ones
             WoWTotem fire = SingularSettings.Instance.Shaman.FireTotem;
             WoWTotem earth = SingularSettings.Instance.Shaman.EarthTotem;
             WoWTotem air = SingularSettings.Instance.Shaman.AirTotem;
@@ -189,16 +190,19 @@ namespace Singular.ClassSpecific.Shaman
 
         public static WoWTotem GetWaterTotem()
         {
+            // Plain and simple. If we're resto, we never want a different water totem out. Thats all there is to it.
             if (TalentManager.CurrentSpec == TalentSpec.RestorationShaman)
             {
                 return WoWTotem.HealingStream;
             }
 
+            // Really only drop this if we don't have the pally buff, and we're not resto.
             if (!StyxWoW.Me.HasAura("Blessing of Might"))
             {
                 return WoWTotem.ManaSpring;
             }
 
+            // ... yea
             return WoWTotem.HealingStream;
         }
 

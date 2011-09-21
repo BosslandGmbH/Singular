@@ -74,7 +74,7 @@ namespace Singular.Helpers
             return
                 new Decorator(
                     // If the target is casting, and can actually be interrupted, AND we've waited out the double-interrupt timer, then find something to interrupt with.
-                    ret => StyxWoW.Me.CurrentTarget.IsCasting && !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast/* && PreventDoubleInterrupt*/,
+                    ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast/* && PreventDoubleInterrupt*/,
                     new PrioritySelector(
 
                         Spell.Cast("Arcane Torrent", onUnit),

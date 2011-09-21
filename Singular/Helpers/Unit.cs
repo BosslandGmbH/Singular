@@ -193,5 +193,18 @@ namespace Singular.Helpers
 
             return tmp;
         }
+        public static bool HasDemoralizing(this WoWUnit unit)
+        {
+            var auras = unit.GetAllAuras();
+            var tmp = (from a in auras
+                       where a.Spell != null && a.Spell.SpellEffect1 != null
+                       let effect = a.Spell.SpellEffect1
+                       // Basically, all spells are -10% damage done that are demoralizing shout/roar/etc.
+                       // The aura type is damage % done. Just chekc for anything < 0. (There may be some I'm forgetting that aren't -10%, but stacks of like 2% or something
+                       where effect.AuraType == WoWApplyAuraType.ModDamagePercentDone && effect.BasePoints < 0
+                       select a).Any();
+
+            return tmp;
+        }
     }
 }

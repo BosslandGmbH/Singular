@@ -28,6 +28,7 @@ namespace Singular.ClassSpecific.Druid
                     ret => StyxWoW.Me.Shapeshift != ShapeshiftForm.Bear,
                     Spell.BuffSelf("Bear Form")),
 
+                Safers.EnsureTarget(),
                 Movement.CreateFaceTargetBehavior(),
 
                 // Defensive CDs are hard to 'roll' from this type of logic, so we'll simply use them more as 'oh shit' buttons, than anything.
@@ -47,7 +48,7 @@ namespace Singular.ClassSpecific.Druid
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 new Decorator(
-                    ret => Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 15f) > 1,
+                    ret => Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 15f) > 2,
                     new PrioritySelector(
                         Spell.Cast("Berserk"),
                         Spell.Cast("Maul"),
@@ -66,7 +67,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.Cast("Pulverize", ret => ((WoWUnit)ret).HasAura("Lacerate", 3) && !StyxWoW.Me.HasAura("Pulverize")),
 
-                Spell.Cast("Demoralizing Roar", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 10 && /*!u.HasAnyAura("Demoralizing Roar", "Demoralizing Shout")*/ !u.HasDemoralizing())),
+                Spell.Cast("Demoralizing Roar", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 10 && !u.HasDemoralizing())),
                 Spell.Cast("Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasSunders()),
 
                 Spell.Cast("Mangle (Bear)"),
@@ -75,8 +76,10 @@ namespace Singular.ClassSpecific.Druid
                     "Maul",
                     ret =>
                     StyxWoW.Me.RagePercent > 60 || (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 6) >= 2 && TalentManager.HasGlyph("Maul"))),
-                Spell.Cast("Thrash"),
-                Spell.Cast("Lacerate")
+                Spell.Cast("Thrash", ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 8 && u.IsCrowdControlled())),
+                Spell.Cast("Lacerate"),
+
+                Movement.CreateMoveToMeleeBehavior(true)
 
                 );
         }

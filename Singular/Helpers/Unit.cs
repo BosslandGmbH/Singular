@@ -40,7 +40,7 @@ namespace Singular.Helpers
                 return
                     ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
                         p =>
-                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.IsUnit) || p.IsTrainingDummy()) && p.DistanceSqr <= 40 * 40).
+                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.IsUnit && p.OwnedByRoot == null && p.Attackable) || p.IsTrainingDummy()) && p.DistanceSqr <= 40 * 40).
                         ToList();
             }
         }
@@ -56,7 +56,7 @@ namespace Singular.Helpers
                 return
                     ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
                         p =>
-                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.IsUnit) || p.IsTrainingDummy())&&
+                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.IsUnit && p.OwnedByRoot == null && p.Attackable) || p.IsTrainingDummy()) &&
                         p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 15 * 15).ToList();
             }
         }
@@ -228,7 +228,8 @@ namespace Singular.Helpers
                        // The aura type is damage % done. Just chekc for anything < 0. (There may be some I'm forgetting that aren't -10%, but stacks of like 2% or something
                        where effect.AuraType == WoWApplyAuraType.ModDamagePercentDone && effect.BasePoints < 0
                        select a).Any();
-
+            if (!tmp)
+                Logger.Write(unit.Name + " does not have demoralizing!");
             return tmp;
         }
     }

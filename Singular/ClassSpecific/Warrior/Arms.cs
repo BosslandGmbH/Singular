@@ -102,10 +102,12 @@ namespace Singular.ClassSpecific.Warrior
                 //Rage Dump
                 Spell.Cast("Cleave", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2 ||
                                             (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2) ||
-                                            (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2)),
+                                            (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2) ||
+                                            (StyxWoW.Me.ActiveAuras.ContainsKey("Deadly Calm") && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2)),
                 Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2 ||
                                                    (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2) ||
-                                                   (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2)),
+                                                   (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 6 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2) ||
+                                                   StyxWoW.Me.ActiveAuras.ContainsKey("Deadly Calm")),
 
                 // Use Engineering Gloves ------ Still Bugged
                 // Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
@@ -122,7 +124,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Overpower"),
                 Spell.Cast("Slam", ret => StyxWoW.Me.RagePercent > 40 && SingularSettings.Instance.Warrior.UseWarriorSlamTalent),
                 //ensure were in melee
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 
@@ -177,7 +179,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Heroic Throw", ret => !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 // Move to Melee
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 

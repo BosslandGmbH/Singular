@@ -133,7 +133,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Spell.Cast("Slam", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Bloodsurge") && TalentManager.GetCount(2, 20) == 1),
 
                 //Move to Melee
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 
@@ -199,7 +199,7 @@ namespace Singular.ClassSpecific.Warrior
 
 
                 // Move to Melee
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 

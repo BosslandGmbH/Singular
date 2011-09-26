@@ -43,7 +43,7 @@ namespace Singular.Helpers
             return new PrioritySelector(
                 ctx => StyxWoW.Me.Inventory.GetItemBySlot(slot),
                 new Decorator(
-                    ctx => ctx != null && CanUseItem((WoWItem)ctx),
+                    ctx => ctx != null && CanUseEquippedItem((WoWItem)ctx),
                     new Action(ctx => UseItem((WoWItem)ctx))));
 
         }
@@ -64,6 +64,15 @@ namespace Singular.Helpers
 
         private static bool CanUseItem(WoWItem item)
         {
+            return item.Usable && item.Cooldown <= 0;
+        }
+
+        private static bool CanUseEquippedItem(WoWItem item)
+        {
+            // Check for engineering tinkers!
+            if (string.IsNullOrEmpty(Lua.GetReturnVal<string>("GetItemSpell(" + item.Entry + ")", 0)))
+                return false;
+
             return item.Usable && item.Cooldown <= 0;
         }
 

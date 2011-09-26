@@ -22,6 +22,14 @@ namespace Singular
         Cone
     }
 
+    public enum CastOn
+    {
+        Never,
+        Bosses,
+        Players,
+        All,
+    }
+
     [Flags]
     public enum WoWContext
     {

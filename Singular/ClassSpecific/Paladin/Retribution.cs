@@ -5,6 +5,8 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic.Combat;
+
 using TreeSharp;
 
 namespace Singular.ClassSpecific.Paladin
@@ -27,78 +29,48 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateAutoAttack(true),
-                //Interrupts
-                    new Decorator(
-                        ret => StyxWoW.Me.CurrentTarget.IsCasting,
-                        new PrioritySelector(
-                //Rebuke ID = 96231
-                            Spell.Cast(96231),
-                // Calling Rebuke by name FAILS!!!!!!!!!!! sigh :(
-                //Spell.Cast("Rebuke", ret => StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != null),
-                            Spell.Cast("Hammer of Justice"),
-                            Spell.Cast("Arcane Torrent")
-                            )),
-                // Zealotry Routine
-                    new Decorator(
-                        ret => StyxWoW.Me.HasAura("Zealotry"),
-                        new PrioritySelector(
-                            Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower > 1),
-                            Spell.Cast("Hammer of Wrath"),
-                            Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                            Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower > 2 || StyxWoW.Me.ActiveAuras.ContainsKey("Hand of Light")),
-                            Spell.Cast("Judgement"),
-                            Spell.Cast("Crusader Strike", ret => StyxWoW.Me.CurrentHolyPower < 3)
-                            )),
-                // AoE Routine - I know the EJ guide says at 5 but I put it to 3 mainly for dungeons. 
-                    new Decorator(
-                        ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) >= 3,
-                        new PrioritySelector(
-                            Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower > 1),
-                            Spell.Cast("Divine Storm", ret => StyxWoW.Me.CurrentHolyPower < 3),
-                            Spell.Cast("Hammer of Wrath"),
-                            Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                            Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower > 2 || StyxWoW.Me.ActiveAuras.ContainsKey("Hand of Light")),
-                            Spell.Cast("Judgement"),
-                            Spell.Cast("Consecration", ret => StyxWoW.Me.ManaPercent > 50 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) >= SingularSettings.Instance.Paladin.ConsecrationCount),
-                            Spell.Cast("Holy Wrath", ret => StyxWoW.Me.ManaPercent > 50)
-                            )),
-                // Undead Routine
-                    new Decorator(
-                        ret => Unit.IsUndeadOrDemon(StyxWoW.Me.CurrentTarget),
-                        new PrioritySelector(
-                            Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower > 1),
-                            Spell.Cast("Crusader Strike", ret => StyxWoW.Me.CurrentHolyPower < 3 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) < 2),
-                            Spell.Cast("Divine Storm", ret => StyxWoW.Me.CurrentHolyPower < 3 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) > 2),
-                            Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                            Spell.Cast("Hammer of Wrath"),
-                            Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower > 2 || StyxWoW.Me.ActiveAuras.ContainsKey("Hand of Light")),
-                            Spell.Cast("Judgement"),
-                            Spell.Cast("Holy Wrath", ret => StyxWoW.Me.ManaPercent > 50),
-                            Spell.Cast("Consecration", ret => StyxWoW.Me.ManaPercent > 50 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) >= SingularSettings.Instance.Paladin.ConsecrationCount)
-                            )),
-                // Single Routine - See AoE notes.
-                    new Decorator(
-                        ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) < 3,
-                        new PrioritySelector(
-                            Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower > 1),
-                            Spell.Cast("Crusader Strike", ret => StyxWoW.Me.CurrentHolyPower < 3),
-                            Spell.Cast("Hammer of Wrath"),
-                            Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                            Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower > 2 || StyxWoW.Me.ActiveAuras.ContainsKey("Hand of Light")),
-                            Spell.Cast("Judgement"),
-                            Spell.Cast("Holy Wrath", ret => StyxWoW.Me.ManaPercent > 50),
-                            Spell.Cast("Consecration", ret => StyxWoW.Me.ManaPercent > 50 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) >= SingularSettings.Instance.Paladin.ConsecrationCount)
-                            )),
-                //Bot Control
-                    Movement.CreateMoveToTargetBehavior(true,5f)
 
 
-                    // to check it was routine prioritizing correctly or just a general logger due to all the green spell spam that is by default :(
-                //new Action(delegate
-                //        {
-                //            Logger.Write("-- END -- ");
-                //        }
-                //        )
+                    // Interrupt the first unit casting near us. Huzzah!
+                    Helpers.Common.CreateInterruptSpellCast(
+                        ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast)),
+
+
+
+
+
+                    // The below is the old combat rotation. I'm rewriting it from scratch to maximize DPS according to Noxxic.com, EJ.com and my own personal findings.
+                    // Along with the findings of other high-end ret paladins.
+
+
+                    // Single Target
+                    Spell.Cast("Inquisition"),
+                    // Pop Crusader if we're in single-target mode.
+                    Spell.Cast("Crusader Strike", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3 || !SpellManager.HasSpell("Divine Storm")),
+                    // Pop Divine Storm if we're trying to AoE.
+                    Spell.Cast("Divine Storm", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
+
+                    // This gets moved up to 3rd if the target is undead/demon. Otherwise, its lower in the prio. (Does this really add *that* much of a DPS boost that we need it?)
+                    Spell.Cast(
+                        "Exorcism",
+                        ret =>
+                        StyxWoW.Me.CurrentTarget.IsUndeadOrDemon() && 
+                        StyxWoW.Me.HasAura("The Art of War") &&
+                        Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
+
+                    Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
+                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.HasAura("Hand of Light")),
+                    // Don't use Exorcism if we're AOEing. 
+                    Spell.Cast("Exorcism", ret => StyxWoW.Me.HasAura("The Art of War") && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
+                    Spell.Cast("Judgement"),
+                    // These 2 are "flipped" for AOE and Single-target. Now, personally, since Cons is a 30s CD, and HW is a 15s CD, there's really no DPS gain by flipping them.
+                    // So just leave them as-is and don't bother messing with it!
+                    Spell.Cast("Holy Wrath"),
+                    Spell.Cast("Consecration", ret => StyxWoW.Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
+
+
+                    // Move to melee is LAST. Period.
+                    Movement.CreateMoveToMeleeBehavior(true)
                     );
         }
 

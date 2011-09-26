@@ -16,6 +16,8 @@ using System.ComponentModel;
 using Styx.Helpers;
 using Styx.WoWInternals.WoWObjects;
 
+using DefaultValue = Styx.Helpers.DefaultValueAttribute;
+
 namespace Singular.Settings
 {
     internal class ShamanSettings : Styx.Helpers.Settings
@@ -25,25 +27,43 @@ namespace Singular.Settings
         {
         }
 
+        #region Category: Totems
         [Setting]
-        [Styx.Helpers.DefaultValue(WoWTotem.None)]
+        [DefaultValue(WoWTotem.None)]
         [Category("Totems")]
         [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
         public WoWTotem FireTotem { get; set; }
         [Setting]
-        [Styx.Helpers.DefaultValue(WoWTotem.None)]
+        [DefaultValue(WoWTotem.None)]
         [Category("Totems")]
         [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
         public WoWTotem EarthTotem { get; set; }
         [Setting]
-        [Styx.Helpers.DefaultValue(WoWTotem.None)]
+        [DefaultValue(WoWTotem.None)]
         [Category("Totems")]
         [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
         public WoWTotem WaterTotem { get; set; }
         [Setting]
-        [Styx.Helpers.DefaultValue(WoWTotem.None)]
+        [DefaultValue(WoWTotem.None)]
         [Category("Totems")]
         [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
         public WoWTotem AirTotem { get; set; }
+        #endregion
+
+        #region Category: Enhancement
+        [Setting]
+        [DefaultValue(CastOn.All)]
+        [Category("Enhancement")]
+        [DisplayName("Feral Spirit")]
+        [Description("Selecet on what type of fight you would like to cast Feral Spirit")]
+        public CastOn CastOn  { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Enhancement")]
+        [DisplayName("Enhancement Heal")]
+        public bool EnhancementHeal { get; set; }
+
+        #endregion
     }
 }

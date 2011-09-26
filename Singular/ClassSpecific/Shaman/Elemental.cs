@@ -66,9 +66,9 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast(
                     "Searing Totem", ret => StyxWoW.Me,
                     ret => StyxWoW.Me.Totems.Count(
-                                t =>
-                                t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
-                                t.Unit.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 35 * 35) == 0 &&
+                        t =>
+                        t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
+                        t.Unit.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 35 * 35) == 0 &&
                            !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
                 // Pop the ele on bosses
                 Spell.Cast("Fire Elemental Totem", ret => StyxWoW.Me, ret => StyxWoW.Me.CurrentTarget.IsBoss()),
@@ -81,7 +81,6 @@ namespace Singular.ClassSpecific.Shaman
                 // Clip the last tick of FS if we can.
                 Spell.Cast("Flame Shock", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 3),
 
-                Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
 
                 // Not sure why EM doesn't want to be cast. I'll have to debug this further.
                 Spell.BuffSelf("Elemental Mastery"),
@@ -93,7 +92,9 @@ namespace Singular.ClassSpecific.Shaman
                     ret => Unit.UnfriendlyUnitsNearTarget.Count() > 2,
                     new PrioritySelector(
                         // Spread shocks
-                        Spell.Cast("Flame Shock", ret => Unit.UnfriendlyUnitsNearTarget.First(u => !u.HasMyAura("Flame Shock")), ret => Unit.UnfriendlyUnitsNearTarget.Count(u => !u.HasMyAura("Flame Shock"))!=0),
+                        Spell.Cast(
+                            "Flame Shock", ret => Unit.UnfriendlyUnitsNearTarget.First(u => !u.HasMyAura("Flame Shock")),
+                            ret => Unit.UnfriendlyUnitsNearTarget.Count(u => !u.HasMyAura("Flame Shock")) != 0),
                         // Bomb them with novas
                         Spell.Cast("Fire Nova"),
                         // CL for the fun of it. :)
@@ -107,7 +108,10 @@ namespace Singular.ClassSpecific.Shaman
 
                 // Ignore this, its useless and a DPS loss. Its ont he GCD and gains nothing from our SP, crit, or any other modifiers. 
                 //Spell.Cast("Rocket Barrage"),
-                Spell.Cast("Lightning Bolt"),
+                
+                // So... ignore movement if we have the glyph (hence the negated HasGlyph, if we don't have it, we want to chekc movement, otherwise, ignore it.)
+                Spell.Cast("Lightning Bolt", !TalentManager.HasGlyph("Unleashed Lightning"), ret => StyxWoW.Me.CurrentTarget, ret => true),
+                Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
 
                 Movement.CreateMoveToTargetBehavior(true, 38f)
                 );

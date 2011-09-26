@@ -70,7 +70,8 @@ namespace Singular.Helpers
         private static bool CanUseEquippedItem(WoWItem item)
         {
             // Check for engineering tinkers!
-            if (string.IsNullOrEmpty(Lua.GetReturnVal<string>("GetItemSpell(" + item.Entry + ")", 0)))
+            string itemSpell = Lua.GetReturnVal<string>("return GetItemSpell(" + item.Entry + ")",0);
+            if (string.IsNullOrEmpty(itemSpell))
                 return false;
 
             return item.Usable && item.Cooldown <= 0;
@@ -169,14 +170,8 @@ namespace Singular.Helpers
                 return false;
             }
 
-            if (!item.Usable)
+            if (!CanUseEquippedItem(item))
                 return false;
-
-            // Its on cooldown, just ignore it.
-            if (item.Cooldown > 0)
-            {
-                return false;
-            }
 
             bool useIt = false;
             switch (usage)

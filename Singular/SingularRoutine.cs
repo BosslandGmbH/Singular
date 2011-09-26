@@ -13,6 +13,9 @@
 
 using System;
 using System.Reflection;
+
+using CommonBehaviors.Actions;
+
 using Singular.Dynamics;
 using Singular.GUI;
 using Singular.Helpers;
@@ -189,9 +192,14 @@ namespace Singular
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
             EnsureComposite(false, BehaviorType.CombatBuffs, out _combatBuffsBehavior);
+            // This is a small bugfix. Just to ensure we always pop trinkets, etc.
+            if (_combatBuffsBehavior == null)
+                _combatBuffsBehavior = new PrioritySelector();
             EnsureComposite(false, BehaviorType.Heal, out _healBehavior);
             EnsureComposite(false, BehaviorType.PullBuffs, out _pullBuffsBehavior);
             EnsureComposite(false, BehaviorType.PreCombatBuffs, out _preCombatBuffsBehavior);
+
+
 
             // Since we can be lazy, we're going to fix a bug right here and now.
             // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
@@ -206,9 +214,9 @@ namespace Singular
                 _combatBuffsBehavior = new Decorator(
                     ret => !IsMounted && !Me.IsOnTransport,
                     new PrioritySelector(
-                        Item.CreateUseAlchemyBuffsBehavior(),
+                        //Item.CreateUseAlchemyBuffsBehavior(),
                         Item.CreateUseTrinketsBehavior(),
-                        Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.MinHealth, SingularSettings.Instance.MinMana),
+                        //Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana),
                         _combatBuffsBehavior)
                     );
             }

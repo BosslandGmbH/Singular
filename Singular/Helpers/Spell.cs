@@ -203,7 +203,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(string name, SimpleBooleanDelegate requirements)
         {
-            return Cast(name, ret => StyxWoW.Me.CurrentTarget, requirements);
+            return Cast(name, true, ret => StyxWoW.Me.CurrentTarget, requirements);
         }
 
         /// <summary>
@@ -218,7 +218,22 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(string name, UnitSelectionDelegate onUnit)
         {
-            return Cast(name, onUnit, ret => true);
+            return Cast(name, true, onUnit, ret => true);
+        }
+        /// <summary>
+        ///   Creates a behavior to cast a spell by name, on a specific unit. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name = "onUnit">The on unit.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite Cast(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return Cast(name, true, onUnit, requirements);
         }
 
         /// <summary>
@@ -232,7 +247,7 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns>.</returns>
-        public static Composite Cast(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        public static Composite Cast(string name, bool checkMovement, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return new Decorator(
                 ret =>
@@ -245,7 +260,7 @@ namespace Singular.Helpers
                         var minReqs = requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null;
                         if (minReqs)
                         {
-                            var canCast = SpellManager.CanCast(name, onUnit(ret), false);
+                            var canCast = SpellManager.CanCast(name, onUnit(ret), false, checkMovement);
 
                             // Make sure we set this.
                             minReqs = canCast;

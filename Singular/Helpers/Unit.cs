@@ -40,7 +40,8 @@ namespace Singular.Helpers
                 return
                     ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
                         p =>
-                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.IsUnit && p.OwnedByRoot == null && p.Attackable) || p.IsTrainingDummy()) && p.DistanceSqr <= 40 * 40).
+                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && !p.IsCritter && p.IsUnit && p.OwnedByRoot == null && p.Attackable) ||
+                         p.IsTrainingDummy()) && p.DistanceSqr <= 40 * 40).
                         ToList();
             }
         }
@@ -56,7 +57,8 @@ namespace Singular.Helpers
                 return
                     ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
                         p =>
-                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && p.IsUnit && p.OwnedByRoot == null && p.Attackable) || p.IsTrainingDummy()) &&
+                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsTotem && !p.IsCritter && !p.IsNonCombatPet && p.IsUnit && p.OwnedByRoot == null &&
+                          p.Attackable) || p.IsTrainingDummy()) &&
                         p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 15 * 15).ToList();
             }
         }

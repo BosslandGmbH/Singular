@@ -68,6 +68,19 @@ namespace Singular.Settings
         [DisplayName("Min Mana")]
         [Description("Minimum mana to drink at.")]
         public int MinMana { get; set; }
+        [Setting]
+        [DefaultValue(30)]
+        [Category("General")]
+        [DisplayName("Potion Health")]
+        [Description("Minimum health to use a health pot or health stone at.")]
+        public int PotionHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("General")]
+        [DisplayName("Potion Mana")]
+        [Description("Minimum mana to use a mana pot at.")]
+        public int PotionMana { get; set; }
 
         #endregion
 

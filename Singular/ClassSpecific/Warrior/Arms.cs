@@ -47,6 +47,16 @@ namespace Singular.ClassSpecific.Warrior
                 //Rocket belt! ----- Still Bugged
                 // new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 20, 
                 //     Item.UseEquippedItem((uint)WoWInventorySlot.Waist)),
+
+                // Hands
+                Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
+
+                //Stance Dancing
+                //Pop over to Zerker
+                Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Rend") && !StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood") && StyxWoW.Me.RagePercent < 50 && StyxWoW.Me.CurrentTarget.IsBoss() && SingularSettings.Instance.Warrior.UseWarriorStanceDance),
+                //Keep in Battle Stance
+                Spell.BuffSelf("Battle Stance", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rend") || ((StyxWoW.Me.ActiveAuras.ContainsKey("Overpower") || StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood")) && SpellManager.Spells["Mortal Strike"].Cooldown) && StyxWoW.Me.RagePercent <= 50),
+                
                 
                 //Charge
                 Movement.CreateFaceTargetBehavior(),

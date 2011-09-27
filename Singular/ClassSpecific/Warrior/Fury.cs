@@ -89,7 +89,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Heroic Throw", ret => StyxWoW.Me.CurrentTarget.Distance > 15 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 // engineering gloves --- Still Bugged
-                // Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
+                Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 // AOE
                 new Decorator(

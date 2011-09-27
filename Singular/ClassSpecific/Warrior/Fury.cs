@@ -169,7 +169,8 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.WaitForCast(),
                         Spell.Cast("Heroic Throw"),
                         Spell.Cast("Shoot"),
-                        Spell.Cast("Throw")
+                        Spell.Cast("Throw"),
+                        Movement.CreateMoveToTargetBehavior(true, 27f)
                     )),
 
                 //low level support
@@ -185,7 +186,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Heroic Fury", ret => SpellManager.Spells["Intercept"].Cooldown && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 //Intercept
-                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
+                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 24 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
                 //Heroic Leap
                 //Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura( "Intercept", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 new Decorator(

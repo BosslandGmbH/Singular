@@ -90,7 +90,7 @@ namespace Singular.ClassSpecific.Warrior
                         // recklessness gets to be used in any stance soon
                         Spell.BuffSelf("Recklessness", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                         Spell.BuffSelf("Sweeping Strikes"),
-                        Spell.Cast("Bladestorm"),
+                        Spell.Cast("Bladestorm", ret => SingularSettings.Instance.Warrior.UseWarriorBladestorm),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
 
@@ -166,7 +166,8 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.WaitForCast(),
                         Spell.Cast("Heroic Throw"),
                         Spell.Cast("Shoot"),
-                        Spell.Cast("Throw")
+                        Spell.Cast("Throw"),
+                        Movement.CreateMoveToTargetBehavior(true, 27f)
                     )),
 
                 //Buff up

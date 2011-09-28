@@ -2,6 +2,7 @@
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
@@ -89,14 +90,15 @@ namespace Singular.ClassSpecific.Shaman
                 Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget.Count() > 2,
+                    ret => SingularSettings.Instance.Shaman.IncludeAoeRotation && Unit.UnfriendlyUnitsNearTarget.Count() > 2,
                     new PrioritySelector(
-                        // Spread shocks
+                        // Spread shocks. Make sure we only spread it to ones we're facing (LazyRaider support with movement turned off)
                         Spell.Cast(
-                            "Flame Shock", ret => Unit.UnfriendlyUnitsNearTarget.First(u => !u.HasMyAura("Flame Shock")),
+                            "Flame Shock",
+                            ret => Unit.UnfriendlyUnitsNearTarget.First(u => !u.HasMyAura("Flame Shock") && StyxWoW.Me.IsSafelyFacing(u)),
                             ret => Unit.UnfriendlyUnitsNearTarget.Count(u => !u.HasMyAura("Flame Shock")) != 0),
                         // Bomb them with novas
-                        Spell.Cast("Fire Nova"),
+                        Spell.Cast("Fire Nova", ret => Unit.UnfriendlyUnitsNearTarget.Any(u => u.HasMyAura("Flame Shock"))),
                         // CL for the fun of it. :)
                         Spell.Cast(
                             "Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget, ClusterType.Chained, 12),
@@ -108,7 +110,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 // Ignore this, its useless and a DPS loss. Its ont he GCD and gains nothing from our SP, crit, or any other modifiers. 
                 //Spell.Cast("Rocket Barrage"),
-                
+
                 // So... ignore movement if we have the glyph (hence the negated HasGlyph, if we don't have it, we want to chekc movement, otherwise, ignore it.)
                 Spell.Cast("Lightning Bolt", !TalentManager.HasGlyph("Unleashed Lightning"), ret => StyxWoW.Me.CurrentTarget, ret => true),
                 Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),

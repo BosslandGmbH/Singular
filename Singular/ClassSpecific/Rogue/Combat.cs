@@ -96,7 +96,9 @@ namespace Singular.ClassSpecific.Rogue
                     Spell.Cast("Feint")),
 
                 // WE GOT TRIX! And no, they're not just for kids.
-                Spell.Cast("Tricks of the Trade", ret => Common.BestTricksTarget, ret => SingularSettings.Instance.Rogue.UseTricksOfTheTrade && Common.BestTricksTarget != null),
+                Spell.Cast(
+                    "Tricks of the Trade", ret => Common.BestTricksTarget,
+                    ret => SingularSettings.Instance.Rogue.UseTricksOfTheTrade && Common.BestTricksTarget != null),
 
                 Spell.BuffSelf("Adrenaline Rush", ret => StyxWoW.Me.CurrentEnergy < 20),
                 // Killing Spree if we are at highest level of Bandit's Guise ( Shallow Insight / Moderate Insight / Deep Insight )
@@ -106,7 +108,7 @@ namespace Singular.ClassSpecific.Rogue
                     ret => StyxWoW.Me.ComboPoints > 4,
                     new PrioritySelector(
                         // This one is more for a group DPS boost, than anything. (Can be useful for ourselves as well, but its really experimental!)
-                        Spell.Buff("Expose Armor", ret=> StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.CurrentTarget.HasSunders()),
+                        Spell.Buff("Expose Armor", ret => StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.CurrentTarget.HasSunders()),
 
 
                         // Check for >our own< Rupture debuff on target since there may be more rogues in party/raid!
@@ -115,15 +117,17 @@ namespace Singular.ClassSpecific.Rogue
                         // of health. Obviously, never use it with BF active)
                         Spell.Cast(
                             "Rupture",
-                            ret =>
-                            SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") &&
-                            !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.CurrentHealth > 200000),
+                            ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") &&
+                                   !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.IsBoss() && !WillEnergyCap),
                         Spell.Cast("Eviscerate"))),
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 
         private static readonly WaitTimer _interruptTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
-
+        private static bool WillEnergyCap
+        {
+            get { return Lua.GetReturnVal<float>("return GetPowerRegen()", 1) > 25f; }
+        }
         private static bool PreventDoubleInterrupt
         {
             get

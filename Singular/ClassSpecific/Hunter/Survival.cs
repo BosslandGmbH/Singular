@@ -12,6 +12,7 @@ namespace Singular.ClassSpecific.Hunter
     {
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.SurvivalHunter)]
+        [Context(WoWContext.All)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         public static Composite CreateSurvivalCombat()

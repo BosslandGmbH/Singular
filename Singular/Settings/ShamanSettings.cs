@@ -65,5 +65,14 @@ namespace Singular.Settings
         public bool EnhancementHeal { get; set; }
 
         #endregion
+
+        #region Category: Elemental
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Elemental")]
+        [DisplayName("Enable AOE Support")]
+        public bool IncludeAoeRotation { get; set; }
+        #endregion
     }
 }

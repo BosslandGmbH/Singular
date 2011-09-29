@@ -70,10 +70,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => Lua.DoString("RunMacroText(\"/cancelaura Blade Flurry\")")),
                         new Action(ret => StyxWoW.SleepForLagDuration()))),
                 Common.CreateRogueBlindOnAddBehavior(),
-                Spell.BuffSelf(
-                    "Blade Flurry",
-                    ret =>
-                    !Unit.NearbyUnfriendlyUnits.Any(u => u.HasAura("Blind")) && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) > 1),
+                Spell.BuffSelf("Blade Flurry", ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.HasAura("Blind")) && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) > 1),
                 Spell.Cast(
                     "Eviscerate", ret => !StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints > 2),
                 // Always keep Slice and Dice up

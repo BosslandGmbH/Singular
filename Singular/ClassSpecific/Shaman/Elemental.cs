@@ -50,6 +50,7 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
+        [Priority(50)]
         public static Composite CreateElementalCombat()
         {
             return new PrioritySelector(
@@ -72,7 +73,7 @@ namespace Singular.ClassSpecific.Shaman
                         t.Unit.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 35 * 35) == 0 &&
                            !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
                 // Pop the ele on bosses
-                Spell.Cast("Fire Elemental Totem", ret => StyxWoW.Me, ret => StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.Cast("Fire Elemental Totem", ret => StyxWoW.Me, ret => StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
 
                 // Don't pop ES if FS is going to fall off soon. Just hold on to it.
                 Spell.Cast(

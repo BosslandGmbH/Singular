@@ -98,6 +98,10 @@ namespace Singular.ClassSpecific.Mage
                 //Spell.BuffSelf("Presence of Mind"),
                 Spell.Cast("Arcane Blast"),
 
+                // These 2 are just for support for some DPS until we get arcane blast.
+                Spell.Cast("Arcane Barrage", ret=>!SpellManager.HasSpell("Arcane Blast")),
+                Spell.Cast("Fireball", ret=>!SpellManager.HasSpell("Arcane Blast")),
+
                 // FFS, don't manually cast slow. So stupid.
                 //Spell.Cast("Slow", ret => TalentManager.GetCount(1, 18) < 2 && !StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Slow") && StyxWoW.Me.CurrentTarget.Distance > 5),
                 //Helpers.Common.CreateUseWand(), // Really? Who uses a wand anymore?

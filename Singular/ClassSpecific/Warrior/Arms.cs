@@ -36,7 +36,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 // Dispel Bubbles
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false, 
+                    ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,, 
                     new PrioritySelector(
                         Spell.WaitForCast(),
                         Movement.CreateEnsureMovementStoppedBehavior(),

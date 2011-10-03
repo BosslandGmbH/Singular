@@ -54,7 +54,7 @@ namespace Singular.ClassSpecific.Priest
 
                 // use dispersion if we can
                 Spell.Cast("Dispersion", ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Priest.DispersionMana),
-                new Decorator(ret => Unit.HasAura(StyxWoW.Me, "Dispersion", 0),
+                new Decorator(ret => StyxWoW.Me.HasAura("Dispersion", 0),
                     new ActionAlwaysSucceed()),
 
                 Spell.Cast("Archangel", ret => SingularSettings.Instance.Priest.AlwaysArchangel5 && StyxWoW.Me.HasAura("Dark Evangelism", 5)),
@@ -70,7 +70,7 @@ namespace Singular.ClassSpecific.Priest
 
                 // start up with the dots
                 Spell.Buff("Vampiric Touch"),
-                Spell.Buff("Devouring Plague"),
+                Spell.Buff("Devouring Plague", ret=> !StyxWoW.Me.CurrentTarget.IsMechanical || StyxWoW.Me.CurrentTarget.IsBoss()),
                 Spell.Buff("Shadow Word: Pain"),
 
                 // blast for shadow orbs or timer

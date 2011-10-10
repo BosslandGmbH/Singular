@@ -11,6 +11,12 @@ namespace Singular.Helpers
 {
     internal static class Unit
     {
+        static HashSet<uint> IgnoreMobs=new HashSet<uint>
+            {
+                52288, // Venomous Effusion (NPC near the snake boss in ZG. Its the green lines on the ground. We want to ignore them.)
+                52302, // Venomous Effusion Stalker (Same as above. A dummy unit)
+
+            };
         public static bool IsUndeadOrDemon(this WoWUnit unit)
         {
             return unit.CreatureType == WoWCreatureType.Undead 
@@ -35,15 +41,13 @@ namespace Singular.Helpers
         /// <value>The nearby unfriendly units.</value>
         public static IEnumerable<WoWUnit> NearbyUnfriendlyUnits
         {
-            get
-            {
-                return
-                    ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
-                        p =>
-                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && !p.IsCritter && p.IsUnit && p.OwnedByRoot == null && p.Attackable) ||
-                         p.IsTrainingDummy()) && p.DistanceSqr <= 40 * 40).
-                        ToList();
-            }
+            get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => ValidUnit(p) && p.DistanceSqr <= 40 * 40).ToList(); }
+        }
+
+        static bool ValidUnit(WoWUnit p)
+        {
+            return ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && !p.IsCritter && p.IsUnit && p.OwnedByRoot == null && p.Attackable) ||
+                    p.IsTrainingDummy()) && !IgnoreMobs.Contains(p.Entry);
         }
 
         /// <summary>
@@ -56,10 +60,7 @@ namespace Singular.Helpers
             {
                 return
                     ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
-                        p =>
-                        ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsTotem && !p.IsCritter && !p.IsNonCombatPet && p.IsUnit && p.OwnedByRoot == null &&
-                          p.Attackable) || p.IsTrainingDummy()) &&
-                        p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 15 * 15).ToList();
+                        p => ValidUnit(p) && p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 15 * 15).ToList();
             }
         }
 

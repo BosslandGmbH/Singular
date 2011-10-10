@@ -13,6 +13,7 @@ namespace Singular.ClassSpecific.Druid
     {
 
         [Spec(TalentSpec.FeralDruid)]
+        //[Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Druid)]
@@ -32,7 +33,7 @@ namespace Singular.ClassSpecific.Druid
 
                 // IsCasting has been fixed a few releases ago to also check for channeled spells. Skull Bash is also not provided in the custom wrappers for the spell manager
                 // So use it by ID
-                Spell.Cast(80965 /*"Skull Bash (Cat)"*/, ret => StyxWoW.Me.CurrentTarget.IsCasting),
+                Spell.Cast(80965 /*"Skull Bash (Cat)"*/, ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
 
                 new Decorator(
                     ret => BossList.BossIds.Contains(StyxWoW.Me.CurrentTarget.Entry),

@@ -27,6 +27,7 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateMoveToLosBehavior(),
                 Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
+
                 //Intimidation
                 Spell.Cast(
                     "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&

@@ -84,6 +84,8 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
+        public UnitSelectionDelegate MyUnitSelector = ret => (WoWUnit)ret;
+
 
         // Quick wrapper to make some logic for non-instances. Bear form really sucks outside of them!
 

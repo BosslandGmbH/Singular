@@ -69,5 +69,11 @@ namespace Singular.Settings
         [DisplayName("Use Rupture Finisher")]
         [Description("Use Rupture Finisher")]
         public bool CombatUseRuptureFinisher { get; set; }
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Combat Spec")]
+        [DisplayName("Use Expose Armor")]
+        [Description("Use Expose Armor")]
+        public bool UseExposeArmor { get; set; }
     }
 }

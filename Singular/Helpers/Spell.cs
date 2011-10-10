@@ -625,8 +625,6 @@ namespace Singular.Helpers
             }
         }
 
-        public static float SafeMeleeRange
-        {
-            get { return Math.Max(MeleeRange - 1f, 5f); } }
+        public static float SafeMeleeRange { get { return Math.Max(MeleeRange - 1f, 5f); } }
     }
 }

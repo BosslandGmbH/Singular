@@ -11,6 +11,7 @@
 
 #endregion
 
+using System;
 using System.Linq;
 
 using Singular.Settings;
@@ -23,6 +24,8 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
+
+using Action = TreeSharp.Action;
 
 namespace Singular.Helpers
 {
@@ -37,10 +40,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveToLosBehavior()
         {
-            return new Decorator(
-                ret => !SingularSettings.Instance.DisableAllMovement && !StyxWoW.Me.CurrentTarget.InLineOfSightOCD,
-                new Action(ret => Navigator.PlayerMover.MoveTowards(StyxWoW.Me.CurrentTarget.Location)));
-
+            return CreateMoveToLosBehavior(ret => StyxWoW.Me.CurrentTarget);
         }
 
         /// <summary>
@@ -83,6 +83,21 @@ namespace Singular.Helpers
         public static Composite CreateMoveToTargetBehavior(bool stopInRange, float range)
         {
             return CreateMoveToLocationBehavior(ret => StyxWoW.Me.CurrentTarget.Location, stopInRange, range);
+        }
+
+        /// <summary>
+        ///   Creates a move to target behavior. Will return RunStatus.Success if it has reached the location, or stopped in range. Best used at the end of a rotation.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/1/2011.
+        /// </remarks>
+        /// <param name = "stopInRange">true to stop in range.</param>
+        /// <param name = "range">The range.</param>
+        /// <param name="onUnit">The unit to move to.</param>
+        /// <returns>.</returns>
+        public static Composite CreateMoveToTargetBehavior(bool stopInRange, float range, UnitSelectionDelegate onUnit)
+        {
+            return CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, range);
         }
 
         /// <summary>
@@ -130,7 +145,7 @@ namespace Singular.Helpers
         /// <param name = "stopInRange">true to stop in range.</param>
         /// <param name = "range">The range.</param>
         /// <returns>.</returns>
-        private static Composite CreateMoveToLocationBehavior(LocationRetriever location, bool stopInRange, float range)
+        public static Composite CreateMoveToLocationBehavior(LocationRetriever location, bool stopInRange, float range)
         {
             // Do not fuck with this. It will ensure we stop in range if we're supposed to.
             // Otherwise it'll stick to the targets ass like flies on dog shit.
@@ -164,15 +179,15 @@ namespace Singular.Helpers
             // or chase it down like mad. (PVP oriented behavior)
             return
                 new Decorator(
-                // Don't run if the movement is disabled.
+                    // Don't run if the movement is disabled.
                     ret => !SingularSettings.Instance.DisableAllMovement,
                     new PrioritySelector(
                         new Decorator(
-                // Give it a little more than 1/2 a yard buffer to get it right. CTM is never 'exact' on where we land. So don't expect it to be.
+                            // Give it a little more than 1/2 a yard buffer to get it right. CTM is never 'exact' on where we land. So don't expect it to be.
                             ret => stopInRange && StyxWoW.Me.Location.Distance(location(ret)) + 0.6f < Spell.SafeMeleeRange,
                             new PrioritySelector(
                                 CreateEnsureMovementStoppedBehavior(),
-                // In short; if we're not moving, just 'succeed' here, so we break the tree.
+                                // In short; if we're not moving, just 'succeed' here, so we break the tree.
                                 new Action(ret => RunStatus.Success)
                                 )
                             ),
@@ -181,6 +196,14 @@ namespace Singular.Helpers
         }
 
         #endregion
+
+        public static Composite CreateMoveToLosBehavior(UnitSelectionDelegate toUnit)
+        {
+            return new Decorator(
+                ret =>
+                !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && !StyxWoW.Me.CurrentTarget.InLineOfSightOCD,
+                new Action(ret => Navigator.MoveTo(toUnit(ret).Location)));
+        }
     }
 
     public delegate WoWPoint LocationRetriever(object context);

@@ -49,7 +49,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60),
                         Movement.CreateMoveToTargetBehavior(true, 5f))),
                 //30-50 support
-                Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.Level > 30 && StyxWoW.Me.Level < 50),
+                Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.Level > 30 && StyxWoW.Me.Level < 50 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),
 
                 // Dispel Bubbles
                 new Decorator(
@@ -82,7 +82,10 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),     
            
                 //Interupts
-                Spell.Cast("Pummel", ret => StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorInterupts),
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorInterupts,
+                    Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
+                // Spell.Cast("Pummel", ret => StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorInterupts),
 
                 //Heal up in mele
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),

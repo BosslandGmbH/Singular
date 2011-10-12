@@ -132,10 +132,10 @@ namespace Singular.Settings
         public bool UseWarriorStanceDance { get; set; }
 
         [Setting]
-        [DefaultValue(false)]
-        [Category("Arms")]
-        [DisplayName("N/A")]
-        [Description("N/A")]
+        [DefaultValue(true)]
+        [Category("DPS")]
+        [DisplayName("Force proper stance?")]
+        [Description("True / False on whether you would like the cc to keep the toon in the proper stance for the spec. Arms:Battle, Fury:Berserker")]
         public bool UseWarriorKeepStance { get; set; }
     }
 }

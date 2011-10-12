@@ -209,8 +209,8 @@
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Jim\Desktop\HBSRC\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular v2\" /i /f /s /v /y
 )
 if $(ConfigurationName) == Raphus (
-RD /S /Q "D:\Dropbox\Projects\Honorbuddy\Styx\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular\"
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\Dropbox\Projects\Honorbuddy\Styx\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular\" /i /f /s /v /y
+RD /S /Q "E:\Programming\Projects\Honorbuddy\Styx\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular\"
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "E:\Programming\Projects\Honorbuddy\Styx\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular\" /i /f /s /v /y
 )
 
 if $(ConfigurationName) == Bobby53 (

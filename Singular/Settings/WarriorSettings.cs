@@ -130,5 +130,12 @@ namespace Singular.Settings
         [DisplayName("Stance Dance?")]
         [Description("True / False if you want the cc to stance dance dps on bosses")]
         public bool UseWarriorStanceDance { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Arms")]
+        [DisplayName("N/A")]
+        [Description("N/A")]
+        public bool UseWarriorKeepStance { get; set; }
     }
 }

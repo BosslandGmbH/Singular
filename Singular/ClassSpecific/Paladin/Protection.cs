@@ -23,6 +23,14 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
+
+                Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.ManaPercent >= 5),
+                Spell.BuffSelf("Seal of Insight", ret => StyxWoW.Me.ManaPercent < 5),
+                
+                Spell.Cast("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 25 && StyxWoW.Me.CurrentHolyPower == 3),
+                Spell.Cast("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 15 && StyxWoW.Me.CurrentHolyPower == 2),
+                Spell.Cast("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 5 && StyxWoW.Me.CurrentHolyPower == 1),
+
                 Spell.Cast("Hammer of Wrath"),
                 Spell.Cast("Avenger's Shield"),
                 // Same rotation for both.
@@ -39,12 +47,12 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) <= 1,
                     new PrioritySelector(
-                //Single target
+                        //Single target
                         Spell.Cast("Crusader Strike"),
                         Spell.Cast("Judgement"),
                         Spell.Cast("Consecration"),
                         Spell.Cast("Holy Wrath"))),
-                Movement.CreateMoveToTargetBehavior(true,5f));
+                Movement.CreateMoveToTargetBehavior(true, 5f));
         }
 
         [Class(WoWClass.Paladin)]

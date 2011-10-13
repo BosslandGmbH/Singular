@@ -32,7 +32,7 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.Cast("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 5 && StyxWoW.Me.CurrentHolyPower == 1),
 
                 Spell.Cast("Hammer of Wrath"),
-                Spell.Cast("Avenger's Shield"),
+                Spell.Cast("Avenger's Shield", ret=>!SingularSettings.Instance.Paladin.AvengersPullOnly),
                 // Same rotation for both.
                 Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
                 //Multi target

@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Judgement"),
                         Spell.Cast("Consecration"),
                         Spell.Cast("Holy Wrath"))),
-                Movement.CreateMoveToTargetBehavior(true, 5f));
+                Movement.CreateMoveToMeleeBehavior(true));
         }
 
         [Class(WoWClass.Paladin)]

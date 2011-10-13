@@ -71,7 +71,11 @@ namespace Singular.ClassSpecific.Hunter
 
                             if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
                             {
-                                Navigator.MoveTo(moveTo);
+                                var result = Navigator.MoveTo(moveTo);
+                                if (result == MoveResult.ReachedDestination)
+                                    // Basically; force us to "tweak" a little one direction. For some reason there's a sweet spot when facing directly away from a mob
+                                    // Where it will refuse to face since the facing difference is less than what we allow. Not sure why, but thats just how it is.
+                                    StyxWoW.Me.SetFacing(StyxWoW.Me.Rotation + 0.1f);
                             }
                         }));
         }

@@ -56,7 +56,8 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Judgement"),
                         Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),
                         Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
-                        Spell.Cast("Consecration"),
+                        // Don't waste mana on cons if its not a boss.
+                        Spell.Cast("Consecration", ret=> StyxWoW.Me.CurrentTarget.IsBoss()),
                         Spell.Cast("Holy Wrath"))),
                 Movement.CreateMoveToMeleeBehavior(true));
         }

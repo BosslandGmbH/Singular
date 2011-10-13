@@ -12,6 +12,9 @@
 #endregion
 
 using System.ComponentModel;
+
+using Singular.ClassSpecific.Paladin;
+
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
@@ -24,6 +27,14 @@ namespace Singular.Settings
             : base(SingularSettings.SettingsPath + "_Paladin.xml")
         {
         }
+
+
+        [Setting]
+        [DefaultValue(PaladinAura.Auto)]
+        [Category("Common")]
+        [DisplayName("Aura")]
+        [Description("The aura to be used while not mounted. Set this to Auto to allow the CC to automatically pick the aura depending on spec.")]
+        public PaladinAura Aura { get; set; }
 
         [Setting]
         [DefaultValue(40)]

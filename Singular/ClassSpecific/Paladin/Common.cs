@@ -3,6 +3,8 @@ using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
@@ -11,6 +13,15 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Paladin
 {
+    public enum PaladinAura
+    {
+        Auto,
+        Devotion,
+        Retribution,
+        Resistance,
+        Concentration,
+    }
+
     public class Common
     {
         [Class(WoWClass.Paladin)]
@@ -24,27 +35,43 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                // This won't run, but it's here for changes in the future. We NEVER run this method if we're mounted.
+                    // This won't run, but it's here for changes in the future. We NEVER run this method if we're mounted.
                     Spell.BuffSelf("Crusader Aura", ret => StyxWoW.Me.Mounted),
                     CreatePaladinBlessBehavior(),
                     new Decorator(
                         ret => TalentManager.CurrentSpec == TalentSpec.HolyPaladin,
                         new PrioritySelector(
-                            Spell.BuffSelf("Concentration Aura"),
+                            Spell.BuffSelf("Concentration Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto),
                             Spell.BuffSelf("Seal of Insight"),
                             Spell.BuffSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Insight"))
-                        )),
+                            )),
                     new Decorator(
                         ret => TalentManager.CurrentSpec != TalentSpec.HolyPaladin,
                         new PrioritySelector(
                             Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin),
-                            Spell.BuffSelf("Devotion Aura",
-                                ret => TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin ||
-                                       TalentManager.CurrentSpec == TalentSpec.Lowbie),
-                            Spell.BuffSelf("Retribution Aura", ret => TalentManager.CurrentSpec == TalentSpec.RetributionPaladin),
+                            Spell.BuffSelf(
+                                "Devotion Aura",
+                                ret =>
+                                SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
+                                (TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin ||
+                                 TalentManager.CurrentSpec == TalentSpec.Lowbie)),
+                            Spell.BuffSelf(
+                                "Retribution Aura",
+                                ret =>
+                                SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
+                                TalentManager.CurrentSpec == TalentSpec.RetributionPaladin),
                             Spell.BuffSelf("Seal of Truth"),
                             Spell.BuffSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth"))
-                        ))
+                            )),
+                    new Decorator(
+                        ret => SingularSettings.Instance.Paladin.Aura != PaladinAura.Auto,
+                        new PrioritySelector(
+                            Spell.BuffSelf("Devotion Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Devotion),
+                            Spell.BuffSelf("Concentration Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Concentration),
+                            Spell.BuffSelf("Resistance Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Resistance),
+                            Spell.BuffSelf("Retribution Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Retribution)
+
+                            ))
                     );
         }
 

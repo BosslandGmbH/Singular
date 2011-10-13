@@ -5,6 +5,7 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic.Combat;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
@@ -27,8 +28,12 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
 
-                Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.ManaPercent >= 5),
+                // Seal twisting. If our mana gets stupid low, just throw on insight to get some mana back quickly, then put our main seal back on.
+                // This is Seal of Truth once we get it, Righteousness when we dont.
                 Spell.BuffSelf("Seal of Insight", ret => StyxWoW.Me.ManaPercent < 5),
+                Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.ManaPercent >= 5),
+                Spell.BuffSelf("Seal of Righteousness", ret =>StyxWoW.Me.ManaPercent >= 5 && !SpellManager.HasSpell("Seal of Truth")),
+                
                 Spell.Cast(
                     "Hand of Reckoning", ret => TankManager.Instance.NeedToTaunt.First(),
                     ret => SingularSettings.Instance.Paladin.EnableTaunt && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),

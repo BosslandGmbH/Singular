@@ -5,6 +5,8 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.WoWInternals.WoWObjects;
+
 using TreeSharp;
 
 namespace Singular.ClassSpecific.Paladin
@@ -19,6 +21,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             TankManager.NeedTankTargeting = true;
             return new PrioritySelector(
+                context => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -26,30 +29,33 @@ namespace Singular.ClassSpecific.Paladin
 
                 Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.ManaPercent >= 5),
                 Spell.BuffSelf("Seal of Insight", ret => StyxWoW.Me.ManaPercent < 5),
-                
-                Spell.Cast("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 25 && StyxWoW.Me.CurrentHolyPower == 3),
-                Spell.Cast("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 15 && StyxWoW.Me.CurrentHolyPower == 2),
-                Spell.Cast("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 5 && StyxWoW.Me.CurrentHolyPower == 1),
 
-                Spell.Cast("Hammer of Wrath"),
-                Spell.Cast("Avenger's Shield", ret=>!SingularSettings.Instance.Paladin.AvengersPullOnly),
+
+                //Spell.Cast("Hammer of Wrath"),
+                //Spell.Cast("Avenger's Shield", ret=>!SingularSettings.Instance.Paladin.AvengersPullOnly),
                 // Same rotation for both.
-                Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
+                //Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
                 //Multi target
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1,
                     new PrioritySelector(
                         Spell.Cast("Hammer of the Righteous"),
-                        Spell.Cast("Crusader Strike"),
                         Spell.Cast("Consecration"),
                         Spell.Cast("Holy Wrath"),
-                        Spell.Cast("Judgement"))),
+                        Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
+                        Spell.Cast("Inquisition"),
+                        Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
+                        Spell.Cast("Judgement")
+                        )),
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) <= 1,
                     new PrioritySelector(
                         //Single target
+                        Spell.Cast("Shield of Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
                         Spell.Cast("Crusader Strike"),
                         Spell.Cast("Judgement"),
+                        Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),
+                        Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
                         Spell.Cast("Consecration"),
                         Spell.Cast("Holy Wrath"))),
                 Movement.CreateMoveToMeleeBehavior(true));
@@ -82,7 +88,7 @@ namespace Singular.ClassSpecific.Paladin
                 new PrioritySelector(
                     Spell.Cast(
                         "Hand of Reckoning",
-                        ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), 
+                        ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
                         ret => TankManager.Instance.NeedToTaunt.Count != 0),
                     Spell.BuffSelf("Avenging Wrath"),
                     Spell.BuffSelf(
@@ -96,7 +102,11 @@ namespace Singular.ClassSpecific.Paladin
                         ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.ArdentDefenderHealth),
                     Spell.BuffSelf(
                         "Divine Protection",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt)
+                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
+
+                    Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 50 && StyxWoW.Me.CurrentHolyPower == 3),
+                    Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 25 && StyxWoW.Me.CurrentHolyPower == 2),
+                    Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 15 && StyxWoW.Me.CurrentHolyPower == 1)
                     );
         }
 

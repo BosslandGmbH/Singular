@@ -34,10 +34,6 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.ManaPercent >= 5),
                 Spell.BuffSelf("Seal of Righteousness", ret =>StyxWoW.Me.ManaPercent >= 5 && !SpellManager.HasSpell("Seal of Truth")),
                 
-                Spell.Cast(
-                    "Hand of Reckoning", ret => TankManager.Instance.NeedToTaunt.First(),
-                    ret => SingularSettings.Instance.Paladin.EnableTaunt && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
-
                 //Spell.Cast("Hammer of Wrath"),
                 //Spell.Cast("Avenger's Shield", ret=>!SingularSettings.Instance.Paladin.AvengersPullOnly),
                 // Same rotation for both.
@@ -97,7 +93,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Cast(
                         "Hand of Reckoning",
                         ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
-                        ret => TankManager.Instance.NeedToTaunt.Count != 0),
+                        ret => SingularSettings.Instance.Paladin.EnableTaunt && TankManager.Instance.NeedToTaunt.Count != 0),
                     Spell.BuffSelf("Avenging Wrath"),
                     Spell.BuffSelf(
                         "Lay on Hands",

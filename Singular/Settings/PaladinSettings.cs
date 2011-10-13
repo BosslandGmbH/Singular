@@ -124,5 +124,12 @@ namespace Singular.Settings
         [DisplayName("Avengers On Pull Only")]
         [Description("Only use Avenger's Shield to pull")]
         public bool AvengersPullOnly { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Protection")]
+        [DisplayName("Enable Taunting")]
+        [Description("Enable Taunting while Protection spec'd")]
+        public bool EnableTaunt { get; set; }
     }
 }

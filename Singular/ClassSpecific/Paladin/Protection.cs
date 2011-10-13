@@ -29,7 +29,9 @@ namespace Singular.ClassSpecific.Paladin
 
                 Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.ManaPercent >= 5),
                 Spell.BuffSelf("Seal of Insight", ret => StyxWoW.Me.ManaPercent < 5),
-
+                Spell.Cast(
+                    "Hand of Reckoning", ret => TankManager.Instance.NeedToTaunt.First(),
+                    ret => SingularSettings.Instance.Paladin.EnableTaunt && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
                 //Spell.Cast("Hammer of Wrath"),
                 //Spell.Cast("Avenger's Shield", ret=>!SingularSettings.Instance.Paladin.AvengersPullOnly),
@@ -57,7 +59,7 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),
                         Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
                         // Don't waste mana on cons if its not a boss.
-                        Spell.Cast("Consecration", ret=> StyxWoW.Me.CurrentTarget.IsBoss()),
+                        Spell.Cast("Consecration", ret => StyxWoW.Me.CurrentTarget.IsBoss()),
                         Spell.Cast("Holy Wrath"))),
                 Movement.CreateMoveToMeleeBehavior(true));
         }

@@ -1,10 +1,16 @@
 ﻿using System;
+using System.Linq;
+
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic.Combat;
+using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
+
 using TreeSharp;
 
 namespace Singular.ClassSpecific.Druid
@@ -30,29 +36,24 @@ namespace Singular.ClassSpecific.Druid
                 {
                     _oldDps = "Starfire";
                 }
-                //else
-                //{
-                //    if (oldEclipse == 0)
-                //        oldEclipse = CurrentEclipse;
-
-                //    // If our current eclipse is higher than our old one, we want to be casting Starfire.
-                //    // Vice versa for Wrath.
-                //    if (CurrentEclipse > oldEclipse)
-                //        _oldDps = "Starfire";
-                //    else if (CurrentEclipse < oldEclipse)
-                //        _oldDps = "Wrath";
-
-                //    // If we haven't changed at all... try flipping the DPS spell we wanna use.
-                //    //else if (CurrentEclipse == oldEclipse)
-                //    //{
-                //    //    _oldDps = _oldDps == "Wrath" ? "Starfire" : "Wrath";
-                //    //}
-
-                //    oldEclipse = CurrentEclipse;
-                //}
 
                 return _oldDps;
             }
+        }
+
+        static int MushroomCount
+        {
+            get { return ObjectManager.GetObjectsOfType<WoWUnit>().Where(o => o.FactionId == 4 && o.Distance <= 40).Count(o => o.CreatedByUnitGuid == StyxWoW.Me.Guid); }
+        }
+
+        static WoWUnit BestAoeTarget
+        {
+            get { return Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f); }
+        }
+
+        static int RadialAoeCount
+        {
+            get { return Clusters.GetClusterCount(BestAoeTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f); }
         }
 
         [Class(WoWClass.Druid)]
@@ -66,7 +67,71 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 Spell.WaitForCast(true),
                 //Heals, will not heal if in a party or if disabled via setting
-                Spell.Buff(
+                CreateBoomkinHeals(),
+
+
+                //Inervate
+                Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
+
+                // Make sure we're in moonkin form first, period.
+                new Decorator(ret => StyxWoW.Me.Shapeshift != Common.WantedDruidForm, Spell.Cast("Moonkin Form")),
+
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+
+
+                // Ensure we do /petattack if we have treants up.
+                Helpers.Common.CreateAutoAttack(true),
+
+                Spell.Cast("Starfall", ret => SingularSettings.Instance.Druid.UseStarfall),
+                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location),
+
+                new Decorator(
+                    ret => Unit.NearbyUnfriendlyUnits.Count() > 2,
+                    new PrioritySelector(
+                        // If we got 3 shrooms out. Pop 'em
+                        Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount == 3),
+
+                        // If Detonate is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
+                        Spell.CastOnGround(
+                            "Wild Mushroom", ret => BestAoeTarget.Location,
+                            ret => RadialAoeCount > 2 && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds < 3),
+
+                        // Spread MF/IS
+                        Spell.Cast(
+                            "Moonfire", ret => Unit.NearbyUnfriendlyUnits.First(u => !u.HasMyAura("Moonfire") && !u.HasMyAura("Sunfire")),
+                            ret => Unit.NearbyUnfriendlyUnits.Count(u => !u.HasMyAura("Moonfire") && !u.HasMyAura("Sunfire")) != 0),
+                        Spell.Cast(
+                            "Insect Swarm", ret => Unit.NearbyUnfriendlyUnits.First(u => !u.HasMyAura("Insect Swarm")),
+                            ret => Unit.NearbyUnfriendlyUnits.Count(u => !u.HasMyAura("Insect Swarm")) != 0)
+                        )),
+
+                Spell.Cast("Solar Beam", ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
+
+                // Starsurge on every proc. Plain and simple.
+                Spell.Cast("Starsurge"),
+
+                // Refresh MF/SF
+                Spell.Cast(
+                    "Moonfire", false, ret => StyxWoW.Me.CurrentTarget, ret =>
+                                                                        (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Moonfire", true).TotalSeconds < 3 &&
+                                                                         StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Sunfire", true).Seconds < 3) ||
+                                                                        StyxWoW.Me.IsMoving),
+
+                // Make sure we keep IS up. Clip the last tick. (~3s)
+                Spell.Cast("Insect Swarm", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Insect Swarm", true).TotalSeconds < 3),
+
+                // And then just spam Wrath/Starfire
+                Spell.Cast("Wrath", ret => BoomkinDpsSpell == "Wrath"),
+                Spell.Cast("Starfire", ret => BoomkinDpsSpell == "Starfire"),
+                Movement.CreateMoveToTargetBehavior(true, 35f)
+                );
+        }
+
+        static Composite CreateBoomkinHeals()
+        {
+            return new PrioritySelector(Spell.Buff(
                     "Regrowth",
                     ret => (StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.RegrowthBalance
                     && !SingularSettings.Instance.Druid.NoHealBalance
@@ -82,38 +147,7 @@ namespace Singular.ClassSpecific.Druid
                     "Healing Touch",
                     ret => (StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.HealingTouchBalance
                     && !SingularSettings.Instance.Druid.NoHealBalance
-                    && !StyxWoW.Me.IsInParty)),
-                //Inervate
-                Spell.Buff(
-                        "Innervate",
-                        ret =>
-                        StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
-                // Make sure we're in moonkin form first, period.
-                new Decorator(
-                    ret => StyxWoW.Me.Shapeshift != Common.WantedDruidForm,
-                    Spell.Cast("Moonkin Form")),
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                // Ensure we do /petattack if we have treants up.
-                Helpers.Common.CreateAutoAttack(true),
-                Spell.Cast("Starfall", ret => SingularSettings.Instance.Druid.UseStarfall),
-                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location),
-                Spell.Cast("Solar Beam", ret => StyxWoW.Me.CurrentTarget.IsCasting),
-                Spell.Cast("Starsurge"),
-                Spell.Cast(
-                    "Moonfire",
-                    ret =>
-                    StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Moonfire", true).TotalSeconds < 3 &&
-                    StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Sunfire", true).Seconds < 3),
-                Spell.Cast("Insect Swarm", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Insect Swarm", true).TotalSeconds < 3),
-                //Spell.Cast("Wrath", ret => StyxWoW.Me.HasAura("Eclipse (Solar)")),
-                //Spell.Cast("Starfire", ret => StyxWoW.Me.HasAura("Eclipse (Lunar)")),
-
-                Spell.Cast("Wrath", ret => BoomkinDpsSpell == "Wrath"),
-                Spell.Cast("Starfire", ret => BoomkinDpsSpell == "Starfire"),
-                Movement.CreateMoveToTargetBehavior(true, 35f)
-                );
+                    && !StyxWoW.Me.IsInParty)));
         }
     }
 }

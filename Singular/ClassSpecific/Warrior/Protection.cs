@@ -2,6 +2,7 @@
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
@@ -33,9 +34,13 @@ namespace Singular.ClassSpecific.Warrior
                 Common.CreateAutoAttack(false),
 
                 //Free Heal
-                Spell.Cast("Victory Rush", ret => StyxWoW.Me.CurrentTarget.Distance < 5),
+                //Spell.Cast("Victory Rush", ret => StyxWoW.Me.CurrentTarget.Distance < 5),
 
                 //Defensive Cooldowns
+                Spell.BuffSelf("Shield Block"),
+                Spell.Cast("Battle Shout", ret => StyxWoW.Me),
+                Spell.BuffSelf("Shield Wall", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Warrior.WarriorProtShieldWallHealth),
+                Spell.Buff("Demoralizing Shout", ret => !StyxWoW.Me.CurrentTarget.HasDemoralizing()),
 
                 //Close cap on target
                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
@@ -46,7 +51,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Interupt or reflect
                 Spell.Cast("Spell Reflection", ret => StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me && StyxWoW.Me.CurrentTarget.IsCasting),
-                Spell.Cast("Pummel", ret => StyxWoW.Me.CurrentTarget.IsCasting),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 //Aoe tanking
                 new Decorator(
@@ -68,13 +73,14 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Single Target
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
-                Spell.Cast("Concussion Blow"),
+                //Spell.Cast("Concussion Blow"),
                 Spell.Cast("Shield Slam"),
                 Spell.Cast("Revenge"),
                 Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent >= 50),
                 Spell.Buff("Rend"),
                 // Tclap may not be a giant threat increase, but Blood and Thunder will refresh rend. Which all in all, is a good thing.
-                Spell.Cast("Thunder Clap", ret => TalentManager.GetCount(3, 3) == 2),
+                // Oh, and the attack speed debuff is win as well.
+                Spell.Cast("Thunder Clap"),
                 Spell.Cast("Devastate"),
 
                 Movement.CreateMoveToTargetBehavior(true, 4f)

@@ -33,6 +33,13 @@ namespace Singular.Helpers
 
     internal static class Spell
     {
+        public static TimeSpan GetSpellCooldown(string spell)
+        {
+            if (SpellManager.HasSpell(spell))
+                return SpellManager.Spells[spell].CooldownTimeLeft();
+            return TimeSpan.MaxValue;
+        }
+
         // Temp wrapper for upcoming HB API
         public static TimeSpan CooldownTimeLeft(this WoWSpell spell)
         {

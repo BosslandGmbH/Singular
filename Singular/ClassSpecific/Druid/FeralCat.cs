@@ -34,8 +34,9 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                
-                new Decorator(ret=>!StyxWoW.Me.IsInRaid && !StyxWoW.Me.IsInParty,
+
+                new Decorator(
+                    ret => !StyxWoW.Me.IsInRaid && !StyxWoW.Me.IsInParty,
                     Resto.CreateRestoDruidHealOnlyBehavior(true)),
 
                 // Drop aggro if we're in trouble.
@@ -46,7 +47,8 @@ namespace Singular.ClassSpecific.Druid
                 //Spell.Cast("Faerie Fire (Feral)", ret=>!Unit.HasAura(StyxWoW.Me.CurrentTarget, "Faerie Fire", 3)),
                 //new Action(ret=>Logger.WriteDebug("Done with FF Going into boss check")),
                 // 
-                Spell.Cast("Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasSunders() && !StyxWoW.Me.CurrentTarget.HasAura("Faerie Fire", 3)),
+                Spell.Cast(
+                    "Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasSunders() && !StyxWoW.Me.CurrentTarget.HasAura("Faerie Fire", 3)),
 
                 // ... interrupts :)
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
@@ -76,7 +78,11 @@ namespace Singular.ClassSpecific.Druid
 
                 // Most pages put this below normal shred generators. But its here to ensure it actually gets used.
                 // If we put it below shred, then we'll never actually pop FB
-                Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints == 5 && (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds > 5||!SpellManager.HasSpell("Rip"))),
+                Spell.Cast(
+                    "Ferocious Bite",
+                    ret =>
+                    StyxWoW.Me.ComboPoints == 5 &&
+                    (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds > 5 || !SpellManager.HasSpell("Rip"))),
 
                 // This is our main CP generator. Use it at all times.
                 Spell.Cast("Shred", ret => StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget)),

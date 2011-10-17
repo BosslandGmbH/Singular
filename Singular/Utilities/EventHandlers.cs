@@ -11,9 +11,9 @@ namespace Singular.Utilities
 {
     class EventHandlers
     {
-        public readonly HashSet<string> _sleepAfterSuccessSpells = new HashSet<string>();
+        public static readonly HashSet<string> _sleepAfterSuccessSpells = new HashSet<string>();
 
-        public EventHandlers()
+        public static void Init()
         {
             BotEvents.Player.OnMapChanged += Player_OnMapChanged;
 
@@ -38,7 +38,7 @@ namespace Singular.Utilities
         ///   Created 3/4/2011.
         /// </remarks>
         /// <param name = "spellName">Name of the spell.</param>
-        protected void AddSpellSucceedWait(string spellName)
+        protected static void AddSpellSucceedWait(string spellName)
         {
             if (!_sleepAfterSuccessSpells.Contains(spellName))
             {
@@ -46,7 +46,7 @@ namespace Singular.Utilities
             }
         }
 
-        private void HandleCombatLog(object sender, LuaEventArgs args)
+        private static void HandleCombatLog(object sender, LuaEventArgs args)
         {
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
             //Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);

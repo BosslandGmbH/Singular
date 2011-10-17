@@ -14,13 +14,10 @@
 using System;
 using System.Reflection;
 
-using CommonBehaviors.Actions;
-
 using Singular.Dynamics;
 using Singular.GUI;
 using Singular.Helpers;
 using Singular.Managers;
-using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
@@ -165,6 +162,10 @@ namespace Singular
                 return;
             }
             Logger.Write("Behaviors created!");
+
+            // When we actually need to use it, we will.
+            //EventHandlers.Init();
+            //Logger.Write("Combat log event handler started.");
         }
 
         public bool CreateBehaviors()

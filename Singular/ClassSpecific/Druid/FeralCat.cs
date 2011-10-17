@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.Druid
     {
 
         [Spec(TalentSpec.FeralDruid)]
-        [Spec(TalentSpec.FeralTankDruid)]
+        //[Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Druid)]
@@ -76,13 +76,13 @@ namespace Singular.ClassSpecific.Druid
 
                 // Most pages put this below normal shred generators. But its here to ensure it actually gets used.
                 // If we put it below shred, then we'll never actually pop FB
-                Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints == 5 && (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds > 5||!SpellManager.HasSpell("Rip"))),
 
                 // This is our main CP generator. Use it at all times.
                 Spell.Cast("Shred", ret => StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget)),
 
                 // And the fallback...
-                Spell.Cast("Mangle (Cat)", ret => !StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget) || SpellManager.HasSpell("Shred")),
+                Spell.Cast("Mangle (Cat)", ret => !StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget) || !SpellManager.HasSpell("Shred")),
 
 
 

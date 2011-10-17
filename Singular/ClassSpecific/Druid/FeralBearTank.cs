@@ -14,7 +14,7 @@ namespace Singular.ClassSpecific.Druid
 {
     public class FeralBearTank
     {
-        //[Spec(TalentSpec.FeralTankDruid)]
+        [Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]

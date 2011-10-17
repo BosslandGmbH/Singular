@@ -27,6 +27,7 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret=>(WoWUnit)ret),
 
                 // Seal twisting. If our mana gets stupid low, just throw on insight to get some mana back quickly, then put our main seal back on.
                 // This is Seal of Truth once we get it, Righteousness when we dont.

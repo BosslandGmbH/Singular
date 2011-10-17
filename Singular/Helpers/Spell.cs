@@ -606,8 +606,9 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 ret =>
-                requirements(ret) && onLocation != null && SpellManager.CanCast(spell) &&
-                SpellManager.Spells[spell].MaxRange < StyxWoW.Me.Location.Distance(onLocation(ret)),
+                requirements(ret) && onLocation != null && SpellManager.CanCast(spell) 
+                /*&&
+                SpellManager.Spells[spell].MaxRange < StyxWoW.Me.Location.Distance(onLocation(ret))*/,
                 new Action(
                     ret =>
                         {

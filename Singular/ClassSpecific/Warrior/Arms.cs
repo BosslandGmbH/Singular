@@ -111,14 +111,7 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.CreateMoveToTargetBehavior(true, 30))),
 
                 //Rage Dump
-                Spell.Cast("Cleave", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2 ||
-                                            (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 8 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2) ||
-                                            (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 8 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2) ||
-                                            (StyxWoW.Me.ActiveAuras.ContainsKey("Deadly Calm") && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2)),
-                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2 ||
-                                                   (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 8 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2) ||
-                                                   (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 8 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2) ||
-                                                   StyxWoW.Me.ActiveAuras.ContainsKey("Deadly Calm")),
+                
 
                 // Use Engineering Gloves ------ Still Bugged
                 // Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
@@ -134,6 +127,14 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Bladestorm", ret => StyxWoW.Me.CurrentTarget.IsPlayer && SingularSettings.Instance.Warrior.UseWarriorBladestorm),
                 Spell.Cast("Overpower"),
                 Spell.Cast("Slam", ret => StyxWoW.Me.RagePercent > 40 && SingularSettings.Instance.Warrior.UseWarriorSlamTalent),
+                Spell.Cast("Cleave", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2 ||
+                                            (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 8 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2) ||
+                                            (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 8 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2) ||
+                                            (StyxWoW.Me.ActiveAuras.ContainsKey("Deadly Calm") && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2)),
+                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.HasAura("Incite", 1) && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2 ||
+                                                   (StyxWoW.Me.RagePercent > 60 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 8 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2) ||
+                                                   (StyxWoW.Me.RagePercent > 85 && SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds < 8 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2) ||
+                                                   StyxWoW.Me.ActiveAuras.ContainsKey("Deadly Calm")),
                 //ensure were in melee
                 Movement.CreateMoveToMeleeBehavior(true)
                 );

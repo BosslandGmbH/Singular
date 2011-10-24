@@ -188,7 +188,7 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.CreateMoveToTargetBehavior(true, 5f))),
                 
                 // Heroic fury
-                Spell.Cast("Heroic Fury", ret => SpellManager.Spells["Intercept"].Cooldown && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                //Spell.Cast(60970, ret => SpellManager.Spells["Intercept"].CooldownTimeLeft().TotalSeconds > 3 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 //Intercept
                 Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 24 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),

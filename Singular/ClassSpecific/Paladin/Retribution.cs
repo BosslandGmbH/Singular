@@ -55,13 +55,13 @@ namespace Singular.ClassSpecific.Paladin
                         "Exorcism",
                         ret =>
                         StyxWoW.Me.CurrentTarget.IsUndeadOrDemon() && 
-                        StyxWoW.Me.HasAura("The Art of War") &&
+                        StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") &&
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
 
                     Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.HasAura("Hand of Light")),
                     // Don't use Exorcism if we're AOEing. 
-                    Spell.Cast("Exorcism", ret => StyxWoW.Me.HasAura("The Art of War") && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
+                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
                     Spell.Cast("Judgement"),
                     // These 2 are "flipped" for AOE and Single-target. Now, personally, since Cons is a 30s CD, and HW is a 15s CD, there's really no DPS gain by flipping them.
                     // So just leave them as-is and don't bother messing with it!

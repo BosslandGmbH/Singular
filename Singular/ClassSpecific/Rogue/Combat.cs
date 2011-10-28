@@ -115,7 +115,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast(
                             "Rupture",
                             ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") &&
-                                   !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.IsBoss() && !WillEnergyCap),
+                                   !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.IsBoss()/* && !WillEnergyCap*/),
                         Spell.Cast("Eviscerate"))),
                 Movement.CreateMoveToMeleeBehavior(true));
         }

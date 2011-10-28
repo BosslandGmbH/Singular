@@ -114,7 +114,7 @@ namespace Singular.ClassSpecific.Druid
 
                 // Refresh MF/SF
                 Spell.Cast(
-                    "Moonfire", false, ret => StyxWoW.Me.CurrentTarget, ret =>
+                    "Moonfire", ret=>false, ret => StyxWoW.Me.CurrentTarget, ret =>
                                                                         (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Moonfire", true).TotalSeconds < 3 &&
                                                                          StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Sunfire", true).Seconds < 3) ||
                                                                         StyxWoW.Me.IsMoving),

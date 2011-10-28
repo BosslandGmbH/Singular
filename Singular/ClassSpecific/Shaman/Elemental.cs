@@ -113,7 +113,7 @@ namespace Singular.ClassSpecific.Shaman
                 //Spell.Cast("Rocket Barrage"),
 
                 // So... ignore movement if we have the glyph (hence the negated HasGlyph, if we don't have it, we want to chekc movement, otherwise, ignore it.)
-                Spell.Cast("Lightning Bolt", !TalentManager.HasGlyph("Unleashed Lightning"), ret => StyxWoW.Me.CurrentTarget, ret => true),
+                Spell.Cast("Lightning Bolt", ret=>!TalentManager.HasGlyph("Unleashed Lightning"), ret => StyxWoW.Me.CurrentTarget, ret => true),
                 Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
 
                 Movement.CreateMoveToTargetBehavior(true, 38f)

@@ -17,7 +17,8 @@ namespace Singular.ClassSpecific.Druid
         [Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances)]
+        [Priority(10000)]
         [Class(WoWClass.Druid)]
         public static Composite CreateBearTankCombat()
         {

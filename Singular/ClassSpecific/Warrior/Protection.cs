@@ -35,6 +35,11 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Free Heal
                 //Spell.Cast("Victory Rush", ret => StyxWoW.Me.CurrentTarget.Distance < 5),
+                new Decorator(ret=>StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Warrior.WarriorEnragedRegenerationHealth,
+                    new PrioritySelector(
+                        Spell.BuffSelf("Berserker Rage"),
+                        Spell.BuffSelf("Enraged Regeneration")
+                        )),
 
                 //Defensive Cooldowns
                 Spell.BuffSelf("Shield Block"),
@@ -81,6 +86,7 @@ namespace Singular.ClassSpecific.Warrior
                 // Tclap may not be a giant threat increase, but Blood and Thunder will refresh rend. Which all in all, is a good thing.
                 // Oh, and the attack speed debuff is win as well.
                 Spell.Cast("Thunder Clap"),
+                Spell.Cast("Shockwave"),
                 Spell.Cast("Devastate"),
 
                 Movement.CreateMoveToTargetBehavior(true, 4f)

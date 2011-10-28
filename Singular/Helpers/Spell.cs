@@ -210,7 +210,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(string name, SimpleBooleanDelegate requirements)
         {
-            return Cast(name, true, ret => StyxWoW.Me.CurrentTarget, requirements);
+            return Cast(name, ret=>true, ret => StyxWoW.Me.CurrentTarget, requirements);
         }
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(string name, UnitSelectionDelegate onUnit)
         {
-            return Cast(name, true, onUnit, ret => true);
+            return Cast(name, ret => true, onUnit, ret => true);
         }
         /// <summary>
         ///   Creates a behavior to cast a spell by name, on a specific unit. Returns
@@ -240,7 +240,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
-            return Cast(name, true, onUnit, requirements);
+            return Cast(name, ret => true, onUnit, requirements);
         }
 
         /// <summary>
@@ -251,10 +251,11 @@ namespace Singular.Helpers
         ///   Created 5/2/2011.
         /// </remarks>
         /// <param name = "name">The name.</param>
+        /// <param name="checkMovement"></param>
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns>.</returns>
-        public static Composite Cast(string name, bool checkMovement, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        public static Composite Cast(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return new Decorator(
                 ret =>
@@ -267,7 +268,7 @@ namespace Singular.Helpers
                         var minReqs = requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null;
                         if (minReqs)
                         {
-                            var canCast = SpellManager.CanCast(name, onUnit(ret), false, checkMovement);
+                            var canCast = SpellManager.CanCast(name, onUnit(ret), false, checkMovement(ret));
 
                             // Make sure we set this.
                             minReqs = canCast;
@@ -278,7 +279,12 @@ namespace Singular.Helpers
                                 WoWSpell spell;
                                 if (SpellManager.Spells.TryGetValue(name, out spell))
                                 {
-                                    if (spell.MaxRange <= 0)
+                                    // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
+                                    if (spell.InternalInfo.SpellRangeId == 1)
+                                        return true;
+
+                                    // RangeId 2 is melee range. Huzzah :)
+                                    if (spell.InternalInfo.SpellRangeId == 2)
                                         minReqs = target.Distance < MeleeRange;
                                     else
                                         minReqs = target.Distance < spell.MaxRange;

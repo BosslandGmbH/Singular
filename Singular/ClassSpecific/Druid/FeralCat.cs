@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.Druid
     {
 
         [Spec(TalentSpec.FeralDruid)]
-        //[Spec(TalentSpec.FeralTankDruid)]
+        [Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Druid)]
@@ -47,14 +47,13 @@ namespace Singular.ClassSpecific.Druid
                 //Spell.Cast("Faerie Fire (Feral)", ret=>!Unit.HasAura(StyxWoW.Me.CurrentTarget, "Faerie Fire", 3)),
                 //new Action(ret=>Logger.WriteDebug("Done with FF Going into boss check")),
                 // 
-                Spell.Cast(
-                    "Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasSunders() && !StyxWoW.Me.CurrentTarget.HasAura("Faerie Fire", 3)),
+                Spell.Cast("Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasSunders() && !StyxWoW.Me.CurrentTarget.HasAura("Faerie Fire", 3)),
 
                 // ... interrupts :)
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 // Keep the debuff up at all times. We'll be spamming Mangle further down the prio list if we can't use shred
-                Spell.Cast("Mangle (Cat)", ret => !StyxWoW.Me.CurrentTarget.HasAnyAura("Mangle", "Hemorrhage", "Trauma")),
+                Spell.Cast("Mangle (Cat)", ret => !StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
 
                 // On cooldown, only when we actually can use the full energy it gives.
                 Spell.BuffSelf("Tiger's Fury", ret => StyxWoW.Me.CurrentEnergy < 40),

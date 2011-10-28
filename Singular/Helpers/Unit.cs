@@ -204,36 +204,73 @@ namespace Singular.Helpers
         {
             return Lists.BossList.TrainingDummies.Contains(unit.Entry);
         }
-
-        public static bool HasSunders(this WoWUnit unit)
+        public static bool HasAuraWithEffect(this WoWUnit unit, WoWApplyAuraType auraType, int miscValue, int basePointsMin, int basePointsMax)
         {
             var auras = unit.GetAllAuras();
-            var tmp = (from a in auras
-                       where a.Spell != null && a.Spell.SpellEffect1 != null
-                       let effect = a.Spell.SpellEffect1
-                       // Sunder, Faerie Fire, and another have -4% armor per-stack.
-                       // Expose Armor, and others, have a flat -12%
-                       // Ensure we check MiscValueA for 1, as thats the resistance index for physical (aka; armor)
-                       where
-                           effect.AuraType == WoWApplyAuraType.ModResistancePct && effect.MiscValueA == 1 &&
-                           (effect.BasePoints == -4 || effect.BasePoints == -12)
-                       select a).Any();
+            return (from a in auras
+                    where a.Spell != null
+                    let spell = a.Spell
+                    from e in spell.GetSpellEffects()
+                    // First check: Ensure the effect is... well... valid
+                    where e != null &&
+                    // Ensure the aura type is correct.
+                    e.AuraType == auraType &&
+                    // Check for a misc value. (Resistance types, etc)
+                    (miscValue == -1 || e.MiscValueA == miscValue) &&
+                    // Check for the base points value. (Usually %s for most debuffs)
+                    e.BasePoints >= basePointsMin && e.BasePoints <= basePointsMax
+                    select a).Any();
+        }
+        public static bool HasSunders(this WoWUnit unit)
+        {
+            // Remember; this is negative values [debuff]. So min is -12, max is -4. Duh.
+            return unit.HasAuraWithEffect(WoWApplyAuraType.ModResistancePct, 1, -12, -4);
 
-            return tmp;
+            //var auras = unit.GetAllAuras();
+            //var tmp = (from a in auras
+            //           where a.Spell != null
+            //           from e in a.Spell.SpellEffects
+            //           // Sunder, Faerie Fire, and another have -4% armor per-stack.
+            //           // Expose Armor, and others, have a flat -12%
+            //           // Ensure we check MiscValueA for 1, as thats the resistance index for physical (aka; armor)
+            //           where
+            //               e != null && e.AuraType == WoWApplyAuraType.ModResistancePct && e.MiscValueA == 1 &&
+            //               (e.BasePoints == -4 || e.BasePoints == -12)
+            //           select a).Any();
+
+            //return tmp;
         }
         public static bool HasDemoralizing(this WoWUnit unit)
         {
-            var auras = unit.GetAllAuras();
-            var tmp = (from a in auras
-                       where a.Spell != null && a.Spell.SpellEffect1 != null
-                       let effect = a.Spell.SpellEffect1
-                       // Basically, all spells are -10% damage done that are demoralizing shout/roar/etc.
-                       // The aura type is damage % done. Just chekc for anything < 0. (There may be some I'm forgetting that aren't -10%, but stacks of like 2% or something
-                       where effect.AuraType == WoWApplyAuraType.ModDamagePercentDone && effect.BasePoints < 0
-                       select a).Any();
-            if (!tmp)
-                Logger.Write(unit.Name + " does not have demoralizing!");
-            return tmp;
+            // Plain and simple, any effect with -damage is good. Ensure at least -1. Since 0 may be a buggy spell entry or something.
+            return unit.HasAuraWithEffect(WoWApplyAuraType.ModDamagePercentDone, -1, int.MinValue, -1);
+
+            //var auras = unit.GetAllAuras();
+            //var tmp = (from a in auras
+            //           where a.Spell != null && a.Spell.SpellEffect1 != null
+            //           let effect = a.Spell.SpellEffect1
+            //           // Basically, all spells are -10% damage done that are demoralizing shout/roar/etc.
+            //           // The aura type is damage % done. Just chekc for anything < 0. (There may be some I'm forgetting that aren't -10%, but stacks of like 2% or something
+            //           where effect.AuraType == WoWApplyAuraType.ModDamagePercentDone && effect.BasePoints < 0
+            //           select a).Any();
+            //if (!tmp)
+            //    Logger.Write(unit.Name + " does not have demoralizing!");
+            //return tmp;
+        }
+
+        public static bool HasBleedDebuff(this WoWUnit unit)
+        {
+            return unit.HasAuraWithEffect(WoWApplyAuraType.ModMechanicDamageTakenPercent, 15, 0, int.MaxValue);
+        }
+
+        /// <summary>A temporary fix until the next build of HB.</summary>
+        static SpellEffect[] GetSpellEffects(this WoWSpell spell)
+        {
+            SpellEffect[] effects = new SpellEffect[3];
+            effects[0] = spell.GetSpellEffect(0);
+            effects[1] = spell.GetSpellEffect(1);
+            effects[2] = spell.GetSpellEffect(2);
+            return effects;
         }
     }
 }

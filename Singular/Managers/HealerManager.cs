@@ -116,6 +116,14 @@ namespace Singular.Managers
                     units.RemoveAt(i);
                     continue;
                 }
+
+                // If we have movement turned off. Ignore people who aren't in range.
+                // Almost all healing is 40 yards, so we'll use that.
+                if (SingularSettings.Instance.DisableAllMovement && p.DistanceSqr > 40*40)
+                {
+                    units.RemoveAt(i);
+                    continue;
+                }
             }
 
             // A little bit of a hack, but this ensures 'Me' is in the list.

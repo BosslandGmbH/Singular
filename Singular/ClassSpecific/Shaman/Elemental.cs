@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.WaitForCast(true),
                 CreateElementalPullBuffs(),
                 // Only call if we're missing more than 2 totems. 
-                Totems.CreateSetTotems(),
+                Totems.CreateSetTotems(3),
                 Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 Spell.Cast("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) > 2),

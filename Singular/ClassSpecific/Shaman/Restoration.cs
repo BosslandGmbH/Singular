@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Singular.Dynamics;
 using Singular.Helpers;
+using Singular.Managers;
 
 using Styx;
+using Styx.Combat.CombatRoutine;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
@@ -30,6 +33,12 @@ namespace Singular.ClassSpecific.Shaman
             }
         }
 
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.RestorationShaman)]
+        [Behavior(BehaviorType.CombatBuffs)]
+        [Behavior(BehaviorType.PreCombatBuffs)]
+        [Context(WoWContext.All)]
         public static Composite CreateRestoShamanHealingBuffs()
         {
             return new PrioritySelector(
@@ -41,14 +50,46 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.Cast("Earthliving Weapon"))
                 );
         }
+
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.RestorationShaman)]
+        [Behavior(BehaviorType.Rest)]
+        [Context(WoWContext.All)]
+        public static Composite CreateRestoShamanRest()
+        {
+            return new PrioritySelector(
+                CreateRestoShamanHealingBuffs(),
+                CreateRestoShamanHealing(),
+                Rest.CreateDefaultRestBehaviour()
+                );
+        }
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.RestorationShaman)]
+        [Behavior(BehaviorType.Combat)]
+        [Context(WoWContext.All)]
         public static Composite CreateRestoShamanHealing()
         {
+            HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
                 context => Managers.HealerManager.Instance.FirstUnit,
                 Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
 
                 Spell.WaitForCast(false),
-                Totems.CreateSetTotems(),
+                Totems.CreateSetTotems(4),
+                Common.CreateInterruptSpellCast(
+                    ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < 15 && u.IsCasting && u.CanInterruptCurrentSpellCast)),
+
+                // Mana tide...
+                Spell.Cast("Mana Tide Totem", ret => StyxWoW.Me.ManaPercent < 80),
+                // Grounding...
+                Spell.Cast("Grounding Totem", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
+
+                // Just pop RT on CD. Plain and simple. Calling GetBestRiptideTarget will see if we can spread RTs (T12 2pc)
+                Spell.Cast("Riptide", ret => GetBestRiptideTarget((WoWPlayer)ret)),
+                // And deal with some edge PVP cases.
+
                 Spell.Buff("Earth Shield", ret => Group.Tank, ret => StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty),
 
                 // Pop NS if someone is in some trouble.
@@ -59,8 +100,6 @@ namespace Singular.ClassSpecific.Shaman
                 // Most (if not all) will leave this at 90. Its lower prio, high HPM, low HPS
                 Spell.Cast("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 90),
 
-                // Just pop RT on CD. Plain and simple. Calling GetBestRiptideTarget will see if we can spread RTs (T12 2pc)
-                Spell.Cast("Riptide", ret => GetBestRiptideTarget((WoWPlayer)ret)),
 
                 // CH/HR only in parties/raids
                 new Decorator(

@@ -74,12 +74,10 @@ namespace Singular.Helpers
             return
                 new Decorator(
                     // If the target is casting, and can actually be interrupted, AND we've waited out the double-interrupt timer, then find something to interrupt with.
-                    ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast/* && PreventDoubleInterrupt*/,
+                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret).IsCasting && onUnit(ret).CanInterruptCurrentSpellCast
+                    /* && PreventDoubleInterrupt*/,
                     new PrioritySelector(
 
-                        Spell.Cast("Arcane Torrent", onUnit),
-                        // Don't waste stomp on bosses. They can't be stunned 99% of the time!
-                        Spell.Cast("War Stomp", onUnit, ret => !onUnit(ret).IsBoss() && onUnit(ret).Distance < 8),
 
                         Spell.Cast("Rebuke", onUnit),
                         Spell.Cast("Avenger's Shield", onUnit),
@@ -107,7 +105,13 @@ namespace Singular.Helpers
                         Spell.Cast("Solar Beam", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin),
 
                         Spell.Cast("Strangulate", onUnit),
-                        Spell.Cast("Mind Freeze", onUnit)
+                        Spell.Cast("Mind Freeze", onUnit),
+
+
+                        // Racials last.
+                        Spell.Cast("Arcane Torrent", onUnit),
+                        // Don't waste stomp on bosses. They can't be stunned 99% of the time!
+                        Spell.Cast("War Stomp", onUnit, ret => !onUnit(ret).IsBoss() && onUnit(ret).Distance < 8)
                         ));
         }
 

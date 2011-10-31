@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.WaitForCast(true),
                 CreateEnhancementShamanPullBuffs(),
                 Common.CreateAutoAttack(false),
-                Totems.CreateSetTotems(),
+                Totems.CreateSetTotems(3),
 
                 // Only call if we're missing more than 2 totems. 
 

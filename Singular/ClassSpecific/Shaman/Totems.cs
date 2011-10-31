@@ -32,12 +32,12 @@ namespace Singular.ClassSpecific.Shaman
     {
         private static bool _totemsSet;
 
-        public static Composite CreateSetTotems()
+        public static Composite CreateSetTotems(int numTotems)
         {
             return new Sequence(
                 new Action(ret => SetupTotemBar()),
                 new Decorator(
-                    ret => TotemsInRange < 3,
+                    ret => TotemsInRange < numTotems,
                     Spell.Cast("Call of the Elements", ret=>StyxWoW.Me))
 
                 );

@@ -173,6 +173,12 @@ namespace Singular.Settings
         [DisplayName("Disable Targeting")]
         public bool DisableTankTargetSwitching { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Tanking")]
+        [DisplayName("Enable Taunting for tanks")]
+        public bool EnableTaunting { get; set; }
+
         #endregion
 
         #region Class Late-Loading Wrappers

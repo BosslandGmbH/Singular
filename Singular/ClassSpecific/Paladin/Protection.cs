@@ -94,7 +94,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Cast(
                         "Hand of Reckoning",
                         ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
-                        ret => SingularSettings.Instance.Paladin.EnableTaunt && TankManager.Instance.NeedToTaunt.Count != 0),
+                        ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.Count != 0),
                     Spell.BuffSelf("Avenging Wrath"),
                     Spell.BuffSelf(
                         "Lay on Hands",

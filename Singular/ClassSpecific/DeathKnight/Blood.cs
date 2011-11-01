@@ -2,6 +2,8 @@
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
+
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
@@ -59,9 +61,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // DG if we can, DC if we can't. DC is our 10s taunt. DG is our "get the fuck over here" taunt
                 Spell.Cast(
-                    "Death Grip", ret => TankManager.Instance.NeedToTaunt.First(), ret => TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
+                    "Death Grip", ret => TankManager.Instance.NeedToTaunt.First(), ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
                 Spell.Cast(
-                    "Dark Command", ret => TankManager.Instance.NeedToTaunt.First(), ret => TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
+                    "Dark Command", ret => TankManager.Instance.NeedToTaunt.First(), ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
                 Spell.Cast("Rune Tap", ret => StyxWoW.Me.HealthPercent < 85),
                 Spell.Cast("Death Coil", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 70 && StyxWoW.Me.HasAura("Lichborne")),

@@ -72,9 +72,9 @@ namespace Singular.ClassSpecific.Warrior
                 //If more than 3 taunt, if needs to taunt                
                 Spell.Cast(
                     "Challenging Shout", ret => TankManager.Instance.NeedToTaunt.First(),
-                    ret => TankManager.Instance.NeedToTaunt.Count(u => u.Distance <= 10) >= 3),
+                    ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.Count(u => u.Distance <= 10) >= 3),
                 // If there's a unit that needs taunting, do it.
-                Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.First(), ret => TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
+                Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.First(), ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
                 //Single Target
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),

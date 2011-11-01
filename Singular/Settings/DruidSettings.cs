@@ -12,6 +12,7 @@
 #endregion
 
 using System.ComponentModel;
+
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
@@ -26,11 +27,13 @@ namespace Singular.Settings
         }
 
         [Setting]
-        [DefaultValue(40)]
+        [Styx.Helpers.DefaultValue(40)]
         [Category("Common")]
         [DisplayName("Innervate Mana")]
         [Description("Innervate will be used when your mana drops below this value")]
         public int InnervateMana { get; set; }
+
+        #region Balance
 
         [Setting]
         [DefaultValue(false)]
@@ -53,7 +56,6 @@ namespace Singular.Settings
         [Description("Healing Touch will be used at this value.")]
         public int HealingTouchBalance { get; set; }
 
-
         [Setting]
         [DefaultValue(70)]
         [Category("Balance")]
@@ -67,6 +69,10 @@ namespace Singular.Settings
         [DisplayName("Regrowth Health")]
         [Description("Regrowth will be used at this value")]
         public int RegrowthBalance { get; set; }
+
+        #endregion
+
+        #region Resto
 
         [Setting]
         [DefaultValue(60)]
@@ -152,11 +158,54 @@ namespace Singular.Settings
         [Description("Barkskin will be used at this value")]
         public int Barkskin { get; set; }
 
+        #endregion
+
+        #region Feral
+
         [Setting]
         [DefaultValue(true)]
         [Category("Feral Tanking")]
         [DisplayName("Feral Charge")]
         [Description("Use Feral Charge to close gaps.")]
         public bool UseFeralChargeBear { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Feral Cat")]
+        [DisplayName("Feral Charge")]
+        [Description("Use Feral Charge to close gaps.")]
+        public bool UseFeralChargeCat { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Feral Tanking")]
+        [DisplayName("Manual Forms")]
+        [Description(
+            "Disables any automatic form switching. Manually switching to cat form will automatically start the Cat combat cycle, and vice versa for bear."
+            )]
+        public bool ManualForms { get; set; }
+
+        [Setting]
+        [DefaultValue(100)]
+        [Category("Feral")]
+        [DisplayName("Barkskin Health")]
+        [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 100)")]
+        public int FeralBarkskin { get; set; }
+
+        [Setting]
+        [DefaultValue(55)]
+        [Category("Feral")]
+        [DisplayName("Survival Instincts Health")]
+        [Description("SI will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 55)")]
+        public int SurvivalInstinctsHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(55)]
+        [Category("Feral Tanking")]
+        [DisplayName("Frenzied Regeneration Health")]
+        [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 30 if glyphed. 15 if not.)")]
+        public int FrenziedRegenerationHealth { get; set; }
+
+        #endregion
     }
 }

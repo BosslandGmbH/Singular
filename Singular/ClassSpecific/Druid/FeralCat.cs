@@ -1,9 +1,12 @@
 ﻿using System.Linq;
 
+using CommonBehaviors.Actions;
+
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Lists;
 using Singular.Managers;
+using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
@@ -16,6 +19,8 @@ namespace Singular.ClassSpecific.Druid
     public class FeralCat
     {
 
+        static DruidSettings Settings { get { return SingularSettings.Instance.Druid; } }
+
         [Spec(TalentSpec.FeralDruid)]
         [Spec(TalentSpec.FeralTankDruid)]
         [Behavior(BehaviorType.Combat)]
@@ -26,9 +31,21 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralCatCombat()
         {
             return new PrioritySelector(
+                // If we're in caster form, and not casting anything (tranq), then fucking switch to cat.
                 new Decorator(
-                    ret => StyxWoW.Me.Shapeshift != ShapeshiftForm.Cat,
+                    ret => StyxWoW.Me.Shapeshift != ShapeshiftForm.Normal,
                     Spell.BuffSelf("Cat Form")),
+
+                new Decorator(
+                    ret => !Settings.ManualForms && StyxWoW.Me.Shapeshift != ShapeshiftForm.Cat,
+                    Spell.BuffSelf("Cat Form")),
+
+                // If the user has manual forms enabled. Automatically switch to cat combat if they switch forms.
+                new Decorator(
+                    ret => Settings.ManualForms && StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear,
+                    new PrioritySelector(
+                        FeralBearTank.CreateBearTankCombat(),
+                        new ActionAlwaysSucceed())),
 
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
@@ -39,6 +56,13 @@ namespace Singular.ClassSpecific.Druid
                     ret => !StyxWoW.Me.IsInRaid && !StyxWoW.Me.IsInParty,
                     Resto.CreateRestoDruidHealOnlyBehavior(true)),
 
+                Spell.Cast(
+                    "Feral Charge (Cat)",
+                    ret => Settings.UseFeralChargeCat && StyxWoW.Me.CurrentTarget.Distance >= 8 && StyxWoW.Me.CurrentTarget.Distance <= 25),
+
+                // Only pop SI if we're taking a bunch of damage.
+                Spell.BuffSelf("Survival Instincts", ret => StyxWoW.Me.HealthPercent < Settings.SurvivalInstinctsHealth),
+
                 // Drop aggro if we're in trouble.
                 new Decorator(
                     ret => (StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty) && StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 50,
@@ -47,7 +71,10 @@ namespace Singular.ClassSpecific.Druid
                 //Spell.Cast("Faerie Fire (Feral)", ret=>!Unit.HasAura(StyxWoW.Me.CurrentTarget, "Faerie Fire", 3)),
                 //new Action(ret=>Logger.WriteDebug("Done with FF Going into boss check")),
                 // 
-                Spell.Cast("Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasSunders() && !StyxWoW.Me.CurrentTarget.HasAura("Faerie Fire", 3)),
+                Spell.Cast(
+                    "Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasSunders() && !StyxWoW.Me.CurrentTarget.HasAura("Faerie Fire", 3)),
+
+                Spell.Cast("Ravage", ret=>StyxWoW.Me.HasAura("Stampede")),
 
                 // ... interrupts :)
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),

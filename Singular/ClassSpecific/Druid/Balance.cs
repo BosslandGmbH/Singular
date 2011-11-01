@@ -84,8 +84,8 @@ namespace Singular.ClassSpecific.Druid
                 // Ensure we do /petattack if we have treants up.
                 Helpers.Common.CreateAutoAttack(true),
 
-                Spell.Cast("Starfall", ret => StyxWoW.Me, ret => SingularSettings.Instance.Druid.UseStarfall),
-                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location),
+                Spell.Cast("Starfall", ret => StyxWoW.Me, ret => SingularSettings.Instance.Druid.UseStarfall && StyxWoW.Me.HasAura("Eclipse (Lunar)")),
+                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.HasAura("Eclipse (Solar)")),
 
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Count(u=>u.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 10f) > 2,

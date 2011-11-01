@@ -23,7 +23,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             TankManager.NeedTankTargeting = true;
             return new PrioritySelector(
-                ctx => TankManager.Instance.FirstUnit,
+                ctx => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
 
                 Spell.BuffSelf("Defensive Stance"),
 

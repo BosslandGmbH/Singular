@@ -200,7 +200,7 @@ namespace Singular.Settings
         public int SurvivalInstinctsHealth { get; set; }
 
         [Setting]
-        [DefaultValue(55)]
+        [DefaultValue(30)]
         [Category("Feral Tanking")]
         [DisplayName("Frenzied Regeneration Health")]
         [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 30 if glyphed. 15 if not.)")]

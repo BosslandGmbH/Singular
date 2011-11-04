@@ -16,7 +16,10 @@ namespace Singular.Helpers
             {
                 52288, // Venomous Effusion (NPC near the snake boss in ZG. Its the green lines on the ground. We want to ignore them.)
                 52302, // Venomous Effusion Stalker (Same as above. A dummy unit)
+                52320, // Pool of Acid
+                52525, // Bloodvenom
 
+                52387, // Cave in stalker - Kilnara
             };
         public static bool IsUndeadOrDemon(this WoWUnit unit)
         {

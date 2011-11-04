@@ -55,7 +55,7 @@ namespace Singular.ClassSpecific.Paladin
                     ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) <= 1,
                     new PrioritySelector(
                         //Single target
-                        Spell.Cast("Shield of Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
+                        Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
                         Spell.Cast("Crusader Strike"),
                         Spell.Cast("Judgement"),
                         Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),

@@ -69,6 +69,12 @@ namespace Singular.Managers
                     continue;
                 }
 
+                if (Unit.IgnoreMobs.Contains(u.Entry))
+                {
+                    units.RemoveAt(i);
+                    continue;
+                }
+
                 if (u.CurrentTarget == null) 
                     continue;
 

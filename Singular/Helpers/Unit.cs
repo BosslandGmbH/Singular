@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Styx;
+using Styx.Helpers;
 using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.WoWInternals;
@@ -11,7 +12,7 @@ namespace Singular.Helpers
 {
     internal static class Unit
     {
-        static HashSet<uint> IgnoreMobs=new HashSet<uint>
+        public static HashSet<uint> IgnoreMobs=new HashSet<uint>
             {
                 52288, // Venomous Effusion (NPC near the snake boss in ZG. Its the green lines on the ground. We want to ignore them.)
                 52302, // Venomous Effusion Stalker (Same as above. A dummy unit)
@@ -191,7 +192,14 @@ namespace Singular.Helpers
                      a.Spell.Mechanic == WoWSpellMechanic.Sapped ||
                      a.Spell.Mechanic == WoWSpellMechanic.Shackled ||
                      a.Spell.Mechanic == WoWSpellMechanic.Asleep ||
-                     a.Spell.Mechanic == WoWSpellMechanic.Frozen
+                     a.Spell.Mechanic == WoWSpellMechanic.Frozen ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Invulnerable ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Invulnerable2 ||
+                     a.Spell.Mechanic == WoWSpellMechanic.Turned ||
+
+                     // Really want to ignore hexed mobs.
+                     a.Spell.Name == "Hex"
+
                      );
         }
 
@@ -243,7 +251,10 @@ namespace Singular.Helpers
         public static bool HasDemoralizing(this WoWUnit unit)
         {
             // Plain and simple, any effect with -damage is good. Ensure at least -1. Since 0 may be a buggy spell entry or something.
-            return unit.HasAuraWithEffect(WoWApplyAuraType.ModDamagePercentDone, -1, int.MinValue, -1);
+            var tmp = unit.HasAuraWithEffect(WoWApplyAuraType.ModDamagePercentDone, -1, int.MinValue, -1);
+            if (!tmp)
+                Logging.Write(unit.Entry + " - " + unit.Name + " does not have demoralizing!");
+            return tmp;
 
             //var auras = unit.GetAllAuras();
             //var tmp = (from a in auras

@@ -155,8 +155,9 @@ namespace Singular.Dynamics
             {
                 return null;
             }
-            // Return a sorted list of our created composites
-            return new PrioritySelector(matchedMethods.OrderByDescending(mm => mm.Key).Select(mm => mm.Value).ToArray());
+
+            // Return the composite match we found. (Note: ANY composite return is fine)
+            return matchedMethods.OrderByDescending(mm => mm.Key).First().Value;
         }
     }
 }

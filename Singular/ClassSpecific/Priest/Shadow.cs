@@ -92,7 +92,7 @@ namespace Singular.ClassSpecific.Priest
                 // try to do _something_
                 Spell.Cast("Mind Blast"),
                 // use wand
-                Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand),
+                //Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

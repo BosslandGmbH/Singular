@@ -1102,6 +1102,14 @@ namespace Singular.Lists
                         18401, //Skra'gath
                         18402, //Warmaul Champion
 
+                        // Cata Zul'gurub
+                        52155, //High Priest Venoxis
+                        52151, //Bloodlord Mandokir
+                        52271, //Hazza'ra
+                        52059, //High Priestess Kilnara
+                        52053, //Zanzil
+                        52148, //Jin'do the Godbreaker
+
                         //Firelands
                         53691, //Shannox
                         52558, //Lord Rhyolith

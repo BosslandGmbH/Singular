@@ -5,6 +5,7 @@ using CommonBehaviors.Actions;
 
 using Singular.Settings;
 using Styx;
+using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
 using Styx.Logic.Inventory;
 using Styx.Logic.Pathing;
@@ -28,6 +29,11 @@ namespace Singular.Helpers
             }
         }
 
+        private static bool PetInCombat
+        {
+            get { return StyxWoW.Me.GotAlivePet && StyxWoW.Me.PetInCombat; }
+        }
+
         public static Composite CreateDefaultRestBehaviour()
         {
             return
@@ -36,6 +42,15 @@ namespace Singular.Helpers
                 new Decorator(
                     ret => !StyxWoW.Me.Dead && !StyxWoW.Me.IsGhost,
                     new PrioritySelector(
+                        new Decorator(ret=>StyxWoW.Me.Class == WoWClass.Hunter && PetInCombat,
+                            new Sequence(
+                                new Action(ret=>Logger.Write("My pet is in combat during rest. Attempting to target and face.")),
+                                new Action(ret=>StyxWoW.Me.Pet.CurrentTarget.Target()),
+                                new Action(ret=>StyxWoW.Me.Pet.Face()),
+                                SingularRoutine.Instance.PullBehavior
+                                )
+                            ),
+
                         // Don't rest if the leader is in combat. Ever.
                         //new Decorator(ret=> StyxWoW.Me.IsInParty,
                         //    new Decorator(ret=>RaFHelper.Leader != null && RaFHelper.Leader.Combat,

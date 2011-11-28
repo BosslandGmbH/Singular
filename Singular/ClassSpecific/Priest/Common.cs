@@ -59,7 +59,6 @@ namespace Singular.ClassSpecific.Priest
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
-        [Priority(999)]
         public static Composite CreatePriestCommonCombatSpells()
         {
             return new PrioritySelector(
@@ -103,7 +102,6 @@ namespace Singular.ClassSpecific.Priest
         [Spec(TalentSpec.Lowbie)]
         [Behavior(BehaviorType.PullBuffs)]
         [Context(WoWContext.All)]
-        [Priority(999)]
         public static Composite CreatePriestCommonPullBuffs()
         {
             return new PrioritySelector(

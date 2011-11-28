@@ -47,7 +47,7 @@ namespace Singular.Settings
         [Category("Shadow")]
         [DisplayName("Devouring Plague First")]
         [Description("Casts devouring plague before anything else, useful for farming low hp mobs")]
-        public bool DevouringPlageuFirst { get; set; }
+        public bool DevouringPlagueFirst { get; set; }
 
         [Setting]
         [DefaultValue(false)]

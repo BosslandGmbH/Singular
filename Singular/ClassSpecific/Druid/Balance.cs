@@ -88,15 +88,15 @@ namespace Singular.ClassSpecific.Druid
                 Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.HasAura("Eclipse (Solar)")),
 
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u=>u.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 10f) > 2,
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 10f) > 2,
                     new PrioritySelector(
-                        // If we got 3 shrooms out. Pop 'em
-                        Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount == 3),
+                // If we got 3 shrooms out. Pop 'em
+                        //Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount == 3),
 
-                        // If Detonate is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
-                        Spell.CastOnGround(
-                            "Wild Mushroom", ret => BestAoeTarget.Location,
-                            ret => RadialAoeCount > 2 && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds < 3),
+                        //// If Detonate is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
+                        //Spell.CastOnGround(
+                        //    "Wild Mushroom", ret => BestAoeTarget.Location,
+                        //    ret => RadialAoeCount > 2 && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds < 3),
 
                         // Spread MF/IS
                         Spell.Cast(

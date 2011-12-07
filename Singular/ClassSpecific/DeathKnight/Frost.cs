@@ -27,37 +27,63 @@ namespace Singular.ClassSpecific.DeathKnight
                 // In this case, since its only one spell being changed, we can live with it.
                 Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.Distance > 15 && !StyxWoW.Me.IsInInstance),
                 //Make sure we're in range, and facing the damned target. (LOS check as well)
-                Spell.Cast("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
                 Spell.Cast("Rune Strike"),
                 Spell.Cast("Mind Freeze", ret => StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
                 Spell.Cast("Strangulate", ret => StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
-                Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 80),
+                Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 30),
+
+                // Cooldowns
                 Spell.Cast("Pillar of Frost"),
-                Spell.Cast("Howling Blast", ret => StyxWoW.Me.HasAura("Freezing Fog") || !StyxWoW.Me.CurrentTarget.HasAura("Frost Fever")),
+                Spell.Cast("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
+
+                // Start AoE section
+                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) >= 3,
+                    new PrioritySelector(
+                        Spell.Cast("Howling Blast", ret => StyxWoW.Me.FrostRuneCount == 2 || StyxWoW.Me.DeathRuneCount == 2),
+                        new Decorator(
+                            ret => SpellManager.CanCast("Death and Decay") && StyxWoW.Me.UnholyRuneCount == 2,
+                            new Action(
+                                ret =>
+                                {
+                                    SpellManager.Cast("Death and Decay");
+                                    LegacySpellManager.ClickRemoteLocation(StyxWoW.Me.CurrentTarget.Location);
+                                })),
+                        Spell.Cast("Plague Strike", ret => StyxWoW.Me.UnholyRuneCount == 2),
+                        Spell.Cast("Frost Strike", ret => StyxWoW.Me.CurrentRunicPower == StyxWoW.Me.MaxRunicPower),
+                        Spell.Cast("Howling Blast"),
+                        new Decorator(
+                            ret => SpellManager.CanCast("Death and Decay"),
+                            new Action(
+                                ret =>
+                                {
+                                    SpellManager.Cast("Death and Decay");
+                                    LegacySpellManager.ClickRemoteLocation(StyxWoW.Me.CurrentTarget.Location);
+                                })),
+                        Spell.Cast("Plague Strike"),
+                        Spell.Cast("Frost Strike"),
+                        Spell.Cast("Horn of Winter")
+                    )
+                ),
+
+                // Start single target section
+                Spell.Cast("Outbreak", ret => StyxWoW.Me.CurrentTarget.HasAura("Frost Fever") || StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
+                Spell.Cast("Howling Blast", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Fever")),
+                Spell.Cast("Plague Strike", ret => !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
                 Spell.Cast(
                     "Pestilence", ret => StyxWoW.Me.CurrentTarget.HasAura("Blood Plague") && StyxWoW.Me.CurrentTarget.HasAura("Frost Fever") &&
                                          (from add in Unit.NearbyUnfriendlyUnits
                                           where !add.HasAura("Blood Plague") && !add.HasAura("Frost Fever") && add.Distance < 10
                                           select add).Count() > 0),
-                new Decorator(
-                    ret => SpellManager.CanCast("Death and Decay") && Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1,
-                    new Action(
-                        ret =>
-                        {
-                            SpellManager.Cast("Death and Decay");
-                            LegacySpellManager.ClickRemoteLocation(StyxWoW.Me.CurrentTarget.Location);
-                        })),
-                Spell.Cast("Outbreak", ret => StyxWoW.Me.CurrentTarget.HasAura("Frost Fever") || StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                Spell.Cast("Plague Strike", ret => !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
                 Spell.Cast(
                     "Obliterate",
                     ret => (StyxWoW.Me.FrostRuneCount == 2 && StyxWoW.Me.UnholyRuneCount == 2) || StyxWoW.Me.DeathRuneCount == 2 || StyxWoW.Me.HasAura("Killing Machine")),
-                Spell.Cast("Blood Strike", ret => StyxWoW.Me.BloodRuneCount == 2),
-                Spell.Cast("Frost Strike", ret => StyxWoW.Me.HasAura("Freezing Fog") || StyxWoW.Me.CurrentRunicPower == StyxWoW.Me.MaxRunicPower),
-                Spell.Cast("Blood Tap", ret => StyxWoW.Me.BloodRuneCount < 2),
+                Spell.Cast("Frost Strike", ret => StyxWoW.Me.CurrentRunicPower == StyxWoW.Me.MaxRunicPower),
+                Spell.Cast("Howling Blast", ret => StyxWoW.Me.HasAura("Freezing Fog")),
                 Spell.Cast("Obliterate"),
-                Spell.Cast("Blood Strike"),
                 Spell.Cast("Frost Strike"),
+                Spell.Cast("Blood Tap"),
+                Spell.Cast("Howling Blast", ret => StyxWoW.Me.CurrentRunicPower < 32),
+                Spell.Cast("Horn of Winter"),
                 Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
         }

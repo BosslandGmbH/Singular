@@ -77,7 +77,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.Auras["Maelstrom Weapon"].StackCount > 4),
 
                 // Clip the last tick of FS if we can.
-                Spell.Buff("Flame Shock", ret => StyxWoW.Me.HasAura("Unleash Flame") || !Styx.Logic.Combat.SpellManager.HasSpell("Unleash Elements")),
+                Spell.Buff("Flame Shock", ret => StyxWoW.Me.HasAura("Unleash Flame") || !SpellManager.HasSpell("Unleash Elements")),
 
                 Spell.Cast("Unleash Elements"),
 

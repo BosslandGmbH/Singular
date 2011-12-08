@@ -55,7 +55,7 @@ namespace Singular.ClassSpecific.Hunter
                         Spell.Cast("Multi-Shot", ret => !SpellManager.CanCast("Explosive Trap")),
                         Spell.Cast("Aimed Shot", ret => StyxWoW.Me.HasAura("Fire!")),
                         Spell.Cast("Kill Shot"),
-                        Spell.Cast("Steady Shot")
+                        Spell.Cast("Steady Shot", ret => !StyxWoW.Me.IsMoving)
                     )
                 ),
 
@@ -74,10 +74,10 @@ namespace Singular.ClassSpecific.Hunter
                     )
                 ),
                 Spell.Cast("Aimed Shot", ret => StyxWoW.Me.HasAura("Fire!")),
-                Spell.Cast("Steady Shot", ret => !StyxWoW.Me.HasAura("Improved Steady Shot")),
+                Spell.Cast("Steady Shot", ret => !StyxWoW.Me.HasAura("Improved Steady Shot") && !StyxWoW.Me.IsMoving),
                 Spell.Cast("Kill Shot", ret => StyxWoW.Me.CurrentTarget.CurrentHealth < 20),
                 Spell.Cast("Rapid Fire", ret => StyxWoW.Me.IsInInstance && !StyxWoW.Me.HasAura("Rapid Fire")),
-                Spell.Cast("Readiness", ret => StyxWoW.Me.IsInInstance),
+                Spell.Cast("Readiness", ret => StyxWoW.Me.IsInInstance && Spell.GetSpellCooldown("Rapid Fire").TotalSeconds > 60),
                 // Focus Dump
                 new Decorator(ret => StyxWoW.Me.PowerPercent >= 65,
                     new PrioritySelector(
@@ -86,7 +86,7 @@ namespace Singular.ClassSpecific.Hunter
                     )
                 ),
                 Spell.Cast("Kill Command", ret => StyxWoW.Me.CurrentTarget.HasAura("Resistance is Futile")),
-                Spell.Cast("Steady Shot"),
+                Spell.Cast("Steady Shot", ret => !StyxWoW.Me.IsMoving),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

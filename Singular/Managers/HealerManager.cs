@@ -135,7 +135,7 @@ namespace Singular.Managers
 
         protected override void DefaultTargetWeight(List<TargetPriority> units)
         {
-            ulong tanks = GetMainTankGuids();
+            var tanks = GetMainTankGuids();
             foreach (TargetPriority prio in units)
             {
                 prio.Score = 500f;
@@ -159,7 +159,7 @@ namespace Singular.Managers
                 }
 
                 // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
-                if (tanks.Equals(p.Guid) && p.HealthPercent != 100)
+                if (tanks.Contains(p.Guid) && p.HealthPercent != 100)
                 {
                     //Logger.Write(p.Name + " is a tank!");
                     prio.Score += 100f;
@@ -167,41 +167,14 @@ namespace Singular.Managers
             }
         }
 
-        private static ulong GetMainTankGuids()
+        private static HashSet<ulong> GetMainTankGuids()
         {
-            if (!_tankReset.IsFinished)
-            {
-                return _tankGuid;
-            }
-            _tankReset.Reset();
+            var infos = StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberInfos : StyxWoW.Me.PartyMemberInfos;
 
-            for (int i = 1; i <= StyxWoW.Me.PartyMemberGuids.Count(); i++)
-            {
-                var memberRole = Lua.GetReturnVal<string>("return UnitGroupRolesAssigned(\"party" + i + "\")", 0);
-                if (memberRole == "TANK")
-                {
-                    var tankGuidString = Lua.GetReturnVal<string>("return UnitGUID(\"party" + i + "\")", 0);
-                    _tankGuid = ulong.Parse(tankGuidString.Replace("0x", string.Empty), NumberStyles.HexNumber);
-                    return _tankGuid;
-                }
-            }
-            _tankGuid = 0;
-            return 0;
-            //List<WoWPartyMember> infos = null;
-            //if (StyxWoW.Me.IsInRaid)
-            //{
-            //    infos = StyxWoW.Me.RaidMemberInfos;
-            //}
-            //else
-            //{
-            //    infos = (from g in StyxWoW.Me.PartyMemberGuids
-            //             select new WoWPartyMember(g)).ToList();
-            //}
-
-            //return new HashSet<ulong>(
-            //    from pi in infos
-            //    where pi.Role == WoWPartyMember.GroupRole.Tank
-            //    select pi.Guid);
+            return new HashSet<ulong>(
+                from pi in infos
+                where (pi.Role & WoWPartyMember.GroupRole.Tank) != 0
+                select pi.Guid);
         }
     }
 }

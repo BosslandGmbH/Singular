@@ -34,7 +34,12 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-        public static Composite CreateRestoDruidHealOnlyBehavior(bool selfOnly = false)
+        public static Composite CreateRestoDruidHealOnlyBehavior()
+        {
+            return CreateRestoDruidHealOnlyBehavior(false);
+        }
+
+        public static Composite CreateRestoDruidHealOnlyBehavior(bool selfOnly)
         {
             HealerManager.NeedHealTargeting = true;
             const uint mapleSeedId = 17034;

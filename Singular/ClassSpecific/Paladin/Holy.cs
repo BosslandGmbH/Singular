@@ -85,8 +85,13 @@ namespace Singular.ClassSpecific.Paladin
                         ))
                 );
         }
+        
+        internal static Composite CreatePaladinHealBehavior()
+        {
+            return CreatePaladinHealBehavior(false);
+        }
 
-        internal static Composite CreatePaladinHealBehavior(bool selfOnly = false)
+        internal static Composite CreatePaladinHealBehavior(bool selfOnly)
         {
             HealerManager.NeedHealTargeting = true;
 

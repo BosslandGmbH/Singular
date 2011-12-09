@@ -139,12 +139,22 @@ namespace Singular.Helpers
         ///   Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
         ///   going down to lower branches in the tree, while casting.)
         /// </summary>
+        /// <returns></returns>
+        public static Composite WaitForCast()
+        {
+            return WaitForCast(false);
+        }
+
+        /// <summary>
+        ///   Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
+        ///   going down to lower branches in the tree, while casting.)
+        /// </summary>
         /// <remarks>
         ///   Created 13/5/2011.
         /// </remarks>
         /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <returns></returns>
-        public static Composite WaitForCast(bool faceDuring = false, params string[] ignoreSpellsForDoubleCastPrevention)
+        public static Composite WaitForCast(bool faceDuring, params string[] ignoreSpellsForDoubleCastPrevention)
         {
             return new PrioritySelector(
                 new Decorator(

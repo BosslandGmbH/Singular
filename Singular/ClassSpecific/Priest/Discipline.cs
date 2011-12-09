@@ -41,7 +41,12 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        public static Composite CreateDiscHealOnlyBehavior(bool selfOnly = false)
+        public static Composite CreateDiscHealOnlyBehavior()
+        {
+            return CreateDiscHealOnlyBehavior(false);
+        }
+
+        public static Composite CreateDiscHealOnlyBehavior(bool selfOnly)
         {
             // Atonement - Tab 1  index 10 - 1/2 pts
             HealerManager.NeedHealTargeting = true;

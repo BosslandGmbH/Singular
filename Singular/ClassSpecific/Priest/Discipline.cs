@@ -41,82 +41,81 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        public static Composite CreateDiscHealOnlyBehavior()
-        {
-            return CreateDiscHealOnlyBehavior(false);
-        }
-
-        public static Composite CreateDiscHealOnlyBehavior(bool selfOnly)
+        public static Composite CreateDiscHealOnlyBehavior(bool selfOnly = false)
         {
             // Atonement - Tab 1  index 10 - 1/2 pts
             HealerManager.NeedHealTargeting = true;
             return new
-                Decorator(
-                ret => HealerManager.Instance.FirstUnit != null,
-                new PrioritySelector(
-                    ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
-                    Spell.WaitForCast(),
-                // Ensure we're in range of the unit to heal, and it's in LOS.
-                //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
-                //Spell.Buff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
-                    Spell.Buff(
-                        "Power Word: Shield",
-                        ret => (WoWUnit)ret, 
-                        ret => !((WoWUnit)ret).HasAura("Weakened Soul") && ((WoWUnit)ret).Combat),
+                PrioritySelector(
+                ret => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
                     new Decorator(
-                        ret =>
-                        Unit.NearbyFriendlyPlayers.Count(p => !p.Dead && p.HealthPercent < SingularSettings.Instance.Priest.PrayerOfHealing) >
-                        SingularSettings.Instance.Priest.PrayerOfHealingCount &&
-                        (SpellManager.CanCast("Prayer of Healing") || SpellManager.CanCast("Divine Hymn")),
-                        new Sequence(
-                            Spell.Cast("Archangel"),
-                // This will skip over DH if we can't cast it.
-                // If we can, the sequence fails, since PoH can't be cast (as we're still casting at this point)
-                            new DecoratorContinue(
-                                ret => SpellManager.CanCast("Divine Hymn"),
-                                Spell.Cast("Divine Hymn")),
-                            Spell.Cast("Prayer of Healing"))),
-                    Spell.Buff(
-                        "Pain Supression",
-                        ret => (WoWUnit)ret, 
-                        ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.PainSuppression),
-                    Spell.Buff(
-                        "Penance",
-                        ret => (WoWUnit)ret, 
-                        ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Penance),
-                    Spell.Cast(
-                        "Flash Heal",
-                        ret => (WoWUnit)ret, 
-                        ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.FlashHeal),
-                    Spell.Cast(
-                        "Binding Heal",
-                        ret => (WoWUnit)ret,
-                        ret => (WoWUnit)ret != StyxWoW.Me && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.BindingHealThem &&
-                               StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.BindingHealMe),
-                    Spell.Cast(
-                        "Greater Heal",
-                        ret => (WoWUnit)ret, 
-                        ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.GreaterHeal),
-                    Spell.Cast(
-                        "Heal",
-                        ret => (WoWUnit)ret, 
-                        ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Heal),
-                    Spell.Buff(
-                        "Renew",
-                        ret => (WoWUnit)ret, 
-                        ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Renew),
-                    Spell.Buff(
-                        "Prayer of Mending",
-                        ret => (WoWUnit)ret, 
-                        ret => ((WoWUnit)ret).HealthPercent < 90)
+                        ret => ret != null,
+                        new PrioritySelector(
+                        Spell.WaitForCast(),
+                        // Ensure we're in range of the unit to heal, and it's in LOS.
+                        //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
+                        //Spell.Buff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
+                        Spell.Buff(
+                            "Power Word: Shield",
+                            ret => (WoWUnit)ret, 
+                            ret => !((WoWUnit)ret).HasAura("Weakened Soul") && ((WoWUnit)ret).Combat),
+                        new Decorator(
+                            ret =>
+                            Unit.NearbyFriendlyPlayers.Count(p => !p.Dead && p.HealthPercent < SingularSettings.Instance.Priest.PrayerOfHealing) >
+                            SingularSettings.Instance.Priest.PrayerOfHealingCount &&
+                            (SpellManager.CanCast("Prayer of Healing") || SpellManager.CanCast("Divine Hymn")),
+                            new Sequence(
+                                Spell.Cast("Archangel"),
+                        // This will skip over DH if we can't cast it.
+                        // If we can, the sequence fails, since PoH can't be cast (as we're still casting at this point)
+                                new DecoratorContinue(
+                                    ret => SpellManager.CanCast("Divine Hymn"),
+                                    Spell.Cast("Divine Hymn")),
+                                Spell.Cast("Prayer of Healing"))),
+                        Spell.Buff(
+                            "Pain Supression",
+                            ret => (WoWUnit)ret, 
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.PainSuppression),
+                        Spell.Buff(
+                            "Penance",
+                            ret => (WoWUnit)ret, 
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Penance),
+                        Spell.Cast(
+                            "Flash Heal",
+                            ret => (WoWUnit)ret, 
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.FlashHeal),
+                        Spell.Cast(
+                            "Binding Heal",
+                            ret => (WoWUnit)ret,
+                            ret => (WoWUnit)ret != StyxWoW.Me && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.BindingHealThem &&
+                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.BindingHealMe),
+                        Spell.Cast(
+                            "Greater Heal",
+                            ret => (WoWUnit)ret, 
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.GreaterHeal),
+                        Spell.Cast(
+                            "Heal",
+                            ret => (WoWUnit)ret, 
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Heal),
+                        Spell.Buff(
+                            "Renew",
+                            ret => (WoWUnit)ret, 
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Renew),
+                        Spell.Buff(
+                            "Prayer of Mending",
+                            ret => (WoWUnit)ret, 
+                            ret => ((WoWUnit)ret).HealthPercent < 90),
 
-                    // Divine Hymn
-                // Desperate Prayer
-                // Prayer of Mending
-                // Prayer of Healing
-                // Power Word: Barrier
-                // TODO: Add smite healing. Only if Atonement is talented. (Its useless otherwise)
-                    ));
+                        Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
+                        Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)
+
+                        // Divine Hymn
+                        // Desperate Prayer
+                        // Prayer of Mending
+                        // Prayer of Healing
+                        // Power Word: Barrier
+                        // TODO: Add smite healing. Only if Atonement is talented. (Its useless otherwise)
+                        )));
         }
 
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.

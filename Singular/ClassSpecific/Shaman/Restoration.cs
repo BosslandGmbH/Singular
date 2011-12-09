@@ -73,62 +73,64 @@ namespace Singular.ClassSpecific.Shaman
         {
             HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
-                context => Managers.HealerManager.Instance.FirstUnit,
-                Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
-
-                Spell.WaitForCast(false),
-                Totems.CreateSetTotems(4),
-                Common.CreateInterruptSpellCast(
-                    ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < 15 && u.IsCasting && u.CanInterruptCurrentSpellCast)),
-
-                // Mana tide...
-                Spell.Cast("Mana Tide Totem", ret => StyxWoW.Me.ManaPercent < 80),
-                // Grounding...
-                Spell.Cast("Grounding Totem", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
-
-                // Just pop RT on CD. Plain and simple. Calling GetBestRiptideTarget will see if we can spread RTs (T12 2pc)
-                Spell.Cast("Riptide", ret => GetBestRiptideTarget((WoWPlayer)ret)),
-                // And deal with some edge PVP cases.
-
-                Spell.Buff("Earth Shield", ret => Group.Tank, ret => StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty),
-
-                // Pop NS if someone is in some trouble.
-                Spell.BuffSelf("Nature's Swiftness", ret => ((WoWUnit)ret).HealthPercent < 15),
-                Spell.Cast("Unleash Elements", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 40),
-                // GHW is highest priority. It should be fairly low health %. (High-end healers will have this set to 70ish
-                Spell.Cast("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 50),
-                // Most (if not all) will leave this at 90. Its lower prio, high HPM, low HPS
-                Spell.Cast("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 90),
-
-
-                // CH/HR only in parties/raids
+                ctx => HealerManager.Instance.FirstUnit,
                 new Decorator(
-                    ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                    ret => ret != null,
                     new PrioritySelector(
-                        // This seems a bit tricky, but its really not. This is just how we cache a somewhat expensive lookup.
-                        // Set the context to the "best unit" for the cluster, so we don't have to do that check twice.
-                        // Then just use the context when passing the unit to throw the heal on, and the target of the heal from the cluster count.
-                        // Also ensure it will jump at least 3 times. (CH is pointless to cast if it won't jump 3 times!)
-                        new PrioritySelector(
-                            context => Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, 12f),
-                            Spell.Cast(
-                                "Chain Heal", ret => (WoWPlayer)ret,
-                                ret => Clusters.GetClusterCount((WoWPlayer)ret, ChainHealPlayers, ClusterType.Chained, 12f) > 2)),
+                        Spell.WaitForCast(),
+                        Totems.CreateSetTotems(4),
+                        Common.CreateInterruptSpellCast(
+                            ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < 15 && u.IsCasting && u.CanInterruptCurrentSpellCast)),
 
-                        // Now we're going to do the same thing as above, but this time we're going to do it with healing rain.
-                        new PrioritySelector(
-                            context => Clusters.GetBestUnitForCluster(Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f),
-                            Spell.CastOnGround(
-                                "Healing Rain", ret => ((WoWPlayer)ret).Location,
-                                ret =>
-                                Clusters.GetClusterCount((WoWPlayer)ret, Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f) >
-                                // If we're in a raid, check for 4 players. If we're just in a party, check for 3.
-                                (StyxWoW.Me.IsInRaid ? 3 : 2))))),
+                        // Mana tide...
+                        Spell.Cast("Mana Tide Totem", ret => StyxWoW.Me.ManaPercent < 80),
+                        // Grounding...
+                        Spell.Cast("Grounding Totem", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
 
-                // Make sure we're in LOS of the target.
-                Movement.CreateMoveToTargetBehavior(true, 38f, ret => (WoWUnit)ret)
+                        // Just pop RT on CD. Plain and simple. Calling GetBestRiptideTarget will see if we can spread RTs (T12 2pc)
+                        Spell.Cast("Riptide", ret => GetBestRiptideTarget((WoWPlayer)ret)),
+                        // And deal with some edge PVP cases.
 
-                );
+                        Spell.Buff("Earth Shield", ret => Group.Tank, ret => StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty),
+
+                        // Pop NS if someone is in some trouble.
+                        Spell.BuffSelf("Nature's Swiftness", ret => ((WoWUnit)ret).HealthPercent < 15),
+                        Spell.Cast("Unleash Elements", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 40),
+                        // GHW is highest priority. It should be fairly low health %. (High-end healers will have this set to 70ish
+                        Spell.Cast("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 50),
+                        // Most (if not all) will leave this at 90. Its lower prio, high HPM, low HPS
+                        Spell.Cast("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 90),
+
+
+                        // CH/HR only in parties/raids
+                        new Decorator(
+                            ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                            new PrioritySelector(
+                                // This seems a bit tricky, but its really not. This is just how we cache a somewhat expensive lookup.
+                                // Set the context to the "best unit" for the cluster, so we don't have to do that check twice.
+                                // Then just use the context when passing the unit to throw the heal on, and the target of the heal from the cluster count.
+                                // Also ensure it will jump at least 3 times. (CH is pointless to cast if it won't jump 3 times!)
+                                new PrioritySelector(
+                                    context => Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, 12f),
+                                    Spell.Cast(
+                                        "Chain Heal", ret => (WoWPlayer)ret,
+                                        ret => Clusters.GetClusterCount((WoWPlayer)ret, ChainHealPlayers, ClusterType.Chained, 12f) > 2)),
+
+                                // Now we're going to do the same thing as above, but this time we're going to do it with healing rain.
+                                new PrioritySelector(
+                                    context => Clusters.GetBestUnitForCluster(Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f),
+                                    Spell.CastOnGround(
+                                        "Healing Rain", ret => ((WoWPlayer)ret).Location,
+                                        ret =>
+                                        Clusters.GetClusterCount((WoWPlayer)ret, Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f) >
+                                        // If we're in a raid, check for 4 players. If we're just in a party, check for 3.
+                                        (StyxWoW.Me.IsInRaid ? 3 : 2))))),
+
+                        // Make sure we're in LOS of the target.
+                        Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
+                        Movement.CreateMoveToTargetBehavior(true, 38f, ret => (WoWUnit)ret)
+
+                )));
         }
 
         private static IEnumerable<WoWUnit> ChainHealPlayers

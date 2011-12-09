@@ -86,22 +86,17 @@ namespace Singular.ClassSpecific.Paladin
                 );
         }
 
-        internal static Composite CreatePaladinHealBehavior()
-        {
-            return CreatePaladinHealBehavior(false);
-        }
-
-        internal static Composite CreatePaladinHealBehavior(bool selfOnly)
+        internal static Composite CreatePaladinHealBehavior(bool selfOnly = false)
         {
             HealerManager.NeedHealTargeting = true;
 
             return
                 new PrioritySelector(
-                    Spell.WaitForCast(),
+                    ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
                     new Decorator(
-                    ret => HealerManager.Instance.FirstUnit != null,
+                    ret => ret != null,
                         new PrioritySelector(
-                            ret => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
+                            Spell.WaitForCast(),
                             Spell.Buff(
                                 "Beacon of Light",
                                 ret => (WoWUnit)ret,
@@ -140,6 +135,7 @@ namespace Singular.ClassSpecific.Paladin
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyLightHealth),
                                 
                             // Get in range and los
+                            Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
                             Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)
                             )));
         }

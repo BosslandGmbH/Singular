@@ -201,7 +201,7 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 ret =>
-                !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && !StyxWoW.Me.CurrentTarget.InLineOfSightOCD,
+                !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && !toUnit(ret).InLineOfSightOCD,
                 new Action(ret => Navigator.MoveTo(toUnit(ret).Location)));
         }
     }

@@ -137,7 +137,10 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.Cast(
                                 "Holy Light",
                                 ret => (WoWUnit)ret,
-                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyLightHealth)
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyLightHealth),
+                                
+                            // Get in range and los
+                            Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)
                             )));
         }
     }

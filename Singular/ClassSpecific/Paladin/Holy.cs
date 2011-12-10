@@ -12,7 +12,7 @@ using TreeSharp;
 
 namespace Singular.ClassSpecific.Paladin
 {
-    public class Holy
+    public static class Holy
     {
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.HolyPaladin)]
@@ -36,13 +36,23 @@ namespace Singular.ClassSpecific.Paladin
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.HolyPaladin)]
+        [Behavior(BehaviorType.Heal)]
+        [Context(WoWContext.All)]
+        public static Composite CreateHolyPaladinHealBehavior()
+        {
+            return
+                new PrioritySelector(
+                    CreatePaladinHealBehavior());
+        }
+
+        [Class(WoWClass.Paladin)]
+        [Spec(TalentSpec.HolyPaladin)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public static Composite CreateHolyPaladinCombatBehavior()
         {
             return
                 new PrioritySelector(
-                    CreatePaladinHealBehavior(),
                     Safers.EnsureTarget(),
                     Spell.Buff("Judgement", 
                                 ret => SpellManager.HasSpell("Judgement") && 

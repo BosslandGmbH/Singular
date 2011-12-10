@@ -69,6 +69,16 @@ namespace Singular.ClassSpecific.Shaman
         [Spec(TalentSpec.RestorationShaman)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
+        public static Composite CreateRestoShamanCombatBehavior()
+        {
+            return
+                new PrioritySelector();
+        }
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.RestorationShaman)]
+        [Behavior(BehaviorType.Heal)]
+        [Context(WoWContext.All)]
         public static Composite CreateRestoShamanHealing()
         {
             HealerManager.NeedHealTargeting = true;

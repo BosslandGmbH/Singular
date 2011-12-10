@@ -44,13 +44,13 @@ namespace Singular
     [Flags]
     public enum BehaviorType
     {
-        Rest = 0,
-        PreCombatBuffs = 0x1,
-        PullBuffs = 0x2,
-        Pull = 0x4,
-        Heal = 0x8,
-        CombatBuffs = 0x10,
-        Combat = 0x20,
+        Rest = 0x1,
+        PreCombatBuffs = 0x2,
+        PullBuffs = 0x4,
+        Pull = 0x8,
+        Heal = 0x10,
+        CombatBuffs = 0x20,
+        Combat = 0x40,
 
         // this is no guarantee that the bot is in combat
         InCombat = Heal | CombatBuffs | Combat,

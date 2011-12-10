@@ -159,9 +159,10 @@ namespace Singular.Managers
                 }
 
                 // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
-                if (tanks.Contains(p.Guid) && p.HealthPercent != 100)
+                if (tanks.Contains(p.Guid) && p.HealthPercent != 100 && 
+                    // Ignore giving more weight to the tank if we have Beacon of Light on it.
+                    !p.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid))
                 {
-                    //Logger.Write(p.Name + " is a tank!");
                     prio.Score += 100f;
                 }
             }

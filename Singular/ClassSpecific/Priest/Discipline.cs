@@ -123,6 +123,18 @@ namespace Singular.ClassSpecific.Priest
                         )));
         }
 
+        [Class(WoWClass.Priest)]
+        [Spec(TalentSpec.DisciplineHealingPriest)]
+        [Spec(TalentSpec.DisciplinePriest)]
+        [Behavior(BehaviorType.Heal)]
+        [Context(WoWContext.All)]
+        public static Composite CreateDiscHealComposite()
+        {
+            return
+                new PrioritySelector(
+                    CreateDiscHealOnlyBehavior());
+        }
+
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
         // Note: This will probably break shit if we're solo, but oh well!
         [Class(WoWClass.Priest)]
@@ -131,11 +143,9 @@ namespace Singular.ClassSpecific.Priest
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
-        public static Composite CreateDiscHealComposite()
+        public static Composite CreateDiscCombatComposite()
         {
             return new PrioritySelector(
-                // Firstly, deal with healing people!
-                CreateDiscHealOnlyBehavior(),
                 Safers.EnsureTarget(),
                 //Pull stuff
                 new Decorator(

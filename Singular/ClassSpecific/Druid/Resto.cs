@@ -126,16 +126,25 @@ namespace Singular.ClassSpecific.Druid
 
         [Class(WoWClass.Druid)]
         [Spec(TalentSpec.RestorationDruid)]
+        [Behavior(BehaviorType.Heal)]
+        [Context(WoWContext.All)]
+        public static Composite CreateRestoDruidHealBehavior()
+        {
+            return
+                new PrioritySelector(
+                    CreateRestoDruidHealOnlyBehavior());
+        }
+
+        [Class(WoWClass.Druid)]
+        [Spec(TalentSpec.RestorationDruid)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public static Composite CreateRestoDruidCombat()
         {
             return
                 new PrioritySelector(
-                // Firstly, deal with healing people!
-                    CreateRestoDruidHealOnlyBehavior(),
                     new Decorator(
-                        ret => !StyxWoW.Me.IsInParty,
+                        ret => !StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid,
                         new PrioritySelector(
                             Safers.EnsureTarget(),
                             Movement.CreateMoveToLosBehavior(),

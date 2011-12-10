@@ -43,6 +43,8 @@ namespace Singular.Helpers
             return CreateMoveToLosBehavior(ret => StyxWoW.Me.CurrentTarget);
         }
 
+       
+
         /// <summary>
         ///   Creates the ensure movement stopped behavior. Will return RunStatus.Success if it has stopped any movement, RunStatus.Failure otherwise.
         /// </summary>
@@ -97,7 +99,10 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveToTargetBehavior(bool stopInRange, float range, UnitSelectionDelegate onUnit)
         {
-            return CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, range);
+            return 
+                new Decorator(
+                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret) != StyxWoW.Me,
+                    CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, range));
         }
 
         /// <summary>
@@ -201,7 +206,8 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 ret =>
-                !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && !toUnit(ret).InLineOfSightOCD,
+                !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && 
+                toUnit(ret) != StyxWoW.Me && !toUnit(ret).InLineOfSightOCD,
                 new Action(ret => Navigator.MoveTo(toUnit(ret).Location)));
         }
     }

@@ -29,15 +29,15 @@ namespace Singular.ClassSpecific.Priest
                 CreateDiscHealOnlyBehavior(true),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 Rest.CreateDefaultRestBehaviour(),
-                // Make sure we're healing OOC too!
-                CreateDiscHealOnlyBehavior(),
                 // Can we res people?
                 new Decorator(
                     ret => Unit.ResurrectablePlayers.Count != 0,
                     new Sequence(
                         Spell.Cast("Resurrection", ret => Unit.ResurrectablePlayers.FirstOrDefault()),
                         new Action(ret => Blacklist.Add(Unit.ResurrectablePlayers.FirstOrDefault().Guid, TimeSpan.FromSeconds(15)))
-                        ))
+                        )),
+                // Make sure we're healing OOC too!
+                CreateDiscHealOnlyBehavior()
                 );
         }
 

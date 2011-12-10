@@ -25,13 +25,13 @@ namespace Singular.ClassSpecific.Druid
                 CreateRestoDruidHealOnlyBehavior(true),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 Rest.CreateDefaultRestBehaviour(),
-                // Make sure we're healing OOC too!
-                CreateRestoDruidHealOnlyBehavior(),
                 // Can we res people?
                 new Decorator(
                     ret => Unit.ResurrectablePlayers.Count != 0,
-                    Spell.Cast("Revive", ret => Unit.ResurrectablePlayers.FirstOrDefault()))
-                );
+                    Spell.Cast("Revive", ret => Unit.ResurrectablePlayers.FirstOrDefault())
+                ),
+                // Make sure we're healing OOC too!
+                CreateRestoDruidHealOnlyBehavior());
         }
 
         public static Composite CreateRestoDruidHealOnlyBehavior()

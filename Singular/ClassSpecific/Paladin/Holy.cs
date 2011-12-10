@@ -25,13 +25,13 @@ namespace Singular.ClassSpecific.Paladin
                 CreatePaladinHealBehavior(true),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 Rest.CreateDefaultRestBehaviour(),
-                // Make sure we're healing OOC too!
-                CreatePaladinHealBehavior(),
                 // Can we res people?
                 new Decorator(
                     ret => Unit.ResurrectablePlayers.Count != 0,
-                    Spell.Cast("Redemption", ret => Unit.ResurrectablePlayers.FirstOrDefault()))
-                );
+                    Spell.Cast("Redemption", ret => Unit.ResurrectablePlayers.FirstOrDefault())
+                    ),
+                // Make sure we're healing OOC too!
+                CreatePaladinHealBehavior());
         }
 
         [Class(WoWClass.Paladin)]

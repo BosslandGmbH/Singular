@@ -26,9 +26,9 @@ namespace Singular.ClassSpecific.DeathKnight
                 ctx => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
 
                 Safers.EnsureTarget(),
-                Helpers.Common.CreateAutoAttack(true),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateAutoAttack(true),
                 Spell.WaitForCast(),
 
                 Spell.BuffSelf("Blood Presence"),

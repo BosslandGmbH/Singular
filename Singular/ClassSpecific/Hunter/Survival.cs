@@ -23,10 +23,10 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !StyxWoW.Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot))),
                 Safers.EnsureTarget(),
-                Helpers.Common.CreateAutoAttack(true),
                 Movement.CreateMoveToLosBehavior(),
                 Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateAutoAttack(true),
                 // Always keep it up on our target!
                 Spell.Buff("Hunter's Mark"),
                 // Heal pet when below 70

@@ -65,8 +65,8 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateFaceTargetBehavior(),
                 Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 CreateEnhancementShamanPullBuffs(),
                 Common.CreateAutoAttack(false),

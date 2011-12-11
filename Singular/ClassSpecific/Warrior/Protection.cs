@@ -29,8 +29,8 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Standard
                 Safers.EnsureTarget(),
-                Movement.CreateFaceTargetBehavior(),
                 Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
                 Common.CreateAutoAttack(false),
 
                 //Free Heal

@@ -61,21 +61,19 @@ namespace Singular.ClassSpecific.Hunter
         {
             return
                 new Decorator(
-                    ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.Distance + StyxWoW.Me.CurrentTarget.CombatReach <= 8 && StyxWoW.Me.CurrentTarget.IsAlive &&
+                    ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.Distance <= Spell.SafeMeleeRange + 3f && StyxWoW.Me.CurrentTarget.IsAlive &&
                            (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me),
                     new Action(
                         ret =>
                         {
-                            WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.CombatReach + 10f);
+                            var moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, Spell.SafeMeleeRange + 10f);
 
                             if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
                             {
-                                var result = Navigator.MoveTo(moveTo);
-                                if (result == MoveResult.ReachedDestination)
-                                    // Basically; force us to "tweak" a little one direction. For some reason there's a sweet spot when facing directly away from a mob
-                                    // Where it will refuse to face since the facing difference is less than what we allow. Not sure why, but thats just how it is.
-                                    StyxWoW.Me.SetFacing(StyxWoW.Me.Rotation + 0.1f);
+                                return Navigator.GetRunStatusFromMoveResult(Navigator.MoveTo(moveTo));
                             }
+
+                            return RunStatus.Failure;
                         }));
         }
 

@@ -36,7 +36,6 @@ namespace Singular.ClassSpecific.Mage
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Helpers.Common.CreateAutoAttack(true),
                 //Move away from frozen targets
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") && StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5,
@@ -53,6 +52,7 @@ namespace Singular.ClassSpecific.Mage
                             })),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateAutoAttack(true),
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
                 new Decorator(
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),

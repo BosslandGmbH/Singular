@@ -28,10 +28,10 @@ namespace Singular.ClassSpecific.Warrior
             return new PrioritySelector(
                 //Ensure Target
                 Safers.EnsureTarget(),
-                // face target
-                Movement.CreateFaceTargetBehavior(),
                 //LOS check
                 Movement.CreateMoveToLosBehavior(),
+                // face target
+                Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
                 Common.CreateAutoAttack(false),
                 

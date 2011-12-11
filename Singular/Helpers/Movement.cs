@@ -132,13 +132,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveBehindTargetBehavior()
         {
-            return new Decorator(ret => SafeToNavigateBehind() &&
-                StyxWoW.Me.Location.Distance(CalculatePointBehindTarget()) >= 1.5,
-                new Action(ret =>
-                {
-                    ObjectManager.Update();
-                    WoWMovement.ClickToMove(CalculatePointBehindTarget());
-                }));
+            return CreateMoveBehindTargetBehavior(ret => true);
         }
 
         /// <summary>
@@ -151,9 +145,10 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveBehindTargetBehavior(SimpleBooleanDelegate requirements)
         {
-            return new Decorator(ret => SafeToNavigateBehind() &&
-                StyxWoW.Me.Location.Distance(CalculatePointBehindTarget()) >= 1.5 &&
-                requirements(ret),
+            return 
+                new Decorator(
+                    ret => StyxWoW.Me.Location.Distance(CalculatePointBehindTarget()) >= 1.5 &&
+                           SafeToNavigateBehind() && requirements(ret),
                 new Action(ret =>
                 {
                     ObjectManager.Update();
@@ -163,7 +158,7 @@ namespace Singular.Helpers
 
         private static WoWPoint CalculatePointBehindTarget()
         {
-            return WoWMathHelper.CalculatePointBehind(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.Rotation, 2);
+            return WoWMathHelper.CalculatePointBehind(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.Rotation, Spell.SafeMeleeRange);
         }
 
         private static bool SafeToNavigateBehind()
@@ -171,6 +166,7 @@ namespace Singular.Helpers
             return (
                 !SingularSettings.Instance.DisableAllMovement &&
                 StyxWoW.Me.CurrentTarget != null &&
+                !StyxWoW.Me.CurrentTarget.MeIsSafelyBehind &&
                 (StyxWoW.Me.CurrentTarget.CurrentTarget == null || (StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me) &&
                 StyxWoW.Me.CurrentTarget.InLineOfSightOCD &&
                 Navigator.CanNavigateFully(StyxWoW.Me.Location, CalculatePointBehindTarget(), 1)

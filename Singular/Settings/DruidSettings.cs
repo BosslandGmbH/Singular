@@ -172,6 +172,20 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Feral Cat")]
+        [DisplayName("FeralHeal")]
+        [Description("Use healing spells in cat spec")]
+        public bool FeralHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Feral Cat")]
+        [DisplayName("Swipe Count")]
+        [Description("Set how many adds to swipe on.")]
+        public int SwipeCount { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Feral Cat")]
         [DisplayName("Feral Charge")]
         [Description("Use Feral Charge to close gaps.")]
         public bool UseFeralChargeCat { get; set; }

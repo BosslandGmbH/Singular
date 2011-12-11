@@ -98,7 +98,10 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => TalentManager.CurrentSpec == TalentSpec.UnholyDeathKnight || TalentManager.CurrentSpec == TalentSpec.FrostDeathKnight),
                     Spell.BuffSelf(
                         "Horn of Winter",
-                        ret => !StyxWoW.Me.HasAura("Horn of Winter") && !StyxWoW.Me.HasAura("Battle Shout") && !StyxWoW.Me.HasAura("Roar of Courage"))
+                        ret => !StyxWoW.Me.HasAura("Horn of Winter") && !StyxWoW.Me.HasAura("Battle Shout") && !StyxWoW.Me.HasAura("Roar of Courage")),
+                    Spell.BuffSelf(
+                        "Bone Shield",
+                        ret => TalentManager.CurrentSpec == TalentSpec.BloodDeathKnight)
                     );
         }
 

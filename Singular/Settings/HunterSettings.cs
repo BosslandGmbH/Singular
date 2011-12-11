@@ -11,6 +11,12 @@
 
 #endregion
 
+using System.ComponentModel;
+
+using Styx.Helpers;
+using Styx.WoWInternals.WoWObjects;
+
+using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
@@ -20,5 +26,13 @@ namespace Singular.Settings
             : base(SingularSettings.SettingsPath + "_Hunter.xml")
         {
         }
+
+        #region Category: Pet
+        [Setting]
+        [DefaultValue("1")]
+        [Category("Pet")]
+        [DisplayName("Pet Slot")]
+        public string PetSlot { get; set; }
+        #endregion
     }
 }

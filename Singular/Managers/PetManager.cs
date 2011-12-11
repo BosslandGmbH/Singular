@@ -48,7 +48,7 @@ namespace Singular.Managers
             // NOTE: This is a bit hackish. This fires VERY OFTEN in major cities. But should prevent us from summoning right after dismounting.
             // Lua.Events.AttachEvent("COMPANION_UPDATE", (s, e) => CallPetTimer.Reset());
             // Note: To be changed to OnDismount with new release
-            Mount.OnMountUp += (s, e) =>
+            Mount.OnDismount += (s, e) =>
                                    {
                                        if (StyxWoW.Me.Class == WoWClass.Warlock || StyxWoW.Me.PetNumber > 0)
                                        {

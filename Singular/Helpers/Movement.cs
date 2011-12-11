@@ -69,7 +69,9 @@ namespace Singular.Helpers
         public static Composite CreateFaceTargetBehavior()
         {
             return new Decorator(
-                ret => !SingularSettings.Instance.DisableAllMovement && !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 70f),
+                ret =>
+                !SingularSettings.Instance.DisableAllMovement && !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget != null &&
+                !StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 70f),
                 new Action(ret => StyxWoW.Me.CurrentTarget.Face()));
         }
 
@@ -119,24 +121,63 @@ namespace Singular.Helpers
             return CreateMoveToMeleeBehavior(ret => StyxWoW.Me.CurrentTarget.Location, stopInRange);
         }
 
+        #region Move Behind
+
         /// <summary>
-        ///   Creates a move behind target behavior. Will return RunStatus.Success if it has reached the location, or stopped in range. Best used at the end of a rotation.
+        ///   Creates a move behind target behavior. If it cannot fully navigate will move to target location
         /// </summary>
         /// <remarks>
-        ///   Created 5/1/2011.
+        ///   Created 2/12/2011.
         /// </remarks>
-        /// <param name = "distanceBehind">The distance behind the target to move to. Passing 0 here will cause undefined behavior.</param>
         /// <returns>.</returns>
-        public static Composite CreateMoveBehindTargetBehavior(float distanceBehind)
+        public static Composite CreateMoveBehindTargetBehavior()
         {
-            // This should more or less ensure we're at the point.
-            return CreateMoveToLocationBehavior(ret => CalculatePointBehindTarget(distanceBehind), true, 5f);
+            return new Decorator(ret => SafeToNavigateBehind() &&
+                StyxWoW.Me.Location.Distance(CalculatePointBehindTarget()) >= 1.5,
+                new Action(ret =>
+                {
+                    ObjectManager.Update();
+                    WoWMovement.ClickToMove(CalculatePointBehindTarget());
+                }));
         }
 
-        private static WoWPoint CalculatePointBehindTarget(float distanceBehind)
+        /// <summary>
+        ///   Creates a move behind target behavior. If it cannot fully navigate will move to target location
+        /// </summary>
+        /// <remarks>
+        ///   Created 2/12/2011.
+        /// </remarks>
+        /// <param name="requirements">Aditional requirments.</param>
+        /// <returns>.</returns>
+        public static Composite CreateMoveBehindTargetBehavior(SimpleBooleanDelegate requirements)
         {
-            return WoWMathHelper.CalculatePointBehind(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.Rotation, distanceBehind);
+            return new Decorator(ret => SafeToNavigateBehind() &&
+                StyxWoW.Me.Location.Distance(CalculatePointBehindTarget()) >= 1.5 &&
+                requirements(ret),
+                new Action(ret =>
+                {
+                    ObjectManager.Update();
+                    WoWMovement.ClickToMove(CalculatePointBehindTarget());
+                }));
         }
+
+        private static WoWPoint CalculatePointBehindTarget()
+        {
+            return WoWMathHelper.CalculatePointBehind(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.Rotation, 2);
+        }
+
+        private static bool SafeToNavigateBehind()
+        {
+            return (
+                !SingularSettings.Instance.DisableAllMovement &&
+                StyxWoW.Me.CurrentTarget != null &&
+                (StyxWoW.Me.CurrentTarget.CurrentTarget == null || (StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me) &&
+                StyxWoW.Me.CurrentTarget.InLineOfSightOCD &&
+                Navigator.CanNavigateFully(StyxWoW.Me.Location, CalculatePointBehindTarget(), 1)
+                ));
+        }
+
+        #endregion
 
         #region Root Move To Location
 

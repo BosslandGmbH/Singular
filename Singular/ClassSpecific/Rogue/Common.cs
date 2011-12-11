@@ -122,8 +122,8 @@ namespace Singular.ClassSpecific.Rogue
                     return null;
 
                 // If the player has a focus target set, use it instead. TODO: Add Me.FocusedUnit to the HB API.
-                if (ObjectManager.Wow.ReadRelative<ulong>(0xA98CA0) != 0)
-                    return ObjectManager.GetObjectByGuid<WoWPlayer>(ObjectManager.Wow.ReadRelative<ulong>(0xA98CA0));
+                if (StyxWoW.Me.FocusedUnitGuid != 0)
+                    return StyxWoW.Me.FocusedUnit;
 
                 if (StyxWoW.Me.IsInInstance)
                 {
@@ -133,7 +133,7 @@ namespace Singular.ClassSpecific.Rogue
                         return RaFHelper.Leader;
                     }
 
-                    if (StyxWoW.Me.IsInParty && Group.Tank != null)
+                    if (StyxWoW.Me.IsInParty && Group.Tank != null && !Group.Tank.Dead)
                         return Group.Tank;
 
                     var bestPlayer = Group.GetPlayerByClassPrio(100f, false,

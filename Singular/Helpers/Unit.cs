@@ -50,8 +50,34 @@ namespace Singular.Helpers
 
         static bool ValidUnit(WoWUnit p)
         {
-            return ((p.IsHostile && !p.Dead && !p.IsPet && !p.IsNonCombatPet && !p.IsCritter && p.IsUnit && p.OwnedByRoot == null && p.Attackable) ||
-                    p.IsTrainingDummy()) && !IgnoreMobs.Contains(p.Entry);
+            if (IgnoreMobs.Contains(p.Entry))
+                return false;
+
+            // Ignore shit we can't select/attack
+            if (!p.CanSelect || !p.Attackable)
+                return false;
+
+            // Ignore friendlies!
+            if (p.IsFriendly)
+                return false;
+
+            // Duh
+            if (p.Dead)
+                return false;
+
+            // Dummies/bosses are valid by default. Period.
+            if (p.IsTrainingDummy() || p.IsBoss())
+                return true;
+
+            // If its a pet, lets ignore it please.
+            if (p.IsPet || p.OwnedByRoot != null)
+                return false;
+
+            // And ignore critters/non-combat pets
+            if (p.IsNonCombatPet || p.IsCritter)
+                return false;
+
+            return true;
         }
 
         /// <summary>

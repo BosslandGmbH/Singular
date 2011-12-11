@@ -32,13 +32,24 @@ namespace Singular.ClassSpecific.Rogue
                 new PrioritySelector(
                     ret => WoWMathHelper.CalculatePointBehind(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.Rotation, 1f),
                     new Decorator(
-                        ret => ((WoWPoint)ret).Distance2D(StyxWoW.Me.Location) > 3f && Navigator.CanNavigateFully(StyxWoW.Me.Location, ((WoWPoint)ret)),
+                        ret =>
+                        ((WoWPoint)ret).Distance2D(StyxWoW.Me.Location) > 3f && Navigator.CanNavigateFully(StyxWoW.Me.Location, ((WoWPoint)ret)),
                         new Action(ret => Navigator.MoveTo(((WoWPoint)ret))))
                     ),
                 Spell.Cast("Cheap Shot"),
                 // Ambush if we can, SS is kinda meh as an opener.
                 Spell.Cast("Ambush"),
                 Spell.Cast("Sinister Strike"),
+
+                // Pull down flying targets.
+                Spell.Cast(
+                    "Throw",
+                    ret => StyxWoW.Me.CurrentTarget.IsFlying && StyxWoW.Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Thrown),
+                Spell.Cast(
+                    "Shoot",
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.IsFlying && (StyxWoW.Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Gun ||
+                                                          StyxWoW.Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow)),
                 Helpers.Common.CreateAutoAttack(true),
                 Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
@@ -64,13 +75,18 @@ namespace Singular.ClassSpecific.Rogue
                 // CP generators, put em at start, since they're strictly conditional
                 // and will help burning energy on Adrenaline Rush
                 new Decorator(
-                    ret => (Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) <= 1 ||
-                            Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && u.HasAura("Blind"))) && StyxWoW.Me.HasAura("Blade Flurry"),
+                    ret => (Unit.NearbyUnfriendlyUnits.Count(u => !u.IsTotem && u.IsWithinMeleeRange) <= 1 ||
+                            Unit.NearbyUnfriendlyUnits.Any(u => !u.IsTotem && u.IsWithinMeleeRange && u.HasAura("Blind"))) &&
+                           StyxWoW.Me.HasAura("Blade Flurry"),
                     new Sequence(
                         new Action(ret => Lua.DoString("RunMacroText(\"/cancelaura Blade Flurry\")")),
                         new Action(ret => StyxWoW.SleepForLagDuration()))),
                 Common.CreateRogueBlindOnAddBehavior(),
-                Spell.BuffSelf("Blade Flurry", ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.HasAura("Blind")) && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) > 1),
+                Spell.BuffSelf(
+                    "Blade Flurry",
+                    ret =>
+                    !Unit.NearbyUnfriendlyUnits.Any(u => u.HasAura("Blind")) &&
+                    Unit.NearbyUnfriendlyUnits.Count(u => !u.IsTotem && u.IsWithinMeleeRange) > 1),
                 Spell.Cast(
                     "Eviscerate", ret => !StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints > 2),
                 // Always keep Slice and Dice up
@@ -105,7 +121,11 @@ namespace Singular.ClassSpecific.Rogue
                     ret => StyxWoW.Me.ComboPoints > 4,
                     new PrioritySelector(
                         // This one is more for a group DPS boost, than anything. (Can be useful for ourselves as well, but its really experimental!)
-                        Spell.Buff("Expose Armor", ret =>SingularSettings.Instance.Rogue.UseExposeArmor && StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.CurrentTarget.HasSunders()),
+                        Spell.Buff(
+                            "Expose Armor",
+                            ret =>
+                            SingularSettings.Instance.Rogue.UseExposeArmor && StyxWoW.Me.CurrentTarget.IsBoss() &&
+                            !StyxWoW.Me.CurrentTarget.HasSunders()),
 
 
                         // Check for >our own< Rupture debuff on target since there may be more rogues in party/raid!
@@ -115,7 +135,8 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast(
                             "Rupture",
                             ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && !StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") &&
-                                   !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.IsBoss()/* && !WillEnergyCap*/),
+                                   !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.IsBoss() &&
+                                   StyxWoW.Me.CurrentTarget.HasBleedDebuff() && !WillEnergyCap),
                         Spell.Cast("Eviscerate"))),
                 Movement.CreateMoveToMeleeBehavior(true));
         }

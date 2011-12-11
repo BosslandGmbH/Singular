@@ -1118,6 +1118,20 @@ namespace Singular.Lists
                         53494, //Baleroc
                         52571, //Majordomo Staghelm
                         52409, //Ragnaros
+
+                        //Dragon Soul
+                        55265, // Morchok
+                        57773, // Kohcrom (Heroic Morchok encounter)
+                        55308, // Zon'ozz
+                        55312, // Yor'sahj
+                        55689, // Hagara
+                        55294, // Ultraxion
+                        56427, // Blackhorn
+
+                        56846, // Arm Tentacle -- Madness of DW
+                        56167, // Arm Tentacle -- Madness of DW
+                        56168, // Wing Tentacle - Madness of DW
+                        57962, // Deathwing ----- Madness of DW (his head)
                     };
 
         #endregion

@@ -46,6 +46,15 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Garrote"),
                 Spell.Cast("Cheap Shot"),
                 Spell.Cast("Sinister Strike"),
+                // Pull down flying targets.
+                Spell.Cast(
+                    "Throw",
+                    ret => StyxWoW.Me.CurrentTarget.IsFlying && StyxWoW.Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Thrown),
+                Spell.Cast(
+                    "Shoot",
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.IsFlying && (StyxWoW.Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Gun ||
+                                                          StyxWoW.Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow)),
                 Helpers.Common.CreateAutoAttack(true),
                 Movement.CreateMoveToTargetBehavior(true, 5f)
                 );
@@ -151,7 +160,7 @@ namespace Singular.ClassSpecific.Rogue
                 // Inside a party/raid, try and get behind.
                 new Decorator(
                     ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
-                    Movement.CreateMoveBehindTargetBehavior(5f))
+                    Movement.CreateMoveBehindTargetBehavior())
                 );
         }
 

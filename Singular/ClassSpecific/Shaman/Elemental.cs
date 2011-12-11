@@ -37,9 +37,9 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanBuffs()
         {
             return new PrioritySelector(
-                Spell.Cast("Ghost Wolf", ret=> !CharacterSettings.Instance.UseMount && StyxWoW.Me.Shapeshift == ShapeshiftForm.Normal),
+                Spell.Cast("Ghost Wolf", ret => !CharacterSettings.Instance.UseMount && StyxWoW.Me.Shapeshift == ShapeshiftForm.Normal),
                 new Decorator(ret => Totems.NeedToRecallTotems,
-                    new Action(ret=>Totems.RecallTotems()))
+                    new Action(ret => Totems.RecallTotems()))
                 );
         }
 
@@ -55,6 +55,8 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 CreateElementalPullBuffs(),
                 // Only call if we're missing more than 2 totems. 
@@ -93,14 +95,14 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => SingularSettings.Instance.Shaman.IncludeAoeRotation && Unit.UnfriendlyUnitsNearTarget.Count() > 2,
                     new PrioritySelector(
-                        // Spread shocks. Make sure we only spread it to ones we're facing (LazyRaider support with movement turned off)
+                // Spread shocks. Make sure we only spread it to ones we're facing (LazyRaider support with movement turned off)
                         Spell.Cast(
                             "Flame Shock",
                             ret => Unit.UnfriendlyUnitsNearTarget.First(u => !u.HasMyAura("Flame Shock") && StyxWoW.Me.IsSafelyFacing(u)),
                             ret => Unit.UnfriendlyUnitsNearTarget.Count(u => !u.HasMyAura("Flame Shock")) != 0),
-                        // Bomb them with novas
+                // Bomb them with novas
                         Spell.Cast("Fire Nova", ret => Unit.UnfriendlyUnitsNearTarget.Any(u => u.HasMyAura("Flame Shock"))),
-                        // CL for the fun of it. :)
+                // CL for the fun of it. :)
                         Spell.Cast(
                             "Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget, ClusterType.Chained, 12),
                             ret => Unit.UnfriendlyUnitsNearTarget.Count() > 2)
@@ -113,7 +115,7 @@ namespace Singular.ClassSpecific.Shaman
                 //Spell.Cast("Rocket Barrage"),
 
                 // So... ignore movement if we have the glyph (hence the negated HasGlyph, if we don't have it, we want to chekc movement, otherwise, ignore it.)
-                Spell.Cast("Lightning Bolt", ret=>!TalentManager.HasGlyph("Unleashed Lightning"), ret => StyxWoW.Me.CurrentTarget, ret => true),
+                Spell.Cast("Lightning Bolt", ret => !TalentManager.HasGlyph("Unleashed Lightning"), ret => StyxWoW.Me.CurrentTarget, ret => true),
                 Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
 
                 Movement.CreateMoveToTargetBehavior(true, 38f)

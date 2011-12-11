@@ -28,10 +28,9 @@ namespace Singular.ClassSpecific.Hunter
         [Context(WoWContext.All)]
         public static Composite CreateHunterBuffs()
         {
-            PetManager.WantedPet = "1";
             return new PrioritySelector(
                 new Decorator(
-                    ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Revive " + PetManager.WantedPet && StyxWoW.Me.GotAlivePet,
+                    ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Revive " + SingularSettings.Instance.Hunter.PetSlot && StyxWoW.Me.GotAlivePet,
                     new Action(ctx => SpellManager.StopCasting())),
                 Spell.WaitForCast(true),
                 Spell.BuffSelf("Aspect of the Hawk"),
@@ -40,7 +39,7 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => !StyxWoW.Me.GotAlivePet,
                     new Sequence(
-                        new Action(ret => PetManager.CallPet(PetManager.WantedPet)),
+                        new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot)),
                         new Action(ret => Thread.Sleep(1000)),
                         new DecoratorContinue(
                             ret => !StyxWoW.Me.GotAlivePet && SpellManager.CanCast("Revive Pet"),

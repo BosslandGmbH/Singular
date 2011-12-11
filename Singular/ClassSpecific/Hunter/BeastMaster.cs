@@ -1,6 +1,7 @@
 ﻿using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using TreeSharp;
@@ -17,11 +18,10 @@ namespace Singular.ClassSpecific.Hunter
         [Context(WoWContext.All)]
         public static Composite CreateBeastMasterCombat()
         {
-            PetManager.WantedPet = "1";
             return new PrioritySelector(
                 new Decorator(
                     ret => !StyxWoW.Me.GotAlivePet,
-                    new Action(ret => PetManager.CallPet(PetManager.WantedPet))),
+                    new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot))),
                 Safers.EnsureTarget(),
                 Helpers.Common.CreateAutoAttack(true),
                 Movement.CreateMoveToLosBehavior(),
@@ -45,6 +45,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast(
                     "Mend Pet",
                     ret =>
+                    StyxWoW.Me.GotAlivePet &&
                     (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !StyxWoW.Me.Pet.HasAura("Mend Pet")),
                 Spell.Cast(
                     "Concussive Shot",
@@ -65,7 +66,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Arcane Shot"),
                 // For when we have no Focus
                 Spell.Cast("Steady Shot"),
-                Movement.CreateMoveToTargetBehavior(true,35f)
+                Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
     }

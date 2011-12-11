@@ -1,6 +1,7 @@
 ﻿using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using TreeSharp;
@@ -16,7 +17,7 @@ namespace Singular.ClassSpecific.Hunter
         [Context(WoWContext.All)]
         public static Composite CreateLowbieCombat()
         {
-            PetManager.WantedPet = "1";
+            PetManager.WantedPet = SingularSettings.Instance.Hunter.PetSlot;
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),

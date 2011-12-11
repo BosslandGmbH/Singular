@@ -2,6 +2,7 @@
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
@@ -33,8 +34,9 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 30),
 
                 // Cooldowns
-                Spell.Cast("Pillar of Frost"),
-                Spell.Cast("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
+                Spell.Cast("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
+                Spell.Cast("Raise Dead", ret => SingularSettings.Instance.DeathKnight.UseRaiseDead && !StyxWoW.Me.GotAlivePet && StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.HasAura("Pillar of Frost")),
+                Spell.Cast("Empower Rune Weapon", ret => SingularSettings.Instance.DeathKnight.UseEmpowerRuneWeapon && StyxWoW.Me.UnholyRuneCount == 0 && StyxWoW.Me.FrostRuneCount == 0 && StyxWoW.Me.DeathRuneCount == 0 && !SpellManager.CanCast("Frost Strike") && StyxWoW.Me.CurrentTarget.IsBoss()),
 
                 // Start AoE section
                 new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) >= 3,

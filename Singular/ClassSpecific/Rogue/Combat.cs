@@ -42,14 +42,11 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Sinister Strike"),
 
                 // Pull down flying targets.
-                Spell.Cast(
-                    "Throw",
-                    ret => StyxWoW.Me.CurrentTarget.IsFlying && StyxWoW.Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Thrown),
+                Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)),
                 Spell.Cast(
                     "Shoot",
                     ret =>
-                    StyxWoW.Me.CurrentTarget.IsFlying && (StyxWoW.Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Gun ||
-                                                          StyxWoW.Me.Inventory.Equipped.Ranged.ItemInfo.WeaponClass == WoWItemWeaponClass.Bow)),
+                    StyxWoW.Me.CurrentTarget.IsFlying && (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
                 Helpers.Common.CreateAutoAttack(true),
                 Movement.CreateMoveToTargetBehavior(true, 5f)
                 );

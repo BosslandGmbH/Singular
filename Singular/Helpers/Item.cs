@@ -245,5 +245,15 @@ namespace Singular.Helpers
                         new ActionAlwaysSucceed()))
                 );
         }
+
+        public static bool RangedIsType(WoWItemWeaponClass wepType)
+        {
+            var ranged = StyxWoW.Me.Inventory.Equipped.Ranged;
+            if (ranged != null && ranged.IsValid)
+            {
+                return ranged.ItemInfo != null && ranged.ItemInfo.WeaponClass == wepType;
+            }
+            return false;
+        }
     }
 }

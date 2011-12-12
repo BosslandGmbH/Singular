@@ -25,7 +25,9 @@ namespace Singular.ClassSpecific.Paladin
             return
                 new PrioritySelector(
                     Safers.EnsureTarget(),
-                    Holy.CreatePaladinHealBehavior(true),
+                    new Decorator(
+                        ret => Group.Healer == null,
+                        Holy.CreatePaladinHealBehavior(true)),
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateAutoAttack(true),

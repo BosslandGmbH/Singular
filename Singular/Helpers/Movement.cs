@@ -147,13 +147,8 @@ namespace Singular.Helpers
         {
             return 
                 new Decorator(
-                    ret => StyxWoW.Me.Location.Distance(CalculatePointBehindTarget()) >= 1.5 &&
-                           SafeToNavigateBehind() && requirements(ret),
-                new Action(ret =>
-                {
-                    ObjectManager.Update();
-                    WoWMovement.ClickToMove(CalculatePointBehindTarget());
-                }));
+                    ret => SafeToNavigateBehind() && requirements(ret),
+                new Action(ret => Navigator.MoveTo(CalculatePointBehindTarget())));
         }
 
         private static WoWPoint CalculatePointBehindTarget()
@@ -169,7 +164,7 @@ namespace Singular.Helpers
                 !StyxWoW.Me.CurrentTarget.MeIsSafelyBehind &&
                 (StyxWoW.Me.CurrentTarget.CurrentTarget == null || (StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me) &&
                 StyxWoW.Me.CurrentTarget.InLineOfSightOCD &&
-                Navigator.CanNavigateFully(StyxWoW.Me.Location, CalculatePointBehindTarget(), 1)
+                Navigator.CanNavigateFully(StyxWoW.Me.Location, CalculatePointBehindTarget())
                 ));
         }
 

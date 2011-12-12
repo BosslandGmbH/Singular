@@ -10,6 +10,9 @@ namespace Singular.Helpers
     {
         public static int GetClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, ClusterType type, float clusterRange)
         {
+            if (otherUnits.Count() == 0)
+                return 0;
+
             switch (type)
             {
                 case ClusterType.Radius:
@@ -25,6 +28,9 @@ namespace Singular.Helpers
 
         public static WoWUnit GetBestUnitForCluster(IEnumerable<WoWUnit> units, ClusterType type, float clusterRange)
         {
+            if (units.Count() == 0)
+                return null;
+
             switch (type)
             {
                 case ClusterType.Radius:

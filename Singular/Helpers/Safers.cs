@@ -46,7 +46,7 @@ namespace Singular.Helpers
                                 ctx =>
                                     {
                                         // If we have a RaF leader, then use its target.
-                                        if (RaFHelper.Leader != null && RaFHelper.Leader.Combat)
+                                        if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && RaFHelper.Leader.Combat)
                                         {
                                             return RaFHelper.Leader.CurrentTarget;
                                         }

@@ -41,7 +41,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Kill Command", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
                 Spell.Buff("Serpent Sting"),
                 Spell.Cast("Chimera Shot", ret => StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Aimed Shot", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 80 || StyxWoW.Me.Auras["Ready, Set, Aim..."].StackCount == 5),
+                Spell.Cast("Aimed Shot", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 80 || (StyxWoW.Me.HasAura("Ready, Set, Aim...") && StyxWoW.Me.Auras["Ready, Set, Aim..."].StackCount == 5)),
                 Spell.Cast("Arcane Shot"),
                 Spell.Cast("Steady Shot"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)

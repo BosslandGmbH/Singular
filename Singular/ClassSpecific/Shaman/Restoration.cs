@@ -6,7 +6,7 @@ using System.Text;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
-
+using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.WoWInternals.WoWObjects;
@@ -60,8 +60,9 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 CreateRestoShamanHealingBuffs(),
-                CreateRestoShamanHealing(),
-                Rest.CreateDefaultRestBehaviour()
+                CreateRestoShamanHealingOnlyBehavior(true),
+                Rest.CreateDefaultRestBehaviour(),
+                CreateRestoShamanHealingOnlyBehavior(false,false)
                 );
         }
 
@@ -79,11 +80,28 @@ namespace Singular.ClassSpecific.Shaman
         [Spec(TalentSpec.RestorationShaman)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
-        public static Composite CreateRestoShamanHealing()
+        public static Composite CreateRestoShamanHealBehavior()
+        {
+            return
+                new PrioritySelector(
+                    CreateRestoShamanHealingOnlyBehavior());
+        }
+
+        public static Composite CreateRestoShamanHealingOnlyBehavior()
+        {
+            return CreateRestoShamanHealingOnlyBehavior(false, false);
+        }
+
+        public static Composite CreateRestoShamanHealingOnlyBehavior(bool selfOnly)
+        {
+            return CreateRestoShamanHealingOnlyBehavior(selfOnly, false);
+        }
+
+        public static Composite CreateRestoShamanHealingOnlyBehavior(bool selfOnly, bool moveInRange)
         {
             HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
-                ctx => HealerManager.Instance.FirstUnit,
+                ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
                 new Decorator(
                     ret => ret != null,
                     new PrioritySelector(
@@ -136,9 +154,12 @@ namespace Singular.ClassSpecific.Shaman
                                         // If we're in a raid, check for 4 players. If we're just in a party, check for 3.
                                         (StyxWoW.Me.IsInRaid ? 3 : 2))))),
 
-                        // Make sure we're in LOS of the target.
-                        Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
-                        Movement.CreateMoveToTargetBehavior(true, 38f, ret => (WoWUnit)ret)
+                        new Decorator(
+                            ret => moveInRange && !SingularSettings.Instance.DisableAllMovement,
+                            new PrioritySelector(
+                                // Make sure we're in LOS of the target.
+                                Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
+                                Movement.CreateMoveToTargetBehavior(true, 38f, ret => (WoWUnit)ret)))
 
                 )));
         }

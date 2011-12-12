@@ -9,13 +9,13 @@ using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Helpers
 {
-    class Group
+    internal static class Group
     {
         public static WoWUnit Tank
         {
             get
             {
-                var unit = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => p.Role == WoWPartyMember.GroupRole.Tank);
+                var unit = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => (p.Role & WoWPartyMember.GroupRole.Tank) != 0);
                 if (unit != null)
                     return unit.ToPlayer();
                 return null;
@@ -25,7 +25,7 @@ namespace Singular.Helpers
         {
             get
             {
-                var unit = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => p.Role == WoWPartyMember.GroupRole.Healer);
+                var unit = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => (p.Role & WoWPartyMember.GroupRole.Healer) != 0);
                 if (unit != null)
                     return unit.ToPlayer();
                 return null;

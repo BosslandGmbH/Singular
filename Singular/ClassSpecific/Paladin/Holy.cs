@@ -31,7 +31,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Cast("Redemption", ret => Unit.ResurrectablePlayers.FirstOrDefault())
                     ),
                 // Make sure we're healing OOC too!
-                CreatePaladinHealBehavior());
+                CreatePaladinHealBehavior(false, false));
         }
 
         [Class(WoWClass.Paladin)]
@@ -98,10 +98,15 @@ namespace Singular.ClassSpecific.Paladin
         
         internal static Composite CreatePaladinHealBehavior()
         {
-            return CreatePaladinHealBehavior(false);
+            return CreatePaladinHealBehavior(false, true);
         }
 
         internal static Composite CreatePaladinHealBehavior(bool selfOnly)
+        {
+            return CreatePaladinHealBehavior(selfOnly, false);
+        }
+
+        internal static Composite CreatePaladinHealBehavior(bool selfOnly, bool moveInRange)
         {
             HealerManager.NeedHealTargeting = true;
 
@@ -114,8 +119,8 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.WaitForCast(),
                             Spell.Buff(
                                 "Beacon of Light",
-                                ret => (WoWUnit)ret,
-                                ret => (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) && RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader),
+                                ret => Group.Tank,
+                                ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid),
                             Spell.Cast(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,
@@ -148,10 +153,13 @@ namespace Singular.ClassSpecific.Paladin
                                 "Holy Light",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyLightHealth),
-                                
-                            // Get in range and los
-                            Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
-                            Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)
+    
+                            new Decorator(
+                                ret => moveInRange && !SingularSettings.Instance.DisableAllMovement,
+                                new PrioritySelector(
+                                    // Get in range and los
+                                    Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
+                                    Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))
                             )));
         }
     }

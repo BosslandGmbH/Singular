@@ -31,15 +31,20 @@ namespace Singular.ClassSpecific.Druid
                     Spell.Cast("Revive", ret => Unit.ResurrectablePlayers.FirstOrDefault())
                 ),
                 // Make sure we're healing OOC too!
-                CreateRestoDruidHealOnlyBehavior());
+                CreateRestoDruidHealOnlyBehavior(false,false));
         }
 
         public static Composite CreateRestoDruidHealOnlyBehavior()
         {
-            return CreateRestoDruidHealOnlyBehavior(false);
+            return CreateRestoDruidHealOnlyBehavior(false, true);
         }
 
         public static Composite CreateRestoDruidHealOnlyBehavior(bool selfOnly)
+        {
+            return CreateRestoDruidHealOnlyBehavior(selfOnly, false);
+        }
+
+        public static Composite CreateRestoDruidHealOnlyBehavior(bool selfOnly, bool moveInRange)
         {
             HealerManager.NeedHealTargeting = true;
             const uint mapleSeedId = 17034;
@@ -119,8 +124,11 @@ namespace Singular.ClassSpecific.Druid
                             ret => (WoWUnit)ret,
                             ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Rejuvenation),
 
-                        Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
-                        Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)
+                        new Decorator(
+                            ret => moveInRange && !SingularSettings.Instance.DisableAllMovement,
+                            new PrioritySelector(
+                                Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
+                                Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))
                         )));
         }
 

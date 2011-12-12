@@ -37,16 +37,21 @@ namespace Singular.ClassSpecific.Priest
                         new Action(ret => Blacklist.Add(Unit.ResurrectablePlayers.FirstOrDefault().Guid, TimeSpan.FromSeconds(15)))
                         )),
                 // Make sure we're healing OOC too!
-                CreateDiscHealOnlyBehavior()
+                CreateDiscHealOnlyBehavior(false, false)
                 );
         }
 
         public static Composite CreateDiscHealOnlyBehavior()
         {
-            return CreateDiscHealOnlyBehavior(false);
+            return CreateDiscHealOnlyBehavior(false, false);
         }
 
         public static Composite CreateDiscHealOnlyBehavior(bool selfOnly)
+        {
+            return CreateDiscHealOnlyBehavior(selfOnly, false);
+        }
+
+        public static Composite CreateDiscHealOnlyBehavior(bool selfOnly, bool moveInRange)
         {
             // Atonement - Tab 1  index 10 - 1/2 pts
             HealerManager.NeedHealTargeting = true;
@@ -111,8 +116,11 @@ namespace Singular.ClassSpecific.Priest
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < 90),
 
-                        Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
-                        Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)
+                        new Decorator(
+                            ret => moveInRange && !SingularSettings.Instance.DisableAllMovement,
+                            new PrioritySelector(
+                                Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
+                                Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))
 
                         // Divine Hymn
                         // Desperate Prayer

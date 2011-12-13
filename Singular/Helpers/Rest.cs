@@ -42,20 +42,6 @@ namespace Singular.Helpers
                 new Decorator(
                     ret => !StyxWoW.Me.Dead && !StyxWoW.Me.IsGhost,
                     new PrioritySelector(
-                        new Decorator(ret=>StyxWoW.Me.Class == WoWClass.Hunter && PetInCombat,
-                            new Sequence(
-                                new Action(ret=>Logger.Write("My pet is in combat during rest. Attempting to target and face.")),
-                                new Action(ret=>StyxWoW.Me.Pet.CurrentTarget.Target()),
-                                new Action(ret=>StyxWoW.Me.Pet.Face()),
-                                SingularRoutine.Instance.PullBehavior
-                                )
-                            ),
-
-                        // Don't rest if the leader is in combat. Ever.
-                        //new Decorator(ret=> StyxWoW.Me.IsInParty,
-                        //    new Decorator(ret=>RaFHelper.Leader != null && RaFHelper.Leader.Combat,
-                        //        new ActionAlwaysFail())),
-                
                         // Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
                         new Decorator(
                             ret => SingularSettings.Instance.WaitForResSickness && StyxWoW.Me.HasAura("Resurrection Sickness"),

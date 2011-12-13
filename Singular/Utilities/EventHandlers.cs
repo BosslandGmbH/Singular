@@ -48,12 +48,6 @@ namespace Singular.Utilities
 
         private static void HandleCombatLog(object sender, LuaEventArgs args)
         {
-            int a = 0;
-            foreach (var arg in args.Args)
-            {
-                Logger.Write("Arg {0}: {1}", a, arg.ToString());
-                a++;
-            }
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
             //Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
             switch (e.Event)
@@ -82,12 +76,6 @@ namespace Singular.Utilities
                     break;
 
                 case "SPELL_MISSED":
-                    int i = 0;
-                    foreach (var arg in e.Args)
-                    {
-                        Logger.Write("Spell Missed Arg {0}: {1}",i, arg.ToString());
-                        i++;
-                    }
                     if (e.Args[14].ToString() == "EVADE")
                     {
                         Logger.Write("Mob is evading. Blacklisting it!");

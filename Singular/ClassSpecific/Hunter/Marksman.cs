@@ -49,13 +49,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 new Decorator(ret => Clusters.GetClusterCount(StyxWoW.Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f) >= 3,
                     new PrioritySelector(
-                        new Decorator(
-                            ret => SpellManager.CanCast("Explosive Trap") && StyxWoW.Me.PowerPercent >= 20,
-                            new PrioritySelector(
-                                Spell.BuffSelf("Trap Launcher"),
-                                new Sequence(
-                                    new Action(ret => Lua.DoString("RunMacroText(\"/cast Explosive Trap\")")),
-                                    new Action(ret => LegacySpellManager.ClickRemoteLocation(StyxWoW.Me.CurrentTarget.Location))))),
+                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
                         Spell.Cast("Multi-Shot", ret => !SpellManager.CanCast("Explosive Trap")),
                         Spell.Cast("Aimed Shot", ret => StyxWoW.Me.HasAura("Fire!")),
                         Spell.Cast("Kill Shot"),

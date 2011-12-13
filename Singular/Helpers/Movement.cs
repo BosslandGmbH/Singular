@@ -161,6 +161,7 @@ namespace Singular.Helpers
             return (
                 !SingularSettings.Instance.DisableAllMovement &&
                 StyxWoW.Me.CurrentTarget != null &&
+                !StyxWoW.Me.CurrentTarget.IsMoving &&
                 !StyxWoW.Me.CurrentTarget.MeIsSafelyBehind &&
                 (StyxWoW.Me.CurrentTarget.CurrentTarget == null || (StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me) &&
                 StyxWoW.Me.CurrentTarget.InLineOfSightOCD &&

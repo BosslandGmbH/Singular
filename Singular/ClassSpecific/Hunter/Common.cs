@@ -77,18 +77,20 @@ namespace Singular.ClassSpecific.Hunter
                         }));
         }
 
-        public static Composite CreateHunterTrapOnAddBehavior()
+        public static Composite CreateHunterTrapOnAddBehavior(string trapName)
         {
             return new PrioritySelector(
-                    ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
-                            u.IsTargetingMeOrPet && u != StyxWoW.Me.CurrentTarget && !u.IsMoving),
-                    new Decorator(
-                        ret => ret != null && SpellManager.CanCast("Freezing Trap", (WoWUnit)ret, false),
-                        new PrioritySelector(
-                            Spell.BuffSelf("Trap Launcher"),
-                            new Sequence(
-                                new Action(ret => Lua.DoString("RunMacroText(\"/cast Freezing Trap\")")),
-                                new Action(ret => LegacySpellManager.ClickRemoteLocation(((WoWUnit)ret).Location))))));
+                ctx => Unit.NearbyUnfriendlyUnits.OrderBy(u => u.DistanceSqr).
+                                                  FirstOrDefault(
+                                                        u => u.IsTargetingMeOrPet && u != StyxWoW.Me.CurrentTarget &&
+                                                             !u.IsMoving),
+                new Decorator(
+                    ctx => ctx != null && SpellManager.CanCast(trapName, (WoWUnit)ctx, false),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Trap Launcher"),
+                        new Sequence(
+                            new Action(ret => Lua.DoString("RunMacroText(\"/cast " + Lua.Escape(trapName) + "\")")),
+                            new Action(ret => LegacySpellManager.ClickRemoteLocation(StyxWoW.Me.CurrentTarget.Location))))));
         }
     }
 }

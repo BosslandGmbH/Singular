@@ -93,6 +93,13 @@ namespace Singular.Settings
         [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
         public bool EnableDebugLogging { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Misc")]
+        [DisplayName("Disable Non Combat Behaviors")]
+        [Description("Enabling that will disable non combat behaviors. (Rest, PreCombat buffs)")]
+        public bool DisableNonCombatBehaviors { get; set; }
+
         #endregion
 
         #region Category: Healing

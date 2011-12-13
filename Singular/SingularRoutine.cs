@@ -18,7 +18,7 @@ using Singular.Dynamics;
 using Singular.GUI;
 using Singular.Helpers;
 using Singular.Managers;
-
+using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
@@ -206,9 +206,11 @@ namespace Singular
             // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
             if (_preCombatBuffsBehavior != null)
             {
-                _preCombatBuffsBehavior = new Decorator(
-                    ret => !IsMounted && !Me.IsOnTransport, new PrioritySelector(
-                        _preCombatBuffsBehavior));
+                _preCombatBuffsBehavior = 
+                    new Decorator(
+                    ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors, 
+                        new PrioritySelector(
+                            _preCombatBuffsBehavior));
             }
             if (_combatBuffsBehavior != null)
             {
@@ -226,7 +228,7 @@ namespace Singular
             if (_restBehavior != null)
             {
                 _restBehavior = new Decorator(
-                    ret => !Me.IsFlying,
+                    ret => !Me.IsFlying && !SingularSettings.Instance.DisableNonCombatBehaviors,
                     new PrioritySelector(
                         _restBehavior));
             }

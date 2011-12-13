@@ -2,6 +2,7 @@
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using TreeSharp;
@@ -38,7 +39,9 @@ namespace Singular.ClassSpecific.DeathKnight
                     "Pestilence", ret => StyxWoW.Me.CurrentTarget.HasAura("Blood Plague") && StyxWoW.Me.CurrentTarget.HasAura("Frost Fever") &&
                                          (Unit.NearbyUnfriendlyUnits.Where(
                                              add => !add.HasAura("Blood Plague") && !add.HasAura("Frost Fever") && add.Distance < 10)).Count() > 0),
-                Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 8*8) > 1),
+                Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, 
+                        ret => SingularSettings.Instance.DeathKnight.UseDeathAndDecay &&
+                               Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 10 * 10) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount),
                 Spell.Cast("Summon Gargoyle"),
                 Spell.Cast("Dark Transformation", ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")),
                 Spell.Cast("Scourge Strike", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),

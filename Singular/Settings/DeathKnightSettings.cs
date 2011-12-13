@@ -27,6 +27,22 @@ namespace Singular.Settings
         {
         }
 
+        #region Common
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Death and Decay")]
+        public bool UseDeathAndDecay { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Common")]
+        [DisplayName("Will use Death and Decay when agro mob count is equal to or higher then this value")]
+        public int DeathAndDecayCount { get; set; }
+
+        #endregion
+
         #region Category: Blood
         [Setting]
         [DefaultValue(true)]

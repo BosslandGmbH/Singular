@@ -112,14 +112,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                          (from add in Unit.NearbyUnfriendlyUnits
                                           where !add.HasAura("Blood Plague") && !add.HasAura("Frost Fever") && add.Distance < 10
                                           select add).Count() > 0),
-                new Decorator(
-                    ret => SpellManager.CanCast("Death and Decay") && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 15f) > 1,
-                    new Action(
-                        ret =>
-                        {
-                            SpellManager.Cast("Death and Decay");
-                            LegacySpellManager.ClickRemoteLocation(StyxWoW.Me.CurrentTarget.Location);
-                        })),
+                Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location,
+                        ret => SingularSettings.Instance.DeathKnight.UseDeathAndDecay &&
+                               Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 10 * 10) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount),
 
                 // DG if we can, DC if we can't. DC is our 10s taunt. DG is our "get the fuck over here" taunt
                 Spell.Cast(

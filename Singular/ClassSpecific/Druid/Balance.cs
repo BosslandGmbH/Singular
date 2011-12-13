@@ -74,7 +74,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
 
                 // Make sure we're in moonkin form first, period.
-                new Decorator(ret => StyxWoW.Me.Shapeshift != Common.WantedDruidForm, Spell.Cast("Moonkin Form")),
+                new Decorator(ret => StyxWoW.Me.Shapeshift != ShapeshiftForm.Moonkin && SpellManager.HasSpell("Moonkin Form"), Spell.Cast("Moonkin Form")),
 
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),

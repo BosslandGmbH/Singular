@@ -157,7 +157,8 @@ namespace Singular.ClassSpecific.Warrior
                 Common.CreateAutoAttack(false),
 
                 //Dismount
-                new Decorator(ret => StyxWoW.Me.Mounted,
+                new Decorator(
+                    ret => StyxWoW.Me.Mounted,
                     new Action(ret => Styx.Logic.Mount.Dismount())),
 
                 // buff up
@@ -165,32 +166,50 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf("Commanding Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == false),
 
                 //Shoot flying targets
-                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsFlying && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.IsFlying && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
                     new PrioritySelector(
                         Spell.WaitForCast(),
                         Spell.Cast("Heroic Throw"),
-                        Spell.Cast("Shoot"),
-                        Spell.Cast("Throw"),
+                        Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)), Spell.Cast(
+                            "Shoot",
+                            ret =>
+                            StyxWoW.Me.CurrentTarget.IsFlying &&
+                            (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
                         Movement.CreateMoveToTargetBehavior(true, 27f)
-                    )),
+                        )),
 
                 //low level support
-                new Decorator(ret => StyxWoW.Me.Level < 50,
+                new Decorator(
+                    ret => StyxWoW.Me.Level < 50,
                     new PrioritySelector(
                         Spell.BuffSelf("Battle Stance"),
                         Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 25),
                         Spell.Cast("Heroic Throw", ret => !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun")),
                         Movement.CreateMoveToTargetBehavior(true, 5f))),
-                
+
                 // Heroic fury
-                new Decorator(ret => HasSpellIntercept(),
+                new Decorator(
+                    ret => HasSpellIntercept(),
                     new PrioritySelector(
-                        Spell.BuffSelf("Heroic Fury", ret => SpellManager.Spells["Intercept"].Cooldown && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
+                        Spell.BuffSelf(
+                            "Heroic Fury",
+                            ret => SpellManager.Spells["Intercept"].Cooldown && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
 
                 //Intercept
-                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 24 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleIntercept),
+                Spell.Cast(
+                    "Intercept",
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 24 &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
+                    PreventDoubleIntercept),
                 //Heroic Leap
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleIntercept),
+                Spell.CastOnGround(
+                    "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept", 1) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
+                    PreventDoubleIntercept),
 
                 // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)

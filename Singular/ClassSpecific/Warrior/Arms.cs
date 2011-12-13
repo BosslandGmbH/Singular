@@ -159,28 +159,46 @@ namespace Singular.ClassSpecific.Warrior
                 Common.CreateAutoAttack(false),
 
                 //Dismount
-                new Decorator(ret => StyxWoW.Me.Mounted,
+                new Decorator(
+                    ret => StyxWoW.Me.Mounted,
                     new Action(o => Styx.Logic.Mount.Dismount())),
 
                 //Shoot flying targets
-                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsFlying && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.IsFlying && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
                     new PrioritySelector(
                         Spell.WaitForCast(),
                         Spell.Cast("Heroic Throw"),
-                        Spell.Cast("Shoot"),
-                        Spell.Cast("Throw"),
+                        Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)), Spell.Cast(
+                            "Shoot",
+                            ret =>
+                            StyxWoW.Me.CurrentTarget.IsFlying &&
+                            (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
                         Movement.CreateMoveToTargetBehavior(true, 27f)
-                    )),
+                        )),
 
                 //Buff up
                 Spell.BuffSelf("Battle Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts),
                 Spell.BuffSelf("Commanding Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == false),
 
                 //Charge
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
+                Spell.Cast(
+                    "Charge",
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < 25 &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
+                    PreventDoubleCharge),
                 //Heroic Leap
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
-                Spell.Cast("Heroic Throw", ret => !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.CastOnGround(
+                    "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
+                    PreventDoubleCharge),
+                Spell.Cast(
+                    "Heroic Throw",
+                    ret =>
+                    !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)

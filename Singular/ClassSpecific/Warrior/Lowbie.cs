@@ -64,6 +64,10 @@ namespace Singular.ClassSpecific.Warrior
                 Common.CreateAutoAttack(false),
                 // charge
                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance < 25),
+                Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)), Spell.Cast(
+                    "Shoot",
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.IsFlying && (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
                 // move to melee
                 Movement.CreateMoveToTargetBehavior(true, 5f)
                 );

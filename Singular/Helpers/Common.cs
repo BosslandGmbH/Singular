@@ -27,7 +27,11 @@ namespace Singular.Helpers
             return new PrioritySelector(
                 new Decorator(
                     ret => !StyxWoW.Me.IsAutoAttacking && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
-                    new Action(ret => StyxWoW.Me.ToggleAttack())),
+                    new Action(ret =>
+                        {
+                            StyxWoW.Me.ToggleAttack();
+                            return RunStatus.Failure;
+                        })),
                 new Decorator(
                     ret => includePet && StyxWoW.Me.GotAlivePet && (StyxWoW.Me.Pet.CurrentTarget == null || StyxWoW.Me.Pet.CurrentTarget != StyxWoW.Me.CurrentTarget),
                     new Action(

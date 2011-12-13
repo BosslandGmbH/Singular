@@ -17,29 +17,9 @@ namespace Singular.ClassSpecific.Druid
 {
     public class Balance
     {
-        private static string _oldDps = "Wrath";
-
         private static int StarfallRange { get { return TalentManager.HasGlyph("Focus") ? 20 : 40; } }
 
         private static int CurrentEclipse { get { return BitConverter.ToInt32(BitConverter.GetBytes(StyxWoW.Me.CurrentEclipse), 0); } }
-
-        private static string BoomkinDpsSpell
-        {
-            get
-            {
-                if (StyxWoW.Me.HasAura("Eclipse (Solar)"))
-                {
-                    _oldDps = "Wrath";
-                }
-                // This doesn't seem to register for whatever reason.
-                else if (StyxWoW.Me.HasAura("Eclipse (Lunar)")) //Eclipse (Lunar) => 48518
-                {
-                    _oldDps = "Starfire";
-                }
-
-                return _oldDps;
-            }
-        }
 
         static int MushroomCount
         {
@@ -88,7 +68,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.HasAura("Eclipse (Solar)")),
 
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 10f) > 2,
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 10f * 10f) > 2,
                     new PrioritySelector(
                 // If we got 3 shrooms out. Pop 'em
                         //Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount == 3),
@@ -123,8 +103,8 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Insect Swarm", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Insect Swarm", true).TotalSeconds < 3),
 
                 // And then just spam Wrath/Starfire
-                Spell.Cast("Wrath", ret => BoomkinDpsSpell == "Wrath"),
-                Spell.Cast("Starfire", ret => BoomkinDpsSpell == "Starfire"),
+                Spell.Cast("Wrath", ret => !StyxWoW.Me.HasAura("Eclipse (Lunar)")),
+                Spell.Cast("Starfire"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

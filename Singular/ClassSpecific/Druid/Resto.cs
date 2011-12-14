@@ -125,7 +125,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Rejuvenation),
 
                         new Decorator(
-                            ret => moveInRange && !SingularSettings.Instance.DisableAllMovement,
+                            ret => moveInRange,
                             new PrioritySelector(
                                 Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
                                 Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))

@@ -157,7 +157,7 @@ namespace Singular.ClassSpecific.Shaman
                                         (StyxWoW.Me.IsInRaid ? 3 : 2))))),
 
                         new Decorator(
-                            ret => moveInRange && !SingularSettings.Instance.DisableAllMovement,
+                            ret => moveInRange,
                             new PrioritySelector(
                                 // Make sure we're in LOS of the target.
                                 Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),

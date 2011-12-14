@@ -117,7 +117,7 @@ namespace Singular.ClassSpecific.Priest
                             ret => ((WoWUnit)ret).HealthPercent < 90),
 
                         new Decorator(
-                            ret => moveInRange && !SingularSettings.Instance.DisableAllMovement,
+                            ret => moveInRange,
                             new PrioritySelector(
                                 Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
                                 Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))

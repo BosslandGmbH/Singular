@@ -155,7 +155,7 @@ namespace Singular.ClassSpecific.Paladin
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyLightHealth),
     
                             new Decorator(
-                                ret => moveInRange && !SingularSettings.Instance.DisableAllMovement,
+                                ret => moveInRange,
                                 new PrioritySelector(
                                     // Get in range and los
                                     Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),

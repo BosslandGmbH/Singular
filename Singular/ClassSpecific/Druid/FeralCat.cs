@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Faerie Fire (Feral)", ret => StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.CurrentTarget.HasSunders()),
 
                 //Keep up bleed debuff 
-                Spell.Cast("Manle (Cat)", ret => !StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
+                Spell.Cast("Mangle (Cat)", ret => !StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
 
                 //Tiger's Fury on CD (ignoring the gear section for now)
                 Spell.BuffSelf("Tiger's Fury"),

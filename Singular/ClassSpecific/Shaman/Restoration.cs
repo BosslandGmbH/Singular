@@ -119,7 +119,9 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Riptide", ret => GetBestRiptideTarget((WoWPlayer)ret)),
                         // And deal with some edge PVP cases.
 
-                        Spell.Buff("Earth Shield", ret => Group.Tank, ret => StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty),
+                        Spell.Buff("Earth Shield", 
+                            ret => Group.Tank, 
+                            ret => Group.Tank != null && Group.Tank.IsAlive),
 
                         // Pop NS if someone is in some trouble.
                         Spell.BuffSelf("Nature's Swiftness", ret => ((WoWUnit)ret).HealthPercent < 15),

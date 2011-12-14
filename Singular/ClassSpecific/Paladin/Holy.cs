@@ -120,7 +120,7 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.Buff(
                                 "Beacon of Light",
                                 ret => Group.Tank,
-                                ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid),
+                                ret => Group.Tank != null && Group.Tank.IsAlive),
                             Spell.Cast(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,

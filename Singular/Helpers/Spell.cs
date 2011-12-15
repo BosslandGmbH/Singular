@@ -274,26 +274,30 @@ namespace Singular.Helpers
                             {
                                 var target = onUnit(ret);
                                 // We're always in range of ourselves. So just ignore this bit if we're casting it on us
-                                if (!target.IsMe)
+                                if (target.IsMe)
+                                {
+                                    inRange = true;
+                                }
+                                else
                                 {
                                     WoWSpell spell;
                                     if (SpellManager.Spells.TryGetValue(name, out spell))
                                     {
+                                        var rangeId = spell.InternalInfo.SpellRangeId;
+                                        var minRange = spell.MinRange;
+                                        var maxRange = spell.MaxRange;
+
                                         // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
-                                        if (spell.InternalInfo.SpellRangeId == 1)
+                                        if (rangeId == 1)
                                             inRange = true;
                                         // RangeId 2 is melee range. Huzzah :)
-                                        else if (spell.InternalInfo.SpellRangeId == 2)
-                                            inRange = target.Distance <= MeleeRange;
+                                        else if (rangeId == 2)
+                                            inRange = target.Distance < MeleeRange;
                                         else
-                                            inRange = target.Distance <= spell.MaxRange &&
-                                                      target.Distance > (spell.MinRange == 0 ? spell.MinRange : spell.MinRange + 1);
+                                            inRange = target.Distance < maxRange &&
+                                                      target.Distance > (minRange == 0 ? minRange : minRange + 1);
 
                                     }
-                                }
-                                else
-                                {
-                                    inRange = true;
                                 }
                             }
                         }

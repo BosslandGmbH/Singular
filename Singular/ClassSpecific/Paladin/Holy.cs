@@ -47,6 +47,20 @@ namespace Singular.ClassSpecific.Paladin
 
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.HolyPaladin)]
+        [Behavior(BehaviorType.CombatBuffs)]
+        [Context(WoWContext.All)]
+        public static Composite CreateHolyPaladinCombatBuffsBehavior()
+        {
+            return
+                new PrioritySelector(
+                    Spell.BuffSelf(
+                        "Divine Plea",
+                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Paladin.DivinePleaMana)
+                    );
+        }
+
+        [Class(WoWClass.Paladin)]
+        [Spec(TalentSpec.HolyPaladin)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public static Composite CreateHolyPaladinCombatBehavior()

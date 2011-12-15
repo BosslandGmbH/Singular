@@ -127,13 +127,18 @@ namespace Singular.Settings
         [Description("Holy Light will be used at this value")]
         public int HolyLightHealth { get; set; }
 
-
-
         [Setting]
         [DefaultValue(false)]
         [Category("Protection")]
         [DisplayName("Avengers On Pull Only")]
         [Description("Only use Avenger's Shield to pull")]
         public bool AvengersPullOnly { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Holy")]
+        [DisplayName("Divine Plea Mana")]
+        [Description("Divine Plea will be used at this value")]
+        public double DivinePleaMana { get; set; }
     }
 }

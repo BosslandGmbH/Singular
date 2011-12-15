@@ -60,7 +60,8 @@ namespace Singular.Helpers
                                         // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
                                         var units =
                                             ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
-                                                p => p.IsHostile && !p.IsOnTransport && !p.Dead && p.DistanceSqr <= 70 * 70 && p.Combat);
+                                                p => p.IsHostile && !p.IsOnTransport && !p.Dead && !p.Mounted
+                                                    && p.DistanceSqr <= 70 * 70 && p.Combat);
 
                                         if (StyxWoW.Me.Combat && units.Any())
                                         {

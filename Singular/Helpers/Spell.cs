@@ -295,7 +295,7 @@ namespace Singular.Helpers
                                             inRange = target.Distance < MeleeRange;
                                         else
                                             inRange = target.Distance < maxRange &&
-                                                      target.Distance > (minRange == 0 ? minRange : minRange + 1);
+                                                      target.Distance > (minRange == 0 ? minRange : minRange + 3);
 
                                     }
                                 }

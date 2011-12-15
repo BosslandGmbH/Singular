@@ -37,6 +37,7 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5,
                     new PrioritySelector(
+                        Common.CreateHunterTrapBehavior("Immolation Trap"),
                         Spell.BuffSelf("Disengage"),
                         Spell.Cast("Raptor Strike")
                         )),

@@ -287,7 +287,7 @@ namespace Singular.Helpers
                                             inRange = target.Distance <= MeleeRange;
                                         else
                                             inRange = target.Distance <= spell.MaxRange &&
-                                                      target.Distance >= spell.MinRange;
+                                                      target.Distance > (spell.MinRange == 0 ? spell.MinRange : spell.MinRange + 1);
 
                                     }
                                 }

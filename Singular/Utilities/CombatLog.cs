@@ -52,7 +52,7 @@ namespace Singular
 
         public int SourceFlags { get { return (int)(double)Args[5]; } }
 
-        public ulong DestGuid { get { return ulong.Parse(Args[6].ToString().Replace("0x", string.Empty), NumberStyles.HexNumber); } }
+        public ulong DestGuid { get { return ulong.Parse(Args[7].ToString().Replace("0x", string.Empty), NumberStyles.HexNumber); } }
 
         public WoWUnit DestUnit
         {
@@ -64,17 +64,17 @@ namespace Singular
             }
         }
 
-        public string DestName { get { return Args[7].ToString(); } }
+        public string DestName { get { return Args[8].ToString(); } }
 
-        public int DestFlags { get { return (int)(double)Args[8]; } }
+        public int DestFlags { get { return (int)(double)Args[9]; } }
 
-        public int SpellId { get { return (int)(double)Args[9]; } }
+        public int SpellId { get { return (int)(double)Args[11]; } }
 
         public WoWSpell Spell { get { return WoWSpell.FromId(SpellId); } }
 
-        public string SpellName { get { return Args[10].ToString(); } }
+        public string SpellName { get { return Args[12].ToString(); } }
 
-        public WoWSpellSchool SpellSchool { get { return (WoWSpellSchool)(int)(double)Args[11]; } }
+        public WoWSpellSchool SpellSchool { get { return (WoWSpellSchool)(int)(double)Args[13]; } }
 
         public object[] SuffixParams
         {

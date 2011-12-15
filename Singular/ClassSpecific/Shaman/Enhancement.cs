@@ -74,7 +74,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 // Only call if we're missing more than 2 totems. 
 
-                Spell.Cast("Call of the Elements", ret => Totems.TotemsInRangeOf(StyxWoW.Me.CurrentTarget) < 3),
+                Spell.Cast("Call of the Elements", ret => StyxWoW.Me.CurrentTarget.Distance < 15 && Totems.TotemsInRangeOf(StyxWoW.Me.CurrentTarget) < 3),
 
                 Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
@@ -98,7 +98,9 @@ namespace Singular.ClassSpecific.Shaman
 
 
                 // Ensure Searing is nearby
-                Spell.Cast("Searing Totem", ret => StyxWoW.Me.Totems.Count(t => t.WoWTotem == WoWTotem.Searing && t.Unit.Distance < 13) == 0),
+                Spell.Cast("Searing Totem", 
+                             ret => StyxWoW.Me.CurrentTarget.Distance < 15 && 
+                                    StyxWoW.Me.Totems.Count(t => t.WoWTotem == WoWTotem.Searing && t.Unit.Distance < 13) == 0),
 
                 Movement.CreateMoveBehindTargetBehavior(),
 

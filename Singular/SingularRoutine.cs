@@ -19,6 +19,7 @@ using Singular.GUI;
 using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
+using Singular.Utilities;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
@@ -164,7 +165,7 @@ namespace Singular
             Logger.Write("Behaviors created!");
 
             // When we actually need to use it, we will.
-            //EventHandlers.Init();
+            EventHandlers.Init();
             //Logger.Write("Combat log event handler started.");
         }
 

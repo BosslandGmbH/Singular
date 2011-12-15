@@ -17,6 +17,16 @@ namespace Singular.Utilities
         {
             BotEvents.Player.OnMapChanged += Player_OnMapChanged;
 
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds)
+                AttachCombatLogEvent();
+        }
+
+        private static bool _combatLogAttached;
+        private static void AttachCombatLogEvent()
+        {
+            if (_combatLogAttached)
+                return;
+
             // DO NOT EDIT THIS UNLESS YOU KNOW WHAT YOU'RE DOING!
             // This ensures we only capture certain combat log events, not all of them.
             // This saves on performance, and possible memory leaks. (Leaks due to Lua table issues.)
@@ -28,6 +38,15 @@ namespace Singular.Utilities
             {
                 Logger.Write("ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
             }
+            _combatLogAttached = true;
+        }
+
+        private static void DetachCombatLogEvent()
+        {
+            if (!_combatLogAttached)
+                return;
+            Lua.Events.DetachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
+            _combatLogAttached = false;
         }
 
         /// <summary>
@@ -94,6 +113,11 @@ namespace Singular.Utilities
 
         private static void Player_OnMapChanged(BotEvents.Player.MapChangedEventArgs args)
         {
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                DetachCombatLogEvent();
+            else
+                AttachCombatLogEvent();
+
             //Why would we create same behaviors all over ?
             if (SingularRoutine.LastWoWContext == SingularRoutine.CurrentWoWContext)
             {

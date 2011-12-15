@@ -264,34 +264,42 @@ namespace Singular.Helpers
                         //Logger.WriteDebug("CanCast: " + SpellManager.CanCast(name, onUnit(ret), false));
 
                         var minReqs = requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null;
+                        var canCast = false;
+                        var inRange = false;
                         if (minReqs)
                         {
-                            var canCast = SpellManager.CanCast(name, onUnit(ret), false, checkMovement(ret));
+                            canCast = SpellManager.CanCast(name, onUnit(ret), false, checkMovement(ret));
 
-                            // Make sure we set this.
-                            minReqs = canCast;
-                            var target = onUnit(ret);
-                            // We're always in range of ourselves. So just ignore this bit if we're casting it on us
-                            if (canCast && !target.IsMe)
+                            if (canCast)
                             {
-                                WoWSpell spell;
-                                if (SpellManager.Spells.TryGetValue(name, out spell))
+                                var target = onUnit(ret);
+                                // We're always in range of ourselves. So just ignore this bit if we're casting it on us
+                                if (!target.IsMe)
                                 {
-                                    // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
-                                    if (spell.InternalInfo.SpellRangeId == 1)
-                                        return true;
+                                    WoWSpell spell;
+                                    if (SpellManager.Spells.TryGetValue(name, out spell))
+                                    {
+                                        // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
+                                        if (spell.InternalInfo.SpellRangeId == 1)
+                                            inRange = true;
+                                        // RangeId 2 is melee range. Huzzah :)
+                                        else if (spell.InternalInfo.SpellRangeId == 2)
+                                            inRange = target.Distance <= MeleeRange;
+                                        else
+                                            inRange = target.Distance <= spell.MaxRange &&
+                                                      target.Distance >= spell.MinRange;
 
-                                    // RangeId 2 is melee range. Huzzah :)
-                                    if (spell.InternalInfo.SpellRangeId == 2)
-                                        minReqs = target.Distance < MeleeRange;
-                                    else
-                                        minReqs = target.Distance < spell.MaxRange;
+                                    }
+                                }
+                                else
+                                {
+                                    inRange = true;
                                 }
                             }
                         }
 
 
-                        return minReqs;
+                        return minReqs && canCast && inRange;
                     },
                 new Action(
                     ret =>
@@ -301,8 +309,6 @@ namespace Singular.Helpers
                         })
                 );
         }
-
-        private static ulong junk;
 
         #endregion
 

@@ -131,7 +131,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static bool HasMyAura(this WoWUnit unit,string aura)
         {
-            return HasMyAura(unit,aura, 0);
+            return HasMyAura(unit,aura, 1);
         }
 
         /// <summary>

@@ -77,6 +77,29 @@ namespace Singular.ClassSpecific.Hunter
                         }));
         }
 
+        public static Composite CreateHunterTrapBehavior(string trapName)
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ctx => ctx != null && SpellManager.CanCast(trapName, (WoWUnit)ctx, false),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Trap Launcher"),
+                        new Sequence(
+                            new Switch<string>(ctx => trapName,
+                                new SwitchArgument<string>("Immolation Trap",
+                                    new Action(ret => LegacySpellManager.CastSpellById(82945))),
+                                new SwitchArgument<string>("Freezing Trap",
+                                    new Action(ret => LegacySpellManager.CastSpellById(60192))),
+                                new SwitchArgument<string>("Explosive Trap",
+                                    new Action(ret => LegacySpellManager.CastSpellById(82939))),
+                                new SwitchArgument<string>("Ice Trap",
+                                    new Action(ret => LegacySpellManager.CastSpellById(82941))),
+                                new SwitchArgument<string>("Snake Trap",
+                                    new Action(ret => LegacySpellManager.CastSpellById(82948)))
+                                ),
+                            new Action(ret => LegacySpellManager.ClickRemoteLocation(((WoWUnit)ret).Location))))));
+        }
+
         public static Composite CreateHunterTrapOnAddBehavior(string trapName)
         {
             return new PrioritySelector(

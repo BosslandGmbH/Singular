@@ -61,7 +61,7 @@ namespace Singular.ClassSpecific.Paladin
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
 
                     Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
-                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.HasAura("Hand of Light")),
+                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 3),
                     // Don't use Exorcism if we're AOEing. 
                     Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
                     Spell.Cast("Judgement"),

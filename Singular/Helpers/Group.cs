@@ -15,20 +15,24 @@ namespace Singular.Helpers
         {
             get
             {
-                var unit = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => (p.Role & WoWPartyMember.GroupRole.Tank) != 0);
-                if (unit != null)
-                    return unit.ToPlayer();
-                return null;
+                var tank = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => (p.Role & WoWPartyMember.GroupRole.Tank) != 0);
+                return tank != null
+                           ? tank.ToPlayer()
+                           : (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Tank) != 0
+                                 ? StyxWoW.Me
+                                 : null;
             }
         }
         public static WoWUnit Healer
         {
             get
             {
-                var unit = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => (p.Role & WoWPartyMember.GroupRole.Healer) != 0);
-                if (unit != null)
-                    return unit.ToPlayer();
-                return null;
+                var healer = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => (p.Role & WoWPartyMember.GroupRole.Healer) != 0);
+                return healer != null
+                           ? healer.ToPlayer()
+                           : (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Healer) != 0
+                                 ? StyxWoW.Me
+                                 : null;
             }
         }
 

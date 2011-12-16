@@ -62,6 +62,7 @@ namespace Singular.ClassSpecific.Shaman
                 CreateRestoShamanHealingBuffs(),
                 CreateRestoShamanHealingOnlyBehavior(true),
                 Rest.CreateDefaultRestBehaviour(),
+                Spell.Resurrect("Ancestral Spirit"),
                 CreateRestoShamanHealingOnlyBehavior(false,false)
                 );
         }

@@ -17,6 +17,7 @@ using System.Linq;
 using CommonBehaviors.Actions;
 
 using Styx;
+using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
@@ -631,6 +632,31 @@ namespace Singular.Helpers
                             LegacySpellManager.ClickRemoteLocation(onLocation(ret));
                         })
                 );
+        }
+
+        #endregion
+
+        #region Resurrect
+
+        /// <summary>
+        ///   Creates a behavior to resurrect dead players around. This behavior will res each player once in every 10 seconds.
+        ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 16/12/2011.
+        /// </remarks>
+        /// <param name = "spellName">The name of resurrection spell.</param>
+        /// <returns>.</returns>
+        public static Composite Resurrect(string spellName)
+        {
+            return
+                new PrioritySelector(
+                    ctx => Unit.ResurrectablePlayers.FirstOrDefault(u => !Blacklist.Contains(u)),
+                    new Decorator(
+                        ctx => ctx != null,
+                        new Sequence(
+                            Cast(spellName, ctx => (WoWPlayer)ctx),
+                            new Action(ctx => Blacklist.Add((WoWPlayer)ctx, TimeSpan.FromSeconds(10))))));
         }
 
         #endregion

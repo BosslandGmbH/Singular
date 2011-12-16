@@ -26,10 +26,7 @@ namespace Singular.ClassSpecific.Druid
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 Rest.CreateDefaultRestBehaviour(),
                 // Can we res people?
-                new Decorator(
-                    ret => Unit.ResurrectablePlayers.Count != 0,
-                    Spell.Cast("Revive", ret => Unit.ResurrectablePlayers.FirstOrDefault())
-                ),
+                Spell.Resurrect("Revive"),
                 // Make sure we're healing OOC too!
                 CreateRestoDruidHealOnlyBehavior(false,false));
         }

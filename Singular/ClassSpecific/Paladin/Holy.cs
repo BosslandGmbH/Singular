@@ -26,10 +26,7 @@ namespace Singular.ClassSpecific.Paladin
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 Rest.CreateDefaultRestBehaviour(),
                 // Can we res people?
-                new Decorator(
-                    ret => Unit.ResurrectablePlayers.Count != 0,
-                    Spell.Cast("Redemption", ret => Unit.ResurrectablePlayers.FirstOrDefault())
-                    ),
+                Spell.Resurrect("Redemption"),
                 // Make sure we're healing OOC too!
                 CreatePaladinHealBehavior(false, false));
         }

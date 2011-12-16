@@ -13,8 +13,28 @@ namespace Singular.ClassSpecific.Hunter
     {
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.BeastMasteryHunter)]
-        [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
+        [Context(WoWContext.All)]
+        public static Composite CreateBeastMasterPull()
+        {
+            return
+                new PrioritySelector(
+                    new Decorator(
+                        ret => !StyxWoW.Me.GotAlivePet,
+                        new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot))),
+                    Safers.EnsureTarget(),
+                    Movement.CreateMoveToLosBehavior(),
+                    Movement.CreateFaceTargetBehavior(),
+                    Spell.Buff("Hunter's Mark"),
+                    Spell.Cast("Concussive Shot"),
+                    Helpers.Common.CreateAutoAttack(true),
+                    Movement.CreateMoveToTargetBehavior(true, 35f)
+                    );
+        }
+
+        [Class(WoWClass.Hunter)]
+        [Spec(TalentSpec.BeastMasteryHunter)]
+        [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public static Composite CreateBeastMasterCombat()
         {
@@ -23,7 +43,7 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !StyxWoW.Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot))),
                 Safers.EnsureTarget(),
-                // Movement.CreateMoveToLosBehavior(), // hawker dec 16 2011
+                Movement.CreateMoveToLosBehavior(),
                 Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),

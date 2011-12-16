@@ -72,20 +72,20 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => !StyxWoW.Me.Combat && !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.IsAlive &&
                            (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me),
-                                                      new Sequence(
-                               new Action(ret => Logging.Write("Moving to pull.")),
-                    new Action(
-                        ret =>
-                        {
-                            var moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, Spell.SafeMeleeRange + 15f);
-
-                            if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                    new Sequence(
+                        new Action(ret => Logging.Write("Moving to pull.")),
+                        new Action(
+                            ret =>
                             {
-                                return Navigator.GetRunStatusFromMoveResult(Navigator.MoveTo(moveTo));
-                            }
+                                var moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, Spell.SafeMeleeRange + 15f);
 
-                            return RunStatus.Failure;
-                        }))));
+                                if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                                {
+                                    return Navigator.GetRunStatusFromMoveResult(Navigator.MoveTo(moveTo));
+                                }
+
+                                return RunStatus.Failure;
+                            }))));
         }
 
         public static Composite CreateHunterBackPedal()

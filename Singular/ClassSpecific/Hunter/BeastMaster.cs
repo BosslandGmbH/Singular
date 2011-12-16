@@ -24,7 +24,6 @@ namespace Singular.ClassSpecific.Hunter
                     new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot))),
                 Safers.EnsureTarget(),
                 // Movement.CreateMoveToLosBehavior(), // hawker dec 16 2011
-                Common.CreateHunterMoveToPullPoint(), // hawker dec 16 2011
                 Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),

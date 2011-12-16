@@ -57,12 +57,44 @@ namespace Singular.ClassSpecific.Hunter
                 );
         }
 
+        /// <summary>
+        /// hawker december 16 2011
+        /// If we have a valid target, we move about 20 yards from it and kill it.  While we are moving, the pet attacks.
+        /// </summary>
+        public static Composite CreateHunterMoveToPullPoint()
+        {
+            return
+                new Decorator(
+                    ret => !StyxWoW.Me.Combat && !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.IsAlive &&
+                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me),
+                                                      new Sequence(
+                               new Action(ret => Logging.Write("Moving to pull.")),
+                    new Action(
+                        ret =>
+                        {
+                            var moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, Spell.SafeMeleeRange + 15f);
+
+                            if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                            {
+                                if (StyxWoW.Me.GotAlivePet)
+                                {
+                                    PetManager.CastPetAction("Attack");
+                                }
+                                return Navigator.GetRunStatusFromMoveResult(Navigator.MoveTo(moveTo));
+                            }
+
+                            return RunStatus.Failure;
+                        })));
+        }
+
         public static Composite CreateHunterBackPedal()
         {
             return
                 new Decorator(
                     ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.Distance <= Spell.SafeMeleeRange + 3f && StyxWoW.Me.CurrentTarget.IsAlive &&
                            (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me),
+                           new Sequence(
+                               new Action(ret => Logging.Write("Moving out of melee distance.")),
                     new Action(
                         ret =>
                         {
@@ -74,7 +106,7 @@ namespace Singular.ClassSpecific.Hunter
                             }
 
                             return RunStatus.Failure;
-                        }));
+                        })));
         }
 
         public static Composite CreateHunterTrapBehavior(string trapName)

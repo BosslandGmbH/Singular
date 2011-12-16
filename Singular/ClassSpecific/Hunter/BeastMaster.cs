@@ -23,7 +23,8 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !StyxWoW.Me.GotAlivePet,
                     new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot))),
                 Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
+                // Movement.CreateMoveToLosBehavior(), // hawker dec 16 2011
+                Common.CreateHunterMoveToPullPoint(), // hawker dec 16 2011
                 Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),

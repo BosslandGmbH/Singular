@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.WaitForCast(),
                 Helpers.Common.CreateAutoAttack(true),
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
+                    ret => StyxWoW.Me.CurrentTarget.Distance < 30f,
                     Movement.CreateEnsureMovementStoppedBehavior()),
                 Spell.Cast("Raptor Strike", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
                 // Always keep it up on our target!

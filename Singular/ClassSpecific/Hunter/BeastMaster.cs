@@ -35,6 +35,8 @@ namespace Singular.ClassSpecific.Hunter
                                            (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
                 // Always keep it up on our target!
                 Spell.Buff("Hunter's Mark"),
+                //Bestial Wrath
+                Spell.Cast("Bestial Wrath", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet && !StyxWoW.Me.CurrentTarget.HasAura("Intimidation")),
                 Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5,

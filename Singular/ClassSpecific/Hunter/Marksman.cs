@@ -35,6 +35,9 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
+                    Movement.CreateEnsureMovementStoppedBehavior()),
                 Spell.Cast("Raptor Strike", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
                 //Interupt
                 Spell.Cast("Silencing Shot", ret => StyxWoW.Me.CurrentTarget.IsCasting),

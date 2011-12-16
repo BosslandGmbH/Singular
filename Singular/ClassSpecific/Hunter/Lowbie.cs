@@ -25,6 +25,9 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(),
                 Helpers.Common.CreateAutoAttack(true),
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
+                    Movement.CreateEnsureMovementStoppedBehavior()),
                 Spell.Cast("Raptor Strike", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
                 // Always keep it up on our target!
                 Spell.Buff("Hunter's Mark"),

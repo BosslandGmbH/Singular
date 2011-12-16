@@ -13,28 +13,7 @@ namespace Singular.ClassSpecific.Hunter
     {
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.BeastMasteryHunter)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
-        public static Composite CreateBeastMasterPull()
-        {
-            return
-                new PrioritySelector(
-                    new Decorator(
-                        ret => !StyxWoW.Me.GotAlivePet,
-                        new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot))),
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Spell.Buff("Hunter's Mark"),
-                    Spell.Cast("Concussive Shot"),
-                    Helpers.Common.CreateAutoAttack(true),
-                    Movement.CreateMoveToTargetBehavior(true, 35f)
-                    );
-        }
-
-        [Class(WoWClass.Hunter)]
-        [Spec(TalentSpec.BeastMasteryHunter)]
-        [Behavior(BehaviorType.Combat)]
+        [Behavior(BehaviorType.Combat | BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public static Composite CreateBeastMasterCombat()
         {
@@ -47,6 +26,9 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
+                    Movement.CreateEnsureMovementStoppedBehavior()),
                 //Intimidation
                 Spell.Cast(
                     "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&

@@ -153,7 +153,7 @@ namespace Singular.Helpers
 
         private static WoWPoint CalculatePointBehindTarget()
         {
-            return WoWMathHelper.CalculatePointBehind(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.Rotation, Spell.SafeMeleeRange);
+            return WoWMathHelper.CalculatePointBehind(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.Rotation, Spell.SafeMeleeRange - 2f);
         }
 
         private static bool SafeToNavigateBehind()

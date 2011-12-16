@@ -74,7 +74,10 @@ namespace Singular.ClassSpecific.Shaman
 
                 // Only call if we're missing more than 2 totems. 
 
-                Spell.Cast("Call of the Elements", ret => StyxWoW.Me.CurrentTarget.Distance < 15 && Totems.TotemsInRangeOf(StyxWoW.Me.CurrentTarget) < 3),
+                Spell.Cast("Call of the Elements", 
+                    ret => StyxWoW.Me.CurrentTarget.Level > StyxWoW.Me.Level - 10 &&
+                           StyxWoW.Me.CurrentTarget.Distance < 15 && 
+                           Totems.TotemsInRangeOf(StyxWoW.Me.CurrentTarget) < 3),
 
                 Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 

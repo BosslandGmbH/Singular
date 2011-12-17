@@ -24,13 +24,14 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Note: You should have this in 2 different methods. Hence the reason for WoWContext being a [Flags] enum.
                 // In this case, since its only one spell being changed, we can live with it.
                 Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.Distance > 15 && !StyxWoW.Me.IsInInstance),
-                //Make sure we're in range, and facing the damned target. (LOS check as well)
+
+                Movement.CreateMoveBehindTargetBehavior(),
+
                 Spell.Cast("Rune Strike"),
-                Spell.Cast("Mind Freeze", ret => StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
-                Spell.Cast("Strangulate", ret => StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
                 Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 30),
 
                 // Cooldowns
@@ -86,7 +87,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Blood Tap"),
                 Spell.Cast("Howling Blast", ret => StyxWoW.Me.CurrentRunicPower < 32),
                 Spell.Cast("Horn of Winter"),
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
     }

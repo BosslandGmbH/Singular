@@ -27,6 +27,7 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Always keep it up on our target!
                 Spell.Buff("Hunter's Mark"),
                 // Heal pet when below 70

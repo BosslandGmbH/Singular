@@ -25,6 +25,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.BuffSelf("Soulburn", ret => SpellManager.HasSpell("Soul Fire") || StyxWoW.Me.HealthPercent < 70),
                 Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.Fleeing,

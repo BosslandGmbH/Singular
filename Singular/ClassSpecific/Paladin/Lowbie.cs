@@ -21,6 +21,7 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateAutoAttack(true),
+                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.Cast("Crusader Strike"),
                     Spell.Cast("Judgement"),
                     Movement.CreateMoveToTargetBehavior(true, 5f)

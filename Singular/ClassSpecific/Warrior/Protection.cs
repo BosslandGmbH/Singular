@@ -56,7 +56,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Interupt or reflect
                 Spell.Cast("Spell Reflection", ret => StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me && StyxWoW.Me.CurrentTarget.IsCasting),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 //Aoe tanking
                 new Decorator(

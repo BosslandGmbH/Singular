@@ -154,6 +154,7 @@ namespace Singular.ClassSpecific.Druid
                             Safers.EnsureTarget(),
                             Movement.CreateMoveToLosBehavior(),
                             Movement.CreateFaceTargetBehavior(),
+                            Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                             Spell.Buff("Moonfire"),
                             Spell.Cast("Starfire", ret => StyxWoW.Me.HasAura("Fury of Stormrage")),
                             Spell.Cast("Wrath"),

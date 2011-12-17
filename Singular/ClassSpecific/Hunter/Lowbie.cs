@@ -28,6 +28,7 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.Distance < 30f,
                     Movement.CreateEnsureMovementStoppedBehavior()),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.Cast("Raptor Strike", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
                 // Always keep it up on our target!
                 Spell.Buff("Hunter's Mark"),

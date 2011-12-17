@@ -31,6 +31,7 @@ namespace Singular.ClassSpecific.Warlock
 
                 Spell.WaitForCast(true, "Haunt", "Unstable Affliction"),
                 Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Emergencies
                 new Decorator(
                     ret => StyxWoW.Me.HealthPercent < 20,

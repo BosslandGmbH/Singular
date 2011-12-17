@@ -23,6 +23,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.WaitForCast(true, "Frostbolt", "Fireball", "Fire Blast"),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Common.CreateMagePolymorphOnAddBehavior(),
                 Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.Auras.ContainsKey("Arcane Missiles!")),
                 Spell.Cast("Fireball", ret => !SpellManager.HasSpell("Frostbolt")),

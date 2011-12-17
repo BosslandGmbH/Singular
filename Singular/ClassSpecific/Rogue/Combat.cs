@@ -64,7 +64,8 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                // Kick/Defensive cooldowns/Recuperation
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                // Defensive cooldowns/Recuperation
                 CreateCombatRogueDefense(),
                 // Redirect if we have CP left
                 Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
@@ -79,6 +80,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => Lua.DoString("RunMacroText(\"/cancelaura Blade Flurry\")")),
                         new Action(ret => StyxWoW.SleepForLagDuration()))),
                 Common.CreateRogueBlindOnAddBehavior(),
+                Movement.CreateMoveBehindTargetBehavior(),
                 Spell.BuffSelf(
                     "Blade Flurry",
                     ret =>
@@ -157,14 +159,6 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateCombatRogueDefense()
         {
             return new PrioritySelector(
-                new Decorator(
-                    ret =>
-                    SingularSettings.Instance.Rogue.InterruptSpells && StyxWoW.Me.CurrentTarget.IsCasting &&
-                    StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
-                    new PrioritySelector(
-                        Spell.Cast("Kick"),
-                        Spell.Cast("Gouge", ret => !StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget))
-                        )),
                 new Decorator(
                     ret =>
                     StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast &&

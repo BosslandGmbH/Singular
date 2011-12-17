@@ -44,6 +44,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
                 new Decorator(ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                    new ActionIdle()),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.WaitForCast(),
                 Spell.Buff("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
                 Spell.Cast("Evocation", ret => StyxWoW.Me.ManaPercent < 20),
@@ -51,7 +52,6 @@ namespace Singular.ClassSpecific.Mage
                    new Action(ctx => Common.UseManaGem())),
                 Spell.BuffSelf("Mana Shield", ret => !StyxWoW.Me.Auras.ContainsKey("Mana Shield") && StyxWoW.Me.HealthPercent <= 75),
                 Common.CreateMagePolymorphOnAddBehavior(),
-                Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting),
                 Spell.Cast("Mirror Image", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 20),
                 Spell.Cast("Time Warp", ret => StyxWoW.Me.CurrentTarget.HealthPercent > 20 && StyxWoW.Me.CurrentTarget.IsBoss()),
                 new Decorator(

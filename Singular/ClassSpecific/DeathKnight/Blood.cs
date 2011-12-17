@@ -30,7 +30,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.WaitForCast(),
-
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.BuffSelf("Blood Presence"),
 
                 // DG to speed up soloing
@@ -122,6 +122,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast(
                     "Dark Command", ret => TankManager.Instance.NeedToTaunt.First(), ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
+                Movement.CreateMoveBehindTargetBehavior(),
                 Spell.Cast("Outbreak", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") || !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
                 Spell.Cast(
                     "Death Strike", ret =>
@@ -147,7 +148,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                 Spell.Cast("Death Coil", ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
                 Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
-                Movement.CreateMoveToTargetBehavior(true, 5f));
+                Movement.CreateMoveToMeleeBehavior(true));
         }
     }
 }

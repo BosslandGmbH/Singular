@@ -81,8 +81,6 @@ namespace Singular.Helpers
                     ret => onUnit != null && onUnit(ret) != null && onUnit(ret).IsCasting && onUnit(ret).CanInterruptCurrentSpellCast
                     /* && PreventDoubleInterrupt*/,
                     new PrioritySelector(
-
-
                         Spell.Cast("Rebuke", onUnit),
                         Spell.Cast("Avenger's Shield", onUnit),
                         Spell.Cast("Hammer of Justice", onUnit),

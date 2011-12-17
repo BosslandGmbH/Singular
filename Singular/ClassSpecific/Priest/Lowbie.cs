@@ -2,6 +2,7 @@
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Styx;
 using Styx.Combat.CombatRoutine;
 using TreeSharp;
 
@@ -22,7 +23,7 @@ namespace Singular.ClassSpecific.Priest
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Spell.BuffSelf("Arcane Torrent", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsCasting && u.DistanceSqr < 8 * 8)),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.Buff("Shadow Word: Pain"),
                 Spell.Cast("Mind Blast"),
                 Spell.Cast("Smite"),

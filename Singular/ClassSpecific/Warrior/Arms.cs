@@ -57,13 +57,11 @@ namespace Singular.ClassSpecific.Warrior
                 //Keep in Battle Stance
                 Spell.BuffSelf("Battle Stance", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rend") || ((StyxWoW.Me.ActiveAuras.ContainsKey("Overpower") || StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood")) && SpellManager.Spells["Mortal Strike"].Cooldown) && StyxWoW.Me.RagePercent <= 75 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),   
                 
-                //Charge
-                Movement.CreateFaceTargetBehavior(),
                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
                 //Heroic Leap
                 Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
 
-
+                Movement.CreateMoveBehindTargetBehavior(),
                 //use it or lose it
                 Spell.Cast("Colossus Smash", ret => StyxWoW.Me.HasAura("Sudden Death", 1)),
 
@@ -86,7 +84,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Mortal Strike"))),
 
                 //Interupts
-                new Decorator(ret=>StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorInterupts,
+                new Decorator(ret=> StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorInterupts,
                     new PrioritySelector(
                         Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                         // Only pop TD on elites/players

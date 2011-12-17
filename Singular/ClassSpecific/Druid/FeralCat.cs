@@ -96,9 +96,8 @@ namespace Singular.ClassSpecific.Druid
                     "Feral Charge (Cat)",
                     ret => Settings.UseFeralChargeCat && StyxWoW.Me.CurrentTarget.Distance >= 8 && StyxWoW.Me.CurrentTarget.Distance <= 25),
 
-                Movement.CreateMoveBehindTargetBehavior(),
-
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Movement.CreateMoveBehindTargetBehavior(),
 
                 //Keep up FF if its not present and target is boss 
                 Spell.Cast("Faerie Fire (Feral)", ret => StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.CurrentTarget.HasSunders()),

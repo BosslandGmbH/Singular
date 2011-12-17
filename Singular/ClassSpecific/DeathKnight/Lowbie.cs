@@ -20,12 +20,14 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.Distance > 15),
                 Spell.Cast("Death Coil"),
+                Movement.CreateMoveBehindTargetBehavior(),
                 Spell.Cast("Icy Touch"),
                 Spell.Cast("Blood Strike"),
                 Spell.Cast("Plague Strike"),
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
     }

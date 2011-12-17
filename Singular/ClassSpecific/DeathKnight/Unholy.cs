@@ -22,14 +22,13 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Note: You should have this in 2 different methods. Hence the reason for WoWContext being a [Flags] enum.
                 // In this case, since its only one spell being changed, we can live with it.
                 Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.Distance > 15 && !StyxWoW.Me.IsInInstance),
-                //Make sure we're in range, and facing the damned target. (LOS check as well)
                 Spell.Cast("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
+                Movement.CreateMoveBehindTargetBehavior(),
                 Spell.Cast("Rune Strike"),
-                Spell.Cast("Mind Freeze", ret => StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
-                Spell.Cast("Strangulate", ret => StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.ChanneledCastingSpellId != 0),
                 Spell.Cast("Unholy Frenzy", ret => StyxWoW.Me.HealthPercent >= 80),
                 Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 80),
                 Spell.Cast("Outbreak", ret => StyxWoW.Me.CurrentTarget.HasAura("Frost Fever") || StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
@@ -50,7 +49,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Scourge Strike"),
                 Spell.Cast("Festering Strike"),
                 Spell.Cast("Death Coil"),
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
     }

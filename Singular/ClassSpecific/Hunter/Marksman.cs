@@ -38,9 +38,8 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
                     Movement.CreateEnsureMovementStoppedBehavior()),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.Cast("Raptor Strike", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
-                //Interupt
-                Spell.Cast("Silencing Shot", ret => StyxWoW.Me.CurrentTarget.IsCasting),
                 // Heal pet when below 70
                 Spell.Cast("Mend Pet", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.HealthPercent < 70 && !StyxWoW.Me.Pet.HasAura("Mend Pet")),
 

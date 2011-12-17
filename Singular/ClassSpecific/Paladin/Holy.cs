@@ -76,6 +76,7 @@ namespace Singular.ClassSpecific.Paladin
                             Movement.CreateMoveToLosBehavior(),
                             Movement.CreateFaceTargetBehavior(),
                             Helpers.Common.CreateAutoAttack(true),
+                            Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                             Spell.Buff("Judgement"),
                             Spell.Cast("Hammer of Wrath"),
                             Spell.Cast("Holy Shock"),

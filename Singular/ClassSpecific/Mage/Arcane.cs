@@ -60,7 +60,8 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
 
                 Spell.WaitForCast(),
-                
+
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Common.CreateMagePolymorphOnAddBehavior(),
 
                 Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),

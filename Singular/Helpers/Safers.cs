@@ -31,7 +31,8 @@ namespace Singular.Helpers
                             // DisableTankTargeting is a user-setting. NeedTankTargeting is an internal one. Make sure both are turned on.
                             ret => !SingularSettings.Instance.DisableTankTargetSwitching && TankManager.NeedTankTargeting
                                    && TankManager.TargetingTimer.IsFinished && StyxWoW.Me.Combat &&
-                                   TankManager.Instance.FirstUnit != null && StyxWoW.Me.CurrentTarget != TankManager.Instance.FirstUnit,
+                                   TankManager.Instance.FirstUnit != null && 
+                                   (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget != TankManager.Instance.FirstUnit),
                             new Action(
                                 ret =>
                                     {

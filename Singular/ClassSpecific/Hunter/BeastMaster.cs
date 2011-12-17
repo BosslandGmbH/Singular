@@ -29,6 +29,7 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
                     Movement.CreateEnsureMovementStoppedBehavior()),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 //Intimidation
                 Spell.Cast(
                     "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&

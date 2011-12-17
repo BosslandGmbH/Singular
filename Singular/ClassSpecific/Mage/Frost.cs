@@ -44,6 +44,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
                 Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.Buff("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
                 Common.CreateMagePolymorphOnAddBehavior(),
                 new Decorator(
@@ -52,8 +53,6 @@ namespace Singular.ClassSpecific.Mage
 
                 // Pop evo if we're low on mana. If we're glyphed, also pop it for health.
                 Spell.Cast("Evocation", ret => StyxWoW.Me.ManaPercent < 20 || (TalentManager.HasGlyph("Evocation") && StyxWoW.Me.HealthPercent < 50)),
-                // Ensure we counterspell anything we can.
-                Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting),
 
                 // We really should only save this for bosses, but this will work fine I suppose.
                 Spell.Cast("Mirror Image"),

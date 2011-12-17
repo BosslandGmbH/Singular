@@ -26,6 +26,7 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => StyxWoW.Me.Shapeshift != Common.WantedDruidForm,
                     Spell.Cast("Cat Form")),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 //Healing if needed in combat
                 Spell.BuffSelf("Rejuvenation", ret => StyxWoW.Me.HealthPercent <= 60),
                 Helpers.Common.CreateAutoAttack(true),

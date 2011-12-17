@@ -41,6 +41,7 @@ namespace Singular.ClassSpecific.Warrior
                 // Low level support
                 new Decorator(ret => StyxWoW.Me.Level < 30,
                     new PrioritySelector(
+                        Movement.CreateMoveBehindTargetBehavior(),
                         Spell.Cast("Victory Rush"),
                         Spell.Cast("Execute"),
                         Spell.Buff("Rend"),
@@ -49,7 +50,7 @@ namespace Singular.ClassSpecific.Warrior
                         //rage dump
                         Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) > 3),
                         Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60),
-                        Movement.CreateMoveToTargetBehavior(true, 5f))),
+                        Movement.CreateMoveToMeleeBehavior(true))),
                 //30-50 support
                 Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.Level > 30 && StyxWoW.Me.Level < 50 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),
 
@@ -76,9 +77,10 @@ namespace Singular.ClassSpecific.Warrior
            
                 //Interupts
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorInterupts,
+                    ret => SingularSettings.Instance.Warrior.UseWarriorInterupts,
                     Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
 
+                Movement.CreateMoveBehindTargetBehavior(),
                 //Heal up in mele
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 Spell.Cast("Heroic Throw", ret => StyxWoW.Me.CurrentTarget.Distance > 15 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
@@ -155,11 +157,6 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
                 Common.CreateAutoAttack(false),
-
-                //Dismount
-                new Decorator(
-                    ret => StyxWoW.Me.Mounted,
-                    new Action(ret => Styx.Logic.Mount.Dismount())),
 
                 // buff up
                 Spell.BuffSelf("Battle Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == true),

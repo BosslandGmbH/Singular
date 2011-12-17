@@ -119,7 +119,7 @@ namespace Singular.ClassSpecific.Shaman
                     (StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock") || StyxWoW.Me.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 4)),
 
 
-                Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.Auras["Maelstrom Weapon"].StackCount > 4),
+                Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasMyAura("Maelstrom Weapon", 5)),
 
 
                 // Clip the last tick of FS if we can.
@@ -127,8 +127,7 @@ namespace Singular.ClassSpecific.Shaman
 
 
                 Spell.Cast("Earth Shock",
-                    ret => SpellManager.Spells["Unleash Elements"].Cooldown ||
-                    !SpellManager.HasSpell("Unleash Elements")),
+                    ret => !SpellManager.HasSpell("Unleash Elements") || SpellManager.Spells["Unleash Elements"].Cooldown),
 
                 //User selects when to cast
                 Spell.Cast("Feral Spirit", ret =>

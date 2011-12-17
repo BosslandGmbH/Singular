@@ -32,18 +32,11 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateAutoAttack(true),
 
-
                     // Interrupt the first unit casting near us. Huzzah!
-                    Helpers.Common.CreateInterruptSpellCast(
-                        ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsCasting && u.CanInterruptCurrentSpellCast)),
-
-
-
-
-
+                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                    Movement.CreateMoveBehindTargetBehavior(),
                     // The below is the old combat rotation. I'm rewriting it from scratch to maximize DPS according to Noxxic.com, EJ.com and my own personal findings.
                     // Along with the findings of other high-end ret paladins.
-
 
                     // Single Target
                     Spell.Cast("Inquisition"),

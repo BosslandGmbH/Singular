@@ -48,8 +48,8 @@ namespace Singular.ClassSpecific.Priest
                     ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(unit => StyxWoW.Me.CurrentTargetGuid != unit.Guid && unit.Aggro && SpellManager.CanCast("Psychic Horror", unit, false)),
                     ret => SingularSettings.Instance.Priest.UsePsychicHorrorAdds && Unit.NearbyUnfriendlyUnits.Count(unit => unit.Aggro && SpellManager.CanCast("Psychic Horror", unit, false)) >= 2),
 
-                // stop person casting
-                Spell.Cast("Silence", ret => StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.CastingSpell != null),
+
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.Cast("Psychic Horror", ret => SingularSettings.Instance.Priest.UsePsychicHorrorInterrupt && StyxWoW.Me.CurrentTarget.IsCasting || StyxWoW.Me.CurrentTarget.CastingSpell != null),
 
                 // use dispersion if we can

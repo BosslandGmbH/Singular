@@ -150,6 +150,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 //Pull stuff
                 new Decorator(
                     ret => !StyxWoW.Me.IsInParty && !StyxWoW.Me.Combat,

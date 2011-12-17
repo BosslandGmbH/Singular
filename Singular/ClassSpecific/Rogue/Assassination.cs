@@ -77,6 +77,7 @@ namespace Singular.ClassSpecific.Rogue
                     ),
                 // Auto-attack after stealth stuff. This ensures we don't waste a vanish for no good reason.
                 Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
 
                 // Redirect if we have CP left
@@ -90,6 +91,7 @@ namespace Singular.ClassSpecific.Rogue
                 //    Spell.Cast("Fan of Knives")),
                 Common.CreateRogueBlindOnAddBehavior(),
 
+                Movement.CreateMoveBehindTargetBehavior(),
                 // Only pop Evisc if we don't have Enven.
                 Spell.Cast(
                     "Eviscerate",
@@ -149,14 +151,7 @@ namespace Singular.ClassSpecific.Rogue
                     "Backstab",
                     ret => StyxWoW.Me.ComboPoints <= 4 && (StyxWoW.Me.CurrentTarget.HealthPercent <= 35 && StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget))),
 
-                // Outside of a party/raid, we don't care where we are. So long as we're in range.
-                new Decorator(
-                    ret => !StyxWoW.Me.IsInRaid && !StyxWoW.Me.IsInParty,
-                    Movement.CreateMoveToTargetBehavior(true, 5f)),
-                // Inside a party/raid, try and get behind.
-                new Decorator(
-                    ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
-                    Movement.CreateMoveBehindTargetBehavior())
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 

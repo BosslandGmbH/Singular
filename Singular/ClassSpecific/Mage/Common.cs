@@ -2,8 +2,11 @@
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 using Styx.Combat.CombatRoutine;
+using Styx.Helpers;
 using Styx.Logic.Combat;
+using Styx.Logic.Pathing;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using TreeSharp;
@@ -104,15 +107,68 @@ namespace Singular.ClassSpecific.Mage
             }
         }
 
+        public static Composite CreateStayAwayFromFrozenTargetsBehavior()
+        {
+            return
+                new PrioritySelector(ctx => 
+                    Unit.NearbyUnfriendlyUnits.Where(u => u.HasAura("Frost Nova") || u.HasAura("Freeze")).
+                                               OrderBy(u => u.DistanceSqr).FirstOrDefault(),
+                    new Decorator(
+                        ret => ret != null && !SingularSettings.Instance.DisableAllMovement,
+                        new PrioritySelector(
+                            new Decorator(
+                                ret => ((WoWUnit)ret).Distance < Spell.SafeMeleeRange + 3f,
+                                new Action(ret =>
+                                               {
+                                                   WoWPoint moveTo =
+                                                       WoWMathHelper.CalculatePointBehind(
+                                                           ((WoWUnit)ret).Location,
+                                                           ((WoWUnit)ret).Rotation,
+                                                           -(Spell.SafeMeleeRange + 5f));
+
+                                                   if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                                                   {
+                                                       Logger.Write("Getting away from frozen target");
+                                                       Navigator.MoveTo(moveTo);
+                                                       return RunStatus.Success;
+                                                   }
+
+                                                   return RunStatus.Failure;
+                                               })),
+                            Movement.CreateEnsureMovementStoppedBehavior())
+                        ));
+        }
+
         public static Composite CreateMagePolymorphOnAddBehavior()
         {
             return new PrioritySelector(
-                    ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
-                            u.IsTargetingMeOrPet && u != StyxWoW.Me.CurrentTarget &&
-                            (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)),
+                    ctx => Unit.NearbyUnfriendlyUnits.OrderByDescending(u => u.CurrentHealth).FirstOrDefault(IsViableForPolymorph),
                     new Decorator(
                         ret => ret != null,
-                        Spell.Buff("Polymorph", ret => (WoWUnit)ret, ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1)));
+                        Spell.Buff("Polymorph", ret => (WoWUnit)ret, ret => Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")))));
+        }
+
+        private static bool IsViableForPolymorph(WoWUnit unit)
+        {
+            if (unit.IsCrowdControlled())
+                return false;
+
+            if (unit.CreatureType != WoWCreatureType.Beast && unit.CreatureType != WoWCreatureType.Humanoid)
+                return false;
+
+            if (StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == unit)
+                return false;
+
+            if (!unit.Combat)
+                return false;
+
+            if (!unit.IsTargetingMeOrPet && !unit.IsTargetingMyPartyMember)
+                return false;
+
+            if (StyxWoW.Me.IsInParty && StyxWoW.Me.PartyMembers.Any(p => p.CurrentTarget != null && p.CurrentTarget == unit))
+                return false;
+
+            return true;
         }
     }
 }

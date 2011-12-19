@@ -52,14 +52,14 @@ namespace Singular.ClassSpecific.Druid
                     new Decorator(
                         ctx => ctx != null,
                         new PrioritySelector(
-                        Spell.WaitForCast(true),
+                        Spell.WaitForCast(false),
                         // Ensure we're in range of the unit to heal, and it's in LOS.
                         //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
                         //Cast Lifebloom on tank if
                         //1- Tank doesn't have lifebloom
                         //2- Tank has less then 3 stacks of lifebloom
                         //3- Tank has 3 stacks of lifebloom but it will expire in 3 seconds
-                        Spell.Cast(
+                        Spell.Heal(
                             "Lifebloom",
                             ret => (WoWUnit)ret,
                             ret =>
@@ -72,12 +72,12 @@ namespace Singular.ClassSpecific.Druid
                             (!((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).Auras["Lifebloom"].StackCount < 3 ||
                              ((WoWUnit)ret).Auras["Lifebloom"].TimeLeft <= TimeSpan.FromSeconds(3))),
                         //Cast rebirth if the tank is dead. Check for Unburdened Rebirth glyph or Maple seed reagent
-                        Spell.Cast(
+                        Spell.Heal(
                             "Rebirth",
                             ret => (WoWUnit)ret,
                             ret => StyxWoW.Me.Combat && RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader &&
                                    ((WoWUnit)ret).Dead && (TalentManager.HasGlyph("Unburdened Rebirth") || StyxWoW.Me.BagItems.Any(i => i.Entry == mapleSeedId))),
-                        Spell.Cast(
+                        Spell.Heal(
                             "Tranquility",
                             ret => StyxWoW.Me.Combat && StyxWoW.Me.IsInParty && Unit.NearbyFriendlyPlayers.Count(
                                 p =>
@@ -91,31 +91,31 @@ namespace Singular.ClassSpecific.Druid
                             TalentManager.HasGlyph("Innervate") && StyxWoW.Me.Combat && (WoWUnit)ret != StyxWoW.Me &&
                             StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana &&
                             ((WoWUnit)ret).PowerType == WoWPowerType.Mana && ((WoWUnit)ret).ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
-                        Spell.Cast(
+                        Spell.Heal(
                             "Swiftmend",
                             ret => (WoWUnit)ret,
                             ret => StyxWoW.Me.Combat && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Swiftmend &&
                                    (((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth"))),
-                        Spell.Cast(
+                        Spell.Heal(
                             "Wild Growth",
                             ret => (WoWUnit)ret,
                             ret => StyxWoW.Me.IsInParty && Unit.NearbyFriendlyPlayers.Count(
                                 p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid.WildGrowthHealth &&
                                      p.Location.DistanceSqr(((WoWUnit)ret).Location) <= 30*30) >= SingularSettings.Instance.Druid.WildGrowthCount),
-                        Spell.Buff(
+                        Spell.Heal(
                             "Regrowth",
                             ret => (WoWUnit)ret,
-                            ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Regrowth),
-                        Spell.Cast(
+                            ret => !((WoWUnit)ret).HasMyAura("Regrowth") && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Regrowth),
+                        Spell.Heal(
                             "Healing Touch",
                             ret => (WoWUnit)ret,
                             ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.HealingTouch),
-                        Spell.Cast(
+                        Spell.Heal(
                             "Nourish",
                             ret => (WoWUnit)ret,
                             ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Nourish &&
-                                   (((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth") ||
-                                    ((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).HasAura("Wild Growth"))),
+                                   ((((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth") ||
+                                    ((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).HasAura("Wild Growth")))),
                         Spell.Buff(
                             "Rejuvenation",
                             ret => (WoWUnit)ret,
@@ -142,7 +142,7 @@ namespace Singular.ClassSpecific.Druid
 
         [Class(WoWClass.Druid)]
         [Spec(TalentSpec.RestorationDruid)]
-        [Behavior(BehaviorType.Combat)]
+        [Behavior(BehaviorType.Combat | BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public static Composite CreateRestoDruidCombat()
         {
@@ -160,20 +160,6 @@ namespace Singular.ClassSpecific.Druid
                             Spell.Cast("Wrath"),
                             Movement.CreateMoveToTargetBehavior(true, 35f)
                             ))
-                    );
-        }
-
-        [Class(WoWClass.Druid)]
-        [Spec(TalentSpec.RestorationDruid)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
-        public static Composite CreateRestoDruidPull()
-        {
-            return
-                new PrioritySelector(
-                    new Decorator(
-                        ret => !StyxWoW.Me.IsInParty,
-                        Spell.Cast("Wrath"))
                     );
         }
 

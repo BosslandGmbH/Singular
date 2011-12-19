@@ -5,6 +5,7 @@ using Singular.Settings;
 
 using Styx;
 using Styx.Logic;
+using Styx.Logic.POI;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using TreeSharp;
@@ -47,27 +48,43 @@ namespace Singular.Helpers
                                 ctx =>
                                     {
                                         // If we have a RaF leader, then use its target.
-                                        if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && RaFHelper.Leader.Combat)
+                                        if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && 
+                                            RaFHelper.Leader.Combat && RaFHelper.Leader.CurrentTarget != null && 
+                                            RaFHelper.Leader.CurrentTarget.IsAlive)
                                         {
                                             return RaFHelper.Leader.CurrentTarget;
                                         }
 
+                                        // Check bot poi.
+                                        if (BotPoi.Current.Type == PoiType.Kill)
+                                        {
+                                            var unit = BotPoi.Current.AsObject as WoWUnit;
+
+                                            if (unit != null && unit.IsAlive)
+                                            {
+                                                return unit;
+                                            }
+                                        }
+
                                         // Does the target list have anything in it? And is the unit in combat?
                                         // Make sure we only check target combat, if we're NOT in a BG. (Inside BGs, all targets are valid!!)
-                                        if (Targeting.Instance.FirstUnit != null && StyxWoW.Me.Combat)
+                                        if (Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.IsAlive && StyxWoW.Me.Combat)
                                         {
                                             return Targeting.Instance.FirstUnit;
                                         }
-                                        // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
-                                        var units =
-                                            ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
-                                                p => p.IsHostile && !p.IsOnTransport && !p.Dead && !p.Mounted
-                                                    && p.DistanceSqr <= 70 * 70 && p.Combat);
 
-                                        if (StyxWoW.Me.Combat && units.Any())
+                                        // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
+                                        var agroMob =
+                                            ObjectManager.GetObjectsOfType<WoWUnit>(false, false).
+                                                Where( p => !Blacklist.Contains(p) && p.IsHostile && !p.IsOnTransport && !p.Dead &&
+                                                            !p.Mounted && p.DistanceSqr <= 70*70 && p.Combat).
+                                                OrderBy(u => u.DistanceSqr).
+                                                FirstOrDefault();
+
+                                        if (agroMob != null)
                                         {
                                             // Return the closest one to us
-                                            return units.OrderBy(u => u.DistanceSqr).FirstOrDefault();
+                                            return agroMob;
                                         }
 
                                         // And there's nothing left, so just return null, kthx.
@@ -78,7 +95,12 @@ namespace Singular.Helpers
                                     ret => ret != null,
                                     new Sequence(
                                         new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
-                                        new Action(ret => ((WoWUnit)ret).Target()))),
+                                        new Action(ret => ((WoWUnit)ret).Target()),
+                                        new WaitContinue(
+                                            2,
+                                            ret => StyxWoW.Me.CurrentTarget != null &&
+                                                   StyxWoW.Me.CurrentTarget == (WoWUnit)ret,
+                                            new ActionAlwaysSucceed()))),
                                 // In order to resolve getting "stuck" on a target, we'll clear it if there's nothing viable.
                                 new Action(
                                     ret =>

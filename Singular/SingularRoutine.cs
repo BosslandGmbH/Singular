@@ -127,11 +127,6 @@ namespace Singular
                 }
             }
 
-            //if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsCasting)
-            //{
-            //    Logger.WriteDebug("Target is casting " + StyxWoW.Me.CurrentTarget.CastingSpell.Name + " - Can I interrupt? " + !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast);
-            //}
-
             PetManager.Pulse();
 
             if (HealerManager.NeedHealTargeting)

@@ -22,23 +22,9 @@ namespace Singular.ClassSpecific.Mage
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
+                Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-
-                //Move away from frozen targets
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") && StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5,
-                    new Action(
-                        ret =>
-                        {
-                            Logger.Write("Getting away from frozen target");
-                            WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, 10f);
-
-                            if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
-                            {
-                                Navigator.MoveTo(moveTo);
-                            }
-                        })),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),

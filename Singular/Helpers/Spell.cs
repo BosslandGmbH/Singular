@@ -155,7 +155,7 @@ namespace Singular.Helpers
         /// </remarks>
         /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <returns></returns>
-        public static Composite WaitForCast(bool faceDuring, params string[] ignoreSpellsForDoubleCastPrevention)
+        public static Composite WaitForCast(bool faceDuring)
         {
             return new PrioritySelector(
                 new Decorator(
@@ -163,23 +163,49 @@ namespace Singular.Helpers
                     StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding() &&
                     (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds > 500 && StyxWoW.Me.ChanneledCastingSpellId == 0),
                     new PrioritySelector(
-                        // This is here to avoid double casting spells with dots/debuffs (like Immolate)
-                        // Note: This needs testing.
-                        new Decorator(
-                            ret => StyxWoW.Me.CurrentTarget != null &&
-                                   StyxWoW.Me.NonChanneledCastingSpellId == StyxWoW.Me.CastingSpellId &&
-                                   StyxWoW.Me.CurrentTarget.Auras.Any(
-                                       a =>
-                                       !ignoreSpellsForDoubleCastPrevention.Contains(a.Value.Spell.Name) &&
-                                       a.Value.SpellId == StyxWoW.Me.CastingSpellId &&
-                                       a.Value.CreatorGuid == StyxWoW.Me.Guid),
-                            new Action(ret => SpellManager.StopCasting())),
                         new Decorator(
                             ret => faceDuring,
                             Movement.CreateFaceTargetBehavior()),
                         new ActionAlwaysSucceed()
                         )));
         }
+        #endregion
+
+        #region PreventDoubleCast
+
+        /// <summary>
+        /// Creates a composite to avoid double casting spells on current target. Mostly usable for spells like Immolate, Devouring Plague etc.
+        /// </summary>
+        /// <remarks>
+        /// Created 19/12/2011 raphus
+        /// </remarks>
+        /// <param name="spellNames"> Spell names to check </param>
+        /// <returns></returns>
+        public static Composite PreventDoubleCast(params string[] spellNames)
+        {
+            return PreventDoubleCast(ret => StyxWoW.Me.CurrentTarget, spellNames);
+        }
+
+        /// <summary>
+        /// Creates a composite to avoid double casting spells on specified unit. Mostly usable for spells like Immolate, Devouring Plague etc.
+        /// </summary>
+        /// <remarks>
+        /// Created 19/12/2011 raphus
+        /// </remarks>
+        /// <param name="unit"> Unit to check </param>
+        /// <param name="spellNames"> Spell names to check </param>
+        /// <returns></returns>
+        public static Composite PreventDoubleCast(UnitSelectionDelegate unit, params string[] spellNames)
+        {
+            return
+                new PrioritySelector(
+                    new Decorator(
+                        ret => StyxWoW.Me.IsCasting && spellNames.Contains(StyxWoW.Me.CastingSpell.Name) &&
+                               unit != null && unit(ret) != null && unit(ret).Auras.Any(a => a.Value.SpellId == StyxWoW.Me.CastingSpellId &&
+                               a.Value.CreatorGuid == StyxWoW.Me.Guid),
+                        new Action(ret => SpellManager.StopCasting())));
+        }
+
         #endregion
 
         #region Cast - by name
@@ -287,7 +313,6 @@ namespace Singular.Helpers
                                         var rangeId = spell.InternalInfo.SpellRangeId;
                                         var minRange = spell.MinRange;
                                         var maxRange = spell.MaxRange;
-
                                         // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
                                         if (rangeId == 1)
                                             inRange = true;
@@ -297,12 +322,10 @@ namespace Singular.Helpers
                                         else
                                             inRange = target.Distance < maxRange &&
                                                       target.Distance > (minRange == 0 ? minRange : minRange + 3);
-
                                     }
                                 }
                             }
                         }
-
 
                         return minReqs && canCast && inRange;
                     },
@@ -590,6 +613,136 @@ namespace Singular.Helpers
 
         #endregion
 
+        #region Heal - by name
+
+        /// <summary>
+        ///   Creates a behavior to cast a heal spell by name. Heal behaviors will make sure
+        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <returns>.</returns>
+        public static Composite Heal(string name)
+        {
+            return Heal(name, ret => true);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a heal spell by name, with special requirements. Heal behaviors will make sure
+        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite Heal(string name, SimpleBooleanDelegate requirements)
+        {
+            return Heal(name, ret => true, ret => StyxWoW.Me.CurrentTarget, requirements);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a heal spell by name, on a specific unit. Heal behaviors will make sure
+        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name = "onUnit">The on unit.</param>
+        /// <returns>.</returns>
+        public static Composite Heal(string name, UnitSelectionDelegate onUnit)
+        {
+            return Heal(name, ret => true, onUnit, ret => true);
+        }
+        /// <summary>
+        ///   Creates a behavior to cast a heal spell by name, on a specific unit. Heal behaviors will make sure
+        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name = "onUnit">The on unit.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite Heal(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return Heal(name, ret => true, onUnit, requirements);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a heal spell by name, with special requirements, on a specific unit. Heal behaviors will make sure
+        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name="checkMovement"></param>
+        /// <param name = "onUnit">The on unit.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite Heal(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return
+                new Sequence(
+                    Cast(name, checkMovement, onUnit, requirements),
+                    // Little bit wait here to catch casting
+                    new WaitContinue(
+                        1,
+                        ret =>
+                            {
+                                WoWSpell spell;
+                                if (SpellManager.Spells.TryGetValue(name, out spell))
+                                {
+                                    if (spell.CastTime == 0)
+                                        return true;
+
+                                    return StyxWoW.Me.IsCasting;
+                                }
+
+                                return true;
+                            },
+                        new ActionAlwaysSucceed()),
+                    new WaitContinue(
+                        10,
+                        ret =>
+                            {
+                                // Let channeled heals been cast till end.
+                                if (StyxWoW.Me.ChanneledCastingSpellId != 0)
+                                {
+                                    return false;
+                                }
+
+                                // Interrupted or finished casting. Continue
+                                if (!StyxWoW.Me.IsCasting)
+                                {
+                                    return true;
+                                }
+
+                                // 500ms left till cast ends. Shall continue for next spell
+                                if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < 500)
+                                {
+                                    return true;
+                                }
+
+                                // If requirements don't meet anymore, stop casting and let it continue
+                                if (!requirements(ret))
+                                {
+                                    SpellManager.StopCasting();
+                                    return true;
+                                }
+                                return false;
+                            },
+                        new ActionAlwaysSucceed()));
+        }
+
+        #endregion
+
         #region CastOnGround - placeable spell casting
 
         /// <summary>
@@ -656,7 +809,7 @@ namespace Singular.Helpers
                         ctx => ctx != null,
                         new Sequence(
                             Cast(spellName, ctx => (WoWPlayer)ctx),
-                            new Action(ctx => Blacklist.Add((WoWPlayer)ctx, TimeSpan.FromSeconds(10))))));
+                            new Action(ctx => Blacklist.Add((WoWPlayer)ctx, TimeSpan.FromSeconds(30))))));
         }
 
         #endregion

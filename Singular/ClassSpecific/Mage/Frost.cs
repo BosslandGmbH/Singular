@@ -2,6 +2,7 @@
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
@@ -23,29 +24,15 @@ namespace Singular.ClassSpecific.Mage
             PetManager.WantedPet = "Water Elemental";
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                //Move away from frozen targets
-                new Decorator(
-                    ret =>
-                    (StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") || StyxWoW.Me.CurrentTarget.HasAura("Freeze")) &&
-                    StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5,
-                    new Action(
-                        ret =>
-                            {
-                                Logger.Write("Getting away from frozen target");
-                                WoWPoint moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, 10f);
-
-                                if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
-                                {
-                                    Navigator.MoveTo(moveTo);
-                                }
-                            })),
+                Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Spell.PreventDoubleCast("Polymorph"),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
                 Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                Spell.Buff("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
+                Spell.Buff("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze"))),
                 Common.CreateMagePolymorphOnAddBehavior(),
                 new Decorator(
                     ret => !StyxWoW.Me.GotAlivePet,
@@ -98,6 +85,7 @@ namespace Singular.ClassSpecific.Mage
                 // Make sure we're in range, and facing the damned target. (LOS check as well)
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
+                    Spell.WaitForCast(true),
                     Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.HasAura("Arcane Missiles!")),
                     Spell.Cast("Frostbolt"),
                     Movement.CreateMoveToTargetBehavior(true, 35f)

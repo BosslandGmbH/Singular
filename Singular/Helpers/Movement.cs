@@ -13,7 +13,7 @@
 
 using System;
 using System.Linq;
-
+using CommonBehaviors.Actions;
 using Singular.Settings;
 
 using Styx;
@@ -72,7 +72,13 @@ namespace Singular.Helpers
                 ret =>
                 !SingularSettings.Instance.DisableAllMovement && !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget != null &&
                 !StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 70f),
-                new Action(ret => StyxWoW.Me.CurrentTarget.Face()));
+                new Sequence(
+                    new Action(ret => Navigator.PlayerMover.MoveStop()),
+                    new WaitContinue(
+                        2,
+                        ret => !StyxWoW.Me.IsMoving,
+                        new ActionAlwaysSucceed()),
+                    new Action(ret => StyxWoW.Me.CurrentTarget.Face())));
         }
 
         /// <summary>
@@ -210,26 +216,7 @@ namespace Singular.Helpers
 
         public static Composite CreateMoveToMeleeBehavior(LocationRetriever location, bool stopInRange)
         {
-            // Do not fuck with this. It will ensure we stop in range if we're supposed to.
-            // Otherwise it'll stick to the targets ass like flies on dog shit.
-            // Specifying a range of, 2 or so, will ensure we're constantly running to the target. Specifying 0 will cause us to spin in circles around the target
-            // or chase it down like mad. (PVP oriented behavior)
-            return
-                new Decorator(
-                    // Don't run if the movement is disabled.
-                    ret => !SingularSettings.Instance.DisableAllMovement,
-                    new PrioritySelector(
-                        new Decorator(
-                            // Give it a little more than 1/2 a yard buffer to get it right. CTM is never 'exact' on where we land. So don't expect it to be.
-                            ret => stopInRange && StyxWoW.Me.Location.Distance(location(ret)) + 0.6f < Spell.SafeMeleeRange,
-                            new PrioritySelector(
-                                CreateEnsureMovementStoppedBehavior(),
-                                // In short; if we're not moving, just 'succeed' here, so we break the tree.
-                                new Action(ret => RunStatus.Success)
-                                )
-                            ),
-                        new Action(ret => Navigator.MoveTo(location(ret)))
-                        ));
+            return CreateMoveToLocationBehavior(location, stopInRange, Spell.SafeMeleeRange);
         }
 
         #endregion

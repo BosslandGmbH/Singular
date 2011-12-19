@@ -29,6 +29,7 @@ namespace Singular.ClassSpecific.Priest
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Spell.PreventDoubleCast("Devouring Plague", "Vampiric Touch"),
                 Spell.WaitForCast(true),
                 // cast devouring plague first if option is set
                 Spell.StopAndBuff("Devouring Plague", ret => SingularSettings.Instance.Priest.DevouringPlagueFirst),

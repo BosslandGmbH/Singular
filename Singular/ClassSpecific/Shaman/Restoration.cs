@@ -117,7 +117,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Grounding Totem", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
 
                         // Just pop RT on CD. Plain and simple. Calling GetBestRiptideTarget will see if we can spread RTs (T12 2pc)
-                        Spell.Cast("Riptide", ret => GetBestRiptideTarget((WoWPlayer)ret)),
+                        Spell.Heal("Riptide", ret => GetBestRiptideTarget((WoWPlayer)ret)),
                         // And deal with some edge PVP cases.
 
                         Spell.Buff("Earth Shield", 
@@ -126,11 +126,11 @@ namespace Singular.ClassSpecific.Shaman
 
                         // Pop NS if someone is in some trouble.
                         Spell.BuffSelf("Nature's Swiftness", ret => ((WoWUnit)ret).HealthPercent < 15),
-                        Spell.Cast("Unleash Elements", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 40),
+                        Spell.Heal("Unleash Elements", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 40),
                         // GHW is highest priority. It should be fairly low health %. (High-end healers will have this set to 70ish
-                        Spell.Cast("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 50),
+                        Spell.Heal("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 50),
                         // Most (if not all) will leave this at 90. Its lower prio, high HPM, low HPS
-                        Spell.Cast("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 90),
+                        Spell.Heal("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 90),
 
 
                         // CH/HR only in parties/raids
@@ -143,7 +143,7 @@ namespace Singular.ClassSpecific.Shaman
                                 // Also ensure it will jump at least 3 times. (CH is pointless to cast if it won't jump 3 times!)
                                 new PrioritySelector(
                                     context => Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, 12f),
-                                    Spell.Cast(
+                                    Spell.Heal(
                                         "Chain Heal", ret => (WoWPlayer)ret,
                                         ret => Clusters.GetClusterCount((WoWPlayer)ret, ChainHealPlayers, ClusterType.Chained, 12f) > 2)),
 

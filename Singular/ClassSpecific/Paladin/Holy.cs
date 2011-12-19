@@ -133,35 +133,35 @@ namespace Singular.ClassSpecific.Paladin
                                 "Beacon of Light",
                                 ret => Group.Tank,
                                 ret => Group.Tank != null && Group.Tank.IsAlive),
-                            Spell.Cast(
+                            Spell.Heal(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,
                                 ret => StyxWoW.Me.Combat && !((WoWUnit)ret).HasAura("Forbearance") &&
                                        ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealth),
-                            Spell.Cast(
+                            Spell.Heal(
                                 "Light of Dawn",
                                 ret => StyxWoW.Me,
                                 ret => StyxWoW.Me.CurrentHolyPower == 3 &&
                                        Unit.NearbyFriendlyPlayers.Count(p =>
                                            p.HealthPercent <= SingularSettings.Instance.Paladin.LightOfDawnHealth && p != StyxWoW.Me &&
                                            p.DistanceSqr < 30*30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin.LightOfDawnCount),
-                            Spell.Cast(
+                            Spell.Heal(
                                 "Word of Glory",
                                 ret => (WoWUnit)ret,
                                 ret => StyxWoW.Me.CurrentHolyPower == 3 && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth),
-                            Spell.Cast(
+                            Spell.Heal(
                                 "Holy Shock",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyShockHealth),
-                            Spell.Cast(
+                            Spell.Heal(
                                 "Flash of Light",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.FlashOfLightHealth),
-                            Spell.Cast(
+                            Spell.Heal(
                                 "Divine Light",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.DivineLightHealth),
-                            Spell.Cast(
+                            Spell.Heal(
                                 "Holy Light",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyLightHealth),

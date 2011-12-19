@@ -75,30 +75,30 @@ namespace Singular.ClassSpecific.Priest
                         // If we can, the sequence fails, since PoH can't be cast (as we're still casting at this point)
                                 new DecoratorContinue(
                                     ret => SpellManager.CanCast("Divine Hymn"),
-                                    Spell.Cast("Divine Hymn")),
-                                Spell.Cast("Prayer of Healing"))),
-                        Spell.Buff(
+                                    Spell.Heal("Divine Hymn")),
+                                Spell.Heal("Prayer of Healing"))),
+                        Spell.Heal(
                             "Pain Supression",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.PainSuppression),
-                        Spell.Buff(
+                        Spell.Heal(
                             "Penance",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Penance),
-                        Spell.Cast(
+                        Spell.Heal(
                             "Flash Heal",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.FlashHeal),
-                        Spell.Cast(
+                        Spell.Heal(
                             "Binding Heal",
                             ret => (WoWUnit)ret,
                             ret => (WoWUnit)ret != StyxWoW.Me && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.BindingHealThem &&
                                    StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.BindingHealMe),
-                        Spell.Cast(
+                        Spell.Heal(
                             "Greater Heal",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.GreaterHeal),
-                        Spell.Cast(
+                        Spell.Heal(
                             "Heal",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Heal),

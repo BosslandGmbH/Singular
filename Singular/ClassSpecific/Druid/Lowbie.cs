@@ -13,8 +13,7 @@ namespace Singular.ClassSpecific.Druid
         [Spec(TalentSpec.Lowbie)]
         [Class(WoWClass.Druid)]
         [Context(WoWContext.All)]
-        [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Heal)]
+        [Behavior(BehaviorType.Combat | BehaviorType.Pull)]
         public static Composite CreateLowbieDruidCombat()
         {
             Common.WantedDruidForm = ShapeshiftForm.Cat;
@@ -35,37 +34,12 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
                         Spell.Cast("Rake", ret => !StyxWoW.Me.CurrentTarget.HasAura("Rake") || StyxWoW.Me.CurrentTarget.GetAuraByName("Rake").CreatorGuid != StyxWoW.Me.Guid),
                         Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints > 4 || StyxWoW.Me.ComboPoints > 0 && StyxWoW.Me.CurrentTarget.HealthPercent < 40),
-                        Spell.Cast("Claw"))),
+                        Spell.Cast("Claw"),
+                        Movement.CreateMoveToMeleeBehavior(true))),
                 //Pre Cat spells
-                Spell.Cast("Moonfire", ret => !StyxWoW.Me.HasAura("Cat Form") && !StyxWoW.Me.CurrentTarget.HasAura("Moonfire")),
-                Spell.Cast("Wrath", ret => !StyxWoW.Me.HasAura("Cat Form")),
-                new Decorator(
-                    ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat,
-                    Movement.CreateMoveToTargetBehavior(true, 5f)),
-                Movement.CreateMoveToTargetBehavior(true, 20f)
-                );
-        }
-
-        [Spec(TalentSpec.Lowbie)]
-        [Class(WoWClass.Druid)]
-        [Context(WoWContext.All)]
-        [Behavior(BehaviorType.Pull)]
-        public static Composite CreateLowbiePull()
-        {
-            Common.WantedDruidForm = ShapeshiftForm.Cat;
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                // Make sure we're in cat form first, period.
-                new Decorator(
-                    ret => StyxWoW.Me.Shapeshift != Common.WantedDruidForm,
-                    Spell.Cast("Cat Form")),
-                Helpers.Common.CreateAutoAttack(true),
-                Spell.Cast("Rake", ret => (!StyxWoW.Me.CurrentTarget.HasAura("Rake") || StyxWoW.Me.CurrentTarget.GetAuraByName("Rake").CreatorGuid != StyxWoW.Me.Guid) && SpellManager.HasSpell("Cat Form")),
-                Spell.Cast("Starfire", ret => !StyxWoW.Me.HasAura("Cat Form")),
-                Spell.Cast("Wrath", ret => !StyxWoW.Me.HasAura("Cat Form")),
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Spell.Buff("Moonfire"),
+                Spell.Cast("Wrath"),
+                Movement.CreateMoveToTargetBehavior(true, 30f)
                 );
         }
     }

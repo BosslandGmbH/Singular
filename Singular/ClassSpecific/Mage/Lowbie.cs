@@ -22,14 +22,13 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Spell.WaitForCast(true, "Frostbolt", "Fireball", "Fire Blast"),
+                Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Common.CreateMagePolymorphOnAddBehavior(),
                 Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.Auras.ContainsKey("Arcane Missiles!")),
                 Spell.Cast("Fireball", ret => !SpellManager.HasSpell("Frostbolt")),
                 Spell.Cast("Fire Blast", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 10),
                 Spell.Cast("Frostbolt"),
-                Helpers.Common.CreateUseWand(),
                 Movement.CreateMoveToTargetBehavior(true, 25f)
                 );
         }

@@ -28,8 +28,8 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-
-                Spell.WaitForCast(true, "Haunt", "Unstable Affliction"),
+                Spell.PreventDoubleCast("Immolate"),
+                Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Emergencies

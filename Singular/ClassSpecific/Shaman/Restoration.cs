@@ -120,9 +120,9 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Heal("Riptide", ret => GetBestRiptideTarget((WoWPlayer)ret)),
                         // And deal with some edge PVP cases.
 
-                        Spell.Buff("Earth Shield", 
+                        Spell.Heal("Earth Shield", 
                             ret => Group.Tank, 
-                            ret => Group.Tank != null && Group.Tank.IsAlive),
+                            ret => Group.Tank != null && Group.Tank.IsAlive && !Group.Tank.HasMyAura("Earth Shield")),
 
                         // Pop NS if someone is in some trouble.
                         Spell.BuffSelf("Nature's Swiftness", ret => ((WoWUnit)ret).HealthPercent < 15),

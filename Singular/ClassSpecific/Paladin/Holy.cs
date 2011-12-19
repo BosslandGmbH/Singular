@@ -129,10 +129,10 @@ namespace Singular.ClassSpecific.Paladin
                     ret => ret != null,
                         new PrioritySelector(
                             Spell.WaitForCast(),
-                            Spell.Buff(
+                            Spell.Cast(
                                 "Beacon of Light",
                                 ret => Group.Tank,
-                                ret => Group.Tank != null && Group.Tank.IsAlive),
+                                ret => Group.Tank != null && Group.Tank.IsAlive && !Group.Tank.HasMyAura("Beacon of Light")),
                             Spell.Heal(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,

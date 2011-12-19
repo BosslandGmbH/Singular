@@ -102,14 +102,14 @@ namespace Singular.ClassSpecific.Priest
                             "Heal",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Heal),
-                        Spell.Buff(
+                        Spell.Heal(
                             "Renew",
                             ret => (WoWUnit)ret, 
-                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Renew),
-                        Spell.Buff(
+                            ret => !((WoWUnit)ret).HasMyAura("Renew") && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Renew),
+                        Spell.Heal(
                             "Prayer of Mending",
-                            ret => (WoWUnit)ret, 
-                            ret => ((WoWUnit)ret).HealthPercent < 90),
+                            ret => (WoWUnit)ret,
+                            ret => !((WoWUnit)ret).HasMyAura("Prayer of Mending") && ((WoWUnit)ret).HealthPercent < 90),
 
                         new Decorator(
                             ret => moveInRange,

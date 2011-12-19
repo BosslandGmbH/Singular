@@ -116,10 +116,11 @@ namespace Singular.ClassSpecific.Druid
                             ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Nourish &&
                                    ((((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth") ||
                                     ((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).HasAura("Wild Growth")))),
-                        Spell.Buff(
+                        Spell.Heal(
                             "Rejuvenation",
                             ret => (WoWUnit)ret,
-                            ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Rejuvenation),
+                            ret => !((WoWUnit)ret).HasMyAura("Rejuvenation") &&
+                                   ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Rejuvenation),
 
                         new Decorator(
                             ret => moveInRange,

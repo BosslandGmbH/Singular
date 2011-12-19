@@ -141,11 +141,14 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateMagePolymorphOnAddBehavior()
         {
-            return new PrioritySelector(
+            return 
+                new PrioritySelector(
                     ctx => Unit.NearbyUnfriendlyUnits.OrderByDescending(u => u.CurrentHealth).FirstOrDefault(IsViableForPolymorph),
                     new Decorator(
-                        ret => ret != null,
-                        Spell.Buff("Polymorph", ret => (WoWUnit)ret, ret => Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")))));
+                        ret => ret != null && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")),
+                        new PrioritySelector(
+                            Spell.PreventDoubleCast(ret => (WoWUnit)ret, "Polymorph"),
+                            Spell.Buff("Polymorph", ret => (WoWUnit)ret))));
         }
 
         private static bool IsViableForPolymorph(WoWUnit unit)

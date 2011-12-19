@@ -131,7 +131,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static bool HasMyAura(this WoWUnit unit,string aura)
         {
-            return HasMyAura(unit,aura, 1);
+            return HasMyAura(unit,aura, 0);
         }
 
         /// <summary>
@@ -150,11 +150,6 @@ namespace Singular.Helpers
         {
             return unit.GetAllAuras().Any(a => a.Name == aura && a.StackCount >= stacks &&
                                               (creator == null || a.CreatorGuid == creator.Guid));
-            //Logger.WriteDebug("Looking for aura: " + aura);
-            var auras = unit.GetAllAuras();
-            return (from a in auras
-                    where a.Name == aura
-                    select a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid)).FirstOrDefault();
         }
 
         /// <summary>

@@ -27,7 +27,6 @@ namespace Singular.ClassSpecific.Mage
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.PreventDoubleCast("Polymorph"),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
                 Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),

@@ -84,7 +84,10 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Howling Blast", ret => StyxWoW.Me.HasAura("Freezing Fog")),
                 Spell.Cast("Obliterate"),
                 Spell.Cast("Frost Strike"),
-                Spell.Cast("Blood Tap"),
+                // Blood Tap changed by the request of benkoren /raphus
+                Spell.Cast("Blood Tap", 
+                    ret => StyxWoW.Me.UnholyRuneCount >= 1 && StyxWoW.Me.FrostRuneCount == 0 && 
+                           StyxWoW.Me.DeathRuneCount == 0 && StyxWoW.Me.CurrentTarget.Distance <= 10),
                 Spell.Cast("Howling Blast", ret => StyxWoW.Me.CurrentRunicPower < 32),
                 Spell.Cast("Horn of Winter"),
                 Movement.CreateMoveToMeleeBehavior(true)

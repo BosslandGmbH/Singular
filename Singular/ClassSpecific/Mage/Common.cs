@@ -16,7 +16,7 @@ using Styx;
 
 namespace Singular.ClassSpecific.Mage
 {
-    public class Common
+    public static class Common
     {
         private static WoWItem _manaGem;
 

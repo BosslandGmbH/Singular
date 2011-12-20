@@ -94,8 +94,6 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.Distance <= Spell.SafeMeleeRange + 3f && StyxWoW.Me.CurrentTarget.IsAlive &&
                            (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me),
-                           new Sequence(
-                               new Action(ret => Logging.Write("Moving out of melee distance.")),
                     new Action(
                         ret =>
                         {
@@ -107,7 +105,7 @@ namespace Singular.ClassSpecific.Hunter
                             }
 
                             return RunStatus.Failure;
-                        })));
+                        }));
         }
 
         public static Composite CreateHunterTrapBehavior(string trapName)

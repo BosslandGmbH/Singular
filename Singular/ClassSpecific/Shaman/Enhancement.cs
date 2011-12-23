@@ -34,23 +34,29 @@ namespace Singular.ClassSpecific.Shaman
 
                 //Removes the weapon enchant if the imbune is the wrong one and then attempts to rebuff
                 //MainHand
-                new Decorator(ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Windfury") &&
-                    StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 0,
+                new Decorator(ret => SpellManager.HasSpell("Windfury Weapon") &&
+                                     !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Windfury") &&
+                                     StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 0,
                         new Action(ret =>
                         {
                             Logger.WriteDebug("Canceling " + StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Name + " Main Hand Imbune");
                             Lua.DoString("CancelItemTempEnchantment(1)");
                         })),
                 Spell.Cast("Windfury Weapon", ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Windfury")),
-
+                // Low level support
+                Spell.Cast("Flametongue Weapon", 
+                    ret => !SpellManager.HasSpell("Windfury Weapon") && 
+                           !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue")),
                 //Offhand
                 new Decorator(ret => !Item.HasWeaponImbue(WoWInventorySlot.OffHand, "Flametongue") &&
-                    StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id != 0,
+                                     StyxWoW.Me.Inventory.Equipped.OffHand != null &&
+                                     StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id != 0,
                         new Action(ret =>
                         {
                             Logger.WriteDebug("Canceling " + StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Name + " OffHand Imbune");
                             Lua.DoString("CancelItemTempEnchantment(2)");
                         })),
+
                 Spell.Cast("Flametongue Weapon", ret => !Item.HasWeaponImbue(WoWInventorySlot.OffHand, "Flametongue"))
                 );
         }

@@ -46,7 +46,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.BuffSelf("Water Shield"),
 
                 new Decorator(
-                    ret => !Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Earthliving"),
+                    ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Earthliving"),
                     Spell.Cast("Earthliving Weapon"))
                 );
         }

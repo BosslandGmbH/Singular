@@ -25,7 +25,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Lightning Shield"),
-                Spell.Cast("Flametongue Weapon", ret => !Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue"))
+                Spell.Cast("Flametongue Weapon", ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue"))
                 //new LogMessage("Flametongue done!"),
                 );
         }
@@ -116,7 +116,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 // So... ignore movement if we have the glyph (hence the negated HasGlyph, if we don't have it, we want to chekc movement, otherwise, ignore it.)
                 Spell.Cast("Lightning Bolt", ret => !TalentManager.HasGlyph("Unleashed Lightning"), ret => StyxWoW.Me.CurrentTarget, ret => true),
-                Spell.Cast("Unleash Elements", ret => Item.HasWeapoinImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
+                Spell.Cast("Unleash Elements", ret => Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
 
                 Movement.CreateMoveToTargetBehavior(true, 38f)
                 );

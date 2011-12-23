@@ -49,7 +49,8 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
                         Spell.Cast("Inquisition"),
                         Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
-                        Spell.Cast("Judgement")
+                        Spell.Cast("Judgement"),
+                        Spell.Cast("Crusader Strike")
                         )),
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) <= 1,

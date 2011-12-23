@@ -122,6 +122,7 @@
     <Compile Include="ClassSpecific\Rogue\Poisons.cs" />
     <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
     <Compile Include="ClassSpecific\Shaman\Enhancement.cs" />
+    <Compile Include="ClassSpecific\Shaman\Lowbie.cs" />
     <Compile Include="ClassSpecific\Shaman\Restoration.cs" />
     <Compile Include="ClassSpecific\Shaman\Totems.cs" />
     <Compile Include="ClassSpecific\Warlock\Affliction.cs" />
@@ -197,6 +198,8 @@
 if $(ConfigurationName) == Raphus (
 RD /S /Q "E:\Programming\Projects\Honorbuddy\Styx\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular\"
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "E:\Programming\Projects\Honorbuddy\Styx\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular\" /i /f /s /v /y
+RD /S /Q "C:\Users\Dodo\Desktop\HB Test\CustomClasses\Singular\"
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\Users\Dodo\Desktop\HB Test\CustomClasses\Singular\" /i /f /s /v /y
 )
 
 if $(ConfigurationName) == Bobby53 (

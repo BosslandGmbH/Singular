@@ -50,7 +50,7 @@ namespace Singular.Helpers
                                         // If we have a RaF leader, then use its target.
                                         var rafLeader = RaFHelper.Leader;
                                         if (rafLeader != null && rafLeader.IsValid && !rafLeader.IsMe && rafLeader.Combat && 
-                                            rafLeader.CurrentTarget != null && rafLeader.CurrentTarget.IsAlive)
+                                            rafLeader.CurrentTarget != null && rafLeader.CurrentTarget.IsAlive && !Blacklist.Contains(rafLeader.CurrentTarget))
                                         {
                                             return rafLeader;
                                         }
@@ -60,7 +60,7 @@ namespace Singular.Helpers
                                         {
                                             var unit = BotPoi.Current.AsObject as WoWUnit;
 
-                                            if (unit != null && unit.IsAlive && !unit.IsMe)
+                                            if (unit != null && unit.IsAlive && !unit.IsMe && !Blacklist.Contains(unit))
                                             {
                                                 return unit;
                                             }
@@ -69,7 +69,8 @@ namespace Singular.Helpers
                                         // Does the target list have anything in it? And is the unit in combat?
                                         // Make sure we only check target combat, if we're NOT in a BG. (Inside BGs, all targets are valid!!)
                                         var firstUnit = Targeting.Instance.FirstUnit;
-                                        if (firstUnit != null && firstUnit.IsAlive && !firstUnit.IsMe && StyxWoW.Me.Combat)
+                                        if (firstUnit != null && firstUnit.IsAlive && !firstUnit.IsMe && StyxWoW.Me.Combat &&
+                                            !Blacklist.Contains(firstUnit))
                                         {
                                             return firstUnit;
                                         }

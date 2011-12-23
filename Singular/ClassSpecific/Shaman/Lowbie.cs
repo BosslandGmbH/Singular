@@ -53,10 +53,9 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.WaitForCast(true),
                     Common.CreateAutoAttack(true),
                     Restoration.CreateRestoShamanHealingOnlyBehavior(true),
-                    Spell.Cast("Earth Shock"),
-                    Spell.Cast("Lightning Bolt"),
-                    // Should use melee when out of mana
-                    Spell.Cast("Primal Strike"),
+                    Spell.Cast("Earth Shock"),      // always use
+                    Spell.Cast("Primal Strike"),    // always use
+                    Spell.Cast("Lightning Bolt"),                   
                     Movement.CreateMoveToTargetBehavior(true, 20f)
                     );
         }

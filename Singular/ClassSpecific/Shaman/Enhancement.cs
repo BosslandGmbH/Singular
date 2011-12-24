@@ -104,6 +104,9 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Feral Spirit", ret => SingularSettings.Instance.Shaman.CastOn != CastOn.Never &&
                     SingularSettings.Instance.Shaman.EnhancementHeal &&
                     StyxWoW.Me.HealthPercent <= 50),
+               
+                Spell.StopAndCast("Healing Wave", ret => StyxWoW.Me, ret => !SpellManager.HasSpell("Healing Surge") && StyxWoW.Me.HealthPercent <= 50 &&
+                    SingularSettings.Instance.Shaman.EnhancementHeal),
 
                 Spell.StopAndCast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 50 &&
                     SingularSettings.Instance.Shaman.EnhancementHeal),
@@ -134,16 +137,10 @@ namespace Singular.ClassSpecific.Shaman
                 // Cast if we have unleash flame buff or if we dont know the spell
                 //cast if the target dosnt have the aura or has less than 4 seconds left
                 Spell.Cast("Flame Shock",
-                ret =>
-                    (StyxWoW.Me.HasAura("Unleash Flame") || !SpellManager.HasSpell("Unleash Elements")) &&
-                    (!StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock") || StyxWoW.Me.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 4)),
+                    ret => StyxWoW.Me.HasAura("Unleash Flame") || StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 4),
 
 
                 Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasMyAura("Maelstrom Weapon", 5)),
-
-
-                // Clip the last tick of FS if we can.
-                Spell.Buff("Flame Shock", ret => StyxWoW.Me.HasAura("Unleash Flame") || !SpellManager.HasSpell("Unleash Elements")),
 
 
                 Spell.Cast("Earth Shock",

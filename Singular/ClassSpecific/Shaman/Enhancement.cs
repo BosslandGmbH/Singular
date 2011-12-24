@@ -126,6 +126,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 Movement.CreateMoveBehindTargetBehavior(),
 
+                Spell.Cast("Primal Strike", ret => !SpellManager.HasSpell("Stormstrike")),
                 Spell.Cast("Stormstrike"),
                 Spell.Cast("Lava Lash"),
                 Spell.Cast("Unleash Elements"),
@@ -135,7 +136,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Flame Shock",
                 ret =>
                     (StyxWoW.Me.HasAura("Unleash Flame") || !SpellManager.HasSpell("Unleash Elements")) &&
-                    (StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock") || StyxWoW.Me.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 4)),
+                    (!StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock") || StyxWoW.Me.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 4)),
 
 
                 Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasMyAura("Maelstrom Weapon", 5)),

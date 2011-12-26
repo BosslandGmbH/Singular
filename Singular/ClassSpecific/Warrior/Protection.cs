@@ -58,6 +58,22 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Spell Reflection", ret => StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me && StyxWoW.Me.CurrentTarget.IsCasting),
                 Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
+                //PVP
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.IsPlayer,
+                    new PrioritySelector(
+                        Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                        Spell.Buff("Rend"),
+                        Spell.Cast("Thunder Clap"),
+                        Spell.Cast("Shockwave"),
+                        Spell.Cast("Cleave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 2),
+                                        Spell.Cast("Concussion Blow"),
+                        Spell.Cast("Shield Slam"),
+                        Spell.Cast("Revenge"),
+                        Spell.Cast("Devastate"),
+                        Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent >= 50)
+                        )),
+
                 //Aoe tanking
                 new Decorator(
                     ret => Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 15f) > 1,
@@ -78,7 +94,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Single Target
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
-                //Spell.Cast("Concussion Blow"),
+                Spell.Cast("Concussion Blow"),
                 Spell.Cast("Shield Slam"),
                 Spell.Cast("Revenge"),
                 Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent >= 50),

@@ -18,15 +18,29 @@ namespace Singular.ClassSpecific.Shaman
     {
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.ElementalShaman)]
+        [Behavior(BehaviorType.Rest)]
+        [Context(WoWContext.All)]
+        public static Composite CreateElementalShamanRest()
+        {
+            return
+                new PrioritySelector(
+                    new Decorator(
+                        ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                        CreateElementalShamanHeal()),
+                    Rest.CreateDefaultRestBehaviour(),
+                    Spell.Resurrect("Ancestral Spirit")
+                    );
+        }
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
         [Behavior(BehaviorType.PullBuffs)]
-        //[Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateElementalPullBuffs()
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.Cast("Flametongue Weapon", ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue"))
-                //new LogMessage("Flametongue done!"),
                 );
         }
 
@@ -34,7 +48,7 @@ namespace Singular.ClassSpecific.Shaman
         [Spec(TalentSpec.ElementalShaman)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
-        public static Composite CreateShamanBuffs()
+        public static Composite CreateElementalShamanPreCombatBuffs()
         {
             return new PrioritySelector(
                 Spell.Cast("Ghost Wolf", ret => !CharacterSettings.Instance.UseMount && StyxWoW.Me.Shapeshift == ShapeshiftForm.Normal),
@@ -42,8 +56,32 @@ namespace Singular.ClassSpecific.Shaman
                     new Action(ret => Totems.RecallTotems()))
                 );
         }
+    
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
+        [Behavior(BehaviorType.Heal)]
+        [Context(WoWContext.All)]
+        public static Composite CreateElementalShamanHeal()
+        {
+            return
+                new Decorator(
+                    ret => SingularSettings.Instance.Shaman.ElementalHeal,
+                    new PrioritySelector(
+                        // Heal the party if the healer is dead
+                        new Decorator(
+                            ret => StyxWoW.Me.CurrentMap.IsDungeon &&
+                                   (Group.Healer == null || !Group.Healer.IsAlive),
+                            Restoration.CreateRestoShamanHealingOnlyBehavior()),
 
-        private static WoWSpell LavaBurst { get { return SpellManager.Spells["Lava Burst"]; } }
+                        Spell.Heal("Healing Wave", 
+                            ret => StyxWoW.Me, 
+                            ret => !SpellManager.HasSpell("Healing Surge") && StyxWoW.Me.HealthPercent <= 50),
+
+                        Spell.Heal("Healing Surge", 
+                            ret => StyxWoW.Me, 
+                            ret => StyxWoW.Me.HealthPercent <= 50)
+                        ));
+        }
 
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.ElementalShaman)]
@@ -51,7 +89,7 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         [Priority(50)]
-        public static Composite CreateElementalCombat()
+        public static Composite CreateElementalShamanCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -118,7 +156,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Lightning Bolt", ret => !TalentManager.HasGlyph("Unleashed Lightning"), ret => StyxWoW.Me.CurrentTarget, ret => true),
                 Spell.Cast("Unleash Elements", ret => Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
     }

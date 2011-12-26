@@ -157,18 +157,25 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite WaitForCast(bool faceDuring)
         {
-            return new PrioritySelector(
-                new Decorator(
-                    ret =>
-                    StyxWoW.Me.IsCasting && !StyxWoW.Me.IsWanding() &&
-                    (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds > 500 && StyxWoW.Me.ChanneledCastingSpellId == 0),
-                    new PrioritySelector(
-                        new Decorator(
-                            ret => faceDuring,
-                            Movement.CreateFaceTargetBehavior()),
-                        new ActionAlwaysSucceed()
-                        )));
+            return
+                new Action(ret =>
+                            {
+                                if (!StyxWoW.Me.IsCasting)
+                                    return RunStatus.Failure;
+
+                                if (StyxWoW.Me.IsWanding())
+                                    return RunStatus.Failure;
+
+                                if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < 500)
+                                    return RunStatus.Failure;
+
+                                if (faceDuring && StyxWoW.Me.ChanneledCastingSpellId == 0)
+                                    Movement.CreateFaceTargetBehavior();
+
+                                return RunStatus.Running;
+                            });
         }
+
         #endregion
 
         #region PreventDoubleCast
@@ -725,10 +732,10 @@ namespace Singular.Helpers
                                 }
 
                                 // 500ms left till cast ends. Shall continue for next spell
-                                if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < 500)
-                                {
-                                    return true;
-                                }
+                                //if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < 500)
+                                //{
+                                //    return true;
+                                //}
 
                                 // If requirements don't meet anymore, stop casting and let it continue
                                 if (!requirements(ret))

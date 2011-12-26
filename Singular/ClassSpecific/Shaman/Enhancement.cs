@@ -23,6 +23,22 @@ namespace Singular.ClassSpecific.Shaman
     {
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.EnhancementShaman)]
+        [Behavior(BehaviorType.Rest)]
+        [Context(WoWContext.All)]
+        public static Composite CreateEnhanceShamanRest()
+        {
+            return
+                new PrioritySelector(
+                    new Decorator(
+                        ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                        CreateEnhanceShamanHeal()),
+                    Rest.CreateDefaultRestBehaviour(),
+                    Spell.Resurrect("Ancestral Spirit")
+                    );
+        }
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.EnhancementShaman)]
         [Behavior(BehaviorType.PullBuffs)]
         [Context(WoWContext.All)]
         [Priority(500)]
@@ -56,7 +72,6 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon,
                     new PrioritySelector(
-
                         //Offhand
                         new Decorator(
                             ret => !Item.HasWeaponImbue(WoWInventorySlot.OffHand, "Flametongue") &&
@@ -72,6 +87,30 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.Cast("Flametongue Weapon", ret => !Item.HasWeaponImbue(WoWInventorySlot.OffHand, "Flametongue"))
                         )));
+        }
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.EnhancementShaman)]
+        [Behavior(BehaviorType.Heal)]
+        [Context(WoWContext.All)]
+        public static Composite CreateEnhanceShamanHeal()
+        {
+            return
+                new Decorator(
+                    ret => SingularSettings.Instance.Shaman.EnhancementHeal,
+                    new PrioritySelector(
+                        // Heal the party if the healer is dead
+                        new Decorator(
+                            ret => StyxWoW.Me.CurrentMap.IsDungeon && 
+                                   (Group.Healer == null || !Group.Healer.IsAlive),
+                            Restoration.CreateRestoShamanHealingOnlyBehavior()),
+
+                        Spell.Heal("Healing Wave", ret => StyxWoW.Me, ret => !SpellManager.HasSpell("Healing Surge") && StyxWoW.Me.HealthPercent <= 50 &&
+                            SingularSettings.Instance.Shaman.EnhancementHeal),
+
+                        Spell.Heal("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 50 &&
+                            SingularSettings.Instance.Shaman.EnhancementHeal)
+                        ));
         }
 
         [Class(WoWClass.Shaman)]
@@ -104,12 +143,6 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Feral Spirit", ret => SingularSettings.Instance.Shaman.CastOn != CastOn.Never &&
                     SingularSettings.Instance.Shaman.EnhancementHeal &&
                     StyxWoW.Me.HealthPercent <= 50),
-               
-                Spell.StopAndCast("Healing Wave", ret => StyxWoW.Me, ret => !SpellManager.HasSpell("Healing Surge") && StyxWoW.Me.HealthPercent <= 50 &&
-                    SingularSettings.Instance.Shaman.EnhancementHeal),
-
-                Spell.StopAndCast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 50 &&
-                    SingularSettings.Instance.Shaman.EnhancementHeal),
 
                //Aoe
                 Spell.Cast("Chain Lightning",

@@ -130,7 +130,7 @@ namespace Singular.ClassSpecific.Shaman
                         // GHW is highest priority. It should be fairly low health %. (High-end healers will have this set to 70ish
                         Spell.Heal("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 50),
                         // Most (if not all) will leave this at 90. Its lower prio, high HPM, low HPS
-                        Spell.Heal("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 90),
+                        Spell.Heal("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).HealthPercent < 60),
 
 
                         // CH/HR only in parties/raids

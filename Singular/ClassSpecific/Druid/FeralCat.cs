@@ -100,7 +100,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateMoveBehindTargetBehavior(),
 
                 //Keep up FF if its not present and target is boss 
-                Spell.Cast("Faerie Fire (Feral)", ret => StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.CurrentTarget.HasSunders()),
+                Spell.Cast("Faerie Fire (Feral)", ret => !StyxWoW.Me.CurrentTarget.HasSunders()),
 
                 //Keep up bleed debuff 
                 Spell.Cast("Mangle (Cat)", ret => !StyxWoW.Me.CurrentTarget.HasBleedDebuff()),

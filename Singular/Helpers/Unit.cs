@@ -279,7 +279,7 @@ namespace Singular.Helpers
             // Plain and simple, any effect with -damage is good. Ensure at least -1. Since 0 may be a buggy spell entry or something.
             var tmp = unit.HasAuraWithEffect(WoWApplyAuraType.ModDamagePercentDone, -1, int.MinValue, -1);
             if (!tmp)
-                Logging.Write(unit.Entry + " - " + unit.Name + " does not have demoralizing!");
+                Logging.Write(unit.Entry + " - " + unit.Name + " does not have a demoralizing debuff!");
             return tmp;
 
             //var auras = unit.GetAllAuras();

@@ -8,6 +8,7 @@ using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
 using TreeSharp;
+using Styx.Logic.Combat;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -45,7 +46,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf("Shield Block"),
                 Spell.Cast("Battle Shout", ret => StyxWoW.Me),
                 Spell.BuffSelf("Shield Wall", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Warrior.WarriorProtShieldWallHealth),
-                Spell.Buff("Demoralizing Shout", ret => !StyxWoW.Me.CurrentTarget.HasDemoralizing()),
+                Spell.Buff("Demoralizing Shout", ret => SpellManager.CanCast("Demoralizing Shout") && !StyxWoW.Me.CurrentTarget.HasDemoralizing()),
 
                 //Close cap on target
                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),

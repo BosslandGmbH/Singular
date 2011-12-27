@@ -131,19 +131,19 @@ namespace Singular.ClassSpecific.Druid
 
         static Composite CreateBoomkinHeals()
         {
-            return new PrioritySelector(Spell.Buff(
+            return new PrioritySelector(Spell.Heal(
                     "Regrowth",
                     ret => (StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.RegrowthBalance
                     && !SingularSettings.Instance.Druid.NoHealBalance
                     && !StyxWoW.Me.IsInParty
                     && !StyxWoW.Me.HasAura("Regrowth"))),
-                Spell.Buff(
+                Spell.Heal(
                     "Rejuvenation",
                     ret => (StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.RejuvenationBalance
                     && !SingularSettings.Instance.Druid.NoHealBalance
                     && !StyxWoW.Me.IsInParty
                     && !StyxWoW.Me.HasAura("Rejuvenation"))),
-                Spell.Cast(
+                Spell.Heal(
                     "Healing Touch",
                     ret => (StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.HealingTouchBalance
                     && !SingularSettings.Instance.Druid.NoHealBalance

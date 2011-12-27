@@ -35,31 +35,34 @@ namespace Singular.ClassSpecific.Paladin
                     // Interrupt the first unit casting near us. Huzzah!
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Movement.CreateMoveBehindTargetBehavior(),
-                    // The below is the old combat rotation. I'm rewriting it from scratch to maximize DPS according to Noxxic.com, EJ.com and my own personal findings.
-                    // Along with the findings of other high-end ret paladins.
+                // The below is the old combat rotation. I'm rewriting it from scratch to maximize DPS according to Noxxic.com, EJ.com and my own personal findings.
+                // Along with the findings of other high-end ret paladins.
 
                     // Single Target
                     Spell.Cast("Inquisition"),
-                    // Pop Crusader if we're in single-target mode.
+                // Pop Crusader if we're in single-target mode.
                     Spell.Cast("Crusader Strike", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3 || !SpellManager.HasSpell("Divine Storm")),
-                    // Pop Divine Storm if we're trying to AoE.
+                // Pop Divine Storm if we're trying to AoE.
                     Spell.Cast("Divine Storm", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
 
                     // This gets moved up to 3rd if the target is undead/demon. Otherwise, its lower in the prio. (Does this really add *that* much of a DPS boost that we need it?)
-                    Spell.Cast(
-                        "Exorcism",
-                        ret =>
-                        StyxWoW.Me.CurrentTarget.IsUndeadOrDemon() && 
-                        StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") &&
-                        Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
+                // ofc a mana free dps fucking does.
+                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
+
+                    //Spell.Cast(
+                    //    "Exorcism",
+                    //    ret =>
+                    //    StyxWoW.Me.CurrentTarget.IsUndeadOrDemon() &&
+                    //    StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") &&
+                    //    Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
 
                     Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 3),
-                    // Don't use Exorcism if we're AOEing. 
+                // Don't use Exorcism if we're AOEing. 
                     Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 3),
                     Spell.Cast("Judgement"),
-                    // These 2 are "flipped" for AOE and Single-target. Now, personally, since Cons is a 30s CD, and HW is a 15s CD, there's really no DPS gain by flipping them.
-                    // So just leave them as-is and don't bother messing with it!
+                // These 2 are "flipped" for AOE and Single-target. Now, personally, since Cons is a 30s CD, and HW is a 15s CD, there's really no DPS gain by flipping them.
+                // So just leave them as-is and don't bother messing with it!
                     Spell.Cast("Holy Wrath"),
                     Spell.Cast("Consecration", ret => StyxWoW.Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
 
@@ -85,7 +88,7 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateFaceTargetBehavior(),
                     Spell.Cast("Judgement"),
                     Helpers.Common.CreateAutoAttack(true),
-                    Movement.CreateMoveToTargetBehavior(true,5f)
+                    Movement.CreateMoveToTargetBehavior(true, 5f)
                     );
         }
 

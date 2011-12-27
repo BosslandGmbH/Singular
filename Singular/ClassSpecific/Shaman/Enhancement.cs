@@ -39,13 +39,15 @@ namespace Singular.ClassSpecific.Shaman
 
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.EnhancementShaman)]
-        [Behavior(BehaviorType.PullBuffs)]
+        [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         [Priority(500)]
-        public static Composite CreateEnhancementShamanPullBuffs()
+        public static Composite CreateEnhancementShamanPreCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Lightning Shield"),
+                Spell.Cast("Lightning Shield",
+                        ret => StyxWoW.Me,
+                        ret => !StyxWoW.Me.HasAura("Lightning Shield", 3)),
 
                 //Removes the weapon enchant if the imbune is the wrong one and then attempts to rebuff
                 //MainHand
@@ -131,7 +133,6 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
-                CreateEnhancementShamanPullBuffs(),
                 Common.CreateAutoAttack(false),
                 Totems.CreateSetTotems(3),
 
@@ -149,21 +150,30 @@ namespace Singular.ClassSpecific.Shaman
                     SingularSettings.Instance.Shaman.EnhancementHeal &&
                     StyxWoW.Me.HealthPercent <= 50),
 
+                Spell.BuffSelf("Lightning Shield"),
+
                //Aoe
                 Spell.Cast("Chain Lightning",
                     ret => !StyxWoW.Me.CurrentTarget.IsNeutral &&
                         Clusters.GetClusterCount(StyxWoW.Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Chained, 10f) >= 2 &&
-                        StyxWoW.Me.Auras["Maelstrom Weapon"].StackCount > 4),
+                        StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
 
                 Spell.Cast("Fire Nova",
                     ret => Clusters.GetClusterCount(StyxWoW.Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f) >= 2 &&
                            Unit.NearbyUnfriendlyUnits.Count(u => u.HasMyAura("Flame Shock")) != 0),
 
+                Spell.Cast("Strength of Earth Totem",
+                             ret => !SpellManager.HasSpell("Call of the Elements") && StyxWoW.Me.CurrentTarget.Distance < 15 &&
+                                    StyxWoW.Me.Totems.Count(
+                                        t => t.WoWTotem == WoWTotem.StrengthOfEarth && 
+                                             t.Unit.Distance < Totems.GetTotemRange(WoWTotem.StrengthOfEarth)) == 0),
 
                 // Ensure Searing is nearby
                 Spell.Cast("Searing Totem", 
-                             ret => StyxWoW.Me.CurrentTarget.Distance < 15 && 
-                                    StyxWoW.Me.Totems.Count(t => t.WoWTotem == WoWTotem.Searing && t.Unit.Distance < 13) == 0),
+                             ret => !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget.Distance < 15 && 
+                                    StyxWoW.Me.Totems.Count(
+                                        t => t.WoWTotem == WoWTotem.Searing && 
+                                             t.Unit.Distance < Totems.GetTotemRange(WoWTotem.Searing)) == 0),
 
                 Movement.CreateMoveBehindTargetBehavior(),
 
@@ -178,7 +188,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.HasAura("Unleash Flame") || StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 4),
 
 
-                Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasMyAura("Maelstrom Weapon", 5)),
+                Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
 
 
                 Spell.Cast("Earth Shock",

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Drawing;
+using System.Linq;
 using CommonBehaviors.Actions;
 
 using Singular.Settings;
@@ -42,6 +43,58 @@ namespace Singular.Helpers
                                         StyxWoW.SleepForLagDuration();
                                         TankManager.TargetingTimer.Reset();
                                     })),
+
+                        new PrioritySelector(
+                            ctx =>
+                                {
+                                    // We are making sure we have the proper target in all cases here.
+
+                                    // No target switching for tanks. They check for their own stuff above.
+                                    if (TankManager.NeedTankTargeting && !SingularSettings.Instance.DisableTankTargetSwitching)
+                                        return null;
+
+                                    // Go below if current target is null or dead. We have other checks to deal with that
+                                    if (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.Dead)
+                                        return null;
+
+                                    // If the current target is in combat or has aggro towards us, it should be a valid target.
+                                    if (StyxWoW.Me.CurrentTarget.Combat || StyxWoW.Me.CurrentTarget.Aggro)
+                                        return null;
+
+                                    // Check botpoi first and make sure our target is set to POI's object.
+                                    if (BotPoi.Current.Type == PoiType.Kill)
+                                    {
+                                        var obj = BotPoi.Current.AsObject;
+
+                                        if (obj != null)
+                                        {
+                                            if (StyxWoW.Me.CurrentTarget != obj)
+                                                return obj;
+                                        }
+                                    }
+
+                                    // Make sure we have the proper target from Targeting. 
+                                    // The Botbase should give us the best target in targeting.
+                                    var firstUnit = Targeting.Instance.FirstUnit;
+
+                                    if (firstUnit != null)
+                                    {
+                                        if (StyxWoW.Me.CurrentTarget != firstUnit)
+                                            return firstUnit;
+                                    }
+
+                                    return null;
+                                },
+                            new Decorator(
+                                ret => ret != null,
+                                new Sequence(
+                                    new Action(ret => Logger.Write(Color.Orange,"Current target is not the best target. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
+                                    new Action(ret => ((WoWUnit)ret).Target()),
+                                    new WaitContinue(
+                                        2,
+                                        ret => StyxWoW.Me.CurrentTarget != null &&
+                                                StyxWoW.Me.CurrentTarget == (WoWUnit)ret,
+                                        new ActionAlwaysSucceed())))),
                         new Decorator(
                             ret => StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.Dead,
                             new PrioritySelector(
@@ -69,7 +122,7 @@ namespace Singular.Helpers
                                         // Does the target list have anything in it? And is the unit in combat?
                                         // Make sure we only check target combat, if we're NOT in a BG. (Inside BGs, all targets are valid!!)
                                         var firstUnit = Targeting.Instance.FirstUnit;
-                                        if (firstUnit != null && firstUnit.IsAlive && !firstUnit.IsMe && StyxWoW.Me.Combat &&
+                                        if (firstUnit != null && firstUnit.IsAlive && !firstUnit.IsMe && firstUnit.Combat &&
                                             !Blacklist.Contains(firstUnit))
                                         {
                                             return firstUnit;
@@ -96,22 +149,13 @@ namespace Singular.Helpers
                                 new Decorator(
                                     ret => ret != null,
                                     new Sequence(
-                                        new Action(ret => Logger.Write("Target is invalid. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
+                                        new Action(ret => Logger.Write(Color.Orange, "Currect target is invalid. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
                                         new Action(ret => ((WoWUnit)ret).Target()),
                                         new WaitContinue(
                                             2,
                                             ret => StyxWoW.Me.CurrentTarget != null &&
                                                    StyxWoW.Me.CurrentTarget == (WoWUnit)ret,
                                             new ActionAlwaysSucceed()))),
-                                // In order to resolve getting "stuck" on a target, we'll clear it if there's nothing viable.
-                                new Action(
-                                    ret =>
-                                        {
-                                            StyxWoW.Me.ClearTarget();
-                                            // Force a failure, just so we can move down the branch. to the log message
-                                            return RunStatus.Failure;
-                                        }),
-                                new Action(ret => Logger.Write("No viable target! NOT GOOD!")),
                                 new ActionAlwaysSucceed()))));
         }
     }

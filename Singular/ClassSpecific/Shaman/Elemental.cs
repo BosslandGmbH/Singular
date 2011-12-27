@@ -65,21 +65,25 @@ namespace Singular.ClassSpecific.Shaman
         {
             return
                 new Decorator(
-                    ret => SingularSettings.Instance.Shaman.ElementalHeal,
+                    ret => SingularSettings.Instance.Shaman.EnhancementHeal,
                     new PrioritySelector(
-                        // Heal the party if the healer is dead
+                        // Heal the party in dungeons if the healer is dead
                         new Decorator(
-                            ret => StyxWoW.Me.CurrentMap.IsDungeon &&
+                            ret => StyxWoW.Me.CurrentMap.IsDungeon && !StyxWoW.Me.IsInRaid &&
                                    (Group.Healer == null || !Group.Healer.IsAlive),
                             Restoration.CreateRestoShamanHealingOnlyBehavior()),
 
-                        Spell.Heal("Healing Wave", 
-                            ret => StyxWoW.Me, 
-                            ret => !SpellManager.HasSpell("Healing Surge") && StyxWoW.Me.HealthPercent <= 50),
+                        // This will work for both solo play and battlegrounds
+                        new Decorator(
+                            ret => !StyxWoW.Me.IsInParty || Group.Healer == null || !Group.Healer.IsAlive,
+                            new PrioritySelector(
+                                Spell.Heal("Healing Wave", 
+                                    ret => StyxWoW.Me, 
+                                    ret => !SpellManager.HasSpell("Healing Surge") && StyxWoW.Me.HealthPercent <= 60),
 
-                        Spell.Heal("Healing Surge", 
-                            ret => StyxWoW.Me, 
-                            ret => StyxWoW.Me.HealthPercent <= 50)
+                                Spell.Heal("Healing Surge", 
+                                    ret => StyxWoW.Me, 
+                                    ret => StyxWoW.Me.HealthPercent <= 60)))
                         ));
         }
 

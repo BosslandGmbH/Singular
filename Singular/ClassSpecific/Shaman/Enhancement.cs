@@ -49,7 +49,7 @@ namespace Singular.ClassSpecific.Shaman
                         ret => StyxWoW.Me,
                         ret => !StyxWoW.Me.HasAura("Lightning Shield", 3)),
 
-                //Removes the weapon enchant if the imbune is the wrong one and then attempts to rebuff
+                //Removes the weapon enchant if the Imbue is the wrong one and then attempts to rebuff
                 //MainHand
                 new Decorator(
                     ret => SpellManager.HasSpell("Windfury Weapon") &&
@@ -59,7 +59,7 @@ namespace Singular.ClassSpecific.Shaman
                         ret =>
                             {
                                 Logger.WriteDebug(
-                                    "Canceling " + StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Name + " Main Hand Imbune");
+                                    "Cancelling " + StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Name + " Main Hand Imbue");
                                 Lua.DoString("CancelItemTempEnchantment(1)");
                             })),
                 Spell.Cast("Windfury Weapon", ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Windfury")),
@@ -82,7 +82,7 @@ namespace Singular.ClassSpecific.Shaman
                                 ret =>
                                     {
                                         Logger.WriteDebug(
-                                            "Canceling " + StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Name + " OffHand Imbune");
+                                            "Cancelling " + StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Name + " OffHand Imbue");
                                         Lua.DoString("CancelItemTempEnchantment(2)");
                                     })),
 

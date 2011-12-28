@@ -121,7 +121,7 @@ namespace Singular.ClassSpecific.Druid
 
                 //5cp rip & rake, we would rather refresh with bite if we have set bonus
                 Spell.Cast("Rip",
-                    ret => StyxWoW.Me.ComboPoints == 5 &&
+                    ret => (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsPlayer) && StyxWoW.Me.ComboPoints == 5 &&
                             (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).Seconds <= 4)),
 
                 Spell.Cast("Rake", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rake", true).Seconds < 2 && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsPlayer)),
@@ -136,7 +136,9 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.Cast("Ravage", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Stampede")),
 
-                Spell.Cast("Shred", ret => StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget)),
+                Spell.Cast("Shred", ret => StyxWoW.Me.ComboPoints < 1 && StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget)),
+
+                Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints > 3),
 
                 Spell.Cast("Mangle (Cat)"),
 

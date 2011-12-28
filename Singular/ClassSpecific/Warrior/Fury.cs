@@ -20,6 +20,18 @@ namespace Singular.ClassSpecific.Warrior
     public class Fury
     {
         private static string[] _slows;
+
+        [Class(WoWClass.Warrior)]
+        [Spec(TalentSpec.FuryWarrior)]
+        [Behavior(BehaviorType.PreCombatBuffs)]
+        [Context(WoWContext.All)]
+        public static Composite CreateFuryWarriorPreCombatBuffs()
+        {
+            return
+                new PrioritySelector(
+                    Spell.BuffSelf("Battle Stance"));
+        }
+
         [Spec(TalentSpec.FuryWarrior)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
@@ -159,6 +171,7 @@ namespace Singular.ClassSpecific.Warrior
                 Common.CreateAutoAttack(false),
 
                 // buff up
+                Spell.BuffSelf("Battle Stance"), // experimental here
                 Spell.BuffSelf("Battle Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == true),
                 Spell.BuffSelf("Commanding Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == false),
 

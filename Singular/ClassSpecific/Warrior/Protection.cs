@@ -14,6 +14,21 @@ namespace Singular.ClassSpecific.Warrior
 {
     public class Protection
     {
+        private static string[] _slows;
+
+        [Class(WoWClass.Warrior)]
+        [Behavior(BehaviorType.PreCombatBuffs)]
+        [Spec(TalentSpec.ProtectionWarrior)]
+        [Context(WoWContext.All)]
+
+        public static Composite CreateWarriorBuffComposite()
+        {
+
+            return new PrioritySelector(
+               Spell.BuffSelf("Battle Stance")
+               );
+        }
+
         [Spec(TalentSpec.ProtectionWarrior)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
@@ -22,6 +37,7 @@ namespace Singular.ClassSpecific.Warrior
         [Priority(500)]
         public static Composite CreateProtectionWarriorCombat()
         {
+            _slows = new[] { "Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom", "Infected Wounds" };
             TankManager.NeedTankTargeting = true;
             return new PrioritySelector(
                 ctx => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
@@ -67,6 +83,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Buff("Rend"),
                         Spell.Cast("Thunder Clap"),
                         Spell.Cast("Shockwave"),
+                        Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows)),
                         Spell.Cast("Cleave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 2),
                                         Spell.Cast("Concussion Blow"),
                         Spell.Cast("Shield Slam"),

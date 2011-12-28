@@ -117,12 +117,15 @@ namespace Singular.Managers
                     continue;
                 }
 
-                // If we have movement turned off. Ignore people who aren't in range.
+                // If we have movement turned off or we are inside battlegrounds, ignore people who aren't in range.
                 // Almost all healing is 40 yards, so we'll use that.
-                if (SingularSettings.Instance.DisableAllMovement && p.DistanceSqr > 40*40)
+                if (p.DistanceSqr > 40*40)
                 {
-                    units.RemoveAt(i);
-                    continue;
+                    if (SingularSettings.Instance.DisableAllMovement || StyxWoW.Me.CurrentMap.IsBattleground)
+                    {
+                        units.RemoveAt(i);
+                        continue;
+                    }
                 }
             }
 

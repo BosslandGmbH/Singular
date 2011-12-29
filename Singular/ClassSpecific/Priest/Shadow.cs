@@ -72,7 +72,7 @@ namespace Singular.ClassSpecific.Priest
                 // start up with the dots
                 Spell.Buff("Vampiric Touch"),
                 Spell.Buff("Devouring Plague", ret => !StyxWoW.Me.CurrentTarget.IsMechanical || StyxWoW.Me.CurrentTarget.IsBoss()),
-                Spell.Buff("Shadow Word: Pain", ret => SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.IsInInstance),
+                Spell.Buff("Shadow Word: Pain", ret => SpellManager.HasSpell("Mass Dispel") || StyxWoW.Me.IsInInstance),
 
                 // blast for shadow orbs or timer
                 new Decorator(ret => ((StyxWoW.Me.HasAura("Shadow Orb", SingularSettings.Instance.Priest.MindBlastOrbs) && !StyxWoW.Me.HasAura("Empowered Shadow", 0)) || _lastMindBlast + TimeSpan.FromSeconds(SingularSettings.Instance.Priest.MindBlastTimer) < DateTime.Now),

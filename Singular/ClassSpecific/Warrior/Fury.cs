@@ -171,7 +171,6 @@ namespace Singular.ClassSpecific.Warrior
                 Common.CreateAutoAttack(false),
 
                 // buff up
-                Spell.BuffSelf("Battle Stance"), // experimental here
                 Spell.BuffSelf("Battle Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == true),
                 Spell.BuffSelf("Commanding Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == false),
 
@@ -194,7 +193,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret => StyxWoW.Me.Level < 50,
                     new PrioritySelector(
                         Spell.BuffSelf("Battle Stance"),
-                        Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 25),
+                        Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 12 && StyxWoW.Me.CurrentTarget.Distance <= 25),
                         Spell.Cast("Heroic Throw", ret => !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun")),
                         Movement.CreateMoveToTargetBehavior(true, 5f))),
 

@@ -62,7 +62,7 @@ namespace Singular.ClassSpecific.Priest
 
                 // open with spike or if its a totem
                 Spell.Cast("Mind Spike",
-                            ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Mind Trauma") && 
+                            ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Mind Trauma") &&
                                    (StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Totem || !StyxWoW.Me.Combat)),
                 // use mind blast after 2+ spikes, or if orbs, 
                 Spell.Cast("Mind Blast", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Mind Spike", 2)),
@@ -71,8 +71,8 @@ namespace Singular.ClassSpecific.Priest
 
                 // start up with the dots
                 Spell.Buff("Vampiric Touch"),
-                Spell.Buff("Devouring Plague", ret=> !StyxWoW.Me.CurrentTarget.IsMechanical || StyxWoW.Me.CurrentTarget.IsBoss()),
-                Spell.Buff("Shadow Word: Pain", ret => !StyxWoW.Me.CurrentTarget.HasAura("Devouring Plague") || StyxWoW.Me.IsInInstance),
+                Spell.Buff("Devouring Plague", ret => !StyxWoW.Me.CurrentTarget.IsMechanical || StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.Buff("Shadow Word: Pain", ret => SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.IsInInstance),
 
                 // blast for shadow orbs or timer
                 new Decorator(ret => ((StyxWoW.Me.HasAura("Shadow Orb", SingularSettings.Instance.Priest.MindBlastOrbs) && !StyxWoW.Me.HasAura("Empowered Shadow", 0)) || _lastMindBlast + TimeSpan.FromSeconds(SingularSettings.Instance.Priest.MindBlastTimer) < DateTime.Now),
@@ -81,7 +81,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Mind Blast"))),
 
                 // attempt to cast shield before flay, if we need to
-                Spell.BuffSelf("Power Word: Shield", ret => StyxWoW.Me.HealthPercent < 80 && StyxWoW.Me.CurrentTarget.HealthPercent > 30 && 
+                Spell.BuffSelf("Power Word: Shield", ret => StyxWoW.Me.HealthPercent < 80 && StyxWoW.Me.CurrentTarget.HealthPercent > 30 &&
                     !StyxWoW.Me.HasAura("Weakened Soul", 0) && Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == StyxWoW.Me.Guid) > 0),
                 // flay if we have shield or if no one's beating on us
                 Spell.Cast("Mind Flay", ret => !StyxWoW.Me.IsMoving && (Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == StyxWoW.Me.Guid) <= 0 || StyxWoW.Me.HasAura("Power Word: Shield", 0))),

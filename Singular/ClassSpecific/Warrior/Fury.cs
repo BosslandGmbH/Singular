@@ -15,6 +15,7 @@ using System;
 using Action = TreeSharp.Action;
 
 
+
 namespace Singular.ClassSpecific.Warrior
 {
     public class Fury
@@ -29,7 +30,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return
                 new PrioritySelector(
-                    Spell.BuffSelf("Battle Stance"));
+                    Spell.BuffSelf("Battle Stance", ret => Styx.Logic.LootTargeting.Instance.FirstObject == null));
         }
 
         [Spec(TalentSpec.FuryWarrior)]
@@ -64,7 +65,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60),
                         Movement.CreateMoveToMeleeBehavior(true))),
                 //30-50 support
-                Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.Level > 30 && StyxWoW.Me.Level < 50 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),
+                Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.Level > 30 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),
 
                 // Dispel Bubbles
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,

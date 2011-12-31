@@ -16,20 +16,8 @@ namespace Singular.ClassSpecific.Warrior
     {
         private static string[] _slows;
 
-        [Class(WoWClass.Warrior)]
+        [Spec(TalentSpec.ProtectionWarrior)]
         [Behavior(BehaviorType.PreCombatBuffs)]
-        [Spec(TalentSpec.ProtectionWarrior)]
-        [Context(WoWContext.All)]
-
-        public static Composite CreateWarriorBuffComposite()
-        {
-
-            return new PrioritySelector(
-               Spell.BuffSelf("Battle Stance")
-               );
-        }
-
-        [Spec(TalentSpec.ProtectionWarrior)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]

@@ -28,7 +28,7 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.PreventDoubleCast("Immolate"),
+                Spell.PreventDoubleCast("Immolate", "Unstable Affliction"),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),

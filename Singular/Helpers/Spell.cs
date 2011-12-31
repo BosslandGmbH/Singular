@@ -811,9 +811,9 @@ namespace Singular.Helpers
         {
             return
                 new PrioritySelector(
-                    ctx => Unit.ResurrectablePlayers.FirstOrDefault(u => !Blacklist.Contains(u)),
+                    ctx =>  Unit.ResurrectablePlayers.FirstOrDefault(u => !Blacklist.Contains(u)),
                     new Decorator(
-                        ctx => ctx != null,
+                        ctx => ctx != null && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
                         new Sequence(
                             Cast(spellName, ctx => (WoWPlayer)ctx),
                             new Action(ctx => Blacklist.Add((WoWPlayer)ctx, TimeSpan.FromSeconds(30))))));

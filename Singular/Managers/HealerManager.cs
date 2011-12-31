@@ -121,7 +121,7 @@ namespace Singular.Managers
                 // Almost all healing is 40 yards, so we'll use that.
                 if (p.DistanceSqr > 40*40)
                 {
-                    if (SingularSettings.Instance.DisableAllMovement || StyxWoW.Me.CurrentMap.IsBattleground)
+                    if (SingularSettings.Instance.DisableAllMovement || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
                     {
                         units.RemoveAt(i);
                         continue;

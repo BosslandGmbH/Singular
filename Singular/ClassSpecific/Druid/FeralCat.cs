@@ -94,7 +94,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.Cast(
                     "Feral Charge (Cat)",
-                    ret => Settings.UseFeralChargeCat && StyxWoW.Me.CurrentTarget.Distance >= 8 && StyxWoW.Me.CurrentTarget.Distance <= 25),
+                    ret => Settings.UseFeralChargeCat && StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 23), // these params often fail
 
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Movement.CreateMoveBehindTargetBehavior(),

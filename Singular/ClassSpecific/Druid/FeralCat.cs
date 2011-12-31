@@ -121,10 +121,10 @@ namespace Singular.ClassSpecific.Druid
 
                 //5cp rip & rake, we would rather refresh with bite if we have set bonus
                 Spell.Cast("Rip",
-                    ret => (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsPlayer) && StyxWoW.Me.ComboPoints == 5 &&
+                    ret => StyxWoW.Me.ComboPoints == 5 &&
                             (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).Seconds <= 4)),
 
-                Spell.Cast("Rake", ret => StyxWoW.Me.ComboPoints < 3 && StyxWoW.Me.CurrentTarget.HealthPercent > 20 && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rake", true).Seconds < 2), // && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsPlayer)
+                Spell.Cast("Rake", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rake", true).Seconds < 2),
 
                 Spell.BuffSelf("Savage Roar"),
 

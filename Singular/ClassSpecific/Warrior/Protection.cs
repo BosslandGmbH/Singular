@@ -17,7 +17,6 @@ namespace Singular.ClassSpecific.Warrior
         private static string[] _slows;
 
         [Spec(TalentSpec.ProtectionWarrior)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]

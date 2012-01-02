@@ -191,7 +191,7 @@ namespace Singular.Settings
         public bool UseFeralChargeCat { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
+        [DefaultValue(false)]
         [Category("Feral Tanking")]
         [DisplayName("Manual Forms")]
         [Description(

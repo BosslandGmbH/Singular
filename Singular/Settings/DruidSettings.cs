@@ -192,7 +192,7 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(false)]
-        [Category("Feral Tanking")]
+        [Category("Feral")]
         [DisplayName("Manual Forms")]
         [Description(
             "Disables any automatic form switching. Manually switching to cat form will automatically start the Cat combat cycle, and vice versa for bear."

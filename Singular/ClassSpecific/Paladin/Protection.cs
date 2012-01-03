@@ -44,6 +44,7 @@ namespace Singular.ClassSpecific.Paladin
                     ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1,
                     new PrioritySelector(
                         Spell.Cast("Hammer of the Righteous"),
+                        Spell.Cast("Hammer of Justice", ctx => !StyxWoW.Me.IsInParty),
                         Spell.Cast("Consecration"),
                         Spell.Cast("Holy Wrath"),
                         Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
@@ -58,6 +59,7 @@ namespace Singular.ClassSpecific.Paladin
                         //Single target
                         Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
                         Spell.Cast("Crusader Strike"),
+                        Spell.Cast("Hammer of Justice"),
                         Spell.Cast("Judgement"),
                         Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),
                         Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),

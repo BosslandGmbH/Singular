@@ -22,6 +22,17 @@ namespace Singular.ClassSpecific.Paladin
         [Context(WoWContext.All)]
         public static Composite CreateRetributionPaladinCombat()
         {
+            /*
+http://us.battle.net/wow/en/forum/topic/2267589223?page=1#2
+
+What you need to realize about Retribution's rotation is that it's actually a loose priority system. Hitting your buttons in the suboptimal order will not put your meters in the dirt, but you will of course be performing at a suboptimal standard (go figure).
+
+3.1 Single Target
+
+Note that opening rotations may differ from what you read in this section due to initial CD usage. Optimal opening rotations are discussed in section 4 (Cooldowns).
+
+Inquisition > Crusader Strike > Hammer of Wrath > Exorcism > Templar's Verdict > Judgement > Holy Wrath > Consecration
+             */
             return
                 new PrioritySelector(
                     Safers.EnsureTarget(),
@@ -104,7 +115,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Spell.BuffSelf("Zealotry", ret => Unit.IsBoss(StyxWoW.Me.CurrentTarget)),
+                    Spell.BuffSelf("Zealotry", ret => !StyxWoW.Me.IsInInstance || Unit.IsBoss(StyxWoW.Me.CurrentTarget)),
                     Spell.BuffSelf("Avenging Wrath"),
                     Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthRet)
                     );

@@ -60,7 +60,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Buff("Rend"),
                         Spell.Cast("Overpower"),
                         Spell.Cast("Bloodthirst"),
-                        //rage dump
+                //rage dump
                         Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) > 3),
                         Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60),
                         Movement.CreateMoveToMeleeBehavior(true))),
@@ -72,7 +72,7 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.BuffSelf("Battle Stance"),
                         Spell.WaitForCast(),
-                        Movement.CreateEnsureMovementStoppedBehavior(),                        
+                        Movement.CreateEnsureMovementStoppedBehavior(),
                         Spell.Cast("Shattering Throw"),
                         Spell.BuffSelf("Berserker Stance"),
                         Movement.CreateMoveToTargetBehavior(true, 30f)
@@ -86,8 +86,8 @@ namespace Singular.ClassSpecific.Warrior
                 // ranged slow
                 Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 // melee slow
-                Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),     
-           
+                Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+
                 //Interupts
                 new Decorator(
                     ret => SingularSettings.Instance.Warrior.UseWarriorInterupts,
@@ -113,10 +113,10 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Blood Thirst"))),
 
                 //Rotation under 20%
-                Spell.Buff("Colossus Smash"),                
+                Spell.Buff("Colossus Smash"),
                 Spell.Cast("Execute"),
                 //Rotation over 20%               
-                
+
                 new Decorator(ret => SingularSettings.Instance.Warrior.UseWarriorSMF,
                     new PrioritySelector(
                         Spell.Cast("Slam", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Bloodsurge")),
@@ -129,21 +129,21 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Slam", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Bloodsurge")))),
 
                 Spell.Cast("Cleave", ret =>
-                                // Only even think about Cleave for more than 2 mobs. (We're probably best off using melee range)
+                    // Only even think about Cleave for more than 2 mobs. (We're probably best off using melee range)
                                 Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2 &&
-                                // If we have Incite, Deadly Calm, or enough rage (pooling for CS if viable) we're good.
+                                    // If we have Incite, Deadly Calm, or enough rage (pooling for CS if viable) we're good.
                                 (StyxWoW.Me.HasAura("Incite", 1) || CanUseRageDump())),
                 Spell.Cast("Heroic Strike", ret =>
-                                // Only even think about HS for less than 2 mobs. (We're probably best off using melee range)
+                    // Only even think about HS for less than 2 mobs. (We're probably best off using melee range)
                                 Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2 &&
-                                // If we have Incite, or enough rage (pooling for CS if viable) we're good.
+                                    // If we have Incite, or enough rage (pooling for CS if viable) we're good.
                                 (StyxWoW.Me.HasAura("Incite", 1) || CanUseRageDump())),
 
                 //Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-        
+
         static bool CanUseRageDump()
         {
             // Pooling rage for upcoming CS. If its > 8s, make sure we have 60 rage. < 8s, only pop it at 85 rage.
@@ -205,6 +205,13 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.BuffSelf(
                             "Heroic Fury",
                             ret => SpellManager.Spells["Intercept"].Cooldown && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
+
+                // Get closer to target
+                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
+                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f)),
+                Spell.CastOnGround(
+                    "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
+                    ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40),
 
                 //Intercept
                 Spell.Cast(

@@ -276,6 +276,10 @@ namespace Singular.Helpers
         }
         public static bool HasDemoralizing(this WoWUnit unit)
         {
+            // don't try if the unit is out of range.
+            if (unit.DistanceSqr > 25)
+                return true;
+
             // Plain and simple, any effect with -damage is good. Ensure at least -1. Since 0 may be a buggy spell entry or something.
             var tmp = unit.HasAuraWithEffect(WoWApplyAuraType.ModDamagePercentDone, -1, int.MinValue, -1);
             if (!tmp)

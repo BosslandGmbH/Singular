@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    // This won't run, but it's here for changes in the future. We NEVER run this method if we're mounted.
+                // This won't run, but it's here for changes in the future. We NEVER run this method if we're mounted.
                     Spell.BuffSelf("Crusader Aura", ret => StyxWoW.Me.Mounted),
                     CreatePaladinBlessBehavior(),
                     new Decorator(
@@ -48,12 +48,18 @@ namespace Singular.ClassSpecific.Paladin
                     new Decorator(
                         ret => TalentManager.CurrentSpec != TalentSpec.HolyPaladin,
                         new PrioritySelector(
-                            Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin),
+                            Spell.BuffSelf("Righteous Fury", ret => (TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin) && StyxWoW.Me.IsInParty),
                             Spell.BuffSelf(
                                 "Devotion Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
-                                (TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin ||
+                                ((StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin) ||
+                                 TalentManager.CurrentSpec == TalentSpec.Lowbie)),
+                            Spell.BuffSelf(
+                                "Retribution Aura",
+                                ret =>
+                                SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
+                                ((!StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin) ||
                                  TalentManager.CurrentSpec == TalentSpec.Lowbie)),
                             Spell.BuffSelf(
                                 "Retribution Aura",
@@ -109,7 +115,7 @@ namespace Singular.ClassSpecific.Paladin
                                                     : new List<WoWPlayer> { StyxWoW.Me };
 
                             var result = players.Any(
-                                p => p.DistanceSqr < 40*40 && p.IsAlive &&
+                                p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
                                      (!p.HasAura("Blessing of Kings") || p.Auras["Blessing of Kings"].CreatorGuid != StyxWoW.Me.Guid) &&
                                      !p.HasAura("Mark of the Wild") &&
                                      !p.HasAura("Embrace of the Shale Spider"));

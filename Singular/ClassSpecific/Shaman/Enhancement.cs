@@ -57,11 +57,11 @@ namespace Singular.ClassSpecific.Shaman
                            StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 0,
                     new Action(
                         ret =>
-                            {
-                                Logger.WriteDebug(
-                                    "Cancelling " + StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Name + " Main Hand Imbue");
-                                Lua.DoString("CancelItemTempEnchantment(1)");
-                            })),
+                        {
+                            Logger.WriteDebug(
+                                "Cancelling " + StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Name + " Main Hand Imbue");
+                            Lua.DoString("CancelItemTempEnchantment(1)");
+                        })),
                 Spell.Cast("Windfury Weapon", ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Windfury")),
                 // Low level support
                 Spell.Cast(
@@ -73,18 +73,18 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon,
                     new PrioritySelector(
-                        //Offhand
+                //Offhand
                         new Decorator(
                             ret => !Item.HasWeaponImbue(WoWInventorySlot.OffHand, "Flametongue") &&
                                    StyxWoW.Me.Inventory.Equipped.OffHand != null &&
                                    StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id != 0,
                             new Action(
                                 ret =>
-                                    {
-                                        Logger.WriteDebug(
-                                            "Cancelling " + StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Name + " OffHand Imbue");
-                                        Lua.DoString("CancelItemTempEnchantment(2)");
-                                    })),
+                                {
+                                    Logger.WriteDebug(
+                                        "Cancelling " + StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Name + " OffHand Imbue");
+                                    Lua.DoString("CancelItemTempEnchantment(2)");
+                                })),
 
                         Spell.Cast("Flametongue Weapon", ret => !Item.HasWeaponImbue(WoWInventorySlot.OffHand, "Flametongue"))
                         )));
@@ -100,7 +100,7 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => SingularSettings.Instance.Shaman.EnhancementHeal,
                     new PrioritySelector(
-                        // Heal the party in dungeons if the healer is dead
+                // Heal the party in dungeons if the healer is dead
                         new Decorator(
                             ret => StyxWoW.Me.CurrentMap.IsDungeon && !StyxWoW.Me.IsInRaid &&
                                    (Group.Healer == null || !Group.Healer.IsAlive),
@@ -138,9 +138,9 @@ namespace Singular.ClassSpecific.Shaman
 
                 // Only call if we're missing more than 2 totems. 
 
-                Spell.Cast("Call of the Elements", 
+                Spell.Cast("Call of the Elements",
                     ret => StyxWoW.Me.CurrentTarget.Level > StyxWoW.Me.Level - 10 &&
-                           StyxWoW.Me.CurrentTarget.Distance < 15 && 
+                           StyxWoW.Me.CurrentTarget.Distance < 15 &&
                            Totems.TotemsInRangeOf(StyxWoW.Me.CurrentTarget) < 3),
 
                 Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
@@ -165,14 +165,14 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Strength of Earth Totem",
                              ret => !SpellManager.HasSpell("Call of the Elements") && StyxWoW.Me.CurrentTarget.Distance < 15 &&
                                     StyxWoW.Me.Totems.Count(
-                                        t => t.WoWTotem == WoWTotem.StrengthOfEarth && 
+                                        t => t.WoWTotem == WoWTotem.StrengthOfEarth &&
                                              t.Unit.Distance < Totems.GetTotemRange(WoWTotem.StrengthOfEarth)) == 0),
 
                 // Ensure Searing is nearby
-                Spell.Cast("Searing Totem", 
-                             ret => !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget.Distance < 15 && 
+                Spell.Cast("Searing Totem",
+                             ret => !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget.Distance < 15 &&
                                     StyxWoW.Me.Totems.Count(
-                                        t => t.WoWTotem == WoWTotem.Searing && 
+                                        t => t.WoWTotem == WoWTotem.Searing &&
                                              t.Unit.Distance < Totems.GetTotemRange(WoWTotem.Searing)) == 0),
 
                 Movement.CreateMoveBehindTargetBehavior(),
@@ -185,7 +185,10 @@ namespace Singular.ClassSpecific.Shaman
                 // Cast if we have unleash flame buff or if we dont know the spell
                 //cast if the target dosnt have the aura or has less than 4 seconds left
                 Spell.Cast("Flame Shock",
-                    ret => StyxWoW.Me.HasAura("Unleash Flame") || StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 4),
+                    ret => !StyxWoW.Me.CurrentTarget.IsPlayer &&
+                        (StyxWoW.Me.HasAura("Unleash Flame") || StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 4)),
+
+                 Spell.Cast("Frost Shock", ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 4),
 
 
                 Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),

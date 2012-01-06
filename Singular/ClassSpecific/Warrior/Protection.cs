@@ -64,11 +64,11 @@ namespace Singular.ClassSpecific.Warrior
 
                 //PVP
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsPlayer,
+                    ret => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsPlayer,
                     new PrioritySelector(
                         Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
                         Spell.Buff("Rend"),
-                        Spell.Cast("Thunder Clap", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 7 * 7),
+                        Spell.Cast("Thunder Clap", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 7 * 7 && StyxWoW.Me.CurrentTarget.Attackable),
                         Spell.Cast("Shockwave"),
                         Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows)),
                         Spell.Cast("Cleave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 2),
@@ -84,7 +84,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret => Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 15f) > 1,
                     new PrioritySelector(
                         Spell.Buff("Rend"),
-                        Spell.Cast("Thunder Clap", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 7 * 7),
+                        Spell.Cast("Thunder Clap", ctx => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.DistanceSqr < 7 * 7 && StyxWoW.Me.CurrentTarget.Attackable),
                         Spell.Cast("Shockwave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 2),
                         Spell.Cast("Cleave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 2)
                         )),
@@ -106,7 +106,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Rend"),
                 // Tclap may not be a giant threat increase, but Blood and Thunder will refresh rend. Which all in all, is a good thing.
                 // Oh, and the attack speed debuff is win as well.
-                Spell.Cast("Thunder Clap", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 7 * 7),
+                Spell.Cast("Thunder Clap", ctx => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.DistanceSqr < 7 * 7 && StyxWoW.Me.CurrentTarget.Attackable),
                 Spell.Cast("Shockwave"),
                 Spell.Cast("Devastate"),
 

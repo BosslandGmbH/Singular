@@ -68,7 +68,7 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
                         Spell.Buff("Rend"),
-                        Spell.Cast("Thunder Clap"),
+                        Spell.Cast("Thunder Clap", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) > 1),
                         Spell.Cast("Shockwave"),
                         Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows)),
                         Spell.Cast("Cleave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 2),

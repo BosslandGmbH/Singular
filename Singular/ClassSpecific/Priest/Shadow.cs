@@ -60,6 +60,11 @@ namespace Singular.ClassSpecific.Priest
 
                 Spell.Cast("Archangel", ret => SingularSettings.Instance.Priest.AlwaysArchangel5 && StyxWoW.Me.HasAura("Dark Evangelism", 5)),
 
+                                // start up with the dots
+                Spell.Buff("Vampiric Touch"),
+                Spell.Buff("Devouring Plague", ret => !StyxWoW.Me.CurrentTarget.IsMechanical || StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.Buff("Shadow Word: Pain", ret => !SpellManager.HasSpell("Vampiric Touch") || StyxWoW.Me.IsInInstance || StyxWoW.Me.CurrentTarget.IsPlayer),
+
                 // open with spike or if its a totem
                 Spell.Cast("Mind Spike",
                             ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Mind Trauma") &&
@@ -68,11 +73,6 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Cast("Mind Blast", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Mind Spike", 2)),
                 // use spike a second time if we can, either after pull or after dots have run out for whatever reason
                 Spell.Cast("Mind Spike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Mind Trauma") && !StyxWoW.Me.CurrentTarget.HasMyAura("Vampiric Touch") && !StyxWoW.Me.CurrentTarget.HasMyAura("Devouring Plague") && !StyxWoW.Me.CurrentTarget.HasMyAura("Shadow Word: Pain")),
-
-                // start up with the dots
-                Spell.Buff("Vampiric Touch"),
-                Spell.Buff("Devouring Plague", ret => !StyxWoW.Me.CurrentTarget.IsMechanical || StyxWoW.Me.CurrentTarget.IsBoss()),
-                Spell.Buff("Shadow Word: Pain", ret => !SpellManager.HasSpell("Vampiric Touch") || StyxWoW.Me.IsInInstance || StyxWoW.Me.CurrentTarget.IsPlayer),
 
                 // blast for shadow orbs or timer
                 new Decorator(ret => ((StyxWoW.Me.HasAura("Shadow Orb", SingularSettings.Instance.Priest.MindBlastOrbs) && !StyxWoW.Me.HasAura("Empowered Shadow", 0)) || _lastMindBlast + TimeSpan.FromSeconds(SingularSettings.Instance.Priest.MindBlastTimer) < DateTime.Now),

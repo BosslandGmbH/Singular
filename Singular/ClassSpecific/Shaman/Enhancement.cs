@@ -140,7 +140,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 Spell.Cast("Call of the Elements",
                     ret => StyxWoW.Me.CurrentTarget.Level > StyxWoW.Me.Level - 10 &&
-                           StyxWoW.Me.CurrentTarget.Distance < 15 &&
+                           StyxWoW.Me.CurrentTarget.Distance < 10 &&
                            Totems.TotemsInRangeOf(StyxWoW.Me.CurrentTarget) < 3),
 
                 Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
@@ -153,6 +153,9 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.BuffSelf("Lightning Shield"),
 
                //Aoe
+               Spell.Cast("Chain Lightning",
+                    ret => StyxWoW.Me.IsInParty && !StyxWoW.Me.CurrentTarget.IsNeutral && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+
                 Spell.Cast("Chain Lightning",
                     ret => !StyxWoW.Me.CurrentTarget.IsNeutral &&
                         Clusters.GetClusterCount(StyxWoW.Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Chained, 10f) >= 2 &&

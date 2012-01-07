@@ -38,8 +38,11 @@ namespace Singular.ClassSpecific.Shaman
                 new Action(ret => SetupTotemBar()),
                 new Decorator(ret => TotemsInRange < numTotems,
                     new Sequence(
-                        new Action(ret => Styx.Helpers.Logging.Write("Called SetupTotemBar")),
-                        Spell.Cast("Call of the Elements", ret => StyxWoW.Me)))
+                        //new Action(ret => Styx.Helpers.Logging.Write("Called SetupTotemBar")),
+                        Spell.Cast("Call of the Elements",
+                    ret => StyxWoW.Me.CurrentTarget.Level > StyxWoW.Me.Level - 10 &&
+                           StyxWoW.Me.CurrentTarget.Distance < 10 &&
+                           Totems.TotemsInRangeOf(StyxWoW.Me.CurrentTarget) < 3)))
 
                 );
         }

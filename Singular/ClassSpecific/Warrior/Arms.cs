@@ -235,7 +235,10 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Recklessness", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
                 
                 //Deadly calm if low on rage or during execute phase on bosses
-                Spell.BuffSelf("Deadly Calm", ret => StyxWoW.Me.RagePercent < 10 || StyxWoW.Me.CurrentTarget.CurrentHealth > StyxWoW.Me.CurrentHealth && StyxWoW.Me.CurrentTarget.HealthPercent < 20 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
+                Spell.BuffSelf("Deadly Calm", ret => StyxWoW.Me.RagePercent < 10 || 
+                    (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.CurrentHealth > StyxWoW.Me.CurrentHealth && StyxWoW.Me.CurrentTarget.HealthPercent < 20) && 
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && 
+                    SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
                 //Inner Rage
                 new Decorator(ret => HasSpellDeadlyCalm(),
                     new PrioritySelector(

@@ -23,13 +23,14 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreatePriestPreCombatBuffs()
         {
             return new PrioritySelector(
+                Spell.BuffSelf("Shadowform"),
+                Spell.BuffSelf("Vampiric Embrace"),
                 Spell.BuffSelf("Power Word: Fortitude", ret => Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && CanCastFortitudeOn(u))),
                 Spell.BuffSelf("Shadow Protection", ret => SingularSettings.Instance.Priest.UseShadowProtection && Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && !Unit.HasAura(u, "Shadow Protection", 0))),
                 Spell.BuffSelf("Inner Fire", ret => SingularSettings.Instance.Priest.UseInnerFire),
                 Spell.BuffSelf("Inner Will", ret => !SingularSettings.Instance.Priest.UseInnerFire),
-                Spell.BuffSelf("Fear Ward", ret => SingularSettings.Instance.Priest.UseFearWard),
-                Spell.BuffSelf("Shadowform"),
-                Spell.BuffSelf("Vampiric Embrace")
+                Spell.BuffSelf("Fear Ward", ret => SingularSettings.Instance.Priest.UseFearWard)
+     
                 );
         }
 

@@ -172,7 +172,7 @@ namespace Singular.ClassSpecific.Warrior
                 Common.CreateAutoAttack(false),
 
                 // buff up
-                Spell.BuffSelf("Battle Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == true),
+                Spell.BuffSelf("Battle Shout", ret => (SingularSettings.Instance.Warrior.UseWarriorShouts || SingularSettings.Instance.Warrior.UseWarriorT12) && !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
                 Spell.BuffSelf("Commanding Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == false),
 
                 //Shoot flying targets
@@ -274,7 +274,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Berserker rage to stay enraged
                 Spell.BuffSelf("Berserker Rage", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Enrage") && !StyxWoW.Me.ActiveAuras.ContainsKey("Berserker Rage") && !StyxWoW.Me.ActiveAuras.ContainsKey("Death Wish")),  //!StyxWoW.Me.HasAnyAura("Enrage", "Berserker Rage", "Death Wish")),
                 //Battleshout Check
-                Spell.BuffSelf("Battle Shout", ret => (StyxWoW.Me.RagePercent < 20 || SingularSettings.Instance.Warrior.UseWarriorT12) && SingularSettings.Instance.Warrior.UseWarriorShouts == true),
+                Spell.BuffSelf("Battle Shout", ret => (SingularSettings.Instance.Warrior.UseWarriorShouts || SingularSettings.Instance.Warrior.UseWarriorT12) && !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
                 Spell.BuffSelf("Commanding Shout", ret => (StyxWoW.Me.RagePercent < 20 || SingularSettings.Instance.Warrior.UseWarriorT12) && SingularSettings.Instance.Warrior.UseWarriorShouts == false)
                 );
         }

@@ -230,7 +230,10 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 //Retaliation if fighting elite or targeting player that swings
-                Spell.Buff("Retaliation", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
+                Spell.Buff("Retaliation", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 36 && (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && 
+                    StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana && 
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && 
+                    SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
                 // Recklessness if caster or elite
                 Spell.Buff("Recklessness", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
                 

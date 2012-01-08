@@ -67,9 +67,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsPlayer,
                     new PrioritySelector(
                         Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
-                        Spell.Cast("Disarm", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 36 &&
-                                                        (StyxWoW.Me.CurrentTarget.Class == WoWClass.Warrior || StyxWoW.Me.CurrentTarget.Class == WoWClass.Rogue ||
-                                                        StyxWoW.Me.CurrentTarget.Class == WoWClass.Paladin || StyxWoW.Me.CurrentTarget.Class == WoWClass.Shaman)),
+                        Spell.Cast("Disarm", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 36 && StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana),
                         Spell.Buff("Rend"),
                         Spell.Cast("Thunder Clap", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 7 * 7 && StyxWoW.Me.CurrentTarget.Attackable),
                         Spell.Cast("Shockwave"),

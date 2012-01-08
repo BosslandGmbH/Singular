@@ -47,7 +47,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Defensive Cooldowns
                 Spell.BuffSelf("Shield Block"),
-                Spell.Cast("Battle Shout", ret => StyxWoW.Me),
+                Spell.BuffSelf("Battle Shout", ret => !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout") || SingularSettings.Instance.Warrior.UseWarriorT12),
                 Spell.BuffSelf("Shield Wall", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Warrior.WarriorProtShieldWallHealth),
                 Spell.Buff("Demoralizing Shout", ret => SpellManager.CanCast("Demoralizing Shout") && !StyxWoW.Me.CurrentTarget.HasDemoralizing()),
 

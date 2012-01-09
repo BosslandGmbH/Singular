@@ -152,7 +152,8 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.Cast("Ravage", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Stampede")),
 
-                Spell.Cast("Shred", ret => StyxWoW.Me.ComboPoints < 1 && StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget)),
+                // shred does less damage than mangle.
+                Spell.Cast("Shred", ret => !SpellManager.HasSpell("Mangle (Cat)") && StyxWoW.Me.ComboPoints < 1 && StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget)),
 
                 Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints > 3),
 

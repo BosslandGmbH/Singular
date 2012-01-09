@@ -230,12 +230,13 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 //Retaliation if fighting elite or targeting player that swings
-                Spell.Buff("Retaliation", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 36 && (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && 
+                Spell.Buff("Retaliation", ret => StyxWoW.Me.HealthPercent < 66 && StyxWoW.Me.CurrentTarget.DistanceSqr < 36 && 
+                    (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && 
                     StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana && 
                     SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && 
                     SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
                 // Recklessness if caster or elite
-                Spell.Buff("Recklessness", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
+                Spell.Buff("Recklessness", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns),
                 
                 //Deadly calm if low on rage or during execute phase on bosses
                 Spell.BuffSelf("Deadly Calm", ret => StyxWoW.Me.RagePercent < 10 || 

@@ -38,6 +38,8 @@ namespace Singular.Utilities
             {
                 Logger.Write("ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
             }
+
+            Logger.WriteDebug("Attached combat log");
             _combatLogAttached = true;
         }
 
@@ -45,6 +47,8 @@ namespace Singular.Utilities
         {
             if (!_combatLogAttached)
                 return;
+
+            Logger.WriteDebug("Detached combat log");
             Lua.Events.DetachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
             _combatLogAttached = false;
         }

@@ -139,6 +139,7 @@ namespace Singular.Managers
         protected override void DefaultTargetWeight(List<TargetPriority> units)
         {
             var tanks = GetMainTankGuids();
+            var inBg = Battlegrounds.IsInsideBattleground;
             foreach (TargetPriority prio in units)
             {
                 prio.Score = 500f;
@@ -156,7 +157,7 @@ namespace Singular.Managers
                 }
 
                 // If they're out of LOS, again, lower score!
-                if (!p.InLineOfSight)
+                if (!p.InLineOfSightOCD)
                 {
                     prio.Score -= 100f;
                 }
@@ -165,6 +166,12 @@ namespace Singular.Managers
                 if (tanks.Contains(p.Guid) && p.HealthPercent != 100 && 
                     // Ignore giving more weight to the tank if we have Beacon of Light on it.
                     !p.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid))
+                {
+                    prio.Score += 100f;
+                }
+
+                // Give flag carriers more weight in battlegrounds. We need to keep them alive!
+                if (inBg && p.Auras.Keys.Any(a => a.ToLowerInvariant().Contains("flag")))
                 {
                     prio.Score += 100f;
                 }

@@ -63,11 +63,12 @@ namespace Singular
         {
             get
             {
-                if (Battlegrounds.IsInsideBattleground)
+                var map = StyxWoW.Me.CurrentMap;
+                if (map.IsBattleground || map.IsArena)
                 {
                     return WoWContext.Battlegrounds;
                 }
-                if (StyxWoW.Me.IsInInstance)
+                if (map.IsDungeon)
                 {
                     return WoWContext.Instances;
                 }

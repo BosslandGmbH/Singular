@@ -179,7 +179,7 @@ namespace Singular.ClassSpecific.Druid
                                SingularSettings.Instance.Druid.TreeOfLifeCount),
                     Spell.BuffSelf(
                         "Innervate",
-                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
+                        ret => StyxWoW.Me.ManaPercent < 15 || StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
                     Spell.BuffSelf(
                         "Barkskin",
                         ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.Barkskin)

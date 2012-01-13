@@ -466,6 +466,7 @@ namespace Singular.Helpers
             return Buff(name, onUnit, ret => true);
         }
 
+        private static string _lastBuffCast = string.Empty;
         /// <summary>
         ///   Creates a behavior to cast a buff by name, with special requirements, on a specific unit. Returns
         ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
@@ -479,10 +480,18 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
+            if (name == _lastBuffCast && StyxWoW.Me.IsCasting)
+            {
+                return new Action(ret => RunStatus.Success);
+            }
+
             return
+                
                 new Decorator(
                     ret => onUnit(ret) != null && !onUnit(ret).HasAura(name),
-                    Cast(name, onUnit, requirements));
+                    new Sequence(
+                        new Action(ctx => _lastBuffCast = name),
+                        Cast(name, onUnit, requirements)));
         }
 
         #endregion

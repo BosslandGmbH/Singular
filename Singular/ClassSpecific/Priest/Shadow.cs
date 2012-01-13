@@ -10,6 +10,7 @@ using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
 using TreeSharp;
 using Action = TreeSharp.Action;
+using Styx.Helpers;
 
 namespace Singular.ClassSpecific.Priest
 {
@@ -31,7 +32,7 @@ namespace Singular.ClassSpecific.Priest
                 Movement.CreateFaceTargetBehavior(),
                 Spell.PreventDoubleCast("Devouring Plague", "Vampiric Touch"),
                 Spell.WaitForCast(true),
-                // cast devouring plague first if option is set
+                 // cast devouring plague first if option is set
                 Spell.StopAndBuff("Devouring Plague", ret => SingularSettings.Instance.Priest.DevouringPlagueFirst),
 
                 // don't attempt to heal unless below a certain percentage health
@@ -61,7 +62,8 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Cast("Archangel", ret => SingularSettings.Instance.Priest.AlwaysArchangel5 && StyxWoW.Me.HasAura("Dark Evangelism", 5)),
 
                                 // start up with the dots
-                Spell.Buff("Vampiric Touch"),
+                Spell.Buff("Vampiric Touch", ctx => !StyxWoW.Me.IsCasting),
+
                 Spell.Buff("Devouring Plague", ret => !StyxWoW.Me.CurrentTarget.IsMechanical || StyxWoW.Me.CurrentTarget.IsBoss()),
                 Spell.Buff("Shadow Word: Pain", ret => !SpellManager.HasSpell("Vampiric Touch") || StyxWoW.Me.IsInInstance || StyxWoW.Me.CurrentTarget.IsPlayer),
 

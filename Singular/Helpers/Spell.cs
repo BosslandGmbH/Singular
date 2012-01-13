@@ -480,7 +480,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
-            if (name == _lastBuffCast && StyxWoW.Me.IsCasting)
+            if (name == _lastBuffCast)
             {
                 return new Action(ret => RunStatus.Success);
             }

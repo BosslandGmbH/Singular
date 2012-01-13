@@ -466,8 +466,8 @@ namespace Singular.Helpers
             return Buff(name, onUnit, ret => true);
         }
 
-        private static string _lastBuffCast = string.Empty;
-        private static System.Diagnostics.Stopwatch _castTimer = new System.Diagnostics.Stopwatch();
+        //private static string _lastBuffCast = string.Empty;
+        //private static System.Diagnostics.Stopwatch _castTimer = new System.Diagnostics.Stopwatch();
         /// <summary>
         ///   Creates a behavior to cast a buff by name, with special requirements, on a specific unit. Returns
         ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
@@ -481,24 +481,24 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
-            if (name == _lastBuffCast && _castTimer.IsRunning && _castTimer.ElapsedMilliseconds < 250)
-            {
-                return new Action(ret => RunStatus.Success);
-            }
+            //if (name == _lastBuffCast && _castTimer.IsRunning && _castTimer.ElapsedMilliseconds < 250)
+            //{
+            //    return new Action(ret => RunStatus.Success);
+            //}
             
-            if (name == _lastBuffCast && StyxWoW.Me.IsCasting)
-            {
-                _castTimer.Reset();
-                _castTimer.Start();
-                return new Action(ret => RunStatus.Success);
-            }
+            //if (name == _lastBuffCast && StyxWoW.Me.IsCasting)
+            //{
+            //    _castTimer.Reset();
+            //    _castTimer.Start();
+            //    return new Action(ret => RunStatus.Success);
+            //}
 
             return
                 
                 new Decorator(
                     ret => onUnit(ret) != null && !onUnit(ret).HasAura(name),
                     new Sequence(
-                        new Action(ctx => _lastBuffCast = name),
+                        // new Action(ctx => _lastBuffCast = name),
                         Cast(name, onUnit, requirements)));
         }
 

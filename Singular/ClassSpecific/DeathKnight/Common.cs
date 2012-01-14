@@ -66,7 +66,8 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.Distance > 15),
                     Spell.Cast("Howling Blast"),
                     Spell.Cast("Icy Touch"),
-                    Movement.CreateMoveToTargetBehavior(true, 5f)
+                    Movement.CreateMoveToTargetBehavior(true, 5f),
+                    Helpers.Common.CreateAutoAttack(true)
                     );
         }
 

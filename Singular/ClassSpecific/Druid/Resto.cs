@@ -150,7 +150,7 @@ namespace Singular.ClassSpecific.Druid
             return
                 new PrioritySelector(
                     new Decorator(
-                        ret => !StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid,
+                        ret => Battlegrounds.IsInsideBattleground || (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid),
                         new PrioritySelector(
                             Safers.EnsureTarget(),
                             Movement.CreateMoveToLosBehavior(),

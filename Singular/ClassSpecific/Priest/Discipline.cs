@@ -170,7 +170,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Buff("Shadow Word: Pain", ret => !StyxWoW.Me.IsInParty || StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.DpsMana),
                 //Solo combat rotation
                         new Decorator(
-                            ret => !StyxWoW.Me.IsInParty,
+                            ret => Battlegrounds.IsInsideBattleground || (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid),
                             new PrioritySelector(
                                 Spell.Cast("Holy Fire"),
                                 Spell.Cast("Penance"))),

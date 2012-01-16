@@ -56,6 +56,22 @@ namespace Singular.ClassSpecific.Paladin
                     );
         }
 
+        private static bool _holyPaladinCombatNeeded
+        {
+            get
+            {
+                if (Battlegrounds.IsInsideBattleground && StyxWoW.Me.HealthPercent < 50 && HealerManager.Instance.FirstUnit == null)
+                {
+                    return true;
+                }
+                if (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.HolyPaladin)]
         [Behavior(BehaviorType.Combat)]
@@ -71,7 +87,7 @@ namespace Singular.ClassSpecific.Paladin
                                        StyxWoW.Me.CurrentTarget.InLineOfSight &&
                                        StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget)),
                     new Decorator(
-                        ret => !StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid,
+                        ret => Battlegrounds.IsInsideBattleground || (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid),
                         new PrioritySelector(
                             Movement.CreateMoveToLosBehavior(),
                             Movement.CreateFaceTargetBehavior(),

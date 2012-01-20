@@ -13,11 +13,17 @@ using Styx.Logic.Pathing;
 using Styx.WoWInternals;
 using TreeSharp;
 using Action = TreeSharp.Action;
+using CommonBehaviors.Actions;
+using Styx.Logic;
 
 namespace Singular.ClassSpecific.Rogue
 {
     public class Combat
     {
+
+        private static ulong _lastPocketPickedGuid = 0;
+        private static readonly WaitTimer PickPocketTimer = WaitTimer.FiveSeconds;
+
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.CombatRogue)]
         [Behavior(BehaviorType.Pull)]
@@ -36,6 +42,27 @@ namespace Singular.ClassSpecific.Rogue
                         ((WoWPoint)ret).Distance2D(StyxWoW.Me.Location) > 3f && Navigator.CanNavigateFully(StyxWoW.Me.Location, ((WoWPoint)ret)),
                         new Action(ret => Navigator.MoveTo(((WoWPoint)ret))))
                     ),
+
+            #region picking pockets for easy money
+ new Decorator(ret => StyxWoW.Me.CurrentTarget.Guid != _lastPocketPickedGuid &&
+                    (StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Demon || StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Dragon ||
+                        StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Giant || StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Humanoid ||
+                        StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Undead) && SpellManager.CanCast("Pick Pocket"),
+                    new Sequence(
+                        new Action(ret => Logging.Write("Pick {0}'s pockets.", StyxWoW.Me.CurrentTarget.Name)),
+                        new Action(ret => WoWMovement.MoveStop()),
+                        new Action(ret => WoWMovement.Face()),
+                        new Action(ret => LegacySpellManager.CastSpellById(921)),
+                        // new Action(ret => Spell.Cast("Pick Pocket")),
+                        new Action(ret => { _lastPocketPickedGuid = StyxWoW.Me.CurrentTarget.Guid; }),
+                        new Action(ret => PickPocketTimer.Reset()),
+                        new Wait(3, ret => !StyxWoW.Me.Combat && !PickPocketTimer.IsFinished && !LootTargeting.LootFrameIsOpen,
+                            new ActionIdle()),
+                            // new Action(ret => Logging.Write("Picked {0}'s pockets.", StyxWoW.Me.CurrentTarget.Name)),
+                        new Wait(3, ret => !StyxWoW.Me.Combat && !PickPocketTimer.IsFinished && LootTargeting.LootFrameIsOpen,
+                            new ActionIdle()))),
+            #endregion
+
                 Spell.Cast("Cheap Shot"),
                 // Ambush if we can, SS is kinda meh as an opener.
                 Spell.Cast("Ambush"),

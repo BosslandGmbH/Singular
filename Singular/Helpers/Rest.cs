@@ -83,7 +83,7 @@ namespace Singular.Helpers
                         // Make sure we're a class with mana, if not, just ignore drinking all together! Other than that... same for food.
                         new Decorator(
                             ret =>
-                            !StyxWoW.Me.IsSwimming && StyxWoW.Me.PowerType == WoWPowerType.Mana &&
+                            !StyxWoW.Me.IsSwimming && (StyxWoW.Me.PowerType == WoWPowerType.Mana || StyxWoW.Me.Class == WoWClass.Druid)  &&
                             StyxWoW.Me.ManaPercent <= SingularSettings.Instance.MinMana &&
                             !StyxWoW.Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
                             new PrioritySelector(

@@ -43,19 +43,19 @@ namespace Singular.Managers
         private static ulong _petGuid;
         private static readonly List<WoWPetSpell> PetSpells = new List<WoWPetSpell>();
 
-        static PetManager()
-        {
-            // NOTE: This is a bit hackish. This fires VERY OFTEN in major cities. But should prevent us from summoning right after dismounting.
-            // Lua.Events.AttachEvent("COMPANION_UPDATE", (s, e) => CallPetTimer.Reset());
-            // Note: To be changed to OnDismount with new release
-            Mount.OnDismount += (s, e) =>
-                                   {
-                                       if (StyxWoW.Me.Class == WoWClass.Warlock || StyxWoW.Me.PetNumber > 0)
-                                       {
-                                           Thread.Sleep(1000);
-                                       }
-                                   };
-        }
+static PetManager()
+{
+    // NOTE: This is a bit hackish. This fires VERY OFTEN in major cities. But should prevent us from summoning right after dismounting.
+    // Lua.Events.AttachEvent("COMPANION_UPDATE", (s, e) => CallPetTimer.Reset());
+    // Note: To be changed to OnDismount with new release
+    Mount.OnDismount += (s, e) =>
+                            {
+                                if (StyxWoW.Me.Class == WoWClass.Hunter || StyxWoW.Me.Class == WoWClass.Warlock || StyxWoW.Me.PetNumber > 0)
+                                {
+                                    Thread.Sleep(1000);
+                                }
+                            };
+}
 
         public static PetType CurrentPetType
         {

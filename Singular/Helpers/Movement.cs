@@ -70,15 +70,18 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 ret =>
-                !SingularSettings.Instance.DisableAllMovement && !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget != null &&
+                !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget != null &&
                 !StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 70f),
                 new Sequence(
                     new Action(ret => Navigator.PlayerMover.MoveStop()),
-                    new WaitContinue(
-                        2,
-                        ret => !StyxWoW.Me.IsMoving,
-                        new ActionAlwaysSucceed()),
-                    new Action(ret => StyxWoW.Me.CurrentTarget.Face())));
+                    new DecoratorContinue(
+                        ret => !StyxWoW.Me.CurrentMap.IsBattleground && !StyxWoW.Me.CurrentMap.IsArena,
+                        new WaitContinue(
+                            2,
+                            ret => !StyxWoW.Me.IsMoving,
+                            new ActionAlwaysSucceed())),
+                    new Action(ret => StyxWoW.Me.CurrentTarget.Face()),
+                    new ActionAlwaysFail()));
         }
 
         /// <summary>
@@ -226,7 +229,7 @@ namespace Singular.Helpers
             return new Decorator(
                 ret =>
                 !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && 
-                toUnit(ret) != StyxWoW.Me && !toUnit(ret).InLineOfSightOCD,
+                toUnit(ret) != StyxWoW.Me && !toUnit(ret).InLineOfSpellSight,
                 new Action(ret => Navigator.MoveTo(toUnit(ret).Location)));
         }
     }

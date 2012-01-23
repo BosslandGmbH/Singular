@@ -84,7 +84,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Buff("Judgement", 
                                 ret => SpellManager.HasSpell("Judgement") && 
                                        StyxWoW.Me.CurrentTarget.Distance <= SpellManager.Spells["Judgement"].MaxRange - 2 &&
-                                       StyxWoW.Me.CurrentTarget.InLineOfSight &&
+                                       StyxWoW.Me.CurrentTarget.InLineOfSpellSight &&
                                        StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget)),
                     new Decorator(
                         ret => Battlegrounds.IsInsideBattleground || (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid),
@@ -145,6 +145,9 @@ namespace Singular.ClassSpecific.Paladin
                     ret => ret != null,
                         new PrioritySelector(
                             Spell.WaitForCast(),
+                            new Decorator(
+                                ret => moveInRange,
+                                Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
                             Spell.Cast(
                                 "Beacon of Light",
                                 ret => Group.Tank,
@@ -184,11 +187,9 @@ namespace Singular.ClassSpecific.Paladin
     
                             new Decorator(
                                 ret => moveInRange,
-                                new PrioritySelector(
-                                    // Get in range and los
-                                    Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
-                                    Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))
-                            )));
+                                // Get in range
+                                Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))
+                            ));
         }
     }
 }

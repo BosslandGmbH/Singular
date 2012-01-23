@@ -53,6 +53,9 @@ namespace Singular.ClassSpecific.Druid
                         ctx => ctx != null,
                         new PrioritySelector(
                         Spell.WaitForCast(false),
+                        new Decorator(
+                            ret => moveInRange,
+                            Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
                         // Ensure we're in range of the unit to heal, and it's in LOS.
                         //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
                         //Cast Lifebloom on tank if
@@ -124,9 +127,7 @@ namespace Singular.ClassSpecific.Druid
 
                         new Decorator(
                             ret => moveInRange,
-                            new PrioritySelector(
-                                Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
-                                Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))
+                            Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
                         )));
         }
 

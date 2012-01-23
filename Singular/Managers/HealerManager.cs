@@ -157,7 +157,7 @@ namespace Singular.Managers
                 }
 
                 // If they're out of LOS, again, lower score!
-                if (!p.InLineOfSightOCD)
+                if (!p.InLineOfSpellSight)
                 {
                     prio.Score -= 100f;
                 }

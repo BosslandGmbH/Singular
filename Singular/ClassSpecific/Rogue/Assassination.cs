@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific.Rogue
                     ret =>
                     StyxWoW.Me.CurrentTarget.IsFlying && (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
                 Helpers.Common.CreateAutoAttack(true),
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 

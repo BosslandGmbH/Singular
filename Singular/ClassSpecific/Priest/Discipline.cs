@@ -57,6 +57,9 @@ namespace Singular.ClassSpecific.Priest
                         ret => ret != null,
                         new PrioritySelector(
                         Spell.WaitForCast(),
+                        new Decorator(
+                            ret => moveInRange,
+                            Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
                         // Ensure we're in range of the unit to heal, and it's in LOS.
                         //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
                         //Spell.Buff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
@@ -113,9 +116,7 @@ namespace Singular.ClassSpecific.Priest
 
                         new Decorator(
                             ret => moveInRange,
-                            new PrioritySelector(
-                                Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
-                                Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))
+                            Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
 
                         // Divine Hymn
                         // Desperate Prayer

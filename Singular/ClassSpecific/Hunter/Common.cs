@@ -67,7 +67,7 @@ namespace Singular.ClassSpecific.Hunter
                 new PrioritySelector(
                     new Decorator(ret => !StyxWoW.Me.Combat && StyxWoW.Me.CurrentTarget.IsAlive &&
                            (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me) &&
-                            StyxWoW.Me.CurrentTarget.Distance < 30f && StyxWoW.Me.CurrentTarget.InLineOfSight,
+                            StyxWoW.Me.CurrentTarget.Distance < 30f && StyxWoW.Me.CurrentTarget.InLineOfSpellSight,
             new Action(ret => Helpers.Common.CreateAutoAttack(true))),
                 new Decorator(
                     ret => !StyxWoW.Me.Combat && !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.IsAlive &&

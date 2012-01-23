@@ -107,10 +107,10 @@ namespace Singular.ClassSpecific.Shaman
                     ret => ret != null,
                     new PrioritySelector(
                         Spell.WaitForCast(),
+                        new Decorator(
+                            ret => moveInRange,
+                            Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
                         Totems.CreateSetTotems(4),
-                        Common.CreateInterruptSpellCast(
-                            ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < 15 && u.IsCasting && u.CanInterruptCurrentSpellCast)),
-
                         // Mana tide...
                         Spell.Cast("Mana Tide Totem", ret => StyxWoW.Me.ManaPercent < 80),
                         // Grounding...
@@ -159,10 +159,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         new Decorator(
                             ret => moveInRange,
-                            new PrioritySelector(
-                                // Make sure we're in LOS of the target.
-                                Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret),
-                                Movement.CreateMoveToTargetBehavior(true, 38f, ret => (WoWUnit)ret)))
+                            Movement.CreateMoveToTargetBehavior(true, 38f, ret => (WoWUnit)ret))
 
                 )));
         }

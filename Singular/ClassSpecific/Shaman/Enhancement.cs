@@ -134,7 +134,9 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Common.CreateAutoAttack(false),
-                Totems.CreateSetTotems(3),
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 20 * 20,
+                    Totems.CreateSetTotems(3)),
 
                 // Only call if we're missing more than 2 totems. 
 

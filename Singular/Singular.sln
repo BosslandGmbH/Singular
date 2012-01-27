@@ -4,6 +4,10 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Singular", "Singular.csproj", "{AA42C9FF-74BB-4AD9-9F9E-702CC584A423}"
 EndProject
 Global
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Bobby53|Any CPU = Bobby53|Any CPU
 		Debug|Any CPU = Debug|Any CPU

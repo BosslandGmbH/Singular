@@ -23,6 +23,7 @@ namespace Singular.ClassSpecific.Rogue
 
         private static ulong _lastPocketPickedGuid = 0;
         private static readonly WaitTimer PickPocketTimer = WaitTimer.FiveSeconds;
+        private static bool doPickPockets = false;
 
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.CombatRogue)]
@@ -44,7 +45,7 @@ namespace Singular.ClassSpecific.Rogue
                     ),
 
             #region picking pockets for easy money
- new Decorator(ret => StyxWoW.Me.CurrentTarget.Guid != _lastPocketPickedGuid &&
+            new Decorator(ret => doPickPockets && StyxWoW.Me.CurrentTarget.Guid != _lastPocketPickedGuid &&
                     (StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Demon || StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Dragon ||
                         StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Giant || StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Humanoid ||
                         StyxWoW.Me.CurrentTarget.CreatureType == WoWCreatureType.Undead) && SpellManager.CanCast("Pick Pocket"),

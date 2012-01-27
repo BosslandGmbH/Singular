@@ -127,7 +127,6 @@ namespace Singular.ClassSpecific.DeathKnight
                Movement.CreateFaceTargetBehavior(),
                Helpers.Common.CreateAutoAttack(true),
                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-               Spell.Buff("Chains of Ice"),
                new Sequence(
                     Spell.Cast("Death Grip",
                                 ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
@@ -136,7 +135,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
-
+               Spell.Buff("Chains of Ice"),
                Spell.Cast("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
 
                 // Anti-magic shell

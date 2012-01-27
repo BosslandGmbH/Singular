@@ -30,7 +30,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                Spell.Buff("Chains of Ice", ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
+                Spell.Buff("Chains of Ice", ret => StyxWoW.Me.CurrentTarget.Fleeing),
                 new Sequence(
                     Spell.Cast("Death Grip",
                                 ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
@@ -113,7 +113,6 @@ namespace Singular.ClassSpecific.DeathKnight
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                Spell.Buff("Chains of Ice", ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
                 new Sequence(
                     Spell.Cast("Death Grip",
                                 ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
@@ -122,6 +121,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
+                Spell.Buff("Chains of Ice", ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
 
                 // Anti-magic shell
                 Spell.BuffSelf("Anti-Magic Shell",

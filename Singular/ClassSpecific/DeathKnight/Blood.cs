@@ -271,9 +271,6 @@ namespace Singular.ClassSpecific.DeathKnight
                                 ret => SingularSettings.Instance.DeathKnight.UseArmyOfTheDead
                                         && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.ArmyOfTheDeadPercent),
 
-                    Spell.Buff("Chains of Ice",
-                        ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
-
                     new Sequence(
                         Spell.Cast("Death Grip",
                                     ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
@@ -282,6 +279,8 @@ namespace Singular.ClassSpecific.DeathKnight
                             new Action(ret => Navigator.PlayerMover.MoveStop())),
                         new WaitContinue(1, new ActionAlwaysSucceed())
                         ),
+                    Spell.Buff("Chains of Ice",
+                        ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
 
                     Spell.Cast("Outbreak",
                                 ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||

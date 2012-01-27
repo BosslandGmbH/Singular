@@ -1,8 +1,10 @@
-﻿using Singular.Dynamics;
+﻿using CommonBehaviors.Actions;
+using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic.Pathing;
 using TreeSharp;
 
 namespace Singular.ClassSpecific.DeathKnight
@@ -21,9 +23,15 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.Distance > 15),
+                new Sequence(
+                    Spell.Cast("Death Grip",
+                                ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
+                    new DecoratorContinue(
+                        ret => StyxWoW.Me.IsMoving,
+                        new Action(ret => Navigator.PlayerMover.MoveStop())),
+                    new WaitContinue(1, new ActionAlwaysSucceed())
+                    ),
                 Spell.Cast("Death Coil"),
-                Movement.CreateMoveBehindTargetBehavior(),
                 Spell.Cast("Icy Touch"),
                 Spell.Cast("Blood Strike"),
                 Spell.Cast("Plague Strike"),

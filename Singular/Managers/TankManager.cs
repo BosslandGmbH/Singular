@@ -69,6 +69,12 @@ namespace Singular.Managers
                     continue;
                 }
 
+                if (u.DistanceSqr > 40*40)
+                {
+                    units.RemoveAt(i);
+                    continue;
+                }
+
                 if (Unit.IgnoreMobs.Contains(u.Entry))
                 {
                     units.RemoveAt(i);

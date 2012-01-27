@@ -1,8 +1,11 @@
-﻿using Singular.Dynamics;
+﻿using CommonBehaviors.Actions;
+using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic.Pathing;
 using TreeSharp;
 
 namespace Singular.ClassSpecific.DeathKnight
@@ -19,16 +22,22 @@ namespace Singular.ClassSpecific.DeathKnight
         [Spec(TalentSpec.UnholyDeathKnight)]
         [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.Battlegrounds | WoWContext.Normal)]
-        public static Composite CreateDeathKnightPvpNormalPull()
+        public static Composite CreateDeathKnightNormalAndPvPPull()
         {
             return
                 new PrioritySelector(
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
-                    Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.Distance > 15),
+                    new Sequence(
+                        Spell.Cast("Death Grip",
+                                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
+                        new DecoratorContinue(
+                            ret => StyxWoW.Me.IsMoving,
+                            new Action(ret => Navigator.PlayerMover.MoveStop())),
+                        new WaitContinue(1, new ActionAlwaysSucceed())),
                     Spell.Cast("Howling Blast"),
                     Spell.Cast("Icy Touch"),
-                    Movement.CreateMoveToTargetBehavior(true, 5f)
+                    Movement.CreateMoveToMeleeBehavior(true)
                     );
         }
 
@@ -40,7 +49,7 @@ namespace Singular.ClassSpecific.DeathKnight
         [Spec(TalentSpec.UnholyDeathKnight)]
         [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateDeathKnightInstancePull()
+        public static Composite CreateDeathKnightFrostAndUnholyInstancePull()
         {
             return
                 new PrioritySelector(
@@ -48,28 +57,11 @@ namespace Singular.ClassSpecific.DeathKnight
                     Movement.CreateFaceTargetBehavior(),
                     Spell.Cast("Howling Blast"),
                     Spell.Cast("Icy Touch"),
-                    Movement.CreateMoveToTargetBehavior(true, 5f)
+                    Movement.CreateMoveToMeleeBehavior(true)
                     );
         }
 
-        // Blood DKs should be DG'ing everything it can when pulling. ONLY IN INSTANCES.
-        [Class(WoWClass.DeathKnight)]
-        [Behavior(BehaviorType.Pull)]
-        [Spec(TalentSpec.BloodDeathKnight)]
-        [Context(WoWContext.Instances)]
-        public static Composite CreateBloodDeathKnightInstancePull()
-        {
-            return
-                new PrioritySelector(
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.Distance > 15),
-                    Spell.Cast("Howling Blast"),
-                    Spell.Cast("Icy Touch"),
-                    Movement.CreateMoveToTargetBehavior(true, 5f),
-                    Helpers.Common.CreateAutoAttack(true)
-                    );
-        }
+
 
         #endregion
 
@@ -99,10 +91,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => TalentManager.CurrentSpec == TalentSpec.UnholyDeathKnight || TalentManager.CurrentSpec == TalentSpec.FrostDeathKnight),
                     Spell.BuffSelf(
                         "Horn of Winter",
-                        ret => !StyxWoW.Me.HasAura("Horn of Winter") && !StyxWoW.Me.HasAura("Battle Shout") && !StyxWoW.Me.HasAura("Roar of Courage")),
-                    Spell.BuffSelf(
-                        "Bone Shield",
-                        ret => TalentManager.CurrentSpec == TalentSpec.BloodDeathKnight)
+                        ret => !StyxWoW.Me.HasAura("Horn of Winter") && !StyxWoW.Me.HasAura("Battle Shout") && !StyxWoW.Me.HasAura("Roar of Courage"))
                     );
         }
 

@@ -82,6 +82,10 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Tripper.Tools, Version=1.0.0.0, Culture=neutral, PublicKeyToken=c40611ce03f849a2, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Honorbuddy\Tripper.Tools.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassSpecific\DeathKnight\Blood.cs" />
@@ -195,7 +199,7 @@
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "G:\Code\WoW\Honorbuddy 2\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular v2\" /i /f /s /v /y
 )
 if $(ConfigurationName) == Raphus (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "E:\Programming\Projects\Honorbuddy\Styx\trunk\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "E:\Buddy\Honorbuddy\Source\trunk\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
 
 )
 

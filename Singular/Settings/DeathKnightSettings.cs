@@ -11,6 +11,7 @@
 
 #endregion
 
+using System;
 using System.ComponentModel;
 
 using Styx.Helpers;
@@ -38,7 +39,8 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(2)]
         [Category("Common")]
-        [DisplayName("Will use Death and Decay when agro mob count is equal to or higher then this value")]
+        [DisplayName("Death and Decay Add Count")]
+        [Description("Will use Death and Decay when agro mob count is equal to or higher then this value. This basicly determines AoE rotation")]
         public int DeathAndDecayCount { get; set; }
 
         #endregion
@@ -190,6 +192,7 @@ namespace Singular.Settings
         #endregion
 
         #region Category: Frost
+
         [Setting]
         [DefaultValue(true)]
         [Category("Frost")]
@@ -207,6 +210,18 @@ namespace Singular.Settings
         [Category("Frost")]
         [DisplayName("Empower Rune Weapon")]
         public bool UseEmpowerRuneWeapon { get; set; }
+
         #endregion
+
+        #region Category: Unholy
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Unholy")]
+        [DisplayName("Summon Gargoyle")]
+        public bool UseSummonGargoyle { get; set; }
+
+        #endregion
+
     }
 }

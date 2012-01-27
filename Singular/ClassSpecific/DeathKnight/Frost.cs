@@ -152,6 +152,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Outbreak", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
                 Spell.Cast("Frost Fever", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
                 Spell.Cast("Blood Strike", ret => StyxWoW.Me.BloodRuneCount != 0),
+                Spell.Buff("Necrotic Strike", ret => SingularSettings.Instance.DeathKnight.UseNecroticStrike),
                 Spell.Cast("Obliterate"),
                 Spell.Cast("Frost Strike"),
                 Spell.Cast("Howling Blast", ret => StyxWoW.Me.HasAura("Freezing Fog")),

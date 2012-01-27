@@ -211,6 +211,12 @@ namespace Singular.Settings
         [DisplayName("Empower Rune Weapon")]
         public bool UseEmpowerRuneWeapon { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Frost")]
+        [DisplayName("Use Necrotic Strike - Frost")]
+        public bool UseNecroticStrike { get; set; }
+
         #endregion
 
         #region Category: Unholy

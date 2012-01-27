@@ -39,7 +39,12 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
-
+                // Anti-magic shell
+                Spell.BuffSelf("Anti-Magic Shell",
+                        ret => Unit.NearbyUnfriendlyUnits.Any(u =>
+                                    (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
+                                    u.CurrentTargetGuid == StyxWoW.Me.Guid &&
+                                    SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
                 Spell.BuffSelf("Icebound Fortitude",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
@@ -117,6 +122,13 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
+
+                // Anti-magic shell
+                Spell.BuffSelf("Anti-Magic Shell",
+                        ret => Unit.NearbyUnfriendlyUnits.Any(u =>
+                                    (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
+                                    u.CurrentTargetGuid == StyxWoW.Me.Guid &&
+                                    SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
 
                 Spell.BuffSelf("Icebound Fortitude", 
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&

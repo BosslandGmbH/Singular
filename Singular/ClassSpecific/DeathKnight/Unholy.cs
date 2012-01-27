@@ -60,7 +60,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // Start AoE section
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 8 * 8) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.Cast("Summon Gargoyle", ret => SingularSettings.Instance.DeathKnight.UseSummonGargoyle),
                             Spell.Cast("Pestilence",
@@ -203,7 +203,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // Start AoE section
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 8 * 8) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.Cast("Pestilence",
                                         ret => StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") && 

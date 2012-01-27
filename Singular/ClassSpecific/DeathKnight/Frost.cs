@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Empower Rune Weapon", ret => SingularSettings.Instance.DeathKnight.UseEmpowerRuneWeapon && StyxWoW.Me.UnholyRuneCount == 0 && StyxWoW.Me.FrostRuneCount == 0 && StyxWoW.Me.DeathRuneCount == 0 && !SpellManager.CanCast("Frost Strike") && StyxWoW.Me.CurrentTarget.IsBoss()),
 
                 // Start AoE section
-                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 8 * 8) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                               new PrioritySelector(
                                   Spell.Cast("Howling Blast",
                                              ret => StyxWoW.Me.FrostRuneCount == 2 || StyxWoW.Me.DeathRuneCount == 2),

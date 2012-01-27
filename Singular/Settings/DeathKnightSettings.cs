@@ -43,6 +43,30 @@ namespace Singular.Settings
         [Description("Will use Death and Decay when agro mob count is equal to or higher then this value. This basicly determines AoE rotation")]
         public int DeathAndDecayCount { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Icebound Fortitude")]
+        public bool UseIceboundFortitude { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Common")]
+        [DisplayName("Icebound Fortitude Percent")]
+        public int IceboundFortitudePercent { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Common")]
+        [DisplayName("Death Strike Emergency Percent")]
+        public int DeathStrikeEmergencyPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Lichborne")]
+        public bool UseLichborne { get; set; }
+
         #endregion
 
         #region Category: Blood
@@ -95,12 +119,6 @@ namespace Singular.Settings
         public int DancingRuneWeaponPercent { get; set; }
 
         [Setting]
-        [DefaultValue(40)]
-        [Category("Blood")]
-        [DisplayName("Death Strike Emergency Percent")]
-        public int DeathStrikeEmergencyPercent { get; set; }
-
-        [Setting]
         [DefaultValue(30)]
         [Category("Blood")]
         [DisplayName("Empower Rune Weapon Percent")]
@@ -109,26 +127,8 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Blood")]
-        [DisplayName("Icebound Fortitude")]
-        public bool UseIceboundFortitude { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
         [DisplayName("Icebound Fortitude Exclusive")]
         public bool IceboundFortitudeExclusive { get; set; }
-
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Blood")]
-        [DisplayName("Icebound Fortitude Percent")]
-        public int IceboundFortitudePercent { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Lichborne")]
-        public bool UseLichborne { get; set; }
 
         [Setting]
         [DefaultValue(true)]

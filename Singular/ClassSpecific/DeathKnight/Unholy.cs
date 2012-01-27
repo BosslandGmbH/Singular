@@ -38,6 +38,19 @@ namespace Singular.ClassSpecific.DeathKnight
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
                Spell.Cast("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
+
+                Spell.BuffSelf("Icebound Fortitude",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
+                               SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
+                Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
+                                                   (StyxWoW.Me.IsCrowdControlled() ||
+                                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
+                Spell.BuffSelf("Death Coil",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&
+                               StyxWoW.Me.HasAura("Lichborne")),
+                Spell.Cast("Death Strike",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
+
                Spell.Cast("Outbreak",
                           ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                                  !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague")),
@@ -125,6 +138,18 @@ namespace Singular.ClassSpecific.DeathKnight
                                             (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
                                             u.CurrentTargetGuid == StyxWoW.Me.Guid &&
                                             SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
+
+                Spell.BuffSelf("Icebound Fortitude",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
+                               SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
+                Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
+                                                   (StyxWoW.Me.IsCrowdControlled() ||
+                                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
+                Spell.BuffSelf("Death Coil",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&
+                               StyxWoW.Me.HasAura("Lichborne")),
+                Spell.Cast("Death Strike",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
                Spell.Cast("Outbreak",
                           ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||

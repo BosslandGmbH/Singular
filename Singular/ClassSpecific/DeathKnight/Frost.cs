@@ -39,12 +39,18 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
-                    
+
+                Spell.BuffSelf("Icebound Fortitude",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
+                               SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                 Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
-                                                   (StyxWoW.Me.IsCrowdControlled() || StyxWoW.Me.HealthPercent < 30)),
-                Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 30),
+                                                   (StyxWoW.Me.IsCrowdControlled() ||
+                                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
                 Spell.BuffSelf("Death Coil",
-                                ret => StyxWoW.Me.HealthPercent < 30 && StyxWoW.Me.HasAura("Lichborne")),
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&
+                               StyxWoW.Me.HasAura("Lichborne")),
+                Spell.Cast("Death Strike",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
                 // Cooldowns
                 Spell.Cast("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
@@ -112,12 +118,18 @@ namespace Singular.ClassSpecific.DeathKnight
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
 
-
+                Spell.BuffSelf("Icebound Fortitude", 
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
+                               SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                 Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
-                                                   (StyxWoW.Me.IsCrowdControlled() || StyxWoW.Me.HealthPercent < 30)),
-                Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 30),
+                                                   (StyxWoW.Me.IsCrowdControlled() || 
+                                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
                 Spell.BuffSelf("Death Coil",
-                                ret => StyxWoW.Me.HealthPercent < 30 && StyxWoW.Me.HasAura("Lichborne")),
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent && 
+                               StyxWoW.Me.HasAura("Lichborne")),
+                Spell.Cast("Death Strike", 
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
+
                 // Cooldowns
                 Spell.Cast("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
                 Spell.Cast("Raise Dead", ret => SingularSettings.Instance.DeathKnight.UseRaiseDead && !StyxWoW.Me.GotAlivePet && StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.HasAura("Pillar of Frost")),
@@ -167,10 +179,13 @@ namespace Singular.ClassSpecific.DeathKnight
                            StyxWoW.Me.FrostRuneCount == 0 && StyxWoW.Me.DeathRuneCount == 0 &&
                            !SpellManager.CanCast("Frost Strike") && StyxWoW.Me.CurrentTarget.IsBoss()),
 
-                Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 30),
+                Spell.BuffSelf("Icebound Fortitude", 
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent && 
+                               SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
+                Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
                 // Start AoE section
-                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 8 * 8) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                               new PrioritySelector(
                                   Spell.Cast("Howling Blast",
                                              ret => StyxWoW.Me.FrostRuneCount == 2 || StyxWoW.Me.DeathRuneCount == 2),

@@ -39,8 +39,12 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
-
+                    
+                Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
+                                                   (StyxWoW.Me.IsCrowdControlled() || StyxWoW.Me.HealthPercent < 30)),
                 Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 30),
+                Spell.BuffSelf("Death Coil",
+                                ret => StyxWoW.Me.HealthPercent < 30 && StyxWoW.Me.HasAura("Lichborne")),
 
                 // Cooldowns
                 Spell.Cast("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
@@ -108,8 +112,12 @@ namespace Singular.ClassSpecific.DeathKnight
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
 
-                Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 30),
 
+                Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
+                                                   (StyxWoW.Me.IsCrowdControlled() || StyxWoW.Me.HealthPercent < 30)),
+                Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < 30),
+                Spell.BuffSelf("Death Coil",
+                                ret => StyxWoW.Me.HealthPercent < 30 && StyxWoW.Me.HasAura("Lichborne")),
                 // Cooldowns
                 Spell.Cast("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
                 Spell.Cast("Raise Dead", ret => SingularSettings.Instance.DeathKnight.UseRaiseDead && !StyxWoW.Me.GotAlivePet && StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.HasAura("Pillar of Frost")),

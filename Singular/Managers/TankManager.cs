@@ -44,7 +44,6 @@ namespace Singular.Managers
         public List<WoWUnit> NeedToTaunt { get; private set; }
 
         public static readonly WaitTimer TargetingTimer = new WaitTimer(TimeSpan.FromSeconds(1));
-        public static bool NeedTankTargeting { get; set; }
 
         protected override List<WoWObject> GetInitialObjectList()
         {

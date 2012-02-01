@@ -103,12 +103,12 @@ namespace Singular.ClassSpecific.Shaman
                 // Heal the party in dungeons if the healer is dead
                         new Decorator(
                             ret => StyxWoW.Me.CurrentMap.IsDungeon && !StyxWoW.Me.IsInRaid &&
-                                   (Group.Healer == null || !Group.Healer.IsAlive),
+                                   Group.Healers.Count(h => h.IsAlive) == 0,
                             Restoration.CreateRestoShamanHealingOnlyBehavior()),
 
                         // This will work for both solo play and battlegrounds
                         new Decorator(
-                            ret => !StyxWoW.Me.IsInParty || Group.Healer == null || !Group.Healer.IsAlive,
+                            ret => !StyxWoW.Me.IsInParty || Group.Healers.Count(h => h.IsAlive) == 0,
                             new PrioritySelector(
                                 Spell.Heal("Healing Wave",
                                     ret => StyxWoW.Me,

@@ -58,12 +58,12 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
                 // Cooldowns
-                Spell.Cast("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
-                Spell.Cast("Raise Dead", ret => SingularSettings.Instance.DeathKnight.UseRaiseDead && !StyxWoW.Me.GotAlivePet && StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.HasAura("Pillar of Frost")),
-                Spell.Cast("Empower Rune Weapon", ret => SingularSettings.Instance.DeathKnight.UseEmpowerRuneWeapon && StyxWoW.Me.UnholyRuneCount == 0 && StyxWoW.Me.FrostRuneCount == 0 && StyxWoW.Me.DeathRuneCount == 0 && !SpellManager.CanCast("Frost Strike") && StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.BuffSelf("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
+                Spell.BuffSelf("Raise Dead", ret => SingularSettings.Instance.DeathKnight.UseRaiseDead && !StyxWoW.Me.GotAlivePet && StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.HasAura("Pillar of Frost")),
+                Spell.BuffSelf("Empower Rune Weapon", ret => SingularSettings.Instance.DeathKnight.UseEmpowerRuneWeapon && StyxWoW.Me.UnholyRuneCount == 0 && StyxWoW.Me.FrostRuneCount == 0 && StyxWoW.Me.DeathRuneCount == 0 && !SpellManager.CanCast("Frost Strike") && StyxWoW.Me.CurrentTarget.IsBoss()),
 
                 // Start AoE section
-                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                               new PrioritySelector(
                                   Spell.Cast("Howling Blast",
                                              ret => StyxWoW.Me.FrostRuneCount == 2 || StyxWoW.Me.DeathRuneCount == 2),
@@ -143,14 +143,14 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
                 // Cooldowns
-                Spell.Cast("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
-                Spell.Cast("Raise Dead", ret => SingularSettings.Instance.DeathKnight.UseRaiseDead && !StyxWoW.Me.GotAlivePet && StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.HasAura("Pillar of Frost")),
-                Spell.Cast("Empower Rune Weapon", ret => SingularSettings.Instance.DeathKnight.UseEmpowerRuneWeapon && StyxWoW.Me.UnholyRuneCount == 0 && StyxWoW.Me.FrostRuneCount == 0 && StyxWoW.Me.DeathRuneCount == 0 && !SpellManager.CanCast("Frost Strike") && StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.BuffSelf("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
+                Spell.BuffSelf("Raise Dead", ret => SingularSettings.Instance.DeathKnight.UseRaiseDead && !StyxWoW.Me.GotAlivePet && StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.HasAura("Pillar of Frost")),
+                Spell.BuffSelf("Empower Rune Weapon", ret => SingularSettings.Instance.DeathKnight.UseEmpowerRuneWeapon && StyxWoW.Me.UnholyRuneCount == 0 && StyxWoW.Me.FrostRuneCount == 0 && StyxWoW.Me.DeathRuneCount == 0 && !SpellManager.CanCast("Frost Strike") && StyxWoW.Me.CurrentTarget.IsBoss()),
 
                 // Start single target section
-                Spell.Cast("Howling Blast", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Fever")),
-                Spell.Cast("Outbreak", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
-                Spell.Cast("Frost Fever", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
+                Spell.Buff("Howling Blast", true, "Frost Fever"),
+                Spell.Buff("Outbreak", true, "Frost Fever"),
+                Spell.Buff("Frost Fever", true),
                 Spell.Cast("Blood Strike", ret => StyxWoW.Me.BloodRuneCount != 0),
                 Spell.Buff("Necrotic Strike", ret => SingularSettings.Instance.DeathKnight.UseNecroticStrike),
                 Spell.Cast("Obliterate"),
@@ -177,16 +177,14 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                Movement.CreateMoveBehindTargetBehavior(),
-
+                
                 // Cooldowns
-                Spell.Cast("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
-                Spell.Cast("Raise Dead",
+                Spell.BuffSelf("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
+                Spell.BuffSelf("Raise Dead",
                            ret =>
                            SingularSettings.Instance.DeathKnight.UseRaiseDead && !StyxWoW.Me.GotAlivePet &&
                            StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.HasAura("Pillar of Frost")),
-                Spell.Cast("Empower Rune Weapon",
+                Spell.BuffSelf("Empower Rune Weapon",
                            ret =>
                            SingularSettings.Instance.DeathKnight.UseEmpowerRuneWeapon && StyxWoW.Me.UnholyRuneCount == 0 &&
                            StyxWoW.Me.FrostRuneCount == 0 && StyxWoW.Me.DeathRuneCount == 0 &&
@@ -197,8 +195,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                 Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
+                Movement.CreateMoveBehindTargetBehavior(),
                 // Start AoE section
-                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                               new PrioritySelector(
                                   Spell.Cast("Howling Blast",
                                              ret => StyxWoW.Me.FrostRuneCount == 2 || StyxWoW.Me.DeathRuneCount == 2),
@@ -219,9 +218,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                   )),
 
                 // Start single target section
-                Spell.Cast("Howling Blast", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Fever")),
-                Spell.Cast("Outbreak", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
-                Spell.Cast("Frost Fever", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
+                Spell.Buff("Howling Blast", true, "Frost Fever"),
+                Spell.Buff("Outbreak", true, "Frost Fever"),
+                Spell.Buff("Frost Fever", true),
                 Spell.Cast(
                     "Obliterate",
                     ret =>

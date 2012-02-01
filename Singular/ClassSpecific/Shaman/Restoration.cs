@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Shaman
             return new PrioritySelector(
                 ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
                 new Decorator(
-                    ret => ret != null,
+                    ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
                     new PrioritySelector(
                         Spell.WaitForCast(),
                         new Decorator(
@@ -121,8 +121,8 @@ namespace Singular.ClassSpecific.Shaman
                         // And deal with some edge PVP cases.
 
                         Spell.Heal("Earth Shield", 
-                            ret => Group.Tank, 
-                            ret => Group.Tank != null && Group.Tank.IsAlive && !Group.Tank.HasMyAura("Earth Shield")),
+                            ret => (WoWUnit)ret, 
+                            ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Earth Shield"))),
 
                         // Pop NS if someone is in some trouble.
                         Spell.BuffSelf("Nature's Swiftness", ret => ((WoWUnit)ret).HealthPercent < 15),

@@ -20,7 +20,6 @@ namespace Singular.ClassSpecific.Paladin
         [Context(WoWContext.All)]
         public static Composite CreateProtectionPaladinCombat()
         {
-            TankManager.NeedTankTargeting = true;
             return new PrioritySelector(
                 context => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
                 Safers.EnsureTarget(),

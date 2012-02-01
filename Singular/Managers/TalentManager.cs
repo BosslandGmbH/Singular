@@ -41,7 +41,7 @@ namespace Singular.Managers
 
         BalanceDruid = ((int)WoWClass.Druid << 8) + 0,
         FeralDruid = ((int)WoWClass.Druid << 8) + 1,
-        FeralTankDruid = TalentManager.TALENT_FLAG_ISEXTRASPEC + ((int)WoWClass.Druid << 8) + 1,
+        //FeralTankDruid = TalentManager.TALENT_FLAG_ISEXTRASPEC + ((int)WoWClass.Druid << 8) + 1,
         RestorationDruid = ((int)WoWClass.Druid << 8) + 2,
 
         BeastMasteryHunter = ((int)WoWClass.Hunter << 8) + 0,
@@ -57,7 +57,7 @@ namespace Singular.Managers
         RetributionPaladin = ((int)WoWClass.Paladin << 8) + 2,
 
         DisciplinePriest = ((int)WoWClass.Priest << 8) + 0,
-        DisciplineHealingPriest = TalentManager.TALENT_FLAG_ISEXTRASPEC + ((int)WoWClass.Priest << 8) + 0,
+        //DisciplineHealingPriest = TalentManager.TALENT_FLAG_ISEXTRASPEC + ((int)WoWClass.Priest << 8) + 0,
         HolyPriest = ((int)WoWClass.Priest << 8) + 1,
         ShadowPriest = ((int)WoWClass.Priest << 8) + 2,
 
@@ -80,7 +80,7 @@ namespace Singular.Managers
 
     internal static class TalentManager
     {
-        public const int TALENT_FLAG_ISEXTRASPEC = 0x10000;
+        //public const int TALENT_FLAG_ISEXTRASPEC = 0x10000;
 
         static TalentManager()
         {
@@ -135,7 +135,7 @@ namespace Singular.Managers
             }
             WoWClass myClass = StyxWoW.Me.Class;
             int treeOne = 0, treeTwo = 0, treeThree = 0;
-            bool isExtraSpec = false;
+            //bool isExtraSpec = false;
 
             // Keep the frame stuck so we can do a bunch of injecting at once.
             using (new FrameLock())
@@ -150,17 +150,17 @@ namespace Singular.Managers
                         var t = new Talent { Tab = tab - 1, Index = index - 1, Count = rank };
                         Talents.Add(t);
 
-                        // Thick Hide - Only used by tanking druids
-                        if (myClass == WoWClass.Druid && tab == 2 && index == 11 && rank != 0)
-                        {
-                            isExtraSpec = true;
-                        }
+                        //// Thick Hide - Only used by tanking druids
+                        //if (myClass == WoWClass.Druid && tab == 2 && index == 11 && rank != 0)
+                        //{
+                        //    isExtraSpec = true;
+                        //}
 
-                        // Renewed Hope
-                        if (myClass == WoWClass.Priest && tab == 1 && index == 8 && rank != 0)
-                        {
-                            isExtraSpec = true;
-                        }
+                        //// Renewed Hope
+                        //if (myClass == WoWClass.Priest && tab == 1 && index == 8 && rank != 0)
+                        //{
+                        //    isExtraSpec = true;
+                        //}
 
                         switch (tab)
                         {
@@ -203,14 +203,14 @@ namespace Singular.Managers
 
             int max = Math.Max(Math.Max(treeOne, treeTwo), treeThree);
             Logger.WriteDebug("[Talents] Best Tree: " + max);
-            Logger.WriteDebug("[Talents] Is Special Spec: " + isExtraSpec);
+            //Logger.WriteDebug("[Talents] Is Special Spec: " + isExtraSpec);
             int specMask = ((int)StyxWoW.Me.Class << 8);
 
-            // Bear tanks, healing disc priests, etc.
-            if (isExtraSpec)
-            {
-                specMask += TALENT_FLAG_ISEXTRASPEC;
-            }
+            //// Bear tanks, healing disc priests, etc.
+            //if (isExtraSpec)
+            //{
+            //    specMask += TALENT_FLAG_ISEXTRASPEC;
+            //}
 
             if (max == treeOne)
             {

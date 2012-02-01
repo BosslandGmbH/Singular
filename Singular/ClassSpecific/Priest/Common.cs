@@ -13,7 +13,6 @@ namespace Singular.ClassSpecific.Priest
     public class Common
     {
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplineHealingPriest)]
         [Spec(TalentSpec.DisciplinePriest)]
         [Spec(TalentSpec.HolyPriest)]
         [Spec(TalentSpec.ShadowPriest)]
@@ -35,7 +34,6 @@ namespace Singular.ClassSpecific.Priest
         }
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplineHealingPriest)]
         [Spec(TalentSpec.DisciplinePriest)]
         [Spec(TalentSpec.HolyPriest)]
         [Spec(TalentSpec.ShadowPriest)]
@@ -52,7 +50,6 @@ namespace Singular.ClassSpecific.Priest
         }
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplineHealingPriest)]
         [Spec(TalentSpec.DisciplinePriest)]
         [Spec(TalentSpec.HolyPriest)]
         [Spec(TalentSpec.ShadowPriest)]
@@ -96,7 +93,6 @@ namespace Singular.ClassSpecific.Priest
         }
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplineHealingPriest)]
         [Spec(TalentSpec.DisciplinePriest)]
         [Spec(TalentSpec.HolyPriest)]
         [Spec(TalentSpec.ShadowPriest)]

@@ -17,7 +17,6 @@ namespace Singular.ClassSpecific.Priest
     public class Discipline
     {
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplineHealingPriest)]
         [Spec(TalentSpec.DisciplinePriest)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
@@ -54,7 +53,7 @@ namespace Singular.ClassSpecific.Priest
                 PrioritySelector(
                 ret => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
                     new Decorator(
-                        ret => ret != null,
+                        ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
                         new PrioritySelector(
                         Spell.WaitForCast(),
                         new Decorator(
@@ -128,7 +127,6 @@ namespace Singular.ClassSpecific.Priest
         }
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplineHealingPriest)]
         [Spec(TalentSpec.DisciplinePriest)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
@@ -142,7 +140,6 @@ namespace Singular.ClassSpecific.Priest
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
         // Note: This will probably break shit if we're solo, but oh well!
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplineHealingPriest)]
         [Spec(TalentSpec.DisciplinePriest)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]

@@ -21,6 +21,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateRestoDruidHealRest()
         {
             return new PrioritySelector(
+                Spell.WaitForCast(),
                 // Heal self before resting. There is no need to eat while we have 100% mana
                 CreateRestoDruidHealOnlyBehavior(true),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
@@ -48,9 +49,9 @@ namespace Singular.ClassSpecific.Druid
 
             return new
                 PrioritySelector(
-                ret => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
+                ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
                     new Decorator(
-                        ctx => ctx != null,
+                        ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
                         new PrioritySelector(
                         Spell.WaitForCast(false),
                         new Decorator(

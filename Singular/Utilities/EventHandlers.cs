@@ -4,21 +4,41 @@ using Singular.Helpers;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
+using Styx.Logic.Combat;
 using Styx.Logic.POI;
 using Styx.WoWInternals;
 
 namespace Singular.Utilities
 {
-    class EventHandlers
+    public static class EventHandlers
     {
-        public static readonly HashSet<string> _sleepAfterSuccessSpells = new HashSet<string>();
-
         public static void Init()
         {
-            BotEvents.Player.OnMapChanged += Player_OnMapChanged;
-
-            if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds)
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds &&
+                !StyxWoW.Me.CurrentMap.IsRaid)
                 AttachCombatLogEvent();
+        }
+
+        internal static void PlayerOnMapChanged(BotEvents.Player.MapChangedEventArgs args)
+        {
+            // Since we hooked this in ctor, make sure we are the selected CC
+            if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
+                return;
+
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds ||
+                StyxWoW.Me.CurrentMap.IsRaid)
+                DetachCombatLogEvent();
+            else
+                AttachCombatLogEvent();
+
+            //Why would we create same behaviors all over ?
+            if (SingularRoutine.LastWoWContext == SingularRoutine.CurrentWoWContext)
+            {
+                return;
+            }
+
+            Logger.Write("Context changed. New context: " + SingularRoutine.CurrentWoWContext + ". Rebuilding behaviors.");
+            SingularRoutine.Instance.CreateBehaviors();
         }
 
         private static bool _combatLogAttached;
@@ -53,22 +73,6 @@ namespace Singular.Utilities
             _combatLogAttached = false;
         }
 
-        /// <summary>
-        ///   Adds a spell to the succeed wait list. When this spell is successfully cast, the event log handler will forcibly sleep the thread
-        ///   for your lag duration. (This is mostly to prevent double-casts due to slow updating of buffs.)
-        /// </summary>
-        /// <remarks>
-        ///   Created 3/4/2011.
-        /// </remarks>
-        /// <param name = "spellName">Name of the spell.</param>
-        protected static void AddSpellSucceedWait(string spellName)
-        {
-            if (!_sleepAfterSuccessSpells.Contains(spellName))
-            {
-                _sleepAfterSuccessSpells.Add(spellName);
-            }
-        }
-
         private static void HandleCombatLog(object sender, LuaEventArgs args)
         {
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
@@ -84,12 +88,7 @@ namespace Singular.Utilities
 
                     // Update the last spell we cast. So certain classes can 'switch' their logic around.
                     Spell.LastSpellCast = e.SpellName;
-                    Logger.WriteDebug("Successfully cast " + Spell.LastSpellCast);
-
-                    if (_sleepAfterSuccessSpells.Contains(e.SpellName))
-                    {
-                        StyxWoW.SleepForLagDuration();
-                    }
+                    //Logger.WriteDebug("Successfully cast " + Spell.LastSpellCast);
 
                     // Force a wait for all summoned minions. This prevents double-casting it.
                     if (SingularRoutine.MyClass == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
@@ -113,23 +112,6 @@ namespace Singular.Utilities
                     }
                     break;
             }
-        }
-
-        private static void Player_OnMapChanged(BotEvents.Player.MapChangedEventArgs args)
-        {
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                DetachCombatLogEvent();
-            else
-                AttachCombatLogEvent();
-
-            //Why would we create same behaviors all over ?
-            if (SingularRoutine.LastWoWContext == SingularRoutine.CurrentWoWContext)
-            {
-                return;
-            }
-
-            Logger.Write("Context changed. New context: " + SingularRoutine.CurrentWoWContext + ". Rebuilding behaviors.");
-            SingularRoutine.Instance.CreateBehaviors();
         }
     }
 }

@@ -42,12 +42,12 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Cast("Immolation Aura", ret => StyxWoW.Me.CurrentTarget.Distance < 5f),
                         Spell.Cast("Shadowflame", ret => StyxWoW.Me.CurrentTarget.Distance < 5)
                         )),
-                Spell.Buff("Immolate"),
+                Spell.Buff("Immolate", true),
                 Spell.Buff("Curse of Tongues", ret => StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana),
                 Spell.Buff("Curse of Elements", ret => StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana),
-                Spell.Buff("Bane of Doom", ret => StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.Buff("Bane of Doom", true, ret => StyxWoW.Me.CurrentTarget.IsBoss()),
 
-                Spell.Buff("Bane of Agony", ret => !StyxWoW.Me.CurrentTarget.HasAura("Bane of Doom") && (StyxWoW.Me.CurrentTarget.HealthPercent >= 30 || StyxWoW.Me.CurrentTarget.Elite)),
+                Spell.Buff("Bane of Agony", true, ret => !StyxWoW.Me.CurrentTarget.HasAura("Bane of Doom") && (StyxWoW.Me.CurrentTarget.HealthPercent >= 30 || StyxWoW.Me.CurrentTarget.Elite)),
                 // Use the infernal if we have a few mobs around us, and it's off CD. Otherwise, just use the Doomguard.
                 // Its a 10min CD, with a 1-1.2min uptime on the minion. Hey, any extra DPS is fine in my book!
                 // Make sure these 2 summons are AFTER the banes above.
@@ -55,7 +55,7 @@ namespace Singular.ClassSpecific.Warlock
                     Spell.CastOnGround("Summon Infernal", ret => StyxWoW.Me.CurrentTarget.Location)
                     ),
                 Spell.Cast("Summon Doomguard", ret=> StyxWoW.Me.CurrentTarget.IsBoss()),
-                Spell.Buff("Corruption", ret => StyxWoW.Me.CurrentTarget.HealthPercent >= 30 || StyxWoW.Me.CurrentTarget.Elite),
+                Spell.Buff("Corruption", true, ret => StyxWoW.Me.CurrentTarget.HealthPercent >= 30 || StyxWoW.Me.CurrentTarget.Elite),
                 Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),
                 Spell.Cast("Health Funnel", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.HealthPercent < 70),
                 Spell.Cast("Hand of Gul'dan"),

@@ -31,9 +31,8 @@ namespace Singular.Helpers
                     new PrioritySelector(
                         new Decorator(
                             // DisableTankTargeting is a user-setting. NeedTankTargeting is an internal one. Make sure both are turned on.
-                            ret => !SingularSettings.Instance.DisableTankTargetSwitching && TankManager.NeedTankTargeting
-                                   && TankManager.TargetingTimer.IsFinished && StyxWoW.Me.Combat &&
-                                   TankManager.Instance.FirstUnit != null &&
+                            ret => !SingularSettings.Instance.DisableTankTargetSwitching && Group.MeIsTank && 
+                                   TankManager.TargetingTimer.IsFinished && StyxWoW.Me.Combat && TankManager.Instance.FirstUnit != null &&
                                    (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget != TankManager.Instance.FirstUnit),
                             new Action(
                                 ret =>
@@ -50,7 +49,7 @@ namespace Singular.Helpers
                                     // We are making sure we have the proper target in all cases here.
 
                                     // No target switching for tanks. They check for their own stuff above.
-                                    if (TankManager.NeedTankTargeting && !SingularSettings.Instance.DisableTankTargetSwitching)
+                                    if (Group.MeIsTank && !SingularSettings.Instance.DisableTankTargetSwitching)
                                         return null;
 
                                     // Go below if current target is null or dead. We have other checks to deal with that

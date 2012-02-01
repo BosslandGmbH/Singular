@@ -70,12 +70,12 @@ namespace Singular.ClassSpecific.Shaman
                         // Heal the party in dungeons if the healer is dead
                         new Decorator(
                             ret => StyxWoW.Me.CurrentMap.IsDungeon && !StyxWoW.Me.IsInRaid &&
-                                   (Group.Healer == null || !Group.Healer.IsAlive),
+                                   Group.Healers.Count(h => h.IsAlive) == 0,
                             Restoration.CreateRestoShamanHealingOnlyBehavior()),
 
                         // This will work for both solo play and battlegrounds
                         new Decorator(
-                            ret => !StyxWoW.Me.IsInParty || Group.Healer == null || !Group.Healer.IsAlive,
+                            ret => !StyxWoW.Me.IsInParty || Group.Healers.Count(h => h.IsAlive) == 0,
                             new PrioritySelector(
                                 Spell.Heal("Healing Wave", 
                                     ret => StyxWoW.Me, 
@@ -135,19 +135,19 @@ namespace Singular.ClassSpecific.Shaman
                 Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 new Decorator(
-                    ret => SingularSettings.Instance.Shaman.IncludeAoeRotation && Unit.UnfriendlyUnitsNearTarget.Count() > 2,
+                    ret => SingularSettings.Instance.Shaman.IncludeAoeRotation && Unit.UnfriendlyUnitsNearTarget(15f).Count() > 2,
                     new PrioritySelector(
                 // Spread shocks. Make sure we only spread it to ones we're facing (LazyRaider support with movement turned off)
                         Spell.Cast(
                             "Flame Shock",
-                            ret => Unit.UnfriendlyUnitsNearTarget.First(u => !u.HasMyAura("Flame Shock") && StyxWoW.Me.IsSafelyFacing(u)),
-                            ret => Unit.UnfriendlyUnitsNearTarget.Count(u => !u.HasMyAura("Flame Shock")) != 0),
+                            ret => Unit.UnfriendlyUnitsNearTarget(15f).First(u => !u.HasMyAura("Flame Shock") && StyxWoW.Me.IsSafelyFacing(u)),
+                            ret => Unit.UnfriendlyUnitsNearTarget(15f).Count(u => !u.HasMyAura("Flame Shock")) != 0),
                 // Bomb them with novas
-                        Spell.Cast("Fire Nova", ret => Unit.UnfriendlyUnitsNearTarget.Any(u => u.HasMyAura("Flame Shock"))),
+                        Spell.Cast("Fire Nova", ret => Unit.UnfriendlyUnitsNearTarget(15f).Any(u => u.HasMyAura("Flame Shock"))),
                 // CL for the fun of it. :)
                         Spell.Cast(
-                            "Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget, ClusterType.Chained, 12),
-                            ret => Unit.UnfriendlyUnitsNearTarget.Count() > 2)
+                            "Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12),
+                            ret => Unit.UnfriendlyUnitsNearTarget(15f).Count() > 2)
                         )),
 
                 //Movement.CreateEnsureMovementStoppedBehavior(),

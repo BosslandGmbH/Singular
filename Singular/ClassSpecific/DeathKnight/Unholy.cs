@@ -43,7 +43,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                     (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
                                     u.CurrentTargetGuid == StyxWoW.Me.Guid &&
                                     SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
-               Spell.Cast("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
+               Spell.BuffSelf("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
 
                Spell.BuffSelf("Icebound Fortitude",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
@@ -58,15 +58,14 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
                Spell.Cast("Outbreak",
-                          ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
-                                 !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague")),
-               Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
-               Movement.CreateMoveBehindTargetBehavior(),
-               Spell.Cast("Plague Strike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague")),
+                    ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
+                            !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
+               Spell.Buff("Icy Touch", true, "Frost Fever"),
+               Spell.Buff("Plague Strike", true, "Blood Plague"),
 
                 // Start AoE section
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.Cast("Summon Gargoyle", ret => SingularSettings.Instance.DeathKnight.UseSummonGargoyle),
                             Spell.Cast("Pestilence",
@@ -136,7 +135,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
                Spell.Buff("Chains of Ice"),
-               Spell.Cast("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
+               Spell.BuffSelf("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
 
                 // Anti-magic shell
                Spell.BuffSelf("Anti-Magic Shell",
@@ -158,10 +157,10 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
                Spell.Cast("Outbreak",
-                          ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
-                                 !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague")),
-               Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
-               Spell.Cast("Plague Strike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague")),
+                    ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
+                            !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
+               Spell.Buff("Icy Touch", true, "Frost Fever"),
+               Spell.Buff("Plague Strike", true, "Blood Plague"),
 
                Spell.Cast("Summon Gargoyle", ret => SingularSettings.Instance.DeathKnight.UseSummonGargoyle),
 
@@ -199,23 +198,23 @@ namespace Singular.ClassSpecific.DeathKnight
                Helpers.Common.CreateAutoAttack(true),
                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-               Spell.Cast("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
-               Spell.Cast("Outbreak", 
-                          ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") || 
-                                 !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague")),
-               Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
+               Spell.BuffSelf("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
+               Spell.Cast("Outbreak",
+                    ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
+                            !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
+               Spell.Buff("Icy Touch", true, "Frost Fever"),
                Movement.CreateMoveBehindTargetBehavior(),
-               Spell.Cast("Plague Strike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague")),
+               Spell.Buff("Plague Strike", true, "Blood Plague"),
 
                 // Start AoE section
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.Cast("Pestilence",
                                         ret => StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") && 
                                             StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") &&
-                                            Unit.NearbyUnfriendlyUnits.Count(u => 
-                                                    u.DistanceSqr < 10 * 10 && !u.HasMyAura("Blood Plague") && 
+                                            Unit.UnfriendlyUnitsNearTarget(10f).Count(u => 
+                                                    !u.HasMyAura("Blood Plague") && 
                                                     !u.HasMyAura("Frost Fever")) > 0),
                             Spell.Cast("Dark Transformation", 
                                         ret => StyxWoW.Me.GotAlivePet &&

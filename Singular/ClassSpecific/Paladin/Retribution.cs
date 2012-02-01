@@ -37,7 +37,7 @@ Inquisition > Crusader Strike > Hammer of Wrath > Exorcism > Templar's Verdict >
                 new PrioritySelector(
                     Safers.EnsureTarget(),
                     new Decorator(
-                        ret => Group.Healer == null,
+                        ret => Group.Healers.Count == 0,
                         Holy.CreatePaladinHealBehavior(true)),
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),

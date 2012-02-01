@@ -81,17 +81,16 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///   Gets the nearby unfriendly units within 40 yards.
+        ///   Gets the nearby unfriendly units within *distance* yards.
         /// </summary>
+        /// <param name="distance"> The distance to check from current target</param>
         /// <value>The nearby unfriendly units.</value>
-        public static IEnumerable<WoWUnit> UnfriendlyUnitsNearTarget
+        public static IEnumerable<WoWUnit> UnfriendlyUnitsNearTarget(float distance)
         {
-            get
-            {
-                return
-                    ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
-                        p => ValidUnit(p) && p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 15 * 15).ToList();
-            }
+            var dist = distance*distance;
+            var curTarLocation = StyxWoW.Me.CurrentTarget.Location;
+            return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
+                        p => ValidUnit(p) && p.Location.DistanceSqr(curTarLocation) <= dist).ToList();
         }
 
         /// <summary>
@@ -282,8 +281,7 @@ namespace Singular.Helpers
 
             // Plain and simple, any effect with -damage is good. Ensure at least -1. Since 0 may be a buggy spell entry or something.
             var tmp = unit.HasAuraWithEffect(WoWApplyAuraType.ModDamagePercentDone, -1, int.MinValue, -1);
-            if (!tmp)
-                Logging.Write(unit.Entry + " - " + unit.Name + " does not have a demoralizing debuff!");
+
             return tmp;
 
             //var auras = unit.GetAllAuras();

@@ -26,12 +26,43 @@ namespace Singular.Settings
         {
         }
 
+        #region Common
+
         [Setting]
-        [Styx.Helpers.DefaultValue(40)]
+        [DefaultValue(40)]
         [Category("Common")]
         [DisplayName("Innervate Mana")]
         [Description("Innervate will be used when your mana drops below this value")]
         public int InnervateMana { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Disable Healing for Balance and Feral")]
+        public bool NoHealBalanceAndFeral { get; set; }
+
+        [Setting]
+        [DefaultValue(20)]
+        [Category("Common")]
+        [DisplayName("Healing Touch Health (Balance and Feral)")]
+        [Description("Healing Touch will be used at this value.")]
+        public int NonRestoHealingTouch { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Common")]
+        [DisplayName("Rejuvenation Health (Balance and Feral)")]
+        [Description("Rejuvenation will be used at this value")]
+        public int NonRestoRejuvenation { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Common")]
+        [DisplayName("Regrowth Health (Balance and Feral")]
+        [Description("Regrowth will be used at this value")]
+        public int NonRestoRegrowth { get; set; }
+
+        #endregion
 
         #region Balance
 
@@ -41,34 +72,6 @@ namespace Singular.Settings
         [DisplayName("Starfall")]
         [Description("Use Starfall.")]
         public bool UseStarfall { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Balance")]
-        [DisplayName("Diable Healing")]
-        [Description("Disables Balance healing, is auto disabled in a party.")]
-        public bool NoHealBalance { get; set; }
-
-        [Setting]
-        [DefaultValue(40)]
-        [Category("Balance")]
-        [DisplayName("Healing Touch")]
-        [Description("Healing Touch will be used at this value.")]
-        public int HealingTouchBalance { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Balance")]
-        [DisplayName("Rejuvenation Health")]
-        [Description("Rejuvenation will be used at this value")]
-        public int RejuvenationBalance { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Balance")]
-        [DisplayName("Regrowth Health")]
-        [Description("Regrowth will be used at this value")]
-        public int RegrowthBalance { get; set; }
 
         #endregion
 
@@ -200,7 +203,7 @@ namespace Singular.Settings
         public bool ManualForms { get; set; }
 
         [Setting]
-        [DefaultValue(100)]
+        [DefaultValue(50)]
         [Category("Feral")]
         [DisplayName("Barkskin Health")]
         [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 100)")]

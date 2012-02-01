@@ -16,6 +16,11 @@ namespace Singular.Helpers
 {
     internal static class Item
     {
+        public static bool HasItem(uint itemId)
+        {
+            return StyxWoW.Me.CarriedItems.Any(i => i.Entry == itemId);
+        }
+
         public static bool HasWeaponImbue(WoWInventorySlot slot, string imbueName)
         {
             //Logger.Write("Checking Weapon Imbue on " + slot + " for " + imbueName);

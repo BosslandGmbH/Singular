@@ -11,28 +11,61 @@ namespace Singular.Helpers
 {
     internal static class Group
     {
-        public static WoWUnit Tank
+        public static bool MeIsTank
         {
             get
             {
-                var tank = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => (p.Role & WoWPartyMember.GroupRole.Tank) != 0);
-                return tank != null
-                           ? tank.ToPlayer()
-                           : (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Tank) != 0
-                                 ? StyxWoW.Me
-                                 : null;
+                return (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Tank) != 0 || 
+                        Tanks.All(t => !t.IsAlive) && StyxWoW.Me.HasAura("Bear Form");
             }
         }
-        public static WoWUnit Healer
+
+        public static bool MeIsHealer
+        {
+            get { return (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Healer) != 0; }
+        }
+
+        public static List<WoWPlayer> Tanks
         {
             get
             {
-                var healer = StyxWoW.Me.PartyMemberInfos.FirstOrDefault(p => (p.Role & WoWPartyMember.GroupRole.Healer) != 0);
-                return healer != null
-                           ? healer.ToPlayer()
-                           : (StyxWoW.Me.Role & WoWPartyMember.GroupRole.Healer) != 0
-                                 ? StyxWoW.Me
-                                 : null;
+                var result = new List<WoWPlayer>();
+
+                if (!StyxWoW.Me.IsInParty)
+                    return result;
+
+                if ((StyxWoW.Me.Role & WoWPartyMember.GroupRole.Tank) != 0)
+                    result.Add(StyxWoW.Me);
+
+                var members = StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberInfos : StyxWoW.Me.PartyMemberInfos;
+
+                var tanks = members.Where(p => (p.Role & WoWPartyMember.GroupRole.Tank) != 0);
+
+                result.AddRange(tanks.Where(t => t.ToPlayer() != null).Select(t => t.ToPlayer()));
+
+                return result;
+            }
+        }
+
+        public static List<WoWPlayer> Healers
+        {
+            get
+            {
+                var result = new List<WoWPlayer>();
+
+                if (!StyxWoW.Me.IsInParty)
+                    return result;
+
+                if ((StyxWoW.Me.Role & WoWPartyMember.GroupRole.Healer) != 0)
+                    result.Add(StyxWoW.Me);
+
+                var members = StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberInfos : StyxWoW.Me.PartyMemberInfos;
+
+                var tanks = members.Where(p => (p.Role & WoWPartyMember.GroupRole.Healer) != 0);
+
+                result.AddRange(tanks.Where(t => t.ToPlayer() != null).Select(t => t.ToPlayer()));
+
+                return result;
             }
         }
 

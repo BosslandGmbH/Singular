@@ -12,6 +12,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using CommonBehaviors.Actions;
@@ -166,7 +167,8 @@ namespace Singular.Helpers
                                 if (StyxWoW.Me.IsWanding())
                                     return RunStatus.Failure;
 
-                                if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < 500)
+                                var latency = StyxWoW.WoWClient.Latency*2;
+                                if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
                                     return RunStatus.Failure;
 
                                 if (faceDuring && StyxWoW.Me.ChanneledCastingSpellId == 0)
@@ -320,15 +322,16 @@ namespace Singular.Helpers
                                         var rangeId = spell.InternalInfo.SpellRangeId;
                                         var minRange = spell.MinRange;
                                         var maxRange = spell.MaxRange;
+                                        var targetDistance = target.Distance;
                                         // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
                                         if (rangeId == 1)
                                             inRange = true;
                                         // RangeId 2 is melee range. Huzzah :)
                                         else if (rangeId == 2)
-                                            inRange = target.Distance < MeleeRange;
+                                            inRange = targetDistance < MeleeRange;
                                         else
-                                            inRange = target.Distance < maxRange &&
-                                                      target.Distance > (minRange == 0 ? minRange : minRange + 3);
+                                            inRange = targetDistance < maxRange &&
+                                                      targetDistance > (minRange == 0 ? minRange : minRange + 3);
                                     }
                                 }
                             }
@@ -436,6 +439,16 @@ namespace Singular.Helpers
             return Buff(name, ret => true);
         }
 
+        public static Composite Buff(string name, params string[] buffNames)
+        {
+            return Buff(name, ret => true, buffNames);
+        }
+
+        public static Composite Buff(string name, bool myBuff)
+        {
+            return Buff(name, myBuff, ret => true);
+        }
+
         /// <summary>
         ///   Creates a behavior to cast a buff by name, with special requirements, on current target. Returns
         ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
@@ -448,7 +461,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(string name, SimpleBooleanDelegate requirements)
         {
-            return Buff(name, ret => StyxWoW.Me.CurrentTarget, requirements);
+            return Buff(name, false, ret => StyxWoW.Me.CurrentTarget, requirements, name);
         }
 
         /// <summary>
@@ -463,7 +476,57 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(string name, UnitSelectionDelegate onUnit)
         {
-            return Buff(name, onUnit, ret => true);
+            return Buff(name, false, onUnit, ret => true, name);
+        }
+
+        public static Composite Buff(string name, bool myBuff, params string[] buffNames)
+        {
+            return Buff(name, myBuff, ret => true, buffNames);
+        }
+
+        public static Composite Buff(string name, UnitSelectionDelegate onUnit, params string[] buffNames)
+        {
+            return Buff(name, onUnit, ret => true, buffNames);
+        }
+
+        public static Composite Buff(string name, SimpleBooleanDelegate requirements, params string[] buffNames)
+        {
+            return Buff(name, ret => StyxWoW.Me.CurrentTarget, requirements, buffNames);
+        }
+
+        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit)
+        {
+            return Buff(name, myBuff, onUnit, ret => true);
+        }
+
+        public static Composite Buff(string name, bool myBuff, SimpleBooleanDelegate requirements)
+        {
+            return Buff(name, myBuff, ret => StyxWoW.Me.CurrentTarget, requirements);
+        }
+
+        public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return Buff(name, false, onUnit, requirements);
+        }
+
+        public static Composite Buff(string name, bool myBuff, SimpleBooleanDelegate requirements, params string[] buffNames)
+        {
+            return Buff(name, myBuff, ret => StyxWoW.Me.CurrentTarget, requirements, buffNames);
+        }
+
+        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, params string[] buffNames)
+        {
+            return Buff(name, myBuff, onUnit, ret => true, buffNames);
+        }
+
+        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return Buff(name, myBuff, onUnit, requirements, name);
+        }
+
+        public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] buffNames)
+        {
+            return Buff(name, false, onUnit, requirements, buffNames);
         }
 
         //private static string _lastBuffCast = string.Empty;
@@ -479,7 +542,7 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns></returns>
-        public static Composite Buff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] buffNames)
         {
             //if (name == _lastBuffCast && _castTimer.IsRunning && _castTimer.ElapsedMilliseconds < 250)
             //{
@@ -494,13 +557,34 @@ namespace Singular.Helpers
             //}
 
             return
-                
                 new Decorator(
-                    ret => onUnit(ret) != null && !onUnit(ret).HasAura(name),
+                    ret => onUnit(ret) != null && !DoubleCastPreventionDict.ContainsKey(name) &&
+                           buffNames.All(b => myBuff ? !onUnit(ret).HasMyAura(b) : !onUnit(ret).HasAura(b)),
                     new Sequence(
                         // new Action(ctx => _lastBuffCast = name),
-                        Cast(name, onUnit, requirements)));
+                        Cast(name, onUnit, requirements),
+                        new DecoratorContinue(
+                            ret => SpellManager.Spells[name].CastTime > 0,
+                            new Sequence(
+                                new WaitContinue(
+                                    1, 
+                                    ret => StyxWoW.Me.IsCasting,
+                                    new Action(ret => UpdateDoubleCastDict(name))))
+                                    ))
+                        );
         }
+
+        private static void UpdateDoubleCastDict(string spellName)
+        {
+            if (DoubleCastPreventionDict.ContainsKey(spellName))
+                DoubleCastPreventionDict[spellName] = DateTime.UtcNow;
+
+            DoubleCastPreventionDict.Add(spellName, DateTime.UtcNow);
+
+            Logger.Write("Added {0} to double cast prevention dict", spellName);
+        }
+
+        public static readonly Dictionary<string, DateTime> DoubleCastPreventionDict = new Dictionary<string, DateTime>();
 
         #endregion
 
@@ -665,7 +749,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Heal(string name, SimpleBooleanDelegate requirements)
         {
-            return Heal(name, ret => true, ret => StyxWoW.Me.CurrentTarget, requirements);
+            return Heal(name, ret => true, ret => StyxWoW.Me, requirements);
         }
 
         /// <summary>
@@ -798,16 +882,17 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 ret =>
-                requirements(ret) && onLocation != null && SpellManager.CanCast(spell) 
-                /*&&
-                SpellManager.Spells[spell].MaxRange < StyxWoW.Me.Location.Distance(onLocation(ret))*/,
-                new Action(
-                    ret =>
-                        {
-                            Logger.Write("Casting " + spell + " at location " + onLocation(ret));
-                            SpellManager.Cast(spell);
-                            LegacySpellManager.ClickRemoteLocation(onLocation(ret));
-                        })
+                requirements(ret) && onLocation != null && SpellManager.CanCast(spell) && 
+                (StyxWoW.Me.Location.Distance(onLocation(ret)) <= SpellManager.Spells[spell].MaxRange || SpellManager.Spells[spell].MaxRange == 0),
+                new Sequence(
+                    new Action(ret => Logger.Write("Casting {0} at location {1}", spell, onLocation(ret))),
+                    new Action(ret => SpellManager.Cast(spell)),
+                    new WaitContinue(
+                        1,
+                        ret => StyxWoW.Me.CurrentPendingCursorSpell != null &&
+                               StyxWoW.Me.CurrentPendingCursorSpell.Name == spell,
+                        new ActionAlwaysSucceed()),
+                    new Action(ret => LegacySpellManager.ClickRemoteLocation(onLocation(ret))))
                 );
         }
 
@@ -845,7 +930,7 @@ namespace Singular.Helpers
                 // If we have no target... then give nothing.
                 if (StyxWoW.Me.CurrentTargetGuid == 0)
                     return 0f;
-
+                
                 return Math.Max(5f, StyxWoW.Me.CombatReach + 1.3333334f + StyxWoW.Me.CurrentTarget.CombatReach);
             }
         }

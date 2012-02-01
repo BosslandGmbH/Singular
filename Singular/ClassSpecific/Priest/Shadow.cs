@@ -30,10 +30,9 @@ namespace Singular.ClassSpecific.Priest
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.PreventDoubleCast("Devouring Plague", "Vampiric Touch"),
                 Spell.WaitForCast(true),
                  // cast devouring plague first if option is set
-                Spell.StopAndBuff("Devouring Plague", ret => SingularSettings.Instance.Priest.DevouringPlagueFirst),
+                Spell.Buff("Devouring Plague", true, ret => SingularSettings.Instance.Priest.DevouringPlagueFirst),
 
                 // don't attempt to heal unless below a certain percentage health
                 new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.DontHealPercent,
@@ -62,10 +61,10 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Cast("Archangel", ret => SingularSettings.Instance.Priest.AlwaysArchangel5 && StyxWoW.Me.HasAura("Dark Evangelism", 5)),
 
                                 // start up with the dots
-                Spell.Buff("Vampiric Touch", ctx => !StyxWoW.Me.IsCasting),
+                Spell.Buff("Vampiric Touch", true),
 
-                Spell.Buff("Devouring Plague", ret => !StyxWoW.Me.CurrentTarget.IsMechanical || StyxWoW.Me.CurrentTarget.IsBoss()),
-                Spell.Buff("Shadow Word: Pain", ret => !SpellManager.HasSpell("Vampiric Touch") || StyxWoW.Me.IsInInstance || StyxWoW.Me.CurrentTarget.IsPlayer),
+                Spell.Buff("Devouring Plague", true, ret => !StyxWoW.Me.CurrentTarget.IsMechanical || StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.Buff("Shadow Word: Pain", true, ret => !SpellManager.HasSpell("Vampiric Touch") || StyxWoW.Me.IsInInstance || StyxWoW.Me.CurrentTarget.IsPlayer),
 
                 // open with spike or if its a totem
                 Spell.Cast("Mind Spike",
@@ -96,6 +95,7 @@ namespace Singular.ClassSpecific.Priest
                 // try to do _something_
                 Spell.Cast("Mind Blast"),
                 // use wand
+                Helpers.Common.CreateUseWand(),
                 //Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );

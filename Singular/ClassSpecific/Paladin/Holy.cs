@@ -142,7 +142,7 @@ namespace Singular.ClassSpecific.Paladin
                 new PrioritySelector(
                     ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
                     new Decorator(
-                    ret => ret != null,
+                    ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40*40),
                         new PrioritySelector(
                             Spell.WaitForCast(),
                             new Decorator(
@@ -150,8 +150,8 @@ namespace Singular.ClassSpecific.Paladin
                                 Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
                             Spell.Cast(
                                 "Beacon of Light",
-                                ret => Group.Tank,
-                                ret => Group.Tank != null && Group.Tank.IsAlive && !Group.Tank.HasMyAura("Beacon of Light")),
+                                ret => (WoWUnit)ret,
+                                ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Beacon of Light"))),
                             Spell.Heal(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,
@@ -188,8 +188,8 @@ namespace Singular.ClassSpecific.Paladin
                             new Decorator(
                                 ret => moveInRange,
                                 // Get in range
-                                Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret)))
-                            ));
+                                Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
+                            )));
         }
     }
 }

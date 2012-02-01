@@ -124,7 +124,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ),
 
                     // Start AoE section
-                    new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.CastOnGround("Death and Decay",
                                 ret => StyxWoW.Me.CurrentTarget.Location,
@@ -132,21 +132,19 @@ namespace Singular.ClassSpecific.DeathKnight
                             Spell.Cast("Outbreak", 
                                 ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") || 
                                         !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                            Spell.Cast("Icy Touch", 
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") && 
-                                        Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
-                            Spell.Cast("Plague Strike", 
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") && 
-                                        Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
+                            Spell.Buff("Icy Touch", true,
+                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, "Frost Fever"),
+                            Spell.Buff("Plague Strike", true,
+                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, "Blood Plague"),
                             Spell.Cast("Pestilence", 
                                 ret => StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") && 
                                         StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") &&
-                                        Unit.NearbyUnfriendlyUnits.Count(u => 
-                                                u.DistanceSqr < 10 * 10 && !u.HasMyAura("Blood Plague") && 
+                                        Unit.UnfriendlyUnitsNearTarget(10f).Count(u => 
+                                                !u.HasMyAura("Blood Plague") && 
                                                 !u.HasMyAura("Frost Fever")) > 0),
                             Spell.Cast("Blood Boil",
                                 ret => TalentManager.GetCount(0, 5) > 0 &&
-                                        Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 12*12 && !u.HasMyAura("Scarlet Fever")) > 0),
+                                        Unit.UnfriendlyUnitsNearTarget(12f).Count(u => !u.HasMyAura("Scarlet Fever")) > 0),
                             new Sequence(
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                                 new Action(ret => DeathStrikeTimer.Reset())),
@@ -158,12 +156,14 @@ namespace Singular.ClassSpecific.DeathKnight
                             )),
 
                     Spell.Cast("Outbreak",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") || 
-                                    !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                    Spell.Cast("Icy Touch",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
-                    Spell.Cast("Plague Strike",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
+                        ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
+                                !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
+                    Spell.Buff("Icy Touch", true,
+                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, 
+                                "Frost Fever"),
+                    Spell.Buff("Plague Strike", true,
+                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, 
+                                "Blood Plague"),
                     // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                     Spell.Cast("Death Coil",
                                 ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
@@ -283,12 +283,14 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
 
                     Spell.Cast("Outbreak",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
-                                    !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                    Spell.Cast("Icy Touch",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
-                    Spell.Cast("Plague Strike",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
+                        ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
+                                !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
+                    Spell.Buff("Icy Touch", true, 
+                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, 
+                        "Frost Fever"),
+                    Spell.Buff("Plague Strike", true,
+                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
+                        "Blood Plague"),
                 // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                     Spell.Cast("Death Coil",
                                 ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
@@ -342,7 +344,6 @@ namespace Singular.ClassSpecific.DeathKnight
         [Context(WoWContext.Instances)]
         public static Composite CreateBloodDeathKnightInstanceCombat()
         {
-            TankManager.NeedTankTargeting = true;
             return
                 new PrioritySelector(
                     Safers.EnsureTarget(),
@@ -434,7 +435,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ),
 
                     // Start AoE section
-                    new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(a => a.DistanceSqr < 12 * 12) >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(15f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.CastOnGround("Death and Decay",
                                 ret => StyxWoW.Me.CurrentTarget.Location,
@@ -442,21 +443,21 @@ namespace Singular.ClassSpecific.DeathKnight
                             Spell.Cast("Outbreak",
                                 ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                                         !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                            Spell.Cast("Icy Touch",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") &&
-                                        Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
-                            Spell.Cast("Plague Strike",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") &&
-                                        Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
+                            Spell.Buff("Icy Touch", true,
+                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
+                                "Frost Fever"),
+                            Spell.Buff("Plague Strike", true,
+                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
+                                "Blood Plague"),
                             Spell.Cast("Pestilence",
                                 ret => StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") &&
                                         StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") &&
-                                        Unit.NearbyUnfriendlyUnits.Count(u =>
-                                                u.DistanceSqr < 10 * 10 && !u.HasMyAura("Blood Plague") &&
+                                        Unit.UnfriendlyUnitsNearTarget(10f).Count(u =>
+                                                !u.HasMyAura("Blood Plague") &&
                                                 !u.HasMyAura("Frost Fever")) > 0),
                             Spell.Cast("Blood Boil",
                                 ret => TalentManager.GetCount(0, 5) > 0 &&
-                                        Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 12 * 12 && !u.HasMyAura("Scarlet Fever")) > 0),
+                                        Unit.UnfriendlyUnitsNearTarget(12f).Count(u => !u.HasMyAura("Scarlet Fever")) > 0),
                             new Sequence(
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                                 new Action(ret => DeathStrikeTimer.Reset())),
@@ -470,12 +471,14 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.Cast("Dark Command", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault()),
 
                     Spell.Cast("Outbreak",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
-                                    !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                    Spell.Cast("Icy Touch",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
-                    Spell.Cast("Plague Strike",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") && Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10),
+                        ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
+                                !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
+                    Spell.Buff("Icy Touch", true,
+                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
+                        "Frost Fever"),
+                    Spell.Buff("Plague Strike", true,
+                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
+                        "Blood Plague"),
                 // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                     Spell.Cast("Death Coil",
                                 ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),

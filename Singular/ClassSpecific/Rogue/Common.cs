@@ -133,8 +133,13 @@ namespace Singular.ClassSpecific.Rogue
                         return RaFHelper.Leader;
                     }
 
-                    if (StyxWoW.Me.IsInParty && Group.Tank != null && !Group.Tank.Dead)
-                        return Group.Tank;
+                    if (StyxWoW.Me.IsInParty)
+                    {
+                        var bestTank = Group.Tanks.OrderBy(t => t.DistanceSqr).FirstOrDefault(t => t.IsAlive);
+
+                        if (bestTank != null)
+                            return bestTank;
+                    }
 
                     var bestPlayer = Group.GetPlayerByClassPrio(100f, false,
                         WoWClass.Rogue, WoWClass.DeathKnight, WoWClass.Warrior,WoWClass.Hunter, WoWClass.Mage, WoWClass.Warlock, WoWClass.Shaman, WoWClass.Druid,

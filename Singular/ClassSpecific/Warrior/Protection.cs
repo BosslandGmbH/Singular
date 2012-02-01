@@ -25,7 +25,6 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateProtectionWarriorCombat()
         {
             _slows = new[] { "Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom", "Infected Wounds" };
-            TankManager.NeedTankTargeting = true;
             return new PrioritySelector(
                 ctx => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
 

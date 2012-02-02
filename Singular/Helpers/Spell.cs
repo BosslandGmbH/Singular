@@ -930,7 +930,10 @@ namespace Singular.Helpers
                 // If we have no target... then give nothing.
                 if (StyxWoW.Me.CurrentTargetGuid == 0)
                     return 0f;
-                
+
+                if (StyxWoW.Me.CurrentTarget.IsPlayer)
+                    return 3.5f;
+
                 return Math.Max(5f, StyxWoW.Me.CombatReach + 1.3333334f + StyxWoW.Me.CurrentTarget.CombatReach);
             }
         }

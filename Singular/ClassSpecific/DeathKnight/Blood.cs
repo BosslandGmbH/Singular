@@ -60,7 +60,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                     ret => StyxWoW.Me.HealthPercent < 90 && StyxWoW.Me.HasAura("Will of the Necropolis")),
                     Spell.BuffSelf("Death Coil",
                                 ret => StyxWoW.Me.HealthPercent < 70 && StyxWoW.Me.HasAura("Lichborne")),
-                    Spell.BuffSelf("Dancing Rune Weapon",
+                    Spell.Cast("Dancing Rune Weapon",
                                 ret => SingularSettings.Instance.DeathKnight.UseDancingRuneWeapon &&
                                        Unit.NearbyUnfriendlyUnits.Count() > 2),
                     Spell.BuffSelf("Bone Shield",
@@ -220,7 +220,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                     ret => StyxWoW.Me.HealthPercent < 90 && StyxWoW.Me.HasAura("Will of the Necropolis")),
                     Spell.BuffSelf("Death Coil",
                                 ret => StyxWoW.Me.HealthPercent < 70 && StyxWoW.Me.HasAura("Lichborne")),
-                    Spell.BuffSelf("Dancing Rune Weapon",
+                    Spell.Cast("Dancing Rune Weapon",
                                 ret => SingularSettings.Instance.DeathKnight.UseDancingRuneWeapon &&
                                        Unit.NearbyUnfriendlyUnits.Count() > 2),
                     Spell.BuffSelf("Bone Shield",
@@ -374,7 +374,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                     ret => StyxWoW.Me.HealthPercent < 90 && StyxWoW.Me.HasAura("Will of the Necropolis")),
                     Spell.BuffSelf("Death Coil",
                                 ret => StyxWoW.Me.HealthPercent < 70 && StyxWoW.Me.HasAura("Lichborne")),
-                    Spell.BuffSelf("Dancing Rune Weapon",
+                    Spell.Cast("Dancing Rune Weapon",
                                 ret => SingularSettings.Instance.DeathKnight.UseDancingRuneWeapon &&
                                        Unit.NearbyUnfriendlyUnits.Count() > 2),
                     Spell.BuffSelf("Bone Shield",

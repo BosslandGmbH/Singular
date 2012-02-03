@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
@@ -29,27 +30,10 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterBuffs()
         {
             return new PrioritySelector(
-                new Decorator(
-                    ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Revive " + SingularSettings.Instance.Hunter.PetSlot && StyxWoW.Me.GotAlivePet,
-                    new Action(ctx => SpellManager.StopCasting())),
                 Spell.WaitForCast(true),
                 Spell.BuffSelf("Aspect of the Hawk"),
                 Spell.BuffSelf("Track Hidden"),
-                //new ActionLogMessage(false, "Checking for pet"),
-                new Decorator(
-                    ret => !StyxWoW.Me.GotAlivePet,
-                    new Sequence(
-                        new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot)),
-                        new Action(ret => Thread.Sleep(1000)),
-                        new DecoratorContinue(
-                            ret => !StyxWoW.Me.GotAlivePet && SpellManager.CanCast("Revive Pet"),
-                            new Sequence(
-                                new Action(ret => SpellManager.Cast("Revive Pet")),
-                                new Action(ret => StyxWoW.SleepForLagDuration()),
-                                new WaitContinue(
-                                    11,
-                                    ret => !StyxWoW.Me.IsCasting,
-                                    new ActionAlwaysSucceed()))))),
+                CreateHunterCallPetBehavior(true),
                 Spell.Cast(
                     "Mend Pet",
                     ret =>
@@ -92,16 +76,20 @@ namespace Singular.ClassSpecific.Hunter
         {
             return
                 new Decorator(
-                    ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.Distance <= Spell.SafeMeleeRange + 3f && StyxWoW.Me.CurrentTarget.IsAlive &&
-                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me),
+                    ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.Distance <= Spell.MeleeRange + 5f && 
+                           StyxWoW.Me.CurrentTarget.IsAlive &&
+                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null || 
+                            StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me || 
+                            StyxWoW.Me.CurrentTarget.IsStunned()),
                     new Action(
                         ret =>
                         {
-                            var moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, Spell.SafeMeleeRange + 10f);
+                            var moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, Spell.MeleeRange + 10f);
 
                             if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
                             {
-                                return Navigator.GetRunStatusFromMoveResult(Navigator.MoveTo(moveTo));
+                                Navigator.MoveTo(moveTo);
+                                return RunStatus.Success;
                             }
 
                             return RunStatus.Failure;
@@ -110,25 +98,45 @@ namespace Singular.ClassSpecific.Hunter
 
         public static Composite CreateHunterTrapBehavior(string trapName)
         {
+            return CreateHunterTrapBehavior(trapName, ret => StyxWoW.Me.CurrentTarget);
+        }
+
+        public static Composite CreateHunterTrapBehavior(string trapName, bool useLauncher)
+        {
+            return CreateHunterTrapBehavior(trapName, useLauncher, ret => StyxWoW.Me.CurrentTarget);
+        }
+
+        public static Composite CreateHunterTrapBehavior(string trapName, UnitSelectionDelegate onUnit)
+        {
+            return CreateHunterTrapBehavior(trapName, true, onUnit);
+        }
+
+        public static Composite CreateHunterTrapBehavior(string trapName, bool useLauncher, UnitSelectionDelegate onUnit)
+        {
             return new PrioritySelector(
                 new Decorator(
-                    ctx => ctx != null && SpellManager.CanCast(trapName, (WoWUnit)ctx, false),
+                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret).DistanceSqr < 40 * 40 &&
+                           SpellManager.HasSpell(trapName) && !SpellManager.Spells[trapName].Cooldown,
                     new PrioritySelector(
-                        Spell.BuffSelf("Trap Launcher"),
-                        new Sequence(
-                            new Switch<string>(ctx => trapName,
-                                new SwitchArgument<string>("Immolation Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(82945))),
-                                new SwitchArgument<string>("Freezing Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(60192))),
-                                new SwitchArgument<string>("Explosive Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(82939))),
-                                new SwitchArgument<string>("Ice Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(82941))),
-                                new SwitchArgument<string>("Snake Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(82948)))
-                                ),
-                            new Action(ret => LegacySpellManager.ClickRemoteLocation(((WoWUnit)ret).Location))))));
+                        Spell.BuffSelf(trapName, ret => !useLauncher),
+                        Spell.BuffSelf("Trap Launcher", ret => useLauncher),
+                        new Decorator(
+                            ret => StyxWoW.Me.HasAura("Trap Launcher"),
+                            new Sequence(
+                                new Switch<string>(ctx => trapName,
+                                    new SwitchArgument<string>("Immolation Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(82945))),
+                                    new SwitchArgument<string>("Freezing Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(60192))),
+                                    new SwitchArgument<string>("Explosive Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(82939))),
+                                    new SwitchArgument<string>("Ice Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(82941))),
+                                    new SwitchArgument<string>("Snake Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(82948)))
+                                    ),
+                                new ActionSleep(200),
+                                new Action(ret => LegacySpellManager.ClickRemoteLocation(onUnit(ret).Location)))))));
         }
 
         public static Composite CreateHunterTrapOnAddBehavior(string trapName)
@@ -136,26 +144,50 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 ctx => Unit.NearbyUnfriendlyUnits.OrderBy(u => u.DistanceSqr).
                                                   FirstOrDefault(
-                                                        u => u.IsTargetingMeOrPet && u != StyxWoW.Me.CurrentTarget &&
-                                                             !u.IsMoving),
+                                                        u => u.Combat && u != StyxWoW.Me.CurrentTarget &&
+                                                             (!u.IsMoving || u.IsPlayer) && u.DistanceSqr < 40*40),
                 new Decorator(
-                    ctx => ctx != null && SpellManager.CanCast(trapName, (WoWUnit)ctx, false),
+                    ret => ret != null && SpellManager.HasSpell(trapName) && !SpellManager.Spells[trapName].Cooldown,
                     new PrioritySelector(
                         Spell.BuffSelf("Trap Launcher"),
-                        new Sequence(
-                            new Switch<string>(ctx => trapName,
-                                new SwitchArgument<string>("Immolation Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(82945))),
-                                new SwitchArgument<string>("Freezing Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(60192))),
-                                new SwitchArgument<string>("Explosive Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(82939))),
-                                new SwitchArgument<string>("Ice Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(82941))),
-                                new SwitchArgument<string>("Snake Trap",
-                                    new Action(ret => LegacySpellManager.CastSpellById(82948)))
-                                ),
-                            new Action(ret => LegacySpellManager.ClickRemoteLocation(((WoWUnit)ret).Location))))));
+                        new Decorator(
+                            ret => StyxWoW.Me.HasAura("Trap Launcher"),
+                            new Sequence(
+                                new Switch<string>(ctx => trapName,
+                                    new SwitchArgument<string>("Immolation Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(82945))),
+                                    new SwitchArgument<string>("Freezing Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(60192))),
+                                    new SwitchArgument<string>("Explosive Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(82939))),
+                                    new SwitchArgument<string>("Ice Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(82941))),
+                                    new SwitchArgument<string>("Snake Trap",
+                                        new Action(ret => LegacySpellManager.CastSpellById(82948)))
+                                    ),
+                                new ActionSleep(200),
+                                new Action(ret => LegacySpellManager.ClickRemoteLocation(((WoWUnit)ret).Location)))))));
+        }
+
+        public static Composite CreateHunterCallPetBehavior(bool reviveInCombat)
+        {
+            return new Decorator(
+                ret => !StyxWoW.Me.GotAlivePet,
+                new PrioritySelector(
+                    Spell.WaitForCast(),
+                    new Decorator(
+                        ret => StyxWoW.Me.Pet != null && (!StyxWoW.Me.Combat || reviveInCombat),
+                        new PrioritySelector(
+                            Movement.CreateEnsureMovementStoppedBehavior(),
+                            Spell.BuffSelf("Revive Pet"))),
+                    new Sequence(
+                        new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot)),
+                        new WaitContinue(2, ret => StyxWoW.Me.GotAlivePet || StyxWoW.Me.Combat, new ActionAlwaysSucceed()),
+                        new Decorator(
+                            ret => !StyxWoW.Me.GotAlivePet && (!StyxWoW.Me.Combat || reviveInCombat),
+                            Spell.BuffSelf("Revive Pet")))
+                    )
+                );
         }
     }
 }

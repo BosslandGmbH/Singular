@@ -17,7 +17,6 @@ namespace Singular.ClassSpecific.Hunter
         [Context(WoWContext.All)]
         public static Composite CreateLowbieCombat()
         {
-            PetManager.WantedPet = SingularSettings.Instance.Hunter.PetSlot;
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
@@ -25,9 +24,6 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(),
                 Helpers.Common.CreateAutoAttack(true),
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 30f,
-                    Movement.CreateEnsureMovementStoppedBehavior()),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.Cast("Raptor Strike", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
                 // Always keep it up on our target!

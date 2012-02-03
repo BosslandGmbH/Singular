@@ -126,6 +126,17 @@ static PetManager()
             StyxWoW.Me.SetFocus(0);
         }
 
+        //public static void EnableActionAutocast(string action)
+        //{
+        //    var spell = PetSpells.FirstOrDefault(p => p.ToString() == action);
+        //    if (spell == null)
+        //        return;
+
+        //    var index = spell.ActionBarIndex + 1;
+        //    Logger.Write("[Pet] Enabling autocast for {0}", action, index);
+        //    Lua.DoString("local index = " + index + " if not select(6, GetPetActionInfo(index)) then TogglePetAutocast(index) end");
+        //}
+
         /// <summary>
         ///   Calls a pet by name, if applicable.
         /// </summary>

@@ -37,7 +37,7 @@ namespace Singular.Settings
         public string PetSlot { get; set; }
 
         [Setting]
-        [DefaultValue("70")]
+        [DefaultValue(70)]
         [Category("Pet")]
         [DisplayName("Mend Pet Percent")]
         public double MendPetPercent { get; set; }

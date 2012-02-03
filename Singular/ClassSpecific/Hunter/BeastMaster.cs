@@ -38,6 +38,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
+                Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
                 Spell.Buff("Hunter's Mark"),
                 Spell.BuffSelf("Aspect of the Hawk"),
                 // Defensive Stuff
@@ -107,6 +108,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
+                Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
                 Spell.Buff("Hunter's Mark"),
                 Spell.BuffSelf("Aspect of the Hawk"),
                 // Defensive Stuff
@@ -118,8 +120,8 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.Cast( "Mend Pet",
                     ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                    (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))), 
-              
+                    (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
+
                 // Cooldowns
                 Spell.BuffSelf("Rapid Fire",
                     ret => StyxWoW.Me.HasAura("Call of the Wild") &&

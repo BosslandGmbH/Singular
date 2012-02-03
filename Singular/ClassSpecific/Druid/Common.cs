@@ -42,7 +42,7 @@ namespace Singular.ClassSpecific.Druid
         #region Combat Buffs
 
         [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.Rest)]
+        [Behavior(BehaviorType.CombatBuffs)]
         [Spec(TalentSpec.BalanceDruid)]
         [Spec(TalentSpec.FeralDruid)]
         [Spec(TalentSpec.RestorationDruid)]
@@ -54,7 +54,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.Dead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.Dead),
                 new Decorator(
-                    ret => Item.HasItem(mapleSeedId),
+                    ret => ret != null && Item.HasItem(mapleSeedId),
                     new PrioritySelector(
                         Spell.WaitForCast(true),
                         Movement.CreateMoveToLosBehavior(ret => (WoWPlayer)ret),

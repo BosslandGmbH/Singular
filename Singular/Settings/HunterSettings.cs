@@ -11,6 +11,7 @@
 
 #endregion
 
+using System;
 using System.ComponentModel;
 
 using Styx.Helpers;
@@ -28,11 +29,19 @@ namespace Singular.Settings
         }
 
         #region Category: Pet
+
         [Setting]
         [DefaultValue("1")]
         [Category("Pet")]
         [DisplayName("Pet Slot")]
         public string PetSlot { get; set; }
+
+        [Setting]
+        [DefaultValue("70")]
+        [Category("Pet")]
+        [DisplayName("Mend Pet Percent")]
+        public double MendPetPercent { get; set; }
+
         #endregion
     }
 }

@@ -118,7 +118,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.Cast( "Mend Pet",
                     ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                    (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))), 
+                    (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))), 
               
                 // Cooldowns
                 Spell.BuffSelf("Rapid Fire",

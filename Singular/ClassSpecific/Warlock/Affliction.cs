@@ -43,7 +43,7 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Cast("Drain Life")
                         )),
                 Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 10),
-                Spell.Cast("Health Funnel", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.HealthPercent < 30),
+                Spell.Cast("Health Funnel", ret => StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && StyxWoW.Me.Pet.HealthPercent < 30),
                 // Finishing sequence
                 Spell.Cast(
                     "Soul Swap",
@@ -96,7 +96,7 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.Buff("Curse of Weakness", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAura("Curse of Weakness")),
                 Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
                 Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),
-                Spell.Cast("Health Funnel", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.HealthPercent < 70),
+                Spell.Cast("Health Funnel", ret => StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && StyxWoW.Me.Pet.HealthPercent < 70),
                 Spell.Cast("Shadow Bolt"),
                 Spell.Cast("Fel Flame", ret => StyxWoW.Me.IsMoving),
                 Movement.CreateMoveToTargetBehavior(true, 35f)

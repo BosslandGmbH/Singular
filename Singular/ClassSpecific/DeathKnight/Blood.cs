@@ -143,7 +143,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                                 !u.HasMyAura("Blood Plague") && 
                                                 !u.HasMyAura("Frost Fever")) > 0),
                             Spell.Cast("Blood Boil",
-                                ret => TalentManager.GetCount(0, 5) > 0 &&
+                                ret => TalentManager.GetCount(1, 6) > 0 &&
                                         Unit.UnfriendlyUnitsNearTarget(12f).Count(u => !u.HasMyAura("Scarlet Fever")) > 0),
                             new Sequence(
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
@@ -456,7 +456,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                                 !u.HasMyAura("Blood Plague") &&
                                                 !u.HasMyAura("Frost Fever")) > 0),
                             Spell.Cast("Blood Boil",
-                                ret => TalentManager.GetCount(0, 5) > 0 &&
+                                ret => TalentManager.GetCount(1, 6) > 0 &&
                                         Unit.UnfriendlyUnitsNearTarget(12f).Count(u => !u.HasMyAura("Scarlet Fever")) > 0),
                             new Sequence(
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),

@@ -63,7 +63,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.Cast(759, ret => !HaveManaGem() && SpellManager.HasSpell(759)), //for dealing with managems
                 new Decorator(
                     ret =>
-                    TalentManager.CurrentSpec == TalentSpec.FrostMage && !StyxWoW.Me.GotAlivePet && SpellManager.CanCast("Summon Water Elemental"),
+                    TalentManager.CurrentSpec == TalentSpec.FrostMage && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
                     new Action(ret => SpellManager.Cast("Summon Water Elemental")))
                 );
         }

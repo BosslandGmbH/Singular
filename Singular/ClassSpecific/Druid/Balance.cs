@@ -118,7 +118,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Moonfire", 
                     ret => (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Moonfire", true).TotalSeconds < 3 &&
                             StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Sunfire", true).TotalSeconds < 3) ||
-                            (!StyxWoW.Me.HasAura("Nature's Grace") && TalentManager.GetCount(0,0) > 0) ||
+                            (!StyxWoW.Me.HasAura("Nature's Grace") && TalentManager.GetCount(1,1) > 0) ||
                             StyxWoW.Me.IsMoving),
 
                 // Make sure we keep IS up. Clip the last tick. (~3s)
@@ -175,7 +175,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Moonfire",
                     ret => (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Moonfire", true).TotalSeconds < 3 &&
                             StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Sunfire", true).TotalSeconds < 3) ||
-                            (!StyxWoW.Me.HasAura("Nature's Grace") && TalentManager.GetCount(0, 0) > 0) ||
+                            (!StyxWoW.Me.HasAura("Nature's Grace") && TalentManager.GetCount(1, 1) > 0) ||
                             StyxWoW.Me.IsMoving),
                 // Make sure we keep IS up. Clip the last tick. (~3s)
                 Spell.Cast("Insect Swarm", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Insect Swarm", true).TotalSeconds < 3),
@@ -262,7 +262,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Moonfire",
                     ret => (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Moonfire", true).TotalSeconds < 3 &&
                             StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Sunfire", true).TotalSeconds < 3) ||
-                            (!StyxWoW.Me.HasAura("Nature's Grace") && TalentManager.GetCount(0, 0) > 0) ||
+                            (!StyxWoW.Me.HasAura("Nature's Grace") && TalentManager.GetCount(1, 1) > 0) ||
                             StyxWoW.Me.IsMoving),
 
                 // Make sure we keep IS up. Clip the last tick. (~3s)

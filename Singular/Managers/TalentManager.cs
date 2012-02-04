@@ -147,7 +147,7 @@ namespace Singular.Managers
                     for (int index = 1; index <= numTalents; index++)
                     {
                         var rank = Lua.GetReturnVal<int>(string.Format("return GetTalentInfo({0}, {1})", tab, index), 4);
-                        var t = new Talent { Tab = tab - 1, Index = index - 1, Count = rank };
+                        var t = new Talent { Tab = tab, Index = index, Count = rank };
                         Talents.Add(t);
 
                         //// Thick Hide - Only used by tanking druids

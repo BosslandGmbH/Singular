@@ -57,7 +57,7 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.Cast("Summon Doomguard", ret=> StyxWoW.Me.CurrentTarget.IsBoss()),
                 Spell.Buff("Corruption", true, ret => StyxWoW.Me.CurrentTarget.HealthPercent >= 30 || StyxWoW.Me.CurrentTarget.Elite),
                 Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),
-                Spell.Cast("Health Funnel", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.HealthPercent < 70),
+                Spell.Cast("Health Funnel", ret => StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && StyxWoW.Me.Pet.HealthPercent < 70),
                 Spell.Cast("Hand of Gul'dan"),
                 // TODO: Make this cast Soulburn if it's available
                 Spell.Cast("Soul Fire", ret => StyxWoW.Me.HasAura("Improved Soul Fire") || StyxWoW.Me.HasAura("Soulburn")),

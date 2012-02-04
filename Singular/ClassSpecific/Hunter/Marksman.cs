@@ -65,7 +65,7 @@ namespace Singular.ClassSpecific.Hunter
                                    SpellManager.Spells["Rapid Fire"].CooldownTimeLeft.TotalSeconds > 5),
                         Spell.BuffSelf("Rapid Fire",
                             ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
-                                   !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Cooldown)) &&
+                                   !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
                                    !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")))),
 
                 // Rotation
@@ -128,7 +128,7 @@ namespace Singular.ClassSpecific.Hunter
                            SpellManager.Spells["Rapid Fire"].Cooldown),
                 Spell.BuffSelf("Rapid Fire",
                     ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
-                           !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Cooldown)) &&
+                           !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
                            !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
 
                 // Rotation
@@ -193,12 +193,12 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !StyxWoW.Me.HasAura("Rapid Fire") && SpellManager.HasSpell("Rapid Fire") && 
                            SpellManager.Spells["Rapid Fire"].Cooldown),
                 Spell.BuffSelf("Rapid Fire",
-                    ret => (StyxWoW.Me.HasAura("Call of the Wild") || 
-                           !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Cooldown)) &&
+                    ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
+                           !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
                            !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
 
                 new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 50,
+                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
                         Common.CreateHunterTrapBehavior("Explosive Trap"),
                         Spell.Cast("Multi Shot"),

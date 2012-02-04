@@ -48,14 +48,15 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
                 Spell.Cast( "Mend Pet",
                     ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                    (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))), 
+                    (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))), 
               
                 // Cooldowns only when there are multiple mobs on normal rotation
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Where(u => u.IsTargetingMeOrPet).Count() >= 2,
                     new PrioritySelector(
                         Spell.BuffSelf("Rapid Fire",
-                            ret => StyxWoW.Me.HasAura("Call of the Wild") &&
+                            ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
+                                   !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Cooldown)) &&
                                    !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
 
                         Spell.BuffSelf("Fervor",
@@ -118,14 +119,15 @@ namespace Singular.ClassSpecific.Hunter
                 
                 Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
 
-                Spell.Cast( "Mend Pet",
+                Spell.Cast("Mend Pet",
                     ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
                     (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
 
                 // Cooldowns
                 Spell.BuffSelf("Rapid Fire",
-                    ret => StyxWoW.Me.HasAura("Call of the Wild") &&
-                            !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
+                    ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
+                           !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Cooldown)) &&
+                           !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
 
                 Spell.BuffSelf("Fervor",
                     ret => StyxWoW.Me.FocusPercent <= 50 && (!StyxWoW.Me.GotAlivePet || StyxWoW.Me.Pet.FocusPercent <= 50)),
@@ -183,9 +185,15 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.Buff("Hunter's Mark"),
                 Spell.BuffSelf("Aspect of the Hawk"),
+
+                Spell.Cast("Mend Pet",
+                    ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
+                    (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
+
                 // Cooldowns
-                Spell.BuffSelf("Rapid Fire", 
-                    ret => StyxWoW.Me.HasAura("Call of the Wild") && 
+                Spell.BuffSelf("Rapid Fire",
+                    ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
+                           !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Cooldown)) &&
                            !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
 
                 Spell.BuffSelf("Fervor", 

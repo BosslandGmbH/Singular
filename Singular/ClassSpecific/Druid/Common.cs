@@ -75,7 +75,6 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceAndFeralDruidRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
                 CreateNonRestoHeals(),
                 Rest.CreateDefaultRestBehaviour(),
                 Spell.Resurrect("Revive")
@@ -92,13 +91,10 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !SingularSettings.Instance.Druid.NoHealBalanceAndFeral && !StyxWoW.Me.HasAura("Drink"),
                     new PrioritySelector(
-                        new Sequence(
-                            Spell.Heal("Rejuvenation",
-                                ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoRejuvenation &&
-                                       !StyxWoW.Me.HasAura("Rejuvenation")),
-                            Spell.Heal("Regrowth",
-                                ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoRegrowth &&
-                                       !StyxWoW.Me.HasAura("Regrowth"))),
+                        Spell.WaitForCast(false,false),
+                        Spell.Heal("Rejuvenation",
+                            ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoRejuvenation &&
+                                    !StyxWoW.Me.HasAura("Rejuvenation")),
                         Spell.Heal("Regrowth",
                             ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoRegrowth &&
                                     !StyxWoW.Me.HasAura("Regrowth")),

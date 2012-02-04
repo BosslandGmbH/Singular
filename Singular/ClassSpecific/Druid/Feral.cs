@@ -99,7 +99,6 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Spell.WaitForCast(),
                 Common.CreateNonRestoHeals(),
                 Spell.BuffSelf("Cat Form"),
                 Movement.CreateMoveToLosBehavior(),

@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Mage
                     new Action(ctx => SpellManager.StopCasting())),
                 Spell.WaitForCast(),
 
-                Spell.BuffSelf("Arcane Brilliance", ret => (!StyxWoW.Me.HasAura("Arcane Brilliance") && !StyxWoW.Me.HasAura("Fel Intelligence"))),
+                Spell.BuffSelf("Arcane Brilliance", ret => !StyxWoW.Me.HasAura("Fel Intelligence")),
 
                 // Additional armors/barriers for BGs. These should be kept up at all times to ensure we're as survivable as possible.
                 new Decorator(
@@ -59,8 +59,8 @@ namespace Singular.ClassSpecific.Mage
                         Spell.BuffSelf("Molten Armor", ret => (TalentManager.CurrentSpec != TalentSpec.ArcaneMage || !SpellManager.HasSpell("Mage Armor"))),
                         Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == TalentSpec.ArcaneMage))),
 
-                Spell.Cast("Conjure Refreshment", ret => !Gotfood()),
-                Spell.Cast(759, ret => !HaveManaGem() && SpellManager.HasSpell(759)), //for dealing with managems
+                Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood()),
+                Spell.BuffSelf("Conjure Mana Gem", ret => !HaveManaGem()), //for dealing with managems
                 new Decorator(
                     ret =>
                     TalentManager.CurrentSpec == TalentSpec.FrostMage && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
@@ -79,12 +79,9 @@ namespace Singular.ClassSpecific.Mage
 
         public static bool HaveManaGem()
         {
-            foreach (WoWItem item in ObjectManager.GetObjectsOfType<WoWItem>(false).Where(item => item.Entry == 36799))
-            {
-                _manaGem = item;
-                return true;
-            }
-            return false;
+            _manaGem = StyxWoW.Me.BagItems.FirstOrDefault(i => i.Entry == 36799);
+
+            return _manaGem != null;
         }
 
         public static bool ManaGemNotCooldown()
@@ -109,34 +106,32 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateStayAwayFromFrozenTargetsBehavior()
         {
-            return
-                new PrioritySelector(ctx => 
-                    Unit.NearbyUnfriendlyUnits.Where(u => u.HasAura("Frost Nova") || u.HasAura("Freeze")).
-                                               OrderBy(u => u.DistanceSqr).FirstOrDefault(),
-                    new Decorator(
-                        ret => ret != null && !SingularSettings.Instance.DisableAllMovement,
-                        new PrioritySelector(
-                            new Decorator(
-                                ret => ((WoWUnit)ret).Distance < Spell.SafeMeleeRange + 3f,
-                                new Action(ret =>
-                                               {
-                                                   WoWPoint moveTo =
-                                                       WoWMathHelper.CalculatePointBehind(
-                                                           ((WoWUnit)ret).Location,
-                                                           ((WoWUnit)ret).Rotation,
-                                                           -(Spell.SafeMeleeRange + 5f));
+            return new PrioritySelector(
+                ctx => Unit.NearbyUnfriendlyUnits.
+                                Where(u => (u.HasAura("Frost Nova") || u.HasAura("Freeze")) &&
+                                            u.Distance < Spell.MeleeRange).
+                                OrderBy(u => u.DistanceSqr).FirstOrDefault(),
+                new Decorator(
+                    ret => ret != null && !SingularSettings.Instance.DisableAllMovement,
+                    new PrioritySelector(
+                        Spell.BuffSelf("Blink"),
+                        new Action(ret =>
+                            {
+                                WoWPoint moveTo =
+                                    WoWMathHelper.CalculatePointBehind(
+                                        ((WoWUnit) ret).Location,
+                                        ((WoWUnit) ret).Rotation,
+                                        -(Spell.MeleeRange + 5f));
 
-                                                   if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
-                                                   {
-                                                       Logger.Write("Getting away from frozen target");
-                                                       Navigator.MoveTo(moveTo);
-                                                       return RunStatus.Success;
-                                                   }
+                                if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                                {
+                                    Logger.Write("Getting away from frozen target");
+                                    Navigator.MoveTo(moveTo);
+                                    return RunStatus.Success;
+                                }
 
-                                                   return RunStatus.Failure;
-                                               })),
-                            Movement.CreateEnsureMovementStoppedBehavior())
-                        ));
+                                return RunStatus.Failure;
+                            }))));
         }
 
         public static Composite CreateMagePolymorphOnAddBehavior()
@@ -147,7 +142,6 @@ namespace Singular.ClassSpecific.Mage
                     new Decorator(
                         ret => ret != null && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")),
                         new PrioritySelector(
-                            Spell.PreventDoubleCast(ret => (WoWUnit)ret, "Polymorph"),
                             Spell.Buff("Polymorph", ret => (WoWUnit)ret))));
         }
 

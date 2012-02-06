@@ -119,6 +119,7 @@ namespace Singular.Helpers
                 ret => extra(ret) && PetManager.CanCastPetAction(action),
                 new Sequence(
                     new Action(ret => PetManager.CastPetAction(action)),
+                    new ActionSleep(250),
                     new Action(ret => LegacySpellManager.ClickRemoteLocation(location(ret)))));
         }
     }

@@ -90,24 +90,5 @@ namespace Singular.ClassSpecific.Mage
                     Movement.CreateMoveToTargetBehavior(true, 35f)
                     );
         }
-
-        [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FireMage)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
-        public static Composite CreateFireMagePreCombatBuffs()
-        {
-            return
-                new PrioritySelector(
-                    Spell.BuffSelf(
-                        "Arcane Brilliance",
-                        ret => (!StyxWoW.Me.HasAura("Arcane Brilliance") &&
-                                !StyxWoW.Me.HasAura("Fel Intelligence"))),
-                    Spell.BuffSelf(
-                        "Molten Armor",
-                        ret => (!StyxWoW.Me.HasAura("Molten Armor"))
-                        )
-                    );
-        }
     }
 }

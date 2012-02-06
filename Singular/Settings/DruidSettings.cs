@@ -164,44 +164,7 @@ namespace Singular.Settings
         #endregion
 
         #region Feral
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Feral Tanking")]
-        [DisplayName("Feral Charge")]
-        [Description("Use Feral Charge to close gaps.")]
-        public bool UseFeralChargeBear { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Feral Cat")]
-        [DisplayName("FeralHeal")]
-        [Description("Use healing spells in cat spec")]
-        public bool FeralHeal { get; set; }
-
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Feral Cat")]
-        [DisplayName("Swipe Count")]
-        [Description("Set how many adds to swipe on.")]
-        public int SwipeCount { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Feral Cat")]
-        [DisplayName("Feral Charge")]
-        [Description("Use Feral Charge to close gaps.")]
-        public bool UseFeralChargeCat { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Feral")]
-        [DisplayName("Manual Forms")]
-        [Description(
-            "Disables any automatic form switching. Manually switching to cat form will automatically start the Cat combat cycle, and vice versa for bear."
-            )]
-        public bool ManualForms { get; set; }
-
+        
         [Setting]
         [DefaultValue(50)]
         [Category("Feral")]

@@ -26,7 +26,8 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterCallPetBehavior(true),
 
                 Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage", ret => StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
+                Spell.BuffSelf("Disengage",
+                    ret => SingularSettings.Instance.Hunter.UseDisengage && StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
                 Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -76,7 +77,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 40),
                 // Only really cast this when we need a sting refresh.
                 Spell.Cast("Cobra Shot"),
-                Spell.Cast("Steady Shot"),
+                Spell.Cast("Steady Shot", ret => !SpellManager.HasSpell("Cobra Shot")),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -151,7 +152,7 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterTrapBehavior("Snake Trap", false),
                 Common.CreateHunterTrapBehavior("Immolation Trap", false),
                 Spell.Cast("Cobra Shot"),
-                Spell.Cast("Steady Shot"),
+                Spell.Cast("Steady Shot", ret => !SpellManager.HasSpell("Cobra Shot")),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
@@ -171,7 +172,8 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterCallPetBehavior(true),
 
                 Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage", ret => StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
+                Spell.BuffSelf("Disengage",
+                    ret => SingularSettings.Instance.Hunter.UseDisengage && StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
                 Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -220,7 +222,7 @@ namespace Singular.ClassSpecific.Hunter
                     ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.HasAura("The Beast Within") && StyxWoW.Me.Pet.HasAura("Frenzy Effect", 5)),
                 Spell.Cast("Arcane Shot",ret => StyxWoW.Me.FocusPercent > 40),
                 Spell.Cast("Cobra Shot"),
-                Spell.Cast("Steady Shot"),
+                Spell.Cast("Steady Shot", ret => !SpellManager.HasSpell("Cobra Shot")),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

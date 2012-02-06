@@ -43,5 +43,16 @@ namespace Singular.Settings
         public double MendPetPercent { get; set; }
 
         #endregion
+
+        #region Category: Common
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Use Disengage")]
+        [Description("Will be used in battlegrounds no matter what this is set")]
+        public bool UseDisengage { get; set; }
+
+        #endregion
     }
 }

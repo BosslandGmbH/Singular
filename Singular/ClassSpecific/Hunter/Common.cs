@@ -41,37 +41,6 @@ namespace Singular.ClassSpecific.Hunter
                 );
         }
 
-        /// <summary>
-        /// hawker december 16 2011
-        /// If we have a valid target, we move about 20 yards from it and kill it.
-        /// </summary>
-        public static Composite CreateHunterMoveToPullPoint()
-        {
-            return
-                new PrioritySelector(
-                    new Decorator(ret => !StyxWoW.Me.Combat && StyxWoW.Me.CurrentTarget.IsAlive &&
-                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me) &&
-                            StyxWoW.Me.CurrentTarget.Distance < 30f && StyxWoW.Me.CurrentTarget.InLineOfSpellSight,
-            new Action(ret => Helpers.Common.CreateAutoAttack(true))),
-                new Decorator(
-                    ret => !StyxWoW.Me.Combat && !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.IsAlive &&
-                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me),
-                    new Sequence(
-                        new Action(ret => Logging.Write("Moving to pull.")),
-                        new Action(
-                            ret =>
-                            {
-                                var moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, Spell.SafeMeleeRange + 15f);
-
-                                if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
-                                {
-                                    return Navigator.GetRunStatusFromMoveResult(Navigator.MoveTo(moveTo));
-                                }
-
-                                return RunStatus.Failure;
-                            }))));
-        }
-
         public static Composite CreateHunterBackPedal()
         {
             return

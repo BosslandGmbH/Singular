@@ -105,19 +105,7 @@ namespace Singular.Settings
         [Category("Blood")]
         [DisplayName("Dancing Rune Weapon")]
         public bool UseDancingRuneWeapon { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Dancing Rune Weapon Exclusive")]
-        public bool DancingRuneWeaponExclusive { get; set; }
-
-        [Setting]
-        [DefaultValue(80)]
-        [Category("Blood")]
-        [DisplayName("Dancing Rune Weapon Percent")]
-        public int DancingRuneWeaponPercent { get; set; }
-
+        
         [Setting]
         [DefaultValue(30)]
         [Category("Blood")]
@@ -165,13 +153,7 @@ namespace Singular.Settings
         [Category("Blood")]
         [DisplayName("Pet Sacrifice Percent")]
         public int PetSacrificePercent { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Rune Tap")]
-        public bool UseRuneTap { get; set; }
-
+        
         [Setting]
         [DefaultValue(true)]
         [Category("Blood")]

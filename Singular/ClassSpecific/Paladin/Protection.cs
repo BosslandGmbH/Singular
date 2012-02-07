@@ -21,7 +21,7 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreateProtectionPaladinCombat()
         {
             return new PrioritySelector(
-                context => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
+                ctx => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -33,38 +33,49 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.BuffSelf("Seal of Insight", ret => StyxWoW.Me.ManaPercent < 5),
                 Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.ManaPercent >= 5),
                 Spell.BuffSelf("Seal of Righteousness", ret =>StyxWoW.Me.ManaPercent >= 5 && !SpellManager.HasSpell("Seal of Truth")),
-                
-                //Spell.Cast("Hammer of Wrath"),
-                //Spell.Cast("Avenger's Shield", ret=>!SingularSettings.Instance.Paladin.AvengersPullOnly),
-                // Same rotation for both.
-                //Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
+
+                // Defensive
+                Spell.BuffSelf("Hand of Freedom",
+                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
+                                                          WoWSpellMechanic.Disoriented,
+                                                          WoWSpellMechanic.Frozen,
+                                                          WoWSpellMechanic.Incapacitated,
+                                                          WoWSpellMechanic.Rooted,
+                                                          WoWSpellMechanic.Slowed,
+                                                          WoWSpellMechanic.Snared)),
+
+                Spell.BuffSelf("Divine Shield", 
+                    ret => StyxWoW.Me.CurrentMap.IsBattleground && StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance")),
+
+                Spell.Cast("Hand of Reckoning", 
+                    ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), 
+                    ret => StyxWoW.Me.IsInInstance),
+
                 //Multi target
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) > 1,
+                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 1,
                     new PrioritySelector(
                         Spell.Cast("Hammer of the Righteous"),
                         Spell.Cast("Hammer of Justice", ctx => !StyxWoW.Me.IsInParty),
                         Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3 || StyxWoW.Me.CurrentTarget.IsBoss()),
                         Spell.Cast("Holy Wrath"),
                         Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
-                        Spell.Cast("Inquisition"),
+                        Spell.BuffSelf("Inquisition"),
                         Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
                         Spell.Cast("Judgement"),
-                        Spell.Cast("Crusader Strike")
-                        )),
-                new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(a => a.Distance < 8) <= 1,
-                    new PrioritySelector(
-                        //Single target
-                        Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
                         Spell.Cast("Crusader Strike"),
-                        Spell.Cast("Hammer of Justice"),
-                        Spell.Cast("Judgement"),
-                        Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),
-                        Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
-                        // Don't waste mana on cons if its not a boss.
-                        Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3 || StyxWoW.Me.CurrentTarget.IsBoss()),
-                        Spell.Cast("Holy Wrath"))),
+                        Movement.CreateMoveToMeleeBehavior(true)
+                        )),
+                //Single target
+                Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
+                Spell.Cast("Crusader Strike"),
+                Spell.Cast("Hammer of Justice"),
+                Spell.Cast("Judgement"),
+                Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),
+                Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
+                // Don't waste mana on cons if its not a boss.
+                Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3 || StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.Cast("Holy Wrath"),
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 

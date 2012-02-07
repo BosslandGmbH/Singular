@@ -84,6 +84,7 @@ namespace Singular.Helpers
                         Spell.Cast("Rebuke", onUnit),
                         Spell.Cast("Avenger's Shield", onUnit),
                         Spell.Cast("Hammer of Justice", onUnit),
+                        Spell.Cast("Repentance", onUnit),
 
                         Spell.Cast("Kick", onUnit),
                         Spell.Cast("Gouge", onUnit, ret => !onUnit(ret).IsBoss() && !onUnit(ret).MeIsSafelyBehind), // Can't gouge bosses.

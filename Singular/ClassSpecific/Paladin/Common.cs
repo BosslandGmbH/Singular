@@ -85,42 +85,44 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Spell.Cast("Blessing of Might",
-                        ret => StyxWoW.Me,
-                        ret =>
-                        {
-                            //Ok, this is a bit complicated but it works :p /raphus
-                            var players = StyxWoW.Me.IsInParty
-                                              ? StyxWoW.Me.PartyMembers.Concat(new List<WoWPlayer> { StyxWoW.Me })
-                                              : StyxWoW.Me.IsInRaid
-                                                    ? StyxWoW.Me.RaidMembers.Concat(new List<WoWPlayer> { StyxWoW.Me })
-                                                    : new List<WoWPlayer> { StyxWoW.Me };
-
-                            var result = players.Any(
-                                p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
-                                     (!p.HasAura("Blessing of Might") || p.Auras["Blessing of Might"].CreatorGuid != StyxWoW.Me.Guid) &&
-                                     ((p.HasAura("Blessing of Kings") && p.Auras["Blessing of Kings"].CreatorGuid != StyxWoW.Me.Guid) ||
-                                     p.HasAura("Mark of the Wild") || p.HasAura("Embrace of the Shale Spider")));
-
-                            return result;
-                        }),
                     Spell.Cast("Blessing of Kings",
                         ret => StyxWoW.Me,
                         ret =>
                         {
-                            var players = StyxWoW.Me.IsInParty
-                                              ? StyxWoW.Me.PartyMembers.Union(new List<WoWPlayer> { StyxWoW.Me })
-                                              : StyxWoW.Me.IsInRaid
-                                                    ? StyxWoW.Me.RaidMembers.Union(new List<WoWPlayer> { StyxWoW.Me })
-                                                    : new List<WoWPlayer> { StyxWoW.Me };
+                            var players = new List<WoWPlayer>();
 
-                            var result = players.Any(
-                                p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
-                                     (!p.HasAura("Blessing of Kings") || p.Auras["Blessing of Kings"].CreatorGuid != StyxWoW.Me.Guid) &&
-                                     !p.HasAura("Mark of the Wild") &&
-                                     !p.HasAura("Embrace of the Shale Spider"));
+                            if (StyxWoW.Me.IsInRaid)
+                                players.AddRange(StyxWoW.Me.RaidMembers);
+                            else if (StyxWoW.Me.IsInParty)
+                                players.AddRange(StyxWoW.Me.PartyMembers);
 
-                            return result;
+                            players.Add(StyxWoW.Me);
+
+                            return players.Any(
+                                        p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
+                                             !p.HasAura("Blessing of Kings") &&
+                                             !p.HasAura("Mark of the Wild") &&
+                                             !p.HasAura("Embrace of the Shale Spider"));
+                        }),
+                    Spell.Cast("Blessing of Might",
+                        ret => StyxWoW.Me,
+                        ret =>
+                        {
+                            var players = new List<WoWPlayer>();
+
+                            if (StyxWoW.Me.IsInRaid)
+                                players.AddRange(StyxWoW.Me.RaidMembers);
+                            else if (StyxWoW.Me.IsInParty)
+                                players.AddRange(StyxWoW.Me.PartyMembers);
+
+                            players.Add(StyxWoW.Me);
+
+                            return players.Any(
+                                        p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
+                                             !p.HasAura("Blessing of Might") &&
+                                             (p.HasAura("Blessing of Kings") ||
+                                              p.HasAura("Mark of the Wild") || 
+                                              p.HasAura("Embrace of the Shale Spider")));
                         })
                     );
         }

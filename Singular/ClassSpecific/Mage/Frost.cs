@@ -9,6 +9,7 @@ using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using TreeSharp;
 using Action = TreeSharp.Action;
@@ -220,7 +221,12 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
-                        Spell.CastOnGround("Flamestrike", ret => StyxWoW.Me.CurrentTarget.Location),
+                        Spell.CastOnGround("Flamestrike", 
+                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
+                            ret => !ObjectManager.GetObjectsOfType<WoWDynamicObject>().Any(o => 
+                                        o.CasterGuid == StyxWoW.Me.Guid && o.Spell.Name == "Flamestrike" &&
+                                        o.Location.Distance(
+                                            Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location) < o.Radius)),
                         Spell.Cast("Cone of Cold", 
                             ret => Clusters.GetClusterCount(StyxWoW.Me.CurrentTarget, 
                                                             Unit.NearbyUnfriendlyUnits,

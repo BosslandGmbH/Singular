@@ -69,7 +69,7 @@ namespace Singular.ClassSpecific.Hunter
                                    SpellManager.Spells["Rapid Fire"].CooldownTimeLeft.TotalSeconds > 5),
                         Spell.BuffSelf("Rapid Fire",
                             ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
-                                   !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
+                                   !StyxWoW.Me.PetSpells.Any(s => s.Spell != null && s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
                                    !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")))),
 
                 // Rotation
@@ -135,7 +135,7 @@ namespace Singular.ClassSpecific.Hunter
                            SpellManager.Spells["Rapid Fire"].Cooldown),
                 Spell.BuffSelf("Rapid Fire",
                     ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
-                           !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
+                           !StyxWoW.Me.PetSpells.Any(s => s.Spell != null && s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
                            !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
 
                 // Rotation
@@ -202,7 +202,7 @@ namespace Singular.ClassSpecific.Hunter
                            SpellManager.Spells["Rapid Fire"].Cooldown),
                 Spell.BuffSelf("Rapid Fire",
                     ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
-                           !StyxWoW.Me.PetSpells.Any(s => s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
+                           !StyxWoW.Me.PetSpells.Any(s => s.Spell != null && s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
                            !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
 
                 new Decorator(

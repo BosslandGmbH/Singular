@@ -28,7 +28,7 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
+                Holy.CreatePaladinHealBehavior(true, false),
                 // Defensive
                 Spell.BuffSelf("Hand of Freedom",
                     ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,

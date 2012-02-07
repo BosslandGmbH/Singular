@@ -69,8 +69,7 @@ namespace Singular.ClassSpecific.Mage
                     new PrioritySelector(
                         Spell.BuffSelf("Mirror Image")
                         )),
-                new Decorator(ret => StyxWoW.Me.ManaPercent < 80 && Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
-                    new Action(ctx => Common.UseManaGem())),
+                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
 
                 // Rotation
                 Spell.Cast("Dragon's Breath",
@@ -131,8 +130,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Blink", ret => StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted()),
                 Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") && !u.HasAura("Frost Nova") && !u.Stunned)),
-                new Decorator(ret => StyxWoW.Me.ManaPercent < 80 && Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
-                    new Action(ctx => Common.UseManaGem())),
+                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
                 // Cooldowns
                 Spell.BuffSelf("Evocation", ret => StyxWoW.Me.ManaPercent < 30),
                 Spell.BuffSelf("Mirror Image"),
@@ -188,8 +186,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Mirror Image"),
                 Spell.BuffSelf("Mage Ward", ret => StyxWoW.Me.HealthPercent <= 75),
 
-                new Decorator(ret => StyxWoW.Me.ManaPercent < 80 && Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
-                    new Action(ctx => Common.UseManaGem())),
+                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
                 // AoE comes first
                 new Decorator(
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,

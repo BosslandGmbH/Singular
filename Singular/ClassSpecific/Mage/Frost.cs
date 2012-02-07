@@ -79,8 +79,7 @@ namespace Singular.ClassSpecific.Mage
                         Spell.BuffSelf("Mirror Image"),
                         Spell.BuffSelf("Icy Veins")
                         )),
-                new Decorator(ret => StyxWoW.Me.ManaPercent < 80 && Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
-                    new Action(ctx => Common.UseManaGem())),
+                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
 
                 new Decorator(
                     ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 10 * 10 && u.IsCrowdControlled()),
@@ -149,8 +148,8 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
                 Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") && !u.HasAura("Frost Nova") && !u.Stunned)),
-                new Decorator(ret => StyxWoW.Me.ManaPercent < 80 && Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
-                    new Action(ctx => Common.UseManaGem())),
+
+                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
                 // Cooldowns
                 Spell.BuffSelf("Evocation", ret => StyxWoW.Me.ManaPercent < 30),
                 Spell.BuffSelf("Mirror Image"),
@@ -215,8 +214,8 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Mirror Image"),
                 Spell.BuffSelf("Mage Ward", ret => StyxWoW.Me.HealthPercent <= 75),
                 Spell.BuffSelf("Icy Veins"),
-                new Decorator(ret => StyxWoW.Me.ManaPercent < 80 && Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
-                    new Action(ctx => Common.UseManaGem())),
+
+                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
                 // AoE comes first
                 new Decorator(
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,

@@ -60,7 +60,7 @@ namespace Singular.ClassSpecific.Mage
                         Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == TalentSpec.ArcaneMage))),
 
                 Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood()),
-                Spell.BuffSelf("Conjure Mana Gem", ret => !HaveManaGem()), //for dealing with managems
+                Spell.BuffSelf("Conjure Mana Gem", ret => !HaveManaGem), //for dealing with managems
                 new Decorator(
                     ret =>
                     TalentManager.CurrentSpec == TalentSpec.FrostMage && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
@@ -77,31 +77,26 @@ namespace Singular.ClassSpecific.Mage
                     item.Entry == 43523 || item.Entry == 65499).Any();
         }
 
-        public static bool HaveManaGem()
+        private static bool HaveManaGem
         {
-            _manaGem = StyxWoW.Me.BagItems.FirstOrDefault(i => i.Entry == 36799);
-
-            return _manaGem != null;
+            get { return StyxWoW.Me.BagItems.Any(i => i.Entry == 36799); }
         }
 
-        public static bool ManaGemNotCooldown()
+        public static Composite CreateUseManaGemBehavior()
         {
-            if (_manaGem != null)
-            {
-                if (_manaGem.Cooldown == 0)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return CreateUseManaGemBehavior(ret => true);
         }
 
-        public static void UseManaGem()
+        public static Composite CreateUseManaGemBehavior(SimpleBooleanDelegate requirements)
         {
-            if (_manaGem != null && ManaGemNotCooldown())
-            {
-                Lua.DoString("UseItemByName(\"" + _manaGem.Name + "\")");
-            }
+            return new PrioritySelector(
+                ctx => StyxWoW.Me.BagItems.FirstOrDefault(i => i.Entry == 36799),
+                new Decorator(
+                    ret => ret != null && StyxWoW.Me.ManaPercent < 100 && ((WoWItem)ret).Cooldown == 0 && requirements(ret),
+                    new Sequence(
+                        new Action(ret => Logger.Write("Using mana gem")),
+                        new Action(ret => ((WoWItem)ret).Use())))
+                );
         }
 
         public static Composite CreateStayAwayFromFrozenTargetsBehavior()

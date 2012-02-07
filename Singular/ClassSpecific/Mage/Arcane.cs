@@ -68,9 +68,7 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => StyxWoW.Me.ManaPercent > 20 && Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2,
                     new PrioritySelector(
-                        // Sigh... CnG's code for mana gems. I shall shoot thee!
-                        new Decorator(ret => StyxWoW.Me.ManaPercent < 80 && Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
-                            new Action(ctx => Common.UseManaGem())),
+                        Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
 
                         Spell.BuffSelf("Arcane Power"),
                         Spell.BuffSelf("Mirror Image"),
@@ -129,10 +127,7 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => StyxWoW.Me.ManaPercent > 20,
                     new PrioritySelector(
-                        // Sigh... CnG's code for mana gems. I shall shoot thee!
-                        new Decorator(ret => StyxWoW.Me.ManaPercent < 80 && Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
-                            new Action(ctx => Common.UseManaGem())),
-
+                        Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
                         Spell.BuffSelf("Arcane Power"),
                         Spell.BuffSelf("Mirror Image"),
                         Spell.BuffSelf("Flame Orb"),
@@ -222,9 +217,7 @@ namespace Singular.ClassSpecific.Mage
                     ret => SpellManager.HasSpell("Evocation") && SpellManager.Spells["Evocation"].CooldownTimeLeft.TotalSeconds < 30 &&
                            StyxWoW.Me.ManaPercent > 10,
                     new PrioritySelector(
-                        // Sigh... CnG's code for mana gems. I shall shoot thee!
-                        new Decorator(ret => StyxWoW.Me.ManaPercent < 80 && Common.HaveManaGem() && !Common.ManaGemNotCooldown(),
-                            new Action(ctx => Common.UseManaGem())),
+                        Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
 
                         Spell.BuffSelf("Arcane Power"),
                         Spell.BuffSelf("Mirror Image"),

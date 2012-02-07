@@ -120,9 +120,9 @@ namespace Singular.ClassSpecific.Paladin
                             return players.Any(
                                         p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
                                              !p.HasAura("Blessing of Might") &&
-                                             (p.HasAura("Blessing of Kings") ||
-                                              p.HasAura("Mark of the Wild") || 
-                                              p.HasAura("Embrace of the Shale Spider")));
+                                             ((p.HasAura("Blessing of Kings") && !p.HasMyAura("Blessing of Kings")) ||
+                                               p.HasAura("Mark of the Wild") || 
+                                               p.HasAura("Embrace of the Shale Spider")));
                         })
                     );
         }

@@ -554,6 +554,7 @@ namespace Singular.Helpers
         ///   Created 5/2/2011.
         /// </remarks>
         /// <param name = "name">The name of the buff</param>
+        /// <param name = "myBuff">Check for self debuffs or not</param>
         /// <param name = "onUnit">The on unit</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns></returns>

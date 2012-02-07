@@ -43,6 +43,13 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(false)]
+        [Category("General")]
+        [DisplayName("Use Instance Rotation (Needs a restart !)")]
+        [Description("When this is set to true, Singular will always use Instance rotations no matter what the current Context is.")]
+        public bool UseInstanceRotation { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
         [Category("Targeting")]
         [DisplayName("Disable Targeting")]
         [Description("Disable all Targeting within the CC. This will NOT stop it from casting spells/heals on units other than your target. Only changing actual targets will be disabled.")]
@@ -56,14 +63,14 @@ namespace Singular.Settings
         public bool WaitForResSickness { get; set; }
 
         [Setting]
-        [DefaultValue(30)]
+        [DefaultValue(65)]
         [Category("General")]
         [DisplayName("Min Health")]
         [Description("Minimum health to eat at.")]
         public int MinHealth { get; set; }
 
         [Setting]
-        [DefaultValue(30)]
+        [DefaultValue(65)]
         [Category("General")]
         [DisplayName("Min Mana")]
         [Description("Minimum mana to drink at.")]

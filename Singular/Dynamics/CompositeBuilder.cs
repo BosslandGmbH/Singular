@@ -17,7 +17,7 @@ using System.Linq;
 using System.Reflection;
 
 using Singular.Managers;
-
+using Singular.Settings;
 using Styx.Combat.CombatRoutine;
 
 using TreeSharp;
@@ -93,9 +93,15 @@ namespace Singular.Dynamics
                     else if (ca is ContextAttribute)
                     {
                         var attrib = ca as ContextAttribute;
-                        if ((attrib.SpecificContext & context) == 0)
+
+                        if (SingularSettings.Instance.UseInstanceRotation)
                         {
-                            continue;
+                            if ((attrib.SpecificContext & WoWContext.Instances) == 0)
+                                continue;
+                        }
+                        else if ((attrib.SpecificContext & context) == 0)
+                        {
+                             continue;
                         }
                         //Logger.WriteDebug(mi.Name + " has my context");
                         contextMatches = true;

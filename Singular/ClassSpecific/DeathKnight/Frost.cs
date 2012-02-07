@@ -84,10 +84,11 @@ namespace Singular.ClassSpecific.DeathKnight
                                   )),
 
                 // Start single target section
-                Spell.Cast("Howling Blast", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Fever")),
-                Spell.Cast("Outbreak", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
-                Spell.Cast("Frost Fever", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever")),
-                Spell.Cast("Blood Strike", ret => StyxWoW.Me.BloodRuneCount != 0),
+                Spell.Buff("Howling Blast", true, "Frost Fever"),
+                Spell.Buff("Outbreak", true, "Frost Fever"),
+                Spell.Buff("Icy Touch", true, "Frost Fever"),
+                Spell.Buff("Plague Strike", true, "Blood Plague"),
+                Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Obliterate")),
                 Spell.Cast("Obliterate"),
                 Spell.Cast("Frost Strike"),
                 Spell.Cast("Howling Blast", ret => StyxWoW.Me.HasAura("Freezing Fog")),
@@ -150,8 +151,9 @@ namespace Singular.ClassSpecific.DeathKnight
                 // Start single target section
                 Spell.Buff("Howling Blast", true, "Frost Fever"),
                 Spell.Buff("Outbreak", true, "Frost Fever"),
-                Spell.Buff("Frost Fever", true),
-                Spell.Cast("Blood Strike", ret => StyxWoW.Me.BloodRuneCount != 0),
+                Spell.Buff("Icy Touch", true, "Frost Fever"),
+                Spell.Buff("Plague Strike", true, "Blood Plague"),
+                Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Obliterate")),
                 Spell.Buff("Necrotic Strike", ret => SingularSettings.Instance.DeathKnight.UseNecroticStrike),
                 Spell.Cast("Obliterate"),
                 Spell.Cast("Frost Strike"),
@@ -220,7 +222,9 @@ namespace Singular.ClassSpecific.DeathKnight
                 // Start single target section
                 Spell.Buff("Howling Blast", true, "Frost Fever"),
                 Spell.Buff("Outbreak", true, "Frost Fever"),
-                Spell.Buff("Frost Fever", true),
+                Spell.Buff("Icy Touch", true, "Frost Fever"),
+                Spell.Buff("Plague Strike", true, "Blood Plague"),
+                Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Obliterate")),
                 Spell.Cast(
                     "Obliterate",
                     ret =>

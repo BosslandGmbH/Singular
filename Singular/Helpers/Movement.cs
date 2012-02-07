@@ -162,7 +162,14 @@ namespace Singular.Helpers
         {
             return 
                 new Decorator(
-                    ret => requirements(ret) && SafeToNavigateBehind(),
+                    ret => !SingularSettings.Instance.DisableAllMovement &&
+                            SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && 
+                            requirements(ret) && 
+                            !Group.MeIsTank && !StyxWoW.Me.CurrentTarget.MeIsBehind &&
+                            StyxWoW.Me.CurrentTarget.IsAlive &&
+                            (StyxWoW.Me.CurrentTarget.CurrentTarget == null || 
+                             StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me || 
+                             StyxWoW.Me.CurrentTarget.Stunned),
                     new Action(ret => Navigator.MoveTo(CalculatePointBehindTarget())));
         }
 
@@ -171,20 +178,6 @@ namespace Singular.Helpers
             return
                 StyxWoW.Me.CurrentTarget.Location.RayCast(
                     StyxWoW.Me.CurrentTarget.Rotation + WoWMathHelper.DegreesToRadians(150), Spell.MeleeRange - 2f);
-        }
-
-        private static bool SafeToNavigateBehind()
-        {
-            var result =
-                !SingularSettings.Instance.DisableAllMovement &&
-                SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds &&
-                !Group.MeIsTank && !StyxWoW.Me.CurrentTarget.MeIsBehind &&
-                StyxWoW.Me.CurrentTarget.IsAlive &&
-                (StyxWoW.Me.CurrentTarget.CurrentTarget == null || 
-                 StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me || 
-                 StyxWoW.Me.CurrentTarget.Stunned);
-
-            return result;
         }
 
         #endregion

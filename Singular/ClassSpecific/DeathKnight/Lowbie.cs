@@ -32,8 +32,10 @@ namespace Singular.ClassSpecific.DeathKnight
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
                 Spell.Cast("Death Coil"),
-                Spell.Cast("Icy Touch"),
+                Spell.Buff("Icy Touch", true, "Frost Fever"),
+                Spell.Buff("Plague Strike", true, "Blood Plague"),
                 Spell.Cast("Blood Strike"),
+                Spell.Cast("Icy Touch"),
                 Spell.Cast("Plague Strike"),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );

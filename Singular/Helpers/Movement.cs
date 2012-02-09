@@ -113,7 +113,7 @@ namespace Singular.Helpers
         {
             return 
                 new Decorator(
-                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret) != StyxWoW.Me,
+                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret) != StyxWoW.Me && !StyxWoW.Me.IsCasting,
                     CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, ret => range));
         }
 
@@ -133,7 +133,10 @@ namespace Singular.Helpers
 
         public static Composite CreateMoveToMeleeBehavior(LocationRetriever location, bool stopInRange)
         {
-            return CreateMoveToLocationBehavior(location, stopInRange, ret => Spell.MeleeRange);
+            return 
+                new Decorator(
+                    ret => !StyxWoW.Me.IsCasting,
+                    CreateMoveToLocationBehavior(location, stopInRange, ret => Spell.MeleeRange));
         }
 
         #region Move Behind
@@ -164,7 +167,7 @@ namespace Singular.Helpers
                 new Decorator(
                     ret => !SingularSettings.Instance.DisableAllMovement &&
                             SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && 
-                            requirements(ret) && 
+                            requirements(ret) && !StyxWoW.Me.IsCasting &&
                             !Group.MeIsTank && !StyxWoW.Me.CurrentTarget.MeIsBehind &&
                             StyxWoW.Me.CurrentTarget.IsAlive &&
                             (StyxWoW.Me.CurrentTarget.CurrentTarget == null || 

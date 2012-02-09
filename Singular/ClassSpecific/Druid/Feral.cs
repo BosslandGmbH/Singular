@@ -403,7 +403,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Rake", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rake", true).TotalSeconds < 3),
                 Spell.Cast("Shred", ret => StyxWoW.Me.HasAura("Omen of Clarity") && StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.Cast("Mangle (Cat)", ret => StyxWoW.Me.HasAura("Omen of Clarity") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Savage Roar", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Savage Roar", true).TotalSeconds < 2),
+                Spell.Cast("Savage Roar", ret => StyxWoW.Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds < 2),
                 Spell.Cast("Ferocious Bite", 
                     ret => StyxWoW.Me.ComboPoints == 5 && StyxWoW.Me.CurrentTarget.HasMyAura("Rip") && 
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds >= 14 &&

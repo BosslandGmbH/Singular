@@ -41,7 +41,7 @@ namespace Singular.ClassSpecific.Paladin
 
                 // AoE Rotation
                 new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
+                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= SingularSettings.Instance.Paladin.ConsecrationCount,
                     new PrioritySelector(
                         // Cooldowns
                         Spell.BuffSelf("Zealotry"),
@@ -62,8 +62,6 @@ namespace Singular.ClassSpecific.Paladin
                            (StyxWoW.Me.HasAura("Inquisition") || !SpellManager.HasSpell("Inquisition"))),
                 Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
                 Spell.Cast("Judgement"),
-                Spell.BuffSelf("Holy Wrath"),
-                Spell.BuffSelf("Consecration"),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -171,7 +169,7 @@ namespace Singular.ClassSpecific.Paladin
 
                 // AoE Rotation
                 new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
+                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= SingularSettings.Instance.Paladin.ConsecrationCount,
                     new PrioritySelector(
                         Spell.BuffSelf("Divine Storm"),
                         Spell.BuffSelf("Consecration"),

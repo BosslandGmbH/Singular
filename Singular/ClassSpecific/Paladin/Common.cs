@@ -48,13 +48,13 @@ namespace Singular.ClassSpecific.Paladin
                     new Decorator(
                         ret => TalentManager.CurrentSpec != TalentSpec.HolyPaladin,
                         new PrioritySelector(
-                            Spell.BuffSelf("Righteous Fury", ret => (TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin) && StyxWoW.Me.IsInParty),
+                            Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin && StyxWoW.Me.IsInParty),
                             Spell.BuffSelf(
                                 "Devotion Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
-                                ((StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin) ||
-                                 TalentManager.CurrentSpec == TalentSpec.Lowbie)),
+                                (StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin ||
+                                 TalentManager.CurrentSpec == TalentSpec.Lowbie && !SpellManager.HasSpell("Retribution Aura"))),
                             Spell.BuffSelf(
                                 "Retribution Aura",
                                 ret =>

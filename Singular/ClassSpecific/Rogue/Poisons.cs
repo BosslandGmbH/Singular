@@ -38,11 +38,11 @@ namespace Singular.ClassSpecific.Rogue
 
         private static readonly HashSet<uint> WoundPoisons = new HashSet<uint> { 10918, 43235 };
 
-        public static bool MainHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 0; } }
+        public static bool MainHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.MainHand != null && StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 0; } }
 
-        public static bool OffHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 0; } }
+        public static bool OffHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.OffHand != null && StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 0; } }
 
-        public static bool ThrownNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.Ranged.IsThrownWeapon && StyxWoW.Me.Inventory.Equipped.Ranged.TemporaryEnchantment.Id == 0; } }
+        public static bool ThrownNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.Ranged != null && StyxWoW.Me.Inventory.Equipped.Ranged.IsThrownWeapon && StyxWoW.Me.Inventory.Equipped.Ranged.TemporaryEnchantment.Id == 0; } }
 
         public static WoWItem MainHandPoison
         {

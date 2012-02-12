@@ -37,7 +37,7 @@ namespace Singular.ClassSpecific.Priest
 
         public static Composite CreateDiscHealOnlyBehavior()
         {
-            return CreateDiscHealOnlyBehavior(false, false);
+            return CreateDiscHealOnlyBehavior(false, true);
         }
 
         public static Composite CreateDiscHealOnlyBehavior(bool selfOnly)

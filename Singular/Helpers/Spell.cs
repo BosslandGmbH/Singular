@@ -357,6 +357,9 @@ namespace Singular.Helpers
                 new Action(
                     ret =>
                         {
+                            if (StyxWoW.Me.Mounted)
+                                Mount.Dismount("Casting spell");
+
                             Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());
                             SpellManager.Cast(name, onUnit(ret));
                         })

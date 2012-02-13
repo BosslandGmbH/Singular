@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateLowbiePriestCombat()
         {
             return new PrioritySelector(
-                Discipline.CreateDiscHealOnlyBehavior(),
+                Discipline.CreateDiscHealOnlyBehavior(false,false),
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),

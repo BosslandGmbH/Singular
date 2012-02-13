@@ -70,7 +70,7 @@ namespace Singular.ClassSpecific.Hunter
                 // Rotation
                 Spell.Cast("Raptor Strike"),
                 Spell.Buff("Serpent Sting", true),
-                Spell.Cast("Kill Command", ret => StyxWoW.Me.GotAlivePet),
+                Spell.Cast("Kill Command", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Spell.MeleeRange),
                 Spell.Cast("Kill Shot"),
                 Spell.Cast("Focus Fire",
                     ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.HasAura("The Beast Within") && StyxWoW.Me.Pet.HasAura("Frenzy Effect", 5)),
@@ -142,7 +142,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Scatter Shot", ret => StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
                 Spell.Cast("Raptor Strike"),
                 Spell.Buff("Serpent Sting", true),
-                Spell.Cast("Kill Command", ret => StyxWoW.Me.GotAlivePet),
+                Spell.Cast("Kill Command", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Spell.MeleeRange),
                 Spell.Cast("Kill Shot"),
                 Spell.Cast("Focus Fire",
                     ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.HasAura("The Beast Within") && StyxWoW.Me.Pet.HasAura("Frenzy Effect", 5)),
@@ -216,7 +216,7 @@ namespace Singular.ClassSpecific.Hunter
                     ),
                 // Rotation
                 Spell.Buff("Serpent Sting", true),
-                Spell.Cast("Kill Command", ret => StyxWoW.Me.GotAlivePet),
+                Spell.Cast("Kill Command", ret => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Spell.MeleeRange),
                 Spell.Cast("Kill Shot"),
                 Spell.Cast("Focus Fire", 
                     ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.HasAura("The Beast Within") && StyxWoW.Me.Pet.HasAura("Frenzy Effect", 5)),

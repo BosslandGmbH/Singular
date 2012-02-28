@@ -11,6 +11,7 @@
 
 #endregion
 
+using System;
 using System.ComponentModel;
 
 using Styx.Helpers;
@@ -27,6 +28,27 @@ namespace Singular.Settings
         }
 
         #region Shadow
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Shadow")]
+        [DisplayName("Flash Heal Health")]
+        [Description("Health for Flash Heal for shadow spec")]
+        public double ShadowFlashHealHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Shadow")]
+        [DisplayName("Mind Flay Mana")]
+        [Description("Will only use Mind Flay while manapercent is above this value")]
+        public double MindFlayMana { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Shadow")]
+        [DisplayName("Shield Health Percent")]
+        [Description("Use PW:Shield on set HP. This will only be used for Mind Spike rotation")]
+        public double ShieldHealthPercent { get; set; }
 
         [Setting]
         [DefaultValue(15)]
@@ -99,7 +121,7 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Shield Pre-Pull")]
-        [Description("Use PW:Shield pre-pull")]
+        [Description("Use PW:Shield pre-pull. This setting is not used in Mind Spike rotation")]
         public bool UseShieldPrePull { get; set; }
 
         [Setting]

@@ -13,27 +13,29 @@ using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Rogue
 {
-    public class Combat
+    public class Subtlety
     {
         #region Normal Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.SubtletyRogue)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateCombatRogueNormalPull()
+        public static Composite CreateSubtletyRogueNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.BuffSelf("Sprint", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth")),
                 Spell.BuffSelf("Stealth"),
                 // Garrote if we can, SS is kinda meh as an opener.
+                Spell.Cast("Premeditation"),
+                Spell.Cast("Shadowstep"),
                 Spell.Cast("Garrote", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Cheap Shot", ret => !SpellManager.HasSpell("Garrote") || !StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Ambush", ret => !SpellManager.HasSpell("Cheap Shot") && StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Ambush", ret => !SpellManager.HasSpell("Garrote") && StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Cheap Shot", ret => !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage")),
 
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
@@ -48,10 +50,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.SubtletyRogue)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateCombatRogueNormalCombat()
+        public static Composite CreateSubtletyRogueNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -84,29 +86,22 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.BuffSelf("Vanish",
                     ret => StyxWoW.Me.HealthPercent < 20),
 
-                Spell.BuffSelf("Adrenaline Rush",
-                    ret => StyxWoW.Me.CurrentEnergy < 20 && !StyxWoW.Me.HasAura("Killing Spree")),
+                Spell.BuffSelf("Preparation",
+                    ret => SpellManager.HasSpell("Vanish") && SpellManager.Spells["Vanish"].CooldownTimeLeft.TotalSeconds > 10 &&
+                           StyxWoW.Me.HealthPercent < 25),
 
-                // Killing Spree if we are at highest level of Bandit's Guise ( Shallow Insight / Moderate Insight / Deep Insight )
-                Spell.Cast("Killing Spree",
-                    ret => StyxWoW.Me.CurrentEnergy < 30 && StyxWoW.Me.HasAura("Deep Insight") && !StyxWoW.Me.HasAura("Adrenaline Rush")),
-
-                Spell.BuffSelf("Blade Flurry",
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1 &&
-                           !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Blind"))),
-
-                Spell.Cast("Revealing Strike", ret => StyxWoW.Me.ComboPoints == 4),
-                Spell.Buff("Rupture", true,
-                    ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 &&
-                           StyxWoW.Me.CurrentTarget.Elite && !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
+                Spell.BuffSelf("Shadow Dance", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3),
+                Spell.Cast("Cheap Shot", ret => StyxWoW.Me.HasAura("Shadow Dance")),
                 Spell.BuffSelf("Slice and Dice",
                     ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 40 && StyxWoW.Me.ComboPoints >= 2),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.ComboPoints == 5),
-                Spell.Cast("Sinister Strike",
-                    ret => StyxWoW.Me.ComboPoints < 4 || !SpellManager.HasSpell("Revealing Strike")),
+                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.Elite),
+                Spell.BuffSelf("Recuperate", ret => TalentManager.GetCount(3, 8) > 0 && StyxWoW.Me.RawComboPoints > 0),
+                Spell.Cast("Eviscerate", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 40 && StyxWoW.Me.ComboPoints >= 2),
+                Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && StyxWoW.Me.HasAura("Shadow Dance")),
+                Spell.Cast("Backstab", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Shadow Dance")),
+                Spell.Cast("Hemorrhage", ret => !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -117,24 +112,27 @@ namespace Singular.ClassSpecific.Rogue
         #region Battleground Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.SubtletyRogue)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateCombatRoguePvPPull()
+        public static Composite CreateSubtletyRoguePvPPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.BuffSelf("Sprint", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth")),
                 Spell.BuffSelf("Stealth"),
                 // Garrote if we can, SS is kinda meh as an opener.
+                Spell.Cast("Premeditation"),
+                Spell.Cast("Shadowstep"),
+
                 Spell.Cast("Garrote",
                     ret => StyxWoW.Me.CurrentTarget.MeIsBehind && StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana),
                 Spell.Cast("Cheap Shot",
                     ret => !SpellManager.HasSpell("Garrote") || !StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.Cast("Ambush", ret => !SpellManager.HasSpell("Cheap Shot") && StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage")),
 
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
@@ -149,10 +147,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.SubtletyRogue)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateCombatRoguePvPCombat()
+        public static Composite CreateSubtletyRoguePvPCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -175,30 +173,27 @@ namespace Singular.ClassSpecific.Rogue
                 // Redirect if we have CP left
                 Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
 
-                Spell.BuffSelf("Adrenaline Rush",
-                    ret => StyxWoW.Me.CurrentEnergy < 20 && !StyxWoW.Me.HasAura("Killing Spree")),
-
-                // Killing Spree if we are at highest level of Bandit's Guise ( Shallow Insight / Moderate Insight / Deep Insight )
-                Spell.Cast("Killing Spree",
-                    ret => StyxWoW.Me.CurrentEnergy < 30 && StyxWoW.Me.HasAura("Deep Insight") && !StyxWoW.Me.HasAura("Adrenaline Rush")),
-
-                Spell.BuffSelf("Blade Flurry",
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1),
-
-                Spell.Cast("Revealing Strike", ret => StyxWoW.Me.ComboPoints == 4),
-                Spell.Buff("Rupture", true,
-                    ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 &&
-                           !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
+                Spell.BuffSelf("Preparation",
+                    ret => SpellManager.HasSpell("Vanish") && SpellManager.Spells["Vanish"].CooldownTimeLeft.TotalSeconds > 10 &&
+                           SpellManager.Spells["Shadowstep"].CooldownTimeLeft.TotalSeconds > 10),
+                Spell.BuffSelf("Shadow Dance", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.BuffSelf("Slice and Dice",
                     ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 30 && StyxWoW.Me.ComboPoints >= 3),
-                Spell.Cast("Kidney Shot",
-                    ret => StyxWoW.Me.ComboPoints == 5 && !StyxWoW.Me.CurrentTarget.IsStunned()),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.ComboPoints == 5),
-                Spell.Cast("Sinister Strike",
-                    ret => StyxWoW.Me.ComboPoints < 4 || !SpellManager.HasSpell("Revealing Strike")),
+                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
+                Spell.BuffSelf("Recuperate", ret => TalentManager.GetCount(3, 8) > 0 && StyxWoW.Me.RawComboPoints > 0),
+                Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
+                // Vanish + Shadowstep + Premeditation + Ambush combo
+                new Decorator(
+                    ret => StyxWoW.Me.HasAura("Vanish"),
+                    new PrioritySelector(
+                        Spell.Cast("Shadowstep"),
+                        Spell.BuffSelf("Premeditation", ret => StyxWoW.Me.ComboPoints <= 3),
+                        Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind)
+                        )),
+                Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && StyxWoW.Me.HasAura("Shadow Dance")),
+                Spell.Cast("Backstab", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Shadow Dance")),
+                Spell.Cast("Hemorrhage", ret => !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -209,22 +204,24 @@ namespace Singular.ClassSpecific.Rogue
         #region Instance Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.SubtletyRogue)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateCombatRogueInstancePull()
+        public static Composite CreateSubtletyRogueInstancePull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.BuffSelf("Sprint", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth")),
                 Spell.BuffSelf("Stealth"),
                 // Garrote if we can, SS is kinda meh as an opener.
+                Spell.Cast("Premeditation"),
+                Spell.Cast("Shadowstep"),
                 Spell.Cast("Garrote", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Cheap Shot", ret => !SpellManager.HasSpell("Garrote") || !StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Ambush", ret => !SpellManager.HasSpell("Cheap Shot") && StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Ambush", ret => !SpellManager.HasSpell("Garrote") && StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Cheap Shot", ret => !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage")),
 
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
@@ -239,10 +236,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(TalentSpec.SubtletyRogue)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateCombatRogueInstanceCombat()
+        public static Composite CreateSubtletyRogueInstanceCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -272,32 +269,32 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Feint", ret => StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 80),
 
                 Movement.CreateMoveBehindTargetBehavior(),
-                
+
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) >= 3,
                     Spell.BuffSelf("Fan of Knives", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown))),
 
-                Spell.BuffSelf("Adrenaline Rush", 
-                    ret => StyxWoW.Me.CurrentEnergy < 20 && !StyxWoW.Me.HasAura("Killing Spree")),
-
-                // Killing Spree if we are at highest level of Bandit's Guise ( Shallow Insight / Moderate Insight / Deep Insight )
-                Spell.Cast("Killing Spree", 
-                    ret => StyxWoW.Me.CurrentEnergy < 30 && StyxWoW.Me.HasAura("Deep Insight") && !StyxWoW.Me.HasAura("Adrenaline Rush")),
-
-                Spell.BuffSelf("Blade Flurry",
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) > 1),
-
-                Spell.Cast("Revealing Strike", ret => StyxWoW.Me.ComboPoints == 4),
-                Spell.Buff("Rupture", true,
-                    ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 && 
-                           !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
+                Spell.BuffSelf("Preparation", 
+                    ret => SpellManager.HasSpell("Vanish") && SpellManager.Spells["Vanish"].CooldownTimeLeft.TotalSeconds > 10 &&
+                           SpellManager.Spells["Shadowstep"].CooldownTimeLeft.TotalSeconds > 10),
+                Spell.BuffSelf("Shadow Dance", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.BuffSelf("Slice and Dice",
                     ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.ComboPoints == 5),
-                Spell.Cast("Sinister Strike",
-                    ret => StyxWoW.Me.ComboPoints < 4 || !SpellManager.HasSpell("Revealing Strike")),
-
+                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
+                Spell.BuffSelf("Recuperate", ret => TalentManager.GetCount(3, 8) > 0 && StyxWoW.Me.RawComboPoints > 0),
+                Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
+                // Vanish + Shadowstep + Premeditation + Ambush combo
+                new Decorator(
+                    ret => StyxWoW.Me.HasAura("Vanish"),
+                    new PrioritySelector(
+                        Spell.Cast("Shadowstep"),
+                        Spell.BuffSelf("Premeditation", ret => StyxWoW.Me.ComboPoints <= 3),
+                        Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind)
+                        )),
+                Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && StyxWoW.Me.HasAura("Shadow Dance")),
+                Spell.Cast("Backstab", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Shadow Dance")),
+                Spell.Cast("Hemorrhage", ret => !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }

@@ -25,33 +25,34 @@ namespace Singular.ClassSpecific.Rogue
 {
     class Assassination
     {
+        #region Normal Rotation
+
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.AssasinationRogue)]
         [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
-        public static Composite CreateCombatRoguePull()
+        [Context(WoWContext.Normal)]
+        public static Composite CreateAssaRogueNormalPull()
         {
             return new PrioritySelector(
+                Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.BuffSelf("Sprint", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth")),
                 Spell.BuffSelf("Stealth"),
-                new PrioritySelector(
-                    ret => WoWMathHelper.CalculatePointBehind(StyxWoW.Me.CurrentTarget.Location, StyxWoW.Me.CurrentTarget.Rotation, 1f),
-                    new Decorator(
-                        ret => ((WoWPoint)ret).Distance2D(StyxWoW.Me.Location) > 3f && Navigator.CanNavigateFully(StyxWoW.Me.Location, ((WoWPoint)ret)),
-                        new TreeSharp.Action(ret => Navigator.MoveTo(((WoWPoint)ret))))
-                    ),
                 // Garrote if we can, SS is kinda meh as an opener.
-                Spell.Cast("Garrote"),
-                Spell.Cast("Cheap Shot"),
-                Spell.Cast("Sinister Strike"),
-                Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                Spell.Cast(
-                    "Shoot",
-                    ret =>
-                    StyxWoW.Me.CurrentTarget.IsFlying && (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
-                Helpers.Common.CreateAutoAttack(true),
+                Spell.Cast("Garrote", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Cheap Shot", ret => !SpellManager.HasSpell("Garrote") || !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Ambush", ret => !SpellManager.HasSpell("Cheap Shot") && StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
+
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
+                    new PrioritySelector(
+                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
+                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
+                        )),
+
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
@@ -59,138 +60,272 @@ namespace Singular.ClassSpecific.Rogue
         [Class(WoWClass.Rogue)]
         [Spec(TalentSpec.AssasinationRogue)]
         [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
-        public static Composite CreateCombatRogueCombat()
+        [Context(WoWContext.Normal)]
+        public static Composite CreateAssaRogueNormalCombat()
         {
-            return new PrioritySelector
-                (
+            return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                // Kick/Defensive cooldowns/Recuperation
-                CreateCombatRogueDefense(),
-
-                // Deal with stealth shit first.
                 new Decorator(
-                    ret => StyxWoW.Me.HasAnyAura("Stealth", "Vanish") || StyxWoW.Me.IsStealthed,
-                    Spell.Cast("Garrote")
-                    ),
-                // Auto-attack after stealth stuff. This ensures we don't waste a vanish for no good reason.
-                Helpers.Common.CreateAutoAttack(true),
+                    ret => !StyxWoW.Me.HasAura("Vanish"),
+                    Helpers.Common.CreateAutoAttack(true)),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
+                // Don't do anything if we casted vanish
+                new Decorator(
+                    ret => StyxWoW.Me.HasAura("Vanish"),
+                    new ActionAlwaysSucceed()),
+
+                // Defensive
+                Spell.BuffSelf("Evasion",
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),
+
+                Spell.BuffSelf("Cloak of Shadows",
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
+
+                Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 15),
+
+                Common.CreateRogueBlindOnAddBehavior(),
 
                 // Redirect if we have CP left
                 Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
 
-                // CP generators, put em at start, since they're strictly conditional
-                // and will help burning energy on Adrenaline Rush
-                //new Decorator(
-                //    ret => (Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6) > 3 &&
-                //            !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 6 * 6 && u.HasAura("Blind"))),
-                //    Spell.Cast("Fan of Knives")),
-                Common.CreateRogueBlindOnAddBehavior(),
+                Spell.BuffSelf("Vanish",
+                    ret => StyxWoW.Me.HealthPercent < 20),
 
-                Movement.CreateMoveBehindTargetBehavior(),
-                // Only pop Evisc if we don't have Enven.
-                Spell.Cast(
-                    "Eviscerate",
-                    ret =>
-                    !SpellManager.HasSpell("Envenom") && !StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent <= 40 &&
-                    StyxWoW.Me.ComboPoints > 2),
+                Spell.BuffSelf("Vendetta", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
 
-                //
-                // Cooldowns:
+                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.Elite),
+                Spell.BuffSelf("Slice and Dice",
+                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
+                Spell.BuffSelf("Cold Blood",
+                    ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.HealthPercent >= 35 ||
+                           StyxWoW.Me.ComboPoints == 5 || !SpellManager.HasSpell("Envenom")),
 
-                // Vanish -> Garrote+Overkill+Vendetta
-                new Decorator(
-                    ret => StyxWoW.Me.EnergyPercent > 45 && !StyxWoW.Me.HasAura("Overkill") && StyxWoW.Me.CurrentTarget.IsBoss(),
-                    new Sequence(
-                        Spell.Cast("Vanish"),
-                        // Sleep to ensure we get the stealth flags set on ourselves.
-                        new Action(ret => StyxWoW.SleepForLagDuration()))),
+                Spell.Cast("Eviscerate",
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints >= 2),
+                Spell.Cast("Eviscerate",
+                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent <= 40 || !SpellManager.HasSpell("Envenom") || !StyxWoW.Me.CurrentTarget.Elite) && 
+                           StyxWoW.Me.ComboPoints >= 4),
 
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 || StyxWoW.Me.CurrentTarget.MaxHealth < 500000,
-                    Spell.Cast("Vendetta")),
+                Spell.Cast("Envenom",
+                    ret => StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent >= 35 && StyxWoW.Me.ComboPoints >= 4),
+                Spell.Cast("Envenom",
+                    ret => StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent < 35 && StyxWoW.Me.ComboPoints == 5),
 
-
-                // Drop aggro if we're in trouble.
-                new Decorator(
-                    ret => (StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty) && StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 50,
-                    Spell.BuffSelf("Feint")),
-
-
-                // Always keep Slice and Dice up
-                Spell.Cast(
-                    "Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-
-                // WE GOT TRIX! And no, they're not just for kids.
-                Spell.Cast(
-                    "Tricks of the Trade", ret => Common.BestTricksTarget,
-                    ret => SingularSettings.Instance.Rogue.UseTricksOfTheTrade && Common.BestTricksTarget != null),
-
-                // Finishers:
-                new Decorator(
-                    ret => StyxWoW.Me.ComboPoints > 4,
-                    new PrioritySelector(
-                        // Check for >our own< Rupture debuff on target since there may be more rogues in party/raid!
-                        Spell.Cast("Rupture", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3),
-                        // Pop CB only before Envenom. Its useless on rupture!
-                        Spell.Cast("Cold Blood"),
-                        Spell.Cast("Envenom")
-                        )),
-
-
-                // Mutliate is our usual DPS filler above 35%
-                Spell.Cast(
-                    "Mutilate",
-                    ret => StyxWoW.Me.ComboPoints <= 4 && (StyxWoW.Me.CurrentTarget.HealthPercent > 35 || !StyxWoW.Me.CurrentTarget.MeIsSafelyBehind)),
-                // Backstab when < 35% health for the extra DPS boost
-                Spell.Buff(
-                    "Backstab",
-                    ret => StyxWoW.Me.ComboPoints <= 4 && (StyxWoW.Me.CurrentTarget.HealthPercent <= 35 && StyxWoW.Me.IsBehind(StyxWoW.Me.CurrentTarget))),
+                Spell.Cast("Backstab",
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.GetCount(1, 13) > 0 &&
+                           StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Cold Blood")),
+                Spell.Cast("Mutilate",
+                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.GetCount(1, 13) == 0 ||
+                           !StyxWoW.Me.CurrentTarget.MeIsBehind) && !StyxWoW.Me.HasAura("Cold Blood")),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 
-        private static readonly WaitTimer _interruptTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
+        #endregion
 
-        private static bool PreventDoubleInterrupt
-        {
-            get
-            {
-                var tmp = _interruptTimer.IsFinished;
-                if (tmp)
-                    _interruptTimer.Reset();
-                return tmp;
-            }
-        }
+        #region Battleground Rotation
 
-        public static Composite CreateCombatRogueDefense()
+        [Class(WoWClass.Rogue)]
+        [Spec(TalentSpec.AssasinationRogue)]
+        [Behavior(BehaviorType.Pull)]
+        [Context(WoWContext.Battlegrounds)]
+        public static Composite CreateAssaRoguePvPPull()
         {
             return new PrioritySelector(
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
-                    new PrioritySelector(
-                        Spell.Cast("Kick", ret => PreventDoubleInterrupt),
-                        Spell.Cast("Gouge", ret => !StyxWoW.Me.CurrentTarget.IsPlayerBehind && PreventDoubleInterrupt)
-                        )),
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsCasting && !StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast,
-                    Spell.Cast("Cloak of Shadows")),
-                // Recuperate to keep us at high health
-                Spell.Buff("Recuperate", ret => StyxWoW.Me.HealthPercent < 50 && StyxWoW.Me.RawComboPoints > 3),
-                Spell.Cast("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) > 1 || StyxWoW.Me.HealthPercent < 50),
-                // Recuperate to not let us down
-                //Spell.Cast("Recuperate", ret => StyxWoW.Me.HealthPercent < 20 && StyxWoW.Me.RawComboPoints > 1),
-                // Cloak of Shadows as really last resort 
-                Spell.Cast("Cloak of Shadows", ret => StyxWoW.Me.HealthPercent < 20),
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Spell.BuffSelf("Sprint", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth")),
+                Spell.BuffSelf("Stealth"),
+                // Garrote if we can, SS is kinda meh as an opener.
+                Spell.Cast("Garrote", 
+                    ret => StyxWoW.Me.CurrentTarget.MeIsBehind && StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana),
+                Spell.Cast("Cheap Shot", 
+                    ret => !SpellManager.HasSpell("Garrote") || !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Ambush", ret => !SpellManager.HasSpell("Cheap Shot") && StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
 
-                // Pop vanish if the shit really hits the fan...
-                Spell.Cast("Vanish", ret => StyxWoW.Me.HealthPercent < 10)
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
+                    new PrioritySelector(
+                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
+                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
+                        )),
+
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
+
+        [Class(WoWClass.Rogue)]
+        [Spec(TalentSpec.AssasinationRogue)]
+        [Behavior(BehaviorType.Combat)]
+        [Context(WoWContext.Battlegrounds)]
+        public static Composite CreateAssaRoguePvPCombat()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                new Decorator(
+                    ret => !StyxWoW.Me.HasAura("Vanish"),
+                    Helpers.Common.CreateAutoAttack(true)),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                // Defensive
+                Spell.BuffSelf("Evasion",
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 1),
+
+                Spell.BuffSelf("Cloak of Shadows",
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
+
+                Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 15),
+
+                // Redirect if we have CP left
+                Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
+
+                Spell.BuffSelf("Vanish",
+                    ret => TalentManager.GetCount(1, 14) > 0 && StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") &&
+                           StyxWoW.Me.HasAura("Slice and Dice")),
+                Spell.Cast("Garrote",
+                    ret => (StyxWoW.Me.HasAura("Vanish") || StyxWoW.Me.IsStealthed) &&
+                           StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.BuffSelf("Vendetta"),
+                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
+                Spell.BuffSelf("Slice and Dice",
+                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
+                Spell.BuffSelf("Cold Blood",
+                    ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.HealthPercent >= 35 ||
+                           StyxWoW.Me.ComboPoints == 5 || !SpellManager.HasSpell("Envenom")),
+                Spell.Cast("Eviscerate",
+                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent <= 40 || !SpellManager.HasSpell("Envenom")) && StyxWoW.Me.ComboPoints >= 4),
+                Spell.Cast("Kidney Shot",
+                    ret => StyxWoW.Me.ComboPoints >= 4 && !StyxWoW.Me.CurrentTarget.IsStunned()),
+                Spell.Cast("Envenom",
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent >= 35 && StyxWoW.Me.ComboPoints >= 4),
+                Spell.Cast("Envenom",
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Backstab",
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.GetCount(1, 13) > 0 &&
+                           StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Cold Blood")),
+                Spell.Cast("Mutilate",
+                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.GetCount(1, 13) == 0 ||
+                           !StyxWoW.Me.CurrentTarget.MeIsBehind) && !StyxWoW.Me.HasAura("Cold Blood")),
+
+                Movement.CreateMoveToMeleeBehavior(true)
+                );
+        }
+
+        #endregion
+
+        #region Instance Rotation
+
+        [Class(WoWClass.Rogue)]
+        [Spec(TalentSpec.AssasinationRogue)]
+        [Behavior(BehaviorType.Pull)]
+        [Context(WoWContext.Instances)]
+        public static Composite CreateAssaRogueInstancePull()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Spell.BuffSelf("Sprint", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth")),
+                Spell.BuffSelf("Stealth"),
+                // Garrote if we can, SS is kinda meh as an opener.
+                Spell.Cast("Garrote", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Cheap Shot", ret => !SpellManager.HasSpell("Garrote") || !StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Ambush", ret => !SpellManager.HasSpell("Cheap Shot") && StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
+
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5*5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
+                    new PrioritySelector(
+                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
+                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
+                        )),
+
+                Movement.CreateMoveToMeleeBehavior(true)
+                );
+        }
+
+        [Class(WoWClass.Rogue)]
+        [Spec(TalentSpec.AssasinationRogue)]
+        [Behavior(BehaviorType.Combat)]
+        [Context(WoWContext.Instances)]
+        public static Composite CreateAssaRogueInstanceCombat()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                new Decorator(
+                    ret => !StyxWoW.Me.HasAura("Vanish"),
+                    Helpers.Common.CreateAutoAttack(true)),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                // Defensive
+                Spell.BuffSelf("Evasion", 
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 1),
+
+                Spell.BuffSelf("Cloak of Shadows",
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
+
+                // Redirect if we have CP left
+                Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
+
+                // Agro management
+                Spell.Cast(
+                    "Tricks of the Trade", 
+                    ret => Common.BestTricksTarget,
+                    ret => SingularSettings.Instance.Rogue.UseTricksOfTheTrade),
+
+                Spell.Cast("Feint", ret => StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 80),
+
+                Movement.CreateMoveBehindTargetBehavior(),
+
+                Spell.BuffSelf("Vanish",
+                    ret => TalentManager.GetCount(1, 14) >0 && StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && 
+                           StyxWoW.Me.HasAura("Slice and Dice")),
+                Spell.Cast("Garrote", 
+                    ret => (StyxWoW.Me.HasAura("Vanish") || StyxWoW.Me.IsStealthed) &&
+                           StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.BuffSelf("Vendetta", 
+                    ret => StyxWoW.Me.CurrentTarget.IsBoss() && 
+                           (StyxWoW.Me.CurrentTarget.HealthPercent < 35 || TalentManager.GetCount(1,13) == 0)),
+
+                new Decorator(
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) >= 3,
+                    Spell.BuffSelf("Fan of Knives", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown))),
+
+                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
+                Spell.BuffSelf("Slice and Dice", 
+                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
+                Spell.BuffSelf("Cold Blood",
+                    ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.HealthPercent >= 35 ||
+                           StyxWoW.Me.ComboPoints == 5 || !SpellManager.HasSpell("Envenom")),
+                Spell.Cast("Eviscerate", 
+                    ret => (!StyxWoW.Me.CurrentTarget.Elite || !SpellManager.HasSpell("Envenom")) && StyxWoW.Me.ComboPoints >= 4),
+                Spell.Cast("Envenom",
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent >= 35 && StyxWoW.Me.ComboPoints >= 4),
+                Spell.Cast("Envenom",
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Backstab",
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.GetCount(1,13) > 0 && 
+                           StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Cold Blood")),
+                Spell.Cast("Mutilate",
+                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.GetCount(1,13) == 0 ||
+                           !StyxWoW.Me.CurrentTarget.MeIsBehind) && !StyxWoW.Me.HasAura("Cold Blood")),
+
+                Movement.CreateMoveToMeleeBehavior(true)
+                );
+        }
+
+        #endregion
     }
 }

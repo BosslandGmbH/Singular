@@ -14,7 +14,7 @@ using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
 using CommonBehaviors.Actions;
-using Action = System.Action;
+using Action = TreeSharp.Action;
 
 
 namespace Singular.ClassSpecific.Druid
@@ -87,6 +87,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Pounce"),
                 Spell.Cast("Shred", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.Cast("Mangle (Cat)"),
+                Spell.Cast("Moonfire", ret => StyxWoW.Me.CurrentTarget.Distance2DSqr < 10*10 && Math.Abs(StyxWoW.Me.CurrentTarget.Z - StyxWoW.Me.Z) > 5),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }

@@ -136,7 +136,7 @@ namespace Singular.Helpers
             return 
                 new Decorator(
                     ret => !StyxWoW.Me.IsCasting,
-                    CreateMoveToLocationBehavior(location, stopInRange, ret => Spell.MeleeRange));
+                    CreateMoveToLocationBehavior(location, stopInRange, ret => StyxWoW.Me.CurrentTarget.IsPlayer ? 2f : Spell.MeleeRange));
         }
 
         #region Move Behind

@@ -23,6 +23,9 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                new Decorator(
+                    ret => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Hellfire" && StyxWoW.Me.HealthPercent < 70,
+                    new Action(ret => SpellManager.StopCasting())),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
@@ -32,7 +35,7 @@ namespace Singular.ClassSpecific.Warlock
                     Pet.CreateCastPetAction("Axe Toss")),
                 new Decorator(ret => StyxWoW.Me.GotAlivePet &&  Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.Pet.Location) < 10*10) > 1,
                     Pet.CreateCastPetAction("Felstorm")),
-                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) > 1,
+                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) > 1 && StyxWoW.Me.HealthPercent >= 70,
                     Spell.BuffSelf("Hellfire")
                     ),
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsBoss(),

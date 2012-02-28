@@ -58,7 +58,7 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(40)]
         [Category("Common")]
-        [DisplayName("Regrowth Health (Balance and Feral")]
+        [DisplayName("Regrowth Health (Balance and Feral)")]
         [Description("Regrowth will be used at this value")]
         public int NonRestoRegrowth { get; set; }
 

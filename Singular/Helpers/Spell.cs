@@ -599,8 +599,6 @@ namespace Singular.Helpers
                 DoubleCastPreventionDict[spellName] = DateTime.UtcNow;
 
             DoubleCastPreventionDict.Add(spellName, DateTime.UtcNow);
-
-            Logger.Write("Added {0} to double cast prevention dict", spellName);
         }
 
         public static readonly Dictionary<string, DateTime> DoubleCastPreventionDict = new Dictionary<string, DateTime>();

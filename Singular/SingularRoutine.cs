@@ -173,6 +173,7 @@ namespace Singular
 
             // When we actually need to use it, we will.
             EventHandlers.Init();
+            MountManager.Init();
             //Logger.Write("Combat log event handler started.");
         }
 

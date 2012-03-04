@@ -8,14 +8,39 @@ using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Helpers;
 using Styx.Logic.Combat;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using TreeSharp;
 
 namespace Singular.ClassSpecific.Shaman
 {
-    class Elemental
+    public class Elemental
     {
+        #region Common
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
+        [Behavior(BehaviorType.PreCombatBuffs)]
+        [Context(WoWContext.All)]
+        public static Composite CreateElementalShamanPreCombatBuffs()
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && SpellManager.HasSpell("Flametongue Weapon") &&
+                            SpellManager.CanCast("Flametongue Weapon", null, false, false),
+                    new Sequence(
+                        new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),
+                        new Action(ret => Logger.Write("Imbuing main hand weapon with Flametongue")),
+                        new Action(ret => SpellManager.Cast("Flametongue Weapon", null))
+                        )),
+
+                Spell.Cast("Lightning Shield", ret => StyxWoW.Me, ret => !StyxWoW.Me.HasAura("Lightning Shield", 2)),
+                new Decorator(ret => Totems.NeedToRecallTotems,
+                    new Action(ret => Totems.RecallTotems()))
+                );
+        }
+
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.ElementalShaman)]
         [Behavior(BehaviorType.Rest)]
@@ -34,33 +59,9 @@ namespace Singular.ClassSpecific.Shaman
 
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.ElementalShaman)]
-        [Behavior(BehaviorType.PullBuffs)]
-        [Context(WoWContext.All)]
-        public static Composite CreateElementalPullBuffs()
-        {
-            return new PrioritySelector(
-                Spell.BuffSelf("Lightning Shield"),
-                Spell.Cast("Flametongue Weapon", ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue"))
-                );
-        }
-
-        [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
-        public static Composite CreateElementalShamanPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.Cast("Ghost Wolf", ret => !CharacterSettings.Instance.UseMount && StyxWoW.Me.Shapeshift == ShapeshiftForm.Normal),
-                new Decorator(ret => Totems.NeedToRecallTotems,
-                    new Action(ret => Totems.RecallTotems()))
-                );
-        }
-    
-        [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
         [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Context(WoWContext.Instances)]
+        [Context(WoWContext.Normal)]
         public static Composite CreateElementalShamanHeal()
         {
             return
@@ -75,93 +76,208 @@ namespace Singular.ClassSpecific.Shaman
 
                         // This will work for both solo play and battlegrounds
                         new Decorator(
-                            ret => !StyxWoW.Me.IsInParty || Group.Healers.Count(h => h.IsAlive) == 0,
+                            ret => Group.Healers.Count(h => h.IsAlive) == 0,
                             new PrioritySelector(
-                                Spell.Heal("Healing Wave", 
-                                    ret => StyxWoW.Me, 
+                                Spell.Heal("Healing Wave",
+                                    ret => StyxWoW.Me,
                                     ret => !SpellManager.HasSpell("Healing Surge") && StyxWoW.Me.HealthPercent <= 60),
 
-                                Spell.Heal("Healing Surge", 
-                                    ret => StyxWoW.Me, 
+                                Spell.Heal("Healing Surge",
+                                    ret => StyxWoW.Me,
                                     ret => StyxWoW.Me.HealthPercent <= 60)))
                         ));
         }
 
+        #endregion
+
+        #region Normal Rotation
+
         [Class(WoWClass.Shaman)]
         [Spec(TalentSpec.ElementalShaman)]
-        [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
-        [Priority(50)]
-        public static Composite CreateElementalShamanCombat()
+        [Context(WoWContext.Normal)]
+        public static Composite CreateElementalShamanNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
-                CreateElementalPullBuffs(),
-                // Only call if we're missing more than 2 totems. 
-                Totems.CreateSetTotems(3),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                Spell.Cast("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) > 2),
-                Spell.Cast("Thunderstorm", ret => StyxWoW.Me.ManaPercent < 40),
-
-                // Ensure Searing is nearby
-                Spell.Cast(
-                    "Searing Totem", ret => StyxWoW.Me,
-                    ret => StyxWoW.Me.Totems.Count(
-                        t =>
-                        t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
-                        t.Unit.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 35 * 35) == 0 &&
-                           !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
-                // Pop the ele on bosses
-                Spell.Cast("Fire Elemental Totem", ret => StyxWoW.Me, ret => StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
-
-                // Don't pop ES if FS is going to fall off soon. Just hold on to it.
-                Spell.Cast(
-                    "Earth Shock",
-                    ret => StyxWoW.Me.HasAura("Lightning Shield", 9) && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),
-
-                // Clip the last tick of FS if we can.
-                Spell.Cast("Flame Shock", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds < 3),
-
-
-                // Not sure why EM doesn't want to be cast. I'll have to debug this further.
-                Spell.BuffSelf("Elemental Mastery"),
-
-                // Pretty much no matter what it is, just use on CD
-                Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
+                Spell.Cast("Lightning Shield", ret => StyxWoW.Me, ret => !StyxWoW.Me.HasAura("Lightning Shield", 2)),
 
                 new Decorator(
-                    ret => SingularSettings.Instance.Shaman.IncludeAoeRotation && Unit.UnfriendlyUnitsNearTarget(15f).Count() > 2,
-                    new PrioritySelector(
-                // Spread shocks. Make sure we only spread it to ones we're facing (LazyRaider support with movement turned off)
-                        Spell.Cast(
-                            "Flame Shock",
-                            ret => Unit.UnfriendlyUnitsNearTarget(15f).First(u => !u.HasMyAura("Flame Shock") && StyxWoW.Me.IsSafelyFacing(u)),
-                            ret => Unit.UnfriendlyUnitsNearTarget(15f).Count(u => !u.HasMyAura("Flame Shock")) != 0),
-                // Bomb them with novas
-                        Spell.Cast("Fire Nova", ret => Unit.UnfriendlyUnitsNearTarget(15f).Any(u => u.HasMyAura("Flame Shock"))),
-                // CL for the fun of it. :)
-                        Spell.Cast(
-                            "Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12),
-                            ret => Unit.UnfriendlyUnitsNearTarget(15f).Count() > 2)
-                        )),
-
-                //Movement.CreateEnsureMovementStoppedBehavior(),
-                Spell.Cast("Lava Burst"),
-
-                // Ignore this, its useless and a DPS loss. Its ont he GCD and gains nothing from our SP, crit, or any other modifiers. 
-                //Spell.Cast("Rocket Barrage"),
-
-                // So... ignore movement if we have the glyph (hence the negated HasGlyph, if we don't have it, we want to chekc movement, otherwise, ignore it.)
-                Spell.Cast("Lightning Bolt", ret => !TalentManager.HasGlyph("Unleashed Lightning"), ret => StyxWoW.Me.CurrentTarget, ret => true),
-                Spell.Cast("Unleash Elements", ret => Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving),
-
+                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 40 * 40,
+                    Totems.CreateSetTotems()),
+                Spell.Cast("Lightning Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
+        [Behavior(BehaviorType.Combat)]
+        [Context(WoWContext.Normal)]
+        public static Composite CreateElementalShamanNormalCombat()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Spell.WaitForCast(true),
+                Totems.CreateSetTotems(),
+                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Spell.BuffSelf("Lightning Shield"),
+
+                Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving),
+
+                new Decorator(
+                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                    new PrioritySelector(
+                        Spell.BuffSelf("Elemental Mastery"),
+                        Spell.BuffSelf("Thunderstorm"),
+                        Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
+                        Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
+                        )),
+
+                // Totem stuff
+                // Pop the ele on bosses
+                Spell.BuffSelf("Fire Elemental Totem", ret => StyxWoW.Me.CurrentTarget.Elite && !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+                Spell.BuffSelf("Searing Totem",
+                    ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) - 2f &&
+                           !StyxWoW.Me.Totems.Any(
+                                t => t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
+                                     t.Unit.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Totems.GetTotemRange(WoWTotem.Searing)) &&
+                           !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+
+                Spell.Buff("Flame Shock", true),
+                Spell.Cast("Lava Burst"),
+                Spell.Cast("Earth Shock",
+                    ret => (StyxWoW.Me.HasAura("Lightning Shield", 7) || TalentManager.GetCount(1, 13) == 0) &&
+                           StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),
+                Spell.Cast("Unleash Elements",
+                    ret => Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
+                Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                Spell.Cast("Lightning Bolt"),
+                Movement.CreateMoveToTargetBehavior(true, 35f)
+                );
+        }
+
+        #endregion
+
+        #region Battleground Rotation
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
+        [Behavior(BehaviorType.Pull)]
+        [Behavior(BehaviorType.Combat)]
+        [Context(WoWContext.Battlegrounds)]
+        public static Composite CreateElementalShamanPvPPullAndCombat()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Spell.WaitForCast(true),
+                Totems.CreateSetTotems(),
+                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                Spell.BuffSelf("Lightning Shield"),
+
+                Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
+
+                Spell.BuffSelf("Elemental Mastery",
+                    ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat &&
+                           (!SpellManager.HasSpell("Spiritwalker's Grace") ||
+                           SpellManager.Spells["Spiritwalker's Grace"].Cooldown && !StyxWoW.Me.HasAura("Spiritwalker's Grace"))),
+                Spell.BuffSelf("Thunderstorm", ret => StyxWoW.Me.IsStunned()),
+                new Decorator(
+                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                    new PrioritySelector(
+                        // Pop the ele on bosses
+                        Spell.BuffSelf("Fire Elemental Totem", ret => !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+                        Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
+                        Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
+                        )),
+
+                // Totem stuff
+                Spell.BuffSelf("Searing Totem",
+                    ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) - 2f &&
+                           !StyxWoW.Me.Totems.Any(
+                                t => t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
+                                     t.Unit.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Totems.GetTotemRange(WoWTotem.Searing)) &&
+                           !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+
+                Spell.Buff("Flame Shock", true),
+                Spell.Cast("Lava Burst"),
+                Spell.Cast("Earth Shock",
+                    ret => (StyxWoW.Me.HasAura("Lightning Shield", 7) || TalentManager.GetCount(1, 13) == 0) &&
+                           StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),
+                Spell.Cast("Unleash Elements",
+                    ret => Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
+                Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                Spell.Cast("Lightning Bolt"),
+                Movement.CreateMoveToTargetBehavior(true, 35f)
+                );
+        }
+
+        #endregion
+
+        #region Instance Rotation
+
+        [Class(WoWClass.Shaman)]
+        [Spec(TalentSpec.ElementalShaman)]
+        [Behavior(BehaviorType.Pull)]
+        [Behavior(BehaviorType.Combat)]
+        [Context(WoWContext.Instances)]
+        public static Composite CreateElementalShamanInstancePullAndCombat()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Spell.WaitForCast(true),
+                Totems.CreateSetTotems(),
+                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                Spell.BuffSelf("Lightning Shield"),
+                Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
+                Spell.BuffSelf("Elemental Mastery",
+                    ret => StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+                Spell.BuffSelf("Elemental Mastery", 
+                    ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat &&
+                           (!SpellManager.HasSpell("Spiritwalker's Grace") || 
+                           SpellManager.Spells["Spiritwalker's Grace"].Cooldown && !StyxWoW.Me.HasAura("Spiritwalker's Grace"))),
+
+                new Decorator(
+                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                    new PrioritySelector(
+                        Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
+                        Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
+                        )),
+                
+                // Totem stuff
+                // Pop the ele on bosses
+                Spell.BuffSelf("Fire Elemental Totem", ret => StyxWoW.Me.CurrentTarget.IsBoss() && !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+                Spell.BuffSelf("Searing Totem",
+                    ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) - 2f &&
+                           !StyxWoW.Me.Totems.Any(
+                                t => t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
+                                     t.Unit.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Totems.GetTotemRange(WoWTotem.Searing)) &&
+                           !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+
+                Spell.Buff("Flame Shock", true),
+                Spell.Cast("Lava Burst"),
+                Spell.Cast("Earth Shock", 
+                    ret => (StyxWoW.Me.HasAura("Lightning Shield", 7) || TalentManager.GetCount(1,13) == 0) &&
+                           StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),
+                Spell.Cast("Unleash Elements", 
+                    ret => Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
+                Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                Spell.Cast("Lightning Bolt"),
+                Movement.CreateMoveToTargetBehavior(true, 35f)
+                );
+        }
+
+        #endregion
     }
 }

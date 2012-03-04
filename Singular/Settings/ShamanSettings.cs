@@ -32,11 +32,6 @@ namespace Singular.Settings
         [DefaultValue(WoWTotem.None)]
         [Category("Totems")]
         [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
-        public WoWTotem FireTotem { get; set; }
-        [Setting]
-        [DefaultValue(WoWTotem.None)]
-        [Category("Totems")]
-        [Description("The totem to use for this slot. Select 'None' for automatic usage.")]
         public WoWTotem EarthTotem { get; set; }
         [Setting]
         [DefaultValue(WoWTotem.None)]

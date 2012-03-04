@@ -357,7 +357,7 @@ namespace Singular.Helpers
                 new Action(
                     ret =>
                         {
-                            if (StyxWoW.Me.Mounted)
+                            if (StyxWoW.Me.Mounted && !name.Contains("Aura") && !name.Contains("Presence") && !name.Contains("Stance"))
                                 Mount.Dismount("Casting spell");
 
                             Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());

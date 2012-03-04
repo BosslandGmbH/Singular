@@ -110,7 +110,7 @@ namespace Singular.ClassSpecific.Shaman
                         new Decorator(
                             ret => moveInRange,
                             Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
-                        Totems.CreateSetTotems(4),
+                        Totems.CreateSetTotems(),
                         // Mana tide...
                         Spell.Cast("Mana Tide Totem", ret => StyxWoW.Me.ManaPercent < 80),
                         // Grounding...

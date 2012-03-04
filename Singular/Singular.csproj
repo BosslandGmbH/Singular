@@ -162,6 +162,7 @@
     <Compile Include="Lists\BossList.cs" />
     <Compile Include="Lists\CataHeroicDpsList.cs" />
     <Compile Include="Managers\HealerManager.cs" />
+    <Compile Include="Managers\MountManager.cs" />
     <Compile Include="Managers\PetManager.cs" />
     <Compile Include="Settings\DeathKnightSettings.cs" />
     <Compile Include="Settings\DruidSettings.cs" />

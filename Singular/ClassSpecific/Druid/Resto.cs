@@ -125,7 +125,6 @@ namespace Singular.ClassSpecific.Druid
                             ret => (WoWUnit)ret,
                             ret => !((WoWUnit)ret).HasMyAura("Rejuvenation") &&
                                    ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Rejuvenation),
-
                         new Decorator(
                             ret => moveInRange,
                             Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))

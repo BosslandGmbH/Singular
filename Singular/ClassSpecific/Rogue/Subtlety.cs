@@ -215,10 +215,10 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateFaceTargetBehavior(),
                 Spell.BuffSelf("Stealth"),
                 // Garrote if we can, SS is kinda meh as an opener.
-                Spell.Cast("Premeditation"),
+                Spell.Cast("Premeditation", ret => StyxWoW.Me.ComboPoints <= 3),
                 Spell.Cast("Shadowstep"),
-                Spell.Cast("Garrote", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Ambush", ret => !SpellManager.HasSpell("Garrote") && StyxWoW.Me.CurrentTarget.MeIsBehind),
+                Spell.Cast("Garrote", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Vanish")),
+                Spell.Cast("Ambush", ret => (!SpellManager.HasSpell("Garrote") || StyxWoW.Me.HasAura("Vanish")) && StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.Cast("Cheap Shot", ret => !StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Cheap Shot") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage")),

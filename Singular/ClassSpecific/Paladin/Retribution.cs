@@ -28,7 +28,12 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                Holy.CreatePaladinHealBehavior(true, false),
+
+                // Heals
+                Spell.Heal("Holy Light", ret => StyxWoW.Me, ret => !SpellManager.HasSpell("Flash of Light") && StyxWoW.Me.HealthPercent < 30),
+                Spell.Heal("Flash of Light", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
+                Spell.Heal("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 50 && StyxWoW.Me.CurrentHolyPower == 3),
+
                 // Defensive
                 Spell.BuffSelf("Hand of Freedom",
                     ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,

@@ -269,5 +269,72 @@ namespace Singular.Settings
         public int DpsMana { get; set; }
 
         #endregion
+
+        #region Holy
+
+        [Setting]
+        [DefaultValue(95)]
+        [Category("Holy")]
+        [DisplayName("Heal Health")]
+        [Description("Heal will be used at this value")]
+        public int HolyHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Holy")]
+        [DisplayName("Greater Heal Health")]
+        [Description("Greater Heal will be used at this value")]
+        public int HolyGreaterHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Holy")]
+        [DisplayName("Flash Heal Health")]
+        [Description("Flash Heal will be used at this value")]
+        public int HolyFlashHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Holy")]
+        [DisplayName("Divine Hymn Health")]
+        [Description("Divine Hymn will be used at this value")]
+        public int DivineHymnHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(6)]
+        [Category("Holy")]
+        [DisplayName("Divine Hymn Count")]
+        [Description("Divine Hymn will be used when this many heal targets below the Divine Hymn Health percent")]
+        public int DivineHymnCount { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Holy")]
+        [DisplayName("Prayer of Healing with Serendipity Health")]
+        [Description("Prayer of Healing with Serendipity will be used at this value")]
+        public int PrayerOfHealingSerendipityHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Holy")]
+        [DisplayName("Prayer of Healing with Serendipity Count")]
+        [Description("Prayer of Healing with Serendipity will be used when this many heal targets below the Prayer of Healing with Serendipity Health percent")]
+        public int PrayerOfHealingSerendipityCount { get; set; }
+
+        [Setting]
+        [DefaultValue(95)]
+        [Category("Holy")]
+        [DisplayName("Circle of Healing Health")]
+        [Description("Circle of Healing will be used at this value")]
+        public int CircleOfHealingHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(5)]
+        [Category("Holy")]
+        [DisplayName("Circle of Healing Count")]
+        [Description("Circle of Healing will be used when this many heal targets below the Circle of Healing Health percent")]
+        public int CircleOfHealingCount { get; set; }
+
+        #endregion
     }
 }

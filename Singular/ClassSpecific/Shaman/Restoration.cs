@@ -74,7 +74,29 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateRestoShamanCombatBehavior()
         {
             return
-                new PrioritySelector();
+                new PrioritySelector(
+                    new Decorator(
+                        ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                        new PrioritySelector(
+                            Safers.EnsureTarget(),
+                            Movement.CreateMoveToLosBehavior(),
+                            Movement.CreateFaceTargetBehavior(),
+                            Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                            Spell.BuffSelf("Fire Elemental Totem",
+                                ret => (StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3) &&
+                                       !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+                            Spell.BuffSelf("Searing Totem",
+                                ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) - 2f &&
+                                        !StyxWoW.Me.Totems.Any(
+                                            t => t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
+                                                    t.Unit.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Totems.GetTotemRange(WoWTotem.Searing)) &&
+                                        !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+                            Spell.Cast("Earth Shock"),
+                            Spell.Cast("Lightning Bolt"),
+                            Movement.CreateMoveToTargetBehavior(true, 35f)
+                            ))
+                    );
         }
 
         [Class(WoWClass.Shaman)]
@@ -156,7 +178,26 @@ namespace Singular.ClassSpecific.Shaman
                                         Clusters.GetClusterCount((WoWPlayer)ret, Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f) >
                                         // If we're in a raid, check for 4 players. If we're just in a party, check for 3.
                                         (StyxWoW.Me.IsInRaid ? 3 : 2))))),
+                        new Decorator(
+                            ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                            new PrioritySelector(
+                                Movement.CreateMoveToLosBehavior(),
+                                Movement.CreateFaceTargetBehavior(),
+                                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
+                                Spell.BuffSelf("Fire Elemental Totem",
+                                    ret => (StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3) &&
+                                           !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+                                Spell.BuffSelf("Searing Totem",
+                                    ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) - 2f &&
+                                           !StyxWoW.Me.Totems.Any(
+                                                t => t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
+                                                     t.Unit.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Totems.GetTotemRange(WoWTotem.Searing)) &&
+                                           !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+                                Spell.Cast("Earth Shock"),
+                                Spell.Cast("Lightning Bolt"),
+                                Movement.CreateMoveToTargetBehavior(true, 35f)
+                                )),
                         new Decorator(
                             ret => moveInRange,
                             Movement.CreateMoveToTargetBehavior(true, 38f, ret => (WoWUnit)ret))

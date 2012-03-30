@@ -76,7 +76,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         // This will work for both solo play and battlegrounds
                         new Decorator(
-                            ret => Group.Healers.Count(h => h.IsAlive) == 0,
+                            ret => Group.Healers.Any() && Group.Healers.Count(h => h.IsAlive) == 0,
                             new PrioritySelector(
                                 Spell.Heal("Healing Wave",
                                     ret => StyxWoW.Me,

@@ -221,6 +221,7 @@ namespace Singular
                         new PrioritySelector(
                             _preCombatBuffsBehavior));
             }
+
             if (_combatBuffsBehavior != null)
             {
                 _combatBuffsBehavior = new Decorator(
@@ -237,7 +238,7 @@ namespace Singular
             if (_restBehavior != null)
             {
                 _restBehavior = new Decorator(
-                    ret => !Me.IsFlying && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                    ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
                     new PrioritySelector(
                         _restBehavior));
             }

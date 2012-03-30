@@ -290,7 +290,17 @@ namespace Singular.ClassSpecific.Druid
                 Spell.WaitForCast(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
+                new Decorator(
+                    ret => !Group.Tanks.Any() && !Group.Healers.Any(),
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => SingularSettings.Instance.Druid.ManualFeralForm == FeralForm.None && StyxWoW.Me.CurrentMap.IsDungeon,
+                            new Action(ret => Logger.Write("Singular can't decide which form to use since there is no roles set in your raid. Please set ManualFeralForm setting to your desired form from Class Config"))),
+                        new Decorator(
+                            ret => SingularSettings.Instance.Druid.ManualFeralForm == FeralForm.Cat || !StyxWoW.Me.CurrentMap.IsDungeon,
+                            CreateFeralCatInstanceCombat()),
+                        CreateFeralBearInstanceCombat()
+                        )),
                 new Decorator(
                     ret => !Group.MeIsTank && Group.Tanks.Any(t => t.IsAlive),
                     CreateFeralCatInstanceCombat()),

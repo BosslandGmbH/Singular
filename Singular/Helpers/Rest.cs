@@ -40,7 +40,7 @@ namespace Singular.Helpers
 
                 // Don't fucking run the rest behavior (or any other) if we're dead or a ghost. Thats all.
                 new Decorator(
-                    ret => !StyxWoW.Me.Dead && !StyxWoW.Me.IsGhost,
+                    ret => !StyxWoW.Me.Dead && !StyxWoW.Me.IsGhost && !StyxWoW.Me.IsCasting,
                     new PrioritySelector(
                         // Make sure we wait out res sickness. Fuck the classes that can deal with it. :O
                         new Decorator(

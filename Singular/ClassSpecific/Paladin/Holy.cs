@@ -56,22 +56,6 @@ namespace Singular.ClassSpecific.Paladin
                     );
         }
 
-        private static bool _holyPaladinCombatNeeded
-        {
-            get
-            {
-                if (Battlegrounds.IsInsideBattleground && StyxWoW.Me.HealthPercent < 50 && HealerManager.Instance.FirstUnit == null)
-                {
-                    return true;
-                }
-                if (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid)
-                {
-                    return true;
-                }
-                return false;
-            }
-        }
-
         [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.HolyPaladin)]
         [Behavior(BehaviorType.Combat)]
@@ -80,15 +64,15 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Spell.Buff("Judgement", 
-                                ret => SpellManager.HasSpell("Judgement") && 
+                    Spell.Buff("Judgement",
+                               ret => SpellManager.HasSpell("Judgement") && StyxWoW.Me.GotTarget &&
                                        StyxWoW.Me.CurrentTarget.Distance <= SpellManager.Spells["Judgement"].MaxRange - 2 &&
                                        StyxWoW.Me.CurrentTarget.InLineOfSpellSight &&
                                        StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget)),
                     new Decorator(
-                        ret => Battlegrounds.IsInsideBattleground || (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid),
+                        ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                         new PrioritySelector(
+                            Safers.EnsureTarget(),
                             Movement.CreateMoveToLosBehavior(),
                             Movement.CreateFaceTargetBehavior(),
                             Helpers.Common.CreateAutoAttack(true),
@@ -184,7 +168,22 @@ namespace Singular.ClassSpecific.Paladin
                                 "Holy Light",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyLightHealth),
-    
+                            new Decorator(
+                                ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                                new PrioritySelector(
+                                    Movement.CreateMoveToLosBehavior(),
+                                    Movement.CreateFaceTargetBehavior(),
+                                    Helpers.Common.CreateAutoAttack(true),
+                                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                                    Spell.Buff("Judgement"),
+                                    Spell.Cast("Hammer of Wrath"),
+                                    Spell.Cast("Holy Shock"),
+                                    Spell.Cast("Crusader Strike"),
+                                    Spell.Cast("Exorcism"),
+                                    Spell.Cast("Holy Wrath"),
+                                    Spell.Cast("Consecration"),
+                                    Movement.CreateMoveToTargetBehavior(true, 5f)
+                                    )),
                             new Decorator(
                                 ret => moveInRange,
                                 // Get in range

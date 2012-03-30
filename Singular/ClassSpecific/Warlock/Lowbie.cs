@@ -1,4 +1,5 @@
 ﻿
+using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -10,6 +11,23 @@ namespace Singular.ClassSpecific.Warlock
 {
     public class Lowbie
     {
+        #region Common
+
+        [Class(WoWClass.Warlock)]
+        [Spec(TalentSpec.Lowbie)]
+        [Behavior(BehaviorType.PreCombatBuffs)]
+        [Context(WoWContext.All)]
+        [Priority(1)]
+        public static Composite CreateLowbieWarlockPreCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(false),
+                Pet.CreateSummonPet("Imp")
+                );
+        }
+
+        #endregion
+
         [Class(WoWClass.Warlock)]
         [Spec(TalentSpec.Lowbie)]
         [Context(WoWContext.All)]
@@ -17,8 +35,6 @@ namespace Singular.ClassSpecific.Warlock
         [Behavior(BehaviorType.Pull)]
         public static Composite CreateLowbieWarlockCombat()
         {
-            PetManager.WantedPet = "Imp";
-
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),

@@ -14,7 +14,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
 using CommonBehaviors.Actions;
 
 using Styx;
@@ -66,75 +66,6 @@ namespace Singular.Helpers
             return spell;
         }
 
-        #region StopAndCast
-
-        public static Composite StopAndCast(string name)
-        {
-            return StopAndCast(name, ret => StyxWoW.Me.CurrentTarget);
-        }
-
-        public static Composite StopAndCast(string name, SimpleBooleanDelegate requirements)
-        {
-            return StopAndCast(name, ret => StyxWoW.Me.CurrentTarget, requirements);
-        }
-
-        public static Composite StopAndCast(string name, UnitSelectionDelegate onUnit)
-        {
-            return StopAndCast(name, onUnit, ret => true);
-        }
-
-        public static Composite StopAndCast(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
-        {
-            return new Decorator(
-               ret =>
-               {
-                   return requirements(ret) && onUnit(ret) != null && SpellManager.CanCast(name, onUnit(ret), true, false);
-               },
-               new Action(
-                   ret =>
-                       {
-                           WoWSpell spell = GetSpellByName(name);
-
-                           if (spell.CastTime > 0 && StyxWoW.Me.IsMoving)
-                           {
-                               WoWMovement.MoveStop();
-                           }
-
-                           Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());
-                           SpellManager.Cast(name, onUnit(ret));
-                        })
-               );
-        }
-
-        #endregion
-
-        #region StopAndBuff
-
-        public static Composite StopAndBuff(string name)
-        {
-            return StopAndBuff(name, ret => StyxWoW.Me.CurrentTarget);
-        }
-
-        public static Composite StopAndBuff(string name, SimpleBooleanDelegate requirements)
-        {
-            return StopAndBuff(name, ret => StyxWoW.Me.CurrentTarget, requirements);
-        }
-
-        public static Composite StopAndBuff(string name, UnitSelectionDelegate onUnit)
-        {
-            return StopAndBuff(name, onUnit, ret => true);
-        }
-
-        public static Composite StopAndBuff(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
-        {
-            return
-                new Decorator(
-                    ret => onUnit(ret) != null && !onUnit(ret).HasAura(name),
-                    StopAndCast(name, onUnit, requirements));
-        }
-
-        #endregion
-
         #region Wait
 
         /// <summary>
@@ -183,7 +114,8 @@ namespace Singular.Helpers
                                     return RunStatus.Failure;
 
                                 var latency = StyxWoW.WoWClient.Latency*2;
-                                if (allowLagTollerance && StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
+                                var castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
+                                if (allowLagTollerance && castTimeLeft != TimeSpan.Zero && StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
                                     return RunStatus.Failure;
 
                                 if (faceDuring && StyxWoW.Me.ChanneledCastingSpellId == 0)
@@ -362,6 +294,16 @@ namespace Singular.Helpers
 
                             Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());
                             SpellManager.Cast(name, onUnit(ret));
+
+                            WoWSpell spell;
+                            if (SpellManager.Spells.TryGetValue(name, out spell))
+                            {
+                                // This is here to prevent cancelling funneled and channeled spells right after the cast. /raphus
+                                if (spell.IsFunnel || spell.IsChanneled)
+                                {
+                                    Thread.Sleep(500);
+                                }
+                            }
                         })
                 );
         }

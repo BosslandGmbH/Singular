@@ -162,6 +162,13 @@ namespace Singular.Dynamics
                 return null;
             }
 
+            var result = new PrioritySelector();
+            foreach (var kvp in matchedMethods.OrderByDescending(mm => mm.Key))
+            {
+                result.AddChild(kvp.Value);
+            }
+
+            return result;
             // Return the composite match we found. (Note: ANY composite return is fine)
             return matchedMethods.OrderByDescending(mm => mm.Key).First().Value;
         }

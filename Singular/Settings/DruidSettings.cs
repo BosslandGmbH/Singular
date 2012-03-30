@@ -11,6 +11,7 @@
 
 #endregion
 
+using System;
 using System.ComponentModel;
 
 using Styx.Helpers;
@@ -19,6 +20,13 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
+    public enum FeralForm
+    {
+        None,
+        Bear,
+        Cat
+    }
+
     internal class DruidSettings : Styx.Helpers.Settings
     {
         public DruidSettings()
@@ -185,6 +193,13 @@ namespace Singular.Settings
         [DisplayName("Frenzied Regeneration Health")]
         [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 30 if glyphed. 15 if not.)")]
         public int FrenziedRegenerationHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(FeralForm.None)]
+        [Category("Feral")]
+        [DisplayName("Manual Feral Form")]
+        [Description("This setting will be used when Singular can't decide the roles in a raid")]
+        public FeralForm ManualFeralForm { get; set; }
 
         #endregion
     }

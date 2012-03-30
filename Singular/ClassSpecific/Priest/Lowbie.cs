@@ -18,7 +18,6 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateLowbiePriestCombat()
         {
             return new PrioritySelector(
-                Discipline.CreateDiscHealOnlyBehavior(false,false),
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -26,7 +25,7 @@ namespace Singular.ClassSpecific.Priest
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 Spell.BuffSelf("Power Word: Shield", ret => !StyxWoW.Me.HasAura("Weakened Soul")),
-                Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 30),
+                Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 40),
 
                 Spell.Buff("Shadow Word: Pain"),
                 Spell.Cast("Mind Blast"),

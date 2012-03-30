@@ -116,6 +116,7 @@
     <Compile Include="ClassSpecific\Paladin\Retribution.cs" />
     <Compile Include="ClassSpecific\Priest\Common.cs" />
     <Compile Include="ClassSpecific\Priest\Discipline.cs" />
+    <Compile Include="ClassSpecific\Priest\Holy.cs" />
     <Compile Include="ClassSpecific\Priest\Lowbie.cs" />
     <Compile Include="ClassSpecific\Priest\Shadow.cs" />
     <Compile Include="ClassSpecific\Rogue\Assassination.cs" />
@@ -132,6 +133,7 @@
     <Compile Include="ClassSpecific\Warlock\Affliction.cs" />
     <Compile Include="ClassSpecific\Warlock\Common.cs" />
     <Compile Include="ClassSpecific\Warlock\Demonology.cs" />
+    <Compile Include="ClassSpecific\Warlock\Destruction.cs" />
     <Compile Include="ClassSpecific\Warlock\Lowbie.cs" />
     <Compile Include="ClassSpecific\Warrior\Arms.cs" />
     <Compile Include="ClassSpecific\Warrior\Fury.cs" />
@@ -201,7 +203,7 @@
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "G:\Code\WoW\Honorbuddy 2\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular v2\" /i /f /s /v /y
 )
 if $(ConfigurationName) == Raphus (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "E:\Buddy\Honorbuddy\Source\trunk\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\Buddy\Honorbuddy\Source\trunk\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
 
 )
 

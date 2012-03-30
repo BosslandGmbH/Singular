@@ -142,13 +142,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                         Unit.UnfriendlyUnitsNearTarget(10f).Count(u => 
                                                 !u.HasMyAura("Blood Plague") && 
                                                 !u.HasMyAura("Frost Fever")) > 0),
-                            Spell.Cast("Blood Boil",
-                                ret => TalentManager.GetCount(1, 6) > 0 &&
-                                        Unit.UnfriendlyUnitsNearTarget(12f).Count(u => !u.HasMyAura("Scarlet Fever")) > 0),
                             new Sequence(
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                                 new Action(ret => DeathStrikeTimer.Reset())),
-                            Spell.Cast("Blood Boil"),
                             Spell.Cast("Heart Strike"),
                             Spell.Cast("Rune Strike"),
                             Spell.Cast("Icy Touch"),
@@ -172,8 +168,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.Cast("Rune Strike"),
                     new Sequence(
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
-                        new Action(ret => DeathStrikeTimer.Reset())),                               
-                    Spell.Cast("Blood Boil"),
+                        new Action(ret => DeathStrikeTimer.Reset())),
                     Spell.Cast("Heart Strike"),
                     Spell.Cast("Icy Touch"),
                     Movement.CreateMoveToMeleeBehavior(true)
@@ -460,13 +455,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                         Unit.UnfriendlyUnitsNearTarget(10f).Count(u =>
                                                 !u.HasMyAura("Blood Plague") &&
                                                 !u.HasMyAura("Frost Fever")) > 0),
-                            Spell.Cast("Blood Boil",
-                                ret => TalentManager.GetCount(1, 6) > 0 &&
-                                        Unit.UnfriendlyUnitsNearTarget(12f).Count(u => !u.HasMyAura("Scarlet Fever")) > 0),
                             new Sequence(
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                                 new Action(ret => DeathStrikeTimer.Reset())),
-                            Spell.Cast("Blood Boil"),
                             Spell.Cast("Heart Strike"),
                             Spell.Cast("Rune Strike"),
                             Spell.Cast("Icy Touch"),
@@ -491,7 +482,6 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Sequence(
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                         new Action(ret => DeathStrikeTimer.Reset())),
-                    Spell.Cast("Blood Boil"),
                     Spell.Cast("Heart Strike"),
                     Spell.Cast("Icy Touch"),
                     Movement.CreateMoveToMeleeBehavior(true)

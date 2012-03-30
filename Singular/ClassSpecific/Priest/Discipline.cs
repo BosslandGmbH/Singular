@@ -112,7 +112,18 @@ namespace Singular.ClassSpecific.Priest
                             "Prayer of Mending",
                             ret => (WoWUnit)ret,
                             ret => !((WoWUnit)ret).HasMyAura("Prayer of Mending") && ((WoWUnit)ret).HealthPercent < 90),
-
+                        new Decorator(
+                            ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                            new PrioritySelector(
+                                Movement.CreateMoveToLosBehavior(),
+                                Movement.CreateFaceTargetBehavior(),
+                                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                                Spell.Buff("Shadow Word: Pain", true),
+                                Spell.Cast("Penance"),
+                                Spell.Cast("Holy Fire"),
+                                Spell.Cast("Smite"),
+                                Movement.CreateMoveToTargetBehavior(true, 35f)
+                                )),
                         new Decorator(
                             ret => moveInRange,
                             Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
@@ -147,33 +158,18 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateDiscCombatComposite()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                //Pull stuff
+
                 new Decorator(
-                    ret => !StyxWoW.Me.IsInParty && !StyxWoW.Me.Combat,
+                    ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                     new PrioritySelector(
+                        Safers.EnsureTarget(),
                         Movement.CreateMoveToLosBehavior(),
                         Movement.CreateFaceTargetBehavior(),
-                        Spell.Cast("Holy Fire", ret => !StyxWoW.Me.IsInParty && !StyxWoW.Me.Combat),
-                        Spell.Cast("Smite", ret => !StyxWoW.Me.IsInParty && !StyxWoW.Me.Combat),
-                        Movement.CreateMoveToTargetBehavior(true, 28f)
-                        )),
-                // If we have nothing to heal, and we're in combat (or the leader is)... kill something!
-                new Decorator(
-                    ret => StyxWoW.Me.Combat || (RaFHelper.Leader != null && RaFHelper.Leader.Combat),
-                    new PrioritySelector(
-                        Movement.CreateMoveToLosBehavior(),
-                        Movement.CreateFaceTargetBehavior(),
-                        Spell.Buff("Shadow Word: Pain", ret => !StyxWoW.Me.IsInParty || StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.DpsMana),
-                //Solo combat rotation
-                        new Decorator(
-                            ret => Battlegrounds.IsInsideBattleground || (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid),
-                            new PrioritySelector(
-                                Spell.Cast("Holy Fire"),
-                                Spell.Cast("Penance"))),
-                //Don't smite while mana is below the setting while in a party (default 70)
-                        Spell.Cast("Smite", ret => !StyxWoW.Me.IsInParty || StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.DpsMana),
+                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Spell.Buff("Shadow Word: Pain", true),
+                        Spell.Cast("Penance"),
+                        Spell.Cast("Holy Fire"),
+                        Spell.Cast("Smite"),
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         ))
                 );

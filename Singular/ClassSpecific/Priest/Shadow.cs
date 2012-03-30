@@ -67,7 +67,9 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Priest.ShadowFlashHealHealth),
                 // don't attempt to heal unless below a certain percentage health
                 new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.DontHealPercent,
-                    Discipline.CreateDiscHealOnlyBehavior(true)),
+                    new PrioritySelector(
+                        Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
+                        )),
 
                 // Before Mind Spike
                 new Decorator(
@@ -176,6 +178,11 @@ namespace Singular.ClassSpecific.Priest
                     new Decorator(
                         ret => ret != null,
                         Spell.Cast("Mind Sear", ret => (WoWUnit)ret))),
+                        
+                // In case of a guild raid
+                new Decorator(
+                    ret => !Group.Tanks.Any() && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                    Spell.Cast("Mind Sear")),
 
                 // Single target boss rotation
                 new Decorator(

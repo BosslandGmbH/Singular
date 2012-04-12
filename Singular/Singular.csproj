@@ -12,6 +12,10 @@
     <AssemblyName>Singular</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <SccProjectName>Svn</SccProjectName>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccProvider>SubversionScc</SccProvider>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -68,6 +72,21 @@
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'HighVoltz|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\HighVoltz\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisLogFile>bin\Jim\Singular.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
+    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
+    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Honorbuddy, Version=2.0.0.5387, Culture=neutral, PublicKeyToken=50a565ab5c01ae50, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
@@ -109,6 +128,8 @@
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
     <Compile Include="ClassSpecific\Mage\Frost.cs" />
     <Compile Include="ClassSpecific\Mage\Lowbie.cs" />
+    <Compile Include="ClassSpecific\Monk\Common.cs" />
+    <Compile Include="ClassSpecific\Monk\Lowbie.cs" />
     <Compile Include="ClassSpecific\Paladin\Common.cs" />
     <Compile Include="ClassSpecific\Paladin\Holy.cs" />
     <Compile Include="ClassSpecific\Paladin\Lowbie.cs" />
@@ -170,6 +191,7 @@
     <Compile Include="Settings\DruidSettings.cs" />
     <Compile Include="Settings\HunterSettings.cs" />
     <Compile Include="Settings\MageSettings.cs" />
+    <Compile Include="Settings\MonkSettings.cs" />
     <Compile Include="Settings\PaladinSettings.cs" />
     <Compile Include="Settings\PriestSettings.cs" />
     <Compile Include="Settings\RogueSettings.cs" />
@@ -210,6 +232,15 @@ if $(ConfigurationName) == Raphus (
 if $(ConfigurationName) == Bobby53 (
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\HB\CustomClasses\Singular\" /i /f /s /v /y
 )
+
+if $(ConfigurationName) == HighVoltz (
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "E:\Buddy\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+    IF EXIST \\HIGHVOLTZ-VM\Buddy\Honorbuddy\Honorbuddy.exe (
+       echo Copying files to VM
+       %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "Z:\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+    )
+)
+
 ECHO Copied</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

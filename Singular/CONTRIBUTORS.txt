@@ -13,3 +13,4 @@ Mortal - Warrior improvements.
 moachi - PvP Ret Paladin
 Bobby53 - Shamans
 CodenameG - Mages
+Laria - Base low level Monk routine

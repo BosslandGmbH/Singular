@@ -117,7 +117,7 @@ namespace Singular
             new ConfigurationForm().ShowDialog();
         }
 
-        private ulong _lastTargetGuid=0;
+        private ulong _lastTargetGuid = 0;
 
         public override void Pulse()
         {
@@ -213,12 +213,13 @@ namespace Singular
 
             // Since we can be lazy, we're going to fix a bug right here and now.
             // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
+            // 4/11/2012 - Changed to use a LockSelector to increased performance.
             if (_preCombatBuffsBehavior != null)
             {
-                _preCombatBuffsBehavior = 
+                _preCombatBuffsBehavior =
                     new Decorator(
-                    ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors, 
-                        new PrioritySelector(
+                    ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                        new LockSelector(
                             _preCombatBuffsBehavior));
             }
 
@@ -226,10 +227,10 @@ namespace Singular
             {
                 _combatBuffsBehavior = new Decorator(
                     ret => !IsMounted && !Me.IsOnTransport,
-                    new PrioritySelector(
-                        //Item.CreateUseAlchemyBuffsBehavior(),
+                    new LockSelector(
+                    //Item.CreateUseAlchemyBuffsBehavior(),
                         Item.CreateUseTrinketsBehavior(),
-                        //Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana),
+                    //Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana),
                         _combatBuffsBehavior)
                     );
             }
@@ -239,10 +240,29 @@ namespace Singular
             {
                 _restBehavior = new Decorator(
                     ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                    new PrioritySelector(
+                    new LockSelector(
                         _restBehavior));
             }
 
+            // Wrap all the behaviors with a LockSelector which basically wraps the child bahaviors with a framelock.
+            // This will generally reduce the time it takes to pulse the behavior thus increasing performance of the cc
+            if (_healBehavior != null)
+            {
+                _healBehavior = new LockSelector(
+                    _healBehavior);
+            }
+
+            if (_pullBuffsBehavior != null)
+            {
+                _pullBuffsBehavior = new LockSelector(
+                    _pullBuffsBehavior);
+            }
+
+            _combatBehavior = new LockSelector(
+                _combatBehavior);
+
+            _pullBehavior = new LockSelector(
+                _pullBehavior);
             return true;
         }
 
@@ -267,5 +287,27 @@ namespace Singular
             Logger.Write(reason);
             TreeRoot.Stop();
         }
+
+        #region Nested type: LockSelector
+        /// <summary>
+        /// This behavior wraps the child behaviors in a 'FrameLock' which can provide a big performance improvement 
+        /// if the child behaviors makes multiple api calls that internally run off a frame in WoW in one CC pulse.
+        /// </summary>
+        private class LockSelector : PrioritySelector
+        {
+            public LockSelector(params Composite[] children)
+                : base(children)
+            {
+            }
+            public override RunStatus Tick(object context)
+            {
+                using (new FrameLock())
+                {
+                    return base.Tick(context);
+                }
+            }
+        }
+        #endregion
+
     }
 }

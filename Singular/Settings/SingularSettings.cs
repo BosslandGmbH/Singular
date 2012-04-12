@@ -208,7 +208,9 @@ namespace Singular.Settings
         private HunterSettings _hunterSettings;
 
         private MageSettings _mageSettings;
-
+		
+		private MonkSettings _monkSettings;
+		
         private PaladinSettings _pallySettings;
 
         private PriestSettings _priestSettings;
@@ -232,7 +234,10 @@ namespace Singular.Settings
 
         [Browsable(false)]
         public MageSettings Mage { get { return _mageSettings ?? (_mageSettings = new MageSettings()); } }
-
+		
+		[Browsable(false)]
+        public MonkSettings Monk { get { return _monkSettings ?? (_monkSettings = new MonkSettings()); } }
+		
         [Browsable(false)]
         public PaladinSettings Paladin { get { return _pallySettings ?? (_pallySettings = new PaladinSettings()); } }
 

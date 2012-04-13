@@ -231,6 +231,7 @@ namespace Singular.Helpers
                 toUnit(ret) != StyxWoW.Me && !toUnit(ret).InLineOfSpellSight,
                 new Action(ret => Navigator.MoveTo(toUnit(ret).Location)));
         }
+
     }
 
     public delegate WoWPoint LocationRetriever(object context);

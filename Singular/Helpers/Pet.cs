@@ -16,6 +16,7 @@ namespace Singular.Helpers
                 ret => !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished,
                 new Sequence(
                     new Action(ret => PetManager.CallPet(petName)),
+                    Helpers.Common.CreateWaitForLagDuration(),
                     new Wait(
                         5,
                         ret => StyxWoW.Me.GotAlivePet || !StyxWoW.Me.IsCasting,
@@ -119,7 +120,7 @@ namespace Singular.Helpers
                 ret => extra(ret) && PetManager.CanCastPetAction(action),
                 new Sequence(
                     new Action(ret => PetManager.CastPetAction(action)),
-                    new ActionSleep(250),
+                    new WaitContinue(System.TimeSpan.FromMilliseconds(250), ret => false, new ActionAlwaysSucceed()),
                     new Action(ret => LegacySpellManager.ClickRemoteLocation(location(ret)))));
         }
     }

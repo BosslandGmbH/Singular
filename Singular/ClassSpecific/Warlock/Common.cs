@@ -9,6 +9,7 @@ using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using TreeSharp;
+using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Warlock
 {
@@ -54,7 +55,7 @@ namespace Singular.ClassSpecific.Warlock
                                 new Action(ret => WoWMovement.MoveStop()),
                                 new Action(ret => StyxWoW.Me.ClearTarget()),
                                 new Action(ret => ((WoWItem)ret).Use()),
-                                new Action(ret => Thread.Sleep(500)))))),
+                                new WaitContinue(System.TimeSpan.FromMilliseconds(500), ret => false, new ActionAlwaysSucceed()))))),
                 Spell.BuffSelf("Demon Armor", ret => !StyxWoW.Me.HasAura("Demon Armor") && !SpellManager.HasSpell("Fel Armor")),
                 Spell.BuffSelf("Fel Armor", ret => !StyxWoW.Me.HasAura("Fel Armor")),
                 Spell.BuffSelf("Soul Link", ret => !StyxWoW.Me.HasAura("Soul Link") && StyxWoW.Me.GotAlivePet),

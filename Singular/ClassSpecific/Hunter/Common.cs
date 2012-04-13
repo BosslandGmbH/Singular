@@ -45,10 +45,10 @@ namespace Singular.ClassSpecific.Hunter
         {
             return
                 new Decorator(
-                    ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.Distance <= Spell.MeleeRange + 5f && 
+                    ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.Distance <= Spell.MeleeRange + 5f &&
                            StyxWoW.Me.CurrentTarget.IsAlive &&
-                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null || 
-                            StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me || 
+                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
+                            StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me ||
                             StyxWoW.Me.CurrentTarget.IsStunned()),
                     new Action(
                         ret =>
@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Hunter
                                     new SwitchArgument<string>("Snake Trap",
                                         new Action(ret => LegacySpellManager.CastSpellById(82948)))
                                     ),
-                                new ActionSleep(200),
+                                new WaitContinue(TimeSpan.FromMilliseconds(200), ret => false, new ActionAlwaysSucceed()),
                                 new Action(ret => LegacySpellManager.ClickRemoteLocation(onUnit(ret).Location)))))));
         }
 
@@ -114,7 +114,7 @@ namespace Singular.ClassSpecific.Hunter
                 ctx => Unit.NearbyUnfriendlyUnits.OrderBy(u => u.DistanceSqr).
                                                   FirstOrDefault(
                                                         u => u.Combat && u != StyxWoW.Me.CurrentTarget &&
-                                                             (!u.IsMoving || u.IsPlayer) && u.DistanceSqr < 40*40),
+                                                             (!u.IsMoving || u.IsPlayer) && u.DistanceSqr < 40 * 40),
                 new Decorator(
                     ret => ret != null && SpellManager.HasSpell(trapName) && !SpellManager.Spells[trapName].Cooldown,
                     new PrioritySelector(
@@ -134,7 +134,7 @@ namespace Singular.ClassSpecific.Hunter
                                     new SwitchArgument<string>("Snake Trap",
                                         new Action(ret => LegacySpellManager.CastSpellById(82948)))
                                     ),
-                                new ActionSleep(200),
+                                new WaitContinue(TimeSpan.FromMilliseconds(200), ret => false, new ActionAlwaysSucceed()),
                                 new Action(ret => LegacySpellManager.ClickRemoteLocation(((WoWUnit)ret).Location)))))));
         }
 
@@ -151,6 +151,7 @@ namespace Singular.ClassSpecific.Hunter
                             Spell.BuffSelf("Revive Pet"))),
                     new Sequence(
                         new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot)),
+                        Helpers.Common.CreateWaitForLagDuration(),
                         new WaitContinue(2, ret => StyxWoW.Me.GotAlivePet || StyxWoW.Me.Combat, new ActionAlwaysSucceed()),
                         new Decorator(
                             ret => !StyxWoW.Me.GotAlivePet && (!StyxWoW.Me.Combat || reviveInCombat),

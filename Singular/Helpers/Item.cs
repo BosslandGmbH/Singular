@@ -141,7 +141,7 @@ namespace Singular.Helpers
                             new Sequence(
                                 new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                new Action(ret => StyxWoW.SleepForLagDuration())))
+                                Helpers.Common.CreateWaitForLagDuration()))
                         )),
                 new Decorator(
                     ret => StyxWoW.Me.ManaPercent < manaPercent,
@@ -152,7 +152,7 @@ namespace Singular.Helpers
                             new Sequence(
                                 new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                new Action(ret => StyxWoW.SleepForLagDuration())))))
+                                Helpers.Common.CreateWaitForLagDuration()))))
                 );
         }
 
@@ -229,7 +229,7 @@ namespace Singular.Helpers
                             new Sequence(
                                 new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                new Action(ret => StyxWoW.SleepForLagDuration())))
+                                Helpers.Common.CreateWaitForLagDuration()))
                         ))
                 );
         }

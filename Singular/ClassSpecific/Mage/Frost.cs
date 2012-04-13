@@ -36,7 +36,9 @@ namespace Singular.ClassSpecific.Mage
                 // We want our pet alive !
                 new Decorator(
                     ret => !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
-                    new Action(ret => PetManager.CallPet("Summon Water Elemental"))),
+                    new Sequence(
+                        new Action(ret => PetManager.CallPet("Summon Water Elemental")),
+                        Helpers.Common.CreateWaitForLagDuration())),
                 Spell.Cast("Frostbolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -59,7 +61,9 @@ namespace Singular.ClassSpecific.Mage
                 // We want our pet alive !
                 new Decorator(
                     ret => !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
-                    new Action(ret => PetManager.CallPet("Summon Water Elemental"))),
+                    new Sequence(
+                        new Action(ret => PetManager.CallPet("Summon Water Elemental")),
+                        Helpers.Common.CreateWaitForLagDuration())),
 
                 // Defensive stuff
                 new Decorator(
@@ -137,7 +141,9 @@ namespace Singular.ClassSpecific.Mage
                 // We want our pet alive !
                 new Decorator(
                     ret => !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
-                    new Action(ret => PetManager.CallPet("Summon Water Elemental"))),
+                    new Sequence(
+                        new Action(ret => PetManager.CallPet("Summon Water Elemental")),
+                        Helpers.Common.CreateWaitForLagDuration())),
 
                 // Defensive stuff
                 new Decorator(
@@ -201,7 +207,9 @@ namespace Singular.ClassSpecific.Mage
                 // We want our pet alive !
                 new Decorator(
                     ret => !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
-                    new Action(ret => PetManager.CallPet("Summon Water Elemental"))),
+                    new Sequence(
+                        new Action(ret => PetManager.CallPet("Summon Water Elemental")),
+                        Helpers.Common.CreateWaitForLagDuration())),
 
                 // Defensive stuff
                 new Decorator(

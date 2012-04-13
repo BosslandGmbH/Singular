@@ -299,8 +299,7 @@ namespace Singular.Helpers
                             if (SpellManager.Spells.TryGetValue(name, out spell))
                             {
                                 // This is here to prevent cancelling funneled and channeled spells right after the cast. /raphus
-                                // 03/04 Removed until new release since 5800 misses the API
-                                if (spell.IsFunnel /*|| spell.IsChanneled*/)
+                                if (spell.IsFunnel || spell.IsChanneled)
                                 {
                                     Thread.Sleep(500);
                                 }

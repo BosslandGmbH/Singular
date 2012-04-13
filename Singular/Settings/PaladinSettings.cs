@@ -11,6 +11,7 @@
 
 #endregion
 
+using System;
 using System.ComponentModel;
 
 using Singular.ClassSpecific.Paladin;
@@ -70,6 +71,13 @@ namespace Singular.Settings
         [DisplayName("Consecration Count")]
         [Description("Consecration will be used when you have more then that many mobs attacking you")]
         public int ConsecrationCount { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Retribution")]
+        [DisplayName("Heal Health")]
+        [Description("Healing will be done at this percentage")]
+        public int RetributionHealHealth { get; set; }
 
         [Setting]
         [DefaultValue(30)]

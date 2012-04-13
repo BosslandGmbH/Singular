@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Druid
 
         static int MushroomCount
         {
-            get { return ObjectManager.GetObjectsOfType<WoWUnit>().Where(o => o.FactionId == 4 && o.Distance <= 40).Count(o => o.CreatedByUnitGuid == StyxWoW.Me.Guid); }
+            get { return ObjectManager.GetObjectsOfType<WoWUnit>().Where(o => o.FactionId == 2203 && o.Distance <= 40).Count(o => o.CreatedByUnitGuid == StyxWoW.Me.Guid); }
         }
 
         static WoWUnit BestAoeTarget

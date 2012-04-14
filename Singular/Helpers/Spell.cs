@@ -286,13 +286,12 @@ namespace Singular.Helpers
 
                     return minReqs && canCast && inRange;
                 },
-                new Sequence(
+                new Sequence( 
+                    new DecoratorContinue(ret => StyxWoW.Me.Mounted && !name.Contains("Aura") && !name.Contains("Presence") && !name.Contains("Stance"),
+                        Common.CreateDismount("Casting spell")),
                     new Action(
                         ret =>
                         {
-                            if (StyxWoW.Me.Mounted && !name.Contains("Aura") && !name.Contains("Presence") && !name.Contains("Stance"))
-                                Mount.Dismount("Casting spell");
-
                             Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());
                             SpellManager.Cast(name, onUnit(ret));
 

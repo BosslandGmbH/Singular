@@ -105,13 +105,20 @@ namespace Singular.GUI
         }
 
         private void btnSaveAndClose_Click(object sender, EventArgs e)
-        {
-            ((Styx.Helpers.Settings)pgGeneral.SelectedObject).Save();
-            if (pgClass.SelectedObject != null)
+        { // prevent an exception from closing HB.
+            try
             {
-                ((Styx.Helpers.Settings)pgClass.SelectedObject).Save();
+                ((Styx.Helpers.Settings) pgGeneral.SelectedObject).Save();
+                if (pgClass.SelectedObject != null)
+                {
+                    ((Styx.Helpers.Settings) pgClass.SelectedObject).Save();
+                }
+                Close();
             }
-            Close();
+            catch (Exception ex)
+            {
+                Logger.Write("ERROR saving settings: {0}", e);
+            }
         }
 
         private void timer1_Tick(object sender, EventArgs e)

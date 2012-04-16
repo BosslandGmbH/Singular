@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -20,6 +19,20 @@ namespace Singular.ClassSpecific.Hunter
 {
     public class Common
     {
+        static Common()
+        {
+            // Lets hook this event so we can disable growl
+            SingularRoutine.OnWoWContextChanged += SingularRoutine_OnWoWContextChanged;
+        }
+
+        // Disable pet growl in instances but enable it outside.
+        static void SingularRoutine_OnWoWContextChanged(object sender, SingularRoutine.WoWContextEventArg e)
+        {
+            Lua.DoString(e.CurrentContext == WoWContext.Instances
+                             ? "DisableSpellAutocast(GetSpellInfo(2649))"
+                             : "EnableSpellAutocast(GetSpellInfo(2649))");
+        }
+
         [Class(WoWClass.Hunter)]
         [Spec(TalentSpec.BeastMasteryHunter)]
         [Spec(TalentSpec.SurvivalHunter)]

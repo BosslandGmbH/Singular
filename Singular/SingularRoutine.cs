@@ -62,6 +62,8 @@ namespace Singular
 
         internal static WoWClass MyClass { get; set; }
 
+        internal static event EventHandler<WoWContextEventArg> OnWoWContextChanged;
+
         internal static WoWContext LastWoWContext { get; set; }
 
         internal static WoWContext CurrentWoWContext
@@ -179,6 +181,10 @@ namespace Singular
 
         public bool CreateBehaviors()
         {
+            // let behaviors be notified if context changes.
+            if (OnWoWContextChanged != null)
+                OnWoWContextChanged(this, new WoWContextEventArg(CurrentWoWContext, LastWoWContext));
+
             //Caching the context to not recreate same behaviors repeatedly.
             LastWoWContext = CurrentWoWContext;
 
@@ -309,5 +315,17 @@ namespace Singular
         }
         #endregion
 
+        #region Nested type: WoWContextEventArg
+        public class WoWContextEventArg : EventArgs
+        {
+            public WoWContextEventArg(WoWContext currentContext, WoWContext prevContext)
+            {
+                CurrentContext = currentContext;
+                PreviousContext = prevContext;
+            }
+            public readonly WoWContext CurrentContext;
+            public readonly WoWContext PreviousContext;
+        }
+        #endregion
     }
 }

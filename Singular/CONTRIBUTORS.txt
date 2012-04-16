@@ -16,3 +16,4 @@ CodenameG - Mages
 Laria - Base low level Monk routine
 Handnavi - Feral Druid rotation
 Highvoltz - changes & fixes.
+Obliv - Ret Paladin rotation

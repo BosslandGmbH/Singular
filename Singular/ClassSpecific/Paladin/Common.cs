@@ -66,18 +66,17 @@ namespace Singular.ClassSpecific.Paladin
                                 "Retribution Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
-                                TalentManager.CurrentSpec == TalentSpec.RetributionPaladin),
-                            Spell.BuffSelf("Seal of Truth"),
-                            Spell.BuffSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth"))
+                                TalentManager.CurrentSpec == TalentSpec.RetributionPaladin)
                             )),
                     new Decorator(
                         ret => SingularSettings.Instance.Paladin.Aura != PaladinAura.Auto,
                         new PrioritySelector(
+                            Spell.BuffSelf("Crusader Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Crusader), // Thanks to Treuben
                             Spell.BuffSelf("Devotion Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Devotion),
                             Spell.BuffSelf("Concentration Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Concentration),
                             Spell.BuffSelf("Resistance Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Resistance),
-                            Spell.BuffSelf("Retribution Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Retribution),
-                            Spell.BuffSelf("Crusader Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Crusader)
+                            Spell.BuffSelf("Retribution Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Retribution)
+
                             ))
                     );
         }
@@ -122,7 +121,7 @@ namespace Singular.ClassSpecific.Paladin
                                         p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
                                              !p.HasAura("Blessing of Might") &&
                                              ((p.HasAura("Blessing of Kings") && !p.HasMyAura("Blessing of Kings")) ||
-                                               p.HasAura("Mark of the Wild") || 
+                                               p.HasAura("Mark of the Wild") ||
                                                p.HasAura("Embrace of the Shale Spider")));
                         })
                     );

@@ -20,6 +20,7 @@ namespace Singular.ClassSpecific.Paladin
         Retribution,
         Resistance,
         Concentration,
+        Crusader
     }
 
     public class Common
@@ -75,8 +76,8 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.BuffSelf("Devotion Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Devotion),
                             Spell.BuffSelf("Concentration Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Concentration),
                             Spell.BuffSelf("Resistance Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Resistance),
-                            Spell.BuffSelf("Retribution Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Retribution)
-
+                            Spell.BuffSelf("Retribution Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Retribution),
+                            Spell.BuffSelf("Crusader Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Crusader)
                             ))
                     );
         }

@@ -11,6 +11,7 @@ using Styx.Logic.Combat;
 using Styx.WoWInternals.WoWObjects;
 using TreeSharp;
 
+
 namespace Singular.ClassSpecific.Paladin
 {
     public enum PaladinAura
@@ -66,17 +67,18 @@ namespace Singular.ClassSpecific.Paladin
                                 "Retribution Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
-                                TalentManager.CurrentSpec == TalentSpec.RetributionPaladin)
+                                TalentManager.CurrentSpec == TalentSpec.RetributionPaladin),
+                            Spell.BuffSelf("Seal of Truth"),
+                            Spell.BuffSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth"))
                             )),
                     new Decorator(
                         ret => SingularSettings.Instance.Paladin.Aura != PaladinAura.Auto,
                         new PrioritySelector(
-                            Spell.BuffSelf("Crusader Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Crusader), // Thanks to Treuben
                             Spell.BuffSelf("Devotion Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Devotion),
                             Spell.BuffSelf("Concentration Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Concentration),
                             Spell.BuffSelf("Resistance Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Resistance),
-                            Spell.BuffSelf("Retribution Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Retribution)
-
+                            Spell.BuffSelf("Retribution Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Retribution),
+                            Spell.BuffSelf("Crusader Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Crusader)
                             ))
                     );
         }

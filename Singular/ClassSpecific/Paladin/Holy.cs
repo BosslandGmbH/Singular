@@ -5,7 +5,6 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.WoWInternals.WoWObjects;
 using TreeSharp;
@@ -107,7 +106,7 @@ namespace Singular.ClassSpecific.Paladin
                         ))
                 );
         }
-        
+
         internal static Composite CreatePaladinHealBehavior()
         {
             return CreatePaladinHealBehavior(false, true);
@@ -126,7 +125,7 @@ namespace Singular.ClassSpecific.Paladin
                 new PrioritySelector(
                     ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
                     new Decorator(
-                    ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40*40),
+                    ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
                         new PrioritySelector(
                             Spell.WaitForCast(),
                             new Decorator(
@@ -147,7 +146,7 @@ namespace Singular.ClassSpecific.Paladin
                                 ret => StyxWoW.Me.CurrentHolyPower == 3 &&
                                        Unit.NearbyFriendlyPlayers.Count(p =>
                                            p.HealthPercent <= SingularSettings.Instance.Paladin.LightOfDawnHealth && p != StyxWoW.Me &&
-                                           p.DistanceSqr < 30*30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin.LightOfDawnCount),
+                                           p.DistanceSqr < 30 * 30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin.LightOfDawnCount),
                             Spell.Heal(
                                 "Word of Glory",
                                 ret => (WoWUnit)ret,
@@ -186,7 +185,7 @@ namespace Singular.ClassSpecific.Paladin
                                     )),
                             new Decorator(
                                 ret => moveInRange,
-                                // Get in range
+                // Get in range
                                 Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
                             )));
         }

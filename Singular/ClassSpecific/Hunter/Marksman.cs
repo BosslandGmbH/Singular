@@ -209,7 +209,7 @@ namespace Singular.ClassSpecific.Hunter
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
                         Common.CreateHunterTrapBehavior("Explosive Trap"),
-                        Spell.Cast("Multi Shot"),
+                        Spell.Cast("Multi-Shot"),
                         Spell.Cast("Steady Shot"),
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         )

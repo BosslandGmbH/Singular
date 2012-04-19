@@ -245,6 +245,7 @@ if $(ConfigurationName) == HighVoltz (
     )
 )
 
+
 ECHO Copied</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -155,7 +155,13 @@ namespace Singular.ClassSpecific.Warrior
                 Common.CreateAutoAttack(false),
 
                 // Dispel Bubbles
-                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
+                new Decorator(
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.IsPlayer &&
+                    (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") ||
+                     StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") ||
+                     StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
                     new PrioritySelector(
                         Spell.WaitForCast(),
                         Movement.CreateEnsureMovementStoppedBehavior(),
@@ -165,40 +171,81 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Rocket belt!
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 20,
-                Item.UseEquippedItem((uint)WoWInventorySlot.Waist)),
+                              Item.UseEquippedItem((uint) WoWInventorySlot.Waist)),
 
                 // Hands
-                Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
+                Item.UseEquippedItem((uint) WoWInventorySlot.Hands),
 
                 //Stance Dancing
                 //Pop over to Zerker
-                Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Rend") && !StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood") && StyxWoW.Me.RagePercent < 75 && StyxWoW.Me.CurrentTarget.IsBoss() && SingularSettings.Instance.Warrior.UseWarriorStanceDance),
+                Spell.BuffSelf("Berserker Stance",
+                               ret =>
+                               StyxWoW.Me.CurrentTarget.HasMyAura("Rend") &&
+                               !StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood") && StyxWoW.Me.RagePercent < 75 &&
+                               StyxWoW.Me.CurrentTarget.IsBoss() &&
+                               SingularSettings.Instance.Warrior.UseWarriorStanceDance),
                 //Keep in Battle Stance
-                Spell.BuffSelf("Battle Stance", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rend") || ((StyxWoW.Me.ActiveAuras.ContainsKey("Overpower") || StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood")) && SpellManager.Spells["Mortal Strike"].Cooldown) && StyxWoW.Me.RagePercent <= 75 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),
+                Spell.BuffSelf("Battle Stance",
+                               ret =>
+                               !StyxWoW.Me.CurrentTarget.HasMyAura("Rend") ||
+                               ((StyxWoW.Me.ActiveAuras.ContainsKey("Overpower") ||
+                                 StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood")) &&
+                                SpellManager.Spells["Mortal Strike"].Cooldown) && StyxWoW.Me.RagePercent <= 75 &&
+                               SingularSettings.Instance.Warrior.UseWarriorKeepStance),
 
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
+                Spell.Cast("Charge",
+                           ret =>
+                           StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 &&
+                           SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false &&
+                           SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
                 //Heroic Leap
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
+                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
+                                   ret =>
+                                   StyxWoW.Me.CurrentTarget.Distance > 9 &&
+                                   !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) &&
+                                   SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false &&
+                                   SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 //use it or lose it
                 Spell.Cast("Colossus Smash", ret => StyxWoW.Me.HasAura("Sudden Death", 1)),
 
                 // ranged slow
-                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.Buff("Piercing Howl",
+                           ret =>
+                           StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer &&
+                           !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) &&
+                           SingularSettings.Instance.Warrior.UseWarriorSlows &&
+                           SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 // Melee slow
-                Spell.Cast("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.Cast("Hamstring",
+                           ret =>
+                           StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) &&
+                           SingularSettings.Instance.Warrior.UseWarriorSlows &&
+                           SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 //Mele Heal
                 Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
 
                 // AOE
-                new Decorator(ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3 && SingularSettings.Instance.Warrior.UseWarriorAOE,
+                new Decorator(
+                    ret =>
+                    Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3 &&
+                    SingularSettings.Instance.Warrior.UseWarriorAOE,
                     new PrioritySelector(
-                // recklessness gets to be used in any stance soon
-                        Spell.BuffSelf("Recklessness", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                        // recklessness gets to be used in any stance soon
+                        Spell.BuffSelf("Recklessness",
+                                       ret =>
+                                       SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns &&
+                                       SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                         Spell.BuffSelf("Sweeping Strikes"),
-                        Spell.Cast("Bladestorm", ret => SingularSettings.Instance.Warrior.UseWarriorBladestorm && StyxWoW.Me.CurrentTarget.DistanceSqr < 36),
+                        Spell.Cast("Bladestorm",
+                                   ret =>
+                                   SingularSettings.Instance.Warrior.UseWarriorBladestorm &&
+                                   StyxWoW.Me.CurrentTarget.DistanceSqr < 36),
+                        // cast rend if target doesn't have it and player has 'Blood and Thunder' talent
+                        Spell.Cast("Rend", ret => TalentManager.GetCount(3,3) > 0 && !StyxWoW.Me.CurrentTarget.HasAura("Rend")),
+                        Spell.Cast("Thunder Clap"),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
 
@@ -368,6 +415,8 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.BuffSelf("Recklessness", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                         Spell.BuffSelf("Sweeping Strikes"),
                         Spell.Cast("Bladestorm", ret => SingularSettings.Instance.Warrior.UseWarriorBladestorm && StyxWoW.Me.CurrentTarget.DistanceSqr < 36),
+                        Spell.Cast("Rend", ret => TalentManager.GetCount(3, 3) > 0 && !StyxWoW.Me.CurrentTarget.HasAura("Rend")),
+                        Spell.Cast("Thunder Clap"), 
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
 
@@ -537,6 +586,8 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.BuffSelf("Recklessness", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                         Spell.BuffSelf("Sweeping Strikes"),
                         Spell.Cast("Bladestorm", ret => SingularSettings.Instance.Warrior.UseWarriorBladestorm && StyxWoW.Me.CurrentTarget.DistanceSqr < 36),
+                        Spell.Cast("Rend", ret => TalentManager.GetCount(3, 3) > 0 && !StyxWoW.Me.CurrentTarget.HasAura("Rend")), // check for 'Blood and Thunder' talent
+                        Spell.Cast("Thunder Clap"),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
 

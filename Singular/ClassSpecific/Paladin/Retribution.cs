@@ -38,13 +38,17 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreateRetributionPaladinHeal()
         {
             return new PrioritySelector(
-                        Spell.WaitForCast(),
-                        Spell.Heal("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth && StyxWoW.Me.CurrentHolyPower == 3),
-                        new Decorator(ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.RetributionHealHealth,
-                            new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(),
-                                Spell.Heal("Holy Light", ret => StyxWoW.Me, ret => !SpellManager.HasSpell("Flash of Light")),
-                                Spell.Heal("Flash of Light", ret => StyxWoW.Me))));
+                //Spell.WaitForCast(),
+                Spell.Heal("Word of Glory", ret => StyxWoW.Me,
+                           ret =>
+                           StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth &&
+                           StyxWoW.Me.CurrentHolyPower == 3),
+                Spell.Heal("Holy Light", ret => StyxWoW.Me,
+                           ret =>
+                           !SpellManager.HasSpell("Flash of Light") &&
+                           StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.RetributionHealHealth),
+                Spell.Heal("Flash of Light", ret => StyxWoW.Me,
+                           ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.RetributionHealHealth));
         }
 
         [Class(WoWClass.Paladin)]

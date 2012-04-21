@@ -166,7 +166,7 @@ namespace Singular.ClassSpecific.Priest
                         Movement.CreateMoveToLosBehavior(),
                         Movement.CreateFaceTargetBehavior(),
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                        Spell.Cast("Evangelism", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
+                        Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
                         Spell.Buff("Shadow Word: Pain", true),
                         Spell.Cast("Penance"),
                         Spell.Cast("Holy Fire"),

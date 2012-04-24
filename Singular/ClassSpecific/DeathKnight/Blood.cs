@@ -88,14 +88,14 @@ namespace Singular.ClassSpecific.DeathKnight
                                             && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
                                             && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
                     Spell.BuffSelf("Raise Dead",
-                                ret => SingularSettings.Instance.DeathKnight.UsePetSacrifice
+                                ret => (SingularSettings.Instance.DeathKnight.UsePetSacrifice
                                         && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificeSummonPercent
                                         && (!SingularSettings.Instance.DeathKnight.PetSacrificeExclusive ||
                                             (!StyxWoW.Me.HasAura("Bone Shield")
                                             && !StyxWoW.Me.HasAura("Vampiric Blood")
                                             && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
                                             && !StyxWoW.Me.HasAura("Lichborne")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
+                                            && !StyxWoW.Me.HasAura("Icebound Fortitude"))))),
                     Spell.BuffSelf("Icebound Fortitude",
                                 ret => SingularSettings.Instance.DeathKnight.UseIceboundFortitude
                                         && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent

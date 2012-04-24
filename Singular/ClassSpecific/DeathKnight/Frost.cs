@@ -30,7 +30,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                Spell.Buff("Chains of Ice", ret => StyxWoW.Me.CurrentTarget.Fleeing),
+                Spell.Buff("Chains of Ice", ret => StyxWoW.Me.CurrentTarget.Fleeing && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                 new Sequence(
                     Spell.Cast("Death Grip",
                                 ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
@@ -78,20 +78,20 @@ namespace Singular.ClassSpecific.DeathKnight
                                         ret => StyxWoW.Me.CurrentTarget.Location,
                                         ret => SingularSettings.Instance.DeathKnight.UseDeathAndDecay),
                                   Spell.Cast("Plague Strike"),
-                                  Spell.Cast("Frost Strike"),
+                                  Spell.Cast("Frost Strike", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                                   Spell.Cast("Horn of Winter"),
                                   Movement.CreateMoveToMeleeBehavior(true)
                                   )),
 
                 // Start single target section
-                Spell.Buff("Howling Blast", true, "Frost Fever"),
+                Spell.Buff("Howling Blast", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
                 Spell.Buff("Outbreak", true, "Frost Fever"),
-                Spell.Buff("Icy Touch", true, "Frost Fever"),
+                Spell.Buff("Icy Touch", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
                 Spell.Buff("Plague Strike", true, "Blood Plague"),
                 Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Obliterate")),
                 Spell.Cast("Obliterate"),
-                Spell.Cast("Frost Strike"),
-                Spell.Cast("Howling Blast", ret => StyxWoW.Me.HasAura("Freezing Fog")),
+                Spell.Cast("Frost Strike", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                Spell.Cast("Howling Blast", ret => StyxWoW.Me.HasAura("Freezing Fog") && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                 Spell.Cast("Horn of Winter"),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -131,16 +131,16 @@ namespace Singular.ClassSpecific.DeathKnight
                                     u.CurrentTargetGuid == StyxWoW.Me.Guid &&
                                     SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
 
-                Spell.BuffSelf("Icebound Fortitude", 
+                Spell.BuffSelf("Icebound Fortitude",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                 Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
-                                                   (StyxWoW.Me.IsCrowdControlled() || 
+                                                   (StyxWoW.Me.IsCrowdControlled() ||
                                                    StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
                 Spell.BuffSelf("Death Coil",
-                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent && 
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&
                                StyxWoW.Me.HasAura("Lichborne")),
-                Spell.Cast("Death Strike", 
+                Spell.Cast("Death Strike",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
                 // Cooldowns
@@ -179,7 +179,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                
+
                 // Cooldowns
                 Spell.BuffSelf("Pillar of Frost", ret => SingularSettings.Instance.DeathKnight.UsePillarOfFrost),
                 Spell.BuffSelf("Raise Dead",
@@ -192,8 +192,8 @@ namespace Singular.ClassSpecific.DeathKnight
                            StyxWoW.Me.FrostRuneCount == 0 && StyxWoW.Me.DeathRuneCount == 0 &&
                            !SpellManager.CanCast("Frost Strike") && StyxWoW.Me.CurrentTarget.IsBoss()),
 
-                Spell.BuffSelf("Icebound Fortitude", 
-                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent && 
+                Spell.BuffSelf("Icebound Fortitude",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                 Spell.Cast("Death Strike", ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
 
@@ -208,21 +208,21 @@ namespace Singular.ClassSpecific.DeathKnight
                                         ret => SingularSettings.Instance.DeathKnight.UseDeathAndDecay && StyxWoW.Me.UnholyRuneCount == 2),
                                   Spell.Cast("Plague Strike", ret => StyxWoW.Me.UnholyRuneCount == 2),
                                   Spell.Cast("Frost Strike",
-                                             ret => StyxWoW.Me.CurrentRunicPower == StyxWoW.Me.MaxRunicPower),
+                                             ret => StyxWoW.Me.CurrentRunicPower == StyxWoW.Me.MaxRunicPower && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                                   Spell.Cast("Horn of Winter"),
                                   Spell.CastOnGround("Death and Decay",
                                         ret => StyxWoW.Me.CurrentTarget.Location,
                                         ret => SingularSettings.Instance.DeathKnight.UseDeathAndDecay),
                                   Spell.Cast("Plague Strike"),
-                                  Spell.Cast("Frost Strike"),
+                                  Spell.Cast("Frost Strike", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                                   Spell.Cast("Horn of Winter"),
                                   Movement.CreateMoveToMeleeBehavior(true)
                                   )),
 
                 // Start single target section
-                Spell.Buff("Howling Blast", true, "Frost Fever"),
+                Spell.Buff("Howling Blast", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
                 Spell.Buff("Outbreak", true, "Frost Fever"),
-                Spell.Buff("Icy Touch", true, "Frost Fever"),
+                Spell.Buff("Icy Touch", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
                 Spell.Buff("Plague Strike", true, "Blood Plague"),
                 Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Obliterate")),
                 Spell.Cast(
@@ -230,15 +230,15 @@ namespace Singular.ClassSpecific.DeathKnight
                     ret =>
                     (StyxWoW.Me.FrostRuneCount == 2 && StyxWoW.Me.UnholyRuneCount == 2) ||
                     StyxWoW.Me.DeathRuneCount == 2 || StyxWoW.Me.HasAura("Killing Machine")),
-                Spell.Cast("Frost Strike", ret => StyxWoW.Me.CurrentRunicPower == StyxWoW.Me.MaxRunicPower),
-                Spell.Cast("Howling Blast", ret => StyxWoW.Me.HasAura("Freezing Fog")),
+                Spell.Cast("Frost Strike", ret => StyxWoW.Me.CurrentRunicPower == StyxWoW.Me.MaxRunicPower && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                Spell.Cast("Howling Blast", ret => StyxWoW.Me.HasAura("Freezing Fog") && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                 Spell.Cast("Obliterate"),
-                Spell.Cast("Frost Strike"),
+                Spell.Cast("Frost Strike",ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                 Spell.Cast("Horn of Winter"),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 
-        #endregion       
+        #endregion
     }
 }

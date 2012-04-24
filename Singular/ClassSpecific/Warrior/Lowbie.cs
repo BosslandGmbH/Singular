@@ -36,7 +36,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 2,
                     new PrioritySelector(
-                        Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                        Spell.Cast("Victory Rush"),
                         Spell.Cast("Thunder Clap"),
                         Spell.Cast("Strike"))),
                 // DPS

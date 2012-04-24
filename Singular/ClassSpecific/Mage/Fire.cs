@@ -32,6 +32,8 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.WaitForCast(true),
+                new Decorator (ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire),
+                    Spell.Cast("Frostfire Bolt")),
                 Spell.Cast("Pyroblast"),
                 Spell.Cast("Fireball"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -77,7 +79,7 @@ namespace Singular.ClassSpecific.Mage
                            StyxWoW.Me.CurrentTarget.DistanceSqr <= 8 * 8),
 
                 Spell.Cast("Fire Blast",
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact")),
+                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact") && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
 
                 new Decorator(
                     ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 10 * 10 && u.IsCrowdControlled()),
@@ -90,10 +92,11 @@ namespace Singular.ClassSpecific.Mage
 
                 Common.CreateMagePolymorphOnAddBehavior(),
                 // Rotation
+                Spell.Cast("Frostfire Bolt", ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
                 Spell.Cast("Combustion",
                     ret => (StyxWoW.Me.CurrentTarget.HasMyAura("Living Bomb") || !SpellManager.HasSpell("Living Bomb")) &&
                            (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.GetCount(2, 4) == 0) &&
-                           StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast!")),
+                           StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast!") ),
                 Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.GetCount(2, 20) != 0),
                 Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Hot Streak")),
                 Spell.BuffSelf("Flame Orb"),
@@ -137,8 +140,8 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Mage Ward", ret => StyxWoW.Me.HealthPercent <= 75),
 
                 Spell.Cast("Dragon's Breath",
-                    ret => StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 90) && 
-                           StyxWoW.Me.CurrentTarget.DistanceSqr <= 8*8),
+                    ret => StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 90) &&
+                           StyxWoW.Me.CurrentTarget.DistanceSqr <= 8 * 8),
 
                 Spell.Cast("Fire Blast",
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact")),
@@ -191,18 +194,18 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
-                        Spell.Cast("Fire Blast", 
-                            ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact") && 
+                        Spell.Cast("Fire Blast",
+                            ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact") &&
                                    (StyxWoW.Me.CurrentTarget.HasMyAura("Combustion") || TalentManager.GetCount(2, 13) == 0)),
-                        Spell.CastOnGround("Blast Wave", 
+                        Spell.CastOnGround("Blast Wave",
                             ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location),
                         Spell.Cast("Dragon's Breath",
                             ret => Clusters.GetClusterCount(StyxWoW.Me.CurrentTarget,
                                                             Unit.NearbyUnfriendlyUnits,
                                                             ClusterType.Cone, 15f) >= 3),
-                        Spell.CastOnGround("Flamestrike", 
+                        Spell.CastOnGround("Flamestrike",
                             ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
-                            ret => !ObjectManager.GetObjectsOfType<WoWDynamicObject>().Any(o => 
+                            ret => !ObjectManager.GetObjectsOfType<WoWDynamicObject>().Any(o =>
                                         o.CasterGuid == StyxWoW.Me.Guid && o.Spell.Name == "Flamestrike" &&
                                         o.Location.Distance(
                                             Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location) < o.Radius))
@@ -213,9 +216,10 @@ namespace Singular.ClassSpecific.Mage
                            !StyxWoW.Me.HasAura("Temporal Displacement")),
 
                 // Rotation
-                Spell.Cast("Combustion", 
+                Spell.Cast("Frostfire Bolt",ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
+                Spell.Cast("Combustion",
                     ret => (StyxWoW.Me.CurrentTarget.HasMyAura("Living Bomb") || !SpellManager.HasSpell("Living Bomb")) &&
-                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.GetCount(2,4) == 0) &&
+                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.GetCount(2, 4) == 0) &&
                            StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast!")),
                 Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.GetCount(2, 20) != 0),
                 Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Hot Streak")),

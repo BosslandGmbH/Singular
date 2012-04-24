@@ -39,7 +39,8 @@ namespace Singular.ClassSpecific.Mage
                     new Sequence(
                         new Action(ret => PetManager.CallPet("Summon Water Elemental")),
                         Helpers.Common.CreateWaitForLagDuration())),
-                Spell.Cast("Frostbolt"),
+                Spell.Cast("Frostbolt", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                Spell.Cast("Frostfire Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
@@ -114,7 +115,8 @@ namespace Singular.ClassSpecific.Mage
                            StyxWoW.Me.CurrentTarget.HasAura("Freeze") ||
                            StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") ||
                            StyxWoW.Me.IsMoving),
-                Spell.Cast("Frostbolt"),
+                Spell.Cast("Frostbolt", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                Spell.Cast("Frostfire Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
@@ -271,7 +273,8 @@ namespace Singular.ClassSpecific.Mage
                            StyxWoW.Me.CurrentTarget.HasAura("Freeze") ||
                            StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") ||
                            StyxWoW.Me.IsMoving),
-                Spell.Cast("Frostbolt"),
+                Spell.Cast("Frostbolt", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                Spell.Cast("Frostfire Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

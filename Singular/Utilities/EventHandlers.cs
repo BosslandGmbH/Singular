@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using Singular.Helpers;
+using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.Logic.POI;
 using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Utilities
 {
@@ -54,7 +56,7 @@ namespace Singular.Utilities
             if (
                 !Lua.Events.AddFilter(
                     "COMBAT_LOG_EVENT_UNFILTERED",
-                    "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED' or args[2] == 'SPELL_MISSED'"))
+                    "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED' or args[2] == 'SPELL_MISSED' or args[2] == 'RANGE_MISSED' or args[2] =='SWING_MISSED'"))
             {
                 Logger.Write("ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
             }
@@ -98,6 +100,8 @@ namespace Singular.Utilities
                     break;
 
                 case "SPELL_MISSED":
+                case "RANGE_MISSED":
+                case "SWING_MISSED":
                     if (e.Args[14].ToString() == "EVADE")
                     {
                         Logger.Write("Mob is evading. Blacklisting it!");
@@ -109,6 +113,15 @@ namespace Singular.Utilities
 
                         BotPoi.Clear("Blacklisting evading mob");
                         StyxWoW.SleepForLagDuration();
+                    }
+                    else if (e.Args[14].ToString() == "IMMUNE")
+                    {
+                        WoWUnit unit = e.DestUnit;
+                        if (unit != null && !unit.IsPlayer)
+                        {
+                            Logger.WriteDebug("{0} is immune to {1} spell school", unit.Name,e.SpellSchool);
+                            SpellImmunityManager.Add(unit.Entry, e.SpellSchool);
+                        }
                     }
                     break;
             }

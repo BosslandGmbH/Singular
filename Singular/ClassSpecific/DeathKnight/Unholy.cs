@@ -6,6 +6,7 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic.Combat;
 using Styx.Logic.Pathing;
 using TreeSharp;
 
@@ -28,7 +29,7 @@ namespace Singular.ClassSpecific.DeathKnight
                Helpers.Common.CreateAutoAttack(true),
                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-               Spell.Buff("Chains of Ice", ret => StyxWoW.Me.CurrentTarget.Fleeing),
+               Spell.Buff("Chains of Ice", ret => StyxWoW.Me.CurrentTarget.Fleeing && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                new Sequence(
                     Spell.Cast("Death Grip",
                                 ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
@@ -60,7 +61,7 @@ namespace Singular.ClassSpecific.DeathKnight
                Spell.Cast("Outbreak",
                     ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                             !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-               Spell.Buff("Icy Touch", true, "Frost Fever"),
+               Spell.Buff("Icy Touch", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
                Spell.Buff("Plague Strike", true, "Blood Plague"),
 
                 // Start AoE section
@@ -86,7 +87,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             Spell.Cast("Death Coil", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Sudden Doom") || StyxWoW.Me.CurrentRunicPower >= 80),
                             Spell.Cast("Scourge Strike"),
                             Spell.Cast("Blood Boil"),
-                            Spell.Cast("Icy Touch"),
+                            Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                             Spell.Cast("Death Coil"),
                             Spell.Cast("Horn of Winter"),
                             Movement.CreateMoveToMeleeBehavior(true)
@@ -202,7 +203,7 @@ namespace Singular.ClassSpecific.DeathKnight
                Spell.Cast("Outbreak",
                     ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                             !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-               Spell.Buff("Icy Touch", true, "Frost Fever"),
+               Spell.Buff("Icy Touch", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
                Movement.CreateMoveBehindTargetBehavior(),
                Spell.Buff("Plague Strike", true, "Blood Plague"),
 
@@ -211,12 +212,12 @@ namespace Singular.ClassSpecific.DeathKnight
                     ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.Cast("Pestilence",
-                                        ret => StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") && 
+                                        ret => StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") &&
                                             StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") &&
-                                            Unit.UnfriendlyUnitsNearTarget(10f).Count(u => 
-                                                    !u.HasMyAura("Blood Plague") && 
+                                            Unit.UnfriendlyUnitsNearTarget(10f).Count(u =>
+                                                    !u.HasMyAura("Blood Plague") &&
                                                     !u.HasMyAura("Frost Fever")) > 0),
-                            Spell.Cast("Dark Transformation", 
+                            Spell.Cast("Dark Transformation",
                                         ret => StyxWoW.Me.GotAlivePet &&
                                             !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")),
                             Spell.CastOnGround("Death and Decay",
@@ -224,11 +225,11 @@ namespace Singular.ClassSpecific.DeathKnight
                                 ret => SingularSettings.Instance.DeathKnight.UseDeathAndDecay),
                             Spell.Cast("Scourge Strike", ret => StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount >= 2),
                             Spell.Cast("Blood Boil", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),
-                            Spell.Cast("Icy Touch", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),
+                            Spell.Cast("Icy Touch", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2 && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                             Spell.Cast("Death Coil", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Sudden Doom") || StyxWoW.Me.CurrentRunicPower >= 80),
                             Spell.Cast("Scourge Strike"),
                             Spell.Cast("Blood Boil"),
-                            Spell.Cast("Icy Touch"),
+                            Spell.Cast("Icy Touch",ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                             Spell.Cast("Death Coil"),
                             Spell.Cast("Horn of Winter"),
                             Movement.CreateMoveToMeleeBehavior(true)
@@ -251,9 +252,9 @@ namespace Singular.ClassSpecific.DeathKnight
                Spell.Cast("Death Coil"),
                Spell.Cast("Horn of Winter"),
                Movement.CreateMoveToMeleeBehavior(true)
-               );           
+               );
         }
 
-        #endregion   
+        #endregion
     }
 }

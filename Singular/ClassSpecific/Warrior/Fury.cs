@@ -200,8 +200,8 @@ namespace Singular.ClassSpecific.Warrior
                     Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
 
                 Movement.CreateMoveBehindTargetBehavior(),
-                //Heal up in mele
-                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                //Heal up in melee
+                Spell.Cast("Victory Rush", ret => SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 Spell.Cast("Heroic Throw", ret => StyxWoW.Me.CurrentTarget.Distance > 15 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 // engineering gloves
@@ -430,8 +430,8 @@ namespace Singular.ClassSpecific.Warrior
                     Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
 
                 Movement.CreateMoveBehindTargetBehavior(),
-                //Heal up in mele
-                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                //Heal up in melee
+                Spell.Cast("Victory Rush", ret => SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 Spell.Cast("Heroic Throw", ret => StyxWoW.Me.CurrentTarget.Distance > 15 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 // engineering gloves
@@ -660,7 +660,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 //Heal up in mele
-                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.Cast("Victory Rush", ret =>  SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                 Spell.Cast("Heroic Throw", ret => StyxWoW.Me.CurrentTarget.Distance > 15 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
                 // engineering gloves

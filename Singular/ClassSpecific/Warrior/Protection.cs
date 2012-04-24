@@ -66,7 +66,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsPlayer,
                     new PrioritySelector(
-                        Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                        Spell.Cast("Victory Rush"),
                         Spell.Cast("Disarm", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 36 &&
                                                         (StyxWoW.Me.CurrentTarget.Class == WoWClass.Warrior || StyxWoW.Me.CurrentTarget.Class == WoWClass.Rogue ||
                                                         StyxWoW.Me.CurrentTarget.Class == WoWClass.Paladin || StyxWoW.Me.CurrentTarget.Class == WoWClass.Hunter)),
@@ -101,7 +101,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.First(), ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
                 //Single Target
-                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                Spell.Cast("Victory Rush"),
                 Spell.Cast("Concussion Blow"),
                 Spell.Cast("Shield Slam"),
                 Spell.Cast("Revenge"),
@@ -168,7 +168,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsPlayer,
                     new PrioritySelector(
-                        Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                        Spell.Cast("Victory Rush"),
                         Spell.Cast("Disarm", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 36 &&
                                                         (StyxWoW.Me.CurrentTarget.Class == WoWClass.Warrior || StyxWoW.Me.CurrentTarget.Class == WoWClass.Rogue ||
                                                         StyxWoW.Me.CurrentTarget.Class == WoWClass.Paladin || StyxWoW.Me.CurrentTarget.Class == WoWClass.Hunter)),
@@ -203,7 +203,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.First(), ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
                 //Single Target
-                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                Spell.Cast("Victory Rush"),
                 Spell.Cast("Concussion Blow"),
                 Spell.Cast("Shield Slam"),
                 Spell.Cast("Revenge"),
@@ -270,7 +270,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsPlayer,
                     new PrioritySelector(
-                        Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                        Spell.Cast("Victory Rush"),
                         Spell.Cast("Disarm", ctx => StyxWoW.Me.CurrentTarget.DistanceSqr < 36 &&
                                                         (StyxWoW.Me.CurrentTarget.Class == WoWClass.Warrior || StyxWoW.Me.CurrentTarget.Class == WoWClass.Rogue ||
                                                         StyxWoW.Me.CurrentTarget.Class == WoWClass.Paladin || StyxWoW.Me.CurrentTarget.Class == WoWClass.Hunter)),
@@ -305,7 +305,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.First(), ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.FirstOrDefault() != null),
 
                 //Single Target
-                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
+                Spell.Cast("Victory Rush"),
                 Spell.Cast("Concussion Blow"),
                 Spell.Cast("Shield Slam"),
                 Spell.Cast("Revenge"),

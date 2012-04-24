@@ -112,7 +112,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                         && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.ArmyOfTheDeadPercent),
 
                     Spell.Buff("Chains of Ice",
-                        ret => StyxWoW.Me.CurrentTarget.Fleeing),
+                        ret => StyxWoW.Me.CurrentTarget.Fleeing && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                     new Sequence(
                         Spell.Cast("Death Grip",
@@ -133,7 +133,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                 ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") || 
                                         !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
                             Spell.Buff("Icy Touch", true,
-                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, "Frost Fever"),
+                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10 && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
                             Spell.Buff("Plague Strike", true,
                                 ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, "Blood Plague"),
                             Spell.Cast("Pestilence", 
@@ -147,7 +147,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                 new Action(ret => DeathStrikeTimer.Reset())),
                             Spell.Cast("Heart Strike"),
                             Spell.Cast("Rune Strike"),
-                            Spell.Cast("Icy Touch"),
+                            Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                             Movement.CreateMoveToMeleeBehavior(true)
                             )),
 
@@ -155,7 +155,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                                 !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
                     Spell.Buff("Icy Touch", true,
-                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, 
+                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10 && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), 
                                 "Frost Fever"),
                     Spell.Buff("Plague Strike", true,
                                 ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, 
@@ -170,7 +170,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                         new Action(ret => DeathStrikeTimer.Reset())),
                     Spell.Cast("Heart Strike"),
-                    Spell.Cast("Icy Touch"),
+                    Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                     Movement.CreateMoveToMeleeBehavior(true)
                     );
         }
@@ -444,7 +444,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                 ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                                         !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
                             Spell.Buff("Icy Touch", true,
-                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
+                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10 && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost),
                                 "Frost Fever"),
                             Spell.Buff("Plague Strike", true,
                                 ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
@@ -460,7 +460,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                 new Action(ret => DeathStrikeTimer.Reset())),
                             Spell.Cast("Heart Strike"),
                             Spell.Cast("Rune Strike"),
-                            Spell.Cast("Icy Touch"),
+                            Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                             Movement.CreateMoveToMeleeBehavior(true)
                             )),
                             
@@ -468,7 +468,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                                 !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
                     Spell.Buff("Icy Touch", true,
-                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
+                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10 && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost),
                         "Frost Fever"),
                     Spell.Buff("Plague Strike", true,
                         ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
@@ -483,7 +483,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                         new Action(ret => DeathStrikeTimer.Reset())),
                     Spell.Cast("Heart Strike"),
-                    Spell.Cast("Icy Touch"),
+                    Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                     Movement.CreateMoveToMeleeBehavior(true)
                     );
         }

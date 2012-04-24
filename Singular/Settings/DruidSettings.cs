@@ -350,14 +350,14 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Disable Healing for Balance and Feral")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Disable Healing for Balance and Feral")]
         public bool RaidCatProwl { get; set; }
 
         [Setting]
         [DefaultValue(15)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Predator's Swiftness (Balance and Feral)")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Predator's Swiftness (Balance and Feral)")]
         public int RaidCatProccHeal { get; set; }
 
         /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
@@ -439,27 +439,27 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Warn if not behind boss")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Warn if not behind boss")]
         public bool CatRaidWarning { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Use dash as gap closer")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Use dash as gap closer")]
         public bool CatRaidDash { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Use Raid button ")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Use Raid button ")]
         //[Description("If set to true, it will cast Berserk only if we got adds.")]
         public bool CatRaidButtons { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Use Stampeding Roar")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Use Stampeding Roar")]
         [Description("If set to true, it will cast Stampeding Roar to close gap to target.")]
         public bool CatRaidStampeding { get; set; }
         
@@ -483,88 +483,88 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Cat PvP")]
-        [DisplayName("Stealth Pull")]
+        [Category("Feral PvP")]
+        [DisplayName("Cat - Stealth Pull")]
         [Description("Always try to pull while in stealth. If disabled it pulls with FFF instead.")]
         public bool CatNormalPullStealth { get; set; }
 
 
         [Setting]
         [DefaultValue(4)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Adds to AOE")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Adds to AOE")]
         [Description("Number of adds needed to start Aoe rotation.")]
         public int CatRaidAoe { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Auto Berserk")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Auto Berserk")]
         [Description("If set to true, it will cast Berserk automatically to do max dps.")]
         public bool CatRaidBerserk { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Auto Tiger's Fury")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Auto Tiger's Fury")]
         [Description("If set to true, it will cast Tiger's Fury automatically to do max dps.")]
         public bool CatRaidTigers { get; set; }
 
         [Setting]
         [DefaultValue(false)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Rebuff infight")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Rebuff infight")]
         [Description("If set to true, it will rebuff Mark of the Wild infight.")]
         public bool CatRaidRebuff { get; set; }
 
         [Setting]
         [DefaultValue(false)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Rez infight")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Rez infight")]
         [Description("If set to true, it will rez while infight.")]
         public bool CatRaidRezz { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Cat Raid / Instance")]
-        [DisplayName("Feral Charge")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Cat - Feral Charge")]
         [Description("Use Feral Charge to close gaps. It should handle bosses where charge is not" +
                      "possible || best solution automatically.")]
         public bool CatRaidUseFeralCharge { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Bear Raid / Instance")]
-        [DisplayName("Feral Charge")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Bear - Feral Charge")]
         [Description("Use Feral Charge to close gaps. It should handle bosses where charge is not" +
                      "possible || best solution automatically.")]
         public bool BearRaidUseFeralCharge { get; set; }
 
         [Setting]
         [DefaultValue(2)]
-        [Category("Bear Raid / Instance")]
-        [DisplayName("Adds to AOE")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Bear - Adds to AOE")]
         [Description("Number of adds needed to start Aoe rotation.")]
         public int BearRaidAoe { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Bear Raid / Instance")]
+        [Category("Feral Raid / Instance")]
         [DisplayName("Auto Berserk")]
         [Description("If set to true, it will cast Berserk automatically to do max threat.")]
         public bool BearRaidBerserk { get; set; }
 
         [Setting]
         [DefaultValue(false)]
-        [Category("Bear Raid / Instance")]
-        [DisplayName("Berserk Burst")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Bear - Berserk Burst")]
         [Description("If set to true, it will SPAM MANGLE FOR GODS SAKE while Berserk is active.")]
         public bool BearRaidBerserkFun { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Bear Raid / Instance")]
-        [DisplayName("Auto defensive cooldowns")]
+        [Category("Feral Raid / Instance")]
+        [DisplayName("Bear - Auto defensive cooldowns")]
         [Description("If set to true, it will cast defensive cooldowns automatically.")]
         public bool BearRaidCooldown { get; set; }
 

@@ -85,7 +85,7 @@ namespace Singular.ClassSpecific.Warlock
                 // Single target rotation
                 Spell.Buff("Curse of the Elements"),
                 Spell.Cast("Soul Fire", ret => !StyxWoW.Me.HasAura("Improved Soul Fire")),
-                Spell.Buff("Immolate", true),
+                Spell.Buff("Immolate", true,ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
                 Spell.Cast("Conflagrate"),
                 Spell.Buff("Bane of Doom", true),
                 Spell.Buff("Corruption", true),
@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Warlock
 
                 // Single target rotation
                 Spell.Cast("Soul Fire", ret => !StyxWoW.Me.HasAura("Improved Soul Fire")),
-                Spell.Buff("Immolate", true),
+                Spell.Buff("Immolate", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
                 Spell.Cast("Conflagrate"),
                 Spell.Buff("Bane of Doom", true),
                 Spell.Buff("Corruption", true),

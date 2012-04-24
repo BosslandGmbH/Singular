@@ -108,10 +108,10 @@ namespace Singular.GUI
         { // prevent an exception from closing HB.
             try
             {
-                ((Styx.Helpers.Settings) pgGeneral.SelectedObject).Save();
+                ((Styx.Helpers.Settings)pgGeneral.SelectedObject).Save();
                 if (pgClass.SelectedObject != null)
                 {
-                    ((Styx.Helpers.Settings) pgClass.SelectedObject).Save();
+                    ((Styx.Helpers.Settings)pgClass.SelectedObject).Save();
                 }
                 Close();
             }
@@ -137,6 +137,7 @@ namespace Singular.GUI
         {
             ObjectManager.Update();
             SpellManager.CanCast("Evasion");
+            Logger.Write("Current target is immune to frost? {0}", StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost));
             //var val = Enum.GetValues(typeof(WoWMovement.ClickToMoveType)).GetValue(lastTried++);
             //WoWMovement.ClickToMove(StyxWoW.Me.CurrentTargetGuid, (WoWMovement.ClickToMoveType)val);
             //Logging.Write("Trying " + val);

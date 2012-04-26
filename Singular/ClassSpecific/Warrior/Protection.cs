@@ -15,7 +15,7 @@ namespace Singular.ClassSpecific.Warrior
     public class Protection
     {
         private static string[] _slows;
-        
+
         #region Normal
         [Spec(TalentSpec.ProtectionWarrior)]
         [Behavior(BehaviorType.Combat)]
@@ -35,11 +35,11 @@ namespace Singular.ClassSpecific.Warrior
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 //Free Heal
                 //Spell.Cast("Victory Rush", ret => StyxWoW.Me.CurrentTarget.Distance < 5),
-                new Decorator(ret=>StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Warrior.WarriorEnragedRegenerationHealth,
+                new Decorator(ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Warrior.WarriorEnragedRegenerationHealth,
                     new PrioritySelector(
                         Spell.BuffSelf("Berserker Rage"),
                         Spell.BuffSelf("Enraged Regeneration")
@@ -60,7 +60,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Interupt or reflect
                 Spell.Cast("Spell Reflection", ret => StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me && StyxWoW.Me.CurrentTarget.IsCasting),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 //PVP
                 new Decorator(
@@ -137,7 +137,7 @@ namespace Singular.ClassSpecific.Warrior
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 //Free Heal
                 //Spell.Cast("Victory Rush", ret => StyxWoW.Me.CurrentTarget.Distance < 5),
@@ -162,7 +162,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Interupt or reflect
                 Spell.Cast("Spell Reflection", ret => StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me && StyxWoW.Me.CurrentTarget.IsCasting),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 //PVP
                 new Decorator(
@@ -222,8 +222,67 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Instance
         [Spec(TalentSpec.ProtectionWarrior)]
-        [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
+        [Context(WoWContext.Instances)]
+        [Class(WoWClass.Warrior)]
+        [Priority(500)]
+        public static Composite CreateProtectionWarriorInstancePull()
+        {
+            return new PrioritySelector(
+                // Ensure Target
+                Safers.EnsureTarget(),
+                //face target
+                Movement.CreateFaceTargetBehavior(),
+                // LOS check
+                Movement.CreateMoveToLosBehavior(),
+                // Auto Attack
+                Helpers.Common.CreateAutoAttack(false),
+
+                //Dismount
+                new Decorator(ret => StyxWoW.Me.Mounted,
+                    Helpers.Common.CreateDismount("Pulling")),
+                //Shoot flying targets
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.IsFlying,
+                    new PrioritySelector(
+                        Spell.WaitForCast(),
+                        Spell.Cast("Heroic Throw"),
+                        Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)),
+                        Spell.Cast("Shoot", ret => StyxWoW.Me.CurrentTarget.IsFlying &&
+                            (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
+                        Movement.CreateMoveToTargetBehavior(true, 27f)
+                        )),
+
+                //Buff up
+                Spell.BuffSelf("Commanding Shout", ret => StyxWoW.Me.RagePercent < 20 && SingularSettings.Instance.Warrior.UseWarriorShouts == false),
+                Spell.BuffSelf("Battle Shout", ret => (SingularSettings.Instance.Warrior.UseWarriorShouts || SingularSettings.Instance.Warrior.UseWarriorT12) && !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
+
+              //Charge
+                Spell.Cast(
+                    "Charge",
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < 25 &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
+                    Common.PreventDoubleCharge),
+                //Heroic Leap
+                Spell.CastOnGround(
+                    "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
+                    ret =>
+                    StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
+                    Common.PreventDoubleCharge),
+                Spell.Cast(
+                    "Heroic Throw",
+                    ret =>
+                    !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun") && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+
+                // Move to Melee
+                Movement.CreateMoveToMeleeBehavior(true)
+                );
+        }
+
+        [Spec(TalentSpec.ProtectionWarrior)]
+        [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -239,7 +298,7 @@ namespace Singular.ClassSpecific.Warrior
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 //Free Heal
                 //Spell.Cast("Victory Rush", ret => StyxWoW.Me.CurrentTarget.Distance < 5),
@@ -264,7 +323,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Interupt or reflect
                 Spell.Cast("Spell Reflection", ret => StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me && StyxWoW.Me.CurrentTarget.IsCasting),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 //PVP
                 new Decorator(

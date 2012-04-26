@@ -161,6 +161,7 @@
     <Compile Include="ClassSpecific\Warlock\Destruction.cs" />
     <Compile Include="ClassSpecific\Warlock\Lowbie.cs" />
     <Compile Include="ClassSpecific\Warrior\Arms.cs" />
+    <Compile Include="ClassSpecific\Warrior\Common.cs" />
     <Compile Include="ClassSpecific\Warrior\Fury.cs" />
     <Compile Include="ClassSpecific\Warrior\Lowbie.cs" />
     <Compile Include="ClassSpecific\Warrior\Protection.cs" />

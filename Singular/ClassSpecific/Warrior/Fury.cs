@@ -49,7 +49,7 @@ namespace Singular.ClassSpecific.Warrior
                 //face target
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 // buff up
                 Spell.BuffSelf("Battle Shout", ret => (SingularSettings.Instance.Warrior.UseWarriorShouts || SingularSettings.Instance.Warrior.UseWarriorT12) && !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
@@ -155,7 +155,7 @@ namespace Singular.ClassSpecific.Warrior
                 // Face Target
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 // Low level support
                 new Decorator(ret => StyxWoW.Me.Level < 30,
@@ -197,7 +197,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Interupts
                 new Decorator(
                     ret => SingularSettings.Instance.Warrior.UseWarriorInterupts,
-                    Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
+                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 //Heal up in melee
@@ -279,7 +279,7 @@ namespace Singular.ClassSpecific.Warrior
                 //face target
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 // buff up
                 Spell.BuffSelf("Battle Shout", ret => (SingularSettings.Instance.Warrior.UseWarriorShouts || SingularSettings.Instance.Warrior.UseWarriorT12) && !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
@@ -385,7 +385,7 @@ namespace Singular.ClassSpecific.Warrior
                 // Face Target
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 // Low level support
                 new Decorator(ret => StyxWoW.Me.Level < 30,
@@ -427,7 +427,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Interupts
                 new Decorator(
                     ret => SingularSettings.Instance.Warrior.UseWarriorInterupts,
-                    Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
+                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 //Heal up in melee
@@ -508,7 +508,7 @@ namespace Singular.ClassSpecific.Warrior
                 //face target
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 // buff up
                 Spell.BuffSelf("Battle Shout", ret => (SingularSettings.Instance.Warrior.UseWarriorShouts || SingularSettings.Instance.Warrior.UseWarriorT12) && !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
@@ -614,7 +614,7 @@ namespace Singular.ClassSpecific.Warrior
                 // Face Target
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 // Low level support
                 new Decorator(ret => StyxWoW.Me.Level < 30,
@@ -656,7 +656,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Interupts
                 new Decorator(
                     ret => SingularSettings.Instance.Warrior.UseWarriorInterupts,
-                    Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
+                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 //Heal up in mele

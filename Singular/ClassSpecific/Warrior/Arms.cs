@@ -34,11 +34,11 @@ namespace Singular.ClassSpecific.Warrior
                 // LOS check
                 Movement.CreateMoveToLosBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 //Dismount
                 new Decorator(ret => StyxWoW.Me.Mounted,
-                    Common.CreateDismount("Pulling")),
+                    Helpers.Common.CreateDismount("Pulling")),
                 //Shoot flying targets
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
@@ -61,14 +61,14 @@ namespace Singular.ClassSpecific.Warrior
                     ret =>
                     StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < 25 &&
                     SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
-                    PreventDoubleCharge),
+                    Common.PreventDoubleCharge),
                 //Heroic Leap
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
                     ret =>
                     StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) &&
                     SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
-                    PreventDoubleCharge),
+                    Common.PreventDoubleCharge),
                 Spell.Cast(
                     "Heroic Throw",
                     ret =>
@@ -152,7 +152,7 @@ namespace Singular.ClassSpecific.Warrior
                 // face target
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 // Dispel Bubbles
                 new Decorator(
@@ -197,14 +197,14 @@ namespace Singular.ClassSpecific.Warrior
                            ret =>
                            StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 &&
                            SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false &&
-                           SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
+                           SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
                 //Heroic Leap
                 Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
                                    ret =>
                                    StyxWoW.Me.CurrentTarget.Distance > 9 &&
                                    !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) &&
                                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false &&
-                                   SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
+                                   SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 //use it or lose it
@@ -252,7 +252,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Interupts
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorInterupts,
                     new PrioritySelector(
-                        Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Only pop TD on elites/players
                         Spell.Cast("Throwdown", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && SingularSettings.Instance.Warrior.UseWarriorThrowdown),
                         Spell.Buff("Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
@@ -368,7 +368,7 @@ namespace Singular.ClassSpecific.Warrior
                 // face target
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 // Dispel Bubbles
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
@@ -392,9 +392,9 @@ namespace Singular.ClassSpecific.Warrior
                 //Keep in Battle Stance
                 Spell.BuffSelf("Battle Stance", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rend") || ((StyxWoW.Me.ActiveAuras.ContainsKey("Overpower") || StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood")) && SpellManager.Spells["Mortal Strike"].Cooldown) && StyxWoW.Me.RagePercent <= 75 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),
 
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
+                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
                 //Heroic Leap
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
+                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 //use it or lose it
@@ -423,7 +423,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Interupts
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorInterupts,
                     new PrioritySelector(
-                        Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Only pop TD on elites/players
                         Spell.Cast("Throwdown", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && SingularSettings.Instance.Warrior.UseWarriorThrowdown),
                         Spell.Buff("Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
@@ -539,7 +539,7 @@ namespace Singular.ClassSpecific.Warrior
                 // face target
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
-                Common.CreateAutoAttack(false),
+                Helpers.Common.CreateAutoAttack(false),
 
                 // Dispel Bubbles
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
@@ -563,9 +563,9 @@ namespace Singular.ClassSpecific.Warrior
                 //Keep in Battle Stance
                 Spell.BuffSelf("Battle Stance", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rend") || ((StyxWoW.Me.ActiveAuras.ContainsKey("Overpower") || StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood")) && SpellManager.Spells["Mortal Strike"].Cooldown) && StyxWoW.Me.RagePercent <= 75 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),
 
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
+                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
                 //Heroic Leap
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && PreventDoubleCharge),
+                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 //use it or lose it
@@ -594,7 +594,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Interupts
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorInterupts,
                     new PrioritySelector(
-                        Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Only pop TD on elites/players
                         Spell.Cast("Throwdown", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && SingularSettings.Instance.Warrior.UseWarriorThrowdown),
                         Spell.Buff("Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
@@ -639,18 +639,7 @@ namespace Singular.ClassSpecific.Warrior
         #endregion
 
         #region Utils
-        private static readonly WaitTimer ChargeTimer = new WaitTimer(TimeSpan.FromMilliseconds(2000));
 
-        private static bool PreventDoubleCharge
-        {
-            get
-            {
-                var tmp = ChargeTimer.IsFinished;
-                if (tmp)
-                    ChargeTimer.Reset();
-                return tmp;
-            }
-        }
         static bool HasSpellDeadlyCalm()
         {
             if (SpellManager.HasSpell("Deadly Calm"))

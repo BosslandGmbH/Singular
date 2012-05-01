@@ -123,7 +123,21 @@ namespace Singular.Settings
         [Category("Protection")]
         [DisplayName("Divine Protection Health")]
         [Description("Divine Protection will be used at this value")]
-        public int DivineProtectionHealthProt { get; set; } 
+        public int DivineProtectionHealthProt { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Protection")]
+        [DisplayName("Avengers On Pull Only")]
+        [Description("Only use Avenger's Shield to pull")]
+        public bool AvengersPullOnly { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Protection")]
+        [DisplayName("Consecration Count")]
+        [Description("Consecration will be used when you have more then that many mobs attacking you")]
+        public int ProtConsecrationCount { get; set; }
         #endregion
 
         #region Retribution
@@ -147,14 +161,6 @@ namespace Singular.Settings
         [DisplayName("Heal Health")]
         [Description("Healing will be done at this percentage")]
         public int RetributionHealHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Protection")]
-        [DisplayName("Avengers On Pull Only")]
-        [Description("Only use Avenger's Shield to pull")]
-        public bool AvengersPullOnly { get; set; }
-
 
         [Setting]
         [DefaultValue(true)]

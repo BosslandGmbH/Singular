@@ -15,6 +15,20 @@ namespace Singular.ClassSpecific.Paladin
     public class Protection
     {
         [Class(WoWClass.Paladin)]
+        [Spec(TalentSpec.HolyPaladin)]
+        [Behavior(BehaviorType.Rest)]
+        [Context(WoWContext.All)]
+        public static Composite CreateHolyPaladinRest()
+        {
+            return new PrioritySelector(
+                // Rest up damnit! Do this first, so we make sure we're fully rested.
+                Rest.CreateDefaultRestBehaviour(),
+                // Can we res people?
+                Spell.Resurrect("Redemption"));
+        }
+
+
+        [Class(WoWClass.Paladin)]
         [Spec(TalentSpec.ProtectionPaladin)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
@@ -26,13 +40,13 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret=>(WoWUnit)ret),
+                Helpers.Common.CreateInterruptSpellCast(ret => (WoWUnit)ret),
 
                 // Seal twisting. If our mana gets stupid low, just throw on insight to get some mana back quickly, then put our main seal back on.
                 // This is Seal of Truth once we get it, Righteousness when we dont.
                 Spell.BuffSelf("Seal of Insight", ret => StyxWoW.Me.ManaPercent < 5),
                 Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.ManaPercent >= 5),
-                Spell.BuffSelf("Seal of Righteousness", ret =>StyxWoW.Me.ManaPercent >= 5 && !SpellManager.HasSpell("Seal of Truth")),
+                Spell.BuffSelf("Seal of Righteousness", ret => StyxWoW.Me.ManaPercent >= 5 && !SpellManager.HasSpell("Seal of Truth")),
 
                 // Defensive
                 Spell.BuffSelf("Hand of Freedom",
@@ -44,12 +58,12 @@ namespace Singular.ClassSpecific.Paladin
                                                           WoWSpellMechanic.Slowed,
                                                           WoWSpellMechanic.Snared)),
 
-                Spell.BuffSelf("Divine Shield", 
+                Spell.BuffSelf("Divine Shield",
                     ret => StyxWoW.Me.CurrentMap.IsBattleground && StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance")),
 
-                Spell.Cast("Hand of Reckoning", 
-                    ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), 
-                    ret => StyxWoW.Me.IsInInstance),
+                Spell.Cast("Hand of Reckoning",
+                    ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
+                    ret => SingularSettings.Instance.EnableTaunting && StyxWoW.Me.IsInInstance),
 
                 //Multi target
                 new Decorator(
@@ -57,7 +71,8 @@ namespace Singular.ClassSpecific.Paladin
                     new PrioritySelector(
                         Spell.Cast("Hammer of the Righteous"),
                         Spell.Cast("Hammer of Justice", ctx => !StyxWoW.Me.IsInParty),
-                        Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3 || StyxWoW.Me.CurrentTarget.IsBoss()),
+                        Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= SingularSettings.Instance.Paladin.ProtConsecrationCount 
+                            || StyxWoW.Me.CurrentTarget.IsBoss()),
                         Spell.Cast("Holy Wrath"),
                         Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
                         Spell.BuffSelf("Inquisition"),

@@ -174,7 +174,7 @@ namespace Singular.ClassSpecific.Warrior
                               Item.UseEquippedItem((uint) WoWInventorySlot.Waist)),
 
                 // Hands
-                Item.UseEquippedItem((uint) WoWInventorySlot.Hands),
+                //Item.UseEquippedItem((uint) WoWInventorySlot.Hands),
 
                 //Stance Dancing
                 //Pop over to Zerker
@@ -265,7 +265,7 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.CreateMoveToTargetBehavior(true, 30))),
 
                 // Use Engineering Gloves
-                Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
+                //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 //Execute under 20%
                 Spell.Cast("Execute", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
@@ -384,7 +384,7 @@ namespace Singular.ClassSpecific.Warrior
                 Item.UseEquippedItem((uint)WoWInventorySlot.Waist)),
 
                 // Hands
-                Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
+                //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 //Stance Dancing
                 //Pop over to Zerker
@@ -436,7 +436,7 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.CreateMoveToTargetBehavior(true, 30))),
 
                 // Use Engineering Gloves
-                Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
+                //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 //Execute under 20%
                 Spell.Cast("Execute", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
@@ -555,7 +555,7 @@ namespace Singular.ClassSpecific.Warrior
                 Item.UseEquippedItem((uint)WoWInventorySlot.Waist)),
 
                 // Hands
-                Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
+                //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 //Stance Dancing
                 //Pop over to Zerker
@@ -607,7 +607,7 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.CreateMoveToTargetBehavior(true, 30))),
 
                 // Use Engineering Gloves
-                Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
+                //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 //Execute under 20%
                 Spell.Cast("Execute", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 20),

@@ -198,17 +198,17 @@ namespace Singular.ClassSpecific.Mage
                             ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact") &&
                                    (StyxWoW.Me.CurrentTarget.HasMyAura("Combustion") || TalentManager.GetCount(2, 13) == 0)),
                         Spell.CastOnGround("Blast Wave",
-                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location),
+                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location),
                         Spell.Cast("Dragon's Breath",
                             ret => Clusters.GetClusterCount(StyxWoW.Me.CurrentTarget,
-                                                            Unit.NearbyUnfriendlyUnits,
+                                                            Unit.NearbyUnitsInCombatWithMe,
                                                             ClusterType.Cone, 15f) >= 3),
                         Spell.CastOnGround("Flamestrike",
-                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
+                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location,
                             ret => !ObjectManager.GetObjectsOfType<WoWDynamicObject>().Any(o =>
                                         o.CasterGuid == StyxWoW.Me.Guid && o.Spell.Name == "Flamestrike" &&
                                         o.Location.Distance(
-                                            Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location) < o.Radius))
+                                            Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location) < o.Radius))
                         )),
 
                 Spell.BuffSelf("Time Warp",

@@ -48,6 +48,12 @@ namespace Singular.Helpers
             get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => ValidUnit(p) && p.DistanceSqr <= 40 * 40).ToList(); }
         }
 
+        public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMe
+        {
+            get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => ValidUnit(p) && p.DistanceSqr <= 40 * 40 && p.Combat && p.TaggedByMe).ToList(); }
+        }
+
+
         static bool ValidUnit(WoWUnit p)
         {
             if (IgnoreMobs.Contains(p.Entry))

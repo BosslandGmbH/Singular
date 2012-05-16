@@ -254,6 +254,14 @@ namespace Singular.Settings
         [Description("Prayer of Healing will be used at this value")]
         public int PrayerOfHealing { get; set; }
 
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Discipline")]
+        [DisplayName("Power Word: Shield Health")]
+        [Description("Power Word: Shield will be used at this value")]
+        public int PowerWordShield { get; set; }
+
         [Setting]
         [DefaultValue(3)]
         [Category("Discipline")]

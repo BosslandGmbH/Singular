@@ -113,6 +113,9 @@ namespace Singular.Helpers
                                 if (StyxWoW.Me.IsWanding())
                                     return RunStatus.Failure;
 
+                                if (StyxWoW.Me.ChannelObjectGuid > 0) 
+                                    return RunStatus.Failure;
+
                                 var latency = StyxWoW.WoWClient.Latency * 2;
                                 var castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
                                 if (allowLagTollerance && castTimeLeft != TimeSpan.Zero && StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)

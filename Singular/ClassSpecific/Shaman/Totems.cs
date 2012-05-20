@@ -389,18 +389,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static int TotemsInRangeOf(WoWUnit unit)
         {
-            int count = 0;
-            foreach (WoWTotemInfo t in StyxWoW.Me.Totems)
-            {
-                if (t.Unit != null)
-                {
-                    if (unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem))
-                    {
-                        count++;
-                    }
-                }
-            }
-            return count;
+            return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem));
         }
 
         public static bool TotemIsKnown(WoWTotem totem)

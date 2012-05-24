@@ -24,6 +24,11 @@ namespace Singular.ClassSpecific.Paladin
         Crusader
     }
 
+    enum PaladinBlessings
+    {
+        Auto, Kings, Might
+    }
+
     public class Common
     {
         [Class(WoWClass.Paladin)]
@@ -91,6 +96,8 @@ namespace Singular.ClassSpecific.Paladin
                         ret => StyxWoW.Me,
                         ret =>
                         {
+                            if (SingularSettings.Instance.Paladin.Blessings == PaladinBlessings.Might)
+                                return false;
                             var players = new List<WoWPlayer>();
 
                             if (StyxWoW.Me.IsInRaid)
@@ -104,7 +111,8 @@ namespace Singular.ClassSpecific.Paladin
                                         p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
                                              !p.HasAura("Blessing of Kings") &&
                                              !p.HasAura("Mark of the Wild") &&
-                                             !p.HasAura("Embrace of the Shale Spider"));
+                                             !p.HasAura("Embrace of the Shale Spider")
+                                             );
                         }),
                     Spell.Cast("Blessing of Might",
                         ret => StyxWoW.Me,
@@ -122,9 +130,10 @@ namespace Singular.ClassSpecific.Paladin
                             return players.Any(
                                         p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
                                              !p.HasAura("Blessing of Might") &&
+                                             (SingularSettings.Instance.Paladin.Blessings == PaladinBlessings.Might ||
                                              ((p.HasAura("Blessing of Kings") && !p.HasMyAura("Blessing of Kings")) ||
                                                p.HasAura("Mark of the Wild") ||
-                                               p.HasAura("Embrace of the Shale Spider")));
+                                               p.HasAura("Embrace of the Shale Spider"))));
                         })
                     );
         }

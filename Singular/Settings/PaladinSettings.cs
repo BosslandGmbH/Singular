@@ -22,13 +22,14 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
+
     internal class PaladinSettings : Styx.Helpers.Settings
     {
         public PaladinSettings()
             : base(SingularSettings.SettingsPath + "_Paladin.xml")
         {
         }
-
+        
         #region Common
         [Setting]
         [DefaultValue(PaladinAura.Auto)]
@@ -43,6 +44,13 @@ namespace Singular.Settings
         [DisplayName("Holy Light Health")]
         [Description("Holy Light will be used at this value")]
         public int HolyLightHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(PaladinBlessings.Auto)]
+        [Category("Common")]
+        [DisplayName("Blessings")]
+        [Description("Which Blessing to cast")]
+        public PaladinBlessings Blessings { get; set; }
 
         [Setting]
         [DefaultValue(30)]

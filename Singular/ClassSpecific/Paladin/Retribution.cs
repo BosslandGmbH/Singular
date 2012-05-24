@@ -119,6 +119,13 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
                     Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
 
+                    //Exo is above HoW if we're fighting Undead / Demon
+                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") && StyxWoW.Me.CurrentTarget.IsUndeadOrDemon()),
+                    //Hammer of Wrath if < 20% or Avenging Wrath Buff
+                    Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20 || StyxWoW.Me.ActiveAuras.ContainsKey("Avenging Wrath")),
+                    //Exo if we have Art of War
+                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
+
                     //crusader_strike,if=holy_power<3
                     Spell.Cast("Crusader Strike", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
                         (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4 || !SpellManager.HasSpell("Divine Storm"))),
@@ -132,12 +139,6 @@ namespace Singular.ClassSpecific.Paladin
                         (StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose"))),
                 //templars_verdict,if=buff.divine_purpose.react or templars_verdict,if=holy_power=3
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose") || StyxWoW.Me.CurrentHolyPower == 3),
-                //Exo is above HoW if we're fighting Undead / Demon
-                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") && StyxWoW.Me.CurrentTarget.IsUndeadOrDemon()),
-                //Hammer of Wrath if < 20% or Avenging Wrath Buff
-                    Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20 || StyxWoW.Me.ActiveAuras.ContainsKey("Avenging Wrath")),
-                //Exo if we have Art of War
-                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
                 //judgement,if=set_bonus.tier13_2pc_melee&buff.zealotry.up&holy_power<3
                     Spell.Cast("Judgement", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
                     Spell.Cast("Judgement"),
@@ -146,7 +147,7 @@ namespace Singular.ClassSpecific.Paladin
                 //holy_wrath
                     Spell.Cast("Holy Wrath", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
                 //consecration,not_flying=1,if=mana>16000
-                    Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4 && StyxWoW.Me.CurrentTarget.Distance <= 5),
+                    Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= SingularSettings.Instance.Paladin.ConsecrationCount && StyxWoW.Me.CurrentTarget.Distance <= 5),
                     Spell.Cast("Divine Plea", ret => StyxWoW.Me.CurrentMana < SingularSettings.Instance.Paladin.DivinePleaMana && StyxWoW.Me.HealthPercent > 70),
 
                     // Move to melee is LAST. Period.
@@ -203,14 +204,17 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
                     Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
 
+                    //Hammer of Wrath if < 20% or Avenging Wrath Buff
+                    Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20 || StyxWoW.Me.ActiveAuras.ContainsKey("Avenging Wrath")),
+                    //Exo if we have Art of War
+                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
+
                     Spell.Cast("Crusader Strike", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
                             (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4 || !SpellManager.HasSpell("Divine Storm"))),
                      Spell.Cast("Divine Storm", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
-                    Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20 || StyxWoW.Me.ActiveAuras.ContainsKey("Avenging Wrath")),
                     Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose")),
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose") || StyxWoW.Me.CurrentHolyPower == 3),
-                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
                     Spell.Cast("Judgement"),
                     Spell.Cast("Holy Wrath"),
                     Spell.Cast("Consecration", ret => StyxWoW.Me.CurrentTarget.Distance <= Spell.MeleeRange && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= SingularSettings.Instance.Paladin.ConsecrationCount),
@@ -270,6 +274,13 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
                     Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
 
+                    //Exo is above HoW if we're fighting Undead / Demon
+                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") && StyxWoW.Me.CurrentTarget.IsUndeadOrDemon()),
+                    //Hammer of Wrath if < 20% or Avenging Wrath Buff
+                    Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20 || StyxWoW.Me.ActiveAuras.ContainsKey("Avenging Wrath")),
+                    //Exo is above HoW if we're fighting Undead / Demon
+                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
+
                     //crusader_strike,if=holy_power<3
                     Spell.Cast("Crusader Strike", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
                         (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4 || !SpellManager.HasSpell("Divine Storm"))),
@@ -283,17 +294,12 @@ namespace Singular.ClassSpecific.Paladin
                         (StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose"))),
                 //templars_verdict,if=buff.divine_purpose.react or templars_verdict,if=holy_power=3
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose") || StyxWoW.Me.CurrentHolyPower == 3),
-                //Exo is above HoW if we're fighting Undead / Demon
-                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                //Hammer of Wrath if < 20% or Avenging Wrath Buff
-                    Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20 || StyxWoW.Me.ActiveAuras.ContainsKey("Avenging Wrath")),
                 //judgement,if=set_bonus.tier13_2pc_melee&buff.zealotry.up&holy_power<3
                     Spell.Cast("Judgement", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
                 //holy_wrath
                     Spell.Cast("Holy Wrath"),
                 //consecration,not_flying=1,if=mana>16000
-                    Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4 ||
-                        StyxWoW.Me.ManaPercent > 58.71),
+                    Spell.Cast("Consecration", ret => StyxWoW.Me.CurrentTarget.Distance <= Spell.MeleeRange && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= SingularSettings.Instance.Paladin.ConsecrationCount),
                 //wait,sec=0.1,if=cooldown.crusader_strike.remains<0.2&cooldown.crusader_strike.remains>0
                     Spell.Cast("Divine Plea", ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Paladin.DivinePleaMana),
 

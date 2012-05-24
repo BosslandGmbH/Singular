@@ -67,7 +67,7 @@ namespace Singular.ClassSpecific.Paladin
 
                 //Multi target
                 new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 1,
+                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Any(),
                     new PrioritySelector(
                         Spell.Cast("Hammer of the Righteous"),
                         Spell.Cast("Hammer of Justice", ctx => !StyxWoW.Me.IsInParty),
@@ -89,7 +89,7 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),
                 Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
                 // Don't waste mana on cons if its not a boss.
-                Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3 || StyxWoW.Me.CurrentTarget.IsBoss()),
+                Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= SingularSettings.Instance.Paladin.ProtConsecrationCount),
                 Spell.Cast("Holy Wrath"),
                 Movement.CreateMoveToMeleeBehavior(true));
         }

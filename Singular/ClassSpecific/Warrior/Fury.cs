@@ -87,26 +87,14 @@ namespace Singular.ClassSpecific.Warrior
                             ret => SpellManager.Spells["Intercept"].Cooldown && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
 
                 // Get closer to target
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
-                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f)),
+                Spell.Cast("Charge", ret => PreventDoubleIntercept && StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
+                Spell.Cast("Intercept", ret => PreventDoubleIntercept && StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
-                    ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40),
-
-                //Intercept
-                Spell.Cast(
-                    "Intercept",
-                    ret =>
-                    StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 24 &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
-                    PreventDoubleIntercept),
-                //Heroic Leap
-                Spell.CastOnGround(
-                    "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
-                    ret =>
-                    StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept", 1) &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
-                    PreventDoubleIntercept),
+                    ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40 && PreventDoubleIntercept &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
 
                 // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)
@@ -317,26 +305,14 @@ namespace Singular.ClassSpecific.Warrior
                             ret => SpellManager.Spells["Intercept"].Cooldown && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
 
                 // Get closer to target
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
-                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f)),
+                Spell.Cast("Charge", ret => PreventDoubleIntercept && StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
+                Spell.Cast("Intercept", ret => PreventDoubleIntercept && StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
-                    ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40),
-
-                //Intercept
-                Spell.Cast(
-                    "Intercept",
-                    ret =>
-                    StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 24 &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
-                    PreventDoubleIntercept),
-                //Heroic Leap
-                Spell.CastOnGround(
-                    "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
-                    ret =>
-                    StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept", 1) &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
-                    PreventDoubleIntercept),
+                    ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40 && PreventDoubleIntercept &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
 
                 // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)
@@ -481,7 +457,7 @@ namespace Singular.ClassSpecific.Warrior
         }
         #endregion
 
-        #region Pvp
+        #region Instance
         [Class(WoWClass.Warrior)]
         [Spec(TalentSpec.FuryWarrior)]
         [Behavior(BehaviorType.PreCombatBuffs)]
@@ -546,26 +522,14 @@ namespace Singular.ClassSpecific.Warrior
                             ret => SpellManager.Spells["Intercept"].Cooldown && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
 
                 // Get closer to target
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
-                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f)),
+                Spell.Cast("Charge", ret => PreventDoubleIntercept && StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
+                Spell.Cast("Intercept", ret => PreventDoubleIntercept && StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f) &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
-                    ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40),
-
-                //Intercept
-                Spell.Cast(
-                    "Intercept",
-                    ret =>
-                    StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 24 &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
-                    PreventDoubleIntercept),
-                //Heroic Leap
-                Spell.CastOnGround(
-                    "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
-                    ret =>
-                    StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Intercept", 1) &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser &&
-                    PreventDoubleIntercept),
+                    ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance <= 40 && PreventDoubleIntercept &&
+                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser),
 
                 // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)

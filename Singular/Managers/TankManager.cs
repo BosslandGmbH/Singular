@@ -68,6 +68,12 @@ namespace Singular.Managers
                     continue;
                 }
 
+                if (u.DistanceSqr > 40 * 40)
+                {
+                    units.RemoveAt(i);
+                    continue;
+                }
+
                 if (Unit.IgnoreMobs.Contains(u.Entry))
                 {
                     units.RemoveAt(i);
@@ -82,7 +88,6 @@ namespace Singular.Managers
                     continue;
 
                 units.RemoveAt(i);
-                continue;
             }
         }
 
@@ -91,11 +96,6 @@ namespace Singular.Managers
             foreach (WoWObject i in incomingUnits)
             {
                 var unit = i as WoWUnit;
-
-                if (unit != null && !unit.IsTargetingMyPartyMember &&  i.DistanceSqr > 40 * 40)
-                {
-                    continue;
-                }
 
                 outgoingUnits.Add(i);
             }

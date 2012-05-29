@@ -231,11 +231,11 @@ namespace Singular.ClassSpecific.Mage
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
                         Spell.CastOnGround("Flamestrike", 
-                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
+                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location,
                             ret => !ObjectManager.GetObjectsOfType<WoWDynamicObject>().Any(o => 
                                         o.CasterGuid == StyxWoW.Me.Guid && o.Spell.Name == "Flamestrike" &&
                                         o.Location.Distance(
-                                            Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location) < o.Radius)),
+                                            Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location) < o.Radius)),
                         Spell.Cast("Cone of Cold", 
                             ret => Clusters.GetClusterCount(StyxWoW.Me.CurrentTarget, 
                                                             Unit.NearbyUnfriendlyUnits,

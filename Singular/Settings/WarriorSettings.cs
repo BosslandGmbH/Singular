@@ -26,8 +26,9 @@ namespace Singular.Settings
         {
         }
 
+        #region Protection
         [Setting]
-        [Styx.Helpers.DefaultValue(50)]
+        [DefaultValue(50)]
         [Category("Protection")]
         [DisplayName("Enraged Regeneration Health")]
         [Description("Enrage Regeneration will be used when your health drops below this value")]
@@ -40,6 +41,10 @@ namespace Singular.Settings
         [Description("Shield Wall will be used when your health drops below this value")]
         public int WarriorProtShieldWallHealth { get; set; }
 
+
+        #endregion
+
+        #region DPS
         [Setting]
         [DefaultValue(true)]
         [Category("DPS")]
@@ -84,18 +89,27 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(false)]
-        [Category("Fury")]
-        [DisplayName("Use SMF Rotation")]
-        [Description("True / False if you would like the cc to use a SMF rotation")]
-        public bool UseWarriorSMF { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
         [Category("DPS")]
         [DisplayName("T12 2-Piece")]
         [Description("True / False if you have the T12 2-piece set bonus")]
         public bool UseWarriorT12 { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("DPS")]
+        [DisplayName("Force proper stance?")]
+        [Description("True / False on whether you would like the cc to keep the toon in the proper stance for the spec. Arms:Battle, Fury:Berserker")]
+        public bool UseWarriorKeepStance { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("DPS")]
+        [DisplayName("Use Charge/Intercept/Heroic Leap?")]
+        [Description("True / False if you would like the cc to use any gap closers")]
+        public bool UseWarriorCloser { get; set; }
+        #endregion
+
+        #region Arms
         [Setting]
         [DefaultValue(true)]
         [Category("Arms")]
@@ -118,24 +132,19 @@ namespace Singular.Settings
         public bool UseWarriorThrowdown { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("DPS")]
-        [DisplayName("Use Charge/Intercept/Heroic Leap?")]
-        [Description("True / False if you would like the cc to use any gap closers")]
-        public bool UseWarriorCloser { get; set; }
-
-        [Setting]
         [DefaultValue(false)]
         [Category("Arms")]
         [DisplayName("Stance Dance?")]
         [Description("True / False if you want the cc to stance dance dps on bosses")]
-        public bool UseWarriorStanceDance { get; set; }
+        public bool UseWarriorStanceDance { get; set; } 
+        #endregion
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("DPS")]
-        [DisplayName("Force proper stance?")]
-        [Description("True / False on whether you would like the cc to keep the toon in the proper stance for the spec. Arms:Battle, Fury:Berserker")]
-        public bool UseWarriorKeepStance { get; set; }
+        [DefaultValue(false)]
+        [Category("Fury")]
+        [DisplayName("Use SMF Rotation")]
+        [Description("True / False if you would like the cc to use a SMF rotation")]
+        public bool UseWarriorSMF { get; set; }
+
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using System.Linq;
 using CommonBehaviors.Actions;
-
 using Singular.Settings;
 
 using Styx;

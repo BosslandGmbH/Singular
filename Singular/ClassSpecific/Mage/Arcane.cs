@@ -190,7 +190,7 @@ namespace Singular.ClassSpecific.Mage
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
                         Spell.CastOnGround("Flamestrike", 
-                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
+                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location,
                             ret => !ObjectManager.GetObjectsOfType<WoWDynamicObject>().Any(o => 
                                         o.CasterGuid == StyxWoW.Me.Guid && o.Spell.Name == "Flamestrike" &&
                                         o.Location.Distance(
@@ -201,9 +201,10 @@ namespace Singular.ClassSpecific.Mage
                                                             Unit.NearbyUnfriendlyUnits,
                                                             ClusterType.Radius,
                                                             10f) >= 3),
-                        Spell.CastOnGround("Blizzard", 
-                            ret => StyxWoW.Me.CurrentTarget.Location, 
+                        Spell.CastOnGround("Blizzard",
+                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location,
                             ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10* 10),
+
                         Spell.Cast("Arcane Blast"),
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         )),

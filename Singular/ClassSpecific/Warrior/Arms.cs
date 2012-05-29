@@ -609,13 +609,18 @@ namespace Singular.ClassSpecific.Warrior
                 // Use Engineering Gloves
                 //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
-                //Execute under 20%
-                Spell.Cast("Execute", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
-
                 //Default Rotatiom
                 Spell.Buff("Rend"),
                 Spell.Cast("Colossus Smash"),
+                Spell.Cast("Mortal Strike", ret => (!StyxWoW.Me.HasAura("Slaughter", 3) || StyxWoW.Me.GetAuraTimeLeft("Slaughter", true).TotalSeconds <= 6)
+                                                    && StyxWoW.Me.CurrentTarget.HealthPercent < 20),
+                //Execute when high rage
+                Spell.Cast("Execute", ret => StyxWoW.Me.RagePercent > 30),
+
+                //Default Rotation
                 Spell.Cast("Mortal Strike"),
+                Spell.Cast("Execute", ret => StyxWoW.Me.RagePercent < 30),
+
                 //Bladestorm after dots and MS if against player
                 Spell.Cast("Bladestorm", ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.DistanceSqr < 36 && SingularSettings.Instance.Warrior.UseWarriorBladestorm),
                 Spell.Cast("Overpower"),

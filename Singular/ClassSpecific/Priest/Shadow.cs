@@ -31,6 +31,8 @@ namespace Singular.ClassSpecific.Priest
 
                 Spell.BuffSelf("Power Word: Shield", 
                     ret => SingularSettings.Instance.Priest.UseShieldPrePull && !StyxWoW.Me.HasAura("Weakened Soul") && !SpellManager.HasSpell("Mind Spike")),
+                Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
                 Spell.Buff("Devouring Plague", true, 
                     ret => SingularSettings.Instance.Priest.DevouringPlagueFirst && 
                            (!SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.CurrentTarget.Elite)),
@@ -70,6 +72,9 @@ namespace Singular.ClassSpecific.Priest
                     new PrioritySelector(
                         Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
                         )),
+                // for NPCs immune to shadow damage.
+                Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
 
                 // Before Mind Spike
                 new Decorator(
@@ -171,6 +176,10 @@ namespace Singular.ClassSpecific.Priest
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.BuffSelf("Shadow Form"),
+                // Shadow immune npcs.
+                Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+
                 // AoE Rotation
                 new PrioritySelector(
                     ret => Group.Tanks.FirstOrDefault(t => 
@@ -183,6 +192,8 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Group.Tanks.Any() && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     Spell.Cast("Mind Sear")),
+
+
 
                 // Single target boss rotation
                 new Decorator(

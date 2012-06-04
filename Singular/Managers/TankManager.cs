@@ -18,6 +18,7 @@ using Singular.Helpers;
 using Styx;
 using Styx.Helpers;
 using Styx.Logic;
+using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
@@ -118,7 +119,7 @@ namespace Singular.Managers
 
                 // If we have NO threat on the mob. Taunt the fucking thing.
                 // Don't taunt fleeing mobs!
-                if (aggroDiff < 0 && !u.Fleeing)
+                if (aggroDiff < 0 && !u.Fleeing && !u.IsImmune(WoWSpellSchool.Physical))
                 {
                     NeedToTaunt.Add(u);
                 }

@@ -39,6 +39,8 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
+                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
+
                 Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
                 Spell.Buff("Hunter's Mark"),
                 Spell.BuffSelf("Aspect of the Hawk"),
@@ -53,7 +55,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 // Cooldowns only when there are multiple mobs on normal rotation
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Where(u => u.IsTargetingMeOrPet).Count() >= 2,
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2,
                     new PrioritySelector(
                         Spell.BuffSelf("Rapid Fire",
                             ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
@@ -99,6 +101,8 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
 
                 Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
                 Spell.Buff("Hunter's Mark"),
@@ -166,6 +170,8 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
 
                 Spell.Buff("Hunter's Mark"),
                 Spell.BuffSelf("Aspect of the Hawk"),

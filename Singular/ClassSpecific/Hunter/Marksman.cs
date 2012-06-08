@@ -46,7 +46,10 @@ namespace Singular.ClassSpecific.Hunter
                     ret => StyxWoW.Me.IsCasting && StyxWoW.Me.CastingSpell.Name == "Steady Shot",
                     new Action(ret => DoubleSteadyCast = true)),
                 Spell.WaitForCast(true),
+
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
 
                 Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
                 Spell.Buff("Hunter's Mark"),
@@ -62,7 +65,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 // Cooldowns only when there are multiple mobs on normal rotation
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Where(u => u.IsTargetingMeOrPet).Count() >= 2,
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2,
                     new PrioritySelector(
                         Spell.BuffSelf("Readiness",
                             ret => !StyxWoW.Me.HasAura("Rapid Fire") && SpellManager.HasSpell("Rapid Fire") &&
@@ -114,6 +117,8 @@ namespace Singular.ClassSpecific.Hunter
                     new Action(ret => DoubleSteadyCast = true)),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
 
                 Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
                 Spell.Buff("Hunter's Mark"),
@@ -187,7 +192,10 @@ namespace Singular.ClassSpecific.Hunter
                     new Action(ret => DoubleSteadyCast = true)),
 
                 Spell.WaitForCast(true),
+
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
 
                 Spell.Buff("Hunter's Mark"),
                 Spell.BuffSelf("Aspect of the Hawk"),

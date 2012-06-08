@@ -124,7 +124,8 @@ namespace Singular.Helpers
                                 if (faceDuring && StyxWoW.Me.ChanneledCastingSpellId == 0)
                                     Movement.CreateFaceTargetBehavior();
 
-                                return RunStatus.Running;
+                               // return RunStatus.Running;
+                                return RunStatus.Success; 
                             });
         }
 

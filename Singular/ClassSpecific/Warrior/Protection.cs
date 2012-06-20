@@ -57,7 +57,15 @@ namespace Singular.ClassSpecific.Warrior
                     (SingularSettings.Instance.Warrior.UseWarriorShouts || SingularSettings.Instance.Warrior.UseWarriorT12) &&
                     !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
                 //Charge
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f) && StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
+                Spell.Cast(
+                    "Charge",
+                    ret => SpellManager.HasSpell("Charge")
+                           &&
+                           StyxWoW.Me.CurrentTarget.Distance.Between(
+                               SpellManager.Spells["Charge"].ActualMinRange(StyxWoW.Me.CurrentTarget),
+                               TalentManager.HasGlyph("Long Charge")
+                                   ? SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget) + 5
+                                   : SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget))),
                 //Heroic Leap
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
@@ -131,7 +139,15 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(false),
                 //Close cap on target
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f) && StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
+                Spell.Cast(
+                    "Charge",
+                    ret => SpellManager.HasSpell("Charge")
+                           &&
+                           StyxWoW.Me.CurrentTarget.Distance.Between(
+                               SpellManager.Spells["Charge"].ActualMinRange(StyxWoW.Me.CurrentTarget),
+                               TalentManager.HasGlyph("Long Charge")
+                                   ? SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget) + 5
+                                   : SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget))),
                 Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f)),
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
@@ -235,7 +251,15 @@ namespace Singular.ClassSpecific.Warrior
                     (SingularSettings.Instance.Warrior.UseWarriorShouts || SingularSettings.Instance.Warrior.UseWarriorT12) &&
                     !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
                 //Charge
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f) && StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
+                Spell.Cast(
+                    "Charge",
+                    ret => SpellManager.HasSpell("Charge")
+                           &&
+                           StyxWoW.Me.CurrentTarget.Distance.Between(
+                               SpellManager.Spells["Charge"].ActualMinRange(StyxWoW.Me.CurrentTarget),
+                               TalentManager.HasGlyph("Long Charge")
+                                   ? SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget) + 5
+                                   : SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget))),
                 //Heroic Leap
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
@@ -309,7 +333,16 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(false),
                 //Close cap on target
-                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f) && StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
+                Spell.Cast(
+                    "Charge",
+                    ret => SpellManager.HasSpell("Charge")
+                           &&
+                           StyxWoW.Me.CurrentTarget.Distance.Between(
+                               SpellManager.Spells["Charge"].ActualMinRange(StyxWoW.Me.CurrentTarget),
+                               TalentManager.HasGlyph("Long Charge")
+                                   ? SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget) + 5
+                                   : SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget))),
+
                 Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f)),
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
@@ -380,7 +413,15 @@ namespace Singular.ClassSpecific.Warrior
                     (SingularSettings.Instance.Warrior.UseWarriorShouts || SingularSettings.Instance.Warrior.UseWarriorT12) &&
                     !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
                 //Charge
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f) && StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
+                Spell.Cast(
+                    "Charge",
+                    ret => SpellManager.HasSpell("Charge")
+                           &&
+                           StyxWoW.Me.CurrentTarget.Distance.Between(
+                               SpellManager.Spells["Charge"].ActualMinRange(StyxWoW.Me.CurrentTarget),
+                               TalentManager.HasGlyph("Long Charge")
+                                   ? SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget) + 5
+                                   : SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget))),
                 //Heroic Leap
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
@@ -454,7 +495,16 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(false),
                 //Close cap on target
-                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f) && StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
+                Spell.Cast(
+                    "Charge",
+                    ret => SpellManager.HasSpell("Charge")
+                           &&
+                           StyxWoW.Me.CurrentTarget.Distance.Between(
+                               SpellManager.Spells["Charge"].ActualMinRange(StyxWoW.Me.CurrentTarget),
+                               TalentManager.HasGlyph("Long Charge")
+                                   ? SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget) + 5
+                                   : SpellManager.Spells["Charge"].ActualMaxRange(StyxWoW.Me.CurrentTarget))),
+
                 Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance.Between(8f, 25f)),
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,

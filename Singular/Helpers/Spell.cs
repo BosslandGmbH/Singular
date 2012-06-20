@@ -915,5 +915,18 @@ namespace Singular.Helpers
 
         public static float SafeMeleeRange { get { return Math.Max(MeleeRange - 1f, 5f); } }
 
+        public static float ActualMaxRange(this WoWSpell spell, WoWUnit unit)
+        {
+            if (spell.MaxRange == 0)
+                return 0;
+           return unit != null ? spell.MaxRange + unit.CombatReach + 1f : spell.MaxRange;
+        }
+
+        public static float ActualMinRange(this WoWSpell spell, WoWUnit unit)
+        {
+            if (spell.MinRange == 0)
+                return 0;
+            return unit != null ? spell.MinRange + unit.CombatReach + 1.6666667f : spell.MinRange;
+        }
     }
 }

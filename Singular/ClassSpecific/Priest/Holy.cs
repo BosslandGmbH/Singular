@@ -60,7 +60,9 @@ namespace Singular.ClassSpecific.Priest
                         new Decorator(
                             ret => moveInRange,
                             Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
-
+                        // use fade to drop aggro.
+                        Spell.Cast("Fade", ret => (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
+    
                         Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= 80 && StyxWoW.Me.GotTarget),
 
                         Spell.BuffSelf("Desperate Prayer", ret => StyxWoW.Me.HealthPercent <= 50),

@@ -7,6 +7,7 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Logic;
 using Styx.Logic.Combat;
 using Styx.WoWInternals.WoWObjects;
 using TreeSharp;
@@ -176,6 +177,10 @@ namespace Singular.ClassSpecific.Priest
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.BuffSelf("Shadow Form"),
+
+                // use fade to drop aggro.
+                Spell.Cast("Fade", ret => (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
+
                 // Shadow immune npcs.
                 Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
                 Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),

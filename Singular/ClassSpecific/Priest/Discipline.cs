@@ -62,6 +62,8 @@ namespace Singular.ClassSpecific.Priest
                         // Ensure we're in range of the unit to heal, and it's in LOS.
                         //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
                         //Spell.Buff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
+                        // use fade to drop aggro.
+                        Spell.Cast("Fade", ret => (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
                         Spell.Buff(
                             "Power Word: Shield",
                             ret => (WoWUnit)ret,

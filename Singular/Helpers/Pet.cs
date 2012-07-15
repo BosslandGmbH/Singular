@@ -1,5 +1,6 @@
 ﻿using CommonBehaviors.Actions;
 using Singular.Managers;
+using Singular.Settings;
 using Styx;
 using Styx.Logic.Combat;
 using TreeSharp;
@@ -13,7 +14,7 @@ namespace Singular.Helpers
         public static Composite CreateSummonPet(string petName)
         {
             return new Decorator(
-                ret => !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished,
+                ret => !SingularSettings.Instance.DisablePetUsage && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished,
                 new Sequence(
                     new Action(ret => PetManager.CallPet(petName)),
                     Helpers.Common.CreateWaitForLagDuration(),

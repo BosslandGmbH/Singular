@@ -107,6 +107,13 @@ namespace Singular.Settings
         [Description("Enabling that will disable non combat behaviors. (Rest, PreCombat buffs)")]
         public bool DisableNonCombatBehaviors { get; set; }
 
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Misc")]
+        [DisplayName("Disable Pet usage")]
+        [Description("Enabling that will disable pet usage")]
+        public bool DisablePetUsage { get; set; }
         #endregion
 
         #region Category: Healing

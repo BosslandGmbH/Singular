@@ -112,7 +112,8 @@ namespace Singular.ClassSpecific.Mage
        static readonly uint[] RefreshmentTableIds = new uint[]
                                          {
                                              186812,
-                                             207386
+                                             207386,
+                                             207387
                                          };
 
         static private WoWGameObject MageTable

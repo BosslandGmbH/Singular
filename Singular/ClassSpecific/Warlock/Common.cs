@@ -3,6 +3,7 @@ using System.Threading;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
+using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
@@ -88,6 +89,8 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockRest()
         {
             return new PrioritySelector(
+                new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && StyxWoW.Me.GotAlivePet,
+                    new Action(ctx => Lua.DoString("PetDismiss()"))),
                 new Decorator(
                     ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name.Contains("Summon") && StyxWoW.Me.GotAlivePet,
                     new Action(ctx => SpellManager.StopCasting())),

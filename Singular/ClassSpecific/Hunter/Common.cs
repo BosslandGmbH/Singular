@@ -46,7 +46,12 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.WaitForCast(true),
                 Spell.BuffSelf("Aspect of the Hawk"),
                 Spell.BuffSelf("Track Hidden"),
-                CreateHunterCallPetBehavior(true),
+                new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && StyxWoW.Me.GotAlivePet,
+                    new Action(ctx => SpellManager.Cast("Dismiss Pet"))),
+
+                new Decorator(ctx => !SingularSettings.Instance.DisablePetUsage,
+                    CreateHunterCallPetBehavior(true)),
+
                 Spell.Cast(
                     "Mend Pet",
                     ret =>
@@ -154,7 +159,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterCallPetBehavior(bool reviveInCombat)
         {
             return new Decorator(
-                ret => !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished,
+                ret =>  !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished,
                 new PrioritySelector(
                     Spell.WaitForCast(),
                     new Decorator(

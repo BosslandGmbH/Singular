@@ -50,12 +50,11 @@ namespace Singular.ClassSpecific.Hunter
                     new Action(ctx => SpellManager.Cast("Dismiss Pet"))),
 
                 new Decorator(ctx => !SingularSettings.Instance.DisablePetUsage,
-                    CreateHunterCallPetBehavior(true)),
-
-                Spell.Cast(
-                    "Mend Pet",
-                    ret =>
-                    (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !StyxWoW.Me.Pet.HasAura("Mend Pet"))
+                    new PrioritySelector(
+                        CreateHunterCallPetBehavior(true),
+                        Spell.Cast("Mend Pet", ret => (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !StyxWoW.Me.Pet.HasAura("Mend Pet"))
+                        )
+                    )
                 );
         }
 

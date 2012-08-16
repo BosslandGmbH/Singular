@@ -77,7 +77,7 @@ namespace Singular.ClassSpecific.Warrior
                 // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
-        } 
+        }
         #endregion
 
         #region Normal
@@ -171,7 +171,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Rocket belt!
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 20,
-                              Item.UseEquippedItem((uint) WoWInventorySlot.Waist)),
+                              Item.UseEquippedItem((uint)WoWInventorySlot.Waist)),
 
                 // Hands
                 //Item.UseEquippedItem((uint) WoWInventorySlot.Hands),
@@ -233,7 +233,7 @@ namespace Singular.ClassSpecific.Warrior
                     Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3 &&
                     SingularSettings.Instance.Warrior.UseWarriorAOE,
                     new PrioritySelector(
-                        // recklessness gets to be used in any stance soon
+                // recklessness gets to be used in any stance soon
                         Spell.BuffSelf("Recklessness",
                                        ret =>
                                        SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns &&
@@ -243,8 +243,8 @@ namespace Singular.ClassSpecific.Warrior
                                    ret =>
                                    SingularSettings.Instance.Warrior.UseWarriorBladestorm &&
                                    StyxWoW.Me.CurrentTarget.DistanceSqr < 36),
-                        // cast rend if target doesn't have it and player has 'Blood and Thunder' talent
-                        Spell.Cast("Rend", ret => TalentManager.GetCount(3,3) > 0 && !StyxWoW.Me.CurrentTarget.HasAura("Rend")),
+                // cast rend if target doesn't have it and player has 'Blood and Thunder' talent
+                        Spell.Cast("Rend", ret => TalentManager.GetCount(3, 3) > 0 && !StyxWoW.Me.CurrentTarget.HasAura("Rend")),
                         Spell.Cast("Thunder Clap"),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
@@ -293,7 +293,7 @@ namespace Singular.ClassSpecific.Warrior
                 //ensure were in melee
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
-        } 
+        }
         #endregion
 
         #region Pvp
@@ -370,14 +370,8 @@ namespace Singular.ClassSpecific.Warrior
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
 
-                // Dispel Bubbles
-                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
-                    new PrioritySelector(
-                        Spell.WaitForCast(),
-                        Movement.CreateEnsureMovementStoppedBehavior(),
-                        Spell.Cast("Shattering Throw"),
-                        Movement.CreateMoveToTargetBehavior(true, 30f)
-                        )),
+                Spell.BuffSelf("Battle Shout", ret => !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
+                Spell.BuffSelf("Commanding Shout", ret => StyxWoW.Me.RagePercent < 20),
 
                 //Rocket belt!
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.Distance > 20,
@@ -386,13 +380,12 @@ namespace Singular.ClassSpecific.Warrior
                 // Hands
                 //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
-                //Stance Dancing
-                //Pop over to Zerker
-                Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Rend") && !StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood") && StyxWoW.Me.RagePercent < 75 && StyxWoW.Me.CurrentTarget.IsBoss() && SingularSettings.Instance.Warrior.UseWarriorStanceDance),
                 //Keep in Battle Stance
                 Spell.BuffSelf("Battle Stance", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Rend") || ((StyxWoW.Me.ActiveAuras.ContainsKey("Overpower") || StyxWoW.Me.ActiveAuras.ContainsKey("Taste for Blood")) && SpellManager.Spells["Mortal Strike"].Cooldown) && StyxWoW.Me.RagePercent <= 75 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),
 
                 Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
+
+                Spell.Cast("Intercept", ret => StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance <= 25 && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
                 //Heroic Leap
                 Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false && SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
 
@@ -405,8 +398,8 @@ namespace Singular.ClassSpecific.Warrior
                 // Melee slow
                 Spell.Cast("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
 
-             //freebie dps - use it if it's available
-                Spell.Cast("Victory Rush"),
+                //Melee Heal
+                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 80),
 
                 // AOE
                 new Decorator(ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3 && SingularSettings.Instance.Warrior.UseWarriorAOE,
@@ -416,7 +409,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.BuffSelf("Sweeping Strikes"),
                         Spell.Cast("Bladestorm", ret => SingularSettings.Instance.Warrior.UseWarriorBladestorm && StyxWoW.Me.CurrentTarget.DistanceSqr < 36),
                         Spell.Cast("Rend", ret => TalentManager.GetCount(3, 3) > 0 && !StyxWoW.Me.CurrentTarget.HasAura("Rend")),
-                        Spell.Cast("Thunder Clap"), 
+                        Spell.Cast("Thunder Clap"),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
 
@@ -425,30 +418,29 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Only pop TD on elites/players
-                        Spell.Cast("Throwdown", ret => (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.Elite) && SingularSettings.Instance.Warrior.UseWarriorThrowdown),
                         Spell.Buff("Intimidating Shout", ret => StyxWoW.Me.CurrentTarget.Distance < 8 && StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.IsCasting && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false))),
 
-                        new Decorator(ret => StyxWoW.Me.CurrentTarget.IsBoss() && StyxWoW.Me.CurrentTarget.HealthPercent <= 25,
+                // Use Engineering Gloves
+                //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),                
+
+                // Dispel Bubbles
+                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
                     new PrioritySelector(
                         Spell.WaitForCast(),
                         Movement.CreateEnsureMovementStoppedBehavior(),
                         Spell.Cast("Shattering Throw"),
-                        Movement.CreateMoveToTargetBehavior(true, 30))),
-
-                // Use Engineering Gloves
-                //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
-
+                        Movement.CreateMoveToTargetBehavior(true, 30f)
+                        )),
                 //Execute under 20%
                 Spell.Cast("Execute", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
 
                 //Default Rotatiom
+                Spell.Buff("Overpower"),
                 Spell.Buff("Rend"),
-                Spell.Cast("Colossus Smash"),
+                Spell.Cast("Throwdown", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 30 || StyxWoW.Me.HealthPercent < 60),
+                Spell.Cast("Colossus Smash", ret => StyxWoW.Me.HasAura("Sudden Death", 1)),
                 Spell.Cast("Mortal Strike"),
-                //Bladestorm after dots and MS if against player
-                Spell.Cast("Bladestorm", ret => StyxWoW.Me.CurrentTarget.IsPlayer && StyxWoW.Me.CurrentTarget.DistanceSqr < 36 && SingularSettings.Instance.Warrior.UseWarriorBladestorm),
-                Spell.Cast("Overpower"),
-                Spell.Cast("Slam", ret => StyxWoW.Me.RagePercent > 40 && SingularSettings.Instance.Warrior.UseWarriorSlamTalent),
+                //Spell.Cast("Slam", ret => StyxWoW.Me.RagePercent > 40 && SingularSettings.Instance.Warrior.UseWarriorSlamTalent),
 
                 Spell.Cast("Cleave", ret =>
                     // Only even think about Cleave for more than 2 mobs. (We're probably best off using melee range)
@@ -660,7 +652,7 @@ namespace Singular.ClassSpecific.Warrior
 
             // We don't know CS. So just check if we have 60 rage to use cleave.
             return StyxWoW.Me.RagePercent > 60;
-        } 
+        }
         #endregion
     }
 }

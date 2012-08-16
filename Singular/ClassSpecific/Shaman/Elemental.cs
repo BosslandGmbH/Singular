@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 283 && SpellManager.HasSpell("Flametongue Weapon") &&
+                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 283 && StyxWoW.Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass != WoWItemWeaponClass.FishingPole && SpellManager.HasSpell("Flametongue Weapon") &&
                             SpellManager.CanCast("Flametongue Weapon", null, false, false),
                     new Sequence(
                         new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),

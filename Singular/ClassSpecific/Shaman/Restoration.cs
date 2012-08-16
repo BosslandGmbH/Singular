@@ -46,7 +46,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.BuffSelf("Water Shield"),
 
                 new Decorator(
-                    ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Earthliving"),
+                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 3345,  
                     Spell.Cast("Earthliving Weapon"))
                 );
         }

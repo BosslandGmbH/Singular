@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && SpellManager.HasSpell("Flametongue Weapon") &&
+                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 283 && SpellManager.HasSpell("Flametongue Weapon") &&
                             SpellManager.CanCast("Flametongue Weapon", null, false, false),
                     new Sequence(
                         new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),
@@ -155,7 +155,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => (StyxWoW.Me.HasAura("Lightning Shield", 7) || TalentManager.GetCount(1, 13) == 0) &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),
                 Spell.Cast("Unleash Elements",
-                    ret => Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
+                    ret => (StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 8024) && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
                 Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
                 Spell.Cast("Lightning Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -213,7 +213,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => (StyxWoW.Me.HasAura("Lightning Shield", 7) || TalentManager.GetCount(1, 13) == 0) &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),
                 Spell.Cast("Unleash Elements",
-                    ret => Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
+                    ret => (StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 8024) && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
                 Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
                 Spell.Cast("Lightning Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -270,8 +270,8 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Earth Shock", 
                     ret => (StyxWoW.Me.HasAura("Lightning Shield", 7) || TalentManager.GetCount(1,13) == 0) &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),
-                Spell.Cast("Unleash Elements", 
-                    ret => Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
+                Spell.Cast("Unleash Elements",
+                    ret => (StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 8024) && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
                 Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
                 Spell.Cast("Lightning Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)

@@ -32,14 +32,14 @@ namespace Singular.ClassSpecific.Shaman
             return new PrioritySelector(
 
                 new Decorator(
-                    ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Windfury") && SpellManager.HasSpell("Windfury Weapon") && 
+                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 283 && SpellManager.HasSpell("Windfury Weapon") && 
                             SpellManager.CanCast("Windfury Weapon", null, false, false),
                     new Sequence(
                         new Action(ret => Lua.DoString("CancelItemTempEnchantment(1) CancelItemTempEnchantment(2)")),
                         new Action(ret => Logger.Write("Imbuing main hand weapon with Windfury")),
                         new Action(ret => SpellManager.Cast("Windfury Weapon", null)))),
                 new Decorator(
-                    ret => !Item.HasWeaponImbue(WoWInventorySlot.MainHand, "Flametongue") && !SpellManager.HasSpell("Windfury Weapon") &&
+                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 5 && !SpellManager.HasSpell("Windfury Weapon") &&
                             SpellManager.CanCast("Flametongue Weapon", null, false, false),
                     new Sequence(
                         new Action(ret => Lua.DoString("CancelItemTempEnchantment(1) CancelItemTempEnchantment(2)")),
@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => StyxWoW.Me.Inventory.Equipped.OffHand != null && 
                            StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon &&
-                           !Item.HasWeaponImbue(WoWInventorySlot.OffHand, "Flametongue") && 
+                           StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id != 5 && 
                            StyxWoW.Me.Inventory.Equipped.MainHand != null && StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment != null &&
                            SpellManager.CanCast("Flametongue Weapon", null, false, false),
                     new Sequence(

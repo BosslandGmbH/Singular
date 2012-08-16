@@ -12,9 +12,7 @@
 #endregion
 
 using System;
-
 using Singular.Managers;
-
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Logic.Combat;
@@ -77,6 +75,8 @@ namespace Singular.Helpers
                         return true;
                     case WoWClass.Priest:
                         return true;
+					//case WoWClass.Monk
+						//return true;
                 }
                 return false;
             }
@@ -94,6 +94,8 @@ namespace Singular.Helpers
                         return true;
                     case WoWClass.Paladin:
                         return true;
+                        //case WoWClass.Monk:
+                        //return true;
                 }
                 return false;
             }
@@ -141,6 +143,9 @@ namespace Singular.Helpers
                         // Priests can dispel magic natively.
                     case WoWClass.Priest:
                         return true;
+
+                        //case WoWClass.Monk: // Monks need the passive talent "internal medicine" ~lvl 20
+                        //return StyxWoW.Me.HasAura("Internal Medicine");
                 }
                 return false;
             }
@@ -155,7 +160,7 @@ namespace Singular.Helpers
             DispelCapabilities ret = DispelCapabilities.None;
             foreach(var debuff in unit.Debuffs.Values)
             {
-                switch(debuff.Spell.DispelType)
+                switch (debuff.Spell.DispelType)
                 {
                     case WoWDispelType.Magic:
                         ret |= DispelCapabilities.Magic;

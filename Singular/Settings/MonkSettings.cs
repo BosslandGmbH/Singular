@@ -11,7 +11,6 @@
 
 #endregion
 
-
 namespace Singular.Settings
 {
     internal class MonkSettings : Styx.Helpers.Settings

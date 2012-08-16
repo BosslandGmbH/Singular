@@ -250,7 +250,7 @@ namespace Singular.Helpers
                     //Logger.WriteDebug("OnUnit: " + onUnit(ret));
                     //Logger.WriteDebug("CanCast: " + SpellManager.CanCast(name, onUnit(ret), false));
 
-                    var minReqs = requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null;
+                    var minReqs = requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null;
                     var canCast = false;
                     var inRange = false;
                     if (minReqs)

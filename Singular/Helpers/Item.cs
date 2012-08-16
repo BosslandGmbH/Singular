@@ -21,20 +21,23 @@ namespace Singular.Helpers
             return StyxWoW.Me.CarriedItems.Any(i => i.Entry == itemId);
         }
 
-        public static bool HasWeaponImbue(WoWInventorySlot slot, string imbueName)
+        public static bool HasWeaponImbue(WoWInventorySlot slot, string imbueName, int imbueId)
         {
-            //Logger.Write("Checking Weapon Imbue on " + slot + " for " + imbueName);
+            Logger.Write("Checking Weapon Imbue on " + slot + " for " + imbueName);
             var item = StyxWoW.Me.Inventory.Equipped.GetEquippedItem(slot);
             if (item == null)
             {
-                //Logger.Write("We have no " + slot + " equipped!");
+                Logger.Write("We have no " + slot + " equipped!");
                 return true;
             }
 
             var enchant = item.TemporaryEnchantment;
-            //if (enchant != null)
-            //    Logger.Write("Enchant: " + enchant.Name + " - " + (enchant.Name == imbueName));
-            return enchant != null && enchant.Name == imbueName;
+            if (enchant != null)
+                Logger.Write("VerzauberungsName: " + enchant.Name );
+                Logger.Write("VerzauberungsID: " + enchant.Id);
+                Logger.Write("ImbueName: " + imbueName);
+                Logger.Write("Enchant: " + enchant.Name + " - " + (enchant.Name == imbueName));
+            return enchant != null && enchant.Name == imbueName || imbueId == enchant.Id;
         }
 
 

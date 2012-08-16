@@ -91,7 +91,7 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 10 * 10 && u.IsCrowdControlled()),
                     new PrioritySelector(
-                        Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") && StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.ManaPercent >=12),
+                        Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.Mounted && !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") && StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.ManaPercent >= 12),
                         Spell.BuffSelf("Frost Nova", 
                             ret => Unit.NearbyUnfriendlyUnits.Any(u => 
                                             u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") && 
@@ -156,7 +156,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
                 Spell.BuffSelf("Blink", ret => StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted()),
                 Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
-                Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") && StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.ManaPercent >= 12),
+                Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.Mounted && !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") && StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.ManaPercent >= 12),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") && !u.HasAura("Frost Nova") && !u.Stunned)),
 
                 Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),

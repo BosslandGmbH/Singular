@@ -158,7 +158,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterCallPetBehavior(bool reviveInCombat)
         {
             return new Decorator(
-                ret =>  SingularSettings.Instance.DisablePetUsage && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished,
+                ret =>  !SingularSettings.Instance.DisablePetUsage && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished,
                 new PrioritySelector(
                     Spell.WaitForCast(),
                     new Decorator(

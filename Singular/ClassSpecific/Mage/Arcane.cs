@@ -189,12 +189,12 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
-                        Spell.CastOnGround("Flamestrike", 
-                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location,
+                        Spell.CastOnGround("Flamestrike",
+                            ret => Clusters.GetBestUnitForCluster(StyxWoW.Me.Combat ? Unit.NearbyUnitsInCombatWithMe : Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
                             ret => !ObjectManager.GetObjectsOfType<WoWDynamicObject>().Any(o => 
                                         o.CasterGuid == StyxWoW.Me.Guid && o.Spell.Name == "Flamestrike" &&
                                         o.Location.Distance(
-                                            Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location) < o.Radius)),
+                                            Clusters.GetBestUnitForCluster(StyxWoW.Me.Combat ? Unit.NearbyUnitsInCombatWithMe : Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location) < o.Radius)),
                         Spell.Cast("Arcane Explosion",
                             ret => StyxWoW.Me.HasAura("Arcane Blast", 3) &&
                                    Clusters.GetClusterCount(StyxWoW.Me,
@@ -202,7 +202,7 @@ namespace Singular.ClassSpecific.Mage
                                                             ClusterType.Radius,
                                                             10f) >= 3),
                         Spell.CastOnGround("Blizzard",
-                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location,
+                            ret => Clusters.GetBestUnitForCluster(StyxWoW.Me.Combat ? Unit.NearbyUnitsInCombatWithMe : Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
                             ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10* 10),
 
                         Spell.Cast("Arcane Blast"),

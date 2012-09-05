@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Styx.Logic.Combat;
+﻿using System.Collections.Generic;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Managers

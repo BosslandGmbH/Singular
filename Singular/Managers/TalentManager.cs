@@ -17,7 +17,6 @@ using System.Linq;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic.Combat;
 using Styx.WoWInternals;
 
 namespace Singular.Managers
@@ -142,7 +141,7 @@ namespace Singular.Managers
             //bool isExtraSpec = false;
 
             // Keep the frame stuck so we can do a bunch of injecting at once.
-            using (new FrameLock())
+            using (StyxWoW.Memory.AcquireFrame())
             {
                 Talents.Clear();
                 for (int tab = 1; tab <= 3; tab++)

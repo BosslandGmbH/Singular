@@ -6,10 +6,10 @@ using Singular.Managers;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic;
+using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
-using Styx.Logic.Combat;
+using Styx.TreeSharp;
+
 
 namespace Singular.ClassSpecific.Warlock
 {

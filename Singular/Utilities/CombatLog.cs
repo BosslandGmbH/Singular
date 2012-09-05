@@ -15,7 +15,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-using Styx.Logic.Combat;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 

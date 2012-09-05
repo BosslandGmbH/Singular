@@ -6,9 +6,9 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic.Combat;
-using Styx.Logic.Pathing;
-using TreeSharp;
+using Styx.Pathing;
+using Styx.TreeSharp;
+using Styx.WoWInternals;
 
 namespace Singular.ClassSpecific.DeathKnight
 {

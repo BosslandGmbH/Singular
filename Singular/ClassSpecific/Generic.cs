@@ -1,16 +1,4 @@
-﻿using System.Linq;
-using Singular.Dynamics;
-using Singular.Helpers;
-using Singular.Managers;
-using Singular.Settings;
-using Styx;
-using Styx.Combat.CombatRoutine;
-using Styx.Logic.Combat;
-using Styx.Logic.Inventory;
-using Styx.WoWInternals;
-using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
-
+﻿
 namespace Singular.ClassSpecific
 {
     public static class Generic

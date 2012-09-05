@@ -11,17 +11,10 @@
 
 #endregion
 
-using System;
-using System.Collections.Generic;
 using System.Drawing;
-
 using Singular.Settings;
-
 using Styx.Helpers;
-
-using TreeSharp;
-
-using Action = TreeSharp.Action;
+using Styx.TreeSharp;
 
 namespace Singular
 {
@@ -65,9 +58,10 @@ namespace Singular
         }
     }
 
-    public class LogMessage:Action
+    public class LogMessage : Action
     {
-        private string message;
+        private readonly string message;
+
         public LogMessage(string message)
         {
             this.message = message;

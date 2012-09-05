@@ -2,10 +2,9 @@
 using Singular.Helpers;
 using Singular.Managers;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic;
-using Styx.Logic.Combat;
+using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
+using Styx.TreeSharp;
 using Styx;
 using System.Linq;
 

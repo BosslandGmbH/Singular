@@ -5,12 +5,13 @@ using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.CommonBot;
+using Styx.TreeSharp;
 
-using TreeSharp;
-using Styx.Logic.Combat;
 using Styx.Helpers;
 using System;
-using Action = TreeSharp.Action;
+using Styx.WoWInternals;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Warrior
 {

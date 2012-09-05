@@ -16,9 +16,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Singular.Helpers;
 using Styx;
-using Styx.Helpers;
-using Styx.Logic;
-using Styx.Logic.Combat;
+using Styx.Common.Helpers;
+using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 

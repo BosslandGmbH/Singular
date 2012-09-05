@@ -6,11 +6,11 @@ using CommonBehaviors.Actions;
 using Singular.Settings;
 
 using Styx;
+using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
 using System.Collections.Generic;
-using Action = TreeSharp.Action;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.Helpers
 {

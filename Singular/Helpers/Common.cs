@@ -2,11 +2,11 @@
 
 using Singular.Managers;
 using Styx;
-using Styx.Combat.CombatRoutine;
+using Styx.Common.Helpers;
+using Styx.CommonBot;
 using Styx.Helpers;
-using Styx.Logic.Combat;
-using TreeSharp;
-using Action = TreeSharp.Action;
+using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals;
 using CommonBehaviors.Actions;
 
@@ -168,6 +168,7 @@ namespace Singular.Helpers
         {
             get
             {
+                
                 var tmp = InterruptTimer.IsFinished;
                 if (tmp)
                     InterruptTimer.Reset();

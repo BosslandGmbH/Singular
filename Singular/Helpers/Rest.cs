@@ -1,18 +1,16 @@
 ﻿using System.Linq;
-using System.Threading;
-
 using CommonBehaviors.Actions;
 
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic.Combat;
-using Styx.Logic.Inventory;
-using Styx.Logic.Pathing;
+using Styx.CommonBot;
+using Styx.CommonBot.Inventory;
+using Styx.Pathing;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
-using TreeSharp;
+using Styx.TreeSharp;
 
 namespace Singular.Helpers
 {
@@ -77,7 +75,7 @@ namespace Singular.Helpers
                                     new Action(
                                         ret =>
                                         {
-                                            Styx.Logic.Common.Rest.FeedImmediate();
+                                            Styx.CommonBot.Rest.FeedImmediate();
                                         }),
                                     Helpers.Common.CreateWaitForLagDuration()))),
                 // Make sure we're a class with mana, if not, just ignore drinking all together! Other than that... same for food.
@@ -93,7 +91,7 @@ namespace Singular.Helpers
                                 new Sequence(
                                     new Action(ret =>
                                         {
-                                            Styx.Logic.Common.Rest.DrinkImmediate();
+                                            Styx.CommonBot.Rest.DrinkImmediate();
                                         }),
                                     Helpers.Common.CreateWaitForLagDuration()))),
                 // This is to ensure we STAY SEATED while eating/drinking. No reason for us to get up before we have to.

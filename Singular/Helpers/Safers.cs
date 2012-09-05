@@ -4,13 +4,13 @@ using CommonBehaviors.Actions;
 using Singular.Settings;
 
 using Styx;
-using Styx.Logic;
-using Styx.Logic.POI;
+using Styx.CommonBot;
+using Styx.CommonBot.POI;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
+using Styx.TreeSharp;
 using Singular.Managers;
-using Action = TreeSharp.Action;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.Helpers
 {

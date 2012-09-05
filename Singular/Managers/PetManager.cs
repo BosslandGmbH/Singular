@@ -14,12 +14,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Helpers;
-using Styx.Logic;
-using Styx.Logic.Combat;
+using Styx.Common.Helpers;
+using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWCache;
 using Styx.WoWInternals.WoWObjects;
@@ -43,6 +41,9 @@ namespace Singular.Managers
 
         private static ulong _petGuid;
         private static readonly List<WoWPetSpell> PetSpells = new List<WoWPetSpell>();
+        public static readonly WaitTimer PetTimer = new WaitTimer(TimeSpan.FromSeconds(2));
+
+        private static bool _wasMounted;
 
         static PetManager()
         {
@@ -50,12 +51,13 @@ namespace Singular.Managers
             // Lua.Events.AttachEvent("COMPANION_UPDATE", (s, e) => CallPetTimer.Reset());
             // Note: To be changed to OnDismount with new release
             Mount.OnDismount += (s, e) =>
+                {
+                    if (StyxWoW.Me.Class == WoWClass.Hunter || StyxWoW.Me.Class == WoWClass.Warlock ||
+                        StyxWoW.Me.PetNumber > 0)
                     {
-                        if (StyxWoW.Me.Class == WoWClass.Hunter || StyxWoW.Me.Class == WoWClass.Warlock || StyxWoW.Me.PetNumber > 0)
-                        {
-                            PetTimer.Reset();
-                        }
-                    };
+                        PetTimer.Reset();
+                    }
+                };
         }
 
         public static PetType CurrentPetType
@@ -69,7 +71,7 @@ namespace Singular.Managers
                 }
                 WoWCache.CreatureCacheEntry c;
                 myPet.GetCachedInfo(out c);
-                return (PetType)c.FamilyID;
+                return (PetType) c.FamilyID;
             }
         }
 
@@ -77,9 +79,6 @@ namespace Singular.Managers
 
         public static string WantedPet { get; set; }
 
-        public static readonly WaitTimer PetTimer = new WaitTimer(TimeSpan.FromSeconds(2));
-
-        private static bool _wasMounted;
         internal static void Pulse()
         {
             if (!StyxWoW.Me.GotAlivePet)
@@ -122,7 +121,7 @@ namespace Singular.Managers
 
         public static void CastPetAction(string action)
         {
-            var spell = PetSpells.FirstOrDefault(p => p.ToString() == action);
+            WoWPetSpell spell = PetSpells.FirstOrDefault(p => p.ToString() == action);
             if (spell == null)
                 return;
 
@@ -132,7 +131,7 @@ namespace Singular.Managers
 
         public static void CastPetAction(string action, WoWUnit on)
         {
-            var spell = PetSpells.FirstOrDefault(p => p.ToString() == action);
+            WoWPetSpell spell = PetSpells.FirstOrDefault(p => p.ToString() == action);
             if (spell == null)
                 return;
 

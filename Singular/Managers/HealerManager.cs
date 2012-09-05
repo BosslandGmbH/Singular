@@ -12,14 +12,13 @@
 #endregion
 
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 
 using Singular.Settings;
 
 using Styx;
-using Styx.Helpers;
-using Styx.Logic;
+using Styx.Common.Helpers;
+using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 

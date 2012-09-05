@@ -13,7 +13,7 @@
 
 using System.Text;
 using Styx;
-using Styx.Logic;
+using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
@@ -79,12 +79,6 @@ namespace Singular
         public static bool IsWanding(this LocalPlayer me)
         {
             return StyxWoW.Me.AutoRepeatingSpellId == 5019;
-        }
-
-        //0x9F8+4
-        public static bool CanInterrupt(this WoWUnit u)
-        {
-            return (ObjectManager.Wow.Read<uint>(u.BaseAddress + 0x9F8 + 0x4) & 8) != 0;
         }
     }
 }

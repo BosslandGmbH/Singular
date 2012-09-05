@@ -6,9 +6,10 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic;
+using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
+using Styx.TreeSharp;
+using Rest = Singular.Helpers.Rest;
 
 namespace Singular.ClassSpecific.Druid
 {

@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using Singular.Helpers;
 using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic;
-using Styx.Logic.Combat;
-using Styx.Logic.POI;
+using Styx.CommonBot;
+using Styx.CommonBot.POI;
+using Styx.CommonBot.Routines;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 

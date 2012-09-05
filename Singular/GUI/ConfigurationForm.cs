@@ -22,9 +22,7 @@ using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Helpers;
-using Styx.Logic;
-using Styx.Logic.Combat;
+using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 

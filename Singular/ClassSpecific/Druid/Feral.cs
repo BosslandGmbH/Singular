@@ -7,19 +7,19 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic;
-using Styx.Logic.Combat;
+using Styx.CommonBot;
+using Styx.Pathing;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
-using TreeSharp;
+using Styx.TreeSharp;
 using CommonBehaviors.Actions;
-using Action = TreeSharp.Action;
+using Action = Styx.TreeSharp.Action;
 using System.Drawing;
 using System.Collections.Generic;
 using Styx.Plugins;
 using Styx.Helpers;
-using Styx.Logic.Pathing;
+
 using System.Diagnostics;
 
 

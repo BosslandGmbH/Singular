@@ -5,7 +5,7 @@ using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
 
-using TreeSharp;
+using Styx.TreeSharp;
 
 namespace Singular.ClassSpecific.Warrior
 {

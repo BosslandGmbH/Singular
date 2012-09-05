@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Styx;
-using Styx.Helpers;
-using Styx.Logic;
-using Styx.Logic.Combat;
+using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 

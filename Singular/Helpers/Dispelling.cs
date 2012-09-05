@@ -15,7 +15,7 @@ using System;
 using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic.Combat;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Helpers

@@ -8,13 +8,12 @@ using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Helpers;
-using Styx.Logic;
-using Styx.Logic.Combat;
-using Styx.Logic.Pathing;
-using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
-using Action = TreeSharp.Action;
+using Styx.Common.Helpers;
+using Styx.CommonBot;
+using Styx.Pathing;
+using Styx.TreeSharp;
+using Styx.WoWInternals;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
@@ -115,8 +114,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.CurrentTarget.Fleeing && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                     new Sequence(
-                        Spell.Cast("Death Grip",
-                                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
+                        Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
                         new DecoratorContinue(
                             ret => StyxWoW.Me.IsMoving,
                             new Action(ret => Navigator.PlayerMover.MoveStop())),

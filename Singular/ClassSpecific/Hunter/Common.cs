@@ -7,13 +7,13 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.CommonBot;
 using Styx.Helpers;
-using Styx.Logic.Combat;
-using Styx.Logic.Pathing;
+using Styx.Pathing;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
-using Action = TreeSharp.Action;
+using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Hunter
 {
@@ -111,18 +111,18 @@ namespace Singular.ClassSpecific.Hunter
                             new Sequence(
                                 new Switch<string>(ctx => trapName,
                                     new SwitchArgument<string>("Immolation Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(82945))),
+                                        new Action(ret => SpellManager.CastSpellById(82945))),
                                     new SwitchArgument<string>("Freezing Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(60192))),
+                                        new Action(ret => SpellManager.CastSpellById(60192))),
                                     new SwitchArgument<string>("Explosive Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(82939))),
+                                        new Action(ret => SpellManager.CastSpellById(82939))),
                                     new SwitchArgument<string>("Ice Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(82941))),
+                                        new Action(ret => SpellManager.CastSpellById(82941))),
                                     new SwitchArgument<string>("Snake Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(82948)))
+                                        new Action(ret => SpellManager.CastSpellById(82948)))
                                     ),
                                 new WaitContinue(TimeSpan.FromMilliseconds(200), ret => false, new ActionAlwaysSucceed()),
-                                new Action(ret => LegacySpellManager.ClickRemoteLocation(onUnit(ret).Location)))))));
+                                new Action(ret => SpellManager.ClickRemoteLocation(onUnit(ret).Location)))))));
         }
 
         public static Composite CreateHunterTrapOnAddBehavior(string trapName)
@@ -141,18 +141,18 @@ namespace Singular.ClassSpecific.Hunter
                             new Sequence(
                                 new Switch<string>(ctx => trapName,
                                     new SwitchArgument<string>("Immolation Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(82945))),
+                                        new Action(ret => SpellManager.CastSpellById(82945))),
                                     new SwitchArgument<string>("Freezing Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(60192))),
+                                        new Action(ret => SpellManager.CastSpellById(60192))),
                                     new SwitchArgument<string>("Explosive Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(82939))),
+                                        new Action(ret => SpellManager.CastSpellById(82939))),
                                     new SwitchArgument<string>("Ice Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(82941))),
+                                        new Action(ret => SpellManager.CastSpellById(82941))),
                                     new SwitchArgument<string>("Snake Trap",
-                                        new Action(ret => LegacySpellManager.CastSpellById(82948)))
+                                        new Action(ret => SpellManager.CastSpellById(82948)))
                                     ),
                                 new WaitContinue(TimeSpan.FromMilliseconds(200), ret => false, new ActionAlwaysSucceed()),
-                                new Action(ret => LegacySpellManager.ClickRemoteLocation(((WoWUnit)ret).Location)))))));
+                                new Action(ret => SpellManager.ClickRemoteLocation(((WoWUnit)ret).Location)))))));
         }
 
         public static Composite CreateHunterCallPetBehavior(bool reviveInCombat)

@@ -11,7 +11,7 @@ using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.WoWInternals.WoWObjects;
 
-using TreeSharp;
+using Styx.TreeSharp;
 
 namespace Singular.ClassSpecific.Shaman
 {

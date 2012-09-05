@@ -6,12 +6,13 @@ using Singular.Helpers;
 using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic;
-using Styx.Logic.Pathing;
+using Styx.CommonBot;
+using Styx.Pathing;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
-using Action = TreeSharp.Action;
+using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
 
 namespace Singular.ClassSpecific.Rogue
 {

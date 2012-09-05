@@ -5,12 +5,13 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
-using Styx.Logic;
+using Styx.TreeSharp;
+
 using System.Collections.Generic;
 using Styx.WoWInternals;
-using Styx.Logic.Combat;
+using Rest = Singular.Helpers.Rest;
 
 namespace Singular.ClassSpecific.Druid
 {

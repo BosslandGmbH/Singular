@@ -7,9 +7,9 @@ using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic.Combat;
+using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
+using Styx.TreeSharp;
 
 
 namespace Singular.ClassSpecific.Paladin

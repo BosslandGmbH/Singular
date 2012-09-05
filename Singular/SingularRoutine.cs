@@ -12,7 +12,6 @@
 #endregion
 
 using System;
-using System.Linq;
 using System.Reflection;
 
 using Singular.Dynamics;
@@ -23,11 +22,12 @@ using Singular.Settings;
 using Singular.Utilities;
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.CommonBot;
+using Styx.CommonBot.Routines;
 using Styx.Helpers;
-using Styx.Logic;
-using Styx.Logic.BehaviorTree;
+using Styx.MemoryManagement;
+using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
 
 namespace Singular
 {
@@ -310,7 +310,7 @@ namespace Singular
             }
             public override RunStatus Tick(object context)
             {
-                using (new FrameLock())
+                using (StyxWoW.Memory.AcquireFrame())
                 {
                     return base.Tick(context);
                 }

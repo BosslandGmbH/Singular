@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Styx;
-using Styx.Logic;
-using Styx.Logic.Combat;
-using Styx.Logic.Pathing;
-using Styx.WoWInternals;
+﻿using Styx;
+using Styx.CommonBot;
 
 namespace Singular.Managers
 {
@@ -23,9 +16,9 @@ namespace Singular.Managers
             if (e.Destination == WoWPoint.Zero)
                 return;
 
-            if (e.Destination.DistanceSqr(StyxWoW.Me.Location) < 60*60)
+            if (e.Destination.DistanceSqr(StyxWoW.Me.Location) < 60 * 60)
             {
-                if (SpellManager.HasSpell("Ghost Wolf") && TalentManager.GetCount(2,6) == 2)
+                if (SpellManager.HasSpell("Ghost Wolf") && TalentManager.GetCount(2, 6) == 2)
                 {
                     e.Cancel = true;
 
@@ -34,7 +27,6 @@ namespace Singular.Managers
                         Logger.Write("Using Ghost Wolf instead of mounting");
                         SpellManager.Cast("Ghost Wolf");
                     }
-
                 }
                 else if (SpellManager.HasSpell("Travel Form"))
                 {

@@ -11,21 +11,13 @@
 
 #endregion
 
-using System;
-using System.Linq;
-using CommonBehaviors.Actions;
 using Singular.Settings;
 
 using Styx;
 using Styx.Helpers;
-using Styx.Logic.Combat;
-using Styx.Logic.Pathing;
-using Styx.WoWInternals;
-using Styx.WoWInternals.WoWObjects;
-
-using TreeSharp;
-
-using Action = TreeSharp.Action;
+using Styx.Pathing;
+using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.Helpers
 {

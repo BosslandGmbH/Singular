@@ -5,13 +5,13 @@ using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
 using Styx.Combat.CombatRoutine;
+using Styx.CommonBot;
 using Styx.Helpers;
-using Styx.Logic.Combat;
-using Styx.Logic.Pathing;
+using Styx.Pathing;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using TreeSharp;
-using Action = TreeSharp.Action;
+using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
 using Styx;
 
 namespace Singular.ClassSpecific.Mage

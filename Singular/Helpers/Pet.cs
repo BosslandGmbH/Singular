@@ -2,9 +2,9 @@
 using Singular.Managers;
 using Singular.Settings;
 using Styx;
-using Styx.Logic.Combat;
-using TreeSharp;
-using Action = TreeSharp.Action;
+using Styx.CommonBot;
+using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.Helpers
 {
@@ -122,7 +122,7 @@ namespace Singular.Helpers
                 new Sequence(
                     new Action(ret => PetManager.CastPetAction(action)),
                     new WaitContinue(System.TimeSpan.FromMilliseconds(250), ret => false, new ActionAlwaysSucceed()),
-                    new Action(ret => LegacySpellManager.ClickRemoteLocation(location(ret)))));
+                    new Action(ret => SpellManager.ClickRemoteLocation(location(ret)))));
         }
     }
 }

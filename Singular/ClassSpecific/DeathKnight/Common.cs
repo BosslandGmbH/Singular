@@ -2,11 +2,10 @@
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
-using Singular.Settings;
 using Styx;
 using Styx.Combat.CombatRoutine;
-using Styx.Logic.Pathing;
-using TreeSharp;
+using Styx.Pathing;
+using Styx.TreeSharp;
 
 namespace Singular.ClassSpecific.DeathKnight
 {

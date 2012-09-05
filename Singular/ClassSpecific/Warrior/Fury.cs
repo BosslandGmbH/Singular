@@ -7,12 +7,14 @@ using Singular.Settings;
 
 using Styx;
 using Styx.Combat.CombatRoutine;
+using Styx.Common.Helpers;
+using Styx.CommonBot;
+using Styx.TreeSharp;
 
-using TreeSharp;
-using Styx.Logic.Combat;
 using Styx.Helpers;
 using System;
-using Action = TreeSharp.Action;
+using Styx.WoWInternals;
+using Action = Styx.TreeSharp.Action;
 
 
 
@@ -31,7 +33,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return
                 new PrioritySelector(
-                    Spell.BuffSelf("Battle Stance", ret => Styx.Logic.LootTargeting.Instance.FirstObject == null));
+                    Spell.BuffSelf("Battle Stance", ret => LootTargeting.Instance.FirstObject == null));
         }
 
         [Spec(TalentSpec.FuryWarrior)]
@@ -249,7 +251,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return
                 new PrioritySelector(
-                    Spell.BuffSelf("Battle Stance", ret => Styx.Logic.LootTargeting.Instance.FirstObject == null));
+                    Spell.BuffSelf("Battle Stance", ret => LootTargeting.Instance.FirstObject == null));
         }
 
         [Spec(TalentSpec.FuryWarrior)]
@@ -466,7 +468,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return
                 new PrioritySelector(
-                    Spell.BuffSelf("Battle Stance", ret => Styx.Logic.LootTargeting.Instance.FirstObject == null));
+                    Spell.BuffSelf("Battle Stance", ret => LootTargeting.Instance.FirstObject == null));
         }
 
         [Spec(TalentSpec.FuryWarrior)]

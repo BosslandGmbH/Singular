@@ -14,18 +14,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using CommonBehaviors.Actions;
 
 using Styx;
-using Styx.Logic;
-using Styx.Logic.Combat;
+using Styx.CommonBot;
+using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-
-using TreeSharp;
-
-using Action = TreeSharp.Action;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.Helpers
 {
@@ -270,15 +266,14 @@ namespace Singular.Helpers
                                 WoWSpell spell;
                                 if (SpellManager.Spells.TryGetValue(name, out spell))
                                 {
-                                    var rangeId = spell.InternalInfo.SpellRangeId;
                                     var minRange = spell.MinRange;
                                     var maxRange = spell.MaxRange;
                                     var targetDistance = target.Distance;
                                     // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
-                                    if (rangeId == 1)
+                                    if (spell.IsSelfOnlySpell)
                                         inRange = true;
                                     // RangeId 2 is melee range. Huzzah :)
-                                    else if (rangeId == 2)
+                                    else if (spell.IsMeleeSpell)
                                         inRange = targetDistance < MeleeRange;
                                     else
                                         inRange = targetDistance < maxRange &&
@@ -316,7 +311,7 @@ namespace Singular.Helpers
                         if (SpellManager.Spells.TryGetValue(name, out spell))
                         {
                             // This is here to prevent cancelling funneled and channeled spells right after the cast. /raphus
-                            if (spell.IsFunnel || spell.IsChanneled)
+                            if (spell.IsFunnel/* || spell.IsChanneled*/)
                                 return false;
                         }
                         return true;
@@ -867,7 +862,7 @@ namespace Singular.Helpers
                         ret => StyxWoW.Me.CurrentPendingCursorSpell != null &&
                                StyxWoW.Me.CurrentPendingCursorSpell.Name == spell,
                         new ActionAlwaysSucceed()),
-                    new Action(ret => LegacySpellManager.ClickRemoteLocation(onLocation(ret))))
+                    new Action(ret => SpellManager.ClickRemoteLocation(onLocation(ret))))
                 );
         }
 

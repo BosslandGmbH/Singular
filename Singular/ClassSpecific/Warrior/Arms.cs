@@ -245,7 +245,6 @@ namespace Singular.ClassSpecific.Warrior
                                    SingularSettings.Instance.Warrior.UseWarriorBladestorm &&
                                    StyxWoW.Me.CurrentTarget.DistanceSqr < 36),
                 // cast rend if target doesn't have it and player has 'Blood and Thunder' talent
-                        Spell.Cast("Rend", ret => TalentManager.GetCount(3, 3) > 0 && !StyxWoW.Me.CurrentTarget.HasAura("Rend")),
                         Spell.Cast("Thunder Clap"),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
@@ -272,7 +271,6 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Execute", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
 
                 //Default Rotatiom
-                Spell.Buff("Rend"),
                 Spell.Cast("Colossus Smash"),
                 Spell.Cast("Mortal Strike"),
                 //Bladestorm after dots and MS if against player
@@ -409,7 +407,6 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.BuffSelf("Recklessness", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                         Spell.BuffSelf("Sweeping Strikes"),
                         Spell.Cast("Bladestorm", ret => SingularSettings.Instance.Warrior.UseWarriorBladestorm && StyxWoW.Me.CurrentTarget.DistanceSqr < 36),
-                        Spell.Cast("Rend", ret => TalentManager.GetCount(3, 3) > 0 && !StyxWoW.Me.CurrentTarget.HasAura("Rend")),
                         Spell.Cast("Thunder Clap"),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
@@ -437,7 +434,6 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Default Rotatiom
                 Spell.Buff("Overpower"),
-                Spell.Buff("Rend"),
                 Spell.Cast("Throwdown", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 30 || StyxWoW.Me.HealthPercent < 60),
                 Spell.Cast("Colossus Smash", ret => StyxWoW.Me.HasAura("Sudden Death", 1)),
                 Spell.Cast("Mortal Strike"),
@@ -579,7 +575,6 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.BuffSelf("Recklessness", ret => SingularSettings.Instance.Warrior.UseWarriorDpsCooldowns && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
                         Spell.BuffSelf("Sweeping Strikes"),
                         Spell.Cast("Bladestorm", ret => SingularSettings.Instance.Warrior.UseWarriorBladestorm && StyxWoW.Me.CurrentTarget.DistanceSqr < 36),
-                        Spell.Cast("Rend", ret => TalentManager.GetCount(3, 3) > 0 && !StyxWoW.Me.CurrentTarget.HasAura("Rend")), // check for 'Blood and Thunder' talent
                         Spell.Cast("Thunder Clap"),
                         Spell.Cast("Cleave"),
                         Spell.Cast("Mortal Strike"))),
@@ -603,7 +598,6 @@ namespace Singular.ClassSpecific.Warrior
                 //Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 //Default Rotatiom
-                Spell.Buff("Rend"),
                 Spell.Cast("Colossus Smash"),
                 Spell.Cast("Mortal Strike", ret => (!StyxWoW.Me.HasAura("Slaughter", 3) || StyxWoW.Me.GetAuraTimeLeft("Slaughter", true).TotalSeconds <= 6)
                                                     && StyxWoW.Me.CurrentTarget.HealthPercent < 20),

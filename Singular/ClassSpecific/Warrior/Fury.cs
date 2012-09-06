@@ -153,7 +153,6 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.CreateMoveBehindTargetBehavior(),
                         Spell.Cast("Victory Rush"),
                         Spell.Cast("Execute"),
-                        Spell.Buff("Rend"),
                         Spell.Cast("Overpower"),
                         Spell.Cast("Bloodthirst"),
                 //rage dump
@@ -371,7 +370,6 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.CreateMoveBehindTargetBehavior(),
                         Spell.Cast("Victory Rush"),
                         Spell.Cast("Execute"),
-                        Spell.Buff("Rend"),
                         Spell.Cast("Overpower"),
                         Spell.Cast("Bloodthirst"),
                 //rage dump
@@ -588,7 +586,6 @@ namespace Singular.ClassSpecific.Warrior
                         Movement.CreateMoveBehindTargetBehavior(),
                         Spell.Cast("Victory Rush"),
                         Spell.Cast("Execute"),
-                        Spell.Buff("Rend"),
                         Spell.Cast("Overpower"),
                         Spell.Cast("Bloodthirst"),
                 //rage dump

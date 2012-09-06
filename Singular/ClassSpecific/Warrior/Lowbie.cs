@@ -38,9 +38,9 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.Cast("Victory Rush"),
                         Spell.Cast("Thunder Clap"),
-                        Spell.Cast("Strike"))),
+                        Spell.Cast("Heroic Strike"))),
                 // DPS
-                Spell.Cast("Strike"),
+                Spell.Cast("Heroic Strike"),
                 Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50),
                 //move to melee
                 Movement.CreateMoveToTargetBehavior(true, 5f)

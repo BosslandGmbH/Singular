@@ -83,7 +83,7 @@ namespace Singular.ClassSpecific.Priest
                     new PrioritySelector(
                         Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                         // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
-                        Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) > 3),
+                        Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
                         Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
                         Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
                         Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
@@ -140,10 +140,10 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Buff("Shadow Word: Pain", true),
                 Spell.Cast("Mind Blast", ret => StyxWoW.Me.HasAura("Shadow Orb")),
                 Spell.Buff("Vampiric Touch", true),
-                Spell.Buff("Devouring Plague", true),
+                Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
                 Spell.Cast("Mind Blast"),
-                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 25),
-                Spell.BuffSelf("Archangel"),
+                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
+                //Spell.BuffSelf("Archangel"),
                 Spell.Cast("Shadowfiend"),
                 Spell.Cast("Mind Flay"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -208,20 +208,20 @@ namespace Singular.ClassSpecific.Priest
                     ret => StyxWoW.Me.CurrentTarget.IsBoss(),
                     new PrioritySelector(
                         Spell.Buff("Shadow Word: Pain", true),
-                        Spell.Cast("Mind Blast", ret => StyxWoW.Me.HasAura("Shadow Orb")),
                         Spell.Buff("Vampiric Touch", true),
-                        Spell.Buff("Devouring Plague", true),
+                        Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
+                        Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
                         Spell.Cast("Mind Blast"),
-                        Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 25),
-                        Spell.BuffSelf("Archangel"),
+                        Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
+                        //Spell.BuffSelf("Archangel"),
                         Spell.Cast("Shadowfiend"),
                         Spell.Cast("Mind Flay"),
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         )),
 
                 // Single target trash rotation
-                Spell.Cast("Mind Blast", ret => StyxWoW.Me.HasAura("Mind Melt", 2)),
-                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 25),
+                Spell.Cast("Mind Blast"),
+                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                 Spell.Cast("Mind Spike"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );

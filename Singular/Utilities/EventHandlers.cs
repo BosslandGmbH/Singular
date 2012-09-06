@@ -101,7 +101,7 @@ namespace Singular.Utilities
                 case "SPELL_MISSED":
                 case "RANGE_MISSED":
                 case "SWING_MISSED":
-                    if (e.Args[14].ToString() == "EVADE")
+                    if (e.Args[11].ToString() == "EVADE")
                     {
                         Logger.Write("Mob is evading. Blacklisting it!");
                         Blacklist.Add(e.DestGuid, TimeSpan.FromMinutes(30));
@@ -113,7 +113,7 @@ namespace Singular.Utilities
                         BotPoi.Clear("Blacklisting evading mob");
                         StyxWoW.SleepForLagDuration();
                     }
-                    else if (e.Args[14].ToString() == "IMMUNE")
+                    else if (e.Args[11].ToString() == "IMMUNE")
                     {
                         WoWUnit unit = e.DestUnit;
                         if (unit != null && !unit.IsPlayer)

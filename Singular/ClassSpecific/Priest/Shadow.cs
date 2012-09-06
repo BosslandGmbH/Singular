@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Priest
 
                 // Shadow immune npcs.
                 Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
-                Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                //Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
 
                 // AoE Rotation
                 new PrioritySelector(
@@ -207,15 +207,22 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsBoss(),
                     new PrioritySelector(
-                        Spell.Buff("Shadow Word: Pain", true),
-                        Spell.Buff("Vampiric Touch", true),
-                        Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
-                        Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
-                        Spell.Cast("Mind Blast"),
                         Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
-                        //Spell.BuffSelf("Archangel"),
-                        Spell.Cast("Shadowfiend"),
-                        Spell.Cast("Mind Flay"),
+                        // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
+                        Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
+                        Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
+                        Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
+                        Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
+                        Spell.Cast("Mindbender", ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 50),
+                        Spell.Cast("Mind Blast"),
+                        // Use archangel on adds or elite mobs to be safe
+                        //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2), // we no longer have archangel
+                        Spell.Cast("Shadowfiend",
+                            ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana &&
+                                   StyxWoW.Me.CurrentTarget.HealthPercent >= 60),
+                        // Mana check is for mana management. Don't mess with it
+                        Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.MindFlayMana),
+                        // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand), // we no longer have wands or shoot
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         )),
 

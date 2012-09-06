@@ -11,10 +11,10 @@
 
 #endregion
 
-using System.Drawing;
 using Singular.Settings;
-using Styx.Helpers;
+using Styx.Common;
 using Styx.TreeSharp;
+using Color = System.Drawing.Color;
 
 namespace Singular
 {
@@ -32,7 +32,9 @@ namespace Singular
 
         public static void Write(Color clr, string message, params object[] args)
         {
-            Logging.Write(clr, "[Singular] " + message, args);
+            System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);
+
+            Logging.Write(newColor, "[Singular] " + message, args);
         }
 
         public static void WriteDebug(string message)
@@ -47,13 +49,15 @@ namespace Singular
 
         public static void WriteDebug(Color clr, string message, params object[] args)
         {
+            System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);
+
             if (SingularSettings.Instance.EnableDebugLogging)
             {
-                Logging.Write(clr, "[Singular-DEBUG] " + message, args);
+                Logging.Write(newColor, "[Singular-DEBUG] " + message, args);
             }
             else
             {
-                Logging.WriteDebug(clr, "[Singular-DEBUG] " + message, args);
+                Logging.Write(LogLevel.Diagnostic, newColor, "[Singular-DEBUG] " + message, args);
             }
         }
     }

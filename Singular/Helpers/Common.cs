@@ -2,6 +2,7 @@
 
 using Singular.Managers;
 using Styx;
+using Styx.Common;
 using Styx.Common.Helpers;
 using Styx.CommonBot;
 using Styx.Helpers;
@@ -131,7 +132,7 @@ namespace Singular.Helpers
         public static Composite CreateDismount(string reason)
         {
             return new Sequence(
-                    new Action(ret => Logging.WriteDebug(Styx.Resources.StyxResources.Stop_and_dismount___ + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty))),
+                    new Action(ret => Logger.WriteDebug(Styx.Resources.StyxResources.Stop_and_dismount___ + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty))),
                 // stop moving 
                     new DecoratorContinue(ret => StyxWoW.Me.IsMoving,
                         new Sequence(

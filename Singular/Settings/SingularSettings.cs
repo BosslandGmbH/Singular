@@ -28,7 +28,7 @@ namespace Singular.Settings
         {
         }
 
-        public static string SettingsPath { get { return string.Format("{0}\\Settings\\SingularSettings_{1}", Logging.ApplicationPath, StyxWoW.Me.Name); } }
+        public static string SettingsPath { get { return string.Format("{0}\\Settings\\SingularSettings_{1}", System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), StyxWoW.Me.Name); } }
 
         public static SingularSettings Instance { get { return _instance ?? (_instance = new SingularSettings()); } }
 

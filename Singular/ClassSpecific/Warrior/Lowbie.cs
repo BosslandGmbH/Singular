@@ -30,8 +30,6 @@ namespace Singular.ClassSpecific.Warrior
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Heal
                 Spell.Cast("Victory Rush"),
-                //rend
-                Spell.Buff("Rend"),
                 // AOE
                 new Decorator(
                     ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 2,

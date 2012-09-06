@@ -133,6 +133,7 @@ namespace Singular
 
                     Logger.WriteDebug("Switched targets!");
                     Logger.WriteDebug("Melee Distance: " + Spell.MeleeRange);
+                    //Logger.Write("Me.MaxHealth = {0}", StyxWoW.Me.MaxHealth.ToString());
                     Logger.WriteDebug("Health: " + StyxWoW.Me.CurrentTarget.MaxHealth);
                     Logger.WriteDebug("Level: " + StyxWoW.Me.CurrentTarget.Level);
                 }

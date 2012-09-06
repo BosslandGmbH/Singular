@@ -30,7 +30,7 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Buff("Shadow Word: Pain"),
                 Spell.Cast("Mind Blast"),
                 Spell.Cast("Smite"),
-                Helpers.Common.CreateUseWand(),
+                //Helpers.Common.CreateUseWand(), // we no longer have wands or shoot
                 Movement.CreateMoveToTargetBehavior(true, 25f)
                 );
         }

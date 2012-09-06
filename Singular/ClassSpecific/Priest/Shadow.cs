@@ -35,8 +35,7 @@ namespace Singular.ClassSpecific.Priest
                     ret => SingularSettings.Instance.Priest.UseShieldPrePull && !StyxWoW.Me.HasAura("Weakened Soul") && !SpellManager.HasSpell("Mind Spike")),
                 Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
                 Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
-                Spell.Buff("Devouring Plague", true, 
-                    ret => SingularSettings.Instance.Priest.DevouringPlagueFirst),
+                //Spell.Buff("Devouring Plague", true, ret => SingularSettings.Instance.Priest.DevouringPlagueFirst), // We have to have 3 orbs - why would we ever pull with this?
                 Spell.Buff("Vampiric Touch", true, ret => !SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.CurrentTarget.Elite),
                 Spell.Cast("Mind Blast"),
                 Spell.Cast("Smite", ret => !SpellManager.HasSpell("Mind Blast")),
@@ -71,42 +70,46 @@ namespace Singular.ClassSpecific.Priest
                 // don't attempt to heal unless below a certain percentage health
                 new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.DontHealPercent,
                     new PrioritySelector(
-                        Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
+                        Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40),
+                        Spell.Heal("Vampiric Embrace", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
                         )),
                 // for NPCs immune to shadow damage.
                 Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
-                Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                //Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)), // Shadow no longer has smite
 
                 // Before Mind Spike
                 new Decorator(
-                    ret => !SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.CurrentTarget.Elite,
+                    ret => (StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth / 2)) || StyxWoW.Me.CurrentTarget.Elite,
                     new PrioritySelector(
-                        Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 25),
+                        Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                         // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
+                        Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) > 3),
+                        Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
                         Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
-                        Spell.Cast("Mind Blast", ret => StyxWoW.Me.HasAura("Shadow Orb")),
                         Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
-                        Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
+                        Spell.Cast("Mindbender", ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 50),
                         Spell.Cast("Mind Blast"),
                         // Use archangel on adds or elite mobs to be safe
-                        Spell.BuffSelf("Archangel", 
-                            ret => StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
+                        //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2), // we no longer have archangel
                         Spell.Cast("Shadowfiend", 
                             ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana &&
                                    StyxWoW.Me.CurrentTarget.HealthPercent >= 60),
                         // Mana check is for mana management. Don't mess with it
                         Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.MindFlayMana),
-                        Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand),
+                        // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand), // we no longer have wands or shoot
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         )),
 
-                // After Mind Spike
-                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 25),
-                Spell.Cast("Mind Blast", ret => StyxWoW.Me.HasAura("Mind Melt", 2)),
+                // After we have Mind Spike
+                new Decorator(
+                    ret => (StyxWoW.Me.CurrentTarget.MaxHealth < (StyxWoW.Me.MaxHealth / 2)),
+                    new PrioritySelector(
+                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
+                Spell.Cast("Mind Blast"),
                 Spell.Cast("Mind Spike"),
-                Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand),
+                //Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand), // we no longer have wands or shoot
                 Movement.CreateMoveToTargetBehavior(true, 35f)
-                );
+                )));
         }
 
         #endregion

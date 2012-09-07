@@ -102,7 +102,12 @@ namespace Singular.Managers
 
         public static int GetCount(int tab, int index)
         {
-            return Talents.FirstOrDefault(t => t.Tab == tab && t.Index == index).Count;
+            return GetCount(index);
+        }
+
+        public static int GetCount(int index)
+        {
+            return Talents.FirstOrDefault(t => t.Index == index).Count;
         }
 
         /// <summary>
@@ -134,58 +139,26 @@ namespace Singular.Managers
             int specBuild = 0;
             int specClassMask = ((int)StyxWoW.Me.Class << 8);
 
-            string s = Lua.GetReturnVal<string>("return GetSpecialization()", 0);
-            if (String.IsNullOrEmpty(s) || !Int32.TryParse( s, out specBuild))
-            {
-                CurrentSpec = TalentSpec.Lowbie;
-                return;
-            }
-
-            CurrentSpec = (TalentSpec)(specClassMask + specBuild - 1);
-
-            int treeOne = 0, treeTwo = 0, treeThree = 0;
-            //bool isExtraSpec = false;
-
             // Keep the frame stuck so we can do a bunch of injecting at once.
             using (StyxWoW.Memory.AcquireFrame())
             {
-                var numTabs = Lua.GetReturnVal<int>("return GetNumTalentTabs()", 0);
+                string s = Lua.GetReturnVal<string>("return GetSpecialization()", 0);
+                if (String.IsNullOrEmpty(s) || !Int32.TryParse( s, out specBuild))
+                {
+                    CurrentSpec = TalentSpec.Lowbie;
+                    return;
+                }
+
+                CurrentSpec = (TalentSpec)(specClassMask + specBuild - 1);
 
                 Talents.Clear();
-                for (int tab = 1; tab <= 3; tab++)
+
+                var numTalents = Lua.GetReturnVal<int>("return GetNumTalents()", 0);
+                for (int index = 1; index <= numTalents; index++)
                 {
-                    var numTalents = Lua.GetReturnVal<int>("return GetNumTalents(" + tab + ")", 0);
-                    for (int index = 1; index <= numTalents; index++)
-                    {
-                        var rank = Lua.GetReturnVal<int>(string.Format("return GetTalentInfo({0}, {1})", tab, index), 4);
-                        var t = new Talent { Tab = tab, Index = index, Count = rank };
-                        Talents.Add(t);
-
-                        //// Thick Hide - Only used by tanking druids
-                        //if (myClass == WoWClass.Druid && tab == 2 && index == 11 && rank != 0)
-                        //{
-                        //    isExtraSpec = true;
-                        //}
-
-                        //// Renewed Hope
-                        //if (myClass == WoWClass.Priest && tab == 1 && index == 8 && rank != 0)
-                        //{
-                        //    isExtraSpec = true;
-                        //}
-
-                        switch (tab)
-                        {
-                            case 1:
-                                treeOne += rank;
-                                break;
-                            case 2:
-                                treeTwo += rank;
-                                break;
-                            case 3:
-                                treeThree += rank;
-                                break;
-                        }
-                    }
+                    var selected = Lua.GetReturnVal<int>(string.Format("return GetTalentInfo({0})", index), 4);
+                    var t = new Talent { Index = index, Count = selected };
+                    Talents.Add(t);
                 }
 
                 Glyphs.Clear();
@@ -213,10 +186,7 @@ namespace Singular.Managers
         public struct Talent
         {
             public int Count;
-
             public int Index;
-
-            public int Tab;
         }
 
         #endregion

@@ -33,6 +33,7 @@ namespace Singular.ClassSpecific.Shaman
     {
         public static Composite CreateSetTotems()
         {
+#if PRE_504_TOTEM_LOGIC
             return new PrioritySelector(
                 new Decorator(
                     ret => !SpellManager.HasSpell("Call of the Elements"),
@@ -136,6 +137,9 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.BuffSelf("Call of the Elements")))
                             
                 );
+#else
+            return new ActionAlwaysFail();
+#endif
         }
 
         public static void SetupTotemBar()
@@ -384,7 +388,18 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Helper shit
 
-        public static bool NeedToRecallTotems { get { return TotemsInRange == 0 && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0; } }
+        public static bool NeedToRecallTotems 
+        { 
+            get 
+            { 
+#if PRE_504_TOTEM_LOGIC
+                return TotemsInRange == 0 && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0; 
+#else
+                return false;
+#endif
+            } 
+        }
+
         public static int TotemsInRange { get { return TotemsInRangeOf(StyxWoW.Me); } }
 
         public static int TotemsInRangeOf(WoWUnit unit)

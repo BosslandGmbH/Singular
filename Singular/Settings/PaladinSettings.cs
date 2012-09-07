@@ -175,8 +175,8 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Retribution")]
-        [DisplayName("Auto GotAK and Zealotry")]
-        [Description("Auomatically use Guardian of the Ancient Kings and Zealotry.  When false both will be disabled.")]
+        [DisplayName("Auto GotAK and Holy Avenger")]
+        [Description("Automatically use Guardian of the Ancient Kings and Holy Avenger.  When false both will be disabled.")]
         public bool RetGoatK { get; set; } 
         #endregion
     }

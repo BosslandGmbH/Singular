@@ -13,7 +13,7 @@
 
 using System;
 using System.ComponentModel;
-
+using System.IO;
 using Styx.Helpers;
 using Styx.WoWInternals.WoWObjects;
 
@@ -24,7 +24,7 @@ namespace Singular.Settings
     internal class DeathKnightSettings : Styx.Helpers.Settings
     {
         public DeathKnightSettings()
-            : base(SingularSettings.SettingsPath + "_DeathKnight.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "DeathKnight.xml"))
         {
         }
 

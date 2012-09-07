@@ -183,7 +183,7 @@ namespace Singular.Helpers
         /// <remarks>Created 5/3/2011.</remarks>
         /// <param name="unit">The unit.</param>
         /// <returns>true if it succeeds, false if it fails.</returns>
-        public static bool CanDispelUnit(WoWUnit unit)
+        public static bool CanDispel(WoWUnit unit)
         {
             return (Capabilities & GetDispellableTypesOnUnit(unit)) != 0;
         }

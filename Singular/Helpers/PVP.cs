@@ -6,7 +6,7 @@ namespace Singular.Helpers
 {
     internal static class PVP
     {
-        public static bool IsCrowdControlled(WoWUnit unit)
+        public static bool IsCrowdControlled(this WoWUnit unit)
         {
             return unit.GetAllAuras().Any(a => a.IsHarmful &&
                 (a.Spell.Mechanic == WoWSpellMechanic.Shackled ||

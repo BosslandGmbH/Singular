@@ -100,7 +100,7 @@ namespace Singular.Helpers
                         Spell.Cast("Wind Shear", onUnit),
 
                         Spell.Cast("Pummel", onUnit),
-                // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
+                        // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
                         Spell.Cast("Heroic Throw", onUnit, ret => TalentManager.GetCount(3, 7) == 2 && !onUnit(ret).IsBoss()),
 
                         Spell.Cast("Silence", onUnit),

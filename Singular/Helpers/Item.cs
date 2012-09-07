@@ -32,12 +32,8 @@ namespace Singular.Helpers
             }
 
             var enchant = item.TemporaryEnchantment;
-            if (enchant != null)
-                Logger.Write("VerzauberungsName: " + enchant.Name );
-                Logger.Write("VerzauberungsID: " + enchant.Id);
-                Logger.Write("ImbueName: " + imbueName);
-                Logger.Write("Enchant: " + enchant.Name + " - " + (enchant.Name == imbueName));
-            return enchant != null && enchant.Name == imbueName || imbueId == enchant.Id;
+
+            return enchant != null && (enchant.Name == imbueName || imbueId == enchant.Id);
         }
 
 

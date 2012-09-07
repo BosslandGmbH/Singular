@@ -121,10 +121,17 @@ namespace Singular.ClassSpecific.Priest
                                 Movement.CreateMoveToLosBehavior(),
                                 Movement.CreateFaceTargetBehavior(),
                                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                                Spell.Cast("Mindbender"),
+                                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
+                                Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
+                                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Cast("Penance"),
                                 Spell.Cast("Holy Fire"),
-                                Spell.Cast("Smite"),
+                                Spell.Cast("Smite", ret => !SpellManager.HasSpell("Power Word: Solace")),
+                                Spell.Cast("Smite", ret => (StyxWoW.Me.ManaPercent >= 10 && SpellManager.HasSpell("Power Word: Solace"))),
+                                Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 10),
+                                //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
                                 Movement.CreateMoveToTargetBehavior(true, 35f)
                                 )),
                         new Decorator(
@@ -169,13 +176,17 @@ namespace Singular.ClassSpecific.Priest
                         Movement.CreateMoveToLosBehavior(),
                         Movement.CreateFaceTargetBehavior(),
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Spell.Cast("Mindbender"),
                         Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
                         Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
-                        Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 25),
+                        Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                         Spell.Buff("Shadow Word: Pain", true),
                         Spell.Cast("Penance"),
                         Spell.Cast("Holy Fire"),
-                        Spell.Cast("Smite"),
+                        Spell.Cast("Smite", ret => !SpellManager.HasSpell("Power Word: Solace")),
+                        Spell.Cast("Smite", ret => (StyxWoW.Me.ManaPercent >= 10 && SpellManager.HasSpell("Power Word: Solace"))),
+                        Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 10),
+                        //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         ))
                 );

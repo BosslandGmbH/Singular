@@ -21,9 +21,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return
                 new PrioritySelector(
-                    Spell.Cast("Lightning Shield",
-                        ret => StyxWoW.Me,
-                        ret => !StyxWoW.Me.HasAura("Lightning Shield", 3)));
+                    Spell.BuffSelf("Lightning Shield"));
         }
 
         [Class(WoWClass.Shaman)]

@@ -94,8 +94,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Honorbuddy">
-      <HintPath>..\..\..\..\..\ßots\HB's\Honorbuddy 2.5.6108.380\Honorbuddy.exe</HintPath>
+      <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
     </Reference>
+    <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -105,7 +106,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="Tripper.Tools">
-      <HintPath>..\..\..\..\..\ßots\HB's\Honorbuddy 2.5.6108.380\Tripper.Tools.dll</HintPath>
+      <HintPath>..\Honorbuddy\Tripper.Tools.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

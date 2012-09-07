@@ -19,7 +19,7 @@ namespace Singular.ClassSpecific.DeathKnight
         [Spec(WoWSpec.DeathKnightBlood)]
         [Spec(WoWSpec.DeathKnightFrost)]
         [Spec(WoWSpec.DeathKnightUnholy)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Context(WoWContext.Battlegrounds | WoWContext.Normal)]
         public static Composite CreateDeathKnightNormalAndPvPPull()
         {
@@ -46,7 +46,7 @@ namespace Singular.ClassSpecific.DeathKnight
         [Behavior(BehaviorType.Pull)]
         [Spec(WoWSpec.DeathKnightFrost)]
         [Spec(WoWSpec.DeathKnightUnholy)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Context(WoWContext.Instances)]
         public static Composite CreateDeathKnightFrostAndUnholyInstancePull()
         {
@@ -71,7 +71,7 @@ namespace Singular.ClassSpecific.DeathKnight
         [Spec(WoWSpec.DeathKnightBlood)]
         [Spec(WoWSpec.DeathKnightFrost)]
         [Spec(WoWSpec.DeathKnightUnholy)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Context(WoWContext.All)]
         public static Composite CreateDeathKnightPreCombatBuffs()
         {
@@ -81,7 +81,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 new PrioritySelector(
                     Spell.BuffSelf(
                         "Frost Presence",
-                        ret => TalentManager.CurrentSpec == WoWSpec.None),
+                        ret => TalentManager.CurrentSpec == (WoWSpec)0),
                     Spell.BuffSelf(
                         "Blood Presence",
                         ret => TalentManager.CurrentSpec == WoWSpec.DeathKnightBlood),

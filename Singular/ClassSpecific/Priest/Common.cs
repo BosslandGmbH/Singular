@@ -16,7 +16,7 @@ namespace Singular.ClassSpecific.Priest
         [Spec(WoWSpec.PriestDiscipline)]
         [Spec(WoWSpec.PriestHoly)]
         [Spec(WoWSpec.PriestShadow)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreatePriestPreCombatBuffs()

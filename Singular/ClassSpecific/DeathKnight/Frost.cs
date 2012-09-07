@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                 Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
-                                                   (StyxWoW.Me.IsCrowdControlled ||
+                                                   (StyxWoW.Me.IsCrowdControlled() ||
                                                    StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
                 Spell.BuffSelf("Death Coil",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&
@@ -136,7 +136,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                 Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
-                                                   (StyxWoW.Me.IsCrowdControlled ||
+                                                   (StyxWoW.Me.IsCrowdControlled() ||
                                                    StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
                 Spell.BuffSelf("Death Coil",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&

@@ -151,7 +151,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.BuffSelf("Moonkin Form"),
                 Spell.BuffSelf("Barkskin", 
-                    ret => StyxWoW.Me.IsCrowdControlled || StyxWoW.Me.HealthPercent < 40),
+                    ret => StyxWoW.Me.IsCrowdControlled() || StyxWoW.Me.HealthPercent < 40),
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),

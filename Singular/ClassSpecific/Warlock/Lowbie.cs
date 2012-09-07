@@ -14,7 +14,7 @@ namespace Singular.ClassSpecific.Warlock
         #region Common
 
         [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         [Priority(1)]
@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Warlock
         #endregion
 
         [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]

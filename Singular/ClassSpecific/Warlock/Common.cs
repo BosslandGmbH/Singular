@@ -37,7 +37,7 @@ namespace Singular.ClassSpecific.Warlock
         [Spec(WoWSpec.WarlockAffliction)]
         [Spec(WoWSpec.WarlockDemonology)]
         [Spec(WoWSpec.WarlockDestruction)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateWarlockPreCombatBuffs()
@@ -69,7 +69,7 @@ namespace Singular.ClassSpecific.Warlock
         [Spec(WoWSpec.WarlockAffliction)]
         [Spec(WoWSpec.WarlockDemonology)]
         [Spec(WoWSpec.WarlockDestruction)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateWarlockCombatBuffs()
@@ -84,7 +84,7 @@ namespace Singular.ClassSpecific.Warlock
         [Spec(WoWSpec.WarlockAffliction)]
         [Spec(WoWSpec.WarlockDemonology)]
         [Spec(WoWSpec.WarlockDestruction)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public static Composite CreateWarlockRest()

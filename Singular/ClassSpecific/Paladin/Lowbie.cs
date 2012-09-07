@@ -11,7 +11,7 @@ namespace Singular.ClassSpecific.Paladin
     public class Lowbie
     {
         [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public static Composite CreateLowbiePaladinCombat()
@@ -30,7 +30,7 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public static Composite CreateLowbiePaladinPull()
@@ -46,7 +46,7 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
         public static Composite CreateLowbiePaladinHeal()
@@ -59,7 +59,7 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateLowbiePaladinPreCombatBuffs()
@@ -72,7 +72,7 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateLowbiePaladinCombatBuffs()

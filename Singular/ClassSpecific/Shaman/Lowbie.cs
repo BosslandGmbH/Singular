@@ -14,7 +14,7 @@ namespace Singular.ClassSpecific.Shaman
     class Lowbie
     {
         [Class(WoWClass.Shaman)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateShamanLowbiePreCombatBuffs()
@@ -25,7 +25,7 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         [Class(WoWClass.Shaman)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateShamanLowbieCombatBuffs()
@@ -36,7 +36,7 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         [Class(WoWClass.Shaman)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public static Composite CreateShamanLowbiePull()
@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         [Class(WoWClass.Shaman)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
         public static Composite CreateShamanLowbieHeal()
@@ -64,7 +64,7 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         [Class(WoWClass.Shaman)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public static Composite CreateShamanLowbieCombat()

@@ -38,7 +38,7 @@ namespace Singular.ClassSpecific.Paladin
         [Spec(WoWSpec.PaladinRetribution)]
         [Spec(WoWSpec.PaladinHoly)]
         [Spec(WoWSpec.PaladinProtection)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Context(WoWContext.All)]
         public static Composite CreatePaladinPreCombatBuffs()
         {
@@ -57,20 +57,20 @@ namespace Singular.ClassSpecific.Paladin
                     new Decorator(
                         ret => TalentManager.CurrentSpec != WoWSpec.PaladinHoly,
                         new PrioritySelector(
-                            Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin && StyxWoW.Me.IsInParty)
+                            Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == WoWSpec.PaladinProtection && StyxWoW.Me.IsInParty)
                             /*
                             Spell.BuffSelf(
                                 "Devotion Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
                                 (StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == WoWSpec.PaladinProtection ||
-                                 TalentManager.CurrentSpec == WoWSpec.None && !SpellManager.HasSpell("Retribution Aura"))),
+                                 TalentManager.CurrentSpec == (WoWSpec)0 && !SpellManager.HasSpell("Retribution Aura"))),
                             Spell.BuffSelf(
                                 "Retribution Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
                                 ((!StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == WoWSpec.PaladinProtection) ||
-                                 TalentManager.CurrentSpec == WoWSpec.None)),
+                                 TalentManager.CurrentSpec == (WoWSpec)0)),
                             Spell.BuffSelf(
                                 "Retribution Aura",
                                 ret =>

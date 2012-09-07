@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Rogue
         [Spec(WoWSpec.RogueCombat)]
         [Spec(WoWSpec.RogueAssassination)]
         [Spec(WoWSpec.RogueSubtlety)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateRoguePreCombatBuffs()
@@ -37,7 +37,7 @@ namespace Singular.ClassSpecific.Rogue
         [Spec(WoWSpec.RogueCombat)]
         [Spec(WoWSpec.RogueAssassination)]
         [Spec(WoWSpec.RogueSubtlety)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public static Composite CreateRogueRest()

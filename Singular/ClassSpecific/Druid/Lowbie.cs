@@ -10,7 +10,7 @@ namespace Singular.ClassSpecific.Druid
 {
     public class Lowbie
     {
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Class(WoWClass.Druid)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Pull)]
@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Class(WoWClass.Druid)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Combat)]

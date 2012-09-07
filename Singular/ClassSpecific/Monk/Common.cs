@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific.Monk
         [Spec(WoWSpec.MistweaverMonk)]
         [Spec(WoWSpec.BrewmasterMonk)]
 
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Context(WoWContext.All)]
         private static Composite CreateMonkPreCombatBuffs()
         {

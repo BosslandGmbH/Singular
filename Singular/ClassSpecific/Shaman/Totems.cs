@@ -250,7 +250,7 @@ namespace Singular.ClassSpecific.Shaman
             if (!me.IsInParty && !me.IsInRaid)
             {
                 // Enhance, lowbie
-                if (isEnhance || TalentManager.CurrentSpec == WoWSpec.None)
+                if (isEnhance || TalentManager.CurrentSpec == (WoWSpec)0)
                 {
                     if (TotemIsKnown(WoWTotem.StrengthOfEarth))
                     {
@@ -297,7 +297,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static WoWTotem GetAirTotem()
         {
-            if (TalentManager.CurrentSpec == WoWSpec.None)
+            if (TalentManager.CurrentSpec == (WoWSpec)0)
             {
                 return WoWTotem.None;
             }

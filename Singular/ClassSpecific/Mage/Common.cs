@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific.Mage
         [Spec(WoWSpec.MageFire)]
         [Spec(WoWSpec.MageFrost)]
         [Spec(WoWSpec.MageArcane)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateMageBuffs()

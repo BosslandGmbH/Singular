@@ -47,7 +47,7 @@ namespace Singular.ClassSpecific.Druid
 [Spec(WoWSpec.DruidBalance)]
 [Spec(WoWSpec.DruidFeral)]
 [Spec(WoWSpec.DruidRestoration)]
-[Spec(WoWSpec.None)]
+[Spec((WoWSpec)0)]
 [Context(WoWContext.All)]
 public static Composite CreateDruidPreCombatBuff()
 {
@@ -73,7 +73,7 @@ public static Composite CreateDruidPreCombatBuff()
         [Spec(WoWSpec.DruidBalance)]
         [Spec(WoWSpec.DruidFeral)]
         [Spec(WoWSpec.DruidRestoration)]
-        [Spec(WoWSpec.None)]
+        [Spec((WoWSpec)0)]
         [Context(WoWContext.All)]
         public static Composite CreateDruidPreCombatBuff()
         {

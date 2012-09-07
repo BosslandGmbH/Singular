@@ -35,11 +35,11 @@ namespace Singular.ClassSpecific.Priest
                 Spell.BuffSelf("Power Word: Shield", 
                     ret => SingularSettings.Instance.Priest.UseShieldPrePull && !StyxWoW.Me.HasAura("Weakened Soul") && !SpellManager.HasSpell("Mind Spike")),
                 Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
-                Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                //Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
                 //Spell.Buff("Devouring Plague", true, ret => SingularSettings.Instance.Priest.DevouringPlagueFirst), // We have to have 3 orbs - why would we ever pull with this?
-                Spell.Buff("Vampiric Touch", true, ret => !SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.CurrentTarget.Elite),
                 Spell.Cast("Mind Blast"),
-                Spell.Cast("Smite", ret => !SpellManager.HasSpell("Mind Blast")),
+                Spell.Buff("Vampiric Touch", true, ret => !SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.CurrentTarget.Elite),
+                Spell.Buff("Shadow Word: Pain"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

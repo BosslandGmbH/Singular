@@ -112,13 +112,13 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK &&
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
 
-                    Spell.Cast("Zealotry", ret => SingularSettings.Instance.Paladin.RetGoatK &&
+                    Spell.Cast("Holy Avenger", ret => SingularSettings.Instance.Paladin.RetGoatK &&
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4),
                     Spell.BuffSelf("Avenging Wrath", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4 ||
-                        (!StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && Spell.GetSpellCooldown("Zealotry").TotalSeconds > 10)),
-                    Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
-                    Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
-                    Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
+                        (!StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger") && Spell.GetSpellCooldown("Holy Avenger").TotalSeconds > 10)),
+                    Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                    Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                    Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
 
                     //Exo is above HoW if we're fighting Undead / Demon
                     Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") && StyxWoW.Me.CurrentTarget.IsUndeadOrDemon()),
@@ -133,15 +133,15 @@ namespace Singular.ClassSpecific.Paladin
                 //Replace CS with DS during AoE
                     Spell.Cast("Divine Storm", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
-                //Judgment,if=buff.zealotry.down&holy_power<3
-                    Spell.Cast("Judgment", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
+                //Judgment,if=buff.Holy Avenger.down&holy_power<3
+                    Spell.Cast("Judgment", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger") && StyxWoW.Me.CurrentHolyPower < 3),
                 //inquisition,if=(buff.inquisition.down|buff.inquisition.remains<=2)&(holy_power>=3|buff.divine_purpose.react)
                     Spell.Cast("Inquisition", ret => (!StyxWoW.Me.HasAura("Inquisition") || StyxWoW.Me.ActiveAuras["Inquisition"].TimeLeft.TotalSeconds <= 2) &&
                         (StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose"))),
                 //templars_verdict,if=buff.divine_purpose.react or templars_verdict,if=holy_power=3
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose") || StyxWoW.Me.CurrentHolyPower == 3),
-                //Judgment,if=set_bonus.tier13_2pc_melee&buff.zealotry.up&holy_power<3
-                    Spell.Cast("Judgment", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
+                //Judgment,if=set_bonus.tier13_2pc_melee&buff.Holy Avenger.up&holy_power<3
+                    Spell.Cast("Judgment", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger") && StyxWoW.Me.CurrentHolyPower < 3),
                     Spell.Cast("Judgment"),
                 //wait,sec=0.1,if=cooldown.crusader_strike.remains<0.2&cooldown.crusader_strike.remains>0
                 //
@@ -199,11 +199,11 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && StyxWoW.Me.CurrentTarget.Distance < 6 &&
                         (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3 || (StyxWoW.Me.CurrentTarget.HasAura("Horde Flag") || StyxWoW.Me.CurrentTarget.HasAura("Alliance Flag")))),
 
-                    Spell.BuffSelf("Zealotry", ret => StyxWoW.Me.CurrentTarget.Distance <= 8),
-                    Spell.BuffSelf("Avenging Wrath", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
-                    Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
-                    Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
-                    Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
+                    Spell.BuffSelf("Holy Avenger", ret => StyxWoW.Me.CurrentTarget.Distance <= 8),
+                    Spell.BuffSelf("Avenging Wrath", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                    Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                    Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                    Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
 
                     //Hammer of Wrath if < 20% or Avenging Wrath Buff
                     Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20 || StyxWoW.Me.ActiveAuras.ContainsKey("Avenging Wrath")),
@@ -261,19 +261,19 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Seal of Truth", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4),
                     Spell.BuffSelf("Seal of Righteousness", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4 || !SpellManager.HasSpell("Seal of Truth")),
 
-                    //7	guardian_of_ancient_kings,if=cooldown.zealotry.remains<10
+                    //7	guardian_of_ancient_kings,if=cooldown.Holy Avenger.remains<10
                     Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && StyxWoW.Me.CurrentTarget.IsBoss() &&
-                        Spell.GetSpellCooldown("Zealotry").TotalSeconds < 10),
-                //8	zealotry,if=cooldown.guardian_of_ancient_kings.remains>0&cooldown.guardian_of_ancient_kings.remains<292
-                    Spell.Cast("Zealotry", ret => SingularSettings.Instance.Paladin.RetGoatK &&
+                        Spell.GetSpellCooldown("Holy Avenger").TotalSeconds < 10),
+                //8	Holy Avenger,if=cooldown.guardian_of_ancient_kings.remains>0&cooldown.guardian_of_ancient_kings.remains<292
+                    Spell.Cast("Holy Avenger", ret => SingularSettings.Instance.Paladin.RetGoatK &&
                         //((!StyxWoW.Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4) ||
                         StyxWoW.Me.CurrentTarget.IsBoss() &&
                         Spell.GetSpellCooldown("Guardian of Ancient Kings").TotalSeconds > 0 &&
                         Spell.GetSpellCooldown("Guardian of Ancient Kings").TotalSeconds < 292),
-                    Spell.BuffSelf("Avenging Wrath", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
-                    Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
-                    Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
-                    Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry")),
+                    Spell.BuffSelf("Avenging Wrath", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                    Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                    Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                    Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
 
                     //Exo is above HoW if we're fighting Undead / Demon
                     Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War") && StyxWoW.Me.CurrentTarget.IsUndeadOrDemon()),
@@ -288,15 +288,15 @@ namespace Singular.ClassSpecific.Paladin
                 //Replace CS with DS during AoE
                     Spell.Cast("Divine Storm", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
-                //Judgment,if=buff.zealotry.down&holy_power<3
-                    Spell.Cast("Judgment", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
+                //Judgment,if=buff.Holy Avenger.down&holy_power<3
+                    Spell.Cast("Judgment", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger") && StyxWoW.Me.CurrentHolyPower < 3),
                 //inquisition,if=(buff.inquisition.down|buff.inquisition.remains<=2)&(holy_power>=3|buff.divine_purpose.react)
                     Spell.Cast("Inquisition", ret => (!StyxWoW.Me.HasAura("Inquisition") || StyxWoW.Me.ActiveAuras["Inquisition"].TimeLeft.TotalSeconds <= 2) &&
                         (StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose"))),
                 //templars_verdict,if=buff.divine_purpose.react or templars_verdict,if=holy_power=3
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose") || StyxWoW.Me.CurrentHolyPower == 3),
-                //Judgment,if=set_bonus.tier13_2pc_melee&buff.zealotry.up&holy_power<3
-                    Spell.Cast("Judgment", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
+                //Judgment,if=set_bonus.tier13_2pc_melee&buff.Holy Avenger.up&holy_power<3
+                    Spell.Cast("Judgment", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger") && StyxWoW.Me.CurrentHolyPower < 3),
                 //holy_wrath
                     Spell.Cast("Holy Wrath"),
                 //consecration,not_flying=1,if=mana>16000
@@ -348,7 +348,7 @@ namespace Singular.ClassSpecific.Paladin
                     ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= SingularSettings.Instance.Paladin.ConsecrationCount,
                     new PrioritySelector(
                 // Cooldowns
-                        Spell.BuffSelf("Zealotry"),
+                        Spell.BuffSelf("Holy Avenger"),
                         Spell.BuffSelf("Avenging Wrath"),
                         Spell.BuffSelf("Guardian of Ancient Kings"),
                         Spell.BuffSelf("Divine Storm"),
@@ -402,7 +402,7 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.BuffSelf("Divine Shield", ret => StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance")),
 
                 // Cooldowns
-                Spell.BuffSelf("Zealotry"),
+                Spell.BuffSelf("Holy Avenger"),
                 Spell.BuffSelf("Avenging Wrath"),
                 Spell.BuffSelf("Guardian of Ancient Kings"),
 
@@ -468,7 +468,7 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsBoss(),
                     new PrioritySelector(
-                    Spell.BuffSelf("Zealotry"),
+                    Spell.BuffSelf("Holy Avenger"),
                     Spell.BuffSelf("Avenging Wrath"),
                     Spell.BuffSelf("Guardian of Ancient Kings"))),
 

@@ -66,8 +66,8 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Spell.BuffSelf("Seal of Righteousness"),
-                    Spell.BuffSelf("Devotion Aura")
+                    Spell.BuffSelf("Seal of Righteousness")
+                    //Spell.BuffSelf("Devotion Aura")
                     );
         }
 
@@ -79,8 +79,8 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Spell.BuffSelf("Seal of Righteousness"),
-                    Spell.BuffSelf("Devotion Aura")
+                    Spell.BuffSelf("Seal of Righteousness")
+                    //Spell.BuffSelf("Devotion Aura")
                     );
         }
     }

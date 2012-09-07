@@ -14,6 +14,7 @@ using Styx.TreeSharp;
 
 namespace Singular.ClassSpecific.Paladin
 {
+    /*
     public enum PaladinAura
     {
         Auto,
@@ -23,6 +24,7 @@ namespace Singular.ClassSpecific.Paladin
         Concentration,
         Crusader
     }
+    */
 
     enum PaladinBlessings
     {
@@ -48,14 +50,15 @@ namespace Singular.ClassSpecific.Paladin
                     new Decorator(
                         ret => TalentManager.CurrentSpec == TalentSpec.HolyPaladin,
                         new PrioritySelector(
-                            Spell.BuffSelf("Concentration Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto),
+                            //Spell.BuffSelf("Concentration Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto),
                             Spell.BuffSelf("Seal of Insight"),
                             Spell.BuffSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Insight"))
                             )),
                     new Decorator(
                         ret => TalentManager.CurrentSpec != TalentSpec.HolyPaladin,
                         new PrioritySelector(
-                            Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin && StyxWoW.Me.IsInParty),
+                            Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin && StyxWoW.Me.IsInParty)
+                            /*
                             Spell.BuffSelf(
                                 "Devotion Aura",
                                 ret =>
@@ -75,7 +78,9 @@ namespace Singular.ClassSpecific.Paladin
                                 TalentManager.CurrentSpec == TalentSpec.RetributionPaladin),
                             Spell.BuffSelf("Seal of Truth"),
                             Spell.BuffSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth"))
-                            )),
+                             */
+                            ))
+                            /*
                     new Decorator(
                         ret => SingularSettings.Instance.Paladin.Aura != PaladinAura.Auto,
                         new PrioritySelector(
@@ -85,6 +90,7 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.BuffSelf("Retribution Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Retribution),
                             Spell.BuffSelf("Crusader Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Crusader)
                             ))
+                             */
                     );
         }
 

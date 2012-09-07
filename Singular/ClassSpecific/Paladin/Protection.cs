@@ -63,7 +63,7 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.BuffSelf("Divine Shield",
                     ret => StyxWoW.Me.CurrentMap.IsBattleground && StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance")),
 
-                Spell.Cast("Hand of Reckoning",
+                Spell.Cast("Reckoning",
                     ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
                     ret => SingularSettings.Instance.EnableTaunting && StyxWoW.Me.IsInInstance),
 
@@ -122,7 +122,7 @@ namespace Singular.ClassSpecific.Paladin
             return
                 new PrioritySelector(
                     Spell.Cast(
-                        "Hand of Reckoning",
+                        "Reckoning",
                         ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
                         ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.Count != 0),
                     Spell.BuffSelf("Avenging Wrath"),

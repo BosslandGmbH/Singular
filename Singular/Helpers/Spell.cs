@@ -54,15 +54,6 @@ namespace Singular.Helpers
 
         #endregion
 
-        private static WoWSpell GetSpellByName(string spellName)
-        {
-            WoWSpell spell;
-            if (!SpellManager.Spells.TryGetValue(spellName, out spell))
-                spell = SpellManager.RawSpells.FirstOrDefault(s => s.Name == spellName);
-
-            return spell;
-        }
-
         #region Wait
 
         /// <summary>

@@ -21,10 +21,10 @@ namespace Singular.ClassSpecific.Mage
         #region Normal Rotation
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FireMage)]
+        [Spec(WoWSpec.MageFire)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateFireMageNormalPull()
+        public static Composite CreateMageFireNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -42,10 +42,10 @@ namespace Singular.ClassSpecific.Mage
         }
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FireMage)]
+        [Spec(WoWSpec.MageFire)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateFireMageNormalCombat()
+        public static Composite CreateMageFireNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -112,11 +112,11 @@ namespace Singular.ClassSpecific.Mage
         #region Battleground Rotation
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FireMage)]
+        [Spec(WoWSpec.MageFire)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateFireMagePvPPullAndCombat()
+        public static Composite CreateMageFirePvPPullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -166,11 +166,11 @@ namespace Singular.ClassSpecific.Mage
         #region Instance Rotation
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FireMage)]
+        [Spec(WoWSpec.MageFire)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateFireMageInstancePullAndCombat()
+        public static Composite CreateMageFireInstancePullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

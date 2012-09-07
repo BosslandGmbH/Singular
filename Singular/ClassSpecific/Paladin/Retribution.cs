@@ -33,10 +33,10 @@ namespace Singular.ClassSpecific.Paladin
 
         #region Heal
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(WoWSpec.PaladinRetribution)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
-        public static Composite CreateRetributionPaladinHeal()
+        public static Composite CreatePaladinRetributionHeal()
         {
             return new PrioritySelector(
                 //Spell.WaitForCast(),
@@ -53,14 +53,14 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(WoWSpec.PaladinRetribution)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
-        public static Composite CreateRetributionPaladinRest()
+        public static Composite CreatePaladinRetributionRest()
         {
             return new PrioritySelector( // use ooc heals if we have mana to
                 new Decorator(ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                    CreateRetributionPaladinHeal()),
+                    CreatePaladinRetributionHeal()),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 Rest.CreateDefaultRestBehaviour(),
                 // Can we res people?
@@ -71,12 +71,12 @@ namespace Singular.ClassSpecific.Paladin
         #region Normal Rotation
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(WoWSpec.PaladinRetribution)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Heal)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateRetributionPaladinNormalPullAndCombat()
+        public static Composite CreatePaladinRetributionNormalPullAndCombat()
         {
             return new PrioritySelector(
 
@@ -161,13 +161,13 @@ namespace Singular.ClassSpecific.Paladin
         #region Battleground Rotation
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(WoWSpec.PaladinRetribution)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.Battlegrounds)]
 
-        public static Composite CreateRetributionPaladinPvPPullAndCombat()
+        public static Composite CreatePaladinRetributionPvPPullAndCombat()
         {
             HealerManager.NeedHealTargeting = true;
             return new PrioritySelector(
@@ -230,11 +230,11 @@ namespace Singular.ClassSpecific.Paladin
         #region Instance Rotation
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(WoWSpec.PaladinRetribution)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateRetributionPaladinInstancePullAndCombat()
+        public static Composite CreatePaladinRetributionInstancePullAndCombat()
         {
             return new PrioritySelector(
                     Safers.EnsureTarget(),
@@ -315,11 +315,11 @@ namespace Singular.ClassSpecific.Paladin
         #region Normal Rotation
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(WoWSpec.PaladinRetribution)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateRetributionPaladinNormalPullAndCombat()
+        public static Composite CreatePaladinRetributionNormalPullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -376,11 +376,11 @@ namespace Singular.ClassSpecific.Paladin
         #region Battleground Rotation
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(WoWSpec.PaladinRetribution)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateRetributionPaladinPvPPullAndCombat()
+        public static Composite CreatePaladinRetributionPvPPullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -438,11 +438,11 @@ namespace Singular.ClassSpecific.Paladin
         #region Instance Rotation
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.RetributionPaladin)]
+        [Spec(WoWSpec.PaladinRetribution)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateRetributionPaladinInstancePullAndCombat()
+        public static Composite CreatePaladinRetributionInstancePullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

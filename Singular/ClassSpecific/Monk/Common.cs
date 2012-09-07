@@ -20,11 +20,11 @@ namespace Singular.ClassSpecific.Monk
     {
         [Class(WoWClass.Monk)]
         [Behavior(BehaviorType.PreCombatBuffs)]
-        [Spec(TalentSpec.WindwalkerMonk)]
-        [Spec(TalentSpec.MistweaverMonk)]
-        [Spec(TalentSpec.BrewmasterMonk)]
+        [Spec(WoWSpec.WindwalkerMonk)]
+        [Spec(WoWSpec.MistweaverMonk)]
+        [Spec(WoWSpec.BrewmasterMonk)]
 
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Context(WoWContext.All)]
         private static Composite CreateMonkPreCombatBuffs()
         {

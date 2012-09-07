@@ -17,12 +17,12 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Normal
 
-        [Spec(TalentSpec.ProtectionWarrior)]
+        [Spec(WoWSpec.WarriorProtection)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        public static Composite CreateProtectionWarriorNormalPull()
+        public static Composite CreateWarriorProtectionNormalPull()
         {
             return new PrioritySelector(
                 // Ensure Target
@@ -78,7 +78,7 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 
-        [Spec(TalentSpec.ProtectionWarrior)]
+        [Spec(WoWSpec.WarriorProtection)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -142,12 +142,12 @@ namespace Singular.ClassSpecific.Warrior
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")));
         }
 
-        [Spec(TalentSpec.ProtectionWarrior)]
+        [Spec(WoWSpec.WarriorProtection)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        public static Composite CreateProtectionWarriorNormalCombat()
+        public static Composite CreateWarriorProtectionNormalCombat()
         {
             _slows = new[] {"Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom", "Infected Wounds"};
             return new PrioritySelector(
@@ -254,12 +254,12 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Pvp
 
-        [Spec(TalentSpec.ProtectionWarrior)]
+        [Spec(WoWSpec.WarriorProtection)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Battlegrounds)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        public static Composite CreateProtectionWarriorPvpPull()
+        public static Composite CreateWarriorProtectionPvpPull()
         {
             return new PrioritySelector(
                 // Ensure Target
@@ -315,7 +315,7 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 
-        [Spec(TalentSpec.ProtectionWarrior)]
+        [Spec(WoWSpec.WarriorProtection)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -379,12 +379,12 @@ namespace Singular.ClassSpecific.Warrior
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")));
         }
 
-        [Spec(TalentSpec.ProtectionWarrior)]
+        [Spec(WoWSpec.WarriorProtection)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        public static Composite CreateProtectionWarriorPvPCombat()
+        public static Composite CreateWarriorProtectionPvPCombat()
         {
             _slows = new[] {"Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom", "Infected Wounds"};
             return new PrioritySelector(
@@ -445,12 +445,12 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Instance
 
-        [Spec(TalentSpec.ProtectionWarrior)]
+        [Spec(WoWSpec.WarriorProtection)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Instances)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        public static Composite CreateProtectionWarriorInstancePull()
+        public static Composite CreateWarriorProtectionInstancePull()
         {
             return new PrioritySelector(
                 // Ensure Target
@@ -506,7 +506,7 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 
-        [Spec(TalentSpec.ProtectionWarrior)]
+        [Spec(WoWSpec.WarriorProtection)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -570,12 +570,12 @@ namespace Singular.ClassSpecific.Warrior
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")));
         }
 
-        [Spec(TalentSpec.ProtectionWarrior)]
+        [Spec(WoWSpec.WarriorProtection)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
-        public static Composite CreateProtectionWarriorCombat()
+        public static Composite CreateWarriorProtectionCombat()
         {
             _slows = new[] {"Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom", "Infected Wounds"};
             return new PrioritySelector(

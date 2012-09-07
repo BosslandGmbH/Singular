@@ -35,10 +35,10 @@ namespace Singular.ClassSpecific.Paladin
     {
         [Class(WoWClass.Paladin)]
         [Behavior(BehaviorType.PreCombatBuffs)]
-        [Spec(TalentSpec.RetributionPaladin)]
-        [Spec(TalentSpec.HolyPaladin)]
-        [Spec(TalentSpec.ProtectionPaladin)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.PaladinRetribution)]
+        [Spec(WoWSpec.PaladinHoly)]
+        [Spec(WoWSpec.PaladinProtection)]
+        [Spec(WoWSpec.None)]
         [Context(WoWContext.All)]
         public static Composite CreatePaladinPreCombatBuffs()
         {
@@ -48,14 +48,14 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Crusader Aura", ret => StyxWoW.Me.Mounted),
                     CreatePaladinBlessBehavior(),
                     new Decorator(
-                        ret => TalentManager.CurrentSpec == TalentSpec.HolyPaladin,
+                        ret => TalentManager.CurrentSpec == WoWSpec.PaladinHoly,
                         new PrioritySelector(
                             //Spell.BuffSelf("Concentration Aura", ret => SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto),
                             Spell.BuffSelf("Seal of Insight"),
                             Spell.BuffSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Insight"))
                             )),
                     new Decorator(
-                        ret => TalentManager.CurrentSpec != TalentSpec.HolyPaladin,
+                        ret => TalentManager.CurrentSpec != WoWSpec.PaladinHoly,
                         new PrioritySelector(
                             Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin && StyxWoW.Me.IsInParty)
                             /*
@@ -63,19 +63,19 @@ namespace Singular.ClassSpecific.Paladin
                                 "Devotion Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
-                                (StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin ||
-                                 TalentManager.CurrentSpec == TalentSpec.Lowbie && !SpellManager.HasSpell("Retribution Aura"))),
+                                (StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == WoWSpec.PaladinProtection ||
+                                 TalentManager.CurrentSpec == WoWSpec.None && !SpellManager.HasSpell("Retribution Aura"))),
                             Spell.BuffSelf(
                                 "Retribution Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
-                                ((!StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == TalentSpec.ProtectionPaladin) ||
-                                 TalentManager.CurrentSpec == TalentSpec.Lowbie)),
+                                ((!StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == WoWSpec.PaladinProtection) ||
+                                 TalentManager.CurrentSpec == WoWSpec.None)),
                             Spell.BuffSelf(
                                 "Retribution Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
-                                TalentManager.CurrentSpec == TalentSpec.RetributionPaladin),
+                                TalentManager.CurrentSpec == WoWSpec.PaladinRetribution),
                             Spell.BuffSelf("Seal of Truth"),
                             Spell.BuffSelf("Seal of Righteousness", ret => !SpellManager.HasSpell("Seal of Truth"))
                              */

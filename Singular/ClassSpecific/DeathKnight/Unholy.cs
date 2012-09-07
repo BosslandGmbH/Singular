@@ -17,10 +17,10 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Normal Rotation
 
         [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.UnholyDeathKnight)]
+        [Spec(WoWSpec.DeathKnightUnholy)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateUnholyDeathKnightNormalCombat()
+        public static Composite CreateDeathKnightUnholyNormalCombat()
         {
             return new PrioritySelector(
                Safers.EnsureTarget(),
@@ -116,10 +116,10 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Battleground Rotation
 
         [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.UnholyDeathKnight)]
+        [Spec(WoWSpec.DeathKnightUnholy)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateUnholyDeathKnightPvPCombat()
+        public static Composite CreateDeathKnightUnholyPvPCombat()
         {
             return new PrioritySelector(
                Safers.EnsureTarget(),
@@ -187,10 +187,10 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Instance Rotations
 
         [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.UnholyDeathKnight)]
+        [Spec(WoWSpec.DeathKnightUnholy)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateUnholyDeathKnightInstanceCombat()
+        public static Composite CreateDeathKnightUnholyInstanceCombat()
         {
             return new PrioritySelector(
                Safers.EnsureTarget(),

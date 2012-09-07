@@ -11,7 +11,7 @@ namespace Singular.ClassSpecific.Hunter
     public class Lowbie
     {
         [Class(WoWClass.Hunter)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]

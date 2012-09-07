@@ -44,10 +44,10 @@ namespace Singular.ClassSpecific.Druid
 
 [Class(WoWClass.Druid)]
 [Behavior(BehaviorType.PreCombatBuffs)]
-[Spec(TalentSpec.BalanceDruid)]
-[Spec(TalentSpec.FeralDruid)]
-[Spec(TalentSpec.RestorationDruid)]
-[Spec(TalentSpec.Lowbie)]
+[Spec(WoWSpec.DruidBalance)]
+[Spec(WoWSpec.DruidFeral)]
+[Spec(WoWSpec.DruidRestoration)]
+[Spec(WoWSpec.None)]
 [Context(WoWContext.All)]
 public static Composite CreateDruidPreCombatBuff()
 {
@@ -70,10 +70,10 @@ public static Composite CreateDruidPreCombatBuff()
 
         [Class(WoWClass.Druid)]
         [Behavior(BehaviorType.PreCombatBuffs)]
-        [Spec(TalentSpec.BalanceDruid)]
-        [Spec(TalentSpec.FeralDruid)]
-        [Spec(TalentSpec.RestorationDruid)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.DruidBalance)]
+        [Spec(WoWSpec.DruidFeral)]
+        [Spec(WoWSpec.DruidRestoration)]
+        [Spec(WoWSpec.None)]
         [Context(WoWContext.All)]
         public static Composite CreateDruidPreCombatBuff()
         {
@@ -118,9 +118,9 @@ public static Composite CreateDruidPreCombatBuff()
 
         [Class(WoWClass.Druid)]
         [Behavior(BehaviorType.CombatBuffs)]
-        [Spec(TalentSpec.BalanceDruid)]
-        [Spec(TalentSpec.FeralDruid)]
-        [Spec(TalentSpec.RestorationDruid)]
+        [Spec(WoWSpec.DruidBalance)]
+        [Spec(WoWSpec.DruidFeral)]
+        [Spec(WoWSpec.DruidRestoration)]
         [Context(WoWContext.Instances)]
         public static Composite CreateDruidInstanceCombatBuffs()
         {
@@ -145,9 +145,9 @@ public static Composite CreateDruidPreCombatBuff()
 
         [Class(WoWClass.Druid)]
         [Behavior(BehaviorType.CombatBuffs)]
-        [Spec(TalentSpec.BalanceDruid)]
-        [Spec(TalentSpec.FeralDruid)]
-        [Spec(TalentSpec.RestorationDruid)]
+        [Spec(WoWSpec.DruidBalance)]
+        [Spec(WoWSpec.DruidFeral)]
+        [Spec(WoWSpec.DruidRestoration)]
         [Context(WoWContext.Instances)]
         public static Composite CreateDruidInstanceCombatBuffs()
         {
@@ -177,10 +177,10 @@ public static Composite CreateDruidPreCombatBuff()
 
         [Class(WoWClass.Druid)]
         [Behavior(BehaviorType.Rest)]
-        [Spec(TalentSpec.BalanceDruid)]
-        [Spec(TalentSpec.FeralDruid)]
+        [Spec(WoWSpec.DruidBalance)]
+        [Spec(WoWSpec.DruidFeral)]
         [Context(WoWContext.All)]
-        public static Composite CreateBalanceAndFeralDruidRest()
+        public static Composite CreateBalanceAndDruidFeralRest()
         {
             return new PrioritySelector(
                 CreateNonRestoHeals(),
@@ -196,10 +196,10 @@ public static Composite CreateDruidPreCombatBuff()
 
         [Class(WoWClass.Druid)]
         [Behavior(BehaviorType.Rest)]
-        [Spec(TalentSpec.BalanceDruid)]
-        [Spec(TalentSpec.FeralDruid)]
+        [Spec(WoWSpec.DruidBalance)]
+        [Spec(WoWSpec.DruidFeral)]
         [Context(WoWContext.All)]
-        public static Composite CreateBalanceAndFeralDruidRest()
+        public static Composite CreateBalanceAndDruidFeralRest()
         {
             return new PrioritySelector(
                 new Decorator(

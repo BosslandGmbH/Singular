@@ -18,10 +18,10 @@ namespace Singular.ClassSpecific.Rogue
         #region Normal Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(WoWSpec.RogueCombat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateCombatRogueNormalPull()
+        public static Composite CreateRogueCombatNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -48,10 +48,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(WoWSpec.RogueCombat)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateCombatRogueNormalCombat()
+        public static Composite CreateRogueCombatNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -117,10 +117,10 @@ namespace Singular.ClassSpecific.Rogue
         #region Battleground Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(WoWSpec.RogueCombat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateCombatRoguePvPPull()
+        public static Composite CreateRogueCombatPvPPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -149,10 +149,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(WoWSpec.RogueCombat)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateCombatRoguePvPCombat()
+        public static Composite CreateRogueCombatPvPCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -209,10 +209,10 @@ namespace Singular.ClassSpecific.Rogue
         #region Instance Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(WoWSpec.RogueCombat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateCombatRogueInstancePull()
+        public static Composite CreateRogueCombatInstancePull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -239,10 +239,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
+        [Spec(WoWSpec.RogueCombat)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateCombatRogueInstanceCombat()
+        public static Composite CreateRogueCombatInstanceCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

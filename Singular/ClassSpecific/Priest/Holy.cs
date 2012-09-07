@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Priest
     public class Holy
     {
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.HolyPriest)]
+        [Spec(WoWSpec.PriestHoly)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public static Composite CreateHolyHealRest()
@@ -146,7 +146,7 @@ namespace Singular.ClassSpecific.Priest
         }
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.HolyPriest)]
+        [Spec(WoWSpec.PriestHoly)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
         public static Composite CreateHolyHealComposite()
@@ -159,7 +159,7 @@ namespace Singular.ClassSpecific.Priest
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
         // Note: This will probably break shit if we're solo, but oh well!
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.HolyPriest)]
+        [Spec(WoWSpec.PriestHoly)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]

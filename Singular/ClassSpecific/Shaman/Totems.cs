@@ -245,12 +245,12 @@ namespace Singular.ClassSpecific.Shaman
         private static WoWTotem GetEarthTotem()
         {
             LocalPlayer me = StyxWoW.Me;
-            bool isEnhance = TalentManager.CurrentSpec == TalentSpec.EnhancementShaman;
+            bool isEnhance = TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement;
             // Solo play
             if (!me.IsInParty && !me.IsInRaid)
             {
                 // Enhance, lowbie
-                if (isEnhance || TalentManager.CurrentSpec == TalentSpec.Lowbie)
+                if (isEnhance || TalentManager.CurrentSpec == WoWSpec.None)
                 {
                     if (TotemIsKnown(WoWTotem.StrengthOfEarth))
                     {
@@ -297,13 +297,13 @@ namespace Singular.ClassSpecific.Shaman
 
         public static WoWTotem GetAirTotem()
         {
-            if (TalentManager.CurrentSpec == TalentSpec.Lowbie)
+            if (TalentManager.CurrentSpec == WoWSpec.None)
             {
                 return WoWTotem.None;
             }
 
             LocalPlayer me = StyxWoW.Me;
-            bool isEnhance = TalentManager.CurrentSpec == TalentSpec.EnhancementShaman;
+            bool isEnhance = TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement;
             
             if (!me.IsInParty && !me.IsInRaid)
             {
@@ -350,7 +350,7 @@ namespace Singular.ClassSpecific.Shaman
         public static WoWTotem GetWaterTotem()
         {
             // Plain and simple. If we're resto, we never want a different water totem out. Thats all there is to it.
-            if (TalentManager.CurrentSpec == TalentSpec.RestorationShaman)
+            if (TalentManager.CurrentSpec == WoWSpec.ShamanRestoration)
             {
                 if (TotemIsKnown(WoWTotem.HealingStream))
                 {

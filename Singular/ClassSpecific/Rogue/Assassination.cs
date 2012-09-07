@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Rogue
         #region Normal Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.AssasinationRogue)]
+        [Spec(WoWSpec.RogueAssassination)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
         public static Composite CreateAssaRogueNormalPull()
@@ -59,7 +59,7 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.AssasinationRogue)]
+        [Spec(WoWSpec.RogueAssassination)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
         public static Composite CreateAssaRogueNormalCombat()
@@ -131,7 +131,7 @@ namespace Singular.ClassSpecific.Rogue
         #region Battleground Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.AssasinationRogue)]
+        [Spec(WoWSpec.RogueAssassination)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Battlegrounds)]
         public static Composite CreateAssaRoguePvPPull()
@@ -163,7 +163,7 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.AssasinationRogue)]
+        [Spec(WoWSpec.RogueAssassination)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
         public static Composite CreateAssaRoguePvPCombat()
@@ -226,7 +226,7 @@ namespace Singular.ClassSpecific.Rogue
         #region Instance Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.AssasinationRogue)]
+        [Spec(WoWSpec.RogueAssassination)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Instances)]
         public static Composite CreateAssaRogueInstancePull()
@@ -256,7 +256,7 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.AssasinationRogue)]
+        [Spec(WoWSpec.RogueAssassination)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
         public static Composite CreateAssaRogueInstanceCombat()

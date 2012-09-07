@@ -21,10 +21,10 @@ namespace Singular.ClassSpecific.Mage
         private static WoWItem _manaGem;
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FireMage)]
-        [Spec(TalentSpec.FrostMage)]
-        [Spec(TalentSpec.ArcaneMage)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.MageFire)]
+        [Spec(WoWSpec.MageFrost)]
+        [Spec(WoWSpec.MageArcane)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateMageBuffs()
@@ -44,7 +44,7 @@ namespace Singular.ClassSpecific.Mage
                 // Mage ward up, at all times. Period.
                         Spell.BuffSelf("Mage Ward"),
                 // Don't put up mana shield if we're arcane. Since our mastery works off of how much mana we have!
-                        Spell.BuffSelf("Mana Shield", ret => TalentManager.CurrentSpec != TalentSpec.ArcaneMage))),
+                        Spell.BuffSelf("Mana Shield", ret => TalentManager.CurrentSpec != WoWSpec.MageArcane))),
                 // We may not have it, but if we do, it should be up 100% of the time.
                 Spell.BuffSelf("Ice Barrier"),
                 // Outside of BGs, we really only have 2 choices of armor. Molten, or mage. Mage for arcane, molten for frost/fire.
@@ -52,8 +52,8 @@ namespace Singular.ClassSpecific.Mage
                     ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) == 0,
                     new PrioritySelector(
                 // Arcane is a mana whore, we want molten if we don't have mage yet. Otherwise, stick with Mage armor.
-                        Spell.BuffSelf("Molten Armor", ret => (TalentManager.CurrentSpec != TalentSpec.ArcaneMage || !SpellManager.HasSpell("Mage Armor"))),
-                        Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == TalentSpec.ArcaneMage))),
+                        Spell.BuffSelf("Molten Armor", ret => (TalentManager.CurrentSpec != WoWSpec.MageArcane || !SpellManager.HasSpell("Mage Armor"))),
+                        Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == WoWSpec.MageArcane))),
 
 
                 new PrioritySelector(ctx => MageTable,
@@ -82,7 +82,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Conjure Mana Gem", ret => !HaveManaGem), //for dealing with managems
                 new Decorator(
                     ret =>
-                    TalentManager.CurrentSpec == TalentSpec.FrostMage && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
+                    TalentManager.CurrentSpec == WoWSpec.MageFrost && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
                     new Action(ret => SpellManager.Cast("Summon Water Elemental")))
                 );
         }

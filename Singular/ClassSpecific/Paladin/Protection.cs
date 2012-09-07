@@ -17,10 +17,10 @@ namespace Singular.ClassSpecific.Paladin
     public class Protection
     {
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.HolyPaladin)]
+        [Spec(WoWSpec.PaladinHoly)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
-        public static Composite CreateHolyPaladinRest()
+        public static Composite CreatePaladinHolyRest()
         {
             return new PrioritySelector(
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
@@ -31,10 +31,10 @@ namespace Singular.ClassSpecific.Paladin
 
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.ProtectionPaladin)]
+        [Spec(WoWSpec.PaladinProtection)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
-        public static Composite CreateProtectionPaladinCombat()
+        public static Composite CreatePaladinProtectionCombat()
         {
             return new PrioritySelector(
                 ctx => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
@@ -97,10 +97,10 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.ProtectionPaladin)]
+        [Spec(WoWSpec.PaladinProtection)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
-        public static Composite CreateProtectionPaladinPull()
+        public static Composite CreatePaladinProtectionPull()
         {
             return
                 new PrioritySelector(
@@ -114,10 +114,10 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.ProtectionPaladin)]
+        [Spec(WoWSpec.PaladinProtection)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.All)]
-        public static Composite CreateProtectionPaladinCombatBuffs()
+        public static Composite CreatePaladinProtectionCombatBuffs()
         {
             return
                 new PrioritySelector(
@@ -146,10 +146,10 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.ProtectionPaladin)]
+        [Spec(WoWSpec.PaladinProtection)]
         [Behavior(BehaviorType.PullBuffs)]
         [Context(WoWContext.All)]
-        public static Composite CreateProtectionPaladinPullBuffs()
+        public static Composite CreatePaladinProtectionPullBuffs()
         {
             return
                 new PrioritySelector(

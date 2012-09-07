@@ -18,6 +18,7 @@ using System.Reflection;
 
 using Singular.Managers;
 using Singular.Settings;
+using Styx;
 using Styx.Combat.CombatRoutine;
 
 using Styx.TreeSharp;
@@ -28,7 +29,7 @@ namespace Singular.Dynamics
     {
         private static List<MethodInfo> _methods = new List<MethodInfo>();
 
-        public static Composite GetComposite(WoWClass wowClass, TalentSpec spec, BehaviorType behavior, WoWContext context, out int behaviourCount)
+        public static Composite GetComposite(WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context, out int behaviourCount)
         {
             behaviourCount = 0;
             if (_methods.Count <= 0)
@@ -71,7 +72,7 @@ namespace Singular.Dynamics
                     else if (ca is SpecAttribute)
                     {
                         var attrib = ca as SpecAttribute;
-                        if (attrib.SpecificSpec != TalentSpec.Any && attrib.SpecificSpec != spec)
+                        if (attrib.SpecificSpec == (WoWSpec)0 && attrib.SpecificSpec != spec)
                         {
                             continue;
                         }

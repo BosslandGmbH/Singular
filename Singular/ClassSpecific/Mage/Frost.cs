@@ -22,10 +22,10 @@ namespace Singular.ClassSpecific.Mage
         #region Normal Rotation
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FrostMage)]
+        [Spec(WoWSpec.MageFrost)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateFrostMageNormalPull()
+        public static Composite CreateMageFrostNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -49,10 +49,10 @@ namespace Singular.ClassSpecific.Mage
         }
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FrostMage)]
+        [Spec(WoWSpec.MageFrost)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateFrostMageNormalCombat()
+        public static Composite CreateMageFrostNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -129,11 +129,11 @@ namespace Singular.ClassSpecific.Mage
         #region Battleground Rotation
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FrostMage)]
+        [Spec(WoWSpec.MageFrost)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateFrostMagePvPPullAndCombat()
+        public static Composite CreateMageFrostPvPPullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -196,11 +196,11 @@ namespace Singular.ClassSpecific.Mage
         #region Instance Rotation
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.FrostMage)]
+        [Spec(WoWSpec.MageFrost)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateFrostMageInstancePullAndCombat()
+        public static Composite CreateMageFrostInstancePullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

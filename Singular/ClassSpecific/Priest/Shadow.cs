@@ -21,10 +21,10 @@ namespace Singular.ClassSpecific.Priest
         #region Normal Rotation
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.ShadowPriest)]
+        [Spec(WoWSpec.PriestShadow)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateShadowPriestNormalPull()
+        public static Composite CreatePriestShadowNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -45,10 +45,10 @@ namespace Singular.ClassSpecific.Priest
         }
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.ShadowPriest)]
+        [Spec(WoWSpec.PriestShadow)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateShadowPriestNormalCombat()
+        public static Composite CreatePriestShadowNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -115,11 +115,11 @@ namespace Singular.ClassSpecific.Priest
         #region Battleground Rotation
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.ShadowPriest)]
+        [Spec(WoWSpec.PriestShadow)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateShadowPriestPvPPullAndCombat()
+        public static Composite CreatePriestShadowPvPPullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -156,10 +156,10 @@ namespace Singular.ClassSpecific.Priest
         #region Instance Rotation
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.ShadowPriest)]
+        [Spec(WoWSpec.PriestShadow)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateShadowPriestRest()
+        public static Composite CreatePriestShadowRest()
         {
             return new PrioritySelector(
                 Spell.Resurrect("Resurrection"),
@@ -168,11 +168,11 @@ namespace Singular.ClassSpecific.Priest
         }
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.ShadowPriest)]
+        [Spec(WoWSpec.PriestShadow)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateShadowPriestInstancePullAndCombat()
+        public static Composite CreatePriestShadowInstancePullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

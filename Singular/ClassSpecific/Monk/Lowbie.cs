@@ -14,7 +14,7 @@ namespace Singular.ClassSpecific.Monk
     public class Lowbie
     {
         [Class(WoWClass.Mage)] 
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
 
@@ -36,7 +36,7 @@ namespace Singular.ClassSpecific.Monk
         }
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public static Composite CreateLowbieMonkPull()

@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Shaman
 
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.RestorationShaman)]
+        [Spec(WoWSpec.ShamanRestoration)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
@@ -53,7 +53,7 @@ namespace Singular.ClassSpecific.Shaman
 
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.RestorationShaman)]
+        [Spec(WoWSpec.ShamanRestoration)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public static Composite CreateRestoShamanRest()
@@ -68,7 +68,7 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.RestorationShaman)]
+        [Spec(WoWSpec.ShamanRestoration)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public static Composite CreateRestoShamanCombatBehavior()
@@ -100,7 +100,7 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.RestorationShaman)]
+        [Spec(WoWSpec.ShamanRestoration)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
         public static Composite CreateRestoShamanHealBehavior()

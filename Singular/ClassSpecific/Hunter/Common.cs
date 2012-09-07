@@ -34,10 +34,10 @@ namespace Singular.ClassSpecific.Hunter
         }
 
         [Class(WoWClass.Hunter)]
-        [Spec(TalentSpec.BeastMasteryHunter)]
-        [Spec(TalentSpec.SurvivalHunter)]
-        [Spec(TalentSpec.MarksmanshipHunter)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.HunterBeastMastery)]
+        [Spec(WoWSpec.HunterSurvival)]
+        [Spec(WoWSpec.HunterMarksmanship)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateHunterBuffs()

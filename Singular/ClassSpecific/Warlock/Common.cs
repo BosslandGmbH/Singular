@@ -34,10 +34,10 @@ namespace Singular.ClassSpecific.Warlock
         }
 
         [Class(WoWClass.Warlock)]
-        [Spec(TalentSpec.AfflictionWarlock)]
-        [Spec(TalentSpec.DemonologyWarlock)]
-        [Spec(TalentSpec.DestructionWarlock)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.WarlockAffliction)]
+        [Spec(WoWSpec.WarlockDemonology)]
+        [Spec(WoWSpec.WarlockDestruction)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateWarlockPreCombatBuffs()
@@ -66,10 +66,10 @@ namespace Singular.ClassSpecific.Warlock
         }
 
         [Class(WoWClass.Warlock)]
-        [Spec(TalentSpec.AfflictionWarlock)]
-        [Spec(TalentSpec.DemonologyWarlock)]
-        [Spec(TalentSpec.DestructionWarlock)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.WarlockAffliction)]
+        [Spec(WoWSpec.WarlockDemonology)]
+        [Spec(WoWSpec.WarlockDestruction)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateWarlockCombatBuffs()
@@ -81,10 +81,10 @@ namespace Singular.ClassSpecific.Warlock
         }
 
         [Class(WoWClass.Warlock)]
-        [Spec(TalentSpec.AfflictionWarlock)]
-        [Spec(TalentSpec.DemonologyWarlock)]
-        [Spec(TalentSpec.DestructionWarlock)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.WarlockAffliction)]
+        [Spec(WoWSpec.WarlockDemonology)]
+        [Spec(WoWSpec.WarlockDestruction)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public static Composite CreateWarlockRest()

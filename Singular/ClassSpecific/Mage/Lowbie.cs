@@ -12,7 +12,7 @@ namespace Singular.ClassSpecific.Mage
     public class Lowbie
     {
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Context(WoWContext.All)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]

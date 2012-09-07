@@ -19,7 +19,7 @@ namespace Singular.ClassSpecific.Hunter
         #region Normal Rotation
         
         [Class(WoWClass.Hunter)]
-        [Spec(TalentSpec.BeastMasteryHunter)]
+        [Spec(WoWSpec.HunterBeastMastery)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
@@ -110,7 +110,7 @@ namespace Singular.ClassSpecific.Hunter
         #region Battleground Rotation
 
         [Class(WoWClass.Hunter)]
-        [Spec(TalentSpec.BeastMasteryHunter)]
+        [Spec(WoWSpec.HunterBeastMastery)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Hunter
         #region Instance Rotation
         
         [Class(WoWClass.Hunter)]
-        [Spec(TalentSpec.BeastMasteryHunter)]
+        [Spec(WoWSpec.HunterBeastMastery)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]

@@ -60,9 +60,9 @@ namespace Singular.ClassSpecific.Druid
         [Class(WoWClass.Druid)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
-        [Spec(TalentSpec.BalanceDruid)]
+        [Spec(WoWSpec.DruidBalance)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateBalanceDruidNormalCombat()
+        public static Composite CreateDruidBalanceNormalCombat()
         {
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(
@@ -138,9 +138,9 @@ namespace Singular.ClassSpecific.Druid
         [Class(WoWClass.Druid)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
-        [Spec(TalentSpec.BalanceDruid)]
+        [Spec(WoWSpec.DruidBalance)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateBalanceDruidPvPCombat()
+        public static Composite CreateDruidBalancePvPCombat()
         {
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(
@@ -151,7 +151,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.BuffSelf("Moonkin Form"),
                 Spell.BuffSelf("Barkskin", 
-                    ret => StyxWoW.Me.IsCrowdControlled() || StyxWoW.Me.HealthPercent < 40),
+                    ret => StyxWoW.Me.IsCrowdControlled || StyxWoW.Me.HealthPercent < 40),
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -193,9 +193,9 @@ namespace Singular.ClassSpecific.Druid
         [Class(WoWClass.Druid)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
-        [Spec(TalentSpec.BalanceDruid)]
+        [Spec(WoWSpec.DruidBalance)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateBalanceDruidInstanceCombat()
+        public static Composite CreateDruidBalanceInstanceCombat()
         {
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(

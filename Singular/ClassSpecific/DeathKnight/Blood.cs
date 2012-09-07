@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.DeathKnight
         [Spec(WoWSpec.DeathKnightBlood)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateBloodDeathKnightNormalCombat()
+        public static Composite CreateDeathKnightBloodNormalCombat()
         {
             return
                 new PrioritySelector(
@@ -178,10 +178,10 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Battleground Rotation
 
         [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.BloodDeathKnight)]
+        [Spec(WoWSpec.DeathKnightBlood)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateBloodDeathKnightPvPCombat()
+        public static Composite CreateDeathKnightBloodPvPCombat()
         {
             return
                 new PrioritySelector(
@@ -307,9 +307,9 @@ namespace Singular.ClassSpecific.DeathKnight
         // Blood DKs should be DG'ing everything it can when pulling. ONLY IN INSTANCES.
         [Class(WoWClass.DeathKnight)]
         [Behavior(BehaviorType.Pull)]
-        [Spec(TalentSpec.BloodDeathKnight)]
+        [Spec(WoWSpec.DeathKnightBlood)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateBloodDeathKnightInstancePull()
+        public static Composite CreateDeathKnightBloodInstancePull()
         {
             return
                 new PrioritySelector(
@@ -332,10 +332,10 @@ namespace Singular.ClassSpecific.DeathKnight
         }
 
         [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.BloodDeathKnight)]
+        [Spec(WoWSpec.DeathKnightBlood)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateBloodDeathKnightInstanceCombat()
+        public static Composite CreateDeathKnightBloodInstanceCombat()
         {
             return
                 new PrioritySelector(

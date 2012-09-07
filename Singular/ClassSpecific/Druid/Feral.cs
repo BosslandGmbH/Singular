@@ -177,7 +177,7 @@ namespace Singular.ClassSpecific.Druid
         #endregion
 
         #region Normal Rotation
-        [Spec(TalentSpec.FeralDruid)]
+        [Spec(WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Druid)]
         [Context(WoWContext.Normal)]
@@ -217,7 +217,7 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-        [Spec(TalentSpec.FeralDruid)]
+        [Spec(WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Druid)]
         [Context(WoWContext.Normal)]
@@ -317,7 +317,7 @@ namespace Singular.ClassSpecific.Druid
 
         #region ILoveAnimals Initialize Pull
 
-        [Spec(TalentSpec.FeralDruid)]
+        [Spec(WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Druid)]
         [Context(WoWContext.Battlegrounds)]
@@ -340,7 +340,7 @@ namespace Singular.ClassSpecific.Druid
 
         #region ILoveAnimals Init Combat
 
-        [Spec(TalentSpec.FeralDruid)]
+        [Spec(WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Druid)]
         [Context(WoWContext.Battlegrounds)]
@@ -821,7 +821,7 @@ namespace Singular.ClassSpecific.Druid
                            ((Settings.PvPBerserksafe && EnemyUnitsPvP.Count >= 2) || !Settings.PvPBerserksafe) &&
                            !SpellManager.GlobalCooldown &&
                            SpellManager.HasSpell("Tiger's Fury") &&
-                           SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().TotalSeconds > 6),
+                           SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds > 6),
                 Helpers.Common.CreateAutoAttack(true),
                 /*AOE*/
                 new Decorator(
@@ -938,7 +938,7 @@ return Action.RAKE;*/
                                     (StyxWoW.Me.CurrentTarget.HasMyAura("Rake") &&
                                      SpellManager.HasSpell("Tiger's Fury") &&
                                      StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rake", true).TotalSeconds <=
-                                     SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().TotalSeconds) ||
+                                     SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds) ||
                                     CurrentEnergy >= 71)
                             ),
                 //#15
@@ -956,7 +956,7 @@ return Action.RAKE;*/
                         //#17
                         Spell.Cast("Ravage!", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Stampede") &&
                                                      SpellManager.HasSpell("Tiger's Fury") &&
-                                                     SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().TotalSeconds <
+                                                     SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds <
                                                      1.0 &&
                                                      Has4PieceTier13Bonus),
                 //#new
@@ -1028,12 +1028,12 @@ return Action.RAKE;*/
                                    ret =>
                                    (StyxWoW.Me.CurrentTarget.MeIsBehind || StyxWoW.Me.CurrentTarget.CanShredBoss()) &&
                                    SpellManager.HasSpell("Tiger's Fury") &&
-                                   SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().TotalSeconds <= 3),
+                                   SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds <= 3),
                         Spell.Cast("Mangle (Cat)",
                                    ret =>
                                    (!StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.CurrentTarget.CanShredBoss()) &&
                                    SpellManager.HasSpell("Tiger's Fury") &&
-                                   SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().
+                                   SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.
                                        TotalSeconds <= 3),
                 //#25
                         Spell.Cast("Shred",
@@ -1068,7 +1068,7 @@ return Action.RAKE;*/
 
         /* Original Battleground Rotation
  
-        [Spec(TalentSpec.FeralDruid)]
+        [Spec(WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Druid)]
         [Context(WoWContext.Battlegrounds)]
@@ -1099,7 +1099,7 @@ return Action.RAKE;*/
                 );
         }
 
-        [Spec(TalentSpec.FeralDruid)]
+        [Spec(WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Druid)]
         [Context(WoWContext.Battlegrounds)]
@@ -1598,7 +1598,7 @@ return Action.RAKE;*/
                            ret => SingularSettings.Instance.Druid.CatRaidBerserk && !SpellManager.GlobalCooldown &&
                                   StyxWoW.Me.CurrentTarget.CurrentHealth / Finisherhealth < 25 &&
                                   SpellManager.HasSpell("Tiger's Fury") &&
-                                  SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().TotalSeconds > 6),
+                                  SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds > 6),
                 Helpers.Common.CreateAutoAttack(true),
                 /*AOE*/
                 new Decorator(
@@ -1689,7 +1689,7 @@ return Action.RAKE;*/
                                           )
                                           && (StyxWoW.Me.ActiveAuras.ContainsKey("Berserk") ||
                                               StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds + 1.9 <=
-                                              SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().TotalSeconds)
+                                              SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds)
                             ),
                 //#12       
                         Spell.Cast("Ferocious Bite",
@@ -1724,7 +1724,7 @@ return Action.RAKE;*/
                                            (StyxWoW.Me.CurrentTarget.HasMyAura("Rake") &&
                                             SpellManager.HasSpell("Tiger's Fury") &&
                                             StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rake", true).TotalSeconds <=
-                                            SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().TotalSeconds) ||
+                                            SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds) ||
                                            CurrentEnergy >= 71)
                             ),
                 //#15
@@ -1746,7 +1746,7 @@ return Action.RAKE;*/
                 //#17
                         Spell.Cast("Ravage!", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Stampede") &&
                                                      SpellManager.HasSpell("Tiger's Fury") &&
-                                                     SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().TotalSeconds <
+                                                     SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds <
                                                      1.0 &&
                                                      Has4PieceTier13Bonus),
                 //#new
@@ -1834,12 +1834,12 @@ return Action.RAKE;*/
                                    ret =>
                                    (StyxWoW.Me.CurrentTarget.MeIsBehind || StyxWoW.Me.CurrentTarget.CanShredBoss()) &&
                                    SpellManager.HasSpell("Tiger's Fury") &&
-                                   SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().TotalSeconds <= 3),
+                                   SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds <= 3),
                         Spell.Cast("Mangle (Cat)",
                                    ret =>
                                    (!StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.CurrentTarget.CanShredBoss()) &&
                                    SpellManager.HasSpell("Tiger's Fury") &&
-                                   SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft().
+                                   SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.
                                        TotalSeconds <= 3),
                 //#25
                         Spell.Cast("Shred",
@@ -1874,7 +1874,7 @@ return Action.RAKE;*/
         // End of ILoveAnimals Instance Rotation
 
         /* Original Instance Rotation
-        [Spec(TalentSpec.FeralDruid)]
+        [Spec(WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Druid)]

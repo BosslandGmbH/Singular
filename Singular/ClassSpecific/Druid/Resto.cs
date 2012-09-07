@@ -16,7 +16,7 @@ namespace Singular.ClassSpecific.Druid
     public class Resto
     {
         [Class(WoWClass.Druid)]
-        [Spec(TalentSpec.RestorationDruid)]
+        [Spec(WoWSpec.DruidRestoration)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public static Composite CreateRestoDruidHealRest()
@@ -144,7 +144,7 @@ namespace Singular.ClassSpecific.Druid
         }
 
         [Class(WoWClass.Druid)]
-        [Spec(TalentSpec.RestorationDruid)]
+        [Spec(WoWSpec.DruidRestoration)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
         public static Composite CreateRestoDruidHealBehavior()
@@ -155,7 +155,7 @@ namespace Singular.ClassSpecific.Druid
         }
 
         [Class(WoWClass.Druid)]
-        [Spec(TalentSpec.RestorationDruid)]
+        [Spec(WoWSpec.DruidRestoration)]
         [Behavior(BehaviorType.Combat | BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public static Composite CreateRestoDruidCombat()
@@ -178,7 +178,7 @@ namespace Singular.ClassSpecific.Druid
         }
 
         [Class(WoWClass.Druid)]
-        [Spec(TalentSpec.RestorationDruid)]
+        [Spec(WoWSpec.DruidRestoration)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateRestoDruidCombatBuffs()

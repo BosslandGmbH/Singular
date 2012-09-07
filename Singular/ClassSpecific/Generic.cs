@@ -3,7 +3,7 @@ namespace Singular.ClassSpecific
 {
     public static class Generic
     {
-        //[Spec(TalentSpec.Any)]
+        //[Spec(WoWSpec.Any)]
         //[Behavior(BehaviorType.All)]
         //[Class(WoWClass.None)]
         //[Priority(999)]
@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific
         //            Item.UseItem(47499)));
         //}
 
-        //[Spec(TalentSpec.Any)]
+        //[Spec(WoWSpec.Any)]
         //[Behavior(BehaviorType.All)]
         //[Class(WoWClass.None)]
         //[Priority(999)]
@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific
         //            Item.UseEquippedItem((uint)InventorySlot.Trinket1Slot)));
         //}
 
-        //[Spec(TalentSpec.Any)]
+        //[Spec(WoWSpec.Any)]
         //[Behavior(BehaviorType.All)]
         //[Class(WoWClass.None)]
         //[Priority(999)]

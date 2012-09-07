@@ -16,10 +16,10 @@ namespace Singular.ClassSpecific.DeathKnight
         // All DKs should be throwing death grip when not in intances. It just speeds things up, and makes a mess for PVP :)
         [Class(WoWClass.DeathKnight)]
         [Behavior(BehaviorType.Pull)]
-        [Spec(TalentSpec.BloodDeathKnight)]
-        [Spec(TalentSpec.FrostDeathKnight)]
-        [Spec(TalentSpec.UnholyDeathKnight)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.DeathKnightBlood)]
+        [Spec(WoWSpec.DeathKnightFrost)]
+        [Spec(WoWSpec.DeathKnightUnholy)]
+        [Spec(WoWSpec.None)]
         [Context(WoWContext.Battlegrounds | WoWContext.Normal)]
         public static Composite CreateDeathKnightNormalAndPvPPull()
         {
@@ -44,9 +44,9 @@ namespace Singular.ClassSpecific.DeathKnight
         // You also shouldn't be a blood DK if you're DPSing. Thats just silly. (Like taking a prot war as DPS... you just don't do it)
         [Class(WoWClass.DeathKnight)]
         [Behavior(BehaviorType.Pull)]
-        [Spec(TalentSpec.FrostDeathKnight)]
-        [Spec(TalentSpec.UnholyDeathKnight)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.DeathKnightFrost)]
+        [Spec(WoWSpec.DeathKnightUnholy)]
+        [Spec(WoWSpec.None)]
         [Context(WoWContext.Instances)]
         public static Composite CreateDeathKnightFrostAndUnholyInstancePull()
         {
@@ -68,10 +68,10 @@ namespace Singular.ClassSpecific.DeathKnight
 
         [Class(WoWClass.DeathKnight)]
         [Behavior(BehaviorType.PreCombatBuffs)]
-        [Spec(TalentSpec.BloodDeathKnight)]
-        [Spec(TalentSpec.FrostDeathKnight)]
-        [Spec(TalentSpec.UnholyDeathKnight)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.DeathKnightBlood)]
+        [Spec(WoWSpec.DeathKnightFrost)]
+        [Spec(WoWSpec.DeathKnightUnholy)]
+        [Spec(WoWSpec.None)]
         [Context(WoWContext.All)]
         public static Composite CreateDeathKnightPreCombatBuffs()
         {
@@ -81,13 +81,13 @@ namespace Singular.ClassSpecific.DeathKnight
                 new PrioritySelector(
                     Spell.BuffSelf(
                         "Frost Presence",
-                        ret => TalentManager.CurrentSpec == TalentSpec.Lowbie),
+                        ret => TalentManager.CurrentSpec == WoWSpec.None),
                     Spell.BuffSelf(
                         "Blood Presence",
-                        ret => TalentManager.CurrentSpec == TalentSpec.BloodDeathKnight),
+                        ret => TalentManager.CurrentSpec == WoWSpec.DeathKnightBlood),
                     Spell.BuffSelf(
                         "Unholy Presence",
-                        ret => TalentManager.CurrentSpec == TalentSpec.UnholyDeathKnight || TalentManager.CurrentSpec == TalentSpec.FrostDeathKnight),
+                        ret => TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy || TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost),
                     Spell.BuffSelf(
                         "Horn of Winter",
                         ret => !StyxWoW.Me.HasAura("Horn of Winter") && !StyxWoW.Me.HasAura("Battle Shout") && !StyxWoW.Me.HasAura("Roar of Courage"))

@@ -19,11 +19,11 @@ namespace Singular.ClassSpecific.Warlock
         #region Common
 
         [Class(WoWClass.Warlock)]
-        [Spec(TalentSpec.DestructionWarlock)]
+        [Spec(WoWSpec.WarlockDestruction)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         [Priority(1)]
-        public static Composite CreateDestructionWarlockPreCombatBuffs()
+        public static Composite CreateWarlockDestructionPreCombatBuffs()
         {
             return new PrioritySelector(
                 Spell.WaitForCast(false),
@@ -39,10 +39,10 @@ namespace Singular.ClassSpecific.Warlock
         #region Normal Rotation
 
         [Class(WoWClass.Warlock)]
-        [Spec(TalentSpec.DestructionWarlock)]
+        [Spec(WoWSpec.WarlockDestruction)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateDestructionWarlockNormalPull()
+        public static Composite CreateWarlockDestructionNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -57,10 +57,10 @@ namespace Singular.ClassSpecific.Warlock
         }
 
         [Class(WoWClass.Warlock)]
-        [Spec(TalentSpec.DestructionWarlock)]
+        [Spec(WoWSpec.WarlockDestruction)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateDestructionWarlockNormalCombat()
+        public static Composite CreateWarlockDestructionNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -105,11 +105,11 @@ namespace Singular.ClassSpecific.Warlock
         #region Battleground Rotation
 
         [Class(WoWClass.Warlock)]
-        [Spec(TalentSpec.DestructionWarlock)]
+        [Spec(WoWSpec.WarlockDestruction)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateDestructionWarlockPvPPullAndCombat()
+        public static Composite CreateWarlockDestructionPvPPullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -155,11 +155,11 @@ namespace Singular.ClassSpecific.Warlock
         #region Instance Rotation
 
         [Class(WoWClass.Warlock)]
-        [Spec(TalentSpec.DestructionWarlock)]
+        [Spec(WoWSpec.WarlockDestruction)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateDestructionWarlockInstancePullAndCombat()
+        public static Composite CreateWarlockDestructionInstancePullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

@@ -13,10 +13,10 @@ namespace Singular.ClassSpecific.Priest
     public class Common
     {
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplinePriest)]
-        [Spec(TalentSpec.HolyPriest)]
-        [Spec(TalentSpec.ShadowPriest)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.PriestDiscipline)]
+        [Spec(WoWSpec.PriestHoly)]
+        [Spec(WoWSpec.PriestShadow)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreatePriestPreCombatBuffs()

@@ -19,10 +19,10 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Normal Rotations
 
         [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.FrostDeathKnight)]
+        [Spec(WoWSpec.DeathKnightFrost)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateFrostDeathKnightNormalCombat()
+        public static Composite CreateDeathKnightFrostNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                 Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
-                                                   (StyxWoW.Me.IsCrowdControlled() ||
+                                                   (StyxWoW.Me.IsCrowdControlled ||
                                                    StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
                 Spell.BuffSelf("Death Coil",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&
@@ -103,10 +103,10 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Battleground Rotation
 
         [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.FrostDeathKnight)]
+        [Spec(WoWSpec.DeathKnightFrost)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateFrostDeathKnightPvPCombat()
+        public static Composite CreateDeathKnightFrostPvPCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -136,7 +136,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                 Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
-                                                   (StyxWoW.Me.IsCrowdControlled() ||
+                                                   (StyxWoW.Me.IsCrowdControlled ||
                                                    StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
                 Spell.BuffSelf("Death Coil",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&
@@ -169,10 +169,10 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Instance Rotations
 
         [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.FrostDeathKnight)]
+        [Spec(WoWSpec.DeathKnightFrost)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateFrostDeathKnightInstanceCombat()
+        public static Composite CreateDeathKnightFrostInstanceCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

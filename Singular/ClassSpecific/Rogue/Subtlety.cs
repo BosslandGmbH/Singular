@@ -18,10 +18,10 @@ namespace Singular.ClassSpecific.Rogue
         #region Normal Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.SubtletyRogue)]
+        [Spec(WoWSpec.RogueSubtlety)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateSubtletyRogueNormalPull()
+        public static Composite CreateRogueSubtletyNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -50,10 +50,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.SubtletyRogue)]
+        [Spec(WoWSpec.RogueSubtlety)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateSubtletyRogueNormalCombat()
+        public static Composite CreateRogueSubtletyNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -112,10 +112,10 @@ namespace Singular.ClassSpecific.Rogue
         #region Battleground Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.SubtletyRogue)]
+        [Spec(WoWSpec.RogueSubtlety)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateSubtletyRoguePvPPull()
+        public static Composite CreateRogueSubtletyPvPPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -147,10 +147,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.SubtletyRogue)]
+        [Spec(WoWSpec.RogueSubtlety)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateSubtletyRoguePvPCombat()
+        public static Composite CreateRogueSubtletyPvPCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -204,10 +204,10 @@ namespace Singular.ClassSpecific.Rogue
         #region Instance Rotation
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.SubtletyRogue)]
+        [Spec(WoWSpec.RogueSubtlety)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateSubtletyRogueInstancePull()
+        public static Composite CreateRogueSubtletyInstancePull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -236,10 +236,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.SubtletyRogue)]
+        [Spec(WoWSpec.RogueSubtlety)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateSubtletyRogueInstanceCombat()
+        public static Composite CreateRogueSubtletyInstanceCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

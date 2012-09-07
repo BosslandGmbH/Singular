@@ -19,10 +19,10 @@ namespace Singular.ClassSpecific.Rogue
     public class Common
     {
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
-        [Spec(TalentSpec.AssasinationRogue)]
-        [Spec(TalentSpec.SubtletyRogue)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.RogueCombat)]
+        [Spec(WoWSpec.RogueAssassination)]
+        [Spec(WoWSpec.RogueSubtlety)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
         public static Composite CreateRoguePreCombatBuffs()
@@ -34,10 +34,10 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.CombatRogue)]
-        [Spec(TalentSpec.AssasinationRogue)]
-        [Spec(TalentSpec.SubtletyRogue)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.RogueCombat)]
+        [Spec(WoWSpec.RogueAssassination)]
+        [Spec(WoWSpec.RogueSubtlety)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public static Composite CreateRogueRest()

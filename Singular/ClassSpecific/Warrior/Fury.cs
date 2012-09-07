@@ -691,7 +691,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             // Pooling rage for upcoming CS. If its > 8s, make sure we have 60 rage. < 8s, only pop it at 85 rage.
             if (SpellManager.HasSpell("Colossus Smash"))
-                return SpellManager.Spells["Colossus Smash"].CooldownTimeLeft().TotalSeconds > 8 ? StyxWoW.Me.RagePercent > 60 : StyxWoW.Me.RagePercent > 85;
+                return SpellManager.Spells["Colossus Smash"].CooldownTimeLeft.TotalSeconds > 8 ? StyxWoW.Me.RagePercent > 60 : StyxWoW.Me.RagePercent > 85;
 
             // We don't know CS. So just check if we have 60 rage to use cleave.
             return StyxWoW.Me.RagePercent > 60;

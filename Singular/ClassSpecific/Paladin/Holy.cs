@@ -15,10 +15,10 @@ namespace Singular.ClassSpecific.Paladin
     public static class Holy
     {
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.HolyPaladin)]
+        [Spec(WoWSpec.PaladinHoly)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
-        public static Composite CreateHolyPaladinRest()
+        public static Composite CreatePaladinHolyRest()
         {
             return new PrioritySelector(
                 // Heal self before resting. There is no need to eat while we have 100% mana
@@ -32,10 +32,10 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.HolyPaladin)]
+        [Spec(WoWSpec.PaladinHoly)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
-        public static Composite CreateHolyPaladinHealBehavior()
+        public static Composite CreatePaladinHolyHealBehavior()
         {
             return
                 new PrioritySelector(
@@ -43,10 +43,10 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.HolyPaladin)]
+        [Spec(WoWSpec.PaladinHoly)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Context(WoWContext.All)]
-        public static Composite CreateHolyPaladinCombatBuffsBehavior()
+        public static Composite CreatePaladinHolyCombatBuffsBehavior()
         {
             return
                 new PrioritySelector(
@@ -57,10 +57,10 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.HolyPaladin)]
+        [Spec(WoWSpec.PaladinHoly)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
-        public static Composite CreateHolyPaladinCombatBehavior()
+        public static Composite CreatePaladinHolyCombatBehavior()
         {
             return
                 new PrioritySelector(
@@ -90,10 +90,10 @@ namespace Singular.ClassSpecific.Paladin
         }
 
         [Class(WoWClass.Paladin)]
-        [Spec(TalentSpec.HolyPaladin)]
+        [Spec(WoWSpec.PaladinHoly)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
-        public static Composite CreateHolyPaladinPullBehavior()
+        public static Composite CreatePaladinHolyPullBehavior()
         {
             return new PrioritySelector(
                 new Decorator(

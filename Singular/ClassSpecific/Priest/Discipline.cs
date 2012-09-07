@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Priest
     public class Discipline
     {
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplinePriest)]
+        [Spec(WoWSpec.PriestDiscipline)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
         public static Composite CreateDiscHealRest()
@@ -150,7 +150,7 @@ namespace Singular.ClassSpecific.Priest
         }
 
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplinePriest)]
+        [Spec(WoWSpec.PriestDiscipline)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.All)]
         public static Composite CreateDiscHealComposite()
@@ -163,7 +163,7 @@ namespace Singular.ClassSpecific.Priest
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
         // Note: This will probably break shit if we're solo, but oh well!
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.DisciplinePriest)]
+        [Spec(WoWSpec.PriestDiscipline)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]

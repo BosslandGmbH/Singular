@@ -22,10 +22,10 @@ namespace Singular.ClassSpecific.Mage
         #region Normal Rotation
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.ArcaneMage)]
+        [Spec(WoWSpec.MageArcane)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateArcaneMageNormalPull()
+        public static Composite CreateMageArcaneNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -43,10 +43,10 @@ namespace Singular.ClassSpecific.Mage
         }
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.ArcaneMage)]
+        [Spec(WoWSpec.MageArcane)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateArcaneMageNormalCombat()
+        public static Composite CreateMageArcaneNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -101,11 +101,11 @@ namespace Singular.ClassSpecific.Mage
         #region Battleground Rotation
 
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.ArcaneMage)]
+        [Spec(WoWSpec.MageArcane)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateArcaneMagePvPPullAndCombat()
+        public static Composite CreateMageArcanePvPPullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -160,11 +160,11 @@ namespace Singular.ClassSpecific.Mage
         #region Instance Rotation
         
         [Class(WoWClass.Mage)]
-        [Spec(TalentSpec.ArcaneMage)]
+        [Spec(WoWSpec.MageArcane)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateArcaneMageInstancePullAndCombat()
+        public static Composite CreateMageArcaneInstancePullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

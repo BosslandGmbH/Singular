@@ -10,7 +10,7 @@ namespace Singular.ClassSpecific.Rogue
     public class Lowbie
     {
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.All)]
         public static Composite CreateLowbieRogueCombat()
@@ -28,7 +28,7 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         [Class(WoWClass.Rogue)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]
         public static Composite CreateLowbieRoguePull()

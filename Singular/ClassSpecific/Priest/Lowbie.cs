@@ -11,7 +11,7 @@ namespace Singular.ClassSpecific.Priest
     public class Lowbie
     {
         [Class(WoWClass.Priest)]
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Combat)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.All)]

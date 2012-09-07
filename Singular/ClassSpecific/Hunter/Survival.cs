@@ -16,11 +16,11 @@ namespace Singular.ClassSpecific.Hunter
         #region Normal Rotation
 
         [Class(WoWClass.Hunter)]
-        [Spec(TalentSpec.SurvivalHunter)]
+        [Spec(WoWSpec.HunterSurvival)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateSurvivalHunterNormalPullAndCombat()
+        public static Composite CreateHunterSurvivalNormalPullAndCombat()
         {
             return new PrioritySelector(
                 Common.CreateHunterCallPetBehavior(true),
@@ -80,11 +80,11 @@ namespace Singular.ClassSpecific.Hunter
         #region Battleground Rotation
 
         [Class(WoWClass.Hunter)]
-        [Spec(TalentSpec.SurvivalHunter)]
+        [Spec(WoWSpec.HunterSurvival)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateSurvivalHunterPvPPullAndCombat()
+        public static Composite CreateHunterSurvivalPvPPullAndCombat()
         {
             return new PrioritySelector(
                 Common.CreateHunterCallPetBehavior(false),
@@ -148,11 +148,11 @@ namespace Singular.ClassSpecific.Hunter
         #region Instance Rotation
 
         [Class(WoWClass.Hunter)]
-        [Spec(TalentSpec.SurvivalHunter)]
+        [Spec(WoWSpec.HunterSurvival)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateSurvivalHunterInstancePullAndCombat()
+        public static Composite CreateHunterSurvivalInstancePullAndCombat()
         {
             return new PrioritySelector(
                 Common.CreateHunterCallPetBehavior(true),

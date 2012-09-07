@@ -192,7 +192,7 @@ namespace Singular.Lists
                         8127, //Antu'sul
                         7271, //Witch Doctor Zum'rah
                         7274, //Sandfury Executioner
-                        7275, //Shadowpriest Sezz'ziz
+                        7275, //PriestShadow Sezz'ziz
                         7796, //Nekrum Gutchewer
                         7797, //Ruuzlu
                         7267, //Chief Ukorz Sandscalp

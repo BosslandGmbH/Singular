@@ -11,7 +11,7 @@ namespace Singular.ClassSpecific.Warrior
 {
     public class Lowbie
     {
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.Lowbie)]
+        [Spec(WoWSpec.None)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]

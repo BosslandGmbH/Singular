@@ -22,10 +22,10 @@ namespace Singular.ClassSpecific.Shaman
         #region Common
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
+        [Spec(WoWSpec.ShamanElemental)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.All)]
-        public static Composite CreateElementalShamanPreCombatBuffs()
+        public static Composite CreateShamanElementalPreCombatBuffs()
         {
             return new PrioritySelector(
                 new Decorator(
@@ -44,27 +44,27 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
+        [Spec(WoWSpec.ShamanElemental)]
         [Behavior(BehaviorType.Rest)]
         [Context(WoWContext.All)]
-        public static Composite CreateElementalShamanRest()
+        public static Composite CreateShamanElementalRest()
         {
             return
                 new PrioritySelector(
                     new Decorator(
                         ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                        CreateElementalShamanHeal()),
+                        CreateShamanElementalHeal()),
                     Rest.CreateDefaultRestBehaviour(),
                     Spell.Resurrect("Ancestral Spirit")
                     );
         }
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
+        [Spec(WoWSpec.ShamanElemental)]
         [Behavior(BehaviorType.Heal)]
         [Context(WoWContext.Instances)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateElementalShamanHeal()
+        public static Composite CreateShamanElementalHeal()
         {
             return
                 new Decorator(
@@ -95,10 +95,10 @@ namespace Singular.ClassSpecific.Shaman
         #region Normal Rotation
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
+        [Spec(WoWSpec.ShamanElemental)]
         [Behavior(BehaviorType.Pull)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateElementalShamanNormalPull()
+        public static Composite CreateShamanElementalNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -116,10 +116,10 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
+        [Spec(WoWSpec.ShamanElemental)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
-        public static Composite CreateElementalShamanNormalCombat()
+        public static Composite CreateShamanElementalNormalCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -169,11 +169,11 @@ namespace Singular.ClassSpecific.Shaman
         #region Battleground Rotation
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
+        [Spec(WoWSpec.ShamanElemental)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Battlegrounds)]
-        public static Composite CreateElementalShamanPvPPullAndCombat()
+        public static Composite CreateShamanElementalPvPPullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -227,11 +227,11 @@ namespace Singular.ClassSpecific.Shaman
         #region Instance Rotation
 
         [Class(WoWClass.Shaman)]
-        [Spec(TalentSpec.ElementalShaman)]
+        [Spec(WoWSpec.ShamanElemental)]
         [Behavior(BehaviorType.Pull)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Instances)]
-        public static Composite CreateElementalShamanInstancePullAndCombat()
+        public static Composite CreateShamanElementalInstancePullAndCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),

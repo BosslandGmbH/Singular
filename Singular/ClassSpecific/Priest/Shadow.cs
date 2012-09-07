@@ -90,10 +90,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
                         Spell.Cast("Mindbender", ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 50),
                         Spell.Cast("Mind Blast"),
-                        // Use archangel on adds or elite mobs to be safe
-                        //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2), // we no longer have archangel
-                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60),
-                        // Mana check is for mana management. Don't mess with it
+                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
                         Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.MindFlayMana),
                         // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand), // we no longer have wands or shoot
                         Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -140,14 +137,11 @@ namespace Singular.ClassSpecific.Priest
                 // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
                 Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
                 Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
-                Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
-                Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
-                Spell.Cast("Mindbender", ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 50),
+                Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 30),
+                Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 30),
+                Spell.Cast("Mindbender"),
                 Spell.Cast("Mind Blast"),
-                // Use archangel on adds or elite mobs to be safe
-                //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2), // we no longer have archangel
-                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60),
-                // Mana check is for mana management. Don't mess with it
+                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
                 Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.MindFlayMana),
                 // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand), // we no longer have wands or shoot
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -212,17 +206,13 @@ namespace Singular.ClassSpecific.Priest
                     ret => StyxWoW.Me.CurrentTarget.IsBoss(),
                     new PrioritySelector(
                         Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
-                        // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
                         Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
                         Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
-                        Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
-                        Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
-                        Spell.Cast("Mindbender", ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 50),
+                        Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite),
+                        Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite),
+                        Spell.Cast("Mindbender"),
                         Spell.Cast("Mind Blast"),
-                        // Use archangel on adds or elite mobs to be safe
-                        //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2), // we no longer have archangel
-                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60),
-                        // Mana check is for mana management. Don't mess with it
+                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
                         Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.MindFlayMana),
                         // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand), // we no longer have wands or shoot
                         Movement.CreateMoveToTargetBehavior(true, 35f)

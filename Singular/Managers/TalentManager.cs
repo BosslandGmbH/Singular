@@ -16,7 +16,6 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Styx;
-using Styx.Combat.CombatRoutine;
 using Styx.WoWInternals;
 
 namespace Singular.Managers
@@ -75,10 +74,6 @@ namespace Singular.Managers
 
         public static void Update()
         {
-            WoWClass myClass = StyxWoW.Me.Class;
-            int specBuild = 0;
-            int specClassMask = ((int)StyxWoW.Me.Class << 8);
-
             // Keep the frame stuck so we can do a bunch of injecting at once.
             using (StyxWoW.Memory.AcquireFrame())
             {

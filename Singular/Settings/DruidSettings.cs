@@ -13,7 +13,7 @@
 
 using System;
 using System.ComponentModel;
-
+using System.IO;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
@@ -30,7 +30,7 @@ namespace Singular.Settings
     internal class DruidSettings : Styx.Helpers.Settings
     {
         public DruidSettings()
-            : base(SingularSettings.SettingsPath + "_Druid.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "Druid.xml"))
         {
         }
         // Pvp By IloveAnimals

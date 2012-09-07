@@ -12,7 +12,7 @@
 #endregion
 
 using System.ComponentModel;
-
+using System.IO;
 using Styx.Helpers;
 using Styx.WoWInternals.WoWObjects;
 
@@ -23,7 +23,7 @@ namespace Singular.Settings
     internal class ShamanSettings : Styx.Helpers.Settings
     {
         public ShamanSettings()
-            : base(SingularSettings.SettingsPath + "_Shaman.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, SingularSettings.SettingsPath + "Shaman.xml"))
         {
         }
 

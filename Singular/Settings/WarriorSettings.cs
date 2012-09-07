@@ -12,7 +12,7 @@
 #endregion
 
 using System.ComponentModel;
-
+using System.IO;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
@@ -22,7 +22,7 @@ namespace Singular.Settings
     internal class WarriorSettings : Styx.Helpers.Settings
     {
         public WarriorSettings()
-            : base(SingularSettings.SettingsPath + "_Warrior.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "Warrior.xml"))
         {
         }
 

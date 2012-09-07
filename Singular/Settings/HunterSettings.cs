@@ -13,7 +13,7 @@
 
 using System;
 using System.ComponentModel;
-
+using System.IO;
 using Styx.Helpers;
 using Styx.WoWInternals.WoWObjects;
 
@@ -24,7 +24,7 @@ namespace Singular.Settings
     internal class HunterSettings : Styx.Helpers.Settings
     {
         public HunterSettings()
-            : base(SingularSettings.SettingsPath + "_Hunter.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "Hunter.xml"))
         {
         }
 

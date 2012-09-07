@@ -13,7 +13,7 @@
 
 using System;
 using System.ComponentModel;
-
+using System.IO;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
@@ -23,7 +23,7 @@ namespace Singular.Settings
     internal class PriestSettings : Styx.Helpers.Settings
     {
         public PriestSettings()
-            : base(SingularSettings.SettingsPath + "_Priest.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "Priest.xml"))
         {
         }
 

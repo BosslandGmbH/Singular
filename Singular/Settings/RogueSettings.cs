@@ -12,6 +12,7 @@
 #endregion
 
 using System.ComponentModel;
+using System.IO;
 using Singular.ClassSpecific.Rogue;
 using Styx.Helpers;
 
@@ -22,7 +23,7 @@ namespace Singular.Settings
     internal class RogueSettings : Styx.Helpers.Settings
     {
         public RogueSettings()
-            : base(SingularSettings.SettingsPath + "_Rogue.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "Rogue.xml"))
         {
         }
 

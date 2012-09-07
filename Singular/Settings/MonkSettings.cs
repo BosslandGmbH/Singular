@@ -11,12 +11,14 @@
 
 #endregion
 
+using System.IO;
+
 namespace Singular.Settings
 {
     internal class MonkSettings : Styx.Helpers.Settings
     {
         public MonkSettings()
-            : base(SingularSettings.SettingsPath + "_Monk.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "Monk.xml"))
         {
         }
     }

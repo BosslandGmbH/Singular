@@ -12,6 +12,7 @@
 #endregion
 
 using System.ComponentModel;
+using System.IO;
 using Styx.Helpers;
 
 namespace Singular.Settings
@@ -19,7 +20,7 @@ namespace Singular.Settings
     internal class MageSettings : Styx.Helpers.Settings
     {
         public MageSettings()
-            : base(SingularSettings.SettingsPath + "_Mage.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "Mage.xml"))
         {
 
         }

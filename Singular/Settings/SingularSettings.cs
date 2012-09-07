@@ -12,7 +12,7 @@
 #endregion
 
 using System.ComponentModel;
-
+using System.IO;
 using Styx;
 using Styx.Helpers;
 
@@ -24,11 +24,29 @@ namespace Singular.Settings
     {
         private static SingularSettings _instance;
 
-        public SingularSettings() : base(SettingsPath + ".xml")
+        public SingularSettings()
+            : base(Path.Combine(CharacterSettingsPath, "SingularSettings.xml"))
         {
         }
 
-        public static string SettingsPath { get { return string.Format("{0}\\Settings\\SingularSettings_{1}", Styx.Common.Utilities.AssemblyDirectory, StyxWoW.Me.Name); } }
+        private static string CharacterSettingsPath
+        {
+            get
+            {
+                string settingsDirectory = Path.Combine(Styx.Common.Utilities.AssemblyDirectory, "Settings");
+                return Path.Combine(Path.Combine(settingsDirectory, StyxWoW.Me.RealmName), StyxWoW.Me.Name);
+            }
+        }
+
+
+        public static string SettingsPath
+        {
+            get
+            {
+                string settingsDirectory = Path.Combine(Styx.Common.Utilities.AssemblyDirectory, "Settings");
+                return Path.Combine(Path.Combine(Path.Combine(settingsDirectory, StyxWoW.Me.RealmName), StyxWoW.Me.Name), "Singular");
+            }
+        }
 
         public static SingularSettings Instance { get { return _instance ?? (_instance = new SingularSettings()); } }
 

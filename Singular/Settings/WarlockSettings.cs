@@ -11,13 +11,14 @@
 
 #endregion
 
+using System.IO;
 
 namespace Singular.Settings
 {
     internal class WarlockSettings : Styx.Helpers.Settings
     {
         public WarlockSettings()
-            : base(SingularSettings.SettingsPath + "_Warlock.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "Warlock.xml"))
         {
         }
     }

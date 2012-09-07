@@ -13,7 +13,7 @@
 
 using System;
 using System.ComponentModel;
-
+using System.IO;
 using Singular.ClassSpecific.Paladin;
 
 using Styx.Helpers;
@@ -26,7 +26,7 @@ namespace Singular.Settings
     internal class PaladinSettings : Styx.Helpers.Settings
     {
         public PaladinSettings()
-            : base(SingularSettings.SettingsPath + "_Paladin.xml")
+            : base(Path.Combine(SingularSettings.SettingsPath, "Paladin.xml"))
         {
         }
         

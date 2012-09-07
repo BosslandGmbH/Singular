@@ -79,7 +79,7 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
                         Spell.BuffSelf("Inquisition"),
                         Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
-                        Spell.Cast("Judgement"),
+                        Spell.Cast("Judgment"),
                         Spell.Cast("Crusader Strike"),
                         Movement.CreateMoveToMeleeBehavior(true)
                         )),
@@ -87,7 +87,7 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
                 Spell.Cast("Crusader Strike"),
                 Spell.Cast("Hammer of Justice"),
-                Spell.Cast("Judgement"),
+                Spell.Cast("Judgment"),
                 Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),
                 Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
                 // Don't waste mana on cons if its not a boss.
@@ -108,7 +108,7 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateAutoAttack(true),
                     Spell.Cast("Avenger's Shield"),
-                    Spell.Cast("Judgement"),
+                    Spell.Cast("Judgment"),
                     Movement.CreateMoveToTargetBehavior(true, 5f)
                     );
         }

@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific.Paladin
                     Helpers.Common.CreateAutoAttack(true),
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.Cast("Crusader Strike"),
-                    Spell.Cast("Judgement"),
+                    Spell.Cast("Judgment"),
                     Movement.CreateMoveToTargetBehavior(true, 5f)
                     );
         }
@@ -40,7 +40,7 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateAutoAttack(true),
-                    Spell.Cast("Judgement"),
+                    Spell.Cast("Judgment"),
                     Movement.CreateMoveToTargetBehavior(true, 5f)
                     );
         }

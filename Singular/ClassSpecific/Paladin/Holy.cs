@@ -64,9 +64,9 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Spell.Buff("Judgement",
-                               ret => SpellManager.HasSpell("Judgement") && StyxWoW.Me.GotTarget &&
-                                       StyxWoW.Me.CurrentTarget.Distance <= SpellManager.Spells["Judgement"].MaxRange - 2 &&
+                    Spell.Buff("Judgment",
+                               ret => SpellManager.HasSpell("Judgment") && StyxWoW.Me.GotTarget &&
+                                       StyxWoW.Me.CurrentTarget.Distance <= SpellManager.Spells["Judgment"].MaxRange - 2 &&
                                        StyxWoW.Me.CurrentTarget.InLineOfSpellSight &&
                                        StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget)),
                     new Decorator(
@@ -77,7 +77,7 @@ namespace Singular.ClassSpecific.Paladin
                             Movement.CreateFaceTargetBehavior(),
                             Helpers.Common.CreateAutoAttack(true),
                             Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                            Spell.Buff("Judgement"),
+                            Spell.Buff("Judgment"),
                             Spell.Cast("Hammer of Wrath"),
                             Spell.Cast("Holy Shock"),
                             Spell.Cast("Crusader Strike"),
@@ -101,7 +101,7 @@ namespace Singular.ClassSpecific.Paladin
                     new PrioritySelector(
                         Movement.CreateMoveToLosBehavior(),
                         Movement.CreateFaceTargetBehavior(),
-                        Spell.Cast("Judgement"),
+                        Spell.Cast("Judgment"),
                         Helpers.Common.CreateAutoAttack(true),
                         Movement.CreateMoveToTargetBehavior(true, 5f)
                         ))
@@ -175,7 +175,7 @@ namespace Singular.ClassSpecific.Paladin
                                     Movement.CreateFaceTargetBehavior(),
                                     Helpers.Common.CreateAutoAttack(true),
                                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                                    Spell.Buff("Judgement"),
+                                    Spell.Buff("Judgment"),
                                     Spell.Cast("Hammer of Wrath"),
                                     Spell.Cast("Holy Shock"),
                                     Spell.Cast("Crusader Strike"),

@@ -48,7 +48,6 @@ namespace Singular.ClassSpecific.Priest
 
         public static Composite CreateHolyHealOnlyBehavior(bool selfOnly, bool moveInRange)
         {
-            // Atonement - Tab 1  index 10 - 1/2 pts
             HealerManager.NeedHealTargeting = true;
             return new
                 PrioritySelector(

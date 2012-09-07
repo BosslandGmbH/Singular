@@ -133,16 +133,16 @@ namespace Singular.ClassSpecific.Paladin
                 //Replace CS with DS during AoE
                     Spell.Cast("Divine Storm", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
-                //judgement,if=buff.zealotry.down&holy_power<3
-                    Spell.Cast("Judgement", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
+                //Judgment,if=buff.zealotry.down&holy_power<3
+                    Spell.Cast("Judgment", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
                 //inquisition,if=(buff.inquisition.down|buff.inquisition.remains<=2)&(holy_power>=3|buff.divine_purpose.react)
                     Spell.Cast("Inquisition", ret => (!StyxWoW.Me.HasAura("Inquisition") || StyxWoW.Me.ActiveAuras["Inquisition"].TimeLeft.TotalSeconds <= 2) &&
                         (StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose"))),
                 //templars_verdict,if=buff.divine_purpose.react or templars_verdict,if=holy_power=3
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose") || StyxWoW.Me.CurrentHolyPower == 3),
-                //judgement,if=set_bonus.tier13_2pc_melee&buff.zealotry.up&holy_power<3
-                    Spell.Cast("Judgement", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
-                    Spell.Cast("Judgement"),
+                //Judgment,if=set_bonus.tier13_2pc_melee&buff.zealotry.up&holy_power<3
+                    Spell.Cast("Judgment", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
+                    Spell.Cast("Judgment"),
                 //wait,sec=0.1,if=cooldown.crusader_strike.remains<0.2&cooldown.crusader_strike.remains>0
                 //
                 //holy_wrath
@@ -216,7 +216,7 @@ namespace Singular.ClassSpecific.Paladin
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
                     Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose")),
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose") || StyxWoW.Me.CurrentHolyPower == 3),
-                    Spell.Cast("Judgement"),
+                    Spell.Cast("Judgment"),
                     Spell.Cast("Holy Wrath"),
                     Spell.Cast("Consecration", ret => StyxWoW.Me.CurrentTarget.Distance <= Spell.MeleeRange && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= SingularSettings.Instance.Paladin.ConsecrationCount),
                     Spell.Cast("Divine Plea", ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Paladin.DivinePleaMana && StyxWoW.Me.HealthPercent > 70),
@@ -288,15 +288,15 @@ namespace Singular.ClassSpecific.Paladin
                 //Replace CS with DS during AoE
                     Spell.Cast("Divine Storm", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
                         Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
-                //judgement,if=buff.zealotry.down&holy_power<3
-                    Spell.Cast("Judgement", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
+                //Judgment,if=buff.zealotry.down&holy_power<3
+                    Spell.Cast("Judgment", ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
                 //inquisition,if=(buff.inquisition.down|buff.inquisition.remains<=2)&(holy_power>=3|buff.divine_purpose.react)
                     Spell.Cast("Inquisition", ret => (!StyxWoW.Me.HasAura("Inquisition") || StyxWoW.Me.ActiveAuras["Inquisition"].TimeLeft.TotalSeconds <= 2) &&
                         (StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose"))),
                 //templars_verdict,if=buff.divine_purpose.react or templars_verdict,if=holy_power=3
                     Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose") || StyxWoW.Me.CurrentHolyPower == 3),
-                //judgement,if=set_bonus.tier13_2pc_melee&buff.zealotry.up&holy_power<3
-                    Spell.Cast("Judgement", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
+                //Judgment,if=set_bonus.tier13_2pc_melee&buff.zealotry.up&holy_power<3
+                    Spell.Cast("Judgment", ret => Has2PieceTier13Bonus && StyxWoW.Me.ActiveAuras.ContainsKey("Zealotry") && StyxWoW.Me.CurrentHolyPower < 3),
                 //holy_wrath
                     Spell.Cast("Holy Wrath"),
                 //consecration,not_flying=1,if=mana>16000
@@ -365,7 +365,7 @@ namespace Singular.ClassSpecific.Paladin
                     ret => StyxWoW.Me.CurrentHolyPower == 3 &&
                            (StyxWoW.Me.HasAura("Inquisition") || !SpellManager.HasSpell("Inquisition"))),
                 Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                Spell.Cast("Judgement"),
+                Spell.Cast("Judgment"),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -424,7 +424,7 @@ namespace Singular.ClassSpecific.Paladin
                     ret => StyxWoW.Me.CurrentHolyPower == 3 &&
                            (StyxWoW.Me.HasAura("Inquisition") || !SpellManager.HasSpell("Inquisition"))),
                 Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                Spell.Cast("Judgement"),
+                Spell.Cast("Judgment"),
                 Spell.BuffSelf("Holy Wrath"),
                 Spell.BuffSelf("Consecration"),
 
@@ -489,7 +489,7 @@ namespace Singular.ClassSpecific.Paladin
                     ret => StyxWoW.Me.CurrentHolyPower == 3 &&
                            (StyxWoW.Me.HasAura("Inquisition") || !SpellManager.HasSpell("Inquisition"))),
                 Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                Spell.Cast("Judgement"),
+                Spell.Cast("Judgment"),
                 Spell.BuffSelf("Holy Wrath"),
                 Spell.BuffSelf("Consecration"),
 

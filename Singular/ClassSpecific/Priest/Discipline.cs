@@ -48,7 +48,6 @@ namespace Singular.ClassSpecific.Priest
 
         public static Composite CreateDiscHealOnlyBehavior(bool selfOnly, bool moveInRange)
         {
-            // Atonement - Tab 1  index 10 - 1/2 pts
             HealerManager.NeedHealTargeting = true;
             return new
                 PrioritySelector(
@@ -146,7 +145,7 @@ namespace Singular.ClassSpecific.Priest
                         // Prayer of Mending
                         // Prayer of Healing
                         // Power Word: Barrier
-                        // TODO: Add smite healing. Only if Atonement is talented. (Its useless otherwise)
+                        // TODO: Add smite healing. Atonement is now specced as all discs. (Its useless otherwise)
                         )));
         }
 

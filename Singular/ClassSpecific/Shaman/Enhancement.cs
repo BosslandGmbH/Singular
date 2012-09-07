@@ -56,8 +56,8 @@ namespace Singular.ClassSpecific.Shaman
                         new Action(ret => Lua.DoString("CancelItemTempEnchantment(2)")),
                         new Action(ret => Logger.Write("Imbuing off hand weapon with Flametongue")),
                         new Action(ret => SpellManager.Cast("Flametongue Weapon", null)))),
-                
-                Spell.Cast("Lightning Shield", ret => StyxWoW.Me, ret => !StyxWoW.Me.HasAura("Lightning Shield", 2)),
+
+                Spell.BuffSelf("Lightning Shield"),
                 new Decorator(ret => Totems.NeedToRecallTotems,
                     new Action(ret => Totems.RecallTotems()))
                 );
@@ -125,7 +125,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
-                Spell.Cast("Lightning Shield", ret => StyxWoW.Me, ret => !StyxWoW.Me.HasAura("Lightning Shield", 2)),
+                Spell.BuffSelf("Lightning Shield"),
 
                 new Decorator(
                     ret => StyxWoW.Me.Level < 20,

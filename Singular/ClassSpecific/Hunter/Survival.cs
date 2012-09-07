@@ -43,7 +43,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
                 Spell.Buff("Hunter's Mark"),
-                Spell.BuffSelf("Aspect of the Hawk"),
+                Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
                 // Defensive Stuff
                 Spell.Cast(
                     "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
@@ -106,7 +106,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
                 Spell.Buff("Hunter's Mark"),
-                Spell.BuffSelf("Aspect of the Hawk"),
+                Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
                 // Defensive Stuff
                 Spell.Cast(
                     "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
@@ -174,7 +174,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
 
                 Spell.Buff("Hunter's Mark"),
-                Spell.BuffSelf("Aspect of the Hawk"),
+                Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
 
                 Spell.Cast("Mend Pet",
                     ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&

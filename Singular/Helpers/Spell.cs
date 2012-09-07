@@ -17,6 +17,7 @@ using System.Linq;
 using CommonBehaviors.Actions;
 
 using Styx;
+using Styx.Common;
 using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
@@ -269,6 +270,7 @@ namespace Singular.Helpers
                                     var minRange = spell.MinRange;
                                     var maxRange = spell.MaxRange;
                                     var targetDistance = target.Distance;
+
                                     // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
                                     if (spell.IsSelfOnlySpell)
                                         inRange = true;

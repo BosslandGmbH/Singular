@@ -32,7 +32,7 @@ namespace Singular.Helpers
                     ret => !StyxWoW.Me.IsAutoAttacking && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
                     new Action(ret =>
                         {
-                            StyxWoW.Me.ToggleAttack();
+                            Lua.DoString("StartAttack()");
                             return RunStatus.Failure;
                         })),
                 new Decorator(

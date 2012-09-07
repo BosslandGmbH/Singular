@@ -44,7 +44,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 Spell.WaitForCast(true),
-                Spell.BuffSelf("Aspect of the Hawk"),
+                Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
                 Spell.BuffSelf("Track Hidden"),
                 new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && StyxWoW.Me.GotAlivePet,
                     new Action(ctx => SpellManager.Cast("Dismiss Pet"))),
@@ -109,18 +109,18 @@ namespace Singular.ClassSpecific.Hunter
                         new Decorator(
                             ret => StyxWoW.Me.HasAura("Trap Launcher"),
                             new Sequence(
-                                new Switch<string>(ctx => trapName,
-                                    new SwitchArgument<string>("Immolation Trap",
-                                        new Action(ret => SpellManager.CastSpellById(82945))),
-                                    new SwitchArgument<string>("Freezing Trap",
-                                        new Action(ret => SpellManager.CastSpellById(60192))),
-                                    new SwitchArgument<string>("Explosive Trap",
-                                        new Action(ret => SpellManager.CastSpellById(82939))),
-                                    new SwitchArgument<string>("Ice Trap",
-                                        new Action(ret => SpellManager.CastSpellById(82941))),
-                                    new SwitchArgument<string>("Snake Trap",
-                                        new Action(ret => SpellManager.CastSpellById(82948)))
-                                    ),
+                /*new Switch<string>(ctx => trapName,
+                    new SwitchArgument<string>("Freezing Trap",
+                        new Action(ret => SpellManager.CastSpellById(1499))),
+                    new SwitchArgument<string>("Explosive Trap",
+                        new Action(ret => SpellManager.CastSpellById(13813))),
+                    new SwitchArgument<string>("Ice Trap",
+                        new Action(ret => SpellManager.CastSpellById(13809))),
+                    new SwitchArgument<string>("Snake Trap",
+                        new Action(ret => SpellManager.CastSpellById(34600)))
+                    ),*/
+
+                                new Action(ret => Lua.DoString(string.Format("CastSpellByName(\"{0}\")", trapName))),
                                 new WaitContinue(TimeSpan.FromMilliseconds(200), ret => false, new ActionAlwaysSucceed()),
                                 new Action(ret => SpellManager.ClickRemoteLocation(onUnit(ret).Location)))))));
         }
@@ -139,18 +139,7 @@ namespace Singular.ClassSpecific.Hunter
                         new Decorator(
                             ret => StyxWoW.Me.HasAura("Trap Launcher"),
                             new Sequence(
-                                new Switch<string>(ctx => trapName,
-                                    new SwitchArgument<string>("Immolation Trap",
-                                        new Action(ret => SpellManager.CastSpellById(82945))),
-                                    new SwitchArgument<string>("Freezing Trap",
-                                        new Action(ret => SpellManager.CastSpellById(60192))),
-                                    new SwitchArgument<string>("Explosive Trap",
-                                        new Action(ret => SpellManager.CastSpellById(82939))),
-                                    new SwitchArgument<string>("Ice Trap",
-                                        new Action(ret => SpellManager.CastSpellById(82941))),
-                                    new SwitchArgument<string>("Snake Trap",
-                                        new Action(ret => SpellManager.CastSpellById(82948)))
-                                    ),
+                                new Action(ret => Lua.DoString(string.Format("CastSpellByName(\"{0}\")", trapName))),
                                 new WaitContinue(TimeSpan.FromMilliseconds(200), ret => false, new ActionAlwaysSucceed()),
                                 new Action(ret => SpellManager.ClickRemoteLocation(((WoWUnit)ret).Location)))))));
         }

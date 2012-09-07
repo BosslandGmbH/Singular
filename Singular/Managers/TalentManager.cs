@@ -143,13 +143,22 @@ namespace Singular.Managers
             using (StyxWoW.Memory.AcquireFrame())
             {
                 string s = Lua.GetReturnVal<string>("return GetSpecialization()", 0);
-                if (String.IsNullOrEmpty(s) || !Int32.TryParse( s, out specBuild))
+                if (String.IsNullOrEmpty(s))
                 {
+                    Logger.Write("TalentManager - no specialization yet");
+                    CurrentSpec = TalentSpec.Lowbie;
+                    return;
+                }
+
+                if (!Int32.TryParse(s, out specBuild))
+                {
+                    Logger.Write("TalentManager - getspecialization returned {0} which failed parse", s);
                     CurrentSpec = TalentSpec.Lowbie;
                     return;
                 }
 
                 CurrentSpec = (TalentSpec)(specClassMask + specBuild - 1);
+                Logger.Write("TalentManager - looks like a {0}", CurrentSpec.ToString());
 
                 Talents.Clear();
 

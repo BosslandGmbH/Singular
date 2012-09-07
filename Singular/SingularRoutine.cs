@@ -158,7 +158,7 @@ namespace Singular
         {
             //Caching current class here to avoid issues with loading screens where Class return None and we cant build behaviors
             _myClass = Me.Class;
-
+            
             Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
             Logger.Write("Determining talent spec.");
             try

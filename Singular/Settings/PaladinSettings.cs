@@ -31,7 +31,8 @@ namespace Singular.Settings
         }
         
         #region Common
-        /*[Setting]
+        /*
+        [Setting]
         [DefaultValue(PaladinAura.Auto)]
         [Category("Common")]
         [DisplayName("Aura")]

@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Normal
         [Class(WoWClass.Warrior)]
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.Normal)]
         public static Composite CreateFuryNormalPreCombatBuffs()
@@ -36,7 +36,7 @@ namespace Singular.ClassSpecific.Warrior
                     Spell.BuffSelf("Battle Stance", ret => LootTargeting.Instance.FirstObject == null));
         }
 
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -103,7 +103,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -129,7 +129,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -243,7 +243,7 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Pvp
         [Class(WoWClass.Warrior)]
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.Battlegrounds)]
         public static Composite CreateFuryPvpPreCombatBuffs()
@@ -253,7 +253,7 @@ namespace Singular.ClassSpecific.Warrior
                     Spell.BuffSelf("Battle Stance", ret => LootTargeting.Instance.FirstObject == null));
         }
 
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -320,7 +320,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -346,7 +346,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -459,7 +459,7 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Instance
         [Class(WoWClass.Warrior)]
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Context(WoWContext.Battlegrounds)]
         public static Composite CreateFuryInstancePreCombatBuffs()
@@ -469,7 +469,7 @@ namespace Singular.ClassSpecific.Warrior
                     Spell.BuffSelf("Battle Stance", ret => LootTargeting.Instance.FirstObject == null));
         }
 
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -536,7 +536,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -562,7 +562,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.FuryWarrior)]
+        [Spec(WoWSpec.WarriorFury)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]

@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific.DeathKnight
         private readonly static WaitTimer DeathStrikeTimer = new WaitTimer(TimeSpan.FromSeconds(5));
 
         [Class(WoWClass.DeathKnight)]
-        [Spec(TalentSpec.BloodDeathKnight)]
+        [Spec(WoWSpec.DeathKnightBlood)]
         [Behavior(BehaviorType.Combat)]
         [Context(WoWContext.Normal)]
         public static Composite CreateBloodDeathKnightNormalCombat()

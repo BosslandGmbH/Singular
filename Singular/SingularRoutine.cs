@@ -142,10 +142,15 @@ namespace Singular
             // Double cast shit
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow.Subtract(t).TotalMilliseconds >= 2500);
             //Only pulse for classes with pets
-            if(StyxWoW.Me.Class== WoWClass.Hunter 
-                || StyxWoW.Me.Class==WoWClass.DeathKnight 
-                || StyxWoW.Me.Class==WoWClass.Warlock
-                || StyxWoW.Me.Class==WoWClass.Mage) PetManager.Pulse();
+            switch (MyClass)
+            {
+                case WoWClass.Hunter:
+                case WoWClass.DeathKnight:
+                case WoWClass.Warlock:
+                case WoWClass.Mage:
+                    PetManager.Pulse();
+                    break;
+            }
 
             if (HealerManager.NeedHealTargeting)
                 HealerManager.Instance.Pulse();

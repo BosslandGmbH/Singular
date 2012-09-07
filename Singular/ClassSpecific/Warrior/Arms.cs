@@ -20,7 +20,7 @@ namespace Singular.ClassSpecific.Warrior
         private static string[] _slows;
 
         #region Common
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.Pull)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -82,7 +82,7 @@ namespace Singular.ClassSpecific.Warrior
         #endregion
 
         #region Normal
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -96,7 +96,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -137,7 +137,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -296,7 +296,7 @@ namespace Singular.ClassSpecific.Warrior
         #endregion
 
         #region Pvp
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -310,7 +310,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -351,7 +351,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -457,7 +457,7 @@ namespace Singular.ClassSpecific.Warrior
         #endregion
 
         #region Instances
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.PreCombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -471,7 +471,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.CombatBuffs)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]
@@ -512,7 +512,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(TalentSpec.ArmsWarrior)]
+        [Spec(WoWSpec.WarriorArms)]
         [Behavior(BehaviorType.Combat)]
         [Class(WoWClass.Warrior)]
         [Priority(500)]

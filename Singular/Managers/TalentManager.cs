@@ -21,66 +21,6 @@ using Styx.WoWInternals;
 
 namespace Singular.Managers
 {
-    public enum TalentSpec
-    {
-        // Just a 'spec' for low levels
-        Lowbie = 0,
-        // A value representing any spec
-        Any = int.MaxValue,
-        // Here's how this works
-        // In the 2nd byte we store the class for the spec
-        // Low byte stores the index of the spec. (0-2 for a total of 3)
-        // We can retrieve the class easily by doing spec & 0xFF00 to get the high-byte (or you can just shift right 8bits)
-        // And the spec can be retrieved via spec & 0xFF - Simple enough
-        // Extra flags are stored in the 3rd byte
-
-        BloodDeathKnight = ((int)WoWClass.DeathKnight << 8) + 0,
-        FrostDeathKnight = ((int)WoWClass.DeathKnight << 8) + 1,
-        UnholyDeathKnight = ((int)WoWClass.DeathKnight << 8) + 2,
-
-        BalanceDruid = ((int)WoWClass.Druid << 8) + 0,
-        FeralDruid = ((int)WoWClass.Druid << 8) + 1,
-        //FeralTankDruid = TalentManager.TALENT_FLAG_ISEXTRASPEC + ((int)WoWClass.Druid << 8) + 1,
-        RestorationDruid = ((int)WoWClass.Druid << 8) + 2,
-
-        BeastMasteryHunter = ((int)WoWClass.Hunter << 8) + 0,
-        MarksmanshipHunter = ((int)WoWClass.Hunter << 8) + 1,
-        SurvivalHunter = ((int)WoWClass.Hunter << 8) + 2,
-
-        ArcaneMage = ((int)WoWClass.Mage << 8) + 0,
-        FireMage = ((int)WoWClass.Mage << 8) + 1,
-        FrostMage = ((int)WoWClass.Mage << 8) + 2,
-
-        HolyPaladin = ((int)WoWClass.Paladin << 8) + 0,
-        ProtectionPaladin = ((int)WoWClass.Paladin << 8) + 1,
-        RetributionPaladin = ((int)WoWClass.Paladin << 8) + 2,
-
-        DisciplinePriest = ((int)WoWClass.Priest << 8) + 0,
-        //DisciplineHealingPriest = TalentManager.TALENT_FLAG_ISEXTRASPEC + ((int)WoWClass.Priest << 8) + 0,
-        HolyPriest = ((int)WoWClass.Priest << 8) + 1,
-        ShadowPriest = ((int)WoWClass.Priest << 8) + 2,
-
-        AssasinationRogue = ((int)WoWClass.Rogue << 8) + 0,
-        CombatRogue = ((int)WoWClass.Rogue << 8) + 1,
-        SubtletyRogue = ((int)WoWClass.Rogue << 8) + 2,
-
-        ElementalShaman = ((int)WoWClass.Shaman << 8) + 0,
-        EnhancementShaman = ((int)WoWClass.Shaman << 8) + 1,
-        RestorationShaman = ((int)WoWClass.Shaman << 8) + 2,
-
-        AfflictionWarlock = ((int)WoWClass.Warlock << 8) + 0,
-        DemonologyWarlock = ((int)WoWClass.Warlock << 8) + 1,
-        DestructionWarlock = ((int)WoWClass.Warlock << 8) + 2,
-
-        ArmsWarrior = ((int)WoWClass.Warrior << 8) + 0,
-        FuryWarrior = ((int)WoWClass.Warrior << 8) + 1,
-        ProtectionWarrior = ((int)WoWClass.Warrior << 8) + 2,
-
-        // BrewmasterMonk = ((int)WoWClass.Monk << 8) + 0,
-        // MistweaverMonk = ((int)WoWClass.Monk << 8) + 1,
-        // WindwalkerMonk = ((int)WoWClass.Monk << 8) + 2,
-    }
-
     internal static class TalentManager
     {
         //public const int TALENT_FLAG_ISEXTRASPEC = 0x10000;
@@ -94,7 +34,7 @@ namespace Singular.Managers
             Lua.Events.AttachEvent("ACTIVE_TALENT_GROUP_CHANGED", UpdateTalentManager);
         }
 
-        public static TalentSpec CurrentSpec { get; private set; }
+        public static WoWSpec CurrentSpec { get; private set; }
 
         public static List<Talent> Talents { get; private set; }
 
@@ -122,7 +62,7 @@ namespace Singular.Managers
 
         private static void UpdateTalentManager(object sender, LuaEventArgs args)
         {
-            TalentSpec oldSpec = CurrentSpec;
+            var oldSpec = CurrentSpec;
 
             Update();
 
@@ -142,22 +82,7 @@ namespace Singular.Managers
             // Keep the frame stuck so we can do a bunch of injecting at once.
             using (StyxWoW.Memory.AcquireFrame())
             {
-                string s = Lua.GetReturnVal<string>("return GetSpecialization()", 0);
-                if (String.IsNullOrEmpty(s))
-                {
-                    Logger.Write("TalentManager - no specialization yet");
-                    CurrentSpec = TalentSpec.Lowbie;
-                    return;
-                }
-
-                if (!Int32.TryParse(s, out specBuild))
-                {
-                    Logger.Write("TalentManager - getspecialization returned {0} which failed parse", s);
-                    CurrentSpec = TalentSpec.Lowbie;
-                    return;
-                }
-
-                CurrentSpec = (TalentSpec)(specClassMask + specBuild - 1);
+                CurrentSpec = StyxWoW.Me.Specialization;
                 Logger.Write("TalentManager - looks like a {0}", CurrentSpec.ToString());
 
                 Talents.Clear();

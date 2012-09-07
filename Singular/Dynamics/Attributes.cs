@@ -14,7 +14,7 @@
 using System;
 
 using Singular.Managers;
-
+using Styx;
 using Styx.Combat.CombatRoutine;
 
 namespace Singular.Dynamics
@@ -66,12 +66,12 @@ namespace Singular.Dynamics
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
     internal sealed class SpecAttribute : Attribute
     {
-        public SpecAttribute(TalentSpec spec)
+        public SpecAttribute(WoWSpec spec)
         {
             SpecificSpec = spec;
         }
 
-        public TalentSpec SpecificSpec { get; private set; }
+        public WoWSpec SpecificSpec { get; private set; }
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]

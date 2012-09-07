@@ -71,6 +71,7 @@ namespace Singular.ClassSpecific.Priest
                 // don't attempt to heal unless below a certain percentage health
                 new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.DontHealPercent,
                     new PrioritySelector(
+                        Spell.Heal("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
                         Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40),
                         Spell.Heal("Vampiric Embrace", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
                         )),

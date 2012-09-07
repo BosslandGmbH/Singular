@@ -65,6 +65,7 @@ namespace Singular.ClassSpecific.Priest
                         //Spell.Buff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
                         // use fade to drop aggro.
                         Spell.Cast("Fade", ret => (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
+                        Spell.Heal("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
                         Spell.Buff(
                             "Power Word: Shield",
                             ret => (WoWUnit)ret,
@@ -84,13 +85,14 @@ namespace Singular.ClassSpecific.Priest
                                     Spell.Heal("Divine Hymn")),
                                 Spell.Heal("Prayer of Healing"))),
                         Spell.Heal(
-                            "Pain Supression",
+                            "Pain Suppression",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.PainSuppression),
                         Spell.Heal(
                             "Penance",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Penance),
+                        Spell.Heal("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
                         Spell.Heal(
                             "Flash Heal",
                             ret => (WoWUnit)ret, 
@@ -124,7 +126,7 @@ namespace Singular.ClassSpecific.Priest
                                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                                 Spell.Cast("Mindbender"),
                                 Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
-                                Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
+                                //Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Cast("Penance"),
@@ -179,7 +181,7 @@ namespace Singular.ClassSpecific.Priest
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                         Spell.Cast("Mindbender"),
                         Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
-                        Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
+                        //Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
                         Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                         Spell.Buff("Shadow Word: Pain", true),
                         Spell.Cast("Penance"),

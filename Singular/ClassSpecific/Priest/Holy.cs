@@ -8,8 +8,6 @@ using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.CommonBot;
 using Styx.Helpers;
-
-
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
@@ -64,14 +62,15 @@ namespace Singular.ClassSpecific.Priest
                             Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
                         // use fade to drop aggro.
                         Spell.Cast("Fade", ret => (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
-    
+
+                        Spell.Cast("Mindbender", ret => StyxWoW.Me.ManaPercent <= 80 && StyxWoW.Me.GotTarget),
                         Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= 80 && StyxWoW.Me.GotTarget),
 
                         Spell.BuffSelf("Desperate Prayer", ret => StyxWoW.Me.HealthPercent <= 50),
                         Spell.BuffSelf("Hymn of Hope", ret => StyxWoW.Me.ManaPercent <= 15 && (!SpellManager.HasSpell("Shadowfiend") || SpellManager.Spells["Shadowfiend"].Cooldown)),
                         Spell.BuffSelf("Divine Hymn", ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent <= SingularSettings.Instance.Priest.DivineHymnHealth) >= SingularSettings.Instance.Priest.DivineHymnCount),
 
-                        Spell.BuffSelf("Chakra"),
+                        Spell.BuffSelf("Chakra: Sanctuary"),
                         Spell.Cast(
                             "Prayer of Mending",
                             ret => (WoWUnit)ret,
@@ -123,10 +122,13 @@ namespace Singular.ClassSpecific.Priest
                                 Movement.CreateMoveToLosBehavior(),
                                 Movement.CreateFaceTargetBehavior(),
                                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                                Spell.Buff("Shadow Word: Pain", true),
+                                Spell.Buff("Shadow Word: Pain", true, ret => SpellManager.HasSpell("Power Word: Solace")),
                                 Spell.Cast("Holy Word: Chastise"),
+                                Spell.Cast("Mindbender"),
                                 Spell.Cast("Holy Fire"),
-                                Spell.Cast("Smite"),
+                                //Spell.Cast("Smite"),
+                                Spell.Cast("Power Word: Solace"),
+                                Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
                                 Movement.CreateMoveToTargetBehavior(true, 35f)
                                 )),
                         new Decorator(
@@ -171,10 +173,13 @@ namespace Singular.ClassSpecific.Priest
                         Movement.CreateMoveToLosBehavior(),
                         Movement.CreateFaceTargetBehavior(),
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                        Spell.Buff("Shadow Word: Pain", true),
+                        Spell.Buff("Shadow Word: Pain", true, ret => SpellManager.HasSpell("Power Word: Solace")),
                         Spell.Cast("Holy Word: Chastise"),
+                        Spell.Cast("Mindbender"),
                         Spell.Cast("Holy Fire"),
-                        Spell.Cast("Smite"),
+                        //Spell.Cast("Smite"),
+                        Spell.Cast("Power Word: Solace"),
+                        Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         ))
                 );

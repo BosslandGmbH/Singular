@@ -75,6 +75,7 @@ namespace Singular.ClassSpecific.Priest
                             SingularSettings.Instance.Priest.PrayerOfHealingCount &&
                             (SpellManager.CanCast("Prayer of Healing") || SpellManager.CanCast("Divine Hymn")),
                             new Sequence(
+                                Spell.Cast("Power Infusion", ret => ((WoWUnit)ret).HealthPercent < 40 || StyxWoW.Me.ManaPercent <= 20),
                                 Spell.Cast("Archangel"),
                         // This will skip over DH if we can't cast it.
                         // If we can, the sequence fails, since PoH can't be cast (as we're still casting at this point)

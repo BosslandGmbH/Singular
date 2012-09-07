@@ -70,7 +70,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.BuffSelf("Hymn of Hope", ret => StyxWoW.Me.ManaPercent <= 15 && (!SpellManager.HasSpell("Shadowfiend") || SpellManager.Spells["Shadowfiend"].Cooldown)),
                         Spell.BuffSelf("Divine Hymn", ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent <= SingularSettings.Instance.Priest.DivineHymnHealth) >= SingularSettings.Instance.Priest.DivineHymnCount),
 
-                        Spell.BuffSelf("Chakra: Sanctuary"),
+                        Spell.BuffSelf("Chakra: Sanctuary"), // all 3 are avail with a cd in holy - add them to the UI manager for holy priest - default Sanctuary
                         Spell.Cast(
                             "Prayer of Mending",
                             ret => (WoWUnit)ret,
@@ -100,6 +100,7 @@ namespace Singular.ClassSpecific.Priest
                             ret => ((WoWUnit)ret).HealthPercent <= 10),
 
                         Spell.CastOnGround("Lightwell", ret => StyxWoW.Me.Location.RayCast(WoWMathHelper.CalculateNeededFacing(StyxWoW.Me.Location, ((WoWUnit)ret).Location), 15f)),
+                        Spell.Cast("Power Infusion", ret => ((WoWUnit)ret).HealthPercent < 40 || StyxWoW.Me.ManaPercent <= 20),
                         Spell.Heal(
                             "Flash Heal",
                             ret => (WoWUnit)ret,

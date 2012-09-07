@@ -130,19 +130,27 @@ namespace Singular.Managers
 
         public static void Update()
         {
-            // Don't bother if we're < 10
-            if (StyxWoW.Me.Level < 10)
+            WoWClass myClass = StyxWoW.Me.Class;
+            int specBuild = 0;
+            int specClassMask = ((int)StyxWoW.Me.Class << 8);
+
+            string s = Lua.GetReturnVal<string>("return GetSpecialization()", 0);
+            if (String.IsNullOrEmpty(s) || !Int32.TryParse( s, out specBuild))
             {
                 CurrentSpec = TalentSpec.Lowbie;
                 return;
             }
-            WoWClass myClass = StyxWoW.Me.Class;
+
+            CurrentSpec = (TalentSpec)(specClassMask + specBuild - 1);
+
             int treeOne = 0, treeTwo = 0, treeThree = 0;
             //bool isExtraSpec = false;
 
             // Keep the frame stuck so we can do a bunch of injecting at once.
             using (StyxWoW.Memory.AcquireFrame())
             {
+                var numTabs = Lua.GetReturnVal<int>("return GetNumTalentTabs()", 0);
+
                 Talents.Clear();
                 for (int tab = 1; tab <= 3; tab++)
                 {
@@ -198,35 +206,6 @@ namespace Singular.Managers
                 }
             }
 
-            if (treeOne == 0 && treeTwo == 0 && treeThree == 0)
-            {
-                CurrentSpec = TalentSpec.Lowbie;
-                return;
-            }
-
-            int max = Math.Max(Math.Max(treeOne, treeTwo), treeThree);
-            Logger.WriteDebug("[Talents] Best Tree: " + max);
-            //Logger.WriteDebug("[Talents] Is Special Spec: " + isExtraSpec);
-            int specMask = ((int)StyxWoW.Me.Class << 8);
-
-            //// Bear tanks, healing disc priests, etc.
-            //if (isExtraSpec)
-            //{
-            //    specMask += TALENT_FLAG_ISEXTRASPEC;
-            //}
-
-            if (max == treeOne)
-            {
-                CurrentSpec = (TalentSpec)(specMask + 0);
-            }
-            else if (max == treeTwo)
-            {
-                CurrentSpec = (TalentSpec)(specMask + 1);
-            }
-            else
-            {
-                CurrentSpec = (TalentSpec)(specMask + 2);
-            }
         }
 
         #region Nested type: Talent

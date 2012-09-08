@@ -78,7 +78,7 @@ namespace Singular.ClassSpecific.Druid
                             "Rebirth",
                             ret => (WoWUnit)ret,
                             ret => StyxWoW.Me.Combat && RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader &&
-                                   ((WoWUnit)ret).Dead && (TalentManager.HasGlyph("Unburdened Rebirth") || StyxWoW.Me.BagItems.Any(i => i.Entry == mapleSeedId))),
+                                   ((WoWUnit)ret).IsDead && (TalentManager.HasGlyph("Unburdened Rebirth") || StyxWoW.Me.BagItems.Any(i => i.Entry == mapleSeedId))),
                         Spell.Heal(
                             "Tranquility",
                             ret => StyxWoW.Me.Combat && StyxWoW.Me.IsInParty && Unit.NearbyFriendlyPlayers.Count(

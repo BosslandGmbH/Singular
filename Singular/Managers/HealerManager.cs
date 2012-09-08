@@ -83,7 +83,7 @@ namespace Singular.Managers
                 WoWPlayer p = o.ToPlayer();
 
                 // Make sure we ignore dead/ghost players. If we need res logic, they need to be in the class-specific area.
-                if (p.Dead || p.IsGhost)
+                if (p.IsDead || p.IsGhost)
                 {
                     units.RemoveAt(i);
                     continue;

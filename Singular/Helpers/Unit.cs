@@ -66,7 +66,7 @@ namespace Singular.Helpers
                 return false;
 
             // Duh
-            if (p.Dead)
+            if (p.IsDead)
                 return false;
 
             // Dummies/bosses are valid by default. Period.
@@ -203,7 +203,7 @@ namespace Singular.Helpers
             get
             {
                 return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(
-                    p => !p.IsMe && p.Dead && p.IsFriendly && p.IsInMyPartyOrRaid &&
+                    p => !p.IsMe && p.IsDead && p.IsFriendly && p.IsInMyPartyOrRaid &&
                          p.DistanceSqr < 40 * 40 && !Blacklist.Contains(p.Guid)).ToList();
             }
         }

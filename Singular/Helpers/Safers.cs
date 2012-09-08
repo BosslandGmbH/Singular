@@ -53,7 +53,7 @@ namespace Singular.Helpers
                                     return null;
 
                                 // Go below if current target is null or dead. We have other checks to deal with that
-                                if (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.Dead)
+                                if (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.IsDead)
                                     return null;
 
                                 // If the current target is in combat or has aggro towards us, it should be a valid target.
@@ -95,7 +95,7 @@ namespace Singular.Helpers
                                                 StyxWoW.Me.CurrentTarget == (WoWUnit)ret,
                                         new ActionAlwaysSucceed())))),
                         new Decorator(
-                            ret => StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.Dead,
+                            ret => StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.IsDead,
                             new PrioritySelector(
                                 ctx =>
                                 {
@@ -130,7 +130,7 @@ namespace Singular.Helpers
                                     // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
                                     var agroMob =
                                         ObjectManager.GetObjectsOfType<WoWUnit>(false, false).
-                                            Where(p => !Blacklist.Contains(p) && p.IsHostile && !p.IsOnTransport && !p.Dead &&
+                                            Where(p => !Blacklist.Contains(p) && p.IsHostile && !p.IsOnTransport && !p.IsDead &&
                                                         !p.Mounted && p.DistanceSqr <= 70 * 70 && p.Combat).
                                             OrderBy(u => u.DistanceSqr).
                                             FirstOrDefault();

@@ -68,7 +68,7 @@ namespace Singular.ClassSpecific.Priest
                             ret => !((WoWUnit)ret).HasAura("Weakened Soul") && ((WoWUnit)ret).Combat && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.PowerWordShield),
                         new Decorator(
                             ret =>
-                            Unit.NearbyFriendlyPlayers.Count(p => !p.Dead && p.HealthPercent < SingularSettings.Instance.Priest.PrayerOfHealing) >
+                            Unit.NearbyFriendlyPlayers.Count(p => !p.IsDead && p.HealthPercent < SingularSettings.Instance.Priest.PrayerOfHealing) >
                             SingularSettings.Instance.Priest.PrayerOfHealingCount &&
                             (SpellManager.CanCast("Prayer of Healing") || SpellManager.CanCast("Divine Hymn")),
                             new Sequence(

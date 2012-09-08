@@ -8,6 +8,7 @@ using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.TreeSharp;
+using Singular.Settings;
 
 namespace Singular.ClassSpecific.Shaman
 {
@@ -57,10 +58,14 @@ namespace Singular.ClassSpecific.Shaman
                     Movement.CreateFaceTargetBehavior(),
                     Spell.WaitForCast(true),
                     Common.CreateAutoAttack(true),
+
+                    Spell.BuffSelf("Blood Fury", ret => SingularSettings.Instance.UseRacials && StyxWoW.Me.Race == WoWRace.Orc),
+                    Spell.BuffSelf("Berserking", ret => SingularSettings.Instance.UseRacials && StyxWoW.Me.Race == WoWRace.Troll),
+
                     Spell.Cast("Earth Shock"),      // always use
                     Spell.Cast("Primal Strike"),    // always use
                     Spell.Cast("Lightning Bolt"),                   
-                    Movement.CreateMoveToTargetBehavior(true, 20f)
+                    Movement.CreateMoveToTargetBehavior(true, 27f)
                     );
         }
     }

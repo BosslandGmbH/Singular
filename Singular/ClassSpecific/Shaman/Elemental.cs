@@ -25,16 +25,10 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanElementalPreCombatBuffs()
         {
             return new PrioritySelector(
-                new Decorator(
-                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 283 && StyxWoW.Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass != WoWItemWeaponClass.FishingPole && SpellManager.HasSpell("Flametongue Weapon") &&
-                            SpellManager.CanCast("Flametongue Weapon", null, false, false),
-                    new Sequence(
-                        new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),
-                        new Action(ret => Logger.Write("Imbuing main hand weapon with Flametongue")),
-                        new Action(ret => SpellManager.Cast("Flametongue Weapon", null))
-                        )),
+                Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
                 Spell.BuffSelf("Lightning Shield"),
+
                 new Decorator(ret => Totems.NeedToRecallTotems,
                     new Action(ret => Totems.RecallTotems()))
                 );
@@ -88,6 +82,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
+
                 Spell.BuffSelf("Lightning Shield"),
 
                 new Decorator(
@@ -100,8 +95,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
 
                 Spell.Cast("Unleash Weapon",
-                    ret => StyxWoW.Me.Inventory.Equipped.MainHand != null
-                        && StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 5),
+                    ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -117,6 +111,11 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.WaitForCast(true),
                 Totems.CreateSetTotems(),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                new Decorator( 
+                    ret => Common.GetImbue( StyxWoW.Me.Inventory.Equipped.MainHand) == Imbue.None,
+                    Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue)),
+                    
                 Spell.BuffSelf("Lightning Shield"),
 
                 Spell.BuffSelf("Elemental Mastery",
@@ -178,8 +177,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Unleash Elements", ret => 
                     StyxWoW.Me.IsMoving &&
                     !StyxWoW.Me.HasAura( "Spiritwalker's Grace") &&
-                    StyxWoW.Me.Inventory.Equipped.MainHand != null &&
-                    StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 5),
+                    Common.IsImbuedForDPS( StyxWoW.Me.Inventory.Equipped.MainHand)),
 
                 Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
                 Spell.Cast("Lightning Bolt"),
@@ -201,6 +199,10 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.WaitForCast(true),
                 Totems.CreateSetTotems(),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                new Decorator(
+                    ret => Common.GetImbue(StyxWoW.Me.Inventory.Equipped.MainHand) == Imbue.None,
+                    Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue)),
 
                 Spell.BuffSelf("Lightning Shield"),
 
@@ -234,7 +236,8 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
                 Spell.Cast("Unleash Elements",
-                    ret => (StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 8024) && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
+                    ret => StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")
+                        && Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
                 Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
                 Spell.Cast("Lightning Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -255,6 +258,10 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.WaitForCast(true),
                 Totems.CreateSetTotems(),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                new Decorator(
+                    ret => Common.GetImbue(StyxWoW.Me.Inventory.Equipped.MainHand) == Imbue.None,
+                    Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue)),
 
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
@@ -292,7 +299,9 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
                 Spell.Cast("Unleash Elements",
-                    ret => (StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 8024) && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
+                    ret => StyxWoW.Me.IsMoving 
+                        && !StyxWoW.Me.HasAura("Spiritwalker's Grace")
+                        && Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
                 Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
                 Spell.Cast("Lightning Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)

@@ -72,9 +72,6 @@ namespace Singular.ClassSpecific.Mage
                     ret => StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 90) &&
                            StyxWoW.Me.CurrentTarget.DistanceSqr <= 8 * 8),
 
-                Spell.Cast("Fire Blast",
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact") && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
-
                 new Decorator(
                     ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 10 * 10 && u.IsCrowdControlled()),
                     new PrioritySelector(
@@ -86,17 +83,18 @@ namespace Singular.ClassSpecific.Mage
 
                 Common.CreateMagePolymorphOnAddBehavior(),
                 // Rotation
+
                 Spell.Cast("Frostfire Bolt", ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
-                Spell.Cast("Combustion",
-                    ret => (StyxWoW.Me.CurrentTarget.HasMyAura("Living Bomb") || !SpellManager.HasSpell("Living Bomb")) &&
-                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.IsSelected(4)) &&
-                           StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast!") ),
-                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.IsSelected(20) ),
-                Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Hot Streak")),
-                Spell.BuffSelf("Flame Orb"),
-                Spell.Buff("Living Bomb", true),
-                Spell.Cast("Fireball"),
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                 Spell.Cast("Living Bomb", ret => !StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") || (StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds <= 2)),
+                 Spell.Cast("Inferno Blast", ret => StyxWoW.Me.HasAura("Heating Up")),
+                 Spell.Cast("Frost Bomb", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 1),
+                Spell.Cast("Combustion", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") && StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast") ),
+               
+                Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Pyroblast!")),
+                Spell.Cast("Fireball", ret => !SpellManager.HasSpell("Scorch")),
+                Spell.Cast("Frostfire bolt", ret => !SpellManager.HasSpell("Fireball")),
+                Spell.Cast("Scorch"),
+                Movement.CreateMoveToTargetBehavior(true, 39f)
                 );
         }
 
@@ -135,17 +133,17 @@ namespace Singular.ClassSpecific.Mage
                 Spell.Cast("Fire Blast",
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact")),
                 // Rotation
-                Spell.Cast("Combustion",
-                    ret => (StyxWoW.Me.CurrentTarget.HasMyAura("Living Bomb") || !SpellManager.HasSpell("Living Bomb")) &&
-                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.IsSelected( 4)) &&
-                           StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast!")),
-                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.IsSelected( 20)),
-                Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Hot Streak")),
-                Spell.BuffSelf("Flame Orb"),
-                Spell.Buff("Living Bomb", true),
-                Spell.Cast("Fireball"),
+                 Spell.Cast("Frostfire Bolt", ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
+                 Spell.Cast("Living Bomb", ret => !StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") || (StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds <= 2)),
+                 Spell.Cast("Inferno Blast", ret => StyxWoW.Me.HasAura("Heating Up")),
+                 Spell.Cast("Frost Bomb", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 1),
+                Spell.Cast("Combustion", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") && StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast")),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Pyroblast!")),
+                Spell.Cast("Fireball", ret => !SpellManager.HasSpell("Scorch")),
+                Spell.Cast("Frostfire bolt", ret => !SpellManager.HasSpell("Fireball")),
+                Spell.Cast("Scorch"),
+                Movement.CreateMoveToTargetBehavior(true, 39f)
                 );
         }
 
@@ -200,17 +198,17 @@ namespace Singular.ClassSpecific.Mage
                            !StyxWoW.Me.HasAura("Temporal Displacement")),
 
                 // Rotation
-                Spell.Cast("Frostfire Bolt",ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
-                Spell.Cast("Combustion",
-                    ret => (StyxWoW.Me.CurrentTarget.HasMyAura("Living Bomb") || !SpellManager.HasSpell("Living Bomb")) &&
-                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.IsSelected(4) ) &&
-                           StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast!")),
-                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.IsSelected(20)),
-                Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Hot Streak")),
-                Spell.BuffSelf("Flame Orb"),
-                Spell.Buff("Living Bomb", true),
-                Spell.Cast("Fireball"),
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                  Spell.Cast("Frostfire Bolt", ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
+                 Spell.Cast("Living Bomb", ret => !StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") || (StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds <= 2)),
+                 Spell.Cast("Inferno Blast", ret => StyxWoW.Me.HasAura("Heating Up")),
+                 Spell.Cast("Frost Bomb", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 1),
+                Spell.Cast("Combustion", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") && StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast")),
+
+                Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Pyroblast!")),
+                Spell.Cast("Fireball", ret => !SpellManager.HasSpell("Scorch")),
+                Spell.Cast("Frostfire bolt", ret => !SpellManager.HasSpell("Fireball")),
+                Spell.Cast("Scorch"),
+                Movement.CreateMoveToTargetBehavior(true, 39f)
                 );
         }
 

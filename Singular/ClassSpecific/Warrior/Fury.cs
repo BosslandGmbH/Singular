@@ -184,12 +184,12 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf("Deadly Calm", ret => StyxWoW.Me.RagePercent >= 40 && TargetSmashed && !WithinExecuteRange),
                 // Cast CS when the requirements are met. There's a few, so this is extracted into its own property.
                 Spell.Cast("Heroic Strike", ret=> NeedHeroicStrike),
+                // CS on cooldown
+                Spell.Cast("Colossus Smash"),
                 // BT basically on cooldown, unless we're in execute range, then save it for rage building. Execute is worth more DPR here.
                 Spell.Cast("Bloodthirst", ret => !WithinExecuteRange || (StyxWoW.Me.CurrentTarget.HealthPercent <= 20 && StyxWoW.Me.RagePercent <= 30)),
                 // Wild strike proc. (Bloodsurge)
                 Spell.Cast("Wild Strike", ret=> !WithinExecuteRange && StyxWoW.Me.HasAura("Bloodsurge")),
-                // CS on cooldown
-                Spell.Cast("Colossus Smash"),
                 // Execute on CD
                 Spell.Cast("Execute", ret => WithinExecuteRange),
                 // RB only when we're not going to have BT come off CD during a GCD

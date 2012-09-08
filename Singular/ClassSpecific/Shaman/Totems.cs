@@ -439,7 +439,8 @@ namespace Singular.ClassSpecific.Shaman
                     return 30f;
 
                 case WoWTotem.Searing:
-                    return 20f ;
+                    // add for Elemental Reach
+                    return SpellManager.HasSpell(29000) ? 35f : 20f ;
 
                 case WoWTotem.Earthbind:
                     return 10f ;

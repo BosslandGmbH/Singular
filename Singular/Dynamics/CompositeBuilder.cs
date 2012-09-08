@@ -45,7 +45,7 @@ namespace Singular.Dynamics
                 }
                 Logger.Write("Added " + _methods.Count + " methods");
             }
-            var matchedMethods = new Dictionary<int, Composite>();
+            var matchedMethods = new Dictionary<BehaviorAttribute, Composite>();
 
             foreach (MethodInfo mi in _methods)
             {
@@ -67,7 +67,7 @@ namespace Singular.Dynamics
                             behavior, wowClass.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced(),
                             attribute.PriorityLevel));
 
-                        matchedMethods.Add(attribute.PriorityLevel, mi.Invoke(null, null) as Composite);
+                        matchedMethods.Add(attribute, mi.Invoke(null, null) as Composite);
                     }
                 }
             }
@@ -78,7 +78,7 @@ namespace Singular.Dynamics
             }
 
             var result = new PrioritySelector();
-            foreach (var kvp in matchedMethods.OrderByDescending(mm => mm.Key))
+            foreach (var kvp in matchedMethods.OrderByDescending(mm => mm.Key.PriorityLevel))
             {
                 result.AddChild(kvp.Value);
                 behaviourCount++;
@@ -92,13 +92,16 @@ namespace Singular.Dynamics
         {
             if (attribute.SpecificClass != wowClass)
                 return false;
-            if ((attribute.Type & behavior) != 0)
+            if ((attribute.Type & behavior) == 0)
                 return false;
             if ((attribute.SpecificContext & context) == 0)
                 return false;
             if (attribute.SpecificSpec != (WoWSpec)int.MaxValue && attribute.SpecificSpec != spec)
                 return false;
 
+            Logger.WriteDebug("IsMatchingMethod({0}, {1}, {2}, {3}) - {4}, {5}, {6}, {7}, {8}", wowClass, spec, behavior,
+                context, attribute.SpecificClass, attribute.SpecificSpec, attribute.Type, attribute.SpecificContext,
+                attribute.PriorityLevel);
             return true;
         }
     }

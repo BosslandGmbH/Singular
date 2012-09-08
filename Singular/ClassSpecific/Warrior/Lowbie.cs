@@ -11,7 +11,7 @@ namespace Singular.ClassSpecific.Warrior
 {
     public class Lowbie
     {
-        [Behavior(BehaviorType.Combat, WoWClass.Warrior, 0, WoWContext.Normal, 500)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warrior, 0, WoWContext.Normal)]
         public static Composite CreateLowbieWarriorCombat()
         {
             return new PrioritySelector(

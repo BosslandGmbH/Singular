@@ -187,7 +187,7 @@ namespace Singular.ClassSpecific.Warrior
                 // BT basically on cooldown, unless we're in execute range, then save it for rage building. Execute is worth more DPR here.
                 Spell.Cast("Bloodthirst", ret => !WithinExecuteRange || (StyxWoW.Me.CurrentTarget.HealthPercent <= 20 && StyxWoW.Me.RagePercent <= 30)),
                 // Wild strike proc. (Bloodsurge)
-                Spell.Cast("Wild Strike", ret=> !WithinExecuteRange && StyxWoW.Me.HasAura("Bloodsurge", 1)),
+                Spell.Cast("Wild Strike", ret=> !WithinExecuteRange && StyxWoW.Me.HasAura("Bloodsurge")),
                 // CS on cooldown
                 Spell.Cast("Colossus Smash"),
                 // Execute on CD
@@ -239,7 +239,7 @@ namespace Singular.ClassSpecific.Warrior
 
         static bool WithinExecuteRange { get { return StyxWoW.Me.CurrentTarget.HealthPercent <= 20; } }
         static bool IsEnraged { get { return StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Enraged); } }
-        private static bool TargetSmashed { get { return StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash", 1); } }
+        private static bool TargetSmashed { get { return StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash"); } }
 
 
         static bool NeedHeroicStrike
@@ -259,7 +259,7 @@ namespace Singular.ClassSpecific.Warrior
                         return true;
                     if (myRage >= 90)
                         return true;
-                    if (myRage >= 30 && StyxWoW.Me.HasAura("Deadly Calm", 1))
+                    if (myRage >= 30 && StyxWoW.Me.HasAura("Deadly Calm"))
                         return true;
                 }
                 return false;

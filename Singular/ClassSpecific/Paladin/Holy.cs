@@ -81,9 +81,7 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.Cast("Hammer of Wrath"),
                             Spell.Cast("Holy Shock"),
                             Spell.Cast("Crusader Strike"),
-                            Spell.Cast("Exorcism"),
-                            Spell.Cast("Holy Wrath"),
-                            Spell.Cast("Consecration"),
+                            Spell.Cast("Denounce"),
                             Movement.CreateMoveToTargetBehavior(true, 5f)
                             ))
                     );
@@ -136,7 +134,21 @@ namespace Singular.ClassSpecific.Paladin
                                 "Beacon of Light",
                                 ret => (WoWUnit)ret,
                                 ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Beacon of Light"))),
+
+
+
+                                //Try and keep it up if requested
+                             Spell.Heal(
+                                "Eternal Flame",
+                                ret => (WoWUnit)ret,
+                               ret => ret is WoWPlayer && SingularSettings.Instance.Paladin.KeepEternalFlameUp && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Eternal Flame"))),
+
                             Spell.Heal(
+                                "Eternal Flame",
+                                ret => (WoWUnit)ret,
+                               ret => StyxWoW.Me.CurrentHolyPower >= 3 && (((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth)),
+
+                           Spell.Heal(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,
                                 ret => StyxWoW.Me.Combat && !((WoWUnit)ret).HasAura("Forbearance") &&
@@ -144,14 +156,14 @@ namespace Singular.ClassSpecific.Paladin
                             Spell.Heal(
                                 "Light of Dawn",
                                 ret => StyxWoW.Me,
-                                ret => StyxWoW.Me.CurrentHolyPower == 3 &&
+                                ret => StyxWoW.Me.CurrentHolyPower >= 3 &&
                                        Unit.NearbyFriendlyPlayers.Count(p =>
                                            p.HealthPercent <= SingularSettings.Instance.Paladin.LightOfDawnHealth && p != StyxWoW.Me &&
                                            p.DistanceSqr < 30 * 30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin.LightOfDawnCount),
                             Spell.Heal(
                                 "Word of Glory",
                                 ret => (WoWUnit)ret,
-                                ret => StyxWoW.Me.CurrentHolyPower == 3 && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth),
+                                ret => StyxWoW.Me.CurrentHolyPower >= 3 && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth),
                             Spell.Heal(
                                 "Holy Shock",
                                 ret => (WoWUnit)ret,
@@ -179,9 +191,7 @@ namespace Singular.ClassSpecific.Paladin
                                     Spell.Cast("Hammer of Wrath"),
                                     Spell.Cast("Holy Shock"),
                                     Spell.Cast("Crusader Strike"),
-                                    Spell.Cast("Exorcism"),
-                                    Spell.Cast("Holy Wrath"),
-                                    Spell.Cast("Consecration"),
+                                    Spell.Cast("Denounce"),
                                     Movement.CreateMoveToTargetBehavior(true, 5f)
                                     )),
                             new Decorator(

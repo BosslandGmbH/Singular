@@ -71,12 +71,20 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(65)]
         [Category("Common")]
-        [DisplayName("Word of Glory Health")]
-        [Description("Word of Glory will be used at this value")]
+        [DisplayName("Word of Glory / Eternal Flame Health")]
+        [Description("Word of Glory / Eternal Flame will be used at this value")]
         public int WordOfGloryHealth { get; set; } 
         #endregion
 
         #region Holy
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Holy")]
+        [DisplayName("Keep Eternal Flame on tank")]
+        [Description("Ensure that Eternal Flame remains on the tank.")]
+        public bool KeepEternalFlameUp { get; set; } 
+
         [Setting]
         [DefaultValue(80)]
         [Category("Holy")]

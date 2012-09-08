@@ -116,21 +116,14 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Totems.CreateSetTotems(),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.BuffSelf("Lightning Shield"),
 
                 Spell.BuffSelf("Elemental Mastery",
                     ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.Elite || u.IsPlayer) &&
                         !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
 
-                Spell.BuffSelf("Blood Fury",
-                    ret => SingularSettings.Instance.UseRacials &&
-                        StyxWoW.Me.Race == WoWRace.Orc &&
-                        !StyxWoW.Me.HasAnyAura("Elemental Mastery", "Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
-                Spell.BuffSelf("Berserking",
-                    ret => SingularSettings.Instance.UseRacials &&
-                        StyxWoW.Me.Race == WoWRace.Troll &&
-                        !StyxWoW.Me.HasAnyAura("Elemental Mastery", "Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+                Common.CreateShamanRacialsCombat(),
 
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving),
 
@@ -207,7 +200,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Totems.CreateSetTotems(),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 Spell.BuffSelf("Lightning Shield"),
 
@@ -261,7 +254,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Totems.CreateSetTotems(),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),

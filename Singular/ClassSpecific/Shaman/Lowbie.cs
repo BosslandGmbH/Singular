@@ -57,15 +57,12 @@ namespace Singular.ClassSpecific.Shaman
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Spell.WaitForCast(true),
-                    Common.CreateAutoAttack(true),
-
-                    Spell.BuffSelf("Blood Fury", ret => SingularSettings.Instance.UseRacials && StyxWoW.Me.Race == WoWRace.Orc),
-                    Spell.BuffSelf("Berserking", ret => SingularSettings.Instance.UseRacials && StyxWoW.Me.Race == WoWRace.Troll),
-
+                    Helpers.Common.CreateAutoAttack(true),
+                    Common.CreateShamanRacialsCombat(),
                     Spell.Cast("Earth Shock"),      // always use
                     Spell.Cast("Primal Strike"),    // always use
                     Spell.Cast("Lightning Bolt"),                   
-                    Movement.CreateMoveToTargetBehavior(true, 27f)
+                    Movement.CreateMoveToTargetBehavior(true, 25f)
                     );
         }
     }

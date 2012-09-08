@@ -120,7 +120,7 @@ namespace Singular.ClassSpecific.Shaman
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         )),
 
-                Common.CreateAutoAttack(true),
+                Helpers.Common.CreateAutoAttack(true),
                 new Decorator( ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 20 * 20,
                     Totems.CreateSetTotems()),
                 Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
@@ -141,8 +141,8 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Totems.CreateSetTotems(),
-                Common.CreateAutoAttack(true),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
@@ -168,14 +168,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.BuffSelf("Elemental Mastery",
                     ret => !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
 
-                Spell.BuffSelf("Blood Fury",
-                    ret => SingularSettings.Instance.UseRacials && 
-                        StyxWoW.Me.Race == WoWRace.Orc && 
-                        !StyxWoW.Me.HasAnyAura("Elemental Mastery", "Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
-                Spell.BuffSelf("Berserking",
-                    ret => SingularSettings.Instance.UseRacials &&
-                        StyxWoW.Me.Race == WoWRace.Troll &&
-                        !StyxWoW.Me.HasAnyAura("Elemental Mastery", "Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+                Common.CreateShamanRacialsCombat(),
 
                 Spell.Cast("Stormstrike"),
                 Spell.Buff("Flame Shock", true,
@@ -220,8 +213,8 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Totems.CreateSetTotems(),
-                Common.CreateAutoAttack(true),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
@@ -272,8 +265,8 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Totems.CreateSetTotems(),
-                Common.CreateAutoAttack(true),
-                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),

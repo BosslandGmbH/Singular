@@ -46,8 +46,8 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
-                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
+                        Spell.Cast("Throw"),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -85,36 +85,14 @@ namespace Singular.ClassSpecific.Rogue
                 // Redirect if we have CP left
                 Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
 
-                Spell.BuffSelf("Vanish",
-                    ret => StyxWoW.Me.HealthPercent < 20),
+                Spell.BuffSelf("Vanish",ret => StyxWoW.Me.HealthPercent < 20),
 
                 Spell.BuffSelf("Vendetta", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
-
-                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.Elite),
-                Spell.BuffSelf("Slice and Dice",
-                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.BuffSelf("Cold Blood",
-                    ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.HealthPercent >= 35 ||
-                           StyxWoW.Me.ComboPoints == 5 || !SpellManager.HasSpell("Envenom")),
-
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints >= 2),
-                Spell.Cast("Eviscerate",
-                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent <= 40 || !SpellManager.HasSpell("Envenom") || !StyxWoW.Me.CurrentTarget.Elite) && 
-                           StyxWoW.Me.ComboPoints >= 4),
-
-                Spell.Cast("Envenom",
-                    ret => StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent >= 35 && StyxWoW.Me.ComboPoints >= 4),
-                Spell.Cast("Envenom",
-                    ret => StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent < 35 && StyxWoW.Me.ComboPoints == 5),
-
-                Spell.Cast("Backstab",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.IsSelected( 13) &&
-                           StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Cold Blood")),
-                Spell.Cast("Mutilate",
-                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.IsSelected(13)  ||
-                           !StyxWoW.Me.CurrentTarget.MeIsBehind) && !StyxWoW.Me.HasAura("Cold Blood")),
-
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && !StyxWoW.Me.HasAura("Slice and Dice")),
+                Spell.Buff("Rupture", true, ret => (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rupture",true).TotalSeconds < 3)),
+                Spell.Buff("Envenom", true, ret => (StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3 && StyxWoW.Me.ComboPoints > 0) || StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Dispatch"),
+                Spell.Cast("Mutilate"),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
@@ -142,8 +120,8 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
-                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
+                        Spell.Cast("Throw"),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -181,26 +159,11 @@ namespace Singular.ClassSpecific.Rogue
                     ret => (StyxWoW.Me.HasAura("Vanish") || StyxWoW.Me.IsStealthed) &&
                            StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.BuffSelf("Vendetta"),
-                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
-                Spell.BuffSelf("Slice and Dice",
-                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.BuffSelf("Cold Blood",
-                    ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.HealthPercent >= 35 ||
-                           StyxWoW.Me.ComboPoints == 5 || !SpellManager.HasSpell("Envenom")),
-                Spell.Cast("Eviscerate",
-                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent <= 40 || !SpellManager.HasSpell("Envenom")) && StyxWoW.Me.ComboPoints >= 4),
-                Spell.Cast("Kidney Shot",
-                    ret => StyxWoW.Me.ComboPoints >= 4 && !StyxWoW.Me.CurrentTarget.IsStunned()),
-                Spell.Cast("Envenom",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent >= 35 && StyxWoW.Me.ComboPoints >= 4),
-                Spell.Cast("Envenom",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && StyxWoW.Me.ComboPoints == 5),
-                Spell.Cast("Backstab",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.IsSelected( 13) &&
-                           StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Cold Blood")),
-                Spell.Cast("Mutilate",
-                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.IsSelected( 13)||
-                           !StyxWoW.Me.CurrentTarget.MeIsBehind) && !StyxWoW.Me.HasAura("Cold Blood")),
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && !StyxWoW.Me.HasAura("Slice and Dice")),
+                Spell.Buff("Rupture", true, ret => (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
+                Spell.Buff("Envenom", true, ret => (StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3 && StyxWoW.Me.ComboPoints > 0) || StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Dispatch"),
+                Spell.Cast("Mutilate"),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -227,8 +190,8 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5*5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
-                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
+                        Spell.Cast("Throw"),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -281,24 +244,11 @@ namespace Singular.ClassSpecific.Rogue
                     ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) >= 3,
                     Spell.BuffSelf("Fan of Knives", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown))),
 
-                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
-                Spell.BuffSelf("Slice and Dice", 
-                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.BuffSelf("Cold Blood",
-                    ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.HealthPercent >= 35 ||
-                           StyxWoW.Me.ComboPoints == 5 || !SpellManager.HasSpell("Envenom")),
-                Spell.Cast("Eviscerate", 
-                    ret => (!StyxWoW.Me.CurrentTarget.Elite || !SpellManager.HasSpell("Envenom")) && StyxWoW.Me.ComboPoints >= 4),
-                Spell.Cast("Envenom",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent >= 35 && StyxWoW.Me.ComboPoints >= 4),
-                Spell.Cast("Envenom",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && StyxWoW.Me.ComboPoints == 5),
-                Spell.Cast("Backstab",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.IsSelected(13)  && 
-                           StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Cold Blood")),
-                Spell.Cast("Mutilate",
-                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.IsSelected(13) ||
-                           !StyxWoW.Me.CurrentTarget.MeIsBehind) && !StyxWoW.Me.HasAura("Cold Blood")),
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && !StyxWoW.Me.HasAura("Slice and Dice")),
+                Spell.Buff("Rupture", true, ret => (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
+                Spell.Buff("Envenom", true, ret => (StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3 && StyxWoW.Me.ComboPoints > 0) || StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Dispatch"),
+                Spell.Cast("Mutilate"),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );

@@ -35,6 +35,7 @@ namespace Singular.ClassSpecific.Rogue
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
                         Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
+                        Spell.Cast("Throw"),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -88,7 +89,7 @@ namespace Singular.ClassSpecific.Rogue
                            !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Blind"))),
 
                 Spell.Cast("Revealing Strike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Revealing Strike")),
-                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && !StyxWoW.Me.HasAura("Slice and Dice")),
                 Spell.Buff("Rupture", true,
                     ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 &&
                            StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
@@ -125,6 +126,7 @@ namespace Singular.ClassSpecific.Rogue
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
                         Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
+                        Spell.Cast("Throw"),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -171,7 +173,7 @@ namespace Singular.ClassSpecific.Rogue
                            !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Blind"))),
 
                 Spell.Cast("Revealing Strike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Revealing Strike")),
-                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && !StyxWoW.Me.HasAura("Slice and Dice")),
                 Spell.Buff("Rupture", true,
                     ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 &&
                            StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
@@ -206,8 +208,8 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
-                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
+                        Spell.Cast("Throw"),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -266,7 +268,7 @@ namespace Singular.ClassSpecific.Rogue
                            !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Blind"))),
 
                 Spell.Cast("Revealing Strike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Revealing Strike")),
-                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && !StyxWoW.Me.HasAura("Slice and Dice")),
                 Spell.Buff("Rupture", true,
                     ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 &&
                            StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),

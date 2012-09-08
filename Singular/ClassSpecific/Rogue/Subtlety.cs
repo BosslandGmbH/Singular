@@ -95,7 +95,8 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.BuffSelf("Slice and Dice",
                     ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
                 Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.Elite),
-                Spell.BuffSelf("Recuperate", ret => TalentManager.GetCount(3, 8) > 0 && StyxWoW.Me.RawComboPoints > 0),
+                Spell.BuffSelf("Recuperate", ret => TalentManager.IsSelected(8) && StyxWoW.Me.RawComboPoints > 0),
+
                 Spell.Cast("Eviscerate", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 40 && StyxWoW.Me.ComboPoints >= 2),
                 Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
                 Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && StyxWoW.Me.HasAura("Shadow Dance")),
@@ -180,7 +181,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.BuffSelf("Slice and Dice",
                     ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
                 Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
-                Spell.BuffSelf("Recuperate", ret => TalentManager.GetCount(3, 8) > 0 && StyxWoW.Me.RawComboPoints > 0),
+                Spell.BuffSelf("Recuperate", ret => TalentManager.IsSelected( 8) && StyxWoW.Me.RawComboPoints > 0),
                 Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
                 // Vanish + Shadowstep + Premeditation + Ambush combo
                 new Decorator(
@@ -281,7 +282,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.BuffSelf("Slice and Dice",
                     ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
                 Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
-                Spell.BuffSelf("Recuperate", ret => TalentManager.GetCount(3, 8) > 0 && StyxWoW.Me.RawComboPoints > 0),
+                Spell.BuffSelf("Recuperate", ret => TalentManager.IsSelected(8) && StyxWoW.Me.RawComboPoints > 0),
                 Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
                 // Vanish + Shadowstep + Premeditation + Ambush combo
                 new Decorator(

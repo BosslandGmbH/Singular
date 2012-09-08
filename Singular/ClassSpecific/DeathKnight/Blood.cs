@@ -39,19 +39,22 @@ namespace Singular.ClassSpecific.DeathKnight
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.BuffSelf("Blood Presence"),
 
-                    // Anti-magic shell
+                    // Anti-magic shell - no cost and doesnt trigger GCD 
                     Spell.BuffSelf("Anti-Magic Shell",
                                     ret => Unit.NearbyUnfriendlyUnits.Any(u =>
                                                 (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
-                                                u.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                                                SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
+                                                u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
                     /*
+,
+
                         Big cooldown section. By default, all cooldowns are priorotized by their time ascending
                         for maximum uptime in the long term. By default, all cooldowns are also exlusive. This
                         means they will be used in rotation rather than conjunction. This is required for high
                         end blood tanking.
                     */
+
+                    /*
                     Spell.BuffSelf("Death Pact",
                                     ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificePercent &&
                                            StyxWoW.Me.GotAlivePet),
@@ -169,6 +172,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => DeathStrikeTimer.Reset())),
                     Spell.Cast("Heart Strike"),
                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                    */
                     Movement.CreateMoveToMeleeBehavior(true)
                     );
         }
@@ -193,12 +197,11 @@ namespace Singular.ClassSpecific.DeathKnight
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.BuffSelf("Blood Presence"),
 
-                    // Anti-magic shell
+                    // Anti-magic shell - no cost and doesnt trigger GCD 
                     Spell.BuffSelf("Anti-Magic Shell",
                                     ret => Unit.NearbyUnfriendlyUnits.Any(u =>
                                                 (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
-                                                u.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                                                SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
+                                                u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
                     /*
                         Big cooldown section. By default, all cooldowns are priorotized by their time ascending
@@ -206,6 +209,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         means they will be used in rotation rather than conjunction. This is required for high
                         end blood tanking.
                     */
+                    /*
                     Spell.BuffSelf("Death Pact",
                                     ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificePercent &&
                                            StyxWoW.Me.GotAlivePet),
@@ -296,6 +300,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => DeathStrikeTimer.Reset())),
                     Spell.Cast("Heart Strike"),
                     Spell.Cast("Icy Touch"),
+                     */
                     Movement.CreateMoveToMeleeBehavior(true)
                     );
         }
@@ -347,12 +352,12 @@ namespace Singular.ClassSpecific.DeathKnight
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.BuffSelf("Blood Presence"),
 
-                    // Anti-magic shell
+                    // Anti-magic shell - no cost and doesnt trigger GCD 
                     Spell.BuffSelf("Anti-Magic Shell",
                                     ret => Unit.NearbyUnfriendlyUnits.Any(u =>
                                                 (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
-                                                u.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                                                SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
+                                                u.CurrentTargetGuid == StyxWoW.Me.Guid)),
+
 
                     /*
                         Big cooldown section. By default, all cooldowns are priorotized by their time ascending
@@ -360,6 +365,8 @@ namespace Singular.ClassSpecific.DeathKnight
                         means they will be used in rotation rather than conjunction. This is required for high
                         end blood tanking.
                     */
+
+                    /*
                     Spell.BuffSelf("Death Pact",
                                     ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificePercent &&
                                            StyxWoW.Me.GotAlivePet),
@@ -482,6 +489,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => DeathStrikeTimer.Reset())),
                     Spell.Cast("Heart Strike"),
                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                     */
                     Movement.CreateMoveToMeleeBehavior(true)
                     );
         }

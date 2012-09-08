@@ -18,7 +18,7 @@ namespace Singular.Managers
 
             if (e.Destination.DistanceSqr(StyxWoW.Me.Location) < 60 * 60)
             {
-                if (SpellManager.HasSpell("Ghost Wolf") && TalentManager.GetCount(2, 6) == 2)
+                if (SpellManager.HasSpell("Ghost Wolf") && TalentManager.IsSelected(6))
                 {
                     e.Cancel = true;
 

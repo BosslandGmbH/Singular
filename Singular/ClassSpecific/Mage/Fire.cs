@@ -96,9 +96,9 @@ namespace Singular.ClassSpecific.Mage
                 Spell.Cast("Frostfire Bolt", ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
                 Spell.Cast("Combustion",
                     ret => (StyxWoW.Me.CurrentTarget.HasMyAura("Living Bomb") || !SpellManager.HasSpell("Living Bomb")) &&
-                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.GetCount(2, 4) == 0) &&
+                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.IsSelected(4)) &&
                            StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast!") ),
-                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.GetCount(2, 20) != 0),
+                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.IsSelected(20) ),
                 Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Hot Streak")),
                 Spell.BuffSelf("Flame Orb"),
                 Spell.Buff("Living Bomb", true),
@@ -149,9 +149,9 @@ namespace Singular.ClassSpecific.Mage
                 // Rotation
                 Spell.Cast("Combustion",
                     ret => (StyxWoW.Me.CurrentTarget.HasMyAura("Living Bomb") || !SpellManager.HasSpell("Living Bomb")) &&
-                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.GetCount(2, 4) == 0) &&
+                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.IsSelected( 4)) &&
                            StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast!")),
-                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.GetCount(2, 20) != 0),
+                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.IsSelected( 20)),
                 Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Hot Streak")),
                 Spell.BuffSelf("Flame Orb"),
                 Spell.Buff("Living Bomb", true),
@@ -197,7 +197,7 @@ namespace Singular.ClassSpecific.Mage
                     new PrioritySelector(
                         Spell.Cast("Fire Blast",
                             ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact") &&
-                                   (StyxWoW.Me.CurrentTarget.HasMyAura("Combustion") || TalentManager.GetCount(2, 13) == 0)),
+                                   (StyxWoW.Me.CurrentTarget.HasMyAura("Combustion") || TalentManager.IsSelected(13) )),
                         Spell.CastOnGround("Blast Wave",
                             ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location),
                         Spell.Cast("Dragon's Breath",
@@ -220,9 +220,9 @@ namespace Singular.ClassSpecific.Mage
                 Spell.Cast("Frostfire Bolt",ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
                 Spell.Cast("Combustion",
                     ret => (StyxWoW.Me.CurrentTarget.HasMyAura("Living Bomb") || !SpellManager.HasSpell("Living Bomb")) &&
-                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.GetCount(2, 4) == 0) &&
+                           (StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") || TalentManager.IsSelected(4) ) &&
                            StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast!")),
-                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.GetCount(2, 20) != 0),
+                Spell.Cast("Scorch", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Critical Mass", true).TotalSeconds < 1 && TalentManager.IsSelected(20)),
                 Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Hot Streak")),
                 Spell.BuffSelf("Flame Orb"),
                 Spell.Buff("Living Bomb", true),

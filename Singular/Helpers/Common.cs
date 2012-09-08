@@ -103,7 +103,7 @@ namespace Singular.Helpers
                         // AOE interrupt
                         Spell.Cast("Disrupting Shout", onUnit),
                         // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
-                        Spell.Cast("Heroic Throw", onUnit, ret => TalentManager.GetCount(3, 7) == 2 && !onUnit(ret).IsBoss()),
+                        Spell.Cast("Heroic Throw", onUnit, ret => TalentManager.IsSelected(7) && !onUnit(ret).IsBoss()),
 
                         Spell.Cast("Silence", onUnit),
 

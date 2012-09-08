@@ -422,9 +422,6 @@ namespace Singular.ClassSpecific.Shaman
         /// <returns>The calculated totem range.</returns>
         public static float GetTotemRange(WoWTotem totem)
         {
-            // 15% extra range if talented for Totemic Reach for each point
-            float talentFactor = (TalentManager.GetCount(2, 7) * 0.15f) + 1;
-
             switch (totem)
             {
                 case WoWTotem.Flametongue:
@@ -433,23 +430,23 @@ namespace Singular.ClassSpecific.Shaman
                 case WoWTotem.Windfury:
                 case WoWTotem.WrathOfAir:
                 case WoWTotem.ManaSpring:
-                    return 40f * talentFactor;
+                    return 40f ;
 
                 case WoWTotem.ElementalResistance:
                 case WoWTotem.HealingStream:
                 case WoWTotem.TranquilMind:
                 case WoWTotem.Tremor:
-                    return 30f * talentFactor;
+                    return 30f;
 
                 case WoWTotem.Searing:
-                    return 20f * talentFactor;
+                    return 20f ;
 
                 case WoWTotem.Earthbind:
-                    return 10f * talentFactor;
+                    return 10f ;
 
                 case WoWTotem.Grounding:
                 case WoWTotem.Magma:
-                    return 8f * talentFactor;
+                    return 8f ;
 
                 case WoWTotem.Stoneclaw:
                     // stoneclaw isn't effected by Totemic Reach (according to basically everything online)
@@ -461,7 +458,7 @@ namespace Singular.ClassSpecific.Shaman
                     return 20f;
                 case WoWTotem.ManaTide:
                     // Again... not sure :S
-                    return 30f * talentFactor;
+                    return 30f ;
             }
             return 0f;
         }

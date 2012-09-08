@@ -38,20 +38,24 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => Navigator.PlayerMover.MoveStop())),
                     new WaitContinue(1, new ActionAlwaysSucceed())
                     ),
-                // Anti-magic shell
-               Spell.BuffSelf("Anti-Magic Shell",
-                        ret => Unit.NearbyUnfriendlyUnits.Any(u =>
-                                    (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
-                                    u.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                                    SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
+
+                // *** Cool downs ***
+                // Anti-magic shell - no cost and doesnt trigger GCD 
+                    Spell.BuffSelf("Anti-Magic Shell",
+                                    ret => Unit.NearbyUnfriendlyUnits.Any(u =>
+                                                (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
+                                                u.CurrentTargetGuid == StyxWoW.Me.Guid)),
+
                Spell.BuffSelf("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
 
                Spell.BuffSelf("Icebound Fortitude",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
+
                Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
                                                    (StyxWoW.Me.IsCrowdControlled() ||
                                                    StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
+                                                   /*
                Spell.BuffSelf("Death Coil",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&
                                StyxWoW.Me.HasAura("Lichborne")),
@@ -107,6 +111,7 @@ namespace Singular.ClassSpecific.DeathKnight
                Spell.Cast("Festering Strike"),
                Spell.Cast("Death Coil"),
                Spell.Cast("Horn of Winter"),
+                                                    */
                Movement.CreateMoveToMeleeBehavior(true)
                );
         }
@@ -138,24 +143,28 @@ namespace Singular.ClassSpecific.DeathKnight
                Spell.Buff("Chains of Ice"),
                Spell.BuffSelf("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
 
-                // Anti-magic shell
-               Spell.BuffSelf("Anti-Magic Shell",
-                                ret => Unit.NearbyUnfriendlyUnits.Any(u =>
-                                            (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
-                                            u.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                                            SingularSettings.Instance.DeathKnight.UseAntiMagicShell)),
+               // *** Cool downs ***
+               // Anti-magic shell - no cost and doesnt trigger GCD 
+             Spell.BuffSelf("Anti-Magic Shell",
+                                    ret => Unit.NearbyUnfriendlyUnits.Any(u =>
+                                                (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
+                                                u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
                Spell.BuffSelf("Icebound Fortitude",
                         ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent &&
                                SingularSettings.Instance.DeathKnight.UseIceboundFortitude),
                Spell.BuffSelf("Lichborne", ret => SingularSettings.Instance.DeathKnight.UseLichborne &&
                                                    (StyxWoW.Me.IsCrowdControlled() ||
-                                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent)),
+                                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.HealPercent)),
+
+                // *** Self Heals ***
                Spell.BuffSelf("Death Coil",
-                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent &&
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.HealPercent &&
                                StyxWoW.Me.HasAura("Lichborne")),
-               Spell.Cast("Death Strike",
-                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathStrikeEmergencyPercent),
+
+                /*
+               Spell.Cast("Death Pact",
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.HealPercent && TalentManager.IsSelected(1)),
 
                Spell.Cast("Outbreak",
                     ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
@@ -178,6 +187,7 @@ namespace Singular.ClassSpecific.DeathKnight
                Spell.Cast("Scourge Strike"),
                Spell.Cast("Death Coil"),
                Spell.Cast("Horn of Winter"),
+                 */
                Movement.CreateMoveToMeleeBehavior(true)
                );
         }
@@ -198,8 +208,16 @@ namespace Singular.ClassSpecific.DeathKnight
                Movement.CreateFaceTargetBehavior(),
                Helpers.Common.CreateAutoAttack(true),
                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                // *** Cool downs ***
+                // Anti-magic shell - no cost and doesnt trigger GCD 
+                Spell.BuffSelf("Anti-Magic Shell",
+                                ret => Unit.NearbyUnfriendlyUnits.Any(u =>
+                                            (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
+                                            u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
                Spell.BuffSelf("Raise Dead", ret => !StyxWoW.Me.GotAlivePet),
+
+               /*
                Spell.Cast("Outbreak",
                     ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                             !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
@@ -251,6 +269,7 @@ namespace Singular.ClassSpecific.DeathKnight
                Spell.Cast("Festering Strike"),
                Spell.Cast("Death Coil"),
                Spell.Cast("Horn of Winter"),
+                */
                Movement.CreateMoveToMeleeBehavior(true)
                );
         }

@@ -116,10 +116,10 @@ namespace Singular.ClassSpecific.Rogue
                     ret => StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HealthPercent < 35 && StyxWoW.Me.ComboPoints == 5),
 
                 Spell.Cast("Backstab",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.GetCount(1, 13) > 0 &&
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.IsSelected( 13) &&
                            StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Cold Blood")),
                 Spell.Cast("Mutilate",
-                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.GetCount(1, 13) == 0 ||
+                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.IsSelected(13)  ||
                            !StyxWoW.Me.CurrentTarget.MeIsBehind) && !StyxWoW.Me.HasAura("Cold Blood")),
 
                 Movement.CreateMoveToMeleeBehavior(true)
@@ -190,7 +190,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
 
                 Spell.BuffSelf("Vanish",
-                    ret => TalentManager.GetCount(1, 14) > 0 && StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") &&
+                    ret => TalentManager.IsSelected(14) && StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") &&
                            StyxWoW.Me.HasAura("Slice and Dice")),
                 Spell.Cast("Garrote",
                     ret => (StyxWoW.Me.HasAura("Vanish") || StyxWoW.Me.IsStealthed) &&
@@ -211,10 +211,10 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Envenom",
                     ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && StyxWoW.Me.ComboPoints == 5),
                 Spell.Cast("Backstab",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.GetCount(1, 13) > 0 &&
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.IsSelected( 13) &&
                            StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Cold Blood")),
                 Spell.Cast("Mutilate",
-                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.GetCount(1, 13) == 0 ||
+                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.IsSelected( 13)||
                            !StyxWoW.Me.CurrentTarget.MeIsBehind) && !StyxWoW.Me.HasAura("Cold Blood")),
 
                 Movement.CreateMoveToMeleeBehavior(true)
@@ -291,14 +291,14 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveBehindTargetBehavior(),
 
                 Spell.BuffSelf("Vanish",
-                    ret => TalentManager.GetCount(1, 14) >0 && StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && 
+                    ret => TalentManager.IsSelected(14) && StyxWoW.Me.CurrentTarget.HasMyAura("Rupture") && 
                            StyxWoW.Me.HasAura("Slice and Dice")),
                 Spell.Cast("Garrote", 
                     ret => (StyxWoW.Me.HasAura("Vanish") || StyxWoW.Me.IsStealthed) &&
                            StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Spell.BuffSelf("Vendetta", 
                     ret => StyxWoW.Me.CurrentTarget.IsBoss() && 
-                           (StyxWoW.Me.CurrentTarget.HealthPercent < 35 || TalentManager.GetCount(1,13) == 0)),
+                           (StyxWoW.Me.CurrentTarget.HealthPercent < 35 || TalentManager.IsSelected(13))),
 
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) >= 3,
@@ -317,10 +317,10 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Envenom",
                     ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && StyxWoW.Me.ComboPoints == 5),
                 Spell.Cast("Backstab",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.GetCount(1,13) > 0 && 
+                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35 && TalentManager.IsSelected(13)  && 
                            StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Cold Blood")),
                 Spell.Cast("Mutilate",
-                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.GetCount(1,13) == 0 ||
+                    ret => (StyxWoW.Me.CurrentTarget.HealthPercent >= 35 || TalentManager.IsSelected(13) ||
                            !StyxWoW.Me.CurrentTarget.MeIsBehind) && !StyxWoW.Me.HasAura("Cold Blood")),
 
                 Movement.CreateMoveToMeleeBehavior(true)

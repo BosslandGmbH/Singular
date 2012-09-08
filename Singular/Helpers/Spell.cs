@@ -54,17 +54,31 @@ namespace Singular.Helpers
             return TimeSpan.MaxValue;
         }
 
+        /// <summary>
+        ///  Returns maximum spell range based on hitbox of unit. 
+        /// </summary>
+        /// <param name="spell"></param>
+        /// <param name="unit"></param>
+        /// <returns>Maximum spell range</returns>
         public static float ActualMaxRange(this WoWSpell spell, WoWUnit unit)
         {
             if (spell.MaxRange == 0)
                 return 0;
+            // 0.3 margin for error
             return unit != null ? spell.MaxRange + unit.CombatReach + 1f : spell.MaxRange;
         }
 
+        /// <summary>
+        /// Returns minimum spell range based on hitbox of unit. 
+        /// </summary>
+        /// <param name="spell"></param>
+        /// <param name="unit"></param>
+        /// <returns>Minimum spell range</returns>
         public static float ActualMinRange(this WoWSpell spell, WoWUnit unit)
         {
             if (spell.MinRange == 0)
                 return 0;
+            // 0.3 margin for error
             return unit != null ? spell.MinRange + unit.CombatReach + 1.6666667f : spell.MinRange;
         }
 

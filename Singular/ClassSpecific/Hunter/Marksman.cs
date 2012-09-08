@@ -244,7 +244,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 // Above 90% Careful Aim rotation
                 new Decorator(
-                    ret => TalentManager.GetCount(2, 6) > 0 && StyxWoW.Me.CurrentTarget.HealthPercent > 90,
+                    ret => TalentManager.IsSelected( 6) && StyxWoW.Me.CurrentTarget.HealthPercent > 90,
                     new PrioritySelector(
                         new Decorator(
                             ret => StyxWoW.Me.IsMoving,

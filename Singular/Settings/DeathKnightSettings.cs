@@ -33,6 +33,38 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
+        [DisplayName("Icebound Fortitude")]
+        public bool UseIceboundFortitude { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Common")]
+        [DisplayName("Icebound Fortitude Percent")]
+        public int IceboundFortitudePercent { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Lichborne")]
+        public bool UseLichborne { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Common")]
+        [DisplayName("Lichborne Percent")]
+        public int LichbornePercent { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Common")]
+        [DisplayName("Heal Percent")]
+        [Description("Health percent at which bot uses self healing abilies.")]
+        public int HealPercent { get; set; }
+
+        /*
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
         [DisplayName("Use Death and Decay")]
         public bool UseDeathAndDecay { get; set; }
 
@@ -44,37 +76,17 @@ namespace Singular.Settings
         public int DeathAndDecayCount { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Icebound Fortitude")]
-        public bool UseIceboundFortitude { get; set; }
-
-        [Setting]
         [DefaultValue(30)]
-        [Category("Common")]
-        [DisplayName("Icebound Fortitude Percent")]
-        public int IceboundFortitudePercent { get; set; }
-
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Common")]
+        [Category("Blood")]
         [DisplayName("Death Strike Emergency Percent")]
         public int DeathStrikeEmergencyPercent { get; set; }
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Lichborne")]
-        public bool UseLichborne { get; set; }
-
+        */
         #endregion
 
         #region Category: Blood
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Anti-Magic Shell")]
-        public bool UseAntiMagicShell { get; set; }
+        /*
+
 
         [Setting]
         [DefaultValue(false)]
@@ -171,10 +183,11 @@ namespace Singular.Settings
         [Category("Blood")]
         [DisplayName("Vampiric Blood Percent")]
         public int VampiricBloodPercent { get; set; }
+         */
         #endregion
 
         #region Category: Frost
-
+        /*
         [Setting]
         [DefaultValue(true)]
         [Category("Frost")]
@@ -198,17 +211,17 @@ namespace Singular.Settings
         [Category("Frost")]
         [DisplayName("Use Necrotic Strike - Frost")]
         public bool UseNecroticStrike { get; set; }
-
+        */
         #endregion
 
         #region Category: Unholy
-
+        /*
         [Setting]
         [DefaultValue(true)]
         [Category("Unholy")]
         [DisplayName("Summon Gargoyle")]
         public bool UseSummonGargoyle { get; set; }
-
+        */
         #endregion
 
     }

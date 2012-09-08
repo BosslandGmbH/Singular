@@ -134,11 +134,11 @@ namespace Singular.Helpers
                         // 3, 17 - Druid - Nature's Cure
                         // 3, 12 - Shaman - Improved Cleanse Spirit
                     case WoWClass.Druid:
-                        return TalentManager.GetCount(3, 17) != 0;
+                        return TalentManager.IsSelected(17);
                     case WoWClass.Paladin:
-                        return TalentManager.GetCount(1, 14) != 0;
+                        return TalentManager.IsSelected(14);
                     case WoWClass.Shaman:
-                        return TalentManager.GetCount(3, 12) != 0;
+                        return TalentManager.IsSelected(12);
 
                         // Priests can dispel magic natively.
                     case WoWClass.Priest:

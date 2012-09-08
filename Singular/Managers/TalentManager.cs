@@ -39,14 +39,9 @@ namespace Singular.Managers
 
         public static HashSet<string> Glyphs { get; private set; }
 
-        public static int GetCount(int tab, int index)
+        public static bool IsSelected(int index)
         {
-            return GetCount(index);
-        }
-
-        public static int GetCount(int index)
-        {
-            return Talents.FirstOrDefault(t => t.Index == index).Count;
+            return Talents.FirstOrDefault(t => t.Index == index).Selected;
         }
 
         /// <summary>
@@ -85,8 +80,8 @@ namespace Singular.Managers
                 var numTalents = Lua.GetReturnVal<int>("return GetNumTalents()", 0);
                 for (int index = 1; index <= numTalents; index++)
                 {
-                    var selected = Lua.GetReturnVal<int>(string.Format("return GetTalentInfo({0})", index), 4);
-                    var t = new Talent { Index = index, Count = selected };
+                    var selected = Lua.GetReturnVal<bool>(string.Format("local t= select(5,GetTalentInfo({0})) if t == true then return 1 end return nil", index), 0);
+                    var t = new Talent { Index = index, Selected = selected };
                     Talents.Add(t);
                 }
 
@@ -114,7 +109,7 @@ namespace Singular.Managers
 
         public struct Talent
         {
-            public int Count;
+            public bool Selected;
             public int Index;
         }
 

@@ -1,4 +1,5 @@
-﻿using CommonBehaviors.Actions;
+﻿using System.Linq;
+using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -23,6 +24,12 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                // Anti-magic shell - no cost and doesnt trigger GCD 
+                    Spell.BuffSelf("Anti-Magic Shell",
+                                    ret => Unit.NearbyUnfriendlyUnits.Any(u =>
+                                                (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
+                                                u.CurrentTargetGuid == StyxWoW.Me.Guid)),
+
                 new Sequence(
                     Spell.Cast("Death Grip",
                                 ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),

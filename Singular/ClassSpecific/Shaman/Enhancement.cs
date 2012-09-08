@@ -78,20 +78,18 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => SingularSettings.Instance.Shaman.EnhancementHeal,
                     new PrioritySelector(
-                // Heal the party in dungeons if the healer is dead
+                        // Heal the party in dungeons if the healer is dead
                         new Decorator(
-                            ret => StyxWoW.Me.CurrentMap.IsDungeon && !StyxWoW.Me.IsInRaid &&
-                                   Group.Healers.Any() && Group.Healers.Count(h => h.IsAlive) == 0,
+                            ret => StyxWoW.Me.CurrentMap.IsDungeon 
+                                && !StyxWoW.Me.IsInRaid 
+                                && Group.Healers.Any() 
+                                && Group.Healers.Count(h => h.IsAlive) == 0,
                             Restoration.CreateRestoShamanHealingOnlyBehavior()),
 
                         // This will work for both solo play and battlegrounds
                         new Decorator(
                             ret => Group.Healers.Count(h => h.IsAlive) == 0,
                             new PrioritySelector(
-                                Spell.Heal("Healing Wave",
-                                    ret => StyxWoW.Me,
-                                    ret => !SpellManager.HasSpell("Healing Surge") && StyxWoW.Me.HealthPercent <= 60),
-
                                 Spell.Heal("Healing Surge",
                                     ret => StyxWoW.Me,
                                     ret => StyxWoW.Me.HealthPercent <= 60)))
@@ -123,9 +121,12 @@ namespace Singular.ClassSpecific.Shaman
                         )),
 
                 Common.CreateAutoAttack(true),
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 20 * 20,
+                new Decorator( ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 20 * 20,
                     Totems.CreateSetTotems()),
+                Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+                Spell.Cast("Unleash Weapon", 
+                    ret => StyxWoW.Me.Inventory.Equipped.OffHand != null 
+                        && StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 5),
                 Spell.Cast("Earth Shock"),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -145,7 +146,9 @@ namespace Singular.ClassSpecific.Shaman
 
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
-                Spell.BuffSelf("Feral Spirit", ret => StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3),
+                Spell.BuffSelf("Feral Spirit", ret => StyxWoW.Me.CurrentTarget.Elite
+                    || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3
+                    || Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet)),
 
                 // Totem stuff
                 // Pop the ele on bosses
@@ -153,7 +156,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => (StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3) && 
                            !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
                 Spell.BuffSelf("Magma Totem",
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10 && u.IsTargetingMeOrPet) >= 3 &&
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8 && u.IsTargetingMeOrPet) >= 3 &&
                            !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental || t.WoWTotem == WoWTotem.Magma)),
                 Spell.BuffSelf("Searing Totem",
                     ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) - 2f &&
@@ -162,34 +165,43 @@ namespace Singular.ClassSpecific.Shaman
                                      t.Unit.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Totems.GetTotemRange(WoWTotem.Searing)) &&
                            !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental || t.WoWTotem == WoWTotem.Magma)),
 
-                // Low level stuff first.
-                new Decorator(
-                    ret => StyxWoW.Me.Level < 20,
-                    new PrioritySelector(
-                        Spell.Cast("Lava Lash"),
-                        Spell.Cast("Primal Strike"),
-                        Spell.Cast("Earth Shock"),
-                        Spell.Cast("Lightning Bolt"),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)
-                        )),
+                Spell.BuffSelf("Elemental Mastery",
+                    ret => !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+
+                Spell.BuffSelf("Blood Fury",
+                    ret => SingularSettings.Instance.UseRacials && 
+                        StyxWoW.Me.Race == WoWRace.Orc && 
+                        !StyxWoW.Me.HasAnyAura("Elemental Mastery", "Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+                Spell.BuffSelf("Berserking",
+                    ret => SingularSettings.Instance.UseRacials &&
+                        StyxWoW.Me.Race == WoWRace.Troll &&
+                        !StyxWoW.Me.HasAnyAura("Elemental Mastery", "Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
 
                 Spell.Cast("Stormstrike"),
-                Spell.Cast("Primal Strike", ret => !SpellManager.HasSpell("Stormstrike")),
                 Spell.Buff("Flame Shock", true,
-                    ret => (StyxWoW.Me.HasAura("Unleash Wind") || !SpellManager.HasSpell("Unleash Elements")) &&
-                           (StyxWoW.Me.CurrentTarget.Elite ||
-                           Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10 && u.IsTargetingMeOrPet) >= 3 && SpellManager.HasSpell("Fire Nova"))),
+                    ret => (StyxWoW.Me.HasAura("Unleash Flame") || !SpellManager.HasSpell("Unleash Elements")) &&
+                           (StyxWoW.Me.CurrentTarget.Elite || (SpellManager.HasSpell("Fire Nova") && Unit.UnfriendlyUnitsNearTarget(10).Count(u => u.IsTargetingMeOrPet) >= 3))),
                 Spell.Cast("Earth Shock",
-                    ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6 || !StyxWoW.Me.CurrentTarget.Elite),
+                    ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3 
+                        || !StyxWoW.Me.CurrentTarget.Elite
+                        || !SpellManager.HasSpell("Flame Shock")),
                 Spell.Cast("Lava Lash",
                     ret => StyxWoW.Me.Inventory.Equipped.OffHand != null &&
                            StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon),
                 Spell.BuffSelf("Fire Nova",
                     ret => StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock") &&
-                           Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10 && u.IsTargetingMeOrPet) >= 3),
-                Spell.Cast("Chain Lightning", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
-                Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+                           Unit.NearbyUnfriendlyUnits.Count(u => 
+                               u.IsTargetingMeOrPet &&
+                               u.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 10 * 10) >= 3),
+                Spell.Cast("Primal Strike", ret => !SpellManager.HasSpell("Stormstrike")),
                 Spell.Cast("Unleash Elements"),
+
+                new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5),
+                    new PrioritySelector(
+                        Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                        Spell.Cast("Lightning Bolt")
+                        )
+                    ),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -232,8 +244,14 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Lava Lash", 
                     ret => StyxWoW.Me.Inventory.Equipped.OffHand != null && 
                            StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon),
-                Spell.Cast("Chain Lightning", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
-                Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+
+                new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5),
+                    new PrioritySelector(
+                        Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                        Spell.Cast("Lightning Bolt")
+                        )
+                    ),
+
                 Spell.Cast("Unleash Elements"),
                 Spell.Buff("Flame Shock", true, ret => StyxWoW.Me.HasAura("Unleash Wind") || !SpellManager.HasSpell("Unleash Elements")),
                 Spell.Cast("Earth Shock", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6),

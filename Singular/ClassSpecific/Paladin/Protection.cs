@@ -69,30 +69,28 @@ namespace Singular.ClassSpecific.Paladin
 
                 //Multi target
                 new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Any(),
+                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 4,
                     new PrioritySelector(
+                        Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower >= 3),
+                        Spell.Cast("Judgment", ret => SpellManager.HasSpell("Sanctified Wrath") && StyxWoW.Me.HasAura("Avenging Wrath")),
                         Spell.Cast("Hammer of the Righteous"),
-                        Spell.Cast("Hammer of Justice", ctx => !StyxWoW.Me.IsInParty),
-                        Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= SingularSettings.Instance.Paladin.ProtConsecrationCount 
-                            || StyxWoW.Me.CurrentTarget.IsBoss()),
-                        Spell.Cast("Holy Wrath"),
-                        Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
-                        Spell.BuffSelf("Inquisition"),
-                        Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
                         Spell.Cast("Judgment"),
-                        Spell.Cast("Crusader Strike"),
+                        Spell.Cast("Avenger's Shield", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Grand Crusader")),
+                        Spell.Cast("Consecration"),
+                        Spell.Cast("Avenger's Shield"),
+                        Spell.Cast("Holy Wrath"),
                         Movement.CreateMoveToMeleeBehavior(true)
                         )),
                 //Single target
-                Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower == 3),
+                Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower >= 3),
+                Spell.Cast("Hammer of the Righteous", ret => !StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
+                Spell.Cast("Judgment", ret => SpellManager.HasSpell("Sanctified Wrath") && StyxWoW.Me.HasAura("Avenging Wrath")),
                 Spell.Cast("Crusader Strike"),
-                Spell.Cast("Hammer of Justice"),
                 Spell.Cast("Judgment"),
-                Spell.Cast("Hammer of Wrath", ret => ((WoWUnit)ret).HealthPercent <= 20),
-                Spell.Cast("Avenger's Shield", ret => !SingularSettings.Instance.Paladin.AvengersPullOnly),
-                // Don't waste mana on cons if its not a boss.
-                Spell.Cast("Consecration", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= SingularSettings.Instance.Paladin.ProtConsecrationCount),
+                Spell.Cast("Avenger's Shield", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Grand Crusader")),
+                Spell.Cast("Consecration"),
                 Spell.Cast("Holy Wrath"),
+                Spell.BuffSelf("Sacred Shield", ret => SpellManager.HasSpell("Sacred Shield")),
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 
@@ -107,8 +105,9 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateAutoAttack(true),
-                    Spell.Cast("Avenger's Shield"),
+                    Spell.BuffSelf("Sacred Shield", ret => SpellManager.HasSpell("Sacred Shield")),
                     Spell.Cast("Judgment"),
+                    Spell.Cast("Avenger's Shield"),
                     Movement.CreateMoveToTargetBehavior(true, 5f)
                     );
         }
@@ -145,7 +144,7 @@ namespace Singular.ClassSpecific.Paladin
                     );
         }
 
-        [Class(WoWClass.Paladin)]
+        /*[Class(WoWClass.Paladin)]
         [Spec(WoWSpec.PaladinProtection)]
         [Behavior(BehaviorType.PullBuffs)]
         [Context(WoWContext.All)]
@@ -155,6 +154,6 @@ namespace Singular.ClassSpecific.Paladin
                 new PrioritySelector(
                     Spell.BuffSelf("Divine Plea")
                     );
-        }
+        }*/
     }
 }

@@ -163,7 +163,9 @@ namespace Singular
         {
             //Caching current class here to avoid issues with loading screens where Class return None and we cant build behaviors
             _myClass = Me.Class;
-            
+
+            RoutineManager.Reloaded += new EventHandler(RoutineManager_Reloaded);
+
             Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
             Logger.Write("Determining talent spec.");
             try
@@ -186,6 +188,12 @@ namespace Singular
             EventHandlers.Init();
             MountManager.Init();
             //Logger.Write("Combat log event handler started.");
+        }
+
+        void RoutineManager_Reloaded(object sender, EventArgs e)
+        {
+            Logger.Write("Routines were reloaded, re-creating behaviors");
+            CreateBehaviors(); 
         }
 
         public bool CreateBehaviors()

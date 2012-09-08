@@ -57,7 +57,7 @@ public static Composite CreateDruidPreCombatBuff()
            ret => StyxWoW.Me,
            ret => !StyxWoW.Me.HasAura("Prowl") &&
                   (Unit.NearbyFriendlyPlayers.Any(unit =>
-                       !unit.Dead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
+                       !unit.IsDead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
                        !unit.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")) || 
                   !StyxWoW.Me.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")))
         );
@@ -81,7 +81,7 @@ public static Composite CreateDruidPreCombatBuff()
                         && !StyxWoW.Me.HasAura("Prowl") 
                         && Unit.NearbyFriendlyPlayers.Any(unit =>
                                                     unit.Distance <= 30f &&
-                                                    !unit.Dead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
+                                                    !unit.IsDead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
                                                     !unit.HasAnyAura("Mark of the Wild",
                                                                      "Embrace of the Shale Spider",
                                                "Blessing of Kings"))))
@@ -121,7 +121,7 @@ public static Composite CreateDruidPreCombatBuff()
             const uint mapleSeedId = 17034;
 
             return new PrioritySelector(
-                ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.Dead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.Dead),
+                ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead),
                 new Decorator(
                     ret => ret != null && Item.HasItem(mapleSeedId),
                     new PrioritySelector(
@@ -144,8 +144,8 @@ public static Composite CreateDruidPreCombatBuff()
 
             return new PrioritySelector(
                 ctx =>
-                Group.Tanks.FirstOrDefault(t => !t.IsMe && t.Dead) ??
-                Group.Healers.FirstOrDefault(h => !h.IsMe && h.Dead),
+                Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ??
+                Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead),
                 new Decorator(
                     ret => ret != null && Item.HasItem(mapleSeedId),
                     new PrioritySelector(

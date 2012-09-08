@@ -41,9 +41,8 @@ namespace Singular.ClassSpecific.Shaman
                 // Keep WS up at all times. Period.
                 Spell.BuffSelf("Water Shield"),
 
-                new Decorator(
-                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 3345 && StyxWoW.Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass != WoWItemWeaponClass.FishingPole,  
-                    Spell.Cast("Earthliving Weapon"))
+                Common.CreateShamanImbueMainHandBehavior( Imbue.Earthliving, Imbue.Flametongue)
+
                 );
         }
 
@@ -59,7 +58,7 @@ namespace Singular.ClassSpecific.Shaman
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
+        [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Battlegrounds | WoWContext.Instances)]
         public static Composite CreateRestoShamanCombatBehavior()
         {
             return
@@ -86,6 +85,20 @@ namespace Singular.ClassSpecific.Shaman
                             Movement.CreateMoveToTargetBehavior(true, 35f)
                             ))
                     );
+        }
+
+        // ultimately we should choose our behavior based upon whether we are in a group or not, 
+        // .. but that is not part of the CompositeConstructor, so for Normal contexts only add a check
+        // .. so Resto can now use ArchBuddy, GatherBuddy, etc.
+
+        [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Normal)]
+        public static Composite CreateRestoShamanCombatNormalBehavior()
+        {
+            return new PrioritySelector(
+                ctx => StyxWoW.Me.IsInRaid || StyxWoW.Me.IsInParty,
+                new Decorator(ret => (bool) ret, CreateRestoShamanCombatBehavior()),
+                new Decorator(ret => !(bool) ret, Elemental.CreateShamanElementalNormalCombat() )
+                );
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanRestoration)]

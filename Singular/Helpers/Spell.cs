@@ -258,8 +258,8 @@ namespace Singular.Helpers
                                 WoWSpell spell;
                                 if (SpellManager.Spells.TryGetValue(name, out spell))
                                 {
-                                    float minRange = spell.MinRange;
-                                    float maxRange = spell.MaxRange;
+                                    float minRange = spell.ActualMinRange(target);
+                                    float maxRange = spell.ActualMaxRange(target);
                                     double targetDistance = target.Distance;
 
                                     // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
@@ -376,7 +376,7 @@ namespace Singular.Helpers
                 new Decorator(
                     ret =>
                     requirements != null && requirements(ret) && onUnit != null && onUnit(ret) != null &&
-                    SpellManager.CanCast(spellId, onUnit(ret), true), new Action(ret =>
+                    SpellManager.CanCast(spellId, onUnit(ret),true), new Action(ret =>
                         {
                             Logger.Write("Casting " + spellId + " on " + onUnit(ret).SafeName());
                             SpellManager.Cast(spellId);

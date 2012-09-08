@@ -70,7 +70,7 @@ namespace Singular.ClassSpecific.Shaman
                             Safers.EnsureTarget(),
                             Movement.CreateMoveToLosBehavior(),
                             Movement.CreateFaceTargetBehavior(),
-                            Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                            Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                             Spell.BuffSelf("Fire Elemental Totem",
                                 ret => (StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3) &&
@@ -169,7 +169,7 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
                                 Movement.CreateMoveToLosBehavior(),
                                 Movement.CreateFaceTargetBehavior(),
-                                Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                                 Spell.BuffSelf("Fire Elemental Totem",
                                     ret => (StyxWoW.Me.CurrentTarget.Elite || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3) &&

@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Mage
 {
     public static class Common
     {
-        private static WoWItem _manaGem;
+   
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
         public static Composite CreateMageBuffs()

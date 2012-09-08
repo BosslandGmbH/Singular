@@ -239,7 +239,8 @@ if $(ConfigurationName) == Raphus (
 )
 
 if $(ConfigurationName) == Bobby53 (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "C:\HB\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HB\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HBB\CustomClasses\Singular\" /i /f /s /v /y
 )
 
 if $(ConfigurationName) == HighVoltz (

@@ -152,6 +152,7 @@
     <Compile Include="ClassSpecific\Rogue\Lowbie.cs" />
     <Compile Include="ClassSpecific\Rogue\Poisons.cs" />
     <Compile Include="ClassSpecific\Rogue\Subtlety.cs" />
+    <Compile Include="ClassSpecific\Shaman\Common.cs" />
     <Compile Include="ClassSpecific\Shaman\Elemental.cs" />
     <Compile Include="ClassSpecific\Shaman\Enhancement.cs" />
     <Compile Include="ClassSpecific\Shaman\Lowbie.cs" />

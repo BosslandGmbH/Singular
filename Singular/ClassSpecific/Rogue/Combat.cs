@@ -34,8 +34,7 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
-                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -88,18 +87,14 @@ namespace Singular.ClassSpecific.Rogue
                     ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1 &&
                            !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Blind"))),
 
-                Spell.Cast("Revealing Strike", ret => StyxWoW.Me.ComboPoints == 4),
+                Spell.Cast("Revealing Strike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Revealing Strike")),
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
                 Spell.Buff("Rupture", true,
                     ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 &&
-                           StyxWoW.Me.CurrentTarget.Elite && !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
-                Spell.BuffSelf("Slice and Dice",
-                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent < 40 && StyxWoW.Me.ComboPoints >= 2),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.ComboPoints == 5),
-                Spell.Cast("Sinister Strike",
-                    ret => StyxWoW.Me.ComboPoints < 4 || !SpellManager.HasSpell("Revealing Strike")),
+                           StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
+                
+                Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Sinister Strike",ret => StyxWoW.Me.ComboPoints <= 4 ),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -129,8 +124,7 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
-                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -162,6 +156,9 @@ namespace Singular.ClassSpecific.Rogue
                 // Redirect if we have CP left
                 Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
 
+                Spell.BuffSelf("Vanish",
+                    ret => StyxWoW.Me.HealthPercent < 20),
+
                 Spell.BuffSelf("Adrenaline Rush",
                     ret => StyxWoW.Me.CurrentEnergy < 20 && !StyxWoW.Me.HasAura("Killing Spree")),
 
@@ -170,22 +167,17 @@ namespace Singular.ClassSpecific.Rogue
                     ret => StyxWoW.Me.CurrentEnergy < 30 && StyxWoW.Me.HasAura("Deep Insight") && !StyxWoW.Me.HasAura("Adrenaline Rush")),
 
                 Spell.BuffSelf("Blade Flurry",
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1),
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1 &&
+                           !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Blind"))),
 
-                Spell.Cast("Revealing Strike", ret => StyxWoW.Me.ComboPoints == 4),
+                Spell.Cast("Revealing Strike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Revealing Strike")),
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
                 Spell.Buff("Rupture", true,
                     ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 &&
-                           !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
-                Spell.BuffSelf("Slice and Dice",
-                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 30 && StyxWoW.Me.ComboPoints >= 3),
-                Spell.Cast("Kidney Shot",
-                    ret => StyxWoW.Me.ComboPoints == 5 && !StyxWoW.Me.CurrentTarget.IsStunned()),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.ComboPoints == 5),
-                Spell.Cast("Sinister Strike",
-                    ret => StyxWoW.Me.ComboPoints < 4 || !SpellManager.HasSpell("Revealing Strike")),
+                           StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
+
+                Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Sinister Strike", ret => StyxWoW.Me.ComboPoints <= 4),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -256,29 +248,31 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveBehindTargetBehavior(),
                 
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) >= 3,
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) >= 7,
                     Spell.BuffSelf("Fan of Knives", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown))),
 
                 Spell.BuffSelf("Adrenaline Rush", 
                     ret => StyxWoW.Me.CurrentEnergy < 20 && !StyxWoW.Me.HasAura("Killing Spree")),
 
+
+                Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
+
                 // Killing Spree if we are at highest level of Bandit's Guise ( Shallow Insight / Moderate Insight / Deep Insight )
-                Spell.Cast("Killing Spree", 
+                Spell.Cast("Killing Spree",
                     ret => StyxWoW.Me.CurrentEnergy < 30 && StyxWoW.Me.HasAura("Deep Insight") && !StyxWoW.Me.HasAura("Adrenaline Rush")),
 
                 Spell.BuffSelf("Blade Flurry",
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) > 1),
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1 &&
+                           !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Blind"))),
 
-                Spell.Cast("Revealing Strike", ret => StyxWoW.Me.ComboPoints == 4),
+                Spell.Cast("Revealing Strike", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Revealing Strike")),
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
                 Spell.Buff("Rupture", true,
-                    ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 && 
-                           !StyxWoW.Me.HasAura("Blade Flurry") && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
-                Spell.BuffSelf("Slice and Dice",
-                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.Cast("Eviscerate",
-                    ret => StyxWoW.Me.ComboPoints == 5),
-                Spell.Cast("Sinister Strike",
-                    ret => StyxWoW.Me.ComboPoints < 4 || !SpellManager.HasSpell("Revealing Strike")),
+                    ret => SingularSettings.Instance.Rogue.CombatUseRuptureFinisher && StyxWoW.Me.ComboPoints >= 4 &&
+                           StyxWoW.Me.CurrentTarget.Elite && StyxWoW.Me.CurrentTarget.HasBleedDebuff()),
+
+                Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
+                Spell.Cast("Sinister Strike", ret => StyxWoW.Me.ComboPoints <= 4),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );

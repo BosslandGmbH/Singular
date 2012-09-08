@@ -190,6 +190,7 @@ namespace Singular
 
         public bool CreateBehaviors()
         {
+            Logger.PrintStackTrace("CreateBehaviors called.");
             // let behaviors be notified if context changes.
             if (OnWoWContextChanged != null)
                 OnWoWContextChanged(this, new WoWContextEventArg(CurrentWoWContext, LastWoWContext));

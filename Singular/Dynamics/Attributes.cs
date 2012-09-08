@@ -19,28 +19,6 @@ using Styx.Combat.CombatRoutine;
 
 namespace Singular.Dynamics
 {
-    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-    internal sealed class PriorityAttribute : Attribute
-    {
-        public PriorityAttribute(int thePriority)
-        {
-            PriorityLevel = thePriority;
-        }
-
-        public int PriorityLevel { get; private set; }
-    }
-
-    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-    internal sealed class ClassAttribute : Attribute
-    {
-        public ClassAttribute(WoWClass specificClass)
-        {
-            SpecificClass = specificClass;
-        }
-
-        public WoWClass SpecificClass { get; private set; }
-    }
-
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
     internal sealed class IgnoreBehaviorCountAttribute : Attribute
     {
@@ -55,33 +33,19 @@ namespace Singular.Dynamics
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
     internal sealed class BehaviorAttribute : Attribute
     {
-        public BehaviorAttribute(BehaviorType type)
+        public BehaviorAttribute(BehaviorType type, WoWClass @class = WoWClass.None, WoWSpec spec = (WoWSpec)0, WoWContext context = WoWContext.All, int priority = 0)
         {
             Type = type;
+            SpecificClass = @class;
+            SpecificSpec = spec;
+            SpecificContext = context;
+            PriorityLevel = priority;
         }
 
         public BehaviorType Type { get; private set; }
-    }
-
-    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
-    internal sealed class SpecAttribute : Attribute
-    {
-        public SpecAttribute(WoWSpec spec)
-        {
-            SpecificSpec = spec;
-        }
-
         public WoWSpec SpecificSpec { get; private set; }
-    }
-
-    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
-    internal sealed class ContextAttribute : Attribute
-    {
-        public ContextAttribute(WoWContext context)
-        {
-            SpecificContext = context;
-        }
-
         public WoWContext SpecificContext { get; private set; }
+        public WoWClass SpecificClass { get; private set; }
+        public int PriorityLevel { get; private set; }
     }
 }

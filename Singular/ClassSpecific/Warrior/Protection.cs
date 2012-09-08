@@ -51,8 +51,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf(
                     "Battle Shout",
                     ret =>
-                    (SingularSettings.Instance.Warrior.UseWarriorShouts ||
-                     SingularSettings.Instance.Warrior.UseWarriorT12) &&
+                    (SingularSettings.Instance.Warrior.UseWarriorShouts) &&
                     !StyxWoW.Me.HasAnyAura(
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")), //Charge
                 Spell.Cast(
@@ -68,13 +67,11 @@ namespace Singular.ClassSpecific.Warrior
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
                     ret =>
                     StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false &&
                     SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
                 Spell.Cast(
                     "Heroic Throw",
                     ret =>
-                    !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun") &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false), // Move to Melee
+                    !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun")), // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 
@@ -96,8 +93,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf(
                     "Battle Shout",
                     ret =>
-                    (SingularSettings.Instance.Warrior.UseWarriorShouts ||
-                     SingularSettings.Instance.Warrior.UseWarriorT12) &&
+                    (SingularSettings.Instance.Warrior.UseWarriorShouts) &&
                     !StyxWoW.Me.HasAnyAura(
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
                 Spell.BuffSelf(
@@ -136,8 +132,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf(
                     "Battle Shout",
                     ret =>
-                    (SingularSettings.Instance.Warrior.UseWarriorShouts ||
-                     SingularSettings.Instance.Warrior.UseWarriorT12) &&
+                    (SingularSettings.Instance.Warrior.UseWarriorShouts) &&
                     !StyxWoW.Me.HasAnyAura(
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")));
         }
@@ -288,8 +283,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf(
                     "Battle Shout",
                     ret =>
-                    (SingularSettings.Instance.Warrior.UseWarriorShouts ||
-                     SingularSettings.Instance.Warrior.UseWarriorT12) &&
+                    (SingularSettings.Instance.Warrior.UseWarriorShouts) &&
                     !StyxWoW.Me.HasAnyAura(
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")), //Charge
                 Spell.Cast(
@@ -305,13 +299,11 @@ namespace Singular.ClassSpecific.Warrior
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
                     ret =>
                     StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false &&
                     SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
                 Spell.Cast(
                     "Heroic Throw",
                     ret =>
-                    !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun") &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false), // Move to Melee
+                    !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun")), // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 
@@ -333,8 +325,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf(
                     "Battle Shout",
                     ret =>
-                    (SingularSettings.Instance.Warrior.UseWarriorShouts ||
-                     SingularSettings.Instance.Warrior.UseWarriorT12) &&
+                    (SingularSettings.Instance.Warrior.UseWarriorShouts) &&
                     !StyxWoW.Me.HasAnyAura(
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
                 Spell.BuffSelf(
@@ -373,8 +364,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf(
                     "Battle Shout",
                     ret =>
-                    (SingularSettings.Instance.Warrior.UseWarriorShouts ||
-                     SingularSettings.Instance.Warrior.UseWarriorT12) &&
+                    (SingularSettings.Instance.Warrior.UseWarriorShouts) &&
                     !StyxWoW.Me.HasAnyAura(
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")));
         }
@@ -479,8 +469,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf(
                     "Battle Shout",
                     ret =>
-                    (SingularSettings.Instance.Warrior.UseWarriorShouts ||
-                     SingularSettings.Instance.Warrior.UseWarriorT12) &&
+                    (SingularSettings.Instance.Warrior.UseWarriorShouts ) &&
                     !StyxWoW.Me.HasAnyAura(
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")), //Charge
                 Spell.Cast(
@@ -496,13 +485,11 @@ namespace Singular.ClassSpecific.Warrior
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
                     ret =>
                     StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false &&
                     SingularSettings.Instance.Warrior.UseWarriorCloser && Common.PreventDoubleCharge),
                 Spell.Cast(
                     "Heroic Throw",
                     ret =>
-                    !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun") &&
-                    SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false), // Move to Melee
+                    !Unit.HasAura(StyxWoW.Me.CurrentTarget, "Charge Stun") ), // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 
@@ -524,8 +511,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf(
                     "Battle Shout",
                     ret =>
-                    (SingularSettings.Instance.Warrior.UseWarriorShouts ||
-                     SingularSettings.Instance.Warrior.UseWarriorT12) &&
+                    (SingularSettings.Instance.Warrior.UseWarriorShouts) &&
                     !StyxWoW.Me.HasAnyAura(
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")),
                 Spell.BuffSelf(
@@ -564,8 +550,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf(
                     "Battle Shout",
                     ret =>
-                    (SingularSettings.Instance.Warrior.UseWarriorShouts ||
-                     SingularSettings.Instance.Warrior.UseWarriorT12) &&
+                    (SingularSettings.Instance.Warrior.UseWarriorShouts) &&
                     !StyxWoW.Me.HasAnyAura(
                         "Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout")));
         }

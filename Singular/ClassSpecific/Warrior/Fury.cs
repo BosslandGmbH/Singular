@@ -24,23 +24,33 @@ namespace Singular.ClassSpecific.Warrior
     {
         private static string[] _slows;
 
-        #region Normal
-        [Class(WoWClass.Warrior)]
-        [Spec(WoWSpec.WarriorFury)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.Normal)]
-        public static Composite CreateFuryNormalPreCombatBuffs()
+        public static ShapeshiftForm SelectedStance
         {
-            return new PrioritySelector(
-                Spell.BuffSelf("Berserker Stance"),
-                Spell.BuffSelf("Battle Shout"));
+            get
+            {
+                var stance = SingularSettings.Instance.Warrior.WarriorDpsStance;
+                if (stance == WarriorStance.BattleStance)
+                    return ShapeshiftForm.BattleStance;
+                return ShapeshiftForm.BerserkerStance;
+            }
         }
 
-        [Spec(WoWSpec.WarriorFury)]
-        [Behavior(BehaviorType.Pull)]
-        [Class(WoWClass.Warrior)]
-        [Priority(500)]
-        [Context(WoWContext.Normal)]
+        public static string SelectedShout
+        {
+            get { return SingularSettings.Instance.Warrior.UseShout.ToString().CamelToSpaced(); }
+        }
+
+        #region Normal
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, WoWSpec.WarriorFury)]
+        public static Composite CreateFuryNormalPreCombatBuffs()
+        {
+            return
+                new PrioritySelector(
+                    Spell.BuffSelf(SingularSettings.Instance.Warrior.WarriorDpsStance.ToString().CamelToSpaced(),
+                        ret => StyxWoW.Me.Shapeshift != SelectedStance), Spell.BuffSelf(SelectedShout));
+        }
+
+        [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorFury)]
         public static Composite CreateFuryNormalPull()
         {
             return new PrioritySelector(
@@ -79,11 +89,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec(WoWSpec.WarriorFury)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Class(WoWClass.Warrior)]
-        [Priority(500)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, WoWSpec.WarriorFury)]
         public static Composite CreateFuryNormalCombatBuffs()
         {
             return new PrioritySelector(
@@ -94,17 +100,11 @@ namespace Singular.ClassSpecific.Warrior
                 // Heroic Fury
                 Spell.BuffSelf("Heroic Fury", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted)),
                 // Fear Remover, or to get ourselves enraged again.
-                Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified) || !StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Enraged)),
-                //Battleshout Check
-                Spell.BuffSelf("Battle Shout", ret => !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem", "Battle Shout") || StyxWoW.Me.RagePercent < 10)
+                Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified))
                 );
         }
 
-        [Spec(WoWSpec.WarriorFury)]
-        [Behavior(BehaviorType.Combat)]
-        [Class(WoWClass.Warrior)]
-        [Priority(500)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorFury)]
         public static Composite CreateFuryNormalCombat()
         {
             _slows = new[] { "Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom", "Infected Wounds" };
@@ -130,11 +130,9 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) > 3),
                         Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60),
                         Movement.CreateMoveToMeleeBehavior(true))),
-                //30-50 support
-                Spell.BuffSelf("Berserker Stance", ret => StyxWoW.Me.Level > 30 && SingularSettings.Instance.Warrior.UseWarriorKeepStance),
-
+                
                 // Dispel Bubbles
-                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")) && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false,
+                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")),
                     new PrioritySelector(
                         Spell.WaitForCast(),
                         Movement.CreateEnsureMovementStoppedBehavior(),
@@ -146,63 +144,80 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && PreventDoubleIntercept),
 
                 // ranged slow
-                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows),
                 // melee slow
-                Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows && SingularSettings.Instance.Warrior.UseWarriorBasicRotation == false),
+                Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows),
 
                 //Interupts
-                new Decorator(
-                    ret => SingularSettings.Instance.Warrior.UseWarriorInterupts,
-                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
+                new Decorator(ret => SingularSettings.Instance.Warrior.UseWarriorInterrupts, Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget)),
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 //Heal up in melee
                 Spell.Cast("Victory Rush",ret=>StyxWoW.Me.HealthPercent < 90),
-                Spell.Cast("Heroic Throw", ret => StyxWoW.Me.CurrentTarget.Distance.Between(15,30)),
 
                 // engineering gloves
                 Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
                 // AOE
-                new Decorator(ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3 && SingularSettings.Instance.Warrior.UseWarriorAOE,
+                new Decorator(ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
                     new PrioritySelector(
                         Spell.Cast("Whirlwind"),
                         Spell.Cast("Cleave"),
-                        Spell.Cast("Raging Blow"),
-                        Spell.Cast("Blood Thirst"))),       
+                        Spell.Cast("Dragon Roar"),
+                        // Only pop RB when we have a few stacks of meat cleaver. Increased DPS by quite a bit.
+                        Spell.Cast("Raging Blow", ret=>StyxWoW.Me.HasAura("Meat Cleaver", 3)))),       
 
-                // These 2 need to be used on cooldown. No excuses.
-                Spell.Cast("Bloodthirst"),
-                Spell.Cast("Colossus Smash"),
-
-                // These are off the GCD. So rage dump if we can.
-                Spell.Cast("Cleave", ret =>
-                    // Only even think about Cleave for more than 2 mobs. (We're probably best off using melee range)
-                                Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) >= 2 &&
-                                    // If we have Incite, Deadly Calm, or enough rage (pooling for CS if viable) we're good.
-                                (StyxWoW.Me.HasAura("Incite", 1) || CanUseRageDump())),
-                Spell.Cast("Heroic Strike", ret =>
-                    // Only even think about HS for less than 2 mobs. (We're probably best off using melee range)
-                                Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 6f) < 2 &&
-                                    // If we have Incite, or enough rage (pooling for CS if viable) we're good.
-                                (StyxWoW.Me.HasAura("Incite", 1) || CanUseRageDump())),
-
-                // Execute if it's available. Ignoring any other abilities!
-                Spell.Cast("Execute"),
-
-                Spell.Cast("Raging Blow"),
-                Spell.Cast("Wild Strike"),
+                // Use the single target rotation!
+                SingleTarget(),
 
                 //Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         } 
+
+
+        private static Composite SingleTarget()
+        {
+            return new PrioritySelector( // Prio #1 -> BR whenever we're not enraged, and can actually melee the target.
+                Spell.BuffSelf("Berserker Rage", ret => !IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
+                // DC if we have rage, target has CS, and we're not within execute range.
+                Spell.BuffSelf("Deadly Calm", ret => StyxWoW.Me.RagePercent >= 40 && TargetSmashed && !WithinExecuteRange),
+                // Cast CS when the requirements are met. There's a few, so this is extracted into its own property.
+                Spell.Cast("Heroic Strike", ret=> NeedHeroicStrike),
+                // BT basically on cooldown, unless we're in execute range, then save it for rage building. Execute is worth more DPR here.
+                Spell.Cast("Bloodthirst", ret => !WithinExecuteRange || (StyxWoW.Me.CurrentTarget.HealthPercent <= 20 && StyxWoW.Me.RagePercent <= 30)),
+                // Wild strike proc. (Bloodsurge)
+                Spell.Cast("Wild Strike", ret=> !WithinExecuteRange && StyxWoW.Me.HasAura("Bloodsurge", 1)),
+                // CS on cooldown
+                Spell.Cast("Colossus Smash"),
+                // Execute on CD
+                Spell.Cast("Execute", ret => WithinExecuteRange),
+                // RB only when we're not going to have BT come off CD during a GCD
+                Spell.Cast("Raging Blow", ret=> BTCD.TotalSeconds >= 1),
+                // Dump rage on WS
+                Spell.Cast("Wild Strike", ret=>!WithinExecuteRange && TargetSmashed && BTCD.TotalSeconds >= 1),
+                // Dragon Roar basically on CD. It ignores armor, so no need to check if the target has CS
+                Spell.Cast("Dragon Roar", ret=>StyxWoW.Me.CurrentTarget.Distance < 8),
+                // HT on CD. Why not? No GCD extra damage. :)
+                Spell.Cast("Heroic Throw"),
+                // Shout when we need to pool some rage.
+                Spell.Cast(SelectedShout, ret=>!TargetSmashed && StyxWoW.Me.CurrentRage < 70),
+                // Fill with WS when BT/CS aren't about to come off CD, and we have some rage to spend.
+                Spell.Cast("Wild Strike", ret=> !WithinExecuteRange && BTCD.TotalSeconds >= 1 && CSCD.TotalSeconds >= 1.6 && StyxWoW.Me.CurrentRage >= 60),
+                // Costs nothing, and does some damage. So cast it please!
+                Spell.Cast("Impending Victory", ret => !WithinExecuteRange),
+
+                // Very last in the prio, just pop BS to waste a GCD and get some rage. Nothing else to do here.
+                Spell.Cast("Battle Shout", ret=> StyxWoW.Me.CurrentRage < 70)
+                );
+        }
+
         #endregion
 
         
         #region Utils
         private static readonly WaitTimer InterceptTimer = new WaitTimer(TimeSpan.FromMilliseconds(2000));
-
+        
         private static bool PreventDoubleIntercept
         {
             get
@@ -214,24 +229,43 @@ namespace Singular.ClassSpecific.Warrior
             }
         }
 
+
+        #endregion
+
+        #region Calculations - These are for the super-high DPS rotations for raiding as SMF. (TG isn't quite as good as SMF anymore!)
+
+        static TimeSpan BTCD { get { return Spell.GetSpellCooldown("Bloodthirst"); } }
+        static TimeSpan CSCD { get { return Spell.GetSpellCooldown("Colossus Smash"); } }
+
+        static bool WithinExecuteRange { get { return StyxWoW.Me.CurrentTarget.HealthPercent <= 20; } }
+        static bool IsEnraged { get { return StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Enraged); } }
         private static bool TargetSmashed { get { return StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash", 1); } }
 
-        static bool CanUseRageDump()
-        {
-            // Pooling rage for upcoming CS. If its > 8s, make sure we have 60 rage. < 8s, only pop it at 85 rage.
-            if (SpellManager.HasSpell("Colossus Smash"))
-                return SpellManager.Spells["Colossus Smash"].CooldownTimeLeft.TotalSeconds > 8 ? StyxWoW.Me.RagePercent > 60 : StyxWoW.Me.RagePercent > 85;
 
-            // We don't know CS. So just check if we have 60 rage to use cleave.
-            return StyxWoW.Me.RagePercent > 60;
+        static bool NeedHeroicStrike
+        {
+            get
+            {
+                if (StyxWoW.Me.CurrentTarget.HealthPercent >= 20)
+                {
+                    // Go based off % since we have the new glyph to add 20% rage.
+                    var myRage = StyxWoW.Me.RagePercent;
+
+                    // Basically, here's how this works.
+                    // If the target is CS'd, and we have > 40 rage, then pop HS.
+                    // If we *ever* have more than 90% rage, then pop HS
+                    // If we popped DC and have more than 30 rage, pop HS (it's more DPR than basically anything else at 15 rage cost)
+                    if (myRage >= 40 && TargetSmashed)
+                        return true;
+                    if (myRage >= 90)
+                        return true;
+                    if (myRage >= 30 && StyxWoW.Me.HasAura("Deadly Calm", 1))
+                        return true;
+                }
+                return false;
+            }
         }
 
-        static bool HasSpellIntercept()
-        {
-            if (SpellManager.HasSpell("Intercept"))
-                return true;
-            return false;
-        } 
         #endregion
     }
 }

@@ -11,9 +11,13 @@
 
 #endregion
 
+using System;
+using System.Diagnostics;
+using System.IO;
 using Singular.Settings;
 using Styx.Common;
 using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
 using Color = System.Drawing.Color;
 
 namespace Singular
@@ -58,6 +62,19 @@ namespace Singular
             else
             {
                 Logging.Write(LogLevel.Diagnostic, newColor, "[Singular-DEBUG] " + message, args);
+            }
+        }
+
+        public static void PrintStackTrace(string reason = "Debug")
+        {
+            WriteDebug("Stack trace for " + reason);
+            var stackTrace = new StackTrace(true);
+            StackFrame[] stackFrames = stackTrace.GetFrames();
+            // Start at frame 1 (just before this method entrance)
+            for (int i = 1; i < Math.Min(stackFrames.Length, 10); i++)
+            {
+                StackFrame frame = stackFrames[i];
+                WriteDebug(string.Format("\tCaller {0}: {1} in {2} line {3}", i, frame.GetMethod().Name, Path.GetFileName(frame.GetFileName()), frame.GetFileLineNumber()));
             }
         }
     }

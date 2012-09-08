@@ -12,10 +12,7 @@ namespace Singular.ClassSpecific.DeathKnight
 {
     public class Lowbie
     {
-        [Class(WoWClass.DeathKnight)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat,WoWClass.DeathKnight)]
         public static Composite CreateLowbieDeathKnightCombat()
         {
             return new PrioritySelector(

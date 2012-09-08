@@ -57,11 +57,8 @@ namespace Singular.ClassSpecific.Druid
 
         #region Normal Rotation
 
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Normal)]
         public static Composite CreateDruidBalanceNormalCombat()
         {
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
@@ -134,12 +131,8 @@ namespace Singular.ClassSpecific.Druid
         #endregion
 
         #region Battleground Rotation
-
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds)]
         public static Composite CreateDruidBalancePvPCombat()
         {
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
@@ -189,12 +182,8 @@ namespace Singular.ClassSpecific.Druid
         #endregion
 
         #region Instance Rotation
-
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Instances)]
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Instances)]
         public static Composite CreateDruidBalanceInstanceCombat()
         {
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;

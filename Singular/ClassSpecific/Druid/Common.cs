@@ -68,13 +68,7 @@ public static Composite CreateDruidPreCombatBuff()
 
         #region PreCombat Buffs
 
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Spec(WoWSpec.DruidFeral)]
-        [Spec(WoWSpec.DruidRestoration)]
-        [Spec((WoWSpec)0)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid,(WoWSpec)int.MaxValue)]
         public static Composite CreateDruidPreCombatBuff()
         {
             // Cast motw if player doesn't have it or if in instance/bg, out of combat and 'Buff raid with Motw' is true or if in instance and in combat and both CatRaidRebuff and 'Buff raid with Motw' are true
@@ -143,12 +137,7 @@ public static Composite CreateDruidPreCombatBuff()
 
         #region Combat Buffs
 
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Spec(WoWSpec.DruidFeral)]
-        [Spec(WoWSpec.DruidRestoration)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec)int.MaxValue,WoWContext.Instances)]
         public static Composite CreateDruidInstanceCombatBuffs()
         {
             const uint mapleSeedId = 17034;
@@ -194,11 +183,9 @@ public static Composite CreateDruidPreCombatBuff()
        
         #region Rest
 
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.Rest)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Spec(WoWSpec.DruidFeral)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidBalance)]
+        [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidFeral)]
+        [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidGuardian)]
         public static Composite CreateBalanceAndDruidFeralRest()
         {
             return new PrioritySelector(

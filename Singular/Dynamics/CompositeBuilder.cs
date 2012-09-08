@@ -37,123 +37,37 @@ namespace Singular.Dynamics
                 Logger.Write("Building method list");
                 foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
                 {
-                    _methods.AddRange(type.GetMethods(BindingFlags.Static | BindingFlags.Public));
+                    // All behavior methods should not be generic, and should have zero parameters, with their return types being of type Composite.
+                    _methods.AddRange(
+                        type.GetMethods(BindingFlags.Static | BindingFlags.Public).Where(
+                            mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(
+                                mi => mi.ReturnType.IsAssignableFrom(typeof (Composite))));
                 }
                 Logger.Write("Added " + _methods.Count + " methods");
             }
-            var matchedMethods = new Dictionary<int, PrioritySelector>();
-            foreach (MethodInfo mi in
-                _methods.Where(
-                    mi =>
-                    !mi.IsGenericMethod &&
-                    mi.GetParameters().Length == 0)
-                    .Where(
-                        mi =>
-                        mi.ReturnType == typeof(Composite) ||
-                        mi.ReturnType.IsSubclassOf(typeof(Composite))))
+            var matchedMethods = new Dictionary<int, Composite>();
+
+            foreach (MethodInfo mi in _methods)
             {
-                //Logger.WriteDebug("[CompositeBuilder] Checking attributes on " + mi.Name);
-                bool classMatches = false, specMatches = false, behaviorMatches = false, contextMatches = false, hasIgnore = false;
-                int thePriority = 0;
-                var theBehaviourType = BehaviorType.All;
-                var theIgnoreType = BehaviorType.All;
-                foreach (object ca in mi.GetCustomAttributes(false))
-                {
-                    if (ca is ClassAttribute)
-                    {
-                        var attrib = ca as ClassAttribute;
-                        if (attrib.SpecificClass != WoWClass.None && attrib.SpecificClass != wowClass)
-                        {
-                            continue;
-                        }
-                        //Logger.WriteDebug(mi.Name + " has my class");
-                        classMatches = true;
-                    }
-                    else if (ca is SpecAttribute)
-                    {
-                        var attrib = ca as SpecAttribute;
-                        if (attrib.SpecificSpec == (WoWSpec)0 && attrib.SpecificSpec != spec)
-                        {
-                            continue;
-                        }
-                        //Logger.WriteDebug(mi.Name + " has my spec");
-                        specMatches = true;
-                    }
-                    else if (ca is BehaviorAttribute)
-                    {
-                        var attrib = ca as BehaviorAttribute;
-                        if ((attrib.Type & behavior) == 0)
-                        {
-                            continue;
-                        }
-                        //Logger.WriteDebug(mi.Name + " has my behavior");
-                        theBehaviourType = attrib.Type;
-                        behaviourCount++;
-                        behaviorMatches = true;
-                    }
-                    else if (ca is ContextAttribute)
-                    {
-                        var attrib = ca as ContextAttribute;
+                // If the behavior is set as ignore. Don't use it? Duh?
+                if (mi.GetCustomAttributes(typeof(IgnoreBehaviorCountAttribute), false).Any())
+                    continue;
 
-                        if (SingularSettings.Instance.UseInstanceRotation)
-                        {
-                            if ((attrib.SpecificContext & WoWContext.Instances) == 0)
-                                continue;
-                        }
-                        else if ((attrib.SpecificContext & context) == 0)
-                        {
-                             continue;
-                        }
-                        //Logger.WriteDebug(mi.Name + " has my context");
-                        contextMatches = true;
-                    }
-                    else if (ca is PriorityAttribute)
-                    {
-                        var attrib = ca as PriorityAttribute;
-                        thePriority = attrib.PriorityLevel;
-                    }
-                    else if (ca is IgnoreBehaviorCountAttribute)
-                    {
-                        var attrib = ca as IgnoreBehaviorCountAttribute;
-                        hasIgnore = true;
-                        theIgnoreType = attrib.Type;
-                    }
-                }
-
-                if (behaviorMatches && hasIgnore && theBehaviourType == theIgnoreType)
+                // If there's no behavior attrib, then move along.
+                foreach (var a in mi.GetCustomAttributes(typeof(BehaviorAttribute), false))
                 {
-                    behaviourCount--;
-                }
-
-                // If all our attributes match, then mark it as wanted!
-                if (classMatches && specMatches && behaviorMatches && contextMatches)
-                {
-                    Logger.WriteDebug("{0} is a match!", mi.Name);
-                    if (!hasIgnore)
-                    {
-                        Logger.Write(" Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority);
-                    }
-                    else
-                    {   
-                        Logger.WriteDebug(" Using {0} for {1} - {2} (Priority: {3})", mi.Name, spec.ToString().CamelToSpaced().Trim(), behavior, thePriority);
-                    }
-                    Composite matched;
-                    try
-                    {
-                        matched = (Composite) mi.Invoke(null, null);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Write("ERROR Creating composite: {0}\n{1}", mi.Name, e.StackTrace);
+                    var attribute = a as BehaviorAttribute;
+                    if (attribute == null)
                         continue;
-                    }
-                    if (!matchedMethods.ContainsKey(thePriority))
+
+                    // Check if our behavior matches with what we want. If not, don't add it!
+                    if (IsMatchingMethod(attribute, wowClass, spec, behavior, context))
                     {
-                        matchedMethods.Add(thePriority, new PrioritySelector(matched));
-                    }
-                    else
-                    {
-                        matchedMethods[thePriority].AddChild(matched);
+                        Logger.Write(string.Format("Matched {0} to behavior {1} for {2} {3} with priority {4}", mi.Name,
+                            behavior, wowClass.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced(),
+                            attribute.PriorityLevel));
+
+                        matchedMethods.Add(attribute.PriorityLevel, mi.Invoke(null, null) as Composite);
                     }
                 }
             }
@@ -167,11 +81,25 @@ namespace Singular.Dynamics
             foreach (var kvp in matchedMethods.OrderByDescending(mm => mm.Key))
             {
                 result.AddChild(kvp.Value);
+                behaviourCount++;
             }
 
             return result;
-            // Return the composite match we found. (Note: ANY composite return is fine)
-            return matchedMethods.OrderByDescending(mm => mm.Key).First().Value;
+        }
+
+
+        private static bool IsMatchingMethod(BehaviorAttribute attribute, WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context)
+        {
+            if (attribute.SpecificClass != wowClass)
+                return false;
+            if (attribute.Type != behavior)
+                return false;
+            if ((attribute.SpecificContext & context) == 0)
+                return false;
+            if (attribute.SpecificSpec != (WoWSpec)int.MaxValue && attribute.SpecificSpec != spec)
+                return false;
+
+            return true;
         }
     }
 }

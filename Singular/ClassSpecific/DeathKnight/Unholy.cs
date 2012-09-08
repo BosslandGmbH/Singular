@@ -16,10 +16,7 @@ namespace Singular.ClassSpecific.DeathKnight
     {
         #region Normal Rotation
 
-        [Class(WoWClass.DeathKnight)]
-        [Spec(WoWSpec.DeathKnightUnholy)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy, WoWContext.Normal)]
         public static Composite CreateDeathKnightUnholyNormalCombat()
         {
             return new PrioritySelector(
@@ -120,10 +117,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
         #region Battleground Rotation
 
-        [Class(WoWClass.DeathKnight)]
-        [Spec(WoWSpec.DeathKnightUnholy)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy, WoWContext.Battlegrounds)]
         public static Composite CreateDeathKnightUnholyPvPCombat()
         {
             return new PrioritySelector(
@@ -196,10 +190,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
         #region Instance Rotations
 
-        [Class(WoWClass.DeathKnight)]
-        [Spec(WoWSpec.DeathKnightUnholy)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy, WoWContext.Instances)]
         public static Composite CreateDeathKnightUnholyInstanceCombat()
         {
             return new PrioritySelector(

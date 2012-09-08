@@ -19,6 +19,19 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
+    public enum WarriorStance
+    {
+        BattleStance,
+        BerserkerStance,
+        DefensiveStance
+    }
+
+    public enum WarriorShout
+    {
+        CommandingShout,
+        BattleShout
+    }
+
     internal class WarriorSettings : Styx.Helpers.Settings
     {
         public WarriorSettings()
@@ -45,19 +58,13 @@ namespace Singular.Settings
         #endregion
 
         #region DPS
-        [Setting]
-        [DefaultValue(true)]
-        [Category("DPS")]
-        [DisplayName("Use Damage Cooldowns")]
-        [Description("True / False if you would like the cc to use damage cooldowns")]
-        public bool UseWarriorDpsCooldowns { get; set; }
 
         [Setting]
         [DefaultValue(true)]
         [Category("DPS")]
         [DisplayName("Use Interupts")]
         [Description("True / False if you would like the cc to use Interupts")]
-        public bool UseWarriorInterupts { get; set; }
+        public bool UseWarriorInterrupts { get; set; }
 
         [Setting]
         [DefaultValue(true)]
@@ -72,35 +79,7 @@ namespace Singular.Settings
         [DisplayName("Slows")]
         [Description("True / False if you would like the cc to use slows ie. Hammstring, Piercing Howl")]
         public bool UseWarriorSlows { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("DPS")]
-        [DisplayName("Basic Rotation Only")]
-        [Description("True / False if you would like the cc to use just the basic DPS rotation only")]
-        public bool UseWarriorBasicRotation { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("DPS")]
-        [DisplayName("Use AOE")]
-        [Description("True / False if you would like the cc to use AOE with more than 3 mobs")]
-        public bool UseWarriorAOE { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("DPS")]
-        [DisplayName("T12 2-Piece")]
-        [Description("True / False if you have the T12 2-piece set bonus")]
-        public bool UseWarriorT12 { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("DPS")]
-        [DisplayName("Force proper stance?")]
-        [Description("True / False on whether you would like the cc to keep the toon in the proper stance for the spec. Arms:Battle, Fury:Berserker")]
-        public bool UseWarriorKeepStance { get; set; }
-
+        
         [Setting]
         [DefaultValue(true)]
         [Category("DPS")]
@@ -109,42 +88,18 @@ namespace Singular.Settings
         public bool UseWarriorCloser { get; set; }
         #endregion
 
-        #region Arms
         [Setting]
-        [DefaultValue(true)]
-        [Category("Arms")]
-        [DisplayName("Improved Slam Talented?")]
-        [Description("True / False if you have Improved Slam Talented")]
-        public bool UseWarriorSlamTalent { get; set; }
+        [DefaultValue(WarriorShout.BattleShout)]
+        [Category("General")]
+        [DisplayName("Warrior Shout")]
+        [Description("The shout to use to keep the buff up, or use for low-rage situations.")]
+        public WarriorShout UseShout { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("Arms")]
-        [DisplayName("Bladestorm?")]
-        [Description("True / False if you would like the cc to use bladestorm")]
-        public bool UseWarriorBladestorm { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Arms")]
-        [DisplayName("Throwdown?")]
-        [Description("True / False if you would like the cc to use Throwdown")]
-        public bool UseWarriorThrowdown { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Arms")]
-        [DisplayName("Stance Dance?")]
-        [Description("True / False if you want the cc to stance dance dps on bosses")]
-        public bool UseWarriorStanceDance { get; set; } 
-        #endregion
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Fury")]
-        [DisplayName("Use SMF Rotation")]
-        [Description("True / False if you would like the cc to use a SMF rotation")]
-        public bool UseWarriorSMF { get; set; }
-
+        [DefaultValue(WarriorStance.BattleStance)]
+        [Category("DPS")]
+        [DisplayName("Warrior DPS Stance")]
+        [Description("The stance to use while DPSing. Battle stance if there is little incoming damage, Berserker otherwise. Protection will always use Defensive stance.")]
+        public WarriorStance WarriorDpsStance { get; set; }
     }
 }

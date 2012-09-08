@@ -23,10 +23,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
         private readonly static WaitTimer DeathStrikeTimer = new WaitTimer(TimeSpan.FromSeconds(5));
 
-        [Class(WoWClass.DeathKnight)]
-        [Spec(WoWSpec.DeathKnightBlood)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood, WoWContext.Normal)]
         public static Composite CreateDeathKnightBloodNormalCombat()
         {
             return
@@ -181,10 +178,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
         #region Battleground Rotation
 
-        [Class(WoWClass.DeathKnight)]
-        [Spec(WoWSpec.DeathKnightBlood)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood, WoWContext.Battlegrounds)]
         public static Composite CreateDeathKnightBloodPvPCombat()
         {
             return
@@ -310,10 +304,7 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Tanking - Instances and Raids
 
         // Blood DKs should be DG'ing everything it can when pulling. ONLY IN INSTANCES.
-        [Class(WoWClass.DeathKnight)]
-        [Behavior(BehaviorType.Pull)]
-        [Spec(WoWSpec.DeathKnightBlood)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood, WoWContext.Instances)]
         public static Composite CreateDeathKnightBloodInstancePull()
         {
             return
@@ -336,10 +327,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     );
         }
 
-        [Class(WoWClass.DeathKnight)]
-        [Spec(WoWSpec.DeathKnightBlood)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood, WoWContext.Instances)]
         public static Composite CreateDeathKnightBloodInstanceCombat()
         {
             return

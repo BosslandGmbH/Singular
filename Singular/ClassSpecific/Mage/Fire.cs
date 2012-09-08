@@ -20,10 +20,7 @@ namespace Singular.ClassSpecific.Mage
     {
         #region Normal Rotation
 
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageFire)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageFire, WoWContext.Normal)]
         public static Composite CreateMageFireNormalPull()
         {
             return new PrioritySelector(
@@ -40,11 +37,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
-
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageFire)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFire, WoWContext.Normal)]
         public static Composite CreateMageFireNormalCombat()
         {
             return new PrioritySelector(
@@ -110,12 +103,7 @@ namespace Singular.ClassSpecific.Mage
         #endregion
 
         #region Battleground Rotation
-
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageFire)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull|BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFire, WoWContext.Battlegrounds)]
         public static Composite CreateMageFirePvPPullAndCombat()
         {
             return new PrioritySelector(
@@ -164,12 +152,7 @@ namespace Singular.ClassSpecific.Mage
         #endregion
 
         #region Instance Rotation
-
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageFire)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFire, WoWContext.Instances)]
         public static Composite CreateMageFireInstancePullAndCombat()
         {
             return new PrioritySelector(

@@ -17,11 +17,7 @@ namespace Singular.ClassSpecific.Warlock
     {
         #region Common
 
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockAffliction)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
-        [Priority(1)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warlock, WoWSpec.WarlockAffliction, priority:1)]
         public static Composite CreateWarlockAfflictionPreCombatBuffs()
         {
             return new PrioritySelector(
@@ -40,10 +36,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #region Normal Rotation
 
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockAffliction)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Normal)]
         public static Composite CreateWarlockAfflictionNormalPull()
         {
             return new PrioritySelector(
@@ -56,11 +49,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
-
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockAffliction)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Normal)]
         public static Composite CreateWarlockAfflictionNormalCombat()
         {
             return new PrioritySelector(
@@ -102,12 +91,7 @@ namespace Singular.ClassSpecific.Warlock
         #endregion
 
         #region Battleground Rotation
-
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockAffliction)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull|BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Battlegrounds)]
         public static Composite CreateWarlockAfflictionPvPPullAndCombat()
         {
             return new PrioritySelector(
@@ -153,11 +137,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #region Instance Rotation
 
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockAffliction)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Instances)]
         public static Composite CreateWarlockAfflictionInstancePullAndCombat()
         {
             return new PrioritySelector(

@@ -9,10 +9,7 @@ namespace Singular.ClassSpecific.Rogue
 {
     public class Lowbie
     {
-        [Class(WoWClass.Rogue)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, 0)]
         public static Composite CreateLowbieRogueCombat()
         {
             return new PrioritySelector(
@@ -26,11 +23,7 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-
-        [Class(WoWClass.Rogue)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, 0)]
         public static Composite CreateLowbieRoguePull()
         {
             return new PrioritySelector(

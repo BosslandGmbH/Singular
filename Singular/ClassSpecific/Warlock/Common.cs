@@ -33,13 +33,7 @@ namespace Singular.ClassSpecific.Warlock
             }
         }
 
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockAffliction)]
-        [Spec(WoWSpec.WarlockDemonology)]
-        [Spec(WoWSpec.WarlockDestruction)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warlock)]
         public static Composite CreateWarlockPreCombatBuffs()
         {
             return new PrioritySelector(
@@ -65,13 +59,7 @@ namespace Singular.ClassSpecific.Warlock
                 );
         }
 
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockAffliction)]
-        [Spec(WoWSpec.WarlockDemonology)]
-        [Spec(WoWSpec.WarlockDestruction)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Warlock)]
         public static Composite CreateWarlockCombatBuffs()
         {
             return new PrioritySelector(
@@ -80,13 +68,7 @@ namespace Singular.ClassSpecific.Warlock
                 );
         }
 
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockAffliction)]
-        [Spec(WoWSpec.WarlockDemonology)]
-        [Spec(WoWSpec.WarlockDestruction)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest, WoWClass.Warlock)]
         public static Composite CreateWarlockRest()
         {
             return new PrioritySelector(

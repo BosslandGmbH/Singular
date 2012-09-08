@@ -13,32 +13,21 @@ namespace Singular.ClassSpecific.Shaman
 {
     class Lowbie
     {
-        [Class(WoWClass.Shaman)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbiePreCombatBuffs()
         {
             return
                 new PrioritySelector(
                     Spell.BuffSelf("Lightning Shield"));
         }
-
-        [Class(WoWClass.Shaman)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbieCombatBuffs()
         {
             return
                 new PrioritySelector(
                     Spell.BuffSelf("Lightning Shield"));
         }
-
-        [Class(WoWClass.Shaman)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbiePull()
         {
             return
@@ -50,11 +39,7 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.Cast("Lightning Bolt"),
                     Movement.CreateMoveToTargetBehavior(true, 20f));
         }
-
-        [Class(WoWClass.Shaman)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Heal, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbieHeal()
         {
             return
@@ -62,11 +47,7 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.Heal("Healing Wave", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 60)
                     );
         }
-
-        [Class(WoWClass.Shaman)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbieCombat()
         {
             return 

@@ -17,10 +17,7 @@ namespace Singular.ClassSpecific.Priest
 {
     public class Discipline
     {
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestDiscipline)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest,WoWClass.Priest,WoWSpec.PriestDiscipline)]
         public static Composite CreateDiscHealRest()
         {
             return new PrioritySelector(
@@ -148,11 +145,7 @@ namespace Singular.ClassSpecific.Priest
                         // TODO: Add smite healing. Atonement is now specced as all discs. (Its useless otherwise)
                         )));
         }
-
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestDiscipline)]
-        [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Heal, WoWClass.Priest, WoWSpec.PriestDiscipline)]
         public static Composite CreateDiscHealComposite()
         {
             return
@@ -162,11 +155,7 @@ namespace Singular.ClassSpecific.Priest
 
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
         // Note: This will probably break shit if we're solo, but oh well!
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestDiscipline)]
-        [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat|BehaviorType.Pull,WoWClass.Priest,WoWSpec.PriestDiscipline)]
         public static Composite CreateDiscCombatComposite()
         {
             return new PrioritySelector(

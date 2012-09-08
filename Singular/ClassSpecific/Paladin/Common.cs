@@ -33,13 +33,7 @@ namespace Singular.ClassSpecific.Paladin
 
     public class Common
     {
-        [Class(WoWClass.Paladin)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Spec(WoWSpec.PaladinRetribution)]
-        [Spec(WoWSpec.PaladinHoly)]
-        [Spec(WoWSpec.PaladinProtection)]
-        [Spec((WoWSpec)0)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin)]
         public static Composite CreatePaladinPreCombatBuffs()
         {
             return

@@ -34,11 +34,7 @@ namespace Singular.ClassSpecific.Shaman
         }
 
 
-        [Class(WoWClass.Shaman)]
-        [Spec(WoWSpec.ShamanRestoration)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.CombatBuffs | BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
         public static Composite CreateRestoShamanHealingBuffs()
         {
             return new PrioritySelector(
@@ -51,11 +47,7 @@ namespace Singular.ClassSpecific.Shaman
                 );
         }
 
-
-        [Class(WoWClass.Shaman)]
-        [Spec(WoWSpec.ShamanRestoration)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
         public static Composite CreateRestoShamanRest()
         {
             return new PrioritySelector(
@@ -67,10 +59,7 @@ namespace Singular.ClassSpecific.Shaman
                 );
         }
 
-        [Class(WoWClass.Shaman)]
-        [Spec(WoWSpec.ShamanRestoration)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
         public static Composite CreateRestoShamanCombatBehavior()
         {
             return
@@ -99,10 +88,7 @@ namespace Singular.ClassSpecific.Shaman
                     );
         }
 
-        [Class(WoWClass.Shaman)]
-        [Spec(WoWSpec.ShamanRestoration)]
-        [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
         public static Composite CreateRestoShamanHealBehavior()
         {
             return
@@ -220,7 +206,7 @@ namespace Singular.ClassSpecific.Shaman
                 return originalTarget;
 
             // Target already has RT. So lets find someone else to throw it on. Lowest health first preferably.
-            return Unit.NearbyFriendlyPlayers.OrderBy(u => u.HealthPercent).Where(u => !u.HasMyAura("Riptide")).FirstOrDefault();
+            return Unit.NearbyFriendlyPlayers.OrderBy(u => u.HealthPercent).FirstOrDefault(u => !u.HasMyAura("Riptide"));
         }
     }
 }

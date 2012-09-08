@@ -20,13 +20,7 @@ namespace Singular.ClassSpecific.Mage
     {
         private static WoWItem _manaGem;
 
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageFire)]
-        [Spec(WoWSpec.MageFrost)]
-        [Spec(WoWSpec.MageArcane)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
         public static Composite CreateMageBuffs()
         {
             return new PrioritySelector(

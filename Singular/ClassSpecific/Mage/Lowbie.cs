@@ -11,11 +11,7 @@ namespace Singular.ClassSpecific.Mage
 {
     public class Lowbie
     {
-        [Class(WoWClass.Mage)]
-        [Spec((WoWSpec)0)]
-        [Context(WoWContext.All)]
-        [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Pull)]
+        [Behavior(BehaviorType.Combat|BehaviorType.Pull,WoWClass.Mage,0)]
         public static Composite CreateLowbieMageCombat()
         {
             return new PrioritySelector(

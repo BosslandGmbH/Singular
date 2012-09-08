@@ -20,10 +20,7 @@ namespace Singular.ClassSpecific.Priest
     {
         #region Normal Rotation
 
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestShadow)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Normal)]
         public static Composite CreatePriestShadowNormalPull()
         {
             return new PrioritySelector(
@@ -43,11 +40,7 @@ namespace Singular.ClassSpecific.Priest
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
-
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestShadow)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Normal)]
         public static Composite CreatePriestShadowNormalCombat()
         {
             return new PrioritySelector(
@@ -114,11 +107,7 @@ namespace Singular.ClassSpecific.Priest
 
         #region Battleground Rotation
 
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestShadow)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Battlegrounds)]
         public static Composite CreatePriestShadowPvPPullAndCombat()
         {
             return new PrioritySelector(
@@ -154,11 +143,7 @@ namespace Singular.ClassSpecific.Priest
         #endregion
 
         #region Instance Rotation
-
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestShadow)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Rest, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Instances)]
         public static Composite CreatePriestShadowRest()
         {
             return new PrioritySelector(
@@ -167,11 +152,7 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestShadow)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Instances)]
         public static Composite CreatePriestShadowInstancePullAndCombat()
         {
             return new PrioritySelector(

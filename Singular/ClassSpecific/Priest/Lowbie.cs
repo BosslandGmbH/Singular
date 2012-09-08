@@ -10,11 +10,7 @@ namespace Singular.ClassSpecific.Priest
 {
     public class Lowbie
     {
-        [Class(WoWClass.Priest)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat | BehaviorType.Pull, WoWClass.Priest, 0)]
         public static Composite CreateLowbiePriestCombat()
         {
             return new PrioritySelector(

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Runtime.Remoting.Contexts;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -14,10 +15,7 @@ namespace Singular.ClassSpecific.Paladin
 {
     public static class Holy
     {
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinHoly)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest,WoWClass.Paladin,WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyRest()
         {
             return new PrioritySelector(
@@ -30,22 +28,14 @@ namespace Singular.ClassSpecific.Paladin
                 // Make sure we're healing OOC too!
                 CreatePaladinHealBehavior(false, false));
         }
-
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinHoly)]
-        [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Heal, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyHealBehavior()
         {
             return
                 new PrioritySelector(
                     CreatePaladinHealBehavior());
         }
-
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinHoly)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyCombatBuffsBehavior()
         {
             return
@@ -55,11 +45,7 @@ namespace Singular.ClassSpecific.Paladin
                         ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Paladin.DivinePleaMana)
                     );
         }
-
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinHoly)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyCombatBehavior()
         {
             return
@@ -86,11 +72,7 @@ namespace Singular.ClassSpecific.Paladin
                             ))
                     );
         }
-
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinHoly)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyPullBehavior()
         {
             return new PrioritySelector(

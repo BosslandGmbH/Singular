@@ -32,10 +32,7 @@ namespace Singular.ClassSpecific.Paladin
         #endregion
 
         #region Heal
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinRetribution)]
-        [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Heal, WoWClass.Paladin, WoWSpec.PaladinRetribution)]
         public static Composite CreatePaladinRetributionHeal()
         {
             return new PrioritySelector(
@@ -51,11 +48,7 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.Heal("Flash of Light", ret => StyxWoW.Me,
                            ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.RetributionHealHealth));
         }
-
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinRetribution)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinRetribution)]
         public static Composite CreatePaladinRetributionRest()
         {
             return new PrioritySelector( // use ooc heals if we have mana to
@@ -70,12 +63,7 @@ namespace Singular.ClassSpecific.Paladin
 
         #region Normal Rotation
 
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinRetribution)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Heal)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Heal|BehaviorType.Pull|BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution,WoWContext.Normal)]
         public static Composite CreatePaladinRetributionNormalPullAndCombat()
         {
             return new PrioritySelector(
@@ -136,13 +124,7 @@ namespace Singular.ClassSpecific.Paladin
 
         #region Battleground Rotation
 
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinRetribution)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.Battlegrounds)]
-
+        [Behavior(BehaviorType.Heal | BehaviorType.Pull | BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Battlegrounds)]
         public static Composite CreatePaladinRetributionPvPPullAndCombat()
         {
             HealerManager.NeedHealTargeting = true;
@@ -199,11 +181,7 @@ namespace Singular.ClassSpecific.Paladin
 
         #region Instance Rotation
 
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinRetribution)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Heal | BehaviorType.Pull | BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Instances)]
         public static Composite CreatePaladinRetributionInstancePullAndCombat()
         {
             return new PrioritySelector(

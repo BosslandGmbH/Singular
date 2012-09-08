@@ -13,11 +13,7 @@ namespace Singular.ClassSpecific.Warlock
     {
         #region Common
 
-        [Class(WoWClass.Warlock)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
-        [Priority(1)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warlock, 0, priority:1)]
         public static Composite CreateLowbieWarlockPreCombatBuffs()
         {
             return new PrioritySelector(
@@ -28,11 +24,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #endregion
 
-        [Class(WoWClass.Warlock)]
-        [Spec((WoWSpec)0)]
-        [Context(WoWContext.All)]
-        [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Pull)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, 0, priority: 1)]
         public static Composite CreateLowbieWarlockCombat()
         {
             return new PrioritySelector(

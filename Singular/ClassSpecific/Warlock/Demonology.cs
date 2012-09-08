@@ -14,11 +14,7 @@ namespace Singular.ClassSpecific.Warlock
     {
         #region Common
 
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockDemonology)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
-        [Priority(1)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warlock, WoWSpec.WarlockDemonology, priority:1)]
         public static Composite CreateWarlockDemonologyPreCombatBuffs()
         {
             return new PrioritySelector(
@@ -34,10 +30,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #region Normal Rotation
 
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockDemonology)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.Normal)]
         public static Composite CreateWarlockDemonologyNormalPull()
         {
             return new PrioritySelector(
@@ -50,11 +43,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
-
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockDemonology)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.Normal)]
         public static Composite CreateWarlockDemonologyNormalCombat()
         {
             return new PrioritySelector(
@@ -100,12 +89,7 @@ namespace Singular.ClassSpecific.Warlock
         #endregion
 
         #region Battleground Rotation
-
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockDemonology)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.Battlegrounds)]
         public static Composite CreateWarlockDemonologyPvPPullAndCombat()
         {
             return new PrioritySelector(
@@ -157,12 +141,7 @@ namespace Singular.ClassSpecific.Warlock
         #endregion
 
         #region Instance Rotation
-
-        [Class(WoWClass.Warlock)]
-        [Spec(WoWSpec.WarlockDemonology)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.Instances)]
         public static Composite CreateWarlockDemonologyInstancePullAndCombat()
         {
             return new PrioritySelector(

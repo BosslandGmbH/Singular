@@ -28,10 +28,7 @@ namespace Singular.ClassSpecific.Rogue
     {
         #region Normal Rotation
 
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueAssassination)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Normal)]
         public static Composite CreateAssaRogueNormalPull()
         {
             return new PrioritySelector(
@@ -57,11 +54,7 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueAssassination)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Normal)]
         public static Composite CreateAssaRogueNormalCombat()
         {
             return new PrioritySelector(
@@ -129,11 +122,7 @@ namespace Singular.ClassSpecific.Rogue
         #endregion
 
         #region Battleground Rotation
-
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueAssassination)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Battlegrounds)]
         public static Composite CreateAssaRoguePvPPull()
         {
             return new PrioritySelector(
@@ -161,11 +150,7 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueAssassination)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Battlegrounds)]
         public static Composite CreateAssaRoguePvPCombat()
         {
             return new PrioritySelector(
@@ -224,11 +209,7 @@ namespace Singular.ClassSpecific.Rogue
         #endregion
 
         #region Instance Rotation
-
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueAssassination)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Instances)]
         public static Composite CreateAssaRogueInstancePull()
         {
             return new PrioritySelector(
@@ -254,11 +235,7 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueAssassination)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Instances)]
         public static Composite CreateAssaRogueInstanceCombat()
         {
             return new PrioritySelector(

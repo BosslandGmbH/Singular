@@ -20,11 +20,7 @@ namespace Singular.ClassSpecific.Mage
     public class Frost
     {
         #region Normal Rotation
-
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageFrost)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.Normal)]
         public static Composite CreateMageFrostNormalPull()
         {
             return new PrioritySelector(
@@ -47,11 +43,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
-
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageFrost)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.Normal)]
         public static Composite CreateMageFrostNormalCombat()
         {
             return new PrioritySelector(
@@ -128,11 +120,7 @@ namespace Singular.ClassSpecific.Mage
 
         #region Battleground Rotation
 
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageFrost)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull|BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.Battlegrounds)]
         public static Composite CreateMageFrostPvPPullAndCombat()
         {
             return new PrioritySelector(
@@ -194,12 +182,7 @@ namespace Singular.ClassSpecific.Mage
         #endregion
 
         #region Instance Rotation
-
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageFrost)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.Instances)]
         public static Composite CreateMageFrostInstancePullAndCombat()
         {
             return new PrioritySelector(

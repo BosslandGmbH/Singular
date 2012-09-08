@@ -11,11 +11,7 @@ namespace Singular.ClassSpecific.Warrior
 {
     public class Lowbie
     {
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Combat)]
-        [Class(WoWClass.Warrior)]
-        [Priority(500)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warrior, 0, WoWContext.Normal, 500)]
         public static Composite CreateLowbieWarriorCombat()
         {
             return new PrioritySelector(
@@ -45,11 +41,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Pull)]
-        [Class(WoWClass.Warrior)]
-        [Priority(500)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Warrior, 0, WoWContext.Normal, 500)]
         public static Composite CreateLowbieWarriorPull()
         {
             return new PrioritySelector(

@@ -10,10 +10,7 @@ namespace Singular.ClassSpecific.Paladin
 {
     public class Lowbie
     {
-        [Class(WoWClass.Paladin)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat,WoWClass.Paladin,0)]
         public static Composite CreateLowbiePaladinCombat()
         {
             return
@@ -28,11 +25,7 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateMoveToTargetBehavior(true, 5f)
                     );
         }
-
-        [Class(WoWClass.Paladin)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinPull()
         {
             return
@@ -44,11 +37,7 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateMoveToTargetBehavior(true, 5f)
                     );
         }
-
-        [Class(WoWClass.Paladin)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Heal, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinHeal()
         {
             return
@@ -57,11 +46,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Heal("Holy Light", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
                     );
         }
-
-        [Class(WoWClass.Paladin)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinPreCombatBuffs()
         {
             return
@@ -70,11 +55,7 @@ namespace Singular.ClassSpecific.Paladin
                     //Spell.BuffSelf("Devotion Aura")
                     );
         }
-
-        [Class(WoWClass.Paladin)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, 0)]
         public static Composite CreateLowbiePaladinCombatBuffs()
         {
             return

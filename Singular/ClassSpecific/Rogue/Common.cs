@@ -18,13 +18,7 @@ namespace Singular.ClassSpecific.Rogue
 {
     public class Common
     {
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueCombat)]
-        [Spec(WoWSpec.RogueAssassination)]
-        [Spec(WoWSpec.RogueSubtlety)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Rogue)]
         public static Composite CreateRoguePreCombatBuffs()
         {
             return new PrioritySelector(
@@ -33,13 +27,7 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueCombat)]
-        [Spec(WoWSpec.RogueAssassination)]
-        [Spec(WoWSpec.RogueSubtlety)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest, WoWClass.Rogue)]
         public static Composite CreateRogueRest()
         {
             return new PrioritySelector(

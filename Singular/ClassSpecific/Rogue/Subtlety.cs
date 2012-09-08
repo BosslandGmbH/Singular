@@ -17,10 +17,7 @@ namespace Singular.ClassSpecific.Rogue
     {
         #region Normal Rotation
 
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueSubtlety)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Normal)]
         public static Composite CreateRogueSubtletyNormalPull()
         {
             return new PrioritySelector(
@@ -48,11 +45,7 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueSubtlety)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Normal)]
         public static Composite CreateRogueSubtletyNormalCombat()
         {
             return new PrioritySelector(
@@ -112,10 +105,7 @@ namespace Singular.ClassSpecific.Rogue
 
         #region Battleground Rotation
 
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueSubtlety)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Battlegrounds)]
         public static Composite CreateRogueSubtletyPvPPull()
         {
             return new PrioritySelector(
@@ -147,10 +137,7 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueSubtlety)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Battlegrounds)]
         public static Composite CreateRogueSubtletyPvPCombat()
         {
             return new PrioritySelector(
@@ -204,10 +191,7 @@ namespace Singular.ClassSpecific.Rogue
 
         #region Instance Rotation
 
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueSubtlety)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Instances)]
         public static Composite CreateRogueSubtletyInstancePull()
         {
             return new PrioritySelector(
@@ -236,10 +220,7 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        [Class(WoWClass.Rogue)]
-        [Spec(WoWSpec.RogueSubtlety)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Instances)]
         public static Composite CreateRogueSubtletyInstanceCombat()
         {
             return new PrioritySelector(

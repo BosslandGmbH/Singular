@@ -17,10 +17,7 @@ namespace Singular.ClassSpecific.Priest
 {
     public class Holy
     {
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestHoly)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest, WoWClass.Priest, WoWSpec.PriestHoly)]
         public static Composite CreateHolyHealRest()
         {
             return new PrioritySelector(
@@ -144,11 +141,7 @@ namespace Singular.ClassSpecific.Priest
                 // TODO: Add smite healing. Only if Atonement is talented. (Its useless otherwise)
                         )));
         }
-
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestHoly)]
-        [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Heal, WoWClass.Priest, WoWSpec.PriestHoly)]
         public static Composite CreateHolyHealComposite()
         {
             return
@@ -158,11 +151,7 @@ namespace Singular.ClassSpecific.Priest
 
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
         // Note: This will probably break shit if we're solo, but oh well!
-        [Class(WoWClass.Priest)]
-        [Spec(WoWSpec.PriestHoly)]
-        [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat|BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestHoly)]
         public static Composite CreateHolyCombatComposite()
         {
             return new PrioritySelector(

@@ -16,10 +16,7 @@ namespace Singular.ClassSpecific.Paladin
 {
     public class Protection
     {
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinHoly)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinProtection)]
         public static Composite CreatePaladinHolyRest()
         {
             return new PrioritySelector(
@@ -30,10 +27,7 @@ namespace Singular.ClassSpecific.Paladin
         }
 
 
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinProtection)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinProtection)]
         public static Composite CreatePaladinProtectionCombat()
         {
             return new PrioritySelector(
@@ -94,10 +88,7 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateMoveToMeleeBehavior(true));
         }
 
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinProtection)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Pull, WoWClass.Paladin, WoWSpec.PaladinProtection)]
         public static Composite CreatePaladinProtectionPull()
         {
             return
@@ -112,10 +103,7 @@ namespace Singular.ClassSpecific.Paladin
                     );
         }
 
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinProtection)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, WoWSpec.PaladinProtection)]
         public static Composite CreatePaladinProtectionCombatBuffs()
         {
             return

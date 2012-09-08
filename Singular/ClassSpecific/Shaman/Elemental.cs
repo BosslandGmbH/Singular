@@ -68,12 +68,8 @@ namespace Singular.ClassSpecific.Shaman
 
                         // This will work for both solo play and battlegrounds
                         new Decorator(
-                            ret => Group.Healers.Any() && Group.Healers.Count(h => h.IsAlive) == 0,
+                            ret => Group.Healers.Any() && Group.Healers.Count(h => h.IsAlive) == 0 && !StyxWoW.Me.IsInRaid ,
                             new PrioritySelector(
-                                Spell.Heal("Healing Wave",
-                                    ret => StyxWoW.Me,
-                                    ret => !SpellManager.HasSpell("Healing Surge") && StyxWoW.Me.HealthPercent <= 60),
-
                                 Spell.Heal("Healing Surge",
                                     ret => StyxWoW.Me,
                                     ret => StyxWoW.Me.HealthPercent <= 60)))
@@ -97,7 +93,16 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 40 * 40,
                     Totems.CreateSetTotems()),
+
                 Spell.Cast("Lightning Bolt"),
+
+                Spell.Cast("Earth Shock",
+                    ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
+
+                Spell.Cast("Unleash Weapon",
+                    ret => StyxWoW.Me.Inventory.Equipped.MainHand != null
+                        && StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 5),
+
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
@@ -114,20 +119,55 @@ namespace Singular.ClassSpecific.Shaman
                 Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 Spell.BuffSelf("Lightning Shield"),
 
+                Spell.BuffSelf("Elemental Mastery",
+                    ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.Elite || u.IsPlayer) &&
+                        !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+
+                Spell.BuffSelf("Blood Fury",
+                    ret => SingularSettings.Instance.UseRacials &&
+                        StyxWoW.Me.Race == WoWRace.Orc &&
+                        !StyxWoW.Me.HasAnyAura("Elemental Mastery", "Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+                Spell.BuffSelf("Berserking",
+                    ret => SingularSettings.Instance.UseRacials &&
+                        StyxWoW.Me.Race == WoWRace.Troll &&
+                        !StyxWoW.Me.HasAnyAura("Elemental Mastery", "Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving),
+
+                Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance < 10f ) >= 3),
 
                 new Decorator(
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
-                        Spell.BuffSelf("Elemental Mastery"),
-                        Spell.BuffSelf("Thunderstorm"),
-                        Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
+                        new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
+
+                        Spell.BuffSelf("Astral Shift", ret => StyxWoW.Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 5),
+
+                        Spell.BuffSelf("Astral Shift", ret => StyxWoW.Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 5),
+
+                        Spell.BuffSelf( StyxWoW.Me.IsHorde ? "Bloodlust" : "Heroism", 
+                            ret => Unit.NearbyUnitsInCombatWithMe.Count() >= 5 ||
+                                Unit.NearbyUnitsInCombatWithMe.Any( u => u.Elite || u.IsPlayer )),
+
+                        Spell.BuffSelf("Magma Totem",
+                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8 && u.IsTargetingMeOrPet) >= 3 &&
+                                   !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental || t.WoWTotem == WoWTotem.Magma)),
+
+                        Spell.BuffSelf("Elemental Mastery", ret =>
+                            !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+
+                        Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location, req => 
+                            (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) &&
+                            Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
+
                         Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
                         )),
 
                 // Totem stuff
                 // Pop the ele on bosses
-                Spell.BuffSelf("Fire Elemental Totem", ret => StyxWoW.Me.CurrentTarget.Elite && !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
+                Spell.BuffSelf("Fire Elemental Totem", 
+                            ret => (Unit.NearbyUnitsInCombatWithMe.Count() >= 5 || Unit.NearbyUnitsInCombatWithMe.Any( u => u.Elite || u.IsPlayer )) &&
+                                !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
                 Spell.BuffSelf("Searing Totem",
                     ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) - 2f &&
                            !StyxWoW.Me.Totems.Any(
@@ -136,12 +176,18 @@ namespace Singular.ClassSpecific.Shaman
                            !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
 
                 Spell.Buff("Flame Shock", true),
+
                 Spell.Cast("Lava Burst"),
                 Spell.Cast("Earth Shock",
                     ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
-                Spell.Cast("Unleash Elements",
-                    ret => (StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 8024) && StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")),
+
+                Spell.Cast("Unleash Elements", ret => 
+                    StyxWoW.Me.IsMoving &&
+                    !StyxWoW.Me.HasAura( "Spiritwalker's Grace") &&
+                    StyxWoW.Me.Inventory.Equipped.MainHand != null &&
+                    StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 5),
+
                 Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
                 Spell.Cast("Lightning Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -219,16 +265,20 @@ namespace Singular.ClassSpecific.Shaman
 
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
+#if DISCRETE_MASTERY_USAGE
                 Spell.BuffSelf("Elemental Mastery",
                     ret => StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
                 Spell.BuffSelf("Elemental Mastery", 
                     ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat &&
                            (!SpellManager.HasSpell("Spiritwalker's Grace") || 
                            SpellManager.Spells["Spiritwalker's Grace"].Cooldown && !StyxWoW.Me.HasAura("Spiritwalker's Grace"))),
-
+#else
+                Spell.BuffSelf("Elemental Mastery", ret => StyxWoW.Me.Combat),
+#endif
                 new Decorator(
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
+                        new Action(act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
                         Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
                         Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
                         )),

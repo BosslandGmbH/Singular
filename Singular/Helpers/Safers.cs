@@ -148,7 +148,7 @@ namespace Singular.Helpers
                                 new Decorator(
                                     ret => ret != null,
                                     new Sequence(
-                                        new Action(ret => Logger.Write(Color.Orange, "Currect target is invalid. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
+                                        new Action(ret => Logger.Write(Color.Orange, "Current target is invalid. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
                                         new Action(ret => ((WoWUnit)ret).Target()),
                                         new WaitContinue(
                                             2,

@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific.Shaman
                             
                 );
 #else
-            return new ActionAlwaysFail();
+            return new Decorator( ret => false, new ActionAlwaysFail());
 #endif
         }
 

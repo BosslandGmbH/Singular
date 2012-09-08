@@ -25,40 +25,36 @@ namespace Singular.ClassSpecific.Shaman
     {
         #region Common
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanEnhancement)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Instances | WoWContext.Normal)]
         public static Composite CreateShamanEnhancementPreCombatBuffs()
         {
             return new PrioritySelector(
 
-                new Decorator(
-                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 283 && StyxWoW.Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass != WoWItemWeaponClass.FishingPole && SpellManager.HasSpell("Windfury Weapon") && 
-                            SpellManager.CanCast("Windfury Weapon", null, false, false),
-                    new Sequence(
-                        new Action(ret => Lua.DoString("CancelItemTempEnchantment(1) CancelItemTempEnchantment(2)")),
-                        new Action(ret => Logger.Write("Imbuing main hand weapon with Windfury")),
-                        new Action(ret => SpellManager.Cast("Windfury Weapon", null)))),
-                new Decorator(
-                    ret => StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != 5 && StyxWoW.Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass != WoWItemWeaponClass.FishingPole && !SpellManager.HasSpell("Windfury Weapon") &&
-                            SpellManager.CanCast("Flametongue Weapon", null, false, false),
-                    new Sequence(
-                        new Action(ret => Lua.DoString("CancelItemTempEnchantment(1) CancelItemTempEnchantment(2)")),
-                        new Action(ret => Logger.Write("Imbuing main hand weapon with Flametongue")),
-                        new Action(ret => SpellManager.Cast("Flametongue Weapon", null)))),
-                new Decorator(
-                    ret => StyxWoW.Me.Inventory.Equipped.OffHand != null && 
-                           StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon &&
-                           StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id != 5 &&
-                           StyxWoW.Me.Inventory.Equipped.MainHand != null && StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment != null && StyxWoW.Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass != WoWItemWeaponClass.FishingPole && SpellManager.CanCast("Flametongue Weapon", null, false, false),
-                    new Sequence(
-                        new Action(ret => Lua.DoString("CancelItemTempEnchantment(2)")),
-                        new Action(ret => Logger.Write("Imbuing off hand weapon with Flametongue")),
-                        new Action(ret => SpellManager.Cast("Flametongue Weapon", null)))),
+                Common.CreateShamanImbueMainHandBehavior( Imbue.Windfury, Imbue.Flametongue ),
+                Common.CreateShamanImbueOffHandBehavior( Imbue.Flametongue ),
 
                 Spell.BuffSelf("Lightning Shield"),
+
                 new Decorator(ret => Totems.NeedToRecallTotems,
                     new Action(ret => Totems.RecallTotems()))
                 );
         }
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Battlegrounds )]
+        public static Composite CreateShamanEnhancementPvpPreCombatBuffs()
+        {
+            return new PrioritySelector(
+
+                Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
+                Common.CreateShamanImbueOffHandBehavior(Imbue.Frostbrand, Imbue.Flametongue),
+
+                Spell.BuffSelf("Lightning Shield"),
+
+                new Decorator(ret => Totems.NeedToRecallTotems,
+                    new Action(ret => Totems.RecallTotems()))
+                );
+        }
+
         [Behavior(BehaviorType.Rest, WoWClass.Shaman, WoWSpec.ShamanEnhancement)]
         public static Composite CreateShamanEnhancementRest()
         {
@@ -108,6 +104,10 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
+
+                Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
+                Common.CreateShamanImbueOffHandBehavior(Imbue.Flametongue),
+
                 Spell.BuffSelf("Lightning Shield"),
 
                 new Decorator(
@@ -143,6 +143,9 @@ namespace Singular.ClassSpecific.Shaman
                 Totems.CreateSetTotems(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
+                Common.CreateShamanImbueOffHandBehavior(Imbue.Flametongue),
 
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
@@ -215,6 +218,9 @@ namespace Singular.ClassSpecific.Shaman
                 Totems.CreateSetTotems(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
+                Common.CreateShamanImbueOffHandBehavior(Imbue.Frostbrand, Imbue.Flametongue),
 
                 Spell.BuffSelf("Lightning Shield"),
                 Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),

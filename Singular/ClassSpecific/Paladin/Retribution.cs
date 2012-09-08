@@ -110,11 +110,9 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Seal of Righteousness", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
 
                     //7	Blow buffs seperatly.  No reason for stacking while grinding.
-                    Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK &&
-                        Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
+                    Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
 
-                    Spell.Cast("Holy Avenger", ret => SingularSettings.Instance.Paladin.RetGoatK &&
-                        Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4),
+                    Spell.Cast("Holy Avenger", ret => SingularSettings.Instance.Paladin.RetGoatK &&Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4),
                     Spell.BuffSelf("Avenging Wrath", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4 ||
                         (!StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger") && Spell.GetSpellCooldown("Holy Avenger").TotalSeconds > 10)),
                     Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
@@ -170,8 +168,11 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
 
                     //  Buffs
-                    Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.CurrentTarget.Entry != 28781 && !StyxWoW.Me.CurrentTarget.HasAura("Horde Flag") && !StyxWoW.Me.CurrentTarget.HasAura("Alliance Flag")),
-                    Spell.BuffSelf("Seal of Justice", ret => StyxWoW.Me.CurrentTarget.Entry == 28781 || StyxWoW.Me.CurrentTarget.HasAura("Horde Flag") || StyxWoW.Me.CurrentTarget.HasAura("Alliance Flag")),
+                    //Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.CurrentTarget.Entry != 28781 && !StyxWoW.Me.CurrentTarget.HasAura("Horde Flag") && !StyxWoW.Me.CurrentTarget.HasAura("Alliance Flag")),
+                    //Spell.BuffSelf("Seal of Justice", ret => StyxWoW.Me.CurrentTarget.Entry == 28781 || StyxWoW.Me.CurrentTarget.HasAura("Horde Flag") || StyxWoW.Me.CurrentTarget.HasAura("Alliance Flag")),
+                    Spell.BuffSelf("Seal of Truth", ret => SpellManager.HasSpell("Seal of Truth") && !StyxWoW.Me.ActiveAuras.ContainsKey("Seal of Truth")),
+
+
 
                     Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && StyxWoW.Me.CurrentTarget.Distance < 6 &&
                         (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3 || (StyxWoW.Me.CurrentTarget.HasAura("Horde Flag") || StyxWoW.Me.CurrentTarget.HasAura("Alliance Flag")))),
@@ -182,21 +183,13 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
                     Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
 
-                    //Hammer of Wrath if < 20% or Avenging Wrath Buff
-                    Spell.Cast("Hammer of Wrath", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20 || StyxWoW.Me.ActiveAuras.ContainsKey("Avenging Wrath")),
-                    //Exo if we have Art of War
-                    Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-
-                    Spell.Cast("Crusader Strike", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
-                            (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4 || !SpellManager.HasSpell("Divine Storm"))),
-                     Spell.Cast("Divine Storm", ret => StyxWoW.Me.CurrentHolyPower < 3 &&
-                        Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
-                    Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose")),
-                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose") || StyxWoW.Me.CurrentHolyPower == 3),
+                    Spell.BuffSelf("Inquisition", ret => SpellManager.HasSpell("Inquisition") && (!StyxWoW.Me.ActiveAuras.ContainsKey("Inquisition") || StyxWoW.Me.ActiveAuras["Inquisition"].TimeLeft.TotalSeconds <= 4) && StyxWoW.Me.CurrentHolyPower > 0),
+                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 5),
+                    Spell.Cast("Hammer of Wrath"),
+                    Spell.Cast("Exorcism"),
+                    Spell.Cast("Crusader Strike"),
                     Spell.Cast("Judgment"),
-                    Spell.Cast("Holy Wrath"),
-                    Spell.Cast("Consecration", ret => StyxWoW.Me.CurrentTarget.Distance <= Spell.MeleeRange && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= SingularSettings.Instance.Paladin.ConsecrationCount),
-                    Spell.Cast("Divine Plea", ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Paladin.DivinePleaMana && StyxWoW.Me.HealthPercent > 70),
+                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.CurrentHolyPower == 4),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );

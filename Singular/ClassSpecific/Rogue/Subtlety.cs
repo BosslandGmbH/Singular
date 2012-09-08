@@ -37,8 +37,8 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
-                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
+                        Spell.Cast("Throw"),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -85,17 +85,14 @@ namespace Singular.ClassSpecific.Rogue
 
                 Spell.BuffSelf("Shadow Dance", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3),
                 Spell.Cast("Cheap Shot", ret => StyxWoW.Me.HasAura("Shadow Dance")),
-                Spell.BuffSelf("Slice and Dice",
-                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4 && StyxWoW.Me.CurrentTarget.Elite),
-                Spell.BuffSelf("Recuperate", ret => TalentManager.IsSelected(8) && StyxWoW.Me.RawComboPoints > 0),
 
-                Spell.Cast("Eviscerate", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 40 && StyxWoW.Me.ComboPoints >= 2),
+               
+                Spell.BuffSelf("Slice and Dice",ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 2),
+                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints == 5),
                 Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
                 Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && StyxWoW.Me.HasAura("Shadow Dance")),
                 Spell.Cast("Backstab", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Shadow Dance")),
                 Spell.Cast("Hemorrhage", ret => !StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -128,8 +125,8 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
-                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
+                        Spell.Cast("Throw"),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -165,23 +162,14 @@ namespace Singular.ClassSpecific.Rogue
                     ret => SpellManager.HasSpell("Vanish") && SpellManager.Spells["Vanish"].CooldownTimeLeft.TotalSeconds > 10 &&
                            SpellManager.Spells["Shadowstep"].CooldownTimeLeft.TotalSeconds > 10),
                 Spell.BuffSelf("Shadow Dance", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.BuffSelf("Slice and Dice",
-                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
-                Spell.BuffSelf("Recuperate", ret => TalentManager.IsSelected( 8) && StyxWoW.Me.RawComboPoints > 0),
+
+
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 2),
+                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints == 5),
                 Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
-                // Vanish + Shadowstep + Premeditation + Ambush combo
-                new Decorator(
-                    ret => StyxWoW.Me.HasAura("Vanish"),
-                    new PrioritySelector(
-                        Spell.Cast("Shadowstep"),
-                        Spell.BuffSelf("Premeditation", ret => StyxWoW.Me.ComboPoints <= 3),
-                        Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind)
-                        )),
                 Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && StyxWoW.Me.HasAura("Shadow Dance")),
                 Spell.Cast("Backstab", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Shadow Dance")),
                 Spell.Cast("Hemorrhage", ret => !StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -211,8 +199,8 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying || StyxWoW.Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(StyxWoW.Me.Z - StyxWoW.Me.CurrentTarget.Z) >= 5,
                     new PrioritySelector(
-                        Spell.Cast("Throw", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown)),
-                        Spell.Cast("Shoot", ret => Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun)),
+                        Spell.Cast("Deadly Throw", ret => SpellManager.HasSpell("Deadly Throw")),
+                        Spell.Cast("Throw"),
                         Spell.Cast("Stealth", ret => StyxWoW.Me.HasAura("Stealth"))
                         )),
 
@@ -260,23 +248,14 @@ namespace Singular.ClassSpecific.Rogue
                     ret => SpellManager.HasSpell("Vanish") && SpellManager.Spells["Vanish"].CooldownTimeLeft.TotalSeconds > 10 &&
                            SpellManager.Spells["Shadowstep"].CooldownTimeLeft.TotalSeconds > 10),
                 Spell.BuffSelf("Shadow Dance", ret => StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.BuffSelf("Slice and Dice",
-                    ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3),
-                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints >= 4),
-                Spell.BuffSelf("Recuperate", ret => TalentManager.IsSelected(8) && StyxWoW.Me.RawComboPoints > 0),
+
+
+                Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 2),
+                Spell.Buff("Rupture", true, ret => StyxWoW.Me.ComboPoints == 5),
                 Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5),
-                // Vanish + Shadowstep + Premeditation + Ambush combo
-                new Decorator(
-                    ret => StyxWoW.Me.HasAura("Vanish"),
-                    new PrioritySelector(
-                        Spell.Cast("Shadowstep"),
-                        Spell.BuffSelf("Premeditation", ret => StyxWoW.Me.ComboPoints <= 3),
-                        Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind)
-                        )),
                 Spell.Cast("Ambush", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && StyxWoW.Me.HasAura("Shadow Dance")),
                 Spell.Cast("Backstab", ret => StyxWoW.Me.CurrentTarget.MeIsBehind && !StyxWoW.Me.HasAura("Shadow Dance")),
                 Spell.Cast("Hemorrhage", ret => !StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Hemorrhage") && !StyxWoW.Me.CurrentTarget.MeIsBehind),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }

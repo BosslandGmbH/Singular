@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
         #region PreCombatBuffs
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.DeathKnight, (WoWSpec) int.MaxValue)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.DeathKnight)]
         public static Composite CreateDeathKnightPreCombatBuffs()
         {
             // Note: This is one of few places where this is slightly more valid than making multiple functions.

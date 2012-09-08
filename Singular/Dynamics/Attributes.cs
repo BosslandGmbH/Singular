@@ -33,7 +33,7 @@ namespace Singular.Dynamics
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
     internal sealed class BehaviorAttribute : Attribute
     {
-        public BehaviorAttribute(BehaviorType type, WoWClass @class = WoWClass.None, WoWSpec spec = (WoWSpec)0, WoWContext context = WoWContext.All, int priority = 0)
+        public BehaviorAttribute(BehaviorType type, WoWClass @class = WoWClass.None, WoWSpec spec =(WoWSpec) int.MaxValue, WoWContext context = WoWContext.All, int priority = 0)
         {
             Type = type;
             SpecificClass = @class;

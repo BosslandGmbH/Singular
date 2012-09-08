@@ -177,10 +177,7 @@ namespace Singular.ClassSpecific.Druid
         #endregion
 
         #region Normal Rotation
-        [Spec(WoWSpec.DruidFeral)]
-        [Behavior(BehaviorType.Pull)]
-        [Class(WoWClass.Druid)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull,WoWClass.Druid,WoWSpec.DruidFeral,WoWContext.Normal)]
         public static Composite CreateFeralNormalPull()
         {
             return new PrioritySelector(
@@ -216,11 +213,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-
-        [Spec(WoWSpec.DruidFeral)]
-        [Behavior(BehaviorType.Combat)]
-        [Class(WoWClass.Druid)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Normal)]
         public static Composite CreateFeralNormalCombat()
         {
             return new PrioritySelector(
@@ -317,12 +310,8 @@ namespace Singular.ClassSpecific.Druid
 
         #region ILoveAnimals Initialize Pull
 
-        [Spec(WoWSpec.DruidFeral)]
-        [Behavior(BehaviorType.Pull)]
-        [Class(WoWClass.Druid)]
-        [Context(WoWContext.Battlegrounds)]
-        [Context(WoWContext.Instances)]
 
+        [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Instances|WoWContext.Battlegrounds)]
         public static Composite InitPull()
         {
             return new PrioritySelector(
@@ -340,11 +329,8 @@ namespace Singular.ClassSpecific.Druid
 
         #region ILoveAnimals Init Combat
 
-        [Spec(WoWSpec.DruidFeral)]
-        [Behavior(BehaviorType.Combat)]
-        [Class(WoWClass.Druid)]
-        [Context(WoWContext.Battlegrounds)]
-        [Context(WoWContext.Instances)]
+
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Instances | WoWContext.Battlegrounds)]
         public static Composite InitCombat()
         {
             return new PrioritySelector(

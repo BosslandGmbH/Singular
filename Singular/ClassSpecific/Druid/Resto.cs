@@ -15,10 +15,7 @@ namespace Singular.ClassSpecific.Druid
 {
     public class Resto
     {
-        [Class(WoWClass.Druid)]
-        [Spec(WoWSpec.DruidRestoration)]
-        [Behavior(BehaviorType.Rest)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidHealRest()
         {
             return new PrioritySelector(
@@ -142,22 +139,14 @@ namespace Singular.ClassSpecific.Druid
                             Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
                         )));
         }
-
-        [Class(WoWClass.Druid)]
-        [Spec(WoWSpec.DruidRestoration)]
-        [Behavior(BehaviorType.Heal)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidHealBehavior()
         {
             return
                 new PrioritySelector(
                     CreateRestoDruidHealOnlyBehavior());
         }
-
-        [Class(WoWClass.Druid)]
-        [Spec(WoWSpec.DruidRestoration)]
-        [Behavior(BehaviorType.Combat | BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat|BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidCombat()
         {
             return
@@ -176,11 +165,7 @@ namespace Singular.ClassSpecific.Druid
                             ))
                     );
         }
-
-        [Class(WoWClass.Druid)]
-        [Spec(WoWSpec.DruidRestoration)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidCombatBuffs()
         {
             return

@@ -92,7 +92,7 @@ namespace Singular.Dynamics
         {
             if (attribute.SpecificClass != wowClass)
                 return false;
-            if (attribute.Type != behavior)
+            if ((attribute.Type & behavior) != 0)
                 return false;
             if ((attribute.SpecificContext & context) == 0)
                 return false;

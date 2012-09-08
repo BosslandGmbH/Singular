@@ -10,11 +10,7 @@ namespace Singular.ClassSpecific.Hunter
 {
     public class Lowbie
     {
-        [Class(WoWClass.Hunter)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.Combat)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.Combat|BehaviorType.Pull,WoWClass.Hunter,0)]
         public static Composite CreateLowbieCombat()
         {
             return new PrioritySelector(

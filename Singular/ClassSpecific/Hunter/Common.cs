@@ -33,13 +33,7 @@ namespace Singular.ClassSpecific.Hunter
                              : "EnableSpellAutocast(GetSpellInfo(2649))");
         }
 
-        [Class(WoWClass.Hunter)]
-        [Spec(WoWSpec.HunterBeastMastery)]
-        [Spec(WoWSpec.HunterSurvival)]
-        [Spec(WoWSpec.HunterMarksmanship)]
-        [Spec((WoWSpec)0)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
-        [Context(WoWContext.All)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Hunter)]
         public static Composite CreateHunterBuffs()
         {
             return new PrioritySelector(

@@ -21,11 +21,7 @@ namespace Singular.ClassSpecific.Hunter
     {
         #region Normal Rotation
 
-        [Class(WoWClass.Hunter)]
-        [Spec(WoWSpec.HunterMarksmanship)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull|BehaviorType.Combat,WoWClass.Hunter,WoWSpec.HunterMarksmanship,WoWContext.Normal)]
         public static Composite CreateMarksmanHunterNormalPullAndCombat()
         {
             return new PrioritySelector(
@@ -110,12 +106,7 @@ namespace Singular.ClassSpecific.Hunter
         #endregion
 
         #region Battleground Rotation
-
-        [Class(WoWClass.Hunter)]
-        [Spec(WoWSpec.HunterMarksmanship)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Battlegrounds)]
         public static Composite CreateMarksmanHunterPvPPullAndCombat()
         {
             return new PrioritySelector(
@@ -184,12 +175,7 @@ namespace Singular.ClassSpecific.Hunter
         #endregion
 
         #region Instance Rotation
-
-        [Class(WoWClass.Hunter)]
-        [Spec(WoWSpec.HunterMarksmanship)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
         public static Composite CreateMarksmanHunterInstancePullAndCombat()
         {
             return new PrioritySelector(

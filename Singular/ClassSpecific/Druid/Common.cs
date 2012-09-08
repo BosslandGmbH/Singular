@@ -68,7 +68,7 @@ public static Composite CreateDruidPreCombatBuff()
 
         #region PreCombat Buffs
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid,(WoWSpec)int.MaxValue)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid)]
         public static Composite CreateDruidPreCombatBuff()
         {
             // Cast motw if player doesn't have it or if in instance/bg, out of combat and 'Buff raid with Motw' is true or if in instance and in combat and both CatRaidRebuff and 'Buff raid with Motw' are true
@@ -137,7 +137,7 @@ public static Composite CreateDruidPreCombatBuff()
 
         #region Combat Buffs
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec)int.MaxValue,WoWContext.Instances)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec)int.MaxValue, WoWContext.Instances)]
         public static Composite CreateDruidInstanceCombatBuffs()
         {
             const uint mapleSeedId = 17034;

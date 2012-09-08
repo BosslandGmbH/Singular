@@ -17,12 +17,8 @@ namespace Singular.ClassSpecific.Hunter
     public class BeastMaster
     {
         #region Normal Rotation
-        
-        [Class(WoWClass.Hunter)]
-        [Spec(WoWSpec.HunterBeastMastery)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+
+        [Behavior(BehaviorType.Pull|BehaviorType.Combat,WoWClass.Hunter,WoWSpec.HunterBeastMastery,WoWContext.Normal)]
         public static Composite CreateBeastMasterHunterNormalPullAndCombat()
         {
             return new PrioritySelector(
@@ -109,11 +105,7 @@ namespace Singular.ClassSpecific.Hunter
 
         #region Battleground Rotation
 
-        [Class(WoWClass.Hunter)]
-        [Spec(WoWSpec.HunterBeastMastery)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterBeastMastery, WoWContext.Battlegrounds)]
         public static Composite CreateBeastMasterHunterPvPPullAndCombat()
         {
             return new PrioritySelector(
@@ -199,12 +191,8 @@ namespace Singular.ClassSpecific.Hunter
         #endregion
 
         #region Instance Rotation
-        
-        [Class(WoWClass.Hunter)]
-        [Spec(WoWSpec.HunterBeastMastery)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterBeastMastery, WoWContext.Instances)]
         public static Composite CreateBeastMasterHunterInstancePullAndCombat()
         {
             return new PrioritySelector(

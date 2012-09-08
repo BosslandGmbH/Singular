@@ -21,10 +21,7 @@ namespace Singular.ClassSpecific.Mage
     {
         #region Normal Rotation
 
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageArcane)]
-        [Behavior(BehaviorType.Pull)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Normal)]
         public static Composite CreateMageArcaneNormalPull()
         {
             return new PrioritySelector(
@@ -41,11 +38,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
-
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageArcane)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Normal)]
         public static Composite CreateMageArcaneNormalCombat()
         {
             return new PrioritySelector(
@@ -99,12 +92,7 @@ namespace Singular.ClassSpecific.Mage
         #endregion
 
         #region Battleground Rotation
-
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageArcane)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull|BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Battlegrounds)]
         public static Composite CreateMageArcanePvPPullAndCombat()
         {
             return new PrioritySelector(
@@ -158,12 +146,8 @@ namespace Singular.ClassSpecific.Mage
         #endregion
 
         #region Instance Rotation
-        
-        [Class(WoWClass.Mage)]
-        [Spec(WoWSpec.MageArcane)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
+
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Instances)]
         public static Composite CreateMageArcaneInstancePullAndCombat()
         {
             return new PrioritySelector(

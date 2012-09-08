@@ -98,12 +98,10 @@ namespace Singular.Utilities
                     }
                     break;
 
-                case "SPELL_MISSED":
-                case "RANGE_MISSED":
                 case "SWING_MISSED":
                     if (e.Args[11].ToString() == "EVADE")
                     {
-                        Logger.Write("Mob is evading. Blacklisting it!");
+                        Logger.Write("Mob is evading swing. Blacklisting it!");
                         Blacklist.Add(e.DestGuid, TimeSpan.FromMinutes(30));
                         if (StyxWoW.Me.CurrentTargetGuid == e.DestGuid)
                         {
@@ -114,6 +112,31 @@ namespace Singular.Utilities
                         StyxWoW.SleepForLagDuration();
                     }
                     else if (e.Args[11].ToString() == "IMMUNE")
+                    {
+                        WoWUnit unit = e.DestUnit;
+                        if (unit != null && !unit.IsPlayer)
+                        {
+                            Logger.WriteDebug("{0} is immune to {1} spell school", unit.Name, e.SpellSchool);
+                            SpellImmunityManager.Add(unit.Entry, e.SpellSchool);
+                        }
+                    }
+                    break;
+
+                case "SPELL_MISSED":
+                case "RANGE_MISSED":
+                    if (e.Args[14].ToString() == "EVADE")
+                    {
+                        Logger.Write("Mob is evading ranged attack. Blacklisting it!");
+                        Blacklist.Add(e.DestGuid, TimeSpan.FromMinutes(30));
+                        if (StyxWoW.Me.CurrentTargetGuid == e.DestGuid)
+                        {
+                            StyxWoW.Me.ClearTarget();
+                        }
+
+                        BotPoi.Clear("Blacklisting evading mob");
+                        StyxWoW.SleepForLagDuration();
+                    }
+                    else if (e.Args[14].ToString() == "IMMUNE")
                     {
                         WoWUnit unit = e.DestUnit;
                         if (unit != null && !unit.IsPlayer)

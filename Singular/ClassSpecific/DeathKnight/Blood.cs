@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using CommonBehaviors.Actions;
 using Singular.Dynamics;
@@ -13,15 +14,181 @@ using Styx.CommonBot;
 using Styx.Pathing;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
     public class Blood
     {
+        private static DeathKnightSettings Settings
+        {
+            get { return SingularSettings.Instance.DeathKnight; }
+        }
+
+        #region Heal
+
+        [Behavior(BehaviorType.Heal, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
+        public static Composite CreateDeathKnightBloodHeals()
+        {
+            return
+                new PrioritySelector(
+                    Spell.BuffSelf("Death Pact",
+                                   ret =>
+                                   TalentManager.IsSelected((int) Common.DeathKnightTalents.DeathPact) &&
+                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathPactPercent &&
+                                   Common.GhoulMinionIsActive),
+                    Spell.Cast("Death Siphon",
+                               ret =>
+                               TalentManager.IsSelected((int) Common.DeathKnightTalents.DeathSiphon) &&
+                               StyxWoW.Me.GotTarget &&
+                               StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.DeathSiphonPercent),
+                    Spell.BuffSelf("Conversion",
+                                   ret =>
+                                   TalentManager.IsSelected((int) Common.DeathKnightTalents.Conversion) &&
+                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.ConversionPercent &&
+                                   StyxWoW.Me.RunicPowerPercent >=
+                                   SingularSettings.Instance.DeathKnight.MinimumConversionRunicPowerPrecent),
+
+                    Spell.BuffSelf("Rune Tap",
+                                   ret =>StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.RuneTapPercent || 
+                                   StyxWoW.Me.HealthPercent < 90 && StyxWoW.Me.HasAura("Will of the Necropolis")),
+
+                    Spell.BuffSelf("Death Coil",
+                                   ret =>
+                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent &&
+                                   StyxWoW.Me.HasAura("Lichborne")),
+
+                    Spell.BuffSelf("Lichborne",
+                                   ret =>
+                                   StyxWoW.Me.HealthPercent <
+                                    SingularSettings.Instance.DeathKnight.LichbornePercent
+                                    && StyxWoW.Me.CurrentRunicPower >= 60
+                                    && (!SingularSettings.Instance.DeathKnight.LichborneExclusive ||
+                                        (!StyxWoW.Me.HasAura("Bone Shield")
+                                         && !StyxWoW.Me.HasAura("Vampiric Blood")
+                                         && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
+                                         && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
+
+                    Spell.BuffSelf("Raise Dead",
+                                   ret =>
+                                   // I need to summon pet for Death Pact
+                                    StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.SummonGhoulPercentBlood &&
+                                   !Common.GhoulMinionIsActive &&
+                                   (!SingularSettings.Instance.DeathKnight.DeathPactExclusive ||
+                                    (!StyxWoW.Me.HasAura("Bone Shield")
+                                     && !StyxWoW.Me.HasAura("Vampiric Blood")
+                                     && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
+                                     && !StyxWoW.Me.HasAura("Lichborne")
+                                     && !StyxWoW.Me.HasAura("Icebound Fortitude"))))
+                    );
+        }
+
+        #endregion
+
+
+        #region CombatBuffs
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
+        public static Composite CreateDeathKnightBloodCombatBuffs()
+        {
+            return
+                new PrioritySelector(
+                    // *** Defensive Cooldowns ***
+                    // Anti-magic shell - no cost and doesnt trigger GCD 
+                    Spell.BuffSelf("Anti-Magic Shell",
+                                   ret => Unit.NearbyUnfriendlyUnits.Any(u =>
+                                                                         (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
+                                                                         u.CurrentTargetGuid == StyxWoW.Me.Guid)),
+                    // we want to make sure our primary target is within melee range so we don't run outside of anti-magic zone.
+                    Spell.CastOnGround("Anti-Magic Zone", ctx => StyxWoW.Me.Location,
+                                       ret => TalentManager.IsSelected((int) Common.DeathKnightTalents.AntiMagicZone) &&
+                                              !StyxWoW.Me.HasAura("Anti-Magic Shell") &&
+                                              Unit.NearbyUnfriendlyUnits.Any(u =>
+                                                                             (u.IsCasting ||
+                                                                              u.ChanneledCastingSpellId != 0) &&
+                                                                             u.CurrentTargetGuid == StyxWoW.Me.Guid) &&
+                                              Targeting.Instance.FirstUnit != null &&
+                                              Targeting.Instance.FirstUnit.IsWithinMeleeRange),
+
+                    Spell.Cast("Dancing Rune Weapon",
+                               ret => Unit.NearbyUnfriendlyUnits.Count() > 2),
+
+                    Spell.BuffSelf("Bone Shield",
+                                   ret => (!SingularSettings.Instance.DeathKnight.BoneShieldExclusive ||
+                                           (!StyxWoW.Me.HasAura("Vampiric Blood") &&
+                                            !StyxWoW.Me.HasAura("Dancing Rune Weapon") &&
+                                            !StyxWoW.Me.HasAura("Lichborne") &&
+                                            !StyxWoW.Me.HasAura("Icebound Fortitude")))),
+                    Spell.BuffSelf("Vampiric Blood",
+                                   ret =>
+                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.VampiricBloodPercent
+                                   && (!SingularSettings.Instance.DeathKnight.VampiricBloodExclusive ||
+                                       (!StyxWoW.Me.HasAura("Bone Shield")
+                                        && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
+                                        && !StyxWoW.Me.HasAura("Lichborne")
+                                        && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
+
+                    Spell.BuffSelf("Icebound Fortitude",
+                                   ret => StyxWoW.Me.HealthPercent <
+                                          SingularSettings.Instance.DeathKnight.IceboundFortitudePercent
+                                          && (!SingularSettings.Instance.DeathKnight.IceboundFortitudeExclusive ||
+                                              (!StyxWoW.Me.HasAura("Bone Shield")
+                                               && !StyxWoW.Me.HasAura("Vampiric Blood")
+                                               && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
+                                               && !StyxWoW.Me.HasAura("Lichborne")))),
+
+                    Spell.BuffSelf("Lichborne",ret => StyxWoW.Me.IsCrowdControlled()),
+                    Spell.BuffSelf("Desecrated Ground", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.DesecratedGround) && StyxWoW.Me.IsCrowdControlled()),
+
+                    // use army of the dead defensively
+                    Spell.BuffSelf("Army of the Dead",
+                                   ret =>
+                                   SingularSettings.Instance.DeathKnight.UseArmyOfTheDead &&
+                                   SingularRoutine.CurrentWoWContext == WoWContext.Instances &&
+                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.ArmyOfTheDeadPercent),
+
+                    // I need to use Empower Rune Weapon to use Death Strike
+                    Spell.BuffSelf("Empower Rune Weapon",
+                                   ret =>
+                                   StyxWoW.Me.HealthPercent < Settings.EmpowerRuneWeaponPercent
+                                   && !SpellManager.CanCast("Death Strike")),
+
+                    new PrioritySelector(ctx => StyxWoW.Me.PartyMembers.FirstOrDefault(u => u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight),
+                        Spell.Cast("Raise Ally", ctx => ctx as WoWUnit, ctx => ctx != null)
+                        ),
+
+
+                    // *** Offensive Cooldowns ***
+                    // I am using pet as dps bonus
+                    Spell.BuffSelf("Raise Dead",
+                                   ret =>
+                                   Common.UseLongCoolDownAbility && Settings.UseGhoulAsDpsCdBlood &&
+                                   !Common.GhoulMinionIsActive),
+
+                    Spell.BuffSelf("Death's Advance",
+                                   ret =>
+                                   TalentManager.IsSelected((int) Common.DeathKnightTalents.DeathsAdvance) &&
+                                   StyxWoW.Me.GotTarget && !SpellManager.CanCast("Death Grip", false) &&
+                                   StyxWoW.Me.CurrentTarget.DistanceSqr > 10*10),
+
+                    Spell.BuffSelf("Blood Tap",
+                                   ret =>
+                                   StyxWoW.Me.HasAura("Blood Charge") &&
+                                   StyxWoW.Me.Auras["Blood Charge"].StackCount >= 5 &&
+                                   (Common.BloodRuneSlotsActive == 0 || Common.FrostRuneSlotsActive == 0 ||
+                                    Common.UnholyRuneSlotsActive == 0)),
+
+                    Spell.Cast("Plague Leech", ret => Common.CanCastPlagueLeech)
+                    );
+        }
+
+        #endregion
+
         #region Normal Rotation
 
         private readonly static WaitTimer DeathStrikeTimer = new WaitTimer(TimeSpan.FromSeconds(5));
+        private static List<WoWUnit> _nearbyUnfriendlyUnits;
 
         [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood, WoWContext.Normal)]
         public static Composite CreateDeathKnightBloodNormalCombat()
@@ -36,80 +203,6 @@ namespace Singular.ClassSpecific.DeathKnight
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.BuffSelf("Blood Presence"),
 
-                    // ** Cool Downs **
-                    Spell.BuffSelf("Vampiric Blood",
-                                   ret => StyxWoW.Me.HealthPercent <
-                                          SingularSettings.Instance.DeathKnight.VampiricBloodPercent),
-                    Spell.BuffSelf("Bone Shield"),
-
-                    /*
-,
-
-                        Big cooldown section. By default, all cooldowns are priorotized by their time ascending
-                        for maximum uptime in the long term. By default, all cooldowns are also exlusive. This
-                        means they will be used in rotation rather than conjunction. This is required for high
-                        end blood tanking.
-                    */
-
-                    /*
-                    Spell.BuffSelf("Death Pact",
-                                    ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificePercent &&
-                                           StyxWoW.Me.GotAlivePet),
-                    Spell.BuffSelf("Rune Tap",
-                                    ret => StyxWoW.Me.HealthPercent < 90 && StyxWoW.Me.HasAura("Will of the Necropolis")),
-                    Spell.BuffSelf("Death Coil",
-                                ret => StyxWoW.Me.HealthPercent < 70 && StyxWoW.Me.HasAura("Lichborne")),
-                    Spell.Cast("Dancing Rune Weapon",
-                                ret => SingularSettings.Instance.DeathKnight.UseDancingRuneWeapon &&
-                                       Unit.NearbyUnfriendlyUnits.Count() > 2),
-                    Spell.BuffSelf("Bone Shield",
-                                    ret => SingularSettings.Instance.DeathKnight.UseBoneShield &&
-                                           (!SingularSettings.Instance.DeathKnight.BoneShieldExclusive ||
-                                                (!StyxWoW.Me.HasAura("Vampiric Blood") &&
-                                                !StyxWoW.Me.HasAura("Dancing Rune Weapon") &&
-                                                !StyxWoW.Me.HasAura("Lichborne") &&
-                                                !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Vampiric Blood",
-                                ret => SingularSettings.Instance.DeathKnight.UseVampiricBlood
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.VampiricBloodPercent
-                                        && (!SingularSettings.Instance.DeathKnight.VampiricBloodExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Lichborne")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Lichborne",
-                                ret => SingularSettings.Instance.DeathKnight.UseLichborne
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent
-                                        && StyxWoW.Me.CurrentRunicPower >= 60
-                                        && (!SingularSettings.Instance.DeathKnight.LichborneExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Vampiric Blood")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Raise Dead",
-                                ret => (SingularSettings.Instance.DeathKnight.UsePetSacrifice
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificeSummonPercent
-                                        && (!SingularSettings.Instance.DeathKnight.PetSacrificeExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Vampiric Blood")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Lichborne")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude"))))),
-                    Spell.BuffSelf("Icebound Fortitude",
-                                ret => SingularSettings.Instance.DeathKnight.UseIceboundFortitude
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent
-                                        && (!SingularSettings.Instance.DeathKnight.IceboundFortitudeExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Vampiric Blood")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Lichborne")))),
-                    Spell.BuffSelf("Empower Rune Weapon",
-                                ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.EmpowerRuneWeaponPercent
-                                        && !SpellManager.CanCast("Death Strike")),
-                    Spell.BuffSelf("Army of the Dead",
-                                ret => SingularSettings.Instance.DeathKnight.UseArmyOfTheDead
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.ArmyOfTheDeadPercent),
-
                     Spell.Buff("Chains of Ice",
                         ret => StyxWoW.Me.CurrentTarget.Fleeing && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
@@ -121,43 +214,53 @@ namespace Singular.ClassSpecific.DeathKnight
                         new WaitContinue(1, new ActionAlwaysSucceed())
                         ),
 
-                    // Start AoE section
-                    new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                // Start AoE section
+                new PrioritySelector(ctx => _nearbyUnfriendlyUnits =Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
+                    new Decorator(ret => _nearbyUnfriendlyUnits.Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
-                            Spell.CastOnGround("Death and Decay",
-                                ret => StyxWoW.Me.CurrentTarget.Location,
-                                ret => SingularSettings.Instance.DeathKnight.UseDeathAndDecay),
-                            Spell.Cast("Outbreak", 
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") || 
-                                        !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                            Spell.Buff("Icy Touch", true,
-                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10 && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
-                            Spell.Buff("Plague Strike", true,
-                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, "Blood Plague"),
-                            Spell.Cast("Pestilence", 
-                                ret => StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") && 
-                                        StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") &&
-                                        Unit.UnfriendlyUnitsNearTarget(10f).Count(u => 
-                                                !u.HasMyAura("Blood Plague") && 
-                                                !u.HasMyAura("Frost Fever")) > 0),
+                            Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => true, false),
+                            Spell.Cast("Gorefiend's Grasp", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.GorefiendsGrasp)),
+                            Spell.Cast("Remorseless Winter", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.RemoreselessWinter)),
+                // spread the disease around.
+                            Spell.BuffSelf("Unholy Blight",
+                                       ret =>
+                                       TalentManager.IsSelected((int)Common.DeathKnightTalents.UnholyBlight) &&
+                                       StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10 &&
+                                       !StyxWoW.Me.HasAura("Unholy Blight")),
+
+                            Spell.Cast("Outbreak",
+                                ret => !StyxWoW.Me.HasAura("Unholy Blight") &&
+                                    (!StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
+                                        !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague"))),
+
+                            Spell.Buff("Icy Touch", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
+                            Spell.Buff("Plague Strike", true, "Blood Plague"),
+
+                            Spell.Cast("Blood Boil",
+                                ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.RollingBlood) &&
+                                        !StyxWoW.Me.HasAura("Unholy Blight") &&
+                                        StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10 && Common.ShouldSpreadDiseases),
+
+                            Spell.Cast("Pestilence",
+                                ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases),
+
                             new Sequence(
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                                 new Action(ret => DeathStrikeTimer.Reset())),
-                            Spell.Cast("Heart Strike"),
+                            Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                            Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
                             Spell.Cast("Rune Strike"),
                             Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                             Movement.CreateMoveToMeleeBehavior(true)
-                            )),
+                            ))),
 
                     Spell.Cast("Outbreak",
                         ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                                 !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
                     Spell.Buff("Icy Touch", true,
-                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10 && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), 
+                                ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), 
                                 "Frost Fever"),
-                    Spell.Buff("Plague Strike", true,
-                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, 
-                                "Blood Plague"),
+                    Spell.Buff("Plague Strike", true, "Blood Plague"),
                     // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                     Spell.Cast("Death Coil",
                                 ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
@@ -167,9 +270,10 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Sequence(
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                         new Action(ret => DeathStrikeTimer.Reset())),
-                    Spell.Cast("Heart Strike"),
+                    Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                    Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-                    */
+  
                     Movement.CreateMoveToMeleeBehavior(true)
                     );
         }
@@ -189,78 +293,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.WaitForCast(),
                     Helpers.Common.CreateAutoAttack(true),
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                    Spell.BuffSelf("Blood Presence"),
-
-                    // ** Cool Downs **
-                    Spell.BuffSelf("Vampiric Blood",
-                                   ret => StyxWoW.Me.HealthPercent <
-                                          SingularSettings.Instance.DeathKnight.VampiricBloodPercent),
-                    Spell.BuffSelf("Bone Shield"),
-                    /*
-                        Big cooldown section. By default, all cooldowns are priorotized by their time ascending
-                        for maximum uptime in the long term. By default, all cooldowns are also exlusive. This
-                        means they will be used in rotation rather than conjunction. This is required for high
-                        end blood tanking.
-                    */
-                    /*
-                    Spell.BuffSelf("Death Pact",
-                                    ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificePercent &&
-                                           StyxWoW.Me.GotAlivePet),
-                    Spell.BuffSelf("Rune Tap",
-                                    ret => StyxWoW.Me.HealthPercent < 90 && StyxWoW.Me.HasAura("Will of the Necropolis")),
-                    Spell.BuffSelf("Death Coil",
-                                ret => StyxWoW.Me.HealthPercent < 70 && StyxWoW.Me.HasAura("Lichborne")),
-                    Spell.Cast("Dancing Rune Weapon",
-                                ret => SingularSettings.Instance.DeathKnight.UseDancingRuneWeapon &&
-                                       Unit.NearbyUnfriendlyUnits.Count() > 2),
-                    Spell.BuffSelf("Bone Shield",
-                                    ret => SingularSettings.Instance.DeathKnight.UseBoneShield &&
-                                           (!SingularSettings.Instance.DeathKnight.BoneShieldExclusive ||
-                                                (!StyxWoW.Me.HasAura("Vampiric Blood") &&
-                                                !StyxWoW.Me.HasAura("Dancing Rune Weapon") &&
-                                                !StyxWoW.Me.HasAura("Lichborne") &&
-                                                !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Vampiric Blood",
-                                ret => SingularSettings.Instance.DeathKnight.UseVampiricBlood
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.VampiricBloodPercent
-                                        && (!SingularSettings.Instance.DeathKnight.VampiricBloodExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Lichborne")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Lichborne",
-                                ret => SingularSettings.Instance.DeathKnight.UseLichborne
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent
-                                        && StyxWoW.Me.CurrentRunicPower >= 60
-                                        && (!SingularSettings.Instance.DeathKnight.LichborneExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Vampiric Blood")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Raise Dead",
-                                ret => SingularSettings.Instance.DeathKnight.UsePetSacrifice
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificeSummonPercent
-                                        && (!SingularSettings.Instance.DeathKnight.PetSacrificeExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Vampiric Blood")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Lichborne")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Icebound Fortitude",
-                                ret => SingularSettings.Instance.DeathKnight.UseIceboundFortitude
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent
-                                        && (!SingularSettings.Instance.DeathKnight.IceboundFortitudeExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Vampiric Blood")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Lichborne")))),
-                    Spell.BuffSelf("Empower Rune Weapon",
-                                ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.EmpowerRuneWeaponPercent
-                                        && !SpellManager.CanCast("Death Strike")),
-                    Spell.BuffSelf("Army of the Dead",
-                                ret => SingularSettings.Instance.DeathKnight.UseArmyOfTheDead
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.ArmyOfTheDeadPercent),
-
+                    Spell.BuffSelf("Blood Presence"),        
                     new Sequence(
                         Spell.Cast("Death Grip",
                                     ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
@@ -272,15 +305,46 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.Buff("Chains of Ice",
                         ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
 
+
+                // Start AoE section
+                new PrioritySelector(ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
+                    new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(15f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                        new PrioritySelector(
+                            Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => true, false),
+                            Spell.Cast("Gorefiend's Grasp", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.GorefiendsGrasp)),
+                            Spell.Cast("Remorseless Winter", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.RemoreselessWinter)),
+                // spread the disease around.
+                            Spell.BuffSelf("Unholy Blight",
+                                       ret =>
+                                       TalentManager.IsSelected((int)Common.DeathKnightTalents.UnholyBlight) &&
+                                       StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10 &&
+                                       !StyxWoW.Me.HasAura("Unholy Blight")),
+
+                            Spell.Cast("Outbreak",
+                                ret => !StyxWoW.Me.HasAura("Unholy Blight") &&
+                                    (!StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
+                                        !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague"))),
+
+                            Spell.Buff("Icy Touch", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
+                            Spell.Buff("Plague Strike", true, "Blood Plague"),
+
+                            Spell.Cast("Blood Boil",
+                                ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.RollingBlood) &&
+                                        !StyxWoW.Me.HasAura("Unholy Blight") &&
+                                        StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10 && Common.ShouldSpreadDiseases),
+
+                            Spell.Cast("Pestilence",
+                                ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases),
+                            Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                            Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount)
+                            ))),
+
                     Spell.Cast("Outbreak",
                         ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                                 !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                    Spell.Buff("Icy Touch", true, 
-                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10, 
-                        "Frost Fever"),
-                    Spell.Buff("Plague Strike", true,
-                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
-                        "Blood Plague"),
+                    Spell.Buff("Icy Touch", true, "Frost Fever"),
+                    Spell.Buff("Plague Strike", true,"Blood Plague"),
+
                 // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                     Spell.Cast("Death Coil",
                                 ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
@@ -291,9 +355,10 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Sequence(
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                         new Action(ret => DeathStrikeTimer.Reset())),
-                    Spell.Cast("Heart Strike"),
+                    Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                    Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
                     Spell.Cast("Icy Touch"),
-                     */
+
                     Movement.CreateMoveToMeleeBehavior(true)
                     );
         }
@@ -319,7 +384,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             ret => StyxWoW.Me.IsMoving,
                             new Action(ret => Navigator.PlayerMover.MoveStop())),
                         new WaitContinue(1, new ActionAlwaysSucceed())),
-                    Spell.Cast("Howling Blast"),
+                    Spell.Cast("Outbreak"),
                     Spell.Cast("Icy Touch"),
                     Movement.CreateMoveToTargetBehavior(true, 5f),
                     Helpers.Common.CreateAutoAttack(true)
@@ -344,71 +409,6 @@ namespace Singular.ClassSpecific.DeathKnight
                                           SingularSettings.Instance.DeathKnight.VampiricBloodPercent),
                     Spell.BuffSelf("Bone Shield"),
 
-                    /*
-                        Big cooldown section. By default, all cooldowns are priorotized by their time ascending
-                        for maximum uptime in the long term. By default, all cooldowns are also exlusive. This
-                        means they will be used in rotation rather than conjunction. This is required for high
-                        end blood tanking.
-                    */
-
-                    /*
-                    Spell.BuffSelf("Death Pact",
-                                    ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificePercent &&
-                                           StyxWoW.Me.GotAlivePet),
-                    Spell.BuffSelf("Rune Tap",
-                                    ret => StyxWoW.Me.HealthPercent < 90 && StyxWoW.Me.HasAura("Will of the Necropolis")),
-                    Spell.BuffSelf("Death Coil",
-                                ret => StyxWoW.Me.HealthPercent < 70 && StyxWoW.Me.HasAura("Lichborne")),
-                    Spell.Cast("Dancing Rune Weapon",
-                                ret => SingularSettings.Instance.DeathKnight.UseDancingRuneWeapon &&
-                                       Unit.NearbyUnfriendlyUnits.Count() > 2),
-                    Spell.BuffSelf("Bone Shield",
-                                    ret => SingularSettings.Instance.DeathKnight.UseBoneShield &&
-                                           (!SingularSettings.Instance.DeathKnight.BoneShieldExclusive ||
-                                                (!StyxWoW.Me.HasAura("Vampiric Blood") &&
-                                                !StyxWoW.Me.HasAura("Dancing Rune Weapon") &&
-                                                !StyxWoW.Me.HasAura("Lichborne") &&
-                                                !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Vampiric Blood",
-                                ret => SingularSettings.Instance.DeathKnight.UseVampiricBlood
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.VampiricBloodPercent
-                                        && (!SingularSettings.Instance.DeathKnight.VampiricBloodExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Lichborne")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Lichborne",
-                                ret => SingularSettings.Instance.DeathKnight.UseLichborne
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.LichbornePercent
-                                        && StyxWoW.Me.CurrentRunicPower >= 60
-                                        && (!SingularSettings.Instance.DeathKnight.LichborneExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Vampiric Blood")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Raise Dead",
-                                ret => SingularSettings.Instance.DeathKnight.UsePetSacrifice
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.PetSacrificeSummonPercent
-                                        && (!SingularSettings.Instance.DeathKnight.PetSacrificeExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Vampiric Blood")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Lichborne")
-                                            && !StyxWoW.Me.HasAura("Icebound Fortitude")))),
-                    Spell.BuffSelf("Icebound Fortitude",
-                                ret => SingularSettings.Instance.DeathKnight.UseIceboundFortitude
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.IceboundFortitudePercent
-                                        && (!SingularSettings.Instance.DeathKnight.IceboundFortitudeExclusive ||
-                                            (!StyxWoW.Me.HasAura("Bone Shield")
-                                            && !StyxWoW.Me.HasAura("Vampiric Blood")
-                                            && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
-                                            && !StyxWoW.Me.HasAura("Lichborne")))),
-                    Spell.BuffSelf("Empower Rune Weapon",
-                                ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.EmpowerRuneWeaponPercent
-                                        && !SpellManager.CanCast("Death Strike")),
-                    Spell.BuffSelf("Army of the Dead",
-                                ret => SingularSettings.Instance.DeathKnight.UseArmyOfTheDead
-                                        && StyxWoW.Me.HealthPercent < SingularSettings.Instance.DeathKnight.ArmyOfTheDeadPercent),
 
                     new Sequence(
                         Spell.Cast("Death Grip",
@@ -424,45 +424,51 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
                         ret => SingularSettings.Instance.EnableTaunting),
 
-                    // Start AoE section
-                    new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(15f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                // Start AoE section
+                new PrioritySelector(ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
+                    new Decorator(ret => _nearbyUnfriendlyUnits.Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
-                            Spell.CastOnGround("Death and Decay",
-                                ret => StyxWoW.Me.CurrentTarget.Location,
-                                ret => SingularSettings.Instance.DeathKnight.UseDeathAndDecay),
+                            Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => true, false),
+                            Spell.Cast("Gorefiend's Grasp", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.GorefiendsGrasp)),
+                            Spell.Cast("Remorseless Winter", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.RemoreselessWinter)),
+                // spread the disease around.
+                            Spell.BuffSelf("Unholy Blight",
+                                       ret =>
+                                       TalentManager.IsSelected((int)Common.DeathKnightTalents.UnholyBlight) &&
+                                       StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10 &&
+                                       !StyxWoW.Me.HasAura("Unholy Blight")),
+
                             Spell.Cast("Outbreak",
-                                ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
-                                        !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                            Spell.Buff("Icy Touch", true,
-                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10 && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost),
-                                "Frost Fever"),
-                            Spell.Buff("Plague Strike", true,
-                                ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
-                                "Blood Plague"),
+                                ret => !StyxWoW.Me.HasAura("Unholy Blight") &&
+                                    (!StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
+                                        !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague"))),
+
+                            Spell.Buff("Icy Touch", true, ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), "Frost Fever"),
+                            Spell.Buff("Plague Strike", true, "Blood Plague"),
+
+                            Spell.Cast("Blood Boil",
+                                ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.RollingBlood) &&
+                                        !StyxWoW.Me.HasAura("Unholy Blight") &&
+                                        StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10 && Common.ShouldSpreadDiseases),
+
                             Spell.Cast("Pestilence",
-                                ret => StyxWoW.Me.CurrentTarget.HasMyAura("Blood Plague") &&
-                                        StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") &&
-                                        Unit.UnfriendlyUnitsNearTarget(10f).Count(u =>
-                                                !u.HasMyAura("Blood Plague") &&
-                                                !u.HasMyAura("Frost Fever")) > 0),
+                                ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases),
+
                             new Sequence(
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                                 new Action(ret => DeathStrikeTimer.Reset())),
-                            Spell.Cast("Heart Strike"),
+                            Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                            Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
                             Spell.Cast("Rune Strike"),
                             Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                             Movement.CreateMoveToMeleeBehavior(true)
-                            )),
+                            ))),
                             
                     Spell.Cast("Outbreak",
                         ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Frost Fever") ||
                                 !StyxWoW.Me.CurrentTarget.HasAura("Blood Plague")),
-                    Spell.Buff("Icy Touch", true,
-                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10 && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost),
-                        "Frost Fever"),
-                    Spell.Buff("Plague Strike", true,
-                        ret => Spell.GetSpellCooldown("Outbreak").TotalSeconds > 10,
-                        "Blood Plague"),
+                    Spell.Buff("Icy Touch", true,ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost),"Frost Fever"),
+                    Spell.Buff("Plague Strike", true,"Blood Plague"),
                 // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                     Spell.Cast("Death Coil",
                                 ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
@@ -472,9 +478,9 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Sequence(
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                         new Action(ret => DeathStrikeTimer.Reset())),
-                    Spell.Cast("Heart Strike"),
+                    Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                    Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-                     */
                     Movement.CreateMoveToMeleeBehavior(true)
                     );
         }

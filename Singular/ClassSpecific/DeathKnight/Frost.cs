@@ -18,6 +18,11 @@ namespace Singular.ClassSpecific.DeathKnight
     {
         #region Normal Rotations
 
+        private static DeathKnightSettings Settings
+        {
+            get { return SingularSettings.Instance.DeathKnight; }
+        }
+
         [Behavior(BehaviorType.Combat,WoWClass.DeathKnight,WoWSpec.DeathKnightFrost,WoWContext.Normal)]
         public static Composite CreateDeathKnightFrostNormalCombat()
         {

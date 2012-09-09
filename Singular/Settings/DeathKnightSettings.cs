@@ -29,25 +29,38 @@ namespace Singular.Settings
         }
 
         #region Common
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Army of the Dead")]
+        public bool UseArmyOfTheDead { get; set; }
 
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Icebound Fortitude")]
-        public bool UseIceboundFortitude { get; set; }
-
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Common")]
-        [DisplayName("Icebound Fortitude Percent")]
-        public int IceboundFortitudePercent { get; set; }
+        [DisplayName("Use Aoe In Instance [DPS]")]
+        public bool UseAoeInInstance { get; set; }
 
         [Setting]
         [DefaultValue(60)]
         [Category("Common")]
-        [DisplayName("Lichborne Percent")]
-        [Description("Health percent when to use Lichborne + Death Coil for healing.")]
-        public int LichbornePercent { get; set; }
+        [DisplayName("Conversion Percent")]
+        [Description("Health percent when to use Conversion for healing.")]
+        public int ConversionPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Common")]
+        [DisplayName("Conversion RunicPower Percent")]
+        [Description("Use Conversion only if runic power is at or above this value.")]
+        public int MinimumConversionRunicPowerPrecent { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Common")]
+        [DisplayName("Death and Decay Add Count")]
+        [Description("Will use Death and Decay when agro mob count is equal to or higher then this value. This basicly determines AoE rotation")]
+        public int DeathAndDecayCount { get; set; }
 
         [Setting]
         [DefaultValue(60)]
@@ -64,53 +77,70 @@ namespace Singular.Settings
         public int DeathSiphonPercent { get; set; }
 
         [Setting]
-        [DefaultValue(60)]
+        [DefaultValue(30)]
         [Category("Common")]
-        [DisplayName("Conversion Percent")]
-        [Description("Health percent when to use Conversion for healing.")]
-        public int ConversionPercent { get; set; }
-
-        [Setting]
-        [DefaultValue(80)]
-        [Category("Common")]
-        [DisplayName("Min. Conversion RunicPower")]
-        [Description("Use Conversion only if runic power is at or above this value.")]
-        public int MinimumConversionRunicPowerPrecent { get; set; }
+        [DisplayName("Death Strike Emergency Percent [DPS]")]
+        public int DeathStrikeEmergencyPercent { get; set; }
 
         [Setting]
         [DefaultValue(30)]
         [Category("Common")]
-        [DisplayName("Death Strike Emergency Percent")]
-        public int DeathStrikeEmergencyPercent { get; set; }
+        [DisplayName("Icebound Fortitude Percent")]
+        public int IceboundFortitudePercent { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
+        [DefaultValue(60)]
         [Category("Common")]
-        [DisplayName("Use Death and Decay")]
-        public bool UseDeathAndDecay { get; set; }
+        [DisplayName("Lichborne Percent")]
+        [Description("Health percent when to use Lichborne + Death Coil for healing.")]
+        public int LichbornePercent { get; set; }
 
-        [Setting]
-        [DefaultValue(2)]
-        [Category("Common")]
-        [DisplayName("Death and Decay Add Count")]
-        [Description("Will use Death and Decay when agro mob count is equal to or higher then this value. This basicly determines AoE rotation")]
-        public int DeathAndDecayCount { get; set; }
-        
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Common")]
-        [DisplayName("Army of the Dead")]
-        public bool UseArmyOfTheDead { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Common")]
-        [DisplayName("Use Ghoul As Dps CoolDown")]
-        [Description("Use Ghoul As Dps CoolDown [Blood/Frost]")]
-        public bool UseGhoulAsDpsCoolDown { get; set; }
         #endregion
 
         #region Category: Blood
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Blood")]
+        [DisplayName("Army Of The Dead Percent")]
+        public int ArmyOfTheDeadPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Blood")]
+        [DisplayName("Blood Boil Count")]
+        [Description("Use Bloodboil when there are at least this many nearby enemies.")]
+        public int BloodBoilCount { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Blood")]
+        [DisplayName("BoneShield Exclusive")]
+        public bool BoneShieldExclusive { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Blood")]
+        [DisplayName("Death Pact Exclusive")]
+        public bool DeathPactExclusive { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Blood")]
+        [DisplayName("Empower Rune Weapon Percent")]
+        public int EmpowerRuneWeaponPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Blood")]
+        [DisplayName("Icebound Fortitude Exclusive")]
+        public bool IceboundFortitudeExclusive { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Blood")]
+        [DisplayName("Lichborne Exclusive")]
+        public bool LichborneExclusive { get; set; }
 
         [Setting]
         [DefaultValue(60)]
@@ -120,22 +150,44 @@ namespace Singular.Settings
         public int RuneTapPercent { get; set; }
 
         [Setting]
+        [DefaultValue(70)]
+        [Category("Blood")]
+        [DisplayName("Summon Ghoul Percent")]
+        public int SummonGhoulPercentBlood { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Blood")]
+        [DisplayName("Use Ghoul As Dps CoolDown")]
+        [Description("Use Ghoul As Dps CoolDown ")]
+        public bool UseGhoulAsDpsCdBlood { get; set; }
+
+        [Setting]
         [DefaultValue(60)]
         [Category("Blood")]
         [DisplayName("Vampiric Blood Percent")]
         public int VampiricBloodPercent { get; set; }
 
-        /*
         [Setting]
-        [DefaultValue(20)]
+        [DefaultValue(false)]
         [Category("Blood")]
-        [DisplayName("Army of the Dead Percent")]
-        public int ArmyOfTheDeadPercent { get; set; }
-
-         */
+        [DisplayName("Vampiric Blood Exclusive")]
+        public bool VampiricBloodExclusive { get; set; } 
         #endregion
 
         #region Category: Frost
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Frost")]
+        [DisplayName("Use Ghoul As Dps CoolDown")]
+        [Description("Use Ghoul As Dps CoolDown ")]
+        public bool UseGhoulAsDpsCdFrost { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Frost")]
+        [DisplayName("Summon Ghoul Percent")]
+        public int SummonGhoulPercentFrost { get; set; }
         /*
         [Setting]
         [DefaultValue(true)]

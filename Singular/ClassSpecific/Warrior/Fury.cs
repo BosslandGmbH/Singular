@@ -80,7 +80,6 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-
         #endregion
 
         #region Normal

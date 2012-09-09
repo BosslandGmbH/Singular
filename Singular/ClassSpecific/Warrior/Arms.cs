@@ -96,9 +96,9 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateArmsNormalCombatBuffs()
         {
             return new PrioritySelector(
-                
+                Spell.BuffSelf("Battle Stance"),
                 Spell.BuffSelf("Recklessness"),
-                Spell.BuffSelf("Berserker Rage"),
+                Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HasAura("Recklessness") || StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash")),
                 Spell.Cast("Deadly Calm", ret=> StyxWoW.Me.HasAura("Taste for Blood"))
                 );
         }

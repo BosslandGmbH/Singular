@@ -1,8 +1,10 @@
-﻿using Singular.Dynamics;
+﻿using System;
+using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Styx.Combat.CombatRoutine;
 using Styx.CommonBot;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Styx;
@@ -19,6 +21,7 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new PrioritySelector(
                 Spell.WaitForCast(false),
+                Pet.CreateSummonPet("Wrathguard"),
                 Pet.CreateSummonPet("Felguard"),
                 Spell.Buff("Dark Intent",
                     ret => StyxWoW.Me.PartyMembers.OrderByDescending(p => p.MaxHealth).FirstOrDefault(),
@@ -39,11 +42,11 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
-                Spell.Buff("Immolate", true),
+                Spell.Buff("Corruption", true),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.All)]
         public static Composite CreateWarlockDemonologyNormalCombat()
         {
             return new PrioritySelector(
@@ -54,137 +57,45 @@ namespace Singular.ClassSpecific.Warlock
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                // Cooldowns
-                Spell.BuffSelf("Soulshatter", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet)),
-                Spell.BuffSelf("Soulburn", ret => StyxWoW.Me.CurrentSoulShards > 0),
-                Spell.Cast("Death Coil", ret => StyxWoW.Me.HealthPercent <= 70),
-
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.Fleeing,
                     Pet.CreateCastPetAction("Axe Toss")),
                 new Decorator(ret => StyxWoW.Me.GotAlivePet && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.Pet.Location) < 10 * 10) > 1,
                     Pet.CreateCastPetAction("Felstorm")),
-                // AoE rotation
-                Spell.BuffSelf("Shadowflame",
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10 && StyxWoW.Me.IsSafelyFacing(u, 90)) >= 3),
 
-                Spell.BuffSelf("Howl of Terror", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= 3),
-                Spell.Buff("Fear", ret => Targeting.Instance.TargetList.ElementAtOrDefault(1), ret => !StyxWoW.Me.CurrentTarget.HasAura("Fear")),
 
-                // Single target rotation
-                Spell.BuffSelf("Metamorphosis"),
-                Spell.BuffSelf("Demon Soul", ret => PetManager.CurrentPetType != PetType.None && (PetManager.CurrentPetType == PetType.Felguard || PetManager.CurrentPetType == PetType.Felhunter || PetManager.CurrentPetType == PetType.Imp || PetManager.CurrentPetType == PetType.Succubus || PetManager.CurrentPetType == PetType.Voidwalker)),
-                Spell.Buff("Immolate", true),
-                Spell.Cast("Hand of Gul'dan"),
-                Spell.Buff("Bane of Agony", true),
-                Spell.Buff("Corruption", true),
-                Spell.Cast("Shadow Bolt", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Shadow Trance")),
-                Spell.Cast("Incinerate", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Molten Core")),
-                Spell.Cast("Soul Fire", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Decimation")),
-                Spell.Cast("Shadow Bolt"),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
-                );
-        }
+                new Decorator(ret => !StyxWoW.Me.ActiveAuras.ContainsKey("Molten Core") && StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Soul Fire", 
+                    new Styx.TreeSharp.Action(r=>SpellManager.StopCasting())),
+                new Decorator(ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Doom") || StyxWoW.Me.GetCurrentPower(WoWPowerType.DemonicFury) >= 900,
+                    new ProbabilitySelector(
 
-        #endregion
-
-        #region Battleground Rotation
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.Battlegrounds)]
-        public static Composite CreateWarlockDemonologyPvPPullAndCombat()
-        {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                // Cooldowns
-                Spell.BuffSelf("Soulshatter", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet)),
-                Spell.BuffSelf("Soulburn", ret => StyxWoW.Me.CurrentSoulShards > 0),
-                Spell.Cast("Death Coil", ret => StyxWoW.Me.HealthPercent <= 70),
-                Spell.Buff("Dark Intent",
-                    ret => StyxWoW.Me.PartyMembers.OrderByDescending(p => p.MaxHealth).FirstOrDefault(),
-                    ret => !StyxWoW.Me.HasAura("Dark Intent")), 
-                    
-                Pet.CreateCastPetAction("Axe Toss"),
-                new Decorator(ret => StyxWoW.Me.GotAlivePet && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(StyxWoW.Me.Pet.Location) < 10 * 10) > 1,
-                    Pet.CreateCastPetAction("Felstorm")),
-
-                // AoE rotation
-                Spell.BuffSelf("Shadowflame",
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10 && StyxWoW.Me.IsSafelyFacing(u, 90)) >= 3),
-
-                Spell.BuffSelf("Howl of Terror", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= 3),
-                // Dimishing returns fucks Fear up. Avoid using it until a proper DR logic.
-                //Spell.Buff("Fear", ret => Targeting.Instance.TargetList.ElementAtOrDefault(1)),
-
-                Spell.Buff("Curse of Tongues", ret => StyxWoW.Me.CurrentTarget.PowerType == WoWPowerType.Mana),
-                Spell.Buff("Curse of Elements", ret => StyxWoW.Me.CurrentTarget.PowerType != WoWPowerType.Mana),
-                // Single target rotation
-                Spell.BuffSelf("Metamorphosis"),
-                Spell.BuffSelf("Demon Soul", ret => PetManager.CurrentPetType != PetType.None && (PetManager.CurrentPetType == PetType.Felguard || PetManager.CurrentPetType == PetType.Felhunter || PetManager.CurrentPetType == PetType.Imp || PetManager.CurrentPetType == PetType.Succubus || PetManager.CurrentPetType == PetType.Voidwalker)),
-                Spell.Buff("Immolate", true),
-                Spell.Cast("Hand of Gul'dan"),
-                Spell.Buff("Bane of Agony", true),
-                Spell.Buff("Corruption", true),
-                Spell.Cast("Shadow Bolt", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Shadow Trance")),
-                Spell.Cast("Incinerate", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Molten Core")),
-                Spell.Cast("Soul Fire", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Decimation")),
-                Spell.Cast("Shadow Bolt"),
-
-                Movement.CreateMoveToTargetBehavior(true, 35f)
-                );
-        }
-
-        #endregion
-
-        #region Instance Rotation
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.Instances)]
-        public static Composite CreateWarlockDemonologyInstancePullAndCombat()
-        {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                new Decorator(
-                    ret => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Hellfire" && StyxWoW.Me.HealthPercent < 60,
-                    new Action(ret => SpellManager.StopCasting())),
-                Spell.WaitForCast(true),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                // Cooldowns
-                Spell.BuffSelf("Soulshatter", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet)),
-                Spell.BuffSelf("Soulburn", ret => StyxWoW.Me.CurrentSoulShards > 0),
-                Spell.BuffSelf("Demonic Empowerment"),
-                Spell.Cast("Death Coil", ret => StyxWoW.Me.HealthPercent <= 70),
-                Spell.Buff("Dark Intent",
-                    ret => StyxWoW.Me.PartyMembers.OrderByDescending(p => p.MaxHealth).FirstOrDefault(),
-                    ret => !StyxWoW.Me.HasAura("Dark Intent")),
-
-                // AoE rotation
-                new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet || u.IsTargetingMyPartyMember || u.IsTargetingMyRaidMember) >= 3,
-                    new PrioritySelector(
                         Spell.BuffSelf("Metamorphosis"),
-                        Spell.BuffSelf("Immolation Aura", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Metamorphosis")),
-                        Spell.BuffSelf("Shadowflame",
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10 && StyxWoW.Me.IsSafelyFacing(u, 90)) >= 3),
-                        Spell.BuffSelf("Hellfire", ret => StyxWoW.Me.HealthPercent > 60)
+                        //Spell.Cast("Doom")
+                        new Decorator(ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Doom"), new Styx.TreeSharp.Action(r=>forcecast("Doom")))
                         )),
 
-                // Single target rotation
-                Spell.BuffSelf("Metamorphosis"),
-                Spell.BuffSelf("Demon Soul", ret => PetManager.CurrentPetType != PetType.None && (PetManager.CurrentPetType == PetType.Felguard || PetManager.CurrentPetType == PetType.Felhunter || PetManager.CurrentPetType == PetType.Imp || PetManager.CurrentPetType == PetType.Succubus || PetManager.CurrentPetType == PetType.Voidwalker)),
-                Spell.Buff("Immolate", true),
-                Spell.Cast("Hand of Gul'dan"),
-                Spell.Buff("Bane of Doom", true),
-                Spell.Buff("Corruption", true),
-                Spell.Cast("Shadow Bolt", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Shadow Trance")),
-                Spell.Cast("Incinerate", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Molten Core")),
-                Spell.Cast("Soul Fire", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Decimation")),
+
+                new Decorator(ret=> StyxWoW.Me.HasAura("Metamorphosis"),
+                    new PrioritySelector(
+                        //Spell.Cast("Metamorphosis", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.DemonicFury) < 800 && !StyxWoW.Me.HasAura("Dark Soul: Knowledge")),
+                        new Decorator(ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.DemonicFury) < 800 && !StyxWoW.Me.HasAura("Dark Soul: Knowledge"), new Styx.TreeSharp.Action(r => forcecast("Metamorphosis"))),
+                        new Decorator(ret => SpellManager.CanCast("Dark Soul: Knowledge"), new Styx.TreeSharp.Action(r => forcecast("Dark Soul: Knowledge"))),
+                        //Spell.Cast("Dark Soul: Knowledge"),
+                        //Spell.Cast("Doom", ret => DoomTime < 5),
+                        new Decorator(ret => DoomTime < 5, new Styx.TreeSharp.Action(r=>forcecast("Doom"))),
+                        //Spell.Cast("Touch of Chaos")
+                        new Styx.TreeSharp.Action(r => forcecast("Touch of Chaos"))
+
+
+                    )),
+
+
+
+
+                // Build demonic fury
+                Spell.Buff("Corruption",true),
+                Spell.Cast("Hand of Gul'dan", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Shadowflame")),
+                Spell.Cast("Soul Fire", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Molten Core")),
                 Spell.Cast("Shadow Bolt"),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -192,5 +103,41 @@ namespace Singular.ClassSpecific.Warlock
         }
 
         #endregion
+
+
+
+
+
+        static double DoomTime
+        {
+            get
+            {
+                var c = MyAura(StyxWoW.Me.CurrentTarget, "Doom");
+
+                if (c == null)
+                {
+                    /*if (lastRuptureCP > 0)
+                    {
+                        lastRuptureCP = 0;
+                        Logging.Write("Updating lastRuptureCP to 0");
+                    }*/
+                    return 0;
+                }
+
+                return c.TimeLeft.TotalSeconds;
+            }
+        }
+
+        private static void forcecast(string what)
+        {
+            Logger.Write("Force casting "+ what);
+            Lua.DoString("RunMacroText(\"/cast " + what + "\")");
+        }
+
+
+        private static WoWAura MyAura(WoWUnit Who, String What)
+        {
+            return Who.GetAllAuras().FirstOrDefault(p => p.CreatorGuid == StyxWoW.Me.Guid && p.Name == What);
+        }
     }
 }

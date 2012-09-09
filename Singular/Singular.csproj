@@ -244,6 +244,7 @@ if $(ConfigurationName) == Bobby53 (
 )
 
 if $(ConfigurationName) == HighVoltz (
+echo copying files to HB folder
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "E:\Buddy\Honorbuddy\Routines\Singular\" /v /i /f  /s /y 
 )
 

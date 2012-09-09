@@ -188,31 +188,7 @@ namespace Singular.Settings
         [Category("Frost")]
         [DisplayName("Summon Ghoul Percent")]
         public int SummonGhoulPercentFrost { get; set; }
-        /*
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Frost")]
-        [DisplayName("Pillar of Frost")]
-        public bool UsePillarOfFrost { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Frost")]
-        [DisplayName("Raise Dead")]
-        public bool UseRaiseDead { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Frost")]
-        [DisplayName("Empower Rune Weapon")]
-        public bool UseEmpowerRuneWeapon { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Frost")]
-        [DisplayName("Use Necrotic Strike - Frost")]
-        public bool UseNecroticStrike { get; set; }
-        */
+        
         #endregion
 
         #region Category: Unholy

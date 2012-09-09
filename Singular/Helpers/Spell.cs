@@ -832,6 +832,24 @@ namespace Singular.Helpers
         public static Composite CastOnGround(string spell, LocationRetriever onLocation,
             SimpleBooleanDelegate requirements)
         {
+            return CastOnGround(spell, onLocation, requirements, true);
+        }
+
+
+        /// <summary>
+        ///   Creates a behavior to cast a spell by name, on the ground at the specified location. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "spell">The spell.</param>
+        /// <param name = "onLocation">The on location.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <param name="waitForSpell">Waits for spell to become active on cursor if true. </param>
+        /// <returns>.</returns>
+        public static Composite CastOnGround(string spell, LocationRetriever onLocation,
+            SimpleBooleanDelegate requirements, bool waitForSpell)
+        {
             return
                 new Decorator(
                     ret =>
@@ -841,13 +859,15 @@ namespace Singular.Helpers
                     new Sequence(
                         new Action(ret => Logger.Write("Casting {0} at location {1}", spell, onLocation(ret))),
                         new Action(ret => SpellManager.Cast(spell)),
-                        new WaitContinue(1,
-                            ret =>
-                            StyxWoW.Me.CurrentPendingCursorSpell != null &&
-                            StyxWoW.Me.CurrentPendingCursorSpell.Name == spell, new ActionAlwaysSucceed()),
+
+                        new DecoratorContinue(ctx => waitForSpell,
+                            new WaitContinue(1,
+                                ret =>
+                                StyxWoW.Me.CurrentPendingCursorSpell != null &&
+                                StyxWoW.Me.CurrentPendingCursorSpell.Name == spell, new ActionAlwaysSucceed())),
+
                         new Action(ret => SpellManager.ClickRemoteLocation(onLocation(ret)))));
         }
-
         #endregion
 
         #region Resurrect

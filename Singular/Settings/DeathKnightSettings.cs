@@ -43,25 +43,46 @@ namespace Singular.Settings
         public int IceboundFortitudePercent { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Lichborne")]
-        public bool UseLichborne { get; set; }
-
-        [Setting]
         [DefaultValue(60)]
         [Category("Common")]
         [DisplayName("Lichborne Percent")]
+        [Description("Health percent when to use Lichborne + Death Coil for healing.")]
         public int LichbornePercent { get; set; }
 
         [Setting]
         [DefaultValue(60)]
         [Category("Common")]
-        [DisplayName("Heal Percent")]
-        [Description("Health percent at which bot uses self healing abilies.")]
-        public int HealPercent { get; set; }
+        [DisplayName("Death Pact Percent")]
+        [Description("Health percent when to use Death Pact for healing.")]
+        public int DeathPactPercent { get; set; }
 
-        /*
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Common")]
+        [DisplayName("Death Siphon Percent")]
+        [Description("Health percent when to use Death Siphon for healing.")]
+        public int DeathSiphonPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Common")]
+        [DisplayName("Conversion Percent")]
+        [Description("Health percent when to use Conversion for healing.")]
+        public int ConversionPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Common")]
+        [DisplayName("Min. Conversion RunicPower")]
+        [Description("Use Conversion only if runic power is at or above this value.")]
+        public int MinimumConversionRunicPowerPrecent { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Common")]
+        [DisplayName("Death Strike Emergency Percent")]
+        public int DeathStrikeEmergencyPercent { get; set; }
+
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
@@ -74,115 +95,43 @@ namespace Singular.Settings
         [DisplayName("Death and Decay Add Count")]
         [Description("Will use Death and Decay when agro mob count is equal to or higher then this value. This basicly determines AoE rotation")]
         public int DeathAndDecayCount { get; set; }
-
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Blood")]
-        [DisplayName("Death Strike Emergency Percent")]
-        public int DeathStrikeEmergencyPercent { get; set; }
-
-        */
-        #endregion
-
-        #region Category: Blood
-        /*
-
-
+        
         [Setting]
         [DefaultValue(false)]
-        [Category("Blood")]
+        [Category("Common")]
         [DisplayName("Army of the Dead")]
         public bool UseArmyOfTheDead { get; set; }
 
         [Setting]
-        [DefaultValue(20)]
-        [Category("Blood")]
-        [DisplayName("Army of the Dead Percent")]
-        public int ArmyOfTheDeadPercent { get; set; }
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Use Ghoul As Dps CoolDown")]
+        [Description("Use Ghoul As Dps CoolDown [Blood/Frost]")]
+        public bool UseGhoulAsDpsCoolDown { get; set; }
+        #endregion
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Bone Shield")]
-        public bool UseBoneShield { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Bone Shield Exclusive")]
-        public bool BoneShieldExclusive { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Dancing Rune Weapon")]
-        public bool UseDancingRuneWeapon { get; set; }
-        
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Blood")]
-        [DisplayName("Empower Rune Weapon Percent")]
-        public int EmpowerRuneWeaponPercent { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Icebound Fortitude Exclusive")]
-        public bool IceboundFortitudeExclusive { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Lichborne Exclusive")]
-        public bool LichborneExclusive { get; set; }
+        #region Category: Blood
 
         [Setting]
         [DefaultValue(60)]
         [Category("Blood")]
-        [DisplayName("Lichborne Percent")]
-        public int LichbornePercent { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Pet Sacrifice")]
-        public bool UsePetSacrifice { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Pet Sacrifice Exclusive")]
-        public bool PetSacrificeExclusive { get; set; }
-
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Blood")]
-        [DisplayName("Pet Sacrifice Summon Percent")]
-        public int PetSacrificeSummonPercent { get; set; }
-
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Blood")]
-        [DisplayName("Pet Sacrifice Percent")]
-        public int PetSacrificePercent { get; set; }
-        
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Vampiric Blood")]
-        public bool UseVampiricBlood { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Blood")]
-        [DisplayName("Vampiric Blood Exclusive")]
-        public bool VampiricBloodExclusive { get; set; }
+        [DisplayName("Rune Tap Percent")]
+        [Description("Health percent when to use Rune Tap for healing.")]
+        public int RuneTapPercent { get; set; }
 
         [Setting]
         [DefaultValue(60)]
         [Category("Blood")]
         [DisplayName("Vampiric Blood Percent")]
         public int VampiricBloodPercent { get; set; }
+
+        /*
+        [Setting]
+        [DefaultValue(20)]
+        [Category("Blood")]
+        [DisplayName("Army of the Dead Percent")]
+        public int ArmyOfTheDeadPercent { get; set; }
+
          */
         #endregion
 
@@ -215,13 +164,13 @@ namespace Singular.Settings
         #endregion
 
         #region Category: Unholy
-        /*
+
         [Setting]
         [DefaultValue(true)]
         [Category("Unholy")]
         [DisplayName("Summon Gargoyle")]
         public bool UseSummonGargoyle { get; set; }
-        */
+
         #endregion
 
     }

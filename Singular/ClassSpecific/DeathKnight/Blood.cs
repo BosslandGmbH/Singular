@@ -36,11 +36,11 @@ namespace Singular.ClassSpecific.DeathKnight
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.BuffSelf("Blood Presence"),
 
-                    // Anti-magic shell - no cost and doesnt trigger GCD 
-                    Spell.BuffSelf("Anti-Magic Shell",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u =>
-                                                (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
-                                                u.CurrentTargetGuid == StyxWoW.Me.Guid)),
+                    // ** Cool Downs **
+                    Spell.BuffSelf("Vampiric Blood",
+                                   ret => StyxWoW.Me.HealthPercent <
+                                          SingularSettings.Instance.DeathKnight.VampiricBloodPercent),
+                    Spell.BuffSelf("Bone Shield"),
 
                     /*
 ,
@@ -191,12 +191,11 @@ namespace Singular.ClassSpecific.DeathKnight
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.BuffSelf("Blood Presence"),
 
-                    // Anti-magic shell - no cost and doesnt trigger GCD 
-                    Spell.BuffSelf("Anti-Magic Shell",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u =>
-                                                (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
-                                                u.CurrentTargetGuid == StyxWoW.Me.Guid)),
-
+                    // ** Cool Downs **
+                    Spell.BuffSelf("Vampiric Blood",
+                                   ret => StyxWoW.Me.HealthPercent <
+                                          SingularSettings.Instance.DeathKnight.VampiricBloodPercent),
+                    Spell.BuffSelf("Bone Shield"),
                     /*
                         Big cooldown section. By default, all cooldowns are priorotized by their time ascending
                         for maximum uptime in the long term. By default, all cooldowns are also exlusive. This
@@ -339,13 +338,11 @@ namespace Singular.ClassSpecific.DeathKnight
                     Helpers.Common.CreateAutoAttack(true),
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.BuffSelf("Blood Presence"),
-
-                    // Anti-magic shell - no cost and doesnt trigger GCD 
-                    Spell.BuffSelf("Anti-Magic Shell",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u =>
-                                                (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
-                                                u.CurrentTargetGuid == StyxWoW.Me.Guid)),
-
+                // ** Cool Downs **
+                    Spell.BuffSelf("Vampiric Blood",
+                                   ret => StyxWoW.Me.HealthPercent <
+                                          SingularSettings.Instance.DeathKnight.VampiricBloodPercent),
+                    Spell.BuffSelf("Bone Shield"),
 
                     /*
                         Big cooldown section. By default, all cooldowns are priorotized by their time ascending

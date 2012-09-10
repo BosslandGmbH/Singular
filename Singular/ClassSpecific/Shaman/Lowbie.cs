@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.Shaman
                     Movement.CreateFaceTargetBehavior(),
                     Spell.WaitForCast(true),
                     Helpers.Common.CreateAutoAttack(true),
-                    Common.CreateShamanRacialsCombat(),
+                    Common.CreateShamanInCombatBuffs(true),
                     Spell.Cast("Earth Shock"),      // always use
                     Spell.Cast("Primal Strike"),    // always use
                     Spell.Cast("Lightning Bolt"),                   

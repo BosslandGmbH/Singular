@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -7,6 +8,7 @@ using Singular.Managers;
 using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.CommonBot;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 
@@ -36,7 +38,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.All)]
         public static Composite CreateWarlockAfflictionNormalPull()
         {
             return new PrioritySelector(
@@ -45,11 +47,15 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
-                Spell.Buff("Unstable Affliction", true),
+                Spell.BuffSelf("Soulburn"),
+                Spell.Cast("Soul Swap"),
+
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Normal)]
+
+        static string[] _Doublecast = { "Agony", "Corruption", "Unstable Afflictio" };
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.All)]
         public static Composite CreateWarlockAfflictionNormalCombat()
         {
             return new PrioritySelector(
@@ -57,133 +63,71 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
+                Spell.PreventDoubleCast(_Doublecast),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                // Cooldowns
-                Spell.BuffSelf("Soulshatter", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet)),
-                Spell.BuffSelf("Soulburn", ret => StyxWoW.Me.CurrentSoulShards > 0),
-                Spell.Cast("Death Coil", ret => StyxWoW.Me.HealthPercent <= 70),
 
-                // AoE rotation
-                Spell.BuffSelf("Shadowflame",
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10 && StyxWoW.Me.IsSafelyFacing(u, 90)) >= 3),
 
-                Spell.BuffSelf("Howl of Terror", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= 3),
-                Spell.Buff("Fear", ret => Targeting.Instance.TargetList.ElementAtOrDefault(1), ret => !StyxWoW.Me.CurrentTarget.HasAura("Fear")),
-                Spell.Buff("Fear", ret => StyxWoW.Me.HealthPercent < 80),
+                //Double cast protection
+                //new Decorator(ret => StyxWoW.Me.CurrentTarget.HasMyAura("Unstable Affliction") && StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Unstable Affliction",
+                 //   new Styx.TreeSharp.Action(r => SpellManager.StopCasting())),
 
-                // Single target rotation
-                Spell.Buff("Curse of the Elements"),
-                Spell.Buff("Haunt", true),
-                Spell.Buff("Bane of Agony", true),
-                Spell.Buff("Corruption", true),
-                Spell.Buff("Unstable Affliction", true, ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Unstable Affliction", true).TotalSeconds < 3, ""),
-                Spell.BuffSelf("Demon Soul", ret => PetManager.CurrentPetType != PetType.None && (PetManager.CurrentPetType == PetType.Felguard || PetManager.CurrentPetType == PetType.Felhunter || PetManager.CurrentPetType == PetType.Imp || PetManager.CurrentPetType == PetType.Succubus || PetManager.CurrentPetType == PetType.Voidwalker)),
-                Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 80 || StyxWoW.Me.HasAura("Soulburn")),
-                Spell.Cast("Drain Soul", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 25),
-                Spell.Cast("Shadow Bolt"),
-
-                Movement.CreateMoveToTargetBehavior(true, 35f)
-                );
-        }
-
-        #endregion
-
-        #region Battleground Rotation
-        [Behavior(BehaviorType.Pull|BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Battlegrounds)]
-        public static Composite CreateWarlockAfflictionPvPPullAndCombat()
-        {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                // Cooldowns
-                Spell.BuffSelf("Soulshatter", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet)),
-                Spell.BuffSelf("Soulburn", ret => StyxWoW.Me.CurrentSoulShards > 0),
-                Spell.Cast("Death Coil", ret => StyxWoW.Me.HealthPercent <= 70),
-                Spell.Buff("Dark Intent",
-                    ret => StyxWoW.Me.PartyMembers.OrderByDescending(p => p.MaxHealth).FirstOrDefault(),
-                    ret => !StyxWoW.Me.HasAura("Dark Intent")),
-
-                // AoE rotation
-                Spell.BuffSelf("Shadowflame",
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10 && StyxWoW.Me.IsSafelyFacing(u, 90)) >= 3),
-
-                Spell.BuffSelf("Howl of Terror", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) >= 3),
-                // Dimishing returns fucks Fear up. Avoid using it until a proper DR logic.
-                //Spell.Buff("Fear", ret => Targeting.Instance.TargetList.ElementAtOrDefault(1)),
-
-                // Single target rotation
-                Spell.Buff("Curse of the Elements"),
-                Spell.Buff("Haunt", true),
-                Spell.Buff("Bane of Agony", true),
-                Spell.Buff("Corruption", true),
-                Spell.Buff("Unstable Affliction", true, ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Unstable Affliction", true).TotalSeconds < 3, ""),
-                Spell.BuffSelf("Demon Soul", ret => PetManager.CurrentPetType != PetType.None && (PetManager.CurrentPetType == PetType.Felguard || PetManager.CurrentPetType == PetType.Felhunter || PetManager.CurrentPetType == PetType.Imp || PetManager.CurrentPetType == PetType.Succubus || PetManager.CurrentPetType == PetType.Voidwalker)),
-                Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 80 || StyxWoW.Me.HasAura("Soulburn")),
-                Spell.Cast("Drain Soul", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 25),
-                Spell.Cast("Shadow Bolt"),
-
-                Movement.CreateMoveToTargetBehavior(true, 35f)
-                );
-        }
-
-        #endregion
-
-        #region Instance Rotation
-
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Instances)]
-        public static Composite CreateWarlockAfflictionInstancePullAndCombat()
-        {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                // Cooldowns
-                Spell.BuffSelf("Soulshatter", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet)),
-                Spell.BuffSelf("Soulburn", ret => StyxWoW.Me.CurrentSoulShards > 0),
-                Spell.Cast("Death Coil", ret => StyxWoW.Me.HealthPercent <= 70),
-                Spell.Buff("Dark Intent", 
-                    ret => StyxWoW.Me.PartyMembers.OrderByDescending(p => p.MaxHealth).FirstOrDefault(), 
-                    ret => !StyxWoW.Me.HasAura("Dark Intent")),
-
-                // AoE rotation
-                new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet || u.IsTargetingMyPartyMember || u.IsTargetingMyRaidMember) >= 3,
+                new Decorator(ret=> StyxWoW.Me.CurrentTarget.HealthPercent > 20.0f, 
                     new PrioritySelector(
-                        ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => 
-                                    (u.IsTargetingMeOrPet || u.IsTargetingMyPartyMember || u.IsTargetingMyRaidMember) &&
-                                    !u.HasMyAura("Seed of Corruption") && u.InLineOfSpellSight),
-                        Spell.BuffSelf("Shadowflame", 
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10 && StyxWoW.Me.IsSafelyFacing(u, 90)) >= 3),
-                        Spell.BuffSelf("Soulburn", ret => StyxWoW.Me.CurrentSoulShards > 0),
-                        Spell.Buff("Seed of Corruption", true, ret => (WoWUnit)ret)
-                        )),
+                Spell.Cast("Agony", ret => AgonyTime < 3),
+                Spell.Cast("Corruption", ret => CorruptionTime < 3),
+                Spell.Cast("Unstable Affliction", ret => UnstableAfflictionTime < 3),
+                Spell.Cast("Haunt", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Haunt")),
+                Spell.Cast("Malefic Grasp")
+                )) ,
+                 new Decorator(ret=> StyxWoW.Me.CurrentTarget.HealthPercent <= 20.0f, 
+                     new PrioritySelector(
+                         Spell.BuffSelf("Soulburn",ret => (AgonyTime < 3 || CorruptionTime < 3 || UnstableAfflictionTime < 3) && !StyxWoW.Me.HasAura("Soulburn")),
+                         Spell.Cast("Soul Swap", ret => StyxWoW.Me.HasAura("Soulburn")),
+                         Spell.Buff("Haunt"),
+                Spell.Cast("Drain Soul"))),
 
-                // Single target rotation
-                Spell.Buff("Curse of the Elements"),
-                Spell.Buff("Haunt", true),
-                Spell.Buff("Bane of Doom", true, ret => StyxWoW.Me.CurrentTarget.IsBoss()),
-                Spell.Buff("Bane of Agony",true, ret => !StyxWoW.Me.CurrentTarget.IsBoss()),
-                Spell.Buff("Corruption", true),
-                Spell.Buff("Unstable Affliction", true, ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Unstable Affliction", true).TotalSeconds < 3, ""),
-                Spell.BuffSelf("Demon Soul", ret => PetManager.CurrentPetType != PetType.None && (PetManager.CurrentPetType == PetType.Felguard || PetManager.CurrentPetType == PetType.Felhunter || PetManager.CurrentPetType == PetType.Imp || PetManager.CurrentPetType == PetType.Succubus || PetManager.CurrentPetType == PetType.Voidwalker)),
-                Spell.Cast("Drain Soul", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 25),
-                Spell.Cast("Shadow Bolt"),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
 
         #endregion
+
+        static double AgonyTime
+        {
+            get
+            {
+                var c = MyAura(StyxWoW.Me.CurrentTarget, "Agony");
+                return c == null ? 0 : c.TimeLeft.TotalSeconds;
+            }
+        }
+        static double CorruptionTime
+        {
+            get
+            {
+                var c = MyAura(StyxWoW.Me.CurrentTarget, "Corruption");
+                return c == null ? 0 : c.TimeLeft.TotalSeconds;
+            }
+        }
+        static double UnstableAfflictionTime
+        {
+            get
+            {
+                var c = MyAura(StyxWoW.Me.CurrentTarget, "Unstable Affliction");
+                return c == null ? 0 : c.TimeLeft.TotalSeconds;
+            }
+        }
+
+
+        
+        private static WoWAura MyAura(WoWUnit Who, String What)
+        {
+            return Who.GetAllAuras().FirstOrDefault(p => p.CreatorGuid == StyxWoW.Me.Guid && p.Name == What);
+        }
+
+
+
     }
 }

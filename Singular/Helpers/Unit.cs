@@ -26,6 +26,40 @@ namespace Singular.Helpers
         }
 
         /// <summary>
+        /// List of WoWPlayer in your Group. Deals with Party / Raid in a list independent manner and does not restrict distance
+        /// </summary>
+        public static IEnumerable<WoWPlayer> GroupMembers
+        {
+            get
+            {
+                ulong[] guids = StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberGuids : StyxWoW.Me.RawPartyMemberGuids;
+                return (
+                    from p in ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
+                    where p.IsFriendly && guids.Any(g => g == p.Guid)
+                    select p).ToList();
+            }
+        }
+
+        /// <summary>
+        /// List of WoWPartyMember in your Group. Deals with Party / Raid in a list independent manner and does not restrict distance
+        /// </summary>
+        public static IEnumerable<WoWPartyMember> GroupMemberInfos
+        {
+            get
+            {
+                return StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberInfos : StyxWoW.Me.PartyMemberInfos;
+            }
+        }
+
+        public static IEnumerable<WoWPlayer> NearbyGroupMembers
+        {
+            get
+            {
+                return GroupMembers.Where(p => p.DistanceSqr <= 40 * 40 ).ToList();
+            }
+        }
+
+        /// <summary>
         ///   Gets the nearby friendly players within 40 yards.
         /// </summary>
         /// <value>The nearby friendly players.</value>
@@ -315,5 +349,12 @@ namespace Singular.Helpers
             effects[2] = spell.GetSpellEffect(2);
             return effects;
         }
+
+        public static bool IsInGroup(this LocalPlayer me)
+        {
+            return me.IsInParty || me.IsInRaid;
+        }
+
+
     }
 }

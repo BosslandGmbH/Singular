@@ -57,7 +57,7 @@ namespace Singular.ClassSpecific.Hunter
                            ret =>
                            StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
                            StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark"),
+                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
 
                 // Defensive Stuff
 
@@ -80,7 +80,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Barrage"),
                 Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
                 Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
-                Spell.Buff("Serpent Sting"),
+                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                 Spell.Cast("Chimera Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent <= 90),
                 Spell.Cast("Dire Beast"),
@@ -113,60 +113,78 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterCallPetBehavior(false),
 
                 Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage", ret => StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
-                Common.CreateHunterBackPedal(),
+                Spell.BuffSelf("Disengage",
+                               ret =>
+                               SingularSettings.Instance.Hunter.UseDisengage &&
+                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
+                //Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
                     Movement.CreateEnsureMovementStoppedBehavior()),
 
-                new Decorator(
-                    ret => StyxWoW.Me.IsCasting && StyxWoW.Me.CastingSpell.Name == "Steady Shot",
-                    new Action(ret => DoubleSteadyCast = true)),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
+                Spell.BuffSelf("Aspect of the Fox", ret => StyxWoW.Me.IsMoving),
+                Spell.BuffSelf("Aspect of the Hawk",
+                               ret => !StyxWoW.Me.IsMoving &&
+                               !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") &&
+                               !StyxWoW.Me.HasAura("Aspect of the Hawk")),
 
-                Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
-                Spell.Buff("Hunter's Mark"),
-                Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
+                Helpers.Common.CreateAutoAttack(true),
+
+                Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+
+                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
+                Spell.Buff("Concussive Shot",
+                           ret =>
+                           StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
+                           StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
+                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
+
                 // Defensive Stuff
+
                 Spell.Cast(
                     "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
-                                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null || StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
-
-                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
+                                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
+                                            StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
 
                 Spell.Cast("Mend Pet",
-                    ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                    (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
+                           ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
+                                  (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
+                                   (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
 
-                // Cooldowns
-                Spell.BuffSelf("Readiness",
-                    ret => !StyxWoW.Me.HasAura("Rapid Fire") && SpellManager.HasSpell("Rapid Fire") &&
-                           SpellManager.Spells["Rapid Fire"].Cooldown),
-                Spell.BuffSelf("Rapid Fire",
-                    ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
-                           !StyxWoW.Me.PetSpells.Any(s => s.Spell != null && s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
-                           !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
-
-                // Rotation
-                Spell.Buff("Wing Clip"),
-                Spell.Cast("Scatter Shot", ret => StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
-                Spell.Cast("Raptor Strike"),
-                Spell.Buff("Serpent Sting", true),
-                Spell.Cast("Chimera Shot"),
-                Spell.Cast("Steady Shot", ret => DoubleSteadyCast),
-                Spell.Cast("Kill Shot"),
-                Spell.Cast("Aimed Shot", ret => StyxWoW.Me.HasAura("Fire!")),
-                Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 40),
-                Spell.CastOnGround("Flare", ret => StyxWoW.Me.Location),
+                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
                 Common.CreateHunterTrapBehavior("Snake Trap", false),
                 Common.CreateHunterTrapBehavior("Immolation Trap", false),
+
+                // Rotation
+
+                Spell.Cast("Glaive Toss"),
+                Spell.Cast("Powershot"),
+                Spell.Cast("Barrage"),
+                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
+                Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
+                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
+                Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
+                Spell.Cast("Chimera Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent <= 90),
+                Spell.Cast("Dire Beast"),
+                Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
+                Spell.Cast("Stampede"),
+                Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
+                Spell.Cast("Steady Shot", ctx => StyxWoW.Me.HasAura("Steady Focus") && StyxWoW.Me.GetAuraTimeLeft("Steady Focus", true) < TimeSpan.FromSeconds(3)),
+                Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
+                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.HasAura("Master Marksman")),
+                Spell.Buff("A Murder of Crows"),
+                Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
+                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent > 90 || StyxWoW.Me.HasAura("Rapid Fire") || StyxWoW.Me.HasAura("Bloodlust")),
+                Spell.Cast("Arcane Shot", ctx => (StyxWoW.Me.FocusPercent >= 66 || SpellManager.Spells["Chimera Shot"].CooldownTimeLeft >= TimeSpan.FromSeconds(5)) && (StyxWoW.Me.CurrentTarget.HealthPercent < 90 && !StyxWoW.Me.HasAura("Rapid Fire") && !StyxWoW.Me.HasAura("Bloodlust"))),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+
                 Spell.Cast("Steady Shot"),
+
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -183,75 +201,76 @@ namespace Singular.ClassSpecific.Hunter
 
                 Safers.EnsureTarget(),
                 Spell.BuffSelf("Disengage",
-                    ret => SingularSettings.Instance.Hunter.UseDisengage && StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
-                Common.CreateHunterBackPedal(),
+                               ret =>
+                               SingularSettings.Instance.Hunter.UseDisengage &&
+                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
+                //Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
                     Movement.CreateEnsureMovementStoppedBehavior()),
 
-                new Decorator(
-                    ret => StyxWoW.Me.IsCasting && StyxWoW.Me.CastingSpell.Name == "Steady Shot",
-                    new Action(ret => DoubleSteadyCast = true)),
-
                 Spell.WaitForCast(true),
-
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
+                Spell.BuffSelf("Aspect of the Fox", ret => StyxWoW.Me.IsMoving),
+                Spell.BuffSelf("Aspect of the Hawk",
+                               ret => !StyxWoW.Me.IsMoving &&
+                               !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") &&
+                               !StyxWoW.Me.HasAura("Aspect of the Hawk")),
 
-                Spell.Buff("Hunter's Mark"),
-                Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
+                Helpers.Common.CreateAutoAttack(true),
+
+                Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+
+                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
+                Spell.Buff("Concussive Shot",
+                           ret =>
+                           StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
+                           StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
+                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
+
+                // Defensive Stuff
+
+                Spell.Cast(
+                    "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
+                                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
+                                            StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
 
                 Spell.Cast("Mend Pet",
-                    ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                    (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
+                           ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
+                                  (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
+                                   (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
 
-                // Cooldowns
-                Spell.BuffSelf("Readiness", 
-                    ret => !StyxWoW.Me.HasAura("Rapid Fire") && SpellManager.HasSpell("Rapid Fire") && 
-                           SpellManager.Spells["Rapid Fire"].Cooldown),
-                Spell.BuffSelf("Rapid Fire",
-                    ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
-                           !StyxWoW.Me.PetSpells.Any(s => s.Spell != null && s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
-                           !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
-
-                new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
-                    new PrioritySelector(
-                        Common.CreateHunterTrapBehavior("Explosive Trap"),
-                        Spell.Cast("Multi-Shot"),
-                        Spell.Cast("Steady Shot"),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)
-                        )
-                    ),
-
-                // Above 90% Careful Aim rotation
-                new Decorator(
-                    ret => TalentManager.IsSelected( 6) && StyxWoW.Me.CurrentTarget.HealthPercent > 90,
-                    new PrioritySelector(
-                        new Decorator(
-                            ret => StyxWoW.Me.IsMoving,
-                            new PrioritySelector(
-                                Spell.Cast("Aimed Shot", ret => StyxWoW.Me.HasAura("Fire!")),
-                                Spell.Buff("Serpent Sting", true),
-                                Spell.Cast("Chimera Shot")
-                                )),
-                        Spell.Cast("Aimed Shot"),
-                        Spell.Cast("Steady Shot"),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)
-                        )),
+                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
 
                 // Rotation
-                Spell.Buff("Serpent Sting", true),
-                Spell.Cast("Chimera Shot"),
-                Spell.Cast("Steady Shot", ret => DoubleSteadyCast),
-                Spell.Cast("Kill Shot"),
-                Spell.Cast("Aimed Shot", ret => StyxWoW.Me.HasAura("Fire!")),
-                Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 40),
+
+                Spell.Cast("Glaive Toss"),
+                Spell.Cast("Powershot"),
+                Spell.Cast("Barrage"),
+                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
+                Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
+                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
+                Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
+                Spell.Cast("Chimera Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent <= 90),
+                Spell.Cast("Dire Beast"),
+                Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
+                Spell.Cast("Stampede"),
+                Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
+                Spell.Cast("Steady Shot", ctx => StyxWoW.Me.HasAura("Steady Focus") && StyxWoW.Me.GetAuraTimeLeft("Steady Focus", true) < TimeSpan.FromSeconds(3)),
+                Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
+                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.HasAura("Master Marksman")),
+                Spell.Buff("A Murder of Crows"),
+                Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
+                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent > 90 || StyxWoW.Me.HasAura("Rapid Fire") || StyxWoW.Me.HasAura("Bloodlust")),
+                Spell.Cast("Arcane Shot", ctx => (StyxWoW.Me.FocusPercent >= 66 || SpellManager.Spells["Chimera Shot"].CooldownTimeLeft >= TimeSpan.FromSeconds(5)) && (StyxWoW.Me.CurrentTarget.HealthPercent < 90 && !StyxWoW.Me.HasAura("Rapid Fire") && !StyxWoW.Me.HasAura("Bloodlust"))),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+
                 Spell.Cast("Steady Shot"),
+
+
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

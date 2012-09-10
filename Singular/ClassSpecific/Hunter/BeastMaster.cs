@@ -54,7 +54,7 @@ namespace Singular.ClassSpecific.Hunter
                            ret =>
                            StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
                            StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark"),
+                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
 
                 // Defensive Stuff
 
@@ -74,7 +74,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.BuffSelf("Focus Fire", ctx => StyxWoW.Me.HasAura("Frenzy")),
 
-                Spell.Buff("Serpent Sting"),
+                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
                 Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
                 Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
@@ -141,7 +141,7 @@ namespace Singular.ClassSpecific.Hunter
                            ret =>
                            StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
                            StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark"),
+                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
 
                 // Defensive Stuff
 
@@ -161,7 +161,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.BuffSelf("Focus Fire", ctx => StyxWoW.Me.HasAura("Frenzy")),
 
-                Spell.Buff("Serpent Sting"),
+                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
                 Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
                 Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
@@ -228,7 +228,7 @@ namespace Singular.ClassSpecific.Hunter
                            ret =>
                            StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
                            StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark"),
+                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
 
                 // Defensive Stuff
 
@@ -242,12 +242,13 @@ namespace Singular.ClassSpecific.Hunter
                                   (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
                                    (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
 
+                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
 
                 // Rotation
 
                 Spell.BuffSelf("Focus Fire", ctx => StyxWoW.Me.HasAura("Frenzy")),
 
-                Spell.Buff("Serpent Sting"),
+                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
                 Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
                 Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
@@ -268,6 +269,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 60 || StyxWoW.Me.HasAura("The Beast Within")),
                 Spell.Cast("Cobra Shot"),
                 Spell.Cast("Steady Shot", ret => !SpellManager.HasSpell("Cobra Shot")),
+
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );

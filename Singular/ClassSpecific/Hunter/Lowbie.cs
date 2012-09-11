@@ -16,12 +16,10 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
-                Common.CreateHunterBackPedal(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                Spell.Cast("Raptor Strike", ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 5 * 5),
                 // Always keep it up on our target!
                 Spell.Buff("Hunter's Mark"),
                 // Heal pet when below 70

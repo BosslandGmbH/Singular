@@ -9,6 +9,8 @@ using Styx;
 using Styx.Combat.CombatRoutine;
 using Styx.Common;
 using Styx.CommonBot;
+using Styx.Helpers;
+using Styx.Pathing;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 
@@ -115,7 +117,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.BuffSelf("Disengage",
                                ret =>
                                SingularSettings.Instance.Hunter.UseDisengage &&
-                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
+                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f && Navigator.CanNavigateFully(StyxWoW.Me.Location,WoWMathHelper.CalculatePointBehind(StyxWoW.Me.Location,StyxWoW.Me.Rotation, 10))),
                 //Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -155,7 +157,10 @@ namespace Singular.ClassSpecific.Hunter
                                   (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
                                    (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
 
-                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
+                Common.CreateHunterTrapBehavior("Snake Trap", false),
+                Common.CreateHunterTrapBehavior("Immolation Trap", false),
+
+                Spell.BuffSelf("Deterrence", ctx => StyxWoW.Me.HealthPercent < 30),
 
                 // Rotation
 
@@ -166,8 +171,9 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                 Spell.Cast("Cobra Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
+                Spell.CastOnGround("Flare", ret => StyxWoW.Me.Location),
                 Spell.Cast("Stampede"),
-                Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
+                Spell.Cast("Rapid Fire"),
                 Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
                 Spell.Cast("Kill Command", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Spell.MeleeRange),
                 Spell.Buff("A Murder of Crows"),

@@ -95,7 +95,8 @@ namespace Singular.Managers
                     {
                         List<string> glyphInfo = Lua.GetReturnValues(String.Format("return GetGlyphSocketInfo({0})", i));
 
-                        if (glyphInfo != null && glyphInfo[3] != "nil" && !string.IsNullOrEmpty(glyphInfo[3]))
+                        // add check for 4 members before access because empty sockets weren't returning 'nil' as documented
+                        if (glyphInfo != null && glyphInfo.Count >= 4 && glyphInfo[3] != "nil" && !string.IsNullOrEmpty(glyphInfo[3]))
                         {
                             Glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name.Replace("Glyph of ", ""));
                         }

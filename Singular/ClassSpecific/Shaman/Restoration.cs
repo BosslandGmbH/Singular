@@ -210,10 +210,10 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
                     new PrioritySelector(
                         new PrioritySelector(
-                            context => Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, 12f),
+                            context => Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, ChainHealHopRange ),
                             Spell.Heal(
                                 "Chain Heal", ret => (WoWPlayer)ret,
-                                ret => Clusters.GetClusterCount((WoWPlayer)ret, ChainHealPlayers, ClusterType.Chained, 12f) >= 3)
+                                ret => Clusters.GetClusterCount((WoWPlayer)ret, ChainHealPlayers, ClusterType.Chained, ChainHealHopRange) >= 3)
                             )
                         )
                     )
@@ -261,6 +261,7 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.BuffSelf(
                         "Healing Stream Totem",
                         ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.IsInRaid ? 3 : 2)
+                            && !Totems.Exist( WoWTotemType.Water)
                         )
                     )
                 );
@@ -282,7 +283,10 @@ namespace Singular.ClassSpecific.Shaman
             return new PrioritySelector(
                 ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
                 new Decorator(
-                    ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
+                    ret => ret != null
+                        && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.IgnoreHealTargetsAboveHealth
+                        && !(Me.Mounted && SingularSettings.Instance.DisableAllMovement )
+                        && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
                     new PrioritySelector(
                         Spell.WaitForCast(),
                         new Decorator( 
@@ -337,6 +341,14 @@ namespace Singular.ClassSpecific.Shaman
 #endif 
         }
 
+        private static float ChainHealHopRange
+        {
+            get
+            {
+                return TalentManager.Glyphs.Contains("Chaining") ? 25f : 12.5f;
+            }
+        }
+
         private static IEnumerable<WoWUnit> ChainHealPlayers
         {
             get
@@ -387,7 +399,7 @@ namespace Singular.ClassSpecific.Shaman
             {
                 foreach (HealSpell hs in spells)
                 {
-                    Logger.Write(Color.LightGreen, "   Heal @ {0}% using [{1}]", hs.Pct, hs.SpellName);
+                    Logger.WriteDebug(Color.LightGreen, "   Heal @ {0}% using [{1}]", hs.Pct, hs.SpellName);
                 }
 
                 LastListCall = DateTime.Now;

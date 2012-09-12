@@ -50,23 +50,35 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal | WoWContext.Instances)]
         public static Composite CreateShamanElementalHeal()
         {
-            return
+            Composite healBT =
                 new Decorator(
-                    ret => SingularSettings.Instance.Shaman.EnhancementHeal && !StyxWoW.Me.IsInRaid,
-                    new PrioritySelector(
-                        // Heal the party in dungeons if the healer is dead
-                        new Decorator(
-                            ret => StyxWoW.Me.CurrentMap.IsDungeon && Group.Healers.Count(h => h.IsAlive) == 0,
-                            Restoration.CreateRestoShamanHealingOnlyBehavior()),
+                    ret => !StyxWoW.Me.Combat || (Group.Healers.Any() && !Group.Healers.Any(h => h.IsAlive)),
+                    Common.CreateShamanNonHealBehavior()
+                    );
 
-                        // This will work for both solo play and battlegrounds
-                        new Decorator(
-                            ret => Group.Healers.Any() && Group.Healers.Count(h => h.IsAlive) == 0,
+            // only include group healing logic if we are configured for group heal and in an Instance
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && SingularSettings.Instance.Shaman.ElementalHeal )
+            {
+                healBT =new Decorator(
+                            ret => !StyxWoW.Me.IsInRaid,
                             new PrioritySelector(
-                                Spell.Heal("Healing Surge",
-                                    ret => StyxWoW.Me,
-                                    ret => StyxWoW.Me.HealthPercent <= 60)))
-                        ));
+                                // Heal the party in dungeons if the healer is dead
+                                new Decorator(
+                                    ret => StyxWoW.Me.CurrentMap.IsDungeon && Group.Healers.Count(h => h.IsAlive) == 0,
+                                    Restoration.CreateRestoShamanHealingOnlyBehavior()),
+
+                                healBT
+                                )
+                            );
+            }
+
+            return healBT;
+        }
+
+        [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Battlegrounds )]
+        public static Composite CreateShamanElementalPvPHeal()
+        {
+            return Common.CreateShamanNonHealBehavior();
         }
 
         #endregion

@@ -127,9 +127,7 @@ namespace Singular
             {
                 _lastTargetGuid = StyxWoW.Me.CurrentTargetGuid;
                 // Don't print this shit if we don't need to. Kthx.
-                // -- chg to GotTarget due to non-zero vals with no target in Guid
-                // if (_lastTargetGuid != 0)  
-                if (StyxWoW.Me.GotTarget)
+                if (_lastTargetGuid != 0)  
                 {
                     // Add other target switch info stuff here.
 

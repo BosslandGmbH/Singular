@@ -70,26 +70,34 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Normal|WoWContext.Instances)]
         public static Composite CreateShamanEnhancementHeal()
         {
-            return
+            Composite healBT =
                 new Decorator(
-                    ret => SingularSettings.Instance.Shaman.EnhancementHeal,
+                    ret => Group.Healers.Any() && Group.Healers.Count(h => h.IsAlive) == 0,
                     new PrioritySelector(
-                        // Heal the party in dungeons if the healer is dead
-                        new Decorator(
-                            ret => StyxWoW.Me.CurrentMap.IsDungeon 
-                                && !StyxWoW.Me.IsInRaid 
-                                && Group.Healers.Any() 
-                                && Group.Healers.Count(h => h.IsAlive) == 0,
-                            Restoration.CreateRestoShamanHealingOnlyBehavior()),
+                        Spell.Heal("Healing Surge",
+                        ret => StyxWoW.Me,
+                        ret => StyxWoW.Me.HealthPercent <= 60)
+                        )
+                    );
 
-                        // This will work for both solo play and battlegrounds
-                        new Decorator(
-                            ret => Group.Healers.Count(h => h.IsAlive) == 0,
+            // group healing logic ONLY if we are configured for it and in an Instance
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && SingularSettings.Instance.Shaman.EnhancementHeal)
+            {
+                healBT =new Decorator(
+                            ret => !StyxWoW.Me.IsInRaid,
                             new PrioritySelector(
-                                Spell.Heal("Healing Surge",
-                                    ret => StyxWoW.Me,
-                                    ret => StyxWoW.Me.HealthPercent <= 60)))
-                        ));
+                                // Off Heal the party in dungeons if the healer is dead
+                                new Decorator(
+                                    ret => StyxWoW.Me.CurrentMap.IsDungeon && Group.Healers.Count(h => h.IsAlive) == 0,
+                                    Restoration.CreateRestoShamanHealingOnlyBehavior()),
+
+                                healBT
+                                )
+                            );
+            }
+
+            return healBT;
+
         }
 
         #endregion

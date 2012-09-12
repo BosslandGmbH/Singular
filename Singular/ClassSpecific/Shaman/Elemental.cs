@@ -136,8 +136,6 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.BuffSelf("Astral Shift", ret => StyxWoW.Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 5),
 
-                        Spell.BuffSelf("Astral Shift", ret => StyxWoW.Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 5),
-
                         Spell.BuffSelf( StyxWoW.Me.IsHorde ? "Bloodlust" : "Heroism", 
                             ret => Unit.NearbyUnitsInCombatWithMe.Count() >= 5 ||
                                 Unit.NearbyUnitsInCombatWithMe.Any( u => u.Elite || u.IsPlayer )),
@@ -196,7 +194,8 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat &&
                            (!SpellManager.HasSpell("Spiritwalker's Grace") ||
                            SpellManager.Spells["Spiritwalker's Grace"].Cooldown && !StyxWoW.Me.HasAura("Spiritwalker's Grace"))),
-                Spell.BuffSelf("Thunderstorm", ret => StyxWoW.Me.IsStunned()),
+
+                Spell.BuffSelf("Thunderstorm", ret => StyxWoW.Me.IsStunned() && Unit.NearbyUnfriendlyUnits.Any( u => u.Distance < 10f)),
 
                 Totems.CreateTotemsPvPBehavior(),
 
@@ -204,18 +203,18 @@ namespace Singular.ClassSpecific.Shaman
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
                         // Pop the ele on bosses
-                        Spell.BuffSelf("Fire Elemental Totem", ret => !StyxWoW.Me.Totems.Any(t => t.GetShamTotem() == ShamTotem.FireElemental)),
+                        Spell.BuffSelf("Fire Elemental Totem", ret => !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
                         Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
                         Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
                         )),
 
                 // Totem stuff
                 Spell.BuffSelf("Searing Totem",
-                    ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(ShamTotem.Searing) - 2f &&
+                    ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) - 2f &&
                            !StyxWoW.Me.Totems.Any(
-                                t => t.Unit != null && t.GetShamTotem() == ShamTotem.Searing &&
-                                     t.Unit.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Totems.GetTotemRange(ShamTotem.Searing)) &&
-                           StyxWoW.Me.Totems.All(t => t.GetShamTotem() != ShamTotem.FireElemental)),
+                                t => t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
+                                     t.Unit.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Totems.GetTotemRange(WoWTotem.Searing)) &&
+                           StyxWoW.Me.Totems.All(t => t.WoWTotem != WoWTotem.FireElemental)),
 
                 Spell.Buff("Flame Shock", true),
                 Spell.Cast("Lava Burst"),

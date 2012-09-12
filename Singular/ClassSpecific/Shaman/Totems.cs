@@ -11,6 +11,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -29,51 +30,18 @@ using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Shaman
 {
-    // temporary enum until HB updated
-    public enum ShamTotem : long
-    {
-        None = 0,
-
-        EarthElemental = (((long)WoWTotemType.Earth) << 32) + 2062,
-        Earthbind = (((long)WoWTotemType.Earth) << 32) + 2484,
-        Earthgrab = (((long)WoWTotemType.Earth) << 32) + 51485,
-        StoneBulwark = (((long)WoWTotemType.Earth) << 32) + 108270,
-        Tremor = (((long)WoWTotemType.Earth) << 32) + 8143,
-
-        FireElemental = (((long)WoWTotemType.Fire) << 32) + 2894,
-        Magma = (((long)WoWTotemType.Fire) << 32) + 8190,
-        Searing = (((long)WoWTotemType.Fire) << 32) + 3599,
-
-        HealingStream = (((long)WoWTotemType.Water) << 32) + 5394,
-        HealingTide = (((long)WoWTotemType.Water) << 32) + 108280,
-        ManaTide = (((long)WoWTotemType.Water) << 32) + 16190,
-
-        Capacitor = (((long)WoWTotemType.Air) << 32) + 108269,
-        Grounding = (((long)WoWTotemType.Air) << 32) + 8177,
-        Stormlash = (((long)WoWTotemType.Air) << 32) + 120668,
-        Windwalk = (((long)WoWTotemType.Air) << 32) + 108273,
-        SpiritLink = (((long)WoWTotemType.Air) << 32) + 98008,
-    }
-    
     internal static class Totems
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
-        // temporary func until HB updated
-        public static ShamTotem GetShamTotem(this WoWTotemInfo ti)
-        {
-            return (ShamTotem) (ti.Unit == null ? 0 : ((long) ti.Type << 32) + ti.Unit.CreatedBySpellId );
-        }
-
-        // temporary func until HB updated
-        public static int GetTotemSpellId(this ShamTotem totem)
+        public static int ToSpellId(this WoWTotem totem)
         {
             return (int) (((long) totem) & ((1 << 32) - 1));
         }
 
-        public static WoWTotemType GetTotemType(this ShamTotem totem)
+        public static WoWTotemType ToType(this WoWTotem totem)
         {
-            return (WoWTotemType) ((long) totem >> 24);
+            return (WoWTotemType) ((long) totem >> 32);
         }
 
 
@@ -96,27 +64,27 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateTotemsNormalBehavior()
         {
+            // create Fire Totems behavior first, then wrap if needed
             Composite fireTotemBehavior =
                 new PrioritySelector(
                     Spell.BuffSelf("Fire Elemental",
                         ret => ((bool)ret)
-                            || (Unit.NearbyUnitsInCombatWithMe.Count() >= StressMobCount && !SpellManager.CanBuff(ShamTotem.EarthElemental.GetTotemSpellId(), false))),
-    
+                            || (Unit.NearbyUnitsInCombatWithMe.Count() >= StressMobCount && !SpellManager.CanBuff(WoWTotem.EarthElemental.ToSpellId(), false))),
+/*  Magma - handle within AoE DPS logic only
                     Spell.BuffSelf("Magma Totem",
-                        ret => Unit.NearbyUnitsInCombatWithMe.Count(u => u.Distance <= GetTotemRange(ShamTotem.Magma)) >= StressMobCount
-                            && !Exist( ShamTotem.FireElemental)),
-    
+                        ret => Unit.NearbyUnitsInCombatWithMe.Count(u => u.Distance <= GetTotemRange(WoWTotem.Magma)) >= StressMobCount
+                            && !Exist( WoWTotem.FireElemental)),
+*/    
                     Spell.BuffSelf("Searing Totem",
                         ret => Me.GotTarget 
-                            && Me.CurrentTarget.Distance < GetTotemRange(ShamTotem.Searing) - 2f 
-                            && !ExistInRange( Me.CurrentTarget.Location, ShamTotem.FireElemental, ShamTotem.Searing ))
+                            && Me.CurrentTarget.Distance < GetTotemRange(WoWTotem.Searing) - 2f 
+                            && !Exist( WoWTotemType.Fire))
                     );
 
-            // resto is healing only
             if ( Me.Specialization == WoWSpec.ShamanRestoration )
                 fireTotemBehavior = new Decorator(ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0, fireTotemBehavior);
 
-
+            // now 
             return new PrioritySelector(
 
                 // check for stress - enemy player or elite within 8 levels nearby
@@ -125,60 +93,59 @@ namespace Singular.ClassSpecific.Shaman
                     || Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && (u.IsPlayer || (u.Elite && u.Level + 8 > Me.Level))),
 
                 // earth totems
-                Spell.BuffSelf(ShamTotem.EarthElemental.GetTotemSpellId(),
-                    ret => (bool) ret && !Exist( ShamTotem.StoneBulwark)),
+                Spell.BuffSelf(WoWTotem.EarthElemental.ToSpellId(),
+                    ret => (bool) ret && !Exist( WoWTotem.StoneBulwark)),
 
-                Spell.BuffSelf(ShamTotem.StoneBulwark.GetTotemSpellId(),
-                    ret => Me.HealthPercent < 50 && !Exist( ShamTotem.EarthElemental)),
+                Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(),
+                    ret => Me.HealthPercent < 50 && !Exist( WoWTotem.EarthElemental)),
 
                 new PrioritySelector( 
                     ctx => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && u.IsPlayer && u.Combat ),
 
-                    Spell.BuffSelf(ShamTotem.Earthgrab.GetTotemSpellId(),
-                        ret => (bool)ret && !Exist( ShamTotem.StoneBulwark, ShamTotem.EarthElemental, ShamTotem.Earthbind )),
+                    Spell.BuffSelf(WoWTotem.Earthgrab.ToSpellId(),
+                        ret => (bool)ret && !Exist( WoWTotem.StoneBulwark, WoWTotem.EarthElemental, WoWTotem.Earthbind )),
 
-                    Spell.BuffSelf(ShamTotem.Earthbind.GetTotemSpellId(),
-                        ret => (bool)ret && !Exist(ShamTotem.StoneBulwark, ShamTotem.EarthElemental, ShamTotem.Earthgrab))
+                    Spell.BuffSelf(WoWTotem.Earthbind.ToSpellId(),
+                        ret => (bool)ret && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental, WoWTotem.Earthgrab))
                     ),
 
-                Spell.BuffSelf(ShamTotem.Tremor.GetTotemSpellId(),
-                    ret => Me.Fleeing && !Exist( ShamTotem.StoneBulwark, ShamTotem.EarthElemental )),
+                Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
+                    ret => Me.Fleeing && !Exist( WoWTotem.StoneBulwark, WoWTotem.EarthElemental )),
                    
 
                 // fire totems
                 fireTotemBehavior,
 
                 // water totems
-                Spell.Cast("Mana Tide Totem", ret => StyxWoW.Me.ManaPercent < 80),
+                Spell.Cast("Mana Tide Totem", ret => ((bool)ret) && StyxWoW.Me.ManaPercent < 80
+                    && !Exist( WoWTotem.HealingTide )),
+
+/* Healing...: handle within Helaing logic
+                Spell.Cast("Healing Tide Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 50
+                    && !Exist(WoWTotem.ManaTide)),
+
+                Spell.Cast("Healing Stream Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 80
+                    && !Exist( WoWTotemType.Water)),
+*/
 
                 // air totems
-                Spell.Cast("Grounding Totem", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting))
+                Spell.Cast("Grounding Totem",
+                    ret => ((bool) ret)
+                        && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)
+                        && !Exist(WoWTotemType.Air)),
 
+                Spell.Cast("Capacitor Totem",
+                    ret => ((bool) ret)
+                        && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))
+                        && !Exist(WoWTotemType.Air)),
+
+                Spell.Cast("Stormlash Totem",
+                    ret => ((bool)ret)
+                        && Me.HasAnyAura( Me.IsHorde?"Bloodlust":"Heroism", "Timewarp", "Ancient Hysteria")
+                        && !Exist(WoWTotemType.Air))
 
                 );
 
-#if TMPNOW
-NORMAL
-
-    HealingTide         = (WoWTotemType.Water << 32) + 108280,   
-	>= 4 attacking || player
-    HealingStream       = (WoWTotemType.Water << 32) + 5394,
-	>= 4 attacking || player
-    ManaTide            = (WoWTotemType.Water << 32) + 16190,    
-	low mana and being attacked 
-
-    Capacitor           = (WoWTotemType.Air << 32) + 108269,  
-	>= 4 attacking || player
-    Grounding           = (WoWTotemType.Air << 32) + 8177,
-	>= (4 attacking || player) and one casting
-    Stormlash           = (WoWTotemType.Air << 32) + 120668, 
-	>= 4 attacking || player
-    Windwalk            = (WoWTotemType.Air << 32) + 108273, 
-	feared 
-    SpiritLink          = (WoWTotemType.Air << 32) + 98008,
-	never
-
-#endif
         }
 
         public static Composite CreateTotemsPvPBehavior()
@@ -234,7 +201,7 @@ NORMAL
         }
 
 
-        private static readonly Dictionary<WoWTotemType, ShamTotem> LastSetTotems = new Dictionary<WoWTotemType, ShamTotem>();
+        private static readonly Dictionary<WoWTotemType, WoWTotem> LastSetTotems = new Dictionary<WoWTotemType, WoWTotem>();
 
 
         #region Helper shit
@@ -251,16 +218,86 @@ NORMAL
             } 
         }
 
+        public static bool TotemIsKnown(WoWTotem totem)
+        {
+            return SpellManager.HasSpell(totem.ToSpellId());
+        }
+
+
+        #region Totem Existance
+
+        public static bool Exist(WoWTotem ti)
+        {
+            return ti != WoWTotem.None
+                && ti != WoWTotem.DummyAir
+                && ti != WoWTotem.DummyEarth
+                && ti != WoWTotem.DummyFire
+                && ti != WoWTotem.DummyWater;
+        }
+
+        public static bool Exist(WoWTotemInfo ti)
+        {
+            return Exist(ti.WoWTotem);
+        }
+
+        public static bool Exist(WoWTotemType type)
+        {
+            WoWTotem wt = GetTotem(type).WoWTotem;
+            return Exist(wt);
+        }
+
+        public static bool Exist(params WoWTotem[] wt)
+        {
+            return wt.Any(t => Exist(t));
+        }
+
+        public static bool ExistInRange(WoWPoint pt, WoWTotem tt)
+        {
+            if ( !Exist(tt))
+                return false;
+
+            WoWTotemInfo ti = GetTotem(tt);
+            return ti.Unit != null && ti.Unit.Location.Distance(pt) < GetTotemRange(tt);
+        }
+
+        public static bool ExistInRange(WoWPoint pt, params WoWTotem[] awt)
+        {
+            return awt.Any(t => ExistInRange(pt, t));
+        }
+
+        public static bool ExistInRange(WoWPoint pt, WoWTotemType type)
+        {
+            WoWTotemInfo ti = GetTotem(type);
+            return Exist(ti) && ti.Unit != null && ti.Unit.Location.Distance(pt) < GetTotemRange(ti.WoWTotem);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// gets reference to array element in Me.Totems[] corresponding to WoWTotemType of wt.  Return is always non-null and does not indicate totem existance
+        /// </summary>
+        /// <param name="wt">WoWTotem of slot to reference</param>
+        /// <returns>WoWTotemInfo reference</returns>
+        public static WoWTotemInfo GetTotem(WoWTotem wt)
+        {
+            return GetTotem(wt.ToType());
+        }
+
+        /// <summary>
+        /// gets reference to array element in Me.Totems[] corresponding to type.  Return is always non-null and does not indicate totem existance
+        /// </summary>
+        /// <param name="type">WoWTotemType of slot to reference</param>
+        /// <returns>WoWTotemInfo reference</returns>
+        public static WoWTotemInfo GetTotem(WoWTotemType type)
+        {
+            return Me.Totems[(int)type];
+        }
+
         public static int TotemsInRange { get { return TotemsInRangeOf(StyxWoW.Me); } }
 
         public static int TotemsInRangeOf(WoWUnit unit)
-        { 
-            return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.GetShamTotem()));
-        }
-
-        public static bool TotemIsKnown(WoWTotem totem)
         {
-            return SpellManager.HasSpell(totem.GetTotemSpellId());
+            return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem));
         }
 
         /// <summary>
@@ -271,135 +308,60 @@ NORMAL
         /// </remarks>
         /// <param name = "totem">The totem.</param>
         /// <returns>The calculated totem range.</returns>
-        public static float GetTotemRange(ShamTotem totem)
+        public static float GetTotemRange(WoWTotem totem)
         {
             switch (totem)
             {
-                case ShamTotem.HealingStream:
-                case ShamTotem.Tremor:
+                case WoWTotem.HealingStream:
+                case WoWTotem.Tremor:
                     return 30f;
 
-                case ShamTotem.Searing:
-                    if ( SpellManager.HasSpell(29000))
+                case WoWTotem.Searing:
+                    if (SpellManager.HasSpell(29000))
                         return 35f;
                     return 20f;
 
-                case ShamTotem.Earthbind:
-                    return 10f ;
-
-                case ShamTotem.Grounding:
-                case ShamTotem.Magma:
-                    return 8f ;
-
-                case ShamTotem.EarthElemental:
-                case ShamTotem.FireElemental:
-                    // Not really sure about these 3.
-                    return 20f;
-                case ShamTotem.ManaTide:
-                    // Again... not sure :S
-                    return 30f ;
-
-
-                case ShamTotem.Earthgrab   :
+                case WoWTotem.Earthbind:
                     return 10f;
 
-                case ShamTotem.StoneBulwark:
-                    // No idea, not like glyphed stoneclaw was since there is a 5 sec pluse shield component also
-                    return 40f;
-
-                case ShamTotem.HealingTide :
-                    return 40f;
-
-                case ShamTotem.Capacitor   :
+                case WoWTotem.Grounding:
+                case WoWTotem.Magma:
                     return 8f;
 
-                case ShamTotem.Stormlash   :
-                    return 30f;
+                case WoWTotem.EarthElemental:
+                case WoWTotem.FireElemental:
+                    // Not really sure about these 3.
+                    return 20f;
 
-                case ShamTotem.Windwalk    :
+                case WoWTotem.ManaTide:
+                    // Again... not sure :S
                     return 40f;
 
-                case ShamTotem.SpiritLink  :
+
+                case WoWTotem.Earthgrab:
+                    return 10f;
+
+                case WoWTotem.StoneBulwark:
+                    // No idea, unlike former glyphed stoneclaw it has a 5 sec pluse shield component so range is more important
+                    return 40f;
+
+                case WoWTotem.HealingTide:
+                    return 40f;
+
+                case WoWTotem.Capacitor:
+                    return 8f;
+
+                case WoWTotem.Stormlash:
+                    return 30f;
+
+                case WoWTotem.Windwalk:
+                    return 40f;
+
+                case WoWTotem.SpiritLink:
                     return 10f;
             }
 
             return 0f;
-        }
-
-        public static bool Exist(ShamTotem tt)
-        {
-#if NOPTE
-            return StyxWoW.Me.Totems.Any(t => tt == t.GetShamTotem());
-#else
-            foreach (WoWTotemInfo t in Me.Totems)
-            {
-                if (tt == t.GetShamTotem())
-                {
-                    return true;
-                }
-            }
-            return false;
-#endif
-        }
-
-        public static bool Exist(params ShamTotem[] tt)
-        {
-#if NOPE
-            return StyxWoW.Me.Totems.Any(t => tt.Contains(t.GetShamTotem()));
-#else
-            foreach (WoWTotemInfo t in Me.Totems)
-            {
-                foreach (ShamTotem ttt in tt)
-                {
-                    if (ttt == t.GetShamTotem())
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-#endif
-        }
-
-        public static bool ExistInRange(WoWPoint pt, ShamTotem tt)
-        {
-#if NOPE
-            return StyxWoW.Me.Totems.Any(t => tt == t.GetShamTotem() && t.Unit.Location.Distance(pt) < GetTotemRange(t.GetShamTotem()));
-#else
-            foreach (WoWTotemInfo t in Me.Totems)
-            {
-                if (tt == t.GetShamTotem())
-                {
-                    if ( t.Unit.Location.Distance(pt) < GetTotemRange(t.GetShamTotem()))
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-#endif
-        }
-
-        public static bool ExistInRange(WoWPoint pt, params ShamTotem[] tt)
-        {
-#if NOPE
-            return StyxWoW.Me.Totems.Any(t => tt.Contains(t.GetShamTotem()) && t.Unit.Location.Distance(pt) < GetTotemRange(t.GetShamTotem()));
-#else
-            foreach (WoWTotemInfo t in Me.Totems)
-            {
-                foreach (ShamTotem ttt in tt)
-                {
-                    if (ttt == t.GetShamTotem())
-                    {
-                        if ( t.Unit.Location.Distance(pt) < GetTotemRange(ttt))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-#endif
         }
 
         #endregion

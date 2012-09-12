@@ -70,8 +70,6 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.BuffSelf("Berserking",
                             ret => SingularSettings.Instance.UseRacials && Me.Race == WoWRace.Troll ),
                         Spell.BuffSelf("Lifeblood",
-                            ret => SingularSettings.Instance.UseRacials),
-                        Spell.BuffSelf("Lifeblood",
                             ret => SingularSettings.Instance.UseRacials)
 
                         );
@@ -221,5 +219,12 @@ namespace Singular.ClassSpecific.Shaman
             return GetImbue(item) == Imbue.Earthliving;
         }
 
+        public static bool InGCD
+        {
+            get
+            {
+                return SpellManager.GlobalCooldown;
+            }
+        }
     }
 }

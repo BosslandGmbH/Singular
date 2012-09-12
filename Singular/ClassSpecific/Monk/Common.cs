@@ -18,8 +18,6 @@ namespace Singular.ClassSpecific.Monk
 { /*
     public class Common
     {
-        [Class(WoWClass.Monk)]
-        [Behavior(BehaviorType.PreCombatBuffs)]
         [Spec(WoWSpec.WindwalkerMonk)]
         [Spec(WoWSpec.MistweaverMonk)]
         [Spec(WoWSpec.BrewmasterMonk)]

@@ -35,7 +35,8 @@ namespace Singular.Helpers
             get
             {
                 // If we have no target... then give nothing.
-                if (StyxWoW.Me.CurrentTargetGuid == 0)
+                // if (StyxWoW.Me.CurrentTargetGuid == 0)  // chg to GotTarget due to non-zero vals with no target in Guid
+                if (!StyxWoW.Me.GotTarget) 
                     return 0f;
 
                 if (StyxWoW.Me.CurrentTarget.IsPlayer)

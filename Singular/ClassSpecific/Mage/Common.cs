@@ -72,8 +72,12 @@ namespace Singular.ClassSpecific.Mage
                         new WaitContinue(30, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()))),
 
                 Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !ShouldSummonTable),
-
-                Spell.BuffSelf("Conjure Mana Gem", ret => !HaveManaGem), //for dealing with managems
+             
+                new Decorator(ret => !HaveManaGem && SpellManager.CanCast("Conjure Mana Gem"), 
+                    new Sequence(
+                        new Action(ret =>Logger.Write("Casting Conjure Mana Gem")),
+                        new Action(ret => SpellManager.Cast(759)))),
+                                  
                 new Decorator(
                     ret =>
                     TalentManager.CurrentSpec == WoWSpec.MageFrost && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
@@ -138,18 +142,18 @@ namespace Singular.ClassSpecific.Mage
 
         public static bool Gotfood { get { return StyxWoW.Me.BagItems.Any(item => MageFoodIds.Contains(item.Entry)); } }
 
-        private static bool HaveManaGem { get { return StyxWoW.Me.BagItems.Any(i => i.Entry == 36799); } }
+        private static bool HaveManaGem { get { return StyxWoW.Me.BagItems.Any(i => i.Entry == 36799 || i.Entry == 81901); } }
 
         public static Composite CreateUseManaGemBehavior() { return CreateUseManaGemBehavior(ret => true); }
 
         public static Composite CreateUseManaGemBehavior(SimpleBooleanDelegate requirements)
         {
             return new PrioritySelector(
-                ctx => StyxWoW.Me.BagItems.FirstOrDefault(i => i.Entry == 36799),
+                ctx => StyxWoW.Me.BagItems.FirstOrDefault(i => i.Entry == 36799 || i.Entry == 81901),
                 new Decorator(
                     ret => ret != null && StyxWoW.Me.ManaPercent < 100 && ((WoWItem)ret).Cooldown == 0 && requirements(ret),
                     new Sequence(
-                        new Action(ret => Logger.Write("Using mana gem")),
+                        new Action(ret => Logger.Write("Using {0}", ((WoWItem)ret).Name)),
                         new Action(ret => ((WoWItem)ret).Use())))
                 );
         }

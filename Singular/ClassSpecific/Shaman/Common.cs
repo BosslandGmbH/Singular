@@ -84,6 +84,7 @@ namespace Singular.ClassSpecific.Shaman
             return inCombatBuffs;
         }
 
+        #region IMBUE SUPPORT
         public static Decorator CreateShamanImbueMainHandBehavior(params Imbue[] imbueList)
         {
             return new Decorator( ret => CanImbue(Me.Inventory.Equipped.MainHand),
@@ -158,7 +159,7 @@ namespace Singular.ClassSpecific.Shaman
                 // check if enough time has passed since last imbue
                 // .. guards against detecting is missing immediately after a cast but before buff appears
                 // .. (which results in imbue cast spam)
-                if (nextImbueAllowed < DateTime.Now)
+                if (nextImbueAllowed > DateTime.Now)
                     return false;
 
                 switch (item.ItemInfo.WeaponClass)
@@ -219,6 +220,9 @@ namespace Singular.ClassSpecific.Shaman
             return GetImbue(item) == Imbue.Earthliving;
         }
 
+        #endregion
+
+
         public static bool InGCD
         {
             get
@@ -226,5 +230,46 @@ namespace Singular.ClassSpecific.Shaman
                 return SpellManager.GlobalCooldown;
             }
         }
+
+        #region NON-RESTO HEALING
+
+        public static Composite CreateShamanNonHealBehavior()
+        {
+            return
+                new PrioritySelector(
+
+                    Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana),
+
+                    new Decorator(
+                        ret => !StyxWoW.Me.Combat,
+                            Spell.Heal(
+                                "Healing Surge",
+                                ret => StyxWoW.Me,
+                                ret => StyxWoW.Me.HealthPercent <= 70)
+                        ),
+                    new Decorator(
+                        ret => StyxWoW.Me.Combat,
+                        new PrioritySelector(
+                            Spell.BuffSelf(
+                                "Healing Tide Totem",
+                                ret => Unit.NearbyFriendlyPlayers.Any(
+                                        p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingTideTotem
+                                            && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
+                            Spell.BuffSelf(
+                                "Healing Stream Totem",
+                                ret => !Totems.Exist(WoWTotemType.Water)
+                                    && Unit.NearbyFriendlyPlayers.Any(
+                                        p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingStreamTotem
+                                            && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
+                            Spell.Heal(
+                                "Healing Surge",
+                                ret => StyxWoW.Me,
+                                ret => StyxWoW.Me.HealthPercent <= 30)
+                            )
+                        )
+                    );
+        }
+
+        #endregion
     }
 }

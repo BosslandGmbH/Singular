@@ -290,7 +290,7 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
                         Spell.WaitForCast(),
                         new Decorator( 
-                            ret => !SpellManager.GlobalCooldown,
+                            ret => !Common.InGCD,
                             new PrioritySelector(
 
                                 new Decorator(

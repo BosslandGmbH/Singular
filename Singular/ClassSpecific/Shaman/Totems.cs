@@ -290,7 +290,7 @@ namespace Singular.ClassSpecific.Shaman
         /// <returns>WoWTotemInfo reference</returns>
         public static WoWTotemInfo GetTotem(WoWTotemType type)
         {
-            return Me.Totems[(int)type];
+            return Me.Totems[(int)type - 1];
         }
 
         public static int TotemsInRange { get { return TotemsInRangeOf(StyxWoW.Me); } }

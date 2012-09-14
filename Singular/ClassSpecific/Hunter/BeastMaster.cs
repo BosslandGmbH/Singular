@@ -77,7 +77,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.BuffSelf("Focus Fire", ctx => StyxWoW.Me.HasAura("Frenzy")),
 
                 Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
                 Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                 Spell.Cast("Cobra Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
@@ -117,7 +117,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.BuffSelf("Disengage",
                                ret =>
                                SingularSettings.Instance.Hunter.UseDisengage &&
-                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f && Navigator.CanNavigateFully(StyxWoW.Me.Location,WoWMathHelper.CalculatePointBehind(StyxWoW.Me.Location,StyxWoW.Me.Rotation, 10))),
+                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f && Navigator.CanNavigateFully(StyxWoW.Me.Location,WoWMathHelper.CalculatePointBehind(StyxWoW.Me.Location,StyxWoW.Me.Rotation, 30))),
                 //Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -167,7 +167,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.BuffSelf("Focus Fire", ctx => StyxWoW.Me.HasAura("Frenzy")),
 
                 Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
                 Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                 Spell.Cast("Cobra Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
@@ -255,7 +255,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.BuffSelf("Focus Fire", ctx => StyxWoW.Me.HasAura("Frenzy")),
 
                 Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
                 Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                 Spell.Cast("Cobra Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),

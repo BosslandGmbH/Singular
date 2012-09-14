@@ -94,7 +94,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
                 Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent > 90 || StyxWoW.Me.HasAura("Rapid Fire") || StyxWoW.Me.HasAura("Bloodlust")),
                 Spell.Cast("Arcane Shot", ctx => (StyxWoW.Me.FocusPercent >= 66 || SpellManager.Spells["Chimera Shot"].CooldownTimeLeft >= TimeSpan.FromSeconds(5)) && (StyxWoW.Me.CurrentTarget.HealthPercent < 90 && !StyxWoW.Me.HasAura("Rapid Fire") && !StyxWoW.Me.HasAura("Bloodlust"))),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
 
                 Spell.Cast("Steady Shot"),
 
@@ -181,7 +181,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
                 Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent > 90 || StyxWoW.Me.HasAura("Rapid Fire") || StyxWoW.Me.HasAura("Bloodlust")),
                 Spell.Cast("Arcane Shot", ctx => (StyxWoW.Me.FocusPercent >= 66 || SpellManager.Spells["Chimera Shot"].CooldownTimeLeft >= TimeSpan.FromSeconds(5)) && (StyxWoW.Me.CurrentTarget.HealthPercent < 90 && !StyxWoW.Me.HasAura("Rapid Fire") && !StyxWoW.Me.HasAura("Bloodlust"))),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
 
                 Spell.Cast("Steady Shot"),
 
@@ -266,7 +266,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
                 Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent > 90 || StyxWoW.Me.HasAura("Rapid Fire") || StyxWoW.Me.HasAura("Bloodlust")),
                 Spell.Cast("Arcane Shot", ctx => (StyxWoW.Me.FocusPercent >= 66 || SpellManager.Spells["Chimera Shot"].CooldownTimeLeft >= TimeSpan.FromSeconds(5)) && (StyxWoW.Me.CurrentTarget.HealthPercent < 90 && !StyxWoW.Me.HasAura("Rapid Fire") && !StyxWoW.Me.HasAura("Bloodlust"))),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
 
                 Spell.Cast("Steady Shot"),
 

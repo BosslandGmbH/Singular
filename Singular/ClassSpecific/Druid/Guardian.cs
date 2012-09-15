@@ -16,7 +16,7 @@ namespace Singular.ClassSpecific.Druid
     {
 
 
-                private static DruidSettings Settings
+        private static DruidSettings Settings
         {
             get { return SingularSettings.Instance.Druid; }
         }
@@ -99,6 +99,5 @@ namespace Singular.ClassSpecific.Druid
             )
             ;
         }
-    }
     }
 }

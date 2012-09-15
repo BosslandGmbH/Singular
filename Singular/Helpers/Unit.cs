@@ -185,8 +185,7 @@ namespace Singular.Helpers
 
         private static bool HasAura(this WoWUnit unit, string aura, int stacks, WoWUnit creator)
         {
-            return unit.GetAllAuras().Any(a => a.Name == aura && a.StackCount >= stacks &&
-                                              (creator == null || a.CreatorGuid == creator.Guid));
+            return unit.GetAllAuras().Any(a => a.Name == aura && a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid));
         }
 
         /// <summary>

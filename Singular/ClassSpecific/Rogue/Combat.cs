@@ -6,7 +6,7 @@ using Singular.Managers;
 using Singular.Settings;
 
 using Styx;
-using Styx.Combat.CombatRoutine;
+
 using Styx.CommonBot;
 using Styx.TreeSharp;
 using CommonBehaviors.Actions;
@@ -240,10 +240,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
 
                 // Agro management
-                Spell.Cast(
-                    "Tricks of the Trade",
-                    ret => Common.BestTricksTarget,
-                    ret => SingularSettings.Instance.Rogue.UseTricksOfTheTrade),
+                Spell.Cast("Tricks of the Trade", ret => Common.BestTricksTarget, ret => SingularSettings.Instance.Rogue.UseTricksOfTheTrade),
 
                 Spell.Cast("Feint", ret => StyxWoW.Me.CurrentTarget.ThreatInfo.RawPercent > 80),
 

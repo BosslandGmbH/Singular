@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Styx;
-using Styx.Combat.CombatRoutine;
+
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Helpers

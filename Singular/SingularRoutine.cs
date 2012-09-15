@@ -21,7 +21,7 @@ using Singular.Managers;
 using Singular.Settings;
 using Singular.Utilities;
 using Styx;
-using Styx.Combat.CombatRoutine;
+
 using Styx.CommonBot;
 using Styx.CommonBot.Routines;
 using Styx.Helpers;

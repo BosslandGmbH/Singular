@@ -8,7 +8,7 @@ using Singular.Managers;
 using Singular.Settings;
 
 using Styx;
-using Styx.Combat.CombatRoutine;
+
 using Styx.Common.Helpers;
 using Styx.CommonBot;
 using Styx.Pathing;

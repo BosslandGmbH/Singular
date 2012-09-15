@@ -14,7 +14,7 @@
 using System;
 using Singular.Managers;
 using Styx;
-using Styx.Combat.CombatRoutine;
+
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 

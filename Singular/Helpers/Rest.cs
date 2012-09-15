@@ -3,7 +3,7 @@ using CommonBehaviors.Actions;
 
 using Singular.Settings;
 using Styx;
-using Styx.Combat.CombatRoutine;
+
 using Styx.CommonBot;
 using Styx.CommonBot.Inventory;
 using Styx.Pathing;

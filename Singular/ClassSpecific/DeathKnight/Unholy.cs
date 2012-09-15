@@ -5,7 +5,7 @@ using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
 using Styx;
-using Styx.Combat.CombatRoutine;
+
 using Styx.Pathing;
 using Styx.TreeSharp;
 using Styx.WoWInternals;

@@ -115,6 +115,7 @@
     <Compile Include="ClassSpecific\Druid\Balance.cs" />
     <Compile Include="ClassSpecific\Druid\Common.cs" />
     <Compile Include="ClassSpecific\Druid\Feral.cs" />
+    <Compile Include="ClassSpecific\Druid\Guardian.cs" />
     <Compile Include="ClassSpecific\Druid\Lowbie.cs" />
     <Compile Include="ClassSpecific\Druid\Resto.cs" />
     <Compile Include="ClassSpecific\Generic.cs" />

@@ -159,6 +159,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 Common.CreateHunterTrapBehavior("Snake Trap", false),
                 Common.CreateHunterTrapBehavior("Immolation Trap", false),
+                new Action(ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(ret => ret.Entry == 76089).UseContainerItem()),
 
                 Spell.BuffSelf("Deterrence", ctx => StyxWoW.Me.HealthPercent < 30),
 

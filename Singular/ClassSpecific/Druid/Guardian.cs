@@ -7,7 +7,6 @@ using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Settings;
 using Styx;
-using Styx.Combat.CombatRoutine;
 using Styx.TreeSharp;
 
 namespace Singular.ClassSpecific.Druid

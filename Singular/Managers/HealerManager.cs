@@ -179,7 +179,7 @@ namespace Singular.Managers
 
         private static HashSet<ulong> GetMainTankGuids()
         {
-            var infos = StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberInfos : StyxWoW.Me.PartyMemberInfos;
+            var infos = StyxWoW.Me.GroupInfo.RaidMembers;
 
             return new HashSet<ulong>(
                 from pi in infos

@@ -192,7 +192,7 @@ namespace Singular.ClassSpecific.Druid
 
                 //Inervate
                 Spell.Buff("Innervate",
-                    ret => (from raidMember in StyxWoW.Me.RaidMemberInfos
+                    ret => (from raidMember in StyxWoW.Me.GroupInfo.RaidMembers
                                 let player = raidMember.ToPlayer()
                                 where player != null && raidMember.HasRole(WoWPartyMember.GroupRole.Healer) && player.ManaPercent <= 15
                                 select player).FirstOrDefault()),

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Styx;
-
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Helpers
@@ -26,21 +26,10 @@ namespace Singular.Helpers
         {
             get
             {
-                var result = new List<WoWPlayer>();
-
                 if (!StyxWoW.Me.IsInParty)
-                    return result;
+                    return new List<WoWPlayer>(); ;
 
-                if ((StyxWoW.Me.Role & WoWPartyMember.GroupRole.Tank) != 0)
-                    result.Add(StyxWoW.Me);
-
-                var members = StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberInfos : StyxWoW.Me.PartyMemberInfos;
-
-                var tanks = members.Where(p => (p.Role & WoWPartyMember.GroupRole.Tank) != 0);
-
-                result.AddRange(tanks.Where(t => t.ToPlayer() != null).Select(t => t.ToPlayer()));
-
-                return result;
+                return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Tank)).Select(p => p.ToPlayer()).ToList();
             }
         }
 
@@ -48,21 +37,11 @@ namespace Singular.Helpers
         {
             get
             {
-                var result = new List<WoWPlayer>();
-
                 if (!StyxWoW.Me.IsInParty)
-                    return result;
+                    return new List<WoWPlayer>(); ;
 
-                if ((StyxWoW.Me.Role & WoWPartyMember.GroupRole.Healer) != 0)
-                    result.Add(StyxWoW.Me);
+                return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Healer)).Select(p => p.ToPlayer()).ToList();
 
-                var members = StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberInfos : StyxWoW.Me.PartyMemberInfos;
-
-                var tanks = members.Where(p => (p.Role & WoWPartyMember.GroupRole.Healer) != 0);
-
-                result.AddRange(tanks.Where(t => t.ToPlayer() != null).Select(t => t.ToPlayer()));
-
-                return result;
             }
         }
 
@@ -78,7 +57,7 @@ namespace Singular.Helpers
             {
 
                 var unit =
-                    StyxWoW.Me.PartyMemberInfos.FirstOrDefault(
+                    StyxWoW.Me.GroupInfo.RaidMembers.FirstOrDefault(
                         p => p.ToPlayer() != null && p.ToPlayer().Distance < range && p.ToPlayer().Class == woWClass);
 
                 if (unit != null)

@@ -32,13 +32,14 @@ namespace Singular.Helpers
         {
             get
             {
-                ulong[] guids = StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberGuids : StyxWoW.Me.RawPartyMemberGuids;
+                ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids;
                 return (
                     from p in ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
                     where p.IsFriendly && guids.Any(g => g == p.Guid)
                     select p).ToList();
             }
         }
+
 
         /// <summary>
         /// List of WoWPartyMember in your Group. Deals with Party / Raid in a list independent manner and does not restrict distance
@@ -47,9 +48,10 @@ namespace Singular.Helpers
         {
             get
             {
-                return StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMemberInfos : StyxWoW.Me.PartyMemberInfos;
+                return  StyxWoW.Me.GroupInfo.RaidMembers;
             }
         }
+
 
         public static IEnumerable<WoWPlayer> NearbyGroupMembers
         {

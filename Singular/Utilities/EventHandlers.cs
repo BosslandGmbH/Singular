@@ -92,7 +92,7 @@ namespace Singular.Utilities
                     //Logger.WriteDebug("Successfully cast " + Spell.LastSpellCast);
 
                     // Force a wait for all summoned minions. This prevents double-casting it.
-                    if (SingularRoutine.MyClass == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
+                    if (StyxWoW.Me.Class == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
                     {
                         StyxWoW.SleepForLagDuration();
                     }

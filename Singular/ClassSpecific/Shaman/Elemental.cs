@@ -1,19 +1,17 @@
 ﻿using System.Linq;
-using Singular.Dynamics;
-using Singular.Helpers;
-using Singular.Managers;
-using Singular.Settings;
 
 using Styx;
-
+using Styx.Combat.CombatRoutine;
 using Styx.CommonBot;
-using Styx.Helpers;
-
-using Styx.WoWInternals;
+using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;
 
-using Styx.TreeSharp;
 using Rest = Singular.Helpers.Rest;
+
+using Singular.Dynamics;
+using Singular.Helpers;
+using Singular.Settings;
+
 
 namespace Singular.ClassSpecific.Shaman
 {
@@ -230,14 +228,6 @@ namespace Singular.ClassSpecific.Shaman
                                 Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
                                 Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
                                 )),
-
-                        // Totem stuff
-                        Spell.BuffSelf("Searing Totem",
-                            ret => StyxWoW.Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) - 2f &&
-                                   !StyxWoW.Me.Totems.Any(
-                                        t => t.Unit != null && t.WoWTotem == WoWTotem.Searing &&
-                                             t.Unit.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Totems.GetTotemRange(WoWTotem.Searing)) &&
-                                   StyxWoW.Me.Totems.All(t => t.WoWTotem != WoWTotem.FireElemental)),
 
                         Spell.Buff("Flame Shock", true),
                         Spell.Cast("Lava Burst"),

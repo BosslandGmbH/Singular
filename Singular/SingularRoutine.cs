@@ -13,7 +13,6 @@
 
 using System;
 using System.Reflection;
-
 using Singular.Dynamics;
 using Singular.GUI;
 using Singular.Helpers;
@@ -21,21 +20,21 @@ using Singular.Managers;
 using Singular.Settings;
 using Singular.Utilities;
 using Styx;
-
 using Styx.CommonBot;
 using Styx.CommonBot.Routines;
 using Styx.Helpers;
-using Styx.MemoryManagement;
 using Styx.TreeSharp;
+using Styx.WoWInternals.DBC;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
-    public partial class SingularRoutine : CombatRoutine
+    public class SingularRoutine : CombatRoutine
     {
         private Composite _combatBehavior;
         private Composite _combatBuffsBehavior;
         private Composite _healBehavior;
+        private ulong _lastTargetGuid;
         private WoWClass _myClass;
         private Composite _preCombatBuffsBehavior;
         private Composite _pullBehavior;
@@ -60,17 +59,13 @@ namespace Singular
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
-        internal static WoWClass MyClass { get; set; }
-
-        internal static event EventHandler<WoWContextEventArg> OnWoWContextChanged;
-
         internal static WoWContext LastWoWContext { get; set; }
 
         internal static WoWContext CurrentWoWContext
         {
             get
             {
-                var map = StyxWoW.Me.CurrentMap;
+                Map map = StyxWoW.Me.CurrentMap;
 
                 if (map.IsBattleground || map.IsArena)
                 {
@@ -114,12 +109,12 @@ namespace Singular
             }
         }
 
+        internal static event EventHandler<WoWContextEventArg> OnWoWContextChanged;
+
         public override void OnButtonPress()
         {
             new ConfigurationForm().ShowDialog();
         }
-
-        private ulong _lastTargetGuid = 0;
 
         public override void Pulse()
         {
@@ -127,7 +122,7 @@ namespace Singular
             {
                 _lastTargetGuid = StyxWoW.Me.CurrentTargetGuid;
                 // Don't print this shit if we don't need to. Kthx.
-                if (_lastTargetGuid != 0)  
+                if (_lastTargetGuid != 0)
                 {
                     // Add other target switch info stuff here.
 
@@ -142,7 +137,7 @@ namespace Singular
             // Double cast shit
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow.Subtract(t).TotalMilliseconds >= 2500);
             //Only pulse for classes with pets
-            switch (MyClass)
+            switch (_myClass)
             {
                 case WoWClass.Hunter:
                 case WoWClass.DeathKnight:
@@ -164,7 +159,7 @@ namespace Singular
             //Caching current class here to avoid issues with loading screens where Class return None and we cant build behaviors
             _myClass = Me.Class;
 
-            RoutineManager.Reloaded += new EventHandler(RoutineManager_Reloaded);
+            RoutineManager.Reloaded += RoutineManager_Reloaded;
 
             Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
             Logger.Write("Determining talent spec.");
@@ -190,10 +185,10 @@ namespace Singular
             //Logger.Write("Combat log event handler started.");
         }
 
-        void RoutineManager_Reloaded(object sender, EventArgs e)
+        private void RoutineManager_Reloaded(object sender, EventArgs e)
         {
             Logger.Write("Routines were reloaded, re-creating behaviors");
-            CreateBehaviors(); 
+            CreateBehaviors();
         }
 
         public bool CreateBehaviors()
@@ -233,8 +228,6 @@ namespace Singular
             EnsureComposite(false, BehaviorType.PullBuffs, out _pullBuffsBehavior);
             EnsureComposite(false, BehaviorType.PreCombatBuffs, out _preCombatBuffsBehavior);
 
-
-
             // Since we can be lazy, we're going to fix a bug right here and now.
             // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
             // 4/11/2012 - Changed to use a LockSelector to increased performance.
@@ -242,51 +235,43 @@ namespace Singular
             {
                 _preCombatBuffsBehavior =
                     new Decorator(
-                    ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                        new LockSelector(
-                            _preCombatBuffsBehavior));
+                        ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                        new LockSelector(_preCombatBuffsBehavior));
             }
 
             if (_combatBuffsBehavior != null)
             {
-                _combatBuffsBehavior = new Decorator(
-                    ret => !IsMounted && !Me.IsOnTransport,
-                    new LockSelector(
-                    //Item.CreateUseAlchemyBuffsBehavior(),
+                _combatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport,
+                    new LockSelector( //Item.CreateUseAlchemyBuffsBehavior(),
                         Item.CreateUseTrinketsBehavior(),
-                    //Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana),
-                        _combatBuffsBehavior)
-                    );
+                        //Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana),
+                        _combatBuffsBehavior));
             }
 
             // There are some classes that uses spells in rest behavior. Basicly we don't want Rest to be called while flying.
             if (_restBehavior != null)
             {
-                _restBehavior = new Decorator(
-                    ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                    new LockSelector(
-                        _restBehavior));
+                _restBehavior =
+                    new Decorator(
+                        ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                        new LockSelector(_restBehavior));
             }
 
             // Wrap all the behaviors with a LockSelector which basically wraps the child bahaviors with a framelock.
             // This will generally reduce the time it takes to pulse the behavior thus increasing performance of the cc
             if (_healBehavior != null)
             {
-                _healBehavior = new LockSelector(
-                    _healBehavior);
+                _healBehavior = new LockSelector(_healBehavior);
             }
 
             if (_pullBuffsBehavior != null)
             {
-                _pullBuffsBehavior = new LockSelector(
-                    _pullBuffsBehavior);
+                _pullBuffsBehavior = new LockSelector(_pullBuffsBehavior);
             }
 
-            _combatBehavior = new LockSelector(
-                _combatBehavior);
+            _combatBehavior = new LockSelector(_combatBehavior);
 
-            _pullBehavior = new LockSelector(
-                _pullBehavior);
+            _pullBehavior = new LockSelector(_pullBehavior);
             return true;
         }
 
@@ -294,13 +279,14 @@ namespace Singular
         {
             Logger.WriteDebug("Creating " + type + " behavior.");
             int count = 0;
-            composite = CompositeBuilder.GetComposite(_myClass, TalentManager.CurrentSpec, type, CurrentWoWContext, out count);
+            composite = CompositeBuilder.GetComposite(_myClass, TalentManager.CurrentSpec, type, CurrentWoWContext,
+                out count);
             if ((composite == null || count <= 0) && error)
             {
                 StopBot(
                     string.Format(
-                        "Singular currently does not support {0} for this class/spec combination, in this context! [{1}, {2}, {3}]", type, _myClass,
-                        TalentManager.CurrentSpec, CurrentWoWContext));
+                        "Singular currently does not support {0} for this class/spec combination, in this context! [{1}, {2}, {3}]",
+                        type, _myClass, TalentManager.CurrentSpec, CurrentWoWContext));
                 return false;
             }
             return composite != null;
@@ -313,16 +299,17 @@ namespace Singular
         }
 
         #region Nested type: LockSelector
+
         /// <summary>
         /// This behavior wraps the child behaviors in a 'FrameLock' which can provide a big performance improvement 
         /// if the child behaviors makes multiple api calls that internally run off a frame in WoW in one CC pulse.
         /// </summary>
         private class LockSelector : PrioritySelector
         {
-            public LockSelector(params Composite[] children)
-                : base(children)
+            public LockSelector(params Composite[] children) : base(children)
             {
             }
+
             public override RunStatus Tick(object context)
             {
                 using (StyxWoW.Memory.AcquireFrame())
@@ -331,19 +318,23 @@ namespace Singular
                 }
             }
         }
+
         #endregion
 
         #region Nested type: WoWContextEventArg
+
         public class WoWContextEventArg : EventArgs
         {
+            public readonly WoWContext CurrentContext;
+            public readonly WoWContext PreviousContext;
+
             public WoWContextEventArg(WoWContext currentContext, WoWContext prevContext)
             {
                 CurrentContext = currentContext;
                 PreviousContext = prevContext;
             }
-            public readonly WoWContext CurrentContext;
-            public readonly WoWContext PreviousContext;
         }
+
         #endregion
     }
 }

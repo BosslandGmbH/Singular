@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 
 using Styx;
-using Styx.Combat.CombatRoutine;
 using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;

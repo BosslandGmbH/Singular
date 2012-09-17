@@ -66,7 +66,7 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
 
                         Spell.BuffSelf("Blood Fury",
-                            ret => SingularSettings.Instance.UseRacials && Me.Race == WoWRace.Orc && (!Me.IsInInstance || Me.HasAura( Lust))),
+                            ret => SingularSettings.Instance.UseRacials && Me.Race == WoWRace.Orc && (!Me.IsInInstance || Me.HasAura(Lust))),
                         Spell.BuffSelf("Berserking",
                             ret => SingularSettings.Instance.UseRacials && Me.Race == WoWRace.Troll ),
                         Spell.BuffSelf("Lifeblood",

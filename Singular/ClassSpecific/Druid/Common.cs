@@ -19,6 +19,28 @@ namespace Singular.ClassSpecific.Druid
     {
         public static ShapeshiftForm WantedDruidForm { get; set; }
 
+        internal enum Talents
+        {
+            FelineSwiftness=1,
+            DispacerBeast,
+            WildCharge,
+            NaturesSwiftness,
+            Renewal,
+            CenarionWard,
+            FaerieSwarm,
+            MassEntanglement,
+            Typhoon,
+            SoulOfTheForest,
+            Incarnation,
+            ForceOfNature,
+            DisorientingRoar,
+            UrsolsVortex,
+            MightyBash,
+            HeartOfTheWild,
+            DreamOfCenarius,
+            NaturesVigil
+        }
+
         // IloveAnimals
         public static List<WoWUnit> EnemyUnits
         {

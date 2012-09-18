@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Moonfire"),
                         Movement.CreateMoveToTargetBehavior(true, 27f)
                         )),
-                Spell.Buff("Bear Form"),
+                Spell.BuffSelf("Bear Form"),
                 // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
@@ -62,7 +62,7 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All)]
         public static Composite CreateFeralNormalCombatBuffs()
         {
-            return new PrioritySelector(Spell.Buff("Bear Form"));
+            return new PrioritySelector(Spell.BuffSelf("Bear Form"));
         }
 
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All)]

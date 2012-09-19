@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralNormalCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.Buff("Cat Form"));
+                Spell.BuffSelf("Cat Form"));
         }
 
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]

@@ -29,7 +29,9 @@ namespace Singular.Helpers
                 if (!StyxWoW.Me.IsInParty)
                     return new List<WoWPlayer>(); ;
 
-                return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Tank)).Select(p => p.ToPlayer()).ToList();
+                return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Tank))
+                    .Select(p => p.ToPlayer())
+                    .Where(p => p != null).ToList();
             }
         }
 
@@ -40,7 +42,8 @@ namespace Singular.Helpers
                 if (!StyxWoW.Me.IsInParty)
                     return new List<WoWPlayer>(); ;
 
-                return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Healer)).Select(p => p.ToPlayer()).ToList();
+                return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Healer))
+                    .Select(p => p.ToPlayer()).Where(p => p != null).ToList();
 
             }
         }

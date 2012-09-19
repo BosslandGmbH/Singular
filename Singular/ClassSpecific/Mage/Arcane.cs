@@ -139,12 +139,14 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
                 Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
                 Spell.Cast("Focus Magic",
-                    ret => StyxWoW.Me.GroupInfo.RaidMembers.
-                                        Where(m => m.HasRole(WoWPartyMember.GroupRole.Damage) && m.ToPlayer() != null).
-                                        Select(m => m.ToPlayer()).
-                                        FirstOrDefault(),
-                    ret => !StyxWoW.Me.GroupInfo.RaidMembers.
-                                        Any(m => m.ToPlayer() != null && m.ToPlayer().HasMyAura("Focus Magic"))),
+                    ret => (from member in StyxWoW.Me.GroupInfo.RaidMembers
+                           where member.HasRole(WoWPartyMember.GroupRole.Damage)
+                           let player = member.ToPlayer()
+                           where player != null
+                           select player).FirstOrDefault(),
+
+                    ret => !StyxWoW.Me.GroupInfo.RaidMembers.Select(m => m.ToPlayer()).
+                                        Any(p => p != null && p.HasMyAura("Focus Magic"))),
                 // AoE comes first
                 new Decorator(
                     ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,

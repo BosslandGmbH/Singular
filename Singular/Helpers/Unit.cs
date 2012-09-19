@@ -384,7 +384,7 @@ namespace Singular.Helpers
         {
             public ulong OwnerGuid;
             public int spellId;
-            private int unk;
+            private int _dword_C;
             public uint HealAmount;
             private byte _isHealOverTime; // includes chaneled spells.
             private byte _byte_15; // unknown value

@@ -1110,6 +1110,24 @@ namespace Singular.Lists
                         52053, //Zanzil
                         52148, //Jin'do the Godbreaker
 
+                        // Well of Eternity
+                        55085,  // Peroth'arn
+                        54853,  // Queen Azshara
+                        54969,  // Mannoroth <The Destructor>
+                        55419,  // Captain Varo'then <The Hand of Azshara>
+
+                        // Hour of Twilight
+                        54590,  // Arcurion
+                        54968,  // Asira Dawnslayer
+                        54938,  // Archbishop Benedictus
+
+                        // End Time
+                        54431,  //  Echo of Baine
+                        54445,  //  Echo of Jaina
+                        54123,  //  Echo of Sylvanas
+                        54544,  //  Echo of Tyrande
+                        54432,  //  Murozond <The Lord of the Infinite>
+
                         //Firelands
                         53691, //Shannox
                         52558, //Lord Rhyolith
@@ -1132,6 +1150,23 @@ namespace Singular.Lists
                         56167, // Arm Tentacle -- Madness of DW
                         56168, // Wing Tentacle - Madness of DW
                         57962, // Deathwing ----- Madness of DW (his head)
+
+                        // === Pandaria 5-man Dungeons
+                        // Gate of the Setting Sun	      
+                        // Mogu'shan Palace	          
+                        // Scarlet Halls	              
+                        // Scarlet Monastery	          
+                        // Scholomance	                  
+                        // Shado-Pan Monastery	          
+                        // Siege of Niuzao Temple	      
+                        // SM Cathedral/GY               
+                        // Stormstout Brewery	          
+                        // Temple of the Jade Serpent
+
+                        // === Pandaria Raids
+                        // Heart of Fear	            
+                        // Mogu'shan Vaults	        
+                        // Terrace of Endless Spring
                     };
 
         #endregion

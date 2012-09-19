@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Styx;
 using Styx.CommonBot;
 using Styx.WoWInternals;
@@ -10,7 +11,7 @@ namespace Singular.Helpers
 {
     internal static class Unit
     {
-        public static HashSet<uint> IgnoreMobs=new HashSet<uint>
+        public static HashSet<uint> IgnoreMobs = new HashSet<uint>
             {
                 52288, // Venomous Effusion (NPC near the snake boss in ZG. Its the green lines on the ground. We want to ignore them.)
                 52302, // Venomous Effusion Stalker (Same as above. A dummy unit)
@@ -21,7 +22,7 @@ namespace Singular.Helpers
             };
         public static bool IsUndeadOrDemon(this WoWUnit unit)
         {
-            return unit.CreatureType == WoWCreatureType.Undead 
+            return unit.CreatureType == WoWCreatureType.Undead
                     || unit.CreatureType == WoWCreatureType.Demon;
         }
 
@@ -48,7 +49,7 @@ namespace Singular.Helpers
         {
             get
             {
-                return  StyxWoW.Me.GroupInfo.RaidMembers;
+                return StyxWoW.Me.GroupInfo.RaidMembers;
             }
         }
 
@@ -57,7 +58,7 @@ namespace Singular.Helpers
         {
             get
             {
-                return GroupMembers.Where(p => p.DistanceSqr <= 40 * 40 ).ToList();
+                return GroupMembers.Where(p => p.DistanceSqr <= 40 * 40).ToList();
             }
         }
 
@@ -69,7 +70,7 @@ namespace Singular.Helpers
         {
             get
             {
-                return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList(); 
+                return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList();
             }
         }
 
@@ -127,7 +128,7 @@ namespace Singular.Helpers
         /// <value>The nearby unfriendly units.</value>
         public static IEnumerable<WoWUnit> UnfriendlyUnitsNearTarget(float distance)
         {
-            var dist = distance*distance;
+            var dist = distance * distance;
             var curTarLocation = StyxWoW.Me.CurrentTarget.Location;
             return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
                         p => ValidUnit(p) && p.Location.DistanceSqr(curTarLocation) <= dist).ToList();
@@ -168,9 +169,9 @@ namespace Singular.Helpers
         /// <param name="aura"> The name of the aura in English. </param>
         /// <param name="unit"> The unit to check auras for. </param>
         /// <returns></returns>
-        public static bool HasMyAura(this WoWUnit unit,string aura)
+        public static bool HasMyAura(this WoWUnit unit, string aura)
         {
-            return HasMyAura(unit,aura, 0);
+            return HasMyAura(unit, aura, 0);
         }
 
         /// <summary>
@@ -285,11 +286,11 @@ namespace Singular.Helpers
                     from e in spell.GetSpellEffects()
                     // First check: Ensure the effect is... well... valid
                     where e != null &&
-                    // Ensure the aura type is correct.
+                        // Ensure the aura type is correct.
                     e.AuraType == auraType &&
-                    // Check for a misc value. (Resistance types, etc)
+                        // Check for a misc value. (Resistance types, etc)
                     (miscValue == -1 || e.MiscValueA == miscValue) &&
-                    // Check for the base points value. (Usually %s for most debuffs)
+                        // Check for the base points value. (Usually %s for most debuffs)
                     e.BasePoints >= basePointsMin && e.BasePoints <= basePointsMax
                     select a).Any();
         }
@@ -356,6 +357,42 @@ namespace Singular.Helpers
             return me.IsInParty || me.IsInRaid;
         }
 
+        private const int UnitIncomingHealsCountIndex = 1203;
+        private const int UnitIncomingHealsListIndex = 1204;
+
+        public static uint GetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
+        {
+            uint health = unit.CurrentHealth;
+            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + UnitIncomingHealsCountIndex * 4);
+            if (incomingHealsCnt == 0)
+                return health;
+
+            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + UnitIncomingHealsListIndex * 4);
+
+            var heals = StyxWoW.Memory.Read<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
+            return heals.Where(heal => includeMyHeals || !includeMyHeals && heal.OwnerGuid != StyxWoW.Me.Guid)
+                .Aggregate(health, (current, heal) => current + heal.HealAmount);
+        }
+
+        public static float GetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)
+        {
+            return (float)unit.GetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct IncomingHeal
+        {
+            public ulong OwnerGuid;
+            public int spellId;
+            private int unk;
+            public uint HealAmount;
+            private byte _isHealOverTime; // includes chaneled spells.
+            private byte _byte_15; // unknown value
+            private byte _byte_16; // unused
+            private byte _byte_17; // unused
+
+            public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
+        }
 
     }
 }

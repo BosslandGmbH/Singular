@@ -299,6 +299,49 @@ namespace Singular.Settings
 
         #endregion
 
+
+        #region Guardian
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Guardian")]
+        [DisplayName("Frenzied Regeneration Health")]
+        [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 30 if glyphed. 15 if not.)")]
+        public int TankFrenziedRegenerationHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Guardian")]
+        [DisplayName("Savage Defense Health")]
+        [Description("Savage Defense will be used at this value. Set this to 100 to enable on cooldown usage.")]
+        public int TankSavageDefense { get; set; }
+
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Guardian")]
+        [DisplayName("Might of Ursoc Health")]
+        [Description("Might of Ursoc will be used at this value. Set this to 100 to enable on cooldown usage.")]
+        public int TankMightOfUrsoc { get; set; }
+
+        [Setting]
+        [DefaultValue(55)]
+        [Category("Guardian")]
+        [DisplayName("Survival Instincts Health")]
+        [Description("SI will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 55)")]
+        public int TankSurvivalInstinctsHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Guardian")]
+        [DisplayName("Barkskin Health")]
+        [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage.")]
+        public int TankFeralBarkskin { get; set; }
+
+
+
+
+        #endregion
+
         #region Feral
 
         [Setting]
@@ -307,6 +350,7 @@ namespace Singular.Settings
         [DisplayName("Barkskin Health")]
         [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int FeralBarkskin { get; set; }
+
 
         [Setting]
         [DefaultValue(55)]
@@ -321,18 +365,6 @@ namespace Singular.Settings
         [DisplayName("Frenzied Regeneration Health")]
         [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 30 if glyphed. 15 if not.)")]
         public int FrenziedRegenerationHealth { get; set; }
-
-        /*      This setting is now unused since ILoveAnimals has replaced the original raid routine 
-                [Setting]
-                [DefaultValue(FeralForm.None)]
-                [Category("Feral")]
-                [DisplayName("Manual Feral Form")]
-                [Description("This setting will be used when Singular can't decide the roles in a raid")]
-                public FeralForm ManualFeralForm { get; set; }
-         */
-
-        // Start of IloveDruids 
-
 
         [Setting]
         [DefaultValue(0)]
@@ -360,14 +392,6 @@ namespace Singular.Settings
         [DisplayName("Cat - Predator's Swiftness (Balance and Feral)")]
         public int RaidCatProccHeal { get; set; }
 
-        /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Feral")]
-        [DisplayName("Choose Form automatically")]
-        [Description("Automatically decides which form might me the best. If set to true, the setting Use Bear Form will be ignored.")]
-        public bool AutoForm { get; set; }
-        */
 
         [Setting]
         [DefaultValue(true)]
@@ -376,14 +400,6 @@ namespace Singular.Settings
         [Description("Automatically interrupt spells while in an instance if this value is set to true.")]
         public bool Interrupt { get; set; }
 
-        /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Feral")]
-        [DisplayName("Use Bear Form")]
-        [Description("If set to false, we will use Cat Form.")]
-        public bool UseBearForm { get; set; }
-        */
 
         [Setting]
         [DefaultValue(true)]
@@ -392,50 +408,6 @@ namespace Singular.Settings
         [Description("If set to true, we will buff the raid automatically.")]
         public bool BuffRaidWithMotw { get; set; }
 
-        /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Feral - PvP")]
-        [DisplayName("Bear Feral Charge")]
-        [Description("Use Feral Charge as bear to close gaps.")]
-        public bool BearNormalUseFeralCharge { get; set; }
-        */
-
-        /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
-        [Setting]
-        [DefaultValue(2)]
-        [Category("Bear Questing / Grinding / Gathering")]
-        [DisplayName("Adds to AOE")]
-        [Description("Number of adds needed to start Aoe rotation.")]
-        public int BearNormalAoe { get; set; }
-        */
-
-        /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Feral - PvP")]
-        [DisplayName("Safe Berserk for Adds")]
-        [Description("If set to true, it will cast Berserk only if we got adds.")]
-        public bool BearNormalSafeBerserk { get; set; }
-        */
-
-        /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
-        [Setting]
-        [DefaultValue(4)]
-        [Category("Bear Questing / Grinding / Gathering")]
-        [DisplayName("Adds to AOE")]
-        [Description("Number of adds needed to start Aoe rotation.")]
-        public int CatNormalAoe { get; set; }
-        */
-        
-        /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Cat Questing / Grinding / Gathering")]
-        [DisplayName("Safe Berserk for Adds")]
-        [Description("If set to true, it will cast Berserk only if we got adds.")]
-        public bool CatNormalSafeBerserk { get; set; }
-         */
 
         [Setting]
         [DefaultValue(true)]
@@ -463,23 +435,7 @@ namespace Singular.Settings
         [Description("If set to true, it will cast Stampeding Roar to close gap to target.")]
         public bool CatRaidStampeding { get; set; }
         
-        /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Cat Questing / Grinding / Gathering")]
-        [DisplayName("Bear Form on x adds")]
-        [Description("Choose the number when it should switch to Bear Form.")]
-        public int CatNormalSwitchAdds { get; set; }
-        */
 
-        /* This setting is used by the ILoveAnimals feral normal routine which is currently not used.
-        [Setting]
-        [DefaultValue(40)]
-        [Category("Cat Questing / Grinding / Gathering")]
-        [DisplayName("Bear Form on % health")]
-        [Description("Choose the number when it should switch to Bear Form.")]
-        public int CatNormalSwitchHealth { get; set; }
-        */
 
         [Setting]
         [DefaultValue(true)]

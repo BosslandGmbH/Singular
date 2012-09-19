@@ -62,7 +62,16 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All)]
         public static Composite CreateFeralNormalCombatBuffs()
         {
-            return new PrioritySelector(Spell.BuffSelf("Bear Form"));
+            return new PrioritySelector(
+                Spell.BuffSelf("Bear Form"),
+                Spell.BuffSelf("Frenzied Regeneration", ret => StyxWoW.Me.CurrentHealth < SingularSettings.Instance.Druid.TankFrenziedRegenerationHealth),
+                Spell.BuffSelf("Savage Defense", ret => StyxWoW.Me.CurrentHealth < SingularSettings.Instance.Druid.TankSavageDefense),
+                Spell.BuffSelf("Might of Ursoc", ret => StyxWoW.Me.CurrentHealth < SingularSettings.Instance.Druid.TankMightOfUrsoc),
+                Spell.BuffSelf("Survival Instincts", ret => StyxWoW.Me.CurrentHealth < SingularSettings.Instance.Druid.TankSurvivalInstinctsHealth),
+                Spell.BuffSelf("Barkskin", ret => StyxWoW.Me.CurrentHealth < SingularSettings.Instance.Druid.TankFeralBarkskin)
+                
+                
+                );
         }
 
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All)]

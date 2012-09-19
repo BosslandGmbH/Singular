@@ -81,7 +81,7 @@ namespace Singular.ClassSpecific.Druid
                                    ((WoWUnit)ret).IsDead && (TalentManager.HasGlyph("Unburdened Rebirth") || StyxWoW.Me.BagItems.Any(i => i.Entry == mapleSeedId))),
                         Spell.Heal(
                             "Tranquility",
-                            ret => StyxWoW.Me.Combat && StyxWoW.Me.IsInParty && Unit.NearbyFriendlyPlayers.Count(
+                            ret => StyxWoW.Me.Combat && StyxWoW.Me.GroupInfo.IsInParty && Unit.NearbyFriendlyPlayers.Count(
                                 p =>
                                 p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid.TranquilityHealth && p.Distance <= 30) >=
                                    SingularSettings.Instance.Druid.TranquilityCount),
@@ -101,7 +101,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Heal(
                             "Wild Growth",
                             ret => (WoWUnit)ret,
-                            ret => StyxWoW.Me.IsInParty && Unit.NearbyFriendlyPlayers.Count(
+                            ret => StyxWoW.Me.GroupInfo.IsInParty && Unit.NearbyFriendlyPlayers.Count(
                                 p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid.WildGrowthHealth &&
                                      p.Location.DistanceSqr(((WoWUnit)ret).Location) <= 30*30) >= SingularSettings.Instance.Druid.WildGrowthCount),
                         Spell.Heal(
@@ -172,7 +172,7 @@ namespace Singular.ClassSpecific.Druid
                 new PrioritySelector(
                     Spell.BuffSelf(
                         "Tree of Life",
-                        ret => StyxWoW.Me.IsInParty && Unit.NearbyFriendlyPlayers.Count(
+                        ret => StyxWoW.Me.GroupInfo.IsInParty && Unit.NearbyFriendlyPlayers.Count(
                             p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid.TreeOfLifeHealth) >=
                                SingularSettings.Instance.Druid.TreeOfLifeCount),
                     Spell.BuffSelf(

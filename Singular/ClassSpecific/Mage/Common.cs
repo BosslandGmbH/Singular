@@ -218,7 +218,7 @@ namespace Singular.ClassSpecific.Mage
             if (!unit.IsTargetingMeOrPet && !unit.IsTargetingMyPartyMember)
                 return false;
 
-            if (StyxWoW.Me.IsInParty && StyxWoW.Me.PartyMembers.Any(p => p.CurrentTarget != null && p.CurrentTarget == unit))
+            if (StyxWoW.Me.GroupInfo.IsInParty && StyxWoW.Me.PartyMembers.Any(p => p.CurrentTarget != null && p.CurrentTarget == unit))
                 return false;
 
             return true;

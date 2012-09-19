@@ -104,7 +104,7 @@ namespace Singular.Managers
         protected override void DefaultTargetWeight(List<TargetPriority> units)
         {
             NeedToTaunt.Clear();
-            List<WoWPlayer> members = StyxWoW.Me.IsInRaid ? StyxWoW.Me.RaidMembers : StyxWoW.Me.PartyMembers;
+            List<WoWPlayer> members = StyxWoW.Me.GroupInfo.IsInRaid ? StyxWoW.Me.RaidMembers : StyxWoW.Me.PartyMembers;
             foreach (TargetPriority p in units)
             {
                 WoWUnit u = p.Object.ToUnit();

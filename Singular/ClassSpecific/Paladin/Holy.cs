@@ -77,7 +77,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid,
+                    ret => !StyxWoW.Me.GroupInfo.IsInParty && !StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
                         Movement.CreateMoveToLosBehavior(),
                         Movement.CreateFaceTargetBehavior(),

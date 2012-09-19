@@ -95,7 +95,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             get
             {
-                if (!StyxWoW.Me.IsInParty && !StyxWoW.Me.IsInRaid)
+                if (!StyxWoW.Me.GroupInfo.IsInParty && !StyxWoW.Me.GroupInfo.IsInRaid)
                     return null;
 
                 // If the player has a focus target set, use it instead. TODO: Add Me.FocusedUnit to the HB API.
@@ -110,7 +110,7 @@ namespace Singular.ClassSpecific.Rogue
                         return RaFHelper.Leader;
                     }
 
-                    if (StyxWoW.Me.IsInParty)
+                    if (StyxWoW.Me.GroupInfo.IsInParty)
                     {
                         var bestTank = Group.Tanks.OrderBy(t => t.DistanceSqr).FirstOrDefault(t => t.IsAlive);
 

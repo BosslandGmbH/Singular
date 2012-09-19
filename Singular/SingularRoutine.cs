@@ -150,7 +150,7 @@ namespace Singular
             if (HealerManager.NeedHealTargeting)
                 HealerManager.Instance.Pulse();
 
-            if (Group.MeIsTank && CurrentWoWContext != WoWContext.Battlegrounds && (Me.IsInParty || Me.IsInRaid))
+            if (Group.MeIsTank && CurrentWoWContext != WoWContext.Battlegrounds && (Me.GroupInfo.IsInParty || Me.GroupInfo.IsInRaid))
                 TankManager.Instance.Pulse();
         }
 

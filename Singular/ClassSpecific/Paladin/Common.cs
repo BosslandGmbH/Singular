@@ -51,19 +51,19 @@ namespace Singular.ClassSpecific.Paladin
                     new Decorator(
                         ret => TalentManager.CurrentSpec != WoWSpec.PaladinHoly,
                         new PrioritySelector(
-                            Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == WoWSpec.PaladinProtection && StyxWoW.Me.IsInParty)
+                            Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == WoWSpec.PaladinProtection && StyxWoW.Me.GroupInfo.IsInParty)
                             /*
                             Spell.BuffSelf(
                                 "Devotion Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
-                                (StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == WoWSpec.PaladinProtection ||
+                                (StyxWoW.Me.GroupInfo.IsInParty && TalentManager.CurrentSpec == WoWSpec.PaladinProtection ||
                                  TalentManager.CurrentSpec == (WoWSpec)0 && !SpellManager.HasSpell("Retribution Aura"))),
                             Spell.BuffSelf(
                                 "Retribution Aura",
                                 ret =>
                                 SingularSettings.Instance.Paladin.Aura == PaladinAura.Auto &&
-                                ((!StyxWoW.Me.IsInParty && TalentManager.CurrentSpec == WoWSpec.PaladinProtection) ||
+                                ((!StyxWoW.Me.GroupInfo.IsInParty && TalentManager.CurrentSpec == WoWSpec.PaladinProtection) ||
                                  TalentManager.CurrentSpec == (WoWSpec)0)),
                             Spell.BuffSelf(
                                 "Retribution Aura",
@@ -100,9 +100,9 @@ namespace Singular.ClassSpecific.Paladin
                                 return false;
                             var players = new List<WoWPlayer>();
 
-                            if (StyxWoW.Me.IsInRaid)
+                            if (StyxWoW.Me.GroupInfo.IsInRaid)
                                 players.AddRange(StyxWoW.Me.RaidMembers);
-                            else if (StyxWoW.Me.IsInParty)
+                            else if (StyxWoW.Me.GroupInfo.IsInParty)
                                 players.AddRange(StyxWoW.Me.PartyMembers);
 
                             players.Add(StyxWoW.Me);
@@ -120,9 +120,9 @@ namespace Singular.ClassSpecific.Paladin
                         {
                             var players = new List<WoWPlayer>();
 
-                            if (StyxWoW.Me.IsInRaid)
+                            if (StyxWoW.Me.GroupInfo.IsInRaid)
                                 players.AddRange(StyxWoW.Me.RaidMembers);
-                            else if (StyxWoW.Me.IsInParty)
+                            else if (StyxWoW.Me.GroupInfo.IsInParty)
                                 players.AddRange(StyxWoW.Me.PartyMembers);
 
                             players.Add(StyxWoW.Me);

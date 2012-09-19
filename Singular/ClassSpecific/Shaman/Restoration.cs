@@ -8,7 +8,7 @@ using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
 using Styx;
-
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using Styx.TreeSharp;
@@ -141,7 +141,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         // CH/HR only in parties/raids
                         new Decorator(
-                            ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                            ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                             new PrioritySelector(
                                 // This seems a bit tricky, but its really not. This is just how we cache a somewhat expensive lookup.
                                 // Set the context to the "best unit" for the cluster, so we don't have to do that check twice.
@@ -161,7 +161,7 @@ namespace Singular.ClassSpecific.Shaman
                                         ret =>
                                         Clusters.GetClusterCount((WoWPlayer)ret, Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f) >
                                         // If we're in a raid, check for 4 players. If we're just in a party, check for 3.
-                                        (StyxWoW.Me.IsInRaid ? 3 : 2))))),
+                                        (StyxWoW.Me.GroupInfo.IsInRaid ? 3 : 2))))),
 
                         new Decorator(
                             ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid),
@@ -207,7 +207,7 @@ namespace Singular.ClassSpecific.Shaman
 
             AddHealSpell(spells, SingularSettings.Instance.Shaman.HealChainHeal , "Chain Heal", 
                 new Decorator(
-                    ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
                         new PrioritySelector(
                             context => Clusters.GetBestUnitForCluster(ChainHealPlayers, ClusterType.Chained, ChainHealHopRange ),
@@ -221,7 +221,7 @@ namespace Singular.ClassSpecific.Shaman
 
             AddHealSpell(spells, SingularSettings.Instance.Shaman.HealHealingRain , "Healing Rain",
                 new Decorator(
-                    ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
                         context => Clusters.GetBestUnitForCluster(Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f),
                         Spell.CastOnGround(
@@ -229,38 +229,38 @@ namespace Singular.ClassSpecific.Shaman
                             ret =>
                             Clusters.GetClusterCount((WoWPlayer)ret, Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f) >
                             // If we're in a raid, check for 4 players. If we're just in a party, check for 3.
-                            (StyxWoW.Me.IsInRaid ? 3 : 2))
+                            (StyxWoW.Me.GroupInfo.IsInRaid ? 3 : 2))
                         )
                     )
                 );
 
             AddHealSpell(spells, SingularSettings.Instance.Shaman.HealSpiritLinkTotem , "Spirit Link Totem",
                 new Decorator(
-                    ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Heal(
                         "Spirit Link Totem", ret => (WoWPlayer)ret,
                         ret => Unit.NearbyFriendlyPlayers.Count(
-                            p => p.HealthPercent < SingularSettings.Instance.Shaman.HealSpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= (Me.IsInRaid ? 3 : 2)
+                            p => p.HealthPercent < SingularSettings.Instance.Shaman.HealSpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
                         )
                     )
                 );
 
             AddHealSpell(spells, SingularSettings.Instance.Shaman.HealHealingTideTotem , "Healing Tide Totem",
                 new Decorator(
-                    ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.BuffSelf(
                         "Healing Tide Totem",
-                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.IsInRaid ? 3 : 2)
+                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
                         )
                     )
                 );
 
             AddHealSpell(spells, SingularSettings.Instance.Shaman.HealHealingStreamTotem , "Healing Stream Totem",
                 new Decorator(
-                    ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.BuffSelf(
                         "Healing Stream Totem",
-                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.IsInRaid ? 3 : 2)
+                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
                             && !Totems.Exist( WoWTotemType.Water)
                         )
                     )
@@ -268,10 +268,10 @@ namespace Singular.ClassSpecific.Shaman
 
             AddHealSpell(spells, SingularSettings.Instance.Shaman.HealAscendance , "Ascendance",
                 new Decorator(
-                    ret => StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid,
+                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.BuffSelf(
                         "Healing Stream Totem",
-                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent < SingularSettings.Instance.Shaman.HealAscendance) >= (Me.IsInRaid ? 3 : 2)
+                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.HealthPercent < SingularSettings.Instance.Shaman.HealAscendance) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
                         )
                     )
                 );

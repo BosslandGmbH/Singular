@@ -57,7 +57,7 @@ namespace Singular.ClassSpecific.Priest
                             ret => moveInRange,
                             Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
                         // use fade to drop aggro.
-                        Spell.Cast("Fade", ret => (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
+                        Spell.Cast("Fade", ret => (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
 
                         Spell.Cast("Mindbender", ret => StyxWoW.Me.ManaPercent <= 80 && StyxWoW.Me.GotTarget),
                         Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= 80 && StyxWoW.Me.GotTarget),

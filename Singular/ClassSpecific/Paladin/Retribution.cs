@@ -93,7 +93,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
 
                     //2	Let's keep up Insight instead of Truth for grinding.  Keep up Righteousness if we need to AoE.  
-                //Spell.BuffSelf("Seal of Insight", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4 || StyxWoW.Me.IsInParty),
+                //Spell.BuffSelf("Seal of Insight", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4 || StyxWoW.Me.GroupInfo.IsInParty),
                     Spell.BuffSelf("Seal of Truth", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4),
                     Spell.BuffSelf("Seal of Righteousness", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
 

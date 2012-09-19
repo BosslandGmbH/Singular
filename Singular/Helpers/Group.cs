@@ -26,7 +26,7 @@ namespace Singular.Helpers
         {
             get
             {
-                if (!StyxWoW.Me.IsInParty)
+                if (!StyxWoW.Me.GroupInfo.IsInParty)
                     return new List<WoWPlayer>(); ;
 
                 return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Tank))
@@ -39,7 +39,7 @@ namespace Singular.Helpers
         {
             get
             {
-                if (!StyxWoW.Me.IsInParty)
+                if (!StyxWoW.Me.GroupInfo.IsInParty)
                     return new List<WoWPlayer>(); ;
 
                 return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Healer))

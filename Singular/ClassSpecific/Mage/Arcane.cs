@@ -172,7 +172,7 @@ namespace Singular.ClassSpecific.Mage
                         )),
 
                 Spell.BuffSelf("Time Warp",
-                    ret => !StyxWoW.Me.IsInRaid && StyxWoW.Me.CurrentTarget.HealthPercent > 20 && StyxWoW.Me.CurrentTarget.IsBoss() &&
+                    ret => !StyxWoW.Me.GroupInfo.IsInRaid && StyxWoW.Me.CurrentTarget.HealthPercent > 20 && StyxWoW.Me.CurrentTarget.IsBoss() &&
                            !StyxWoW.Me.HasAura("Temporal Displacement")),
 
                 // Burn mana phase

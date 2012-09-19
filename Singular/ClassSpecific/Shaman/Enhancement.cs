@@ -84,7 +84,7 @@ namespace Singular.ClassSpecific.Shaman
             if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && SingularSettings.Instance.Shaman.EnhancementHeal)
             {
                 healBT =new Decorator(
-                            ret => !StyxWoW.Me.IsInRaid,
+                            ret => !StyxWoW.Me.GroupInfo.IsInRaid,
                             new PrioritySelector(
                                 // Off Heal the party in dungeons if the healer is dead
                                 new Decorator(

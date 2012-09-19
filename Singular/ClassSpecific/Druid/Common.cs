@@ -212,14 +212,14 @@ public static Composite CreateDruidPreCombatBuff()
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !StyxWoW.Me.IsInRaid && !StyxWoW.Me.IsInInstance && !Battlegrounds.IsInsideBattleground
+                    ret => !StyxWoW.Me.GroupInfo.IsInRaid && !StyxWoW.Me.IsInInstance && !Battlegrounds.IsInsideBattleground
                            &&
                            (StyxWoW.Me.ZoneId != 3702 && StyxWoW.Me.ZoneId != 4378 && StyxWoW.Me.ZoneId != 3698 &&
                             StyxWoW.Me.ZoneId != 3968 && StyxWoW.Me.ZoneId != 4406),
                     CreateNonRestoHeals()),
                 new Decorator(
                     ret =>
-                    (StyxWoW.Me.IsInRaid ||
+                    (StyxWoW.Me.GroupInfo.IsInRaid ||
                      StyxWoW.Me.IsInInstance) && SingularSettings.Instance.Druid.RaidHealNonCombat && !StyxWoW.Me.Combat,
                     CreateNonRestoHeals()),
                 new Decorator(
@@ -415,7 +415,7 @@ public static Composite CreateDruidPreCombatBuff()
             if (!unit.IsTargetingMeOrPet && !unit.IsTargetingMyPartyMember)
                 return false;
 
-            if (StyxWoW.Me.IsInParty &&
+            if (StyxWoW.Me.GroupInfo.IsInParty &&
                 StyxWoW.Me.PartyMembers.Any(p => p.CurrentTarget != null && p.CurrentTarget == unit))
                 return false;
 

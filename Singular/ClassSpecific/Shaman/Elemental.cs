@@ -3,6 +3,7 @@
 using Styx;
 using Styx.CommonBot;
 using Styx.TreeSharp;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using Rest = Singular.Helpers.Rest;
@@ -57,7 +58,7 @@ namespace Singular.ClassSpecific.Shaman
             if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && SingularSettings.Instance.Shaman.ElementalHeal )
             {
                 healBT =new Decorator(
-                            ret => !StyxWoW.Me.IsInRaid,
+                            ret => !StyxWoW.Me.GroupInfo.IsInRaid,
                             new PrioritySelector(
                                 // Heal the party in dungeons if the healer is dead
                                 new Decorator(

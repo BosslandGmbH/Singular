@@ -164,7 +164,7 @@ namespace Singular.ClassSpecific.Priest
                 Spell.BuffSelf("Shadow Form"),
 
                 // use fade to drop aggro.
-                Spell.Cast("Fade", ret => (StyxWoW.Me.IsInParty || StyxWoW.Me.IsInRaid) && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
+                Spell.Cast("Fade", ret => (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
 
                 // Shadow immune npcs.
                 Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),

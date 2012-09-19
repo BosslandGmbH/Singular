@@ -354,7 +354,7 @@ namespace Singular.Helpers
 
         public static bool IsInGroup(this LocalPlayer me)
         {
-            return me.IsInParty || me.IsInRaid;
+            return StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid;
         }
 
         private const int UnitIncomingHealsCountIndex = 1203;

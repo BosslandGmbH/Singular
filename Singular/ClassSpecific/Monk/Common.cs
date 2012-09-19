@@ -34,9 +34,9 @@ namespace Singular.ClassSpecific.Monk
                         {
                             var players = new List<WoWPlayer>();
 
-                            if (StyxWoW.Me.IsInRaid)
+                            if (StyxWoW.Me.GroupInfo.IsInRaid)
                                 players.AddRange(StyxWoW.Me.RaidMembers);
-                            else if (StyxWoW.Me.IsInParty)
+                            else if (StyxWoW.Me.GroupInfo.IsInParty)
                                 players.AddRange(StyxWoW.Me.PartyMembers);
 
                             players.Add(StyxWoW.Me);
@@ -54,9 +54,9 @@ namespace Singular.ClassSpecific.Monk
                         {
                             var players = new List<WoWPlayer>();
 
-                            if (StyxWoW.Me.IsInRaid)
+                            if (StyxWoW.Me.GroupInfo.IsInRaid)
                                 players.AddRange(StyxWoW.Me.RaidMembers);
-                            else if (StyxWoW.Me.IsInParty)
+                            else if (StyxWoW.Me.GroupInfo.IsInParty)
                                 players.AddRange(StyxWoW.Me.PartyMembers);
 
                             players.Add(StyxWoW.Me);

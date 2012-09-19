@@ -302,7 +302,7 @@ namespace Singular.Settings
 
         #region Guardian
         [Setting]
-        [DefaultValue(30)]
+        [DefaultValue(40)]
         [Category("Guardian")]
         [DisplayName("Frenzied Regeneration Health")]
         [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 30 if glyphed. 15 if not.)")]
@@ -317,7 +317,7 @@ namespace Singular.Settings
 
 
         [Setting]
-        [DefaultValue(50)]
+        [DefaultValue(20)]
         [Category("Guardian")]
         [DisplayName("Might of Ursoc Health")]
         [Description("Might of Ursoc will be used at this value. Set this to 100 to enable on cooldown usage.")]

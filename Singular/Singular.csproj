@@ -169,12 +169,6 @@
     <Compile Include="Helpers\Common.cs" />
     <Compile Include="Helpers\Dispelling.cs" />
     <Compile Include="Dynamics\CompositeBuilder.cs" />
-    <Compile Include="Helpers\GUI\ConfigurationForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Helpers\GUI\ConfigurationForm.Designer.cs">
-      <DependentUpon>ConfigurationForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="Helpers\Group.cs" />
     <Compile Include="Helpers\Item.cs" />
     <Compile Include="Helpers\Movement.cs" />
@@ -212,15 +206,18 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Utilities\EventHandlers.cs" />
     <Compile Include="Utilities\Logger.cs" />
+    <Compile Include="GUI\ConfigurationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\ConfigurationForm.Designer.cs">
+      <DependentUpon>ConfigurationForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GUI\ConfigurationForm.resx">	
+      <DependentUpon>ConfigurationForm.cs</DependentUpon>
+	</Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="CONTRIBUTORS.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Helpers\GUI\ConfigurationForm.resx">
-      <DependentUpon>ConfigurationForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

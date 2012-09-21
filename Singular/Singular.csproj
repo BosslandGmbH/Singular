@@ -212,9 +212,6 @@
     <Compile Include="GUI\ConfigurationForm.Designer.cs">
       <DependentUpon>ConfigurationForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="GUI\ConfigurationForm.resx">	
-      <DependentUpon>ConfigurationForm.cs</DependentUpon>
-	</Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="CONTRIBUTORS.txt" />

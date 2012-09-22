@@ -35,6 +35,9 @@ namespace Singular.Lists
 
         public static HashSet<uint> TrainingDummies{get { return _dummies; }}
 
+        public static HashSet<uint> CanShredBoss { get { return _shred; } }
+
+
         private static HashSet<uint>  _dummies = new HashSet<uint>
             {
                 31146, // Raider's
@@ -47,6 +50,16 @@ namespace Singular.Lists
                 32666, // 60
                 30527, // ?? Boss one (no idea?)
             };
+
+        private static readonly HashSet<uint> _shred = new HashSet<uint>
+            {
+                56846, // Arm Tentacle -- Madness of DW
+                56167, // Arm Tentacle -- Madness of DW
+                56168, // Wing Tentacle - Madness of DW
+                57962, // Deathwing ----- Madness of DW (his head)
+                56471, // Mutated Corruption 
+            };
+
 
         private static HashSet<uint> _bosses = new HashSet<uint>
                     {

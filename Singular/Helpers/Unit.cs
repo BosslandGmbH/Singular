@@ -231,6 +231,14 @@ namespace Singular.Helpers
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }
 
+        public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, int auraID, bool fromMyAura)
+        {
+            WoWAura wantedAura =
+                onUnit.GetAllAuras().Where(a => a.SpellId == auraID && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+
+            return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
+        }
+
         /// <summary>
         /// Returns a list of resurrectable players in a 40 yard radius
         /// </summary>
@@ -277,6 +285,12 @@ namespace Singular.Helpers
         {
             return Lists.BossList.TrainingDummies.Contains(unit.Entry);
         }
+
+        public static bool IsShredBoss(this WoWUnit unit)
+        {
+            return Lists.BossList.CanShredBoss.Contains(unit.Entry);
+        }
+
         public static bool HasAuraWithEffect(this WoWUnit unit, WoWApplyAuraType auraType, int miscValue, int basePointsMin, int basePointsMax)
         {
             var auras = unit.GetAllAuras();

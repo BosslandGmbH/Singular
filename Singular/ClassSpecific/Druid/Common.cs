@@ -1,47 +1,29 @@
-﻿using System.Linq;
-using Singular.Dynamics;
-using Singular.Helpers;
-using Singular.Managers;
-using Singular.Settings;
-using Styx;
-using Styx.Common;
-using Styx.CommonBot;
-using Styx.WoWInternals.WoWObjects;
-using Styx.TreeSharp;
+﻿#region
 
 using System.Collections.Generic;
+using System.Linq;
+using Singular.Dynamics;
+using Singular.Helpers;
+using Singular.Settings;
+using Styx;
+using Styx.CommonBot;
+using Styx.TreeSharp;
 using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
 using Rest = Singular.Helpers.Rest;
+
+#endregion
 
 namespace Singular.ClassSpecific.Druid
 {
     public class Common
     {
+        public static bool prevSwift;
+        public static double RipMultiplier;
+        public static double RakeMultiplier;
+        public static double ExtendedRip;
         public static ShapeshiftForm WantedDruidForm { get; set; }
 
-        internal enum Talents
-        {
-            FelineSwiftness=1,
-            DispacerBeast,
-            WildCharge,
-            NaturesSwiftness,
-            Renewal,
-            CenarionWard,
-            FaerieSwarm,
-            MassEntanglement,
-            Typhoon,
-            SoulOfTheForest,
-            Incarnation,
-            ForceOfNature,
-            DisorientingRoar,
-            UrsolsVortex,
-            MightyBash,
-            HeartOfTheWild,
-            DreamOfCenarius,
-            NaturesVigil
-        }
-
-        // IloveAnimals
         public static List<WoWUnit> EnemyUnits
         {
             get
@@ -57,36 +39,42 @@ namespace Singular.ClassSpecific.Druid
                                && !unit.IsNonCombatPet
                                && !unit.IsCritter
                                && unit.DistanceSqr
-                               <= 15 * 15).ToList();
+                               <= 15*15).ToList();
             }
         }
 
-        /* Original PreCombat Buffs
-#region PreCombat Buffs
+        public static double energy
+        {
+            get { return Lua.GetReturnVal<int>("return UnitMana(\"player\");", 0); }
+        }
 
-[Class(WoWClass.Druid)]
-[Behavior(BehaviorType.PreCombatBuffs)]
-[Spec(WoWSpec.DruidBalance)]
-[Spec(WoWSpec.DruidFeral)]
-[Spec(WoWSpec.DruidRestoration)]
-[Spec((WoWSpec)0)]
-[Context(WoWContext.All)]
-public static Composite CreateDruidPreCombatBuff()
-{
-    return new PrioritySelector(
-       Spell.Cast(
-           "Mark of the Wild",
-           ret => StyxWoW.Me,
-           ret => !StyxWoW.Me.HasAura("Prowl") &&
-                  (Unit.NearbyFriendlyPlayers.Any(unit =>
-                       !unit.IsDead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
-                       !unit.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")) || 
-                  !StyxWoW.Me.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")))
-        );
-}
+        public static double energyregen
+        {
+            get { return Lua.GetReturnVal<float>("return GetPowerRegen()", 1); }
+        }
 
-#endregion
-*/
+        public static double energytime_to_max
+        {
+            get { return (100 - energy)*(1.0/energyregen); }
+        }
+
+        public static double tick_multiplier
+        {
+            get
+            {
+                double tick_multiplier = 1;
+                //Tigers Fury
+                if (StyxWoW.Me.HasAura(5217))
+                    tick_multiplier = tick_multiplier*1.15;
+                //Savage Roar
+                if (StyxWoW.Me.HasAura(127538))
+                    tick_multiplier = tick_multiplier*1.3;
+                //Doc
+                if (StyxWoW.Me.HasAura(108373))
+                    tick_multiplier = tick_multiplier*1.25;
+                return tick_multiplier;
+            }
+        }
 
         #region PreCombat Buffs
 
@@ -94,19 +82,22 @@ public static Composite CreateDruidPreCombatBuff()
         public static Composite CreateDruidPreCombatBuff()
         {
             // Cast motw if player doesn't have it or if in instance/bg, out of combat and 'Buff raid with Motw' is true or if in instance and in combat and both CatRaidRebuff and 'Buff raid with Motw' are true
-            return new PrioritySelector( 
+            return new PrioritySelector(
                 Spell.Cast(
                     "Mark of the Wild",
                     ret => StyxWoW.Me,
-                    ret =>!StyxWoW.Me.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider","Blessing of Kings")
-                        || (SingularSettings.Instance.Druid.BuffRaidWithMotw && (!StyxWoW.Me.Combat || (StyxWoW.Me.Combat && SingularSettings.Instance.Druid.CatRaidRebuff)) 
-                        && !StyxWoW.Me.HasAura("Prowl") 
-                        && Unit.NearbyFriendlyPlayers.Any(unit =>
-                                                    unit.Distance <= 30f &&
-                                                    !unit.IsDead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
-                                                    !unit.HasAnyAura("Mark of the Wild",
-                                                                     "Embrace of the Shale Spider",
-                                               "Blessing of Kings"))))
+                    ret =>
+                    !StyxWoW.Me.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")
+                    ||
+                    (SingularSettings.Instance.Druid.BuffRaidWithMotw &&
+                     (!StyxWoW.Me.Combat || (StyxWoW.Me.Combat && SingularSettings.Instance.Druid.CatRaidRebuff))
+                     && !StyxWoW.Me.HasAura("Prowl")
+                     && Unit.NearbyFriendlyPlayers.Any(unit =>
+                                                       unit.Distance <= 30f &&
+                                                       !unit.IsDead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
+                                                       !unit.HasAnyAura("Mark of the Wild",
+                                                                        "Embrace of the Shale Spider",
+                                                                        "Blessing of Kings"))))
                 /*   This logic needs work. 
                 new Decorator(
                     ret =>
@@ -128,38 +119,9 @@ public static Composite CreateDruidPreCombatBuff()
 
         #endregion
 
-
-        /* Original Combat Buffs
         #region Combat Buffs
 
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Spec(WoWSpec.DruidFeral)]
-        [Spec(WoWSpec.DruidRestoration)]
-        [Context(WoWContext.Instances)]
-        public static Composite CreateDruidInstanceCombatBuffs()
-        {
-            const uint mapleSeedId = 17034;
-
-            return new PrioritySelector(
-                ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead),
-                new Decorator(
-                    ret => ret != null && Item.HasItem(mapleSeedId),
-                    new PrioritySelector(
-                        Spell.WaitForCast(true),
-                        Movement.CreateMoveToLosBehavior(ret => (WoWPlayer)ret),
-                        Spell.Cast("Rebirth", ret => (WoWPlayer)ret),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)))
-                );
-        }
-
-        #endregion
-        */
-
-        #region Combat Buffs
-
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec)int.MaxValue, WoWContext.Instances)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec) int.MaxValue, WoWContext.Instances)]
         public static Composite CreateDruidInstanceCombatBuffs()
         {
             const uint mapleSeedId = 17034;
@@ -172,37 +134,15 @@ public static Composite CreateDruidPreCombatBuff()
                     ret => ret != null && Item.HasItem(mapleSeedId),
                     new PrioritySelector(
                         Spell.WaitForCast(true),
-                        Movement.CreateMoveToLosBehavior(ret => (WoWPlayer)ret),
+                        Movement.CreateMoveToLosBehavior(ret => (WoWPlayer) ret),
                         new Decorator(ret => SingularSettings.Instance.Druid.CatRaidRezz,
-                                      Spell.Cast("Rebirth", ret => (WoWPlayer)ret)),
+                                      Spell.Cast("Rebirth", ret => (WoWPlayer) ret)),
                         Movement.CreateMoveToTargetBehavior(true, 35f)))
                 );
         }
 
         #endregion
 
-
-
-       /* Original Rest
-        #region Rest
-
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.Rest)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Spec(WoWSpec.DruidFeral)]
-        [Context(WoWContext.All)]
-        public static Composite CreateBalanceAndDruidFeralRest()
-        {
-            return new PrioritySelector(
-                CreateNonRestoHeals(),
-                Rest.CreateDefaultRestBehaviour(),
-                Spell.Resurrect("Revive")
-                );
-        }
-
-        #endregion
-        */
-       
         #region Rest
 
         [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidBalance)]
@@ -212,10 +152,11 @@ public static Composite CreateDruidPreCombatBuff()
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => !StyxWoW.Me.GroupInfo.IsInRaid && !StyxWoW.Me.IsInInstance && !Battlegrounds.IsInsideBattleground
-                           &&
-                           (StyxWoW.Me.ZoneId != 3702 && StyxWoW.Me.ZoneId != 4378 && StyxWoW.Me.ZoneId != 3698 &&
-                            StyxWoW.Me.ZoneId != 3968 && StyxWoW.Me.ZoneId != 4406),
+                    ret =>
+                    !StyxWoW.Me.GroupInfo.IsInRaid && !StyxWoW.Me.IsInInstance && !Battlegrounds.IsInsideBattleground
+                    &&
+                    (StyxWoW.Me.ZoneId != 3702 && StyxWoW.Me.ZoneId != 4378 && StyxWoW.Me.ZoneId != 3698 &&
+                     StyxWoW.Me.ZoneId != 3968 && StyxWoW.Me.ZoneId != 4406),
                     CreateNonRestoHeals()),
                 new Decorator(
                     ret =>
@@ -227,7 +168,7 @@ public static Composite CreateDruidPreCombatBuff()
                     (Battlegrounds.IsInsideBattleground ||
                      StyxWoW.Me.ZoneId == 3702 || StyxWoW.Me.ZoneId == 4378 || StyxWoW.Me.ZoneId == 3698 ||
                      StyxWoW.Me.ZoneId == 3968 || StyxWoW.Me.ZoneId == 4406) &&
-                    (SingularSettings.Instance.Druid.PvPpHealBool == true ||
+                    (SingularSettings.Instance.Druid.PvPpHealBool ||
                      (SingularSettings.Instance.Druid.PvPpHealBool == false && !StyxWoW.Me.Combat)),
                     CreateNonRestoPvPHeals()),
                 Rest.CreateDefaultRestBehaviour(),
@@ -283,7 +224,7 @@ public static Composite CreateDruidPreCombatBuff()
                         ),
                     new Decorator(
                         ret =>
-                        (SingularSettings.Instance.Druid.PvPpHealBool == true  ||
+                        (SingularSettings.Instance.Druid.PvPpHealBool ||
                          (SingularSettings.Instance.Druid.PvPpHealBool == false && !StyxWoW.Me.Combat)) &&
                         !StyxWoW.Me.HasAura("Drink"),
                         new PrioritySelector(
@@ -338,6 +279,81 @@ public static Composite CreateDruidPreCombatBuff()
         }
 
         #endregion
+
+        /* Original PreCombat Buffs
+#region PreCombat Buffs
+
+[Class(WoWClass.Druid)]
+[Behavior(BehaviorType.PreCombatBuffs)]
+[Spec(WoWSpec.DruidBalance)]
+[Spec(WoWSpec.DruidFeral)]
+[Spec(WoWSpec.DruidRestoration)]
+[Spec((WoWSpec)0)]
+[Context(WoWContext.All)]
+public static Composite CreateDruidPreCombatBuff()
+{
+    return new PrioritySelector(
+       Spell.Cast(
+           "Mark of the Wild",
+           ret => StyxWoW.Me,
+           ret => !StyxWoW.Me.HasAura("Prowl") &&
+                  (Unit.NearbyFriendlyPlayers.Any(unit =>
+                       !unit.IsDead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
+                       !unit.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")) || 
+                  !StyxWoW.Me.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")))
+        );
+}
+
+#endregion
+*/
+
+        /* Original Combat Buffs
+        #region Combat Buffs
+
+        [Class(WoWClass.Druid)]
+        [Behavior(BehaviorType.CombatBuffs)]
+        [Spec(WoWSpec.DruidBalance)]
+        [Spec(WoWSpec.DruidFeral)]
+        [Spec(WoWSpec.DruidRestoration)]
+        [Context(WoWContext.Instances)]
+        public static Composite CreateDruidInstanceCombatBuffs()
+        {
+            const uint mapleSeedId = 17034;
+
+            return new PrioritySelector(
+                ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead),
+                new Decorator(
+                    ret => ret != null && Item.HasItem(mapleSeedId),
+                    new PrioritySelector(
+                        Spell.WaitForCast(true),
+                        Movement.CreateMoveToLosBehavior(ret => (WoWPlayer)ret),
+                        Spell.Cast("Rebirth", ret => (WoWPlayer)ret),
+                        Movement.CreateMoveToTargetBehavior(true, 35f)))
+                );
+        }
+
+        #endregion
+        */
+
+        /* Original Rest
+        #region Rest
+
+        [Class(WoWClass.Druid)]
+        [Behavior(BehaviorType.Rest)]
+        [Spec(WoWSpec.DruidBalance)]
+        [Spec(WoWSpec.DruidFeral)]
+        [Context(WoWContext.All)]
+        public static Composite CreateBalanceAndDruidFeralRest()
+        {
+            return new PrioritySelector(
+                CreateNonRestoHeals(),
+                Rest.CreateDefaultRestBehaviour(),
+                Spell.Resurrect("Revive")
+                );
+        }
+
+        #endregion
+        */
 
         public static Composite CreateEscapeFromCc()
         {
@@ -395,7 +411,7 @@ public static Composite CreateDruidPreCombatBuff()
                         StyxWoW.Me.ActiveAuras.ContainsKey("Predator's Swiftness") &&
                         Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")),
                         new PrioritySelector(
-                            Spell.Buff("Cyclone", ret => (WoWUnit)ret))));
+                            Spell.Buff("Cyclone", ret => (WoWUnit) ret))));
         }
 
         private static bool IsViableForCyclone(WoWUnit unit)
@@ -422,6 +438,31 @@ public static Composite CreateDruidPreCombatBuff()
             return true;
         }
 
+        #region Nested type: Talents
+
+        internal enum Talents
+        {
+            FelineSwiftness = 1,
+            DispacerBeast,
+            WildCharge,
+            NaturesSwiftness,
+            Renewal,
+            CenarionWard,
+            FaerieSwarm,
+            MassEntanglement,
+            Typhoon,
+            SoulOfTheForest,
+            Incarnation,
+            ForceOfNature,
+            DisorientingRoar,
+            UrsolsVortex,
+            MightyBash,
+            HeartOfTheWild,
+            DreamOfCenarius,
+            NaturesVigil
+        }
+
+        #endregion
 
         /* Original Non Resto Healing
         #region Non Resto Healing

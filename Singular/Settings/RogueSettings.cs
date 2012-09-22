@@ -28,25 +28,18 @@ namespace Singular.Settings
         }
 
         [Setting]
-        [DefaultValue(PoisonType.Instant)]
+        [DefaultValue(LethalPoisonType.Deadly)]
         [Category("Common")]
-        [DisplayName("Main Hand Poison")]
-        [Description("Main Hand Poison")]
-        public PoisonType MHPoison { get; set; }
+        [DisplayName("Lethal Poison")]
+        [Description("Lethal Poison")]
+        public LethalPoisonType LethalPoison { get; set; }
 
         [Setting]
-        [DefaultValue(PoisonType.Deadly)]
+        [DefaultValue(NonLethalPoisonType.Crippling)]
         [Category("Common")]
-        [DisplayName("Off Hand Poison")]
-        [Description("Off Hand Poison")]
-        public PoisonType OHPoison { get; set; }
-
-        [Setting]
-        [DefaultValue(PoisonType.Wound)]
-        [Category("Common")]
-        [DisplayName("Thrown Poison")]
-        [Description("Thrown Poison")]
-        public PoisonType ThrownPoison { get; set; }
+        [DisplayName("Non Lethal Poison")]
+        [Description("Non Lethal Poison")]
+        public NonLethalPoisonType NonLethalPoison { get; set; }
 
 
         [Setting]

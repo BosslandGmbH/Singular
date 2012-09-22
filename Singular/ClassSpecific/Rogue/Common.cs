@@ -42,42 +42,8 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateApplyPoisons()
         {
             return new PrioritySelector(
-                new Decorator(
-                    ret => Poisons.MainHandNeedsPoison && Poisons.MainHandPoison != null,
-                    new Sequence(
-                        new Action(ret => Logger.Write(string.Format("Applying {0} to main hand", Poisons.MainHandPoison.Name))),
-                        new Action(ret => Navigator.PlayerMover.MoveStop()),
-                        Helpers.Common.CreateWaitForLagDuration(),
-                        new Action(ret => Poisons.MainHandPoison.UseContainerItem()),
-                        Helpers.Common.CreateWaitForLagDuration(),
-                        new Action(ret => Lua.DoString("UseInventoryItem(16)")),
-                        new WaitContinue(2, ret => StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
-                        new WaitContinue(10, ret => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
-                        new WaitContinue(1, ret => false, new ActionAlwaysSucceed()))),
-                new Decorator(
-                    ret => Poisons.OffHandNeedsPoison && Poisons.OffHandPoison != null,
-                    new Sequence(
-                        new Action(ret => Logger.Write(string.Format("Applying {0} to off hand", Poisons.OffHandPoison.Name))),
-                        new Action(ret => Navigator.PlayerMover.MoveStop()),
-                       Helpers.Common.CreateWaitForLagDuration(),
-                        new Action(ret => Poisons.OffHandPoison.UseContainerItem()),
-                        Helpers.Common.CreateWaitForLagDuration(),
-                        new Action(ret => Lua.DoString("UseInventoryItem(17)")),
-                        new WaitContinue(2, ret => StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
-                        new WaitContinue(10, ret => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
-                        new WaitContinue(1, ret => false, new ActionAlwaysSucceed()))),
-                new Decorator(
-                    ret => Poisons.ThrownNeedsPoison && Poisons.ThrownPoison != null,
-                    new Sequence(
-                        new Action(ret => Logger.Write(string.Format("Applying {0} to main hand", Poisons.ThrownPoison.Name))),
-                        new Action(ret => Navigator.PlayerMover.MoveStop()),
-                        Helpers.Common.CreateWaitForLagDuration(),
-                        new Action(ret => Poisons.ThrownPoison.UseContainerItem()),
-                        Helpers.Common.CreateWaitForLagDuration(),
-                        new Action(ret => Lua.DoString("UseInventoryItem(18)")),
-                        new WaitContinue(2, ret => StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
-                        new WaitContinue(10, ret => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
-                        new WaitContinue(1, ret => false, new ActionAlwaysSucceed())))
+                new Decorator(r => Poisons.NeedLethalPosion() > 0, Spell.BuffSelf(Poisons.NeedLethalPosion())),
+                new Decorator(r => Poisons.NeedNonLethalPosion() > 0, Spell.BuffSelf(Poisons.NeedNonLethalPosion()))
                 );
         }
 

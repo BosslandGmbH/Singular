@@ -2,123 +2,102 @@
 using System.Linq;
 using Singular.Settings;
 using Styx;
+using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.ClassSpecific.Rogue
 {
-    public enum PoisonType
+    public enum LethalPoisonType
     {
-        Instant,
-        Crippling,
-        MindNumbing,
         Deadly,
         Wound
+    }
+
+
+    public enum NonLethalPoisonType
+    {
+        Crippling,
+        MindNumbing,
+        Leeching,
+        Paralytic
     }
 
     public static class Poisons
     {
         static Poisons()
         {
-            Lua.Events.AttachEvent("END_BOUND_TRADEABLE", HandleEndBoundTradeable);
+            //Lua.Events.AttachEvent("END_BOUND_TRADEABLE", HandleEndBoundTradeable);
         }
 
         private static void HandleEndBoundTradeable(object sender, LuaEventArgs args)
         {
-            Lua.DoString("EndBoundTradeable(" + args.Args[0] + ")");
+            //Lua.DoString("EndBoundTradeable(" + args.Args[0] + ")");
         }
 
-        private static readonly HashSet<uint> InstantPoisons = new HashSet<uint> { 6947, 43231 };
+        //Lethal
+        private const int DeadlyPoison = 2823;
+        private const int WoundPoison = 8679;
 
-        private static readonly HashSet<uint> CripplingPoisons = new HashSet<uint> { 3775 };
+        //Non-lethal
+        private const int CripplingPoison = 3408;
+        private const int MindNumbingPoison = 5761;
+        private const int LeechingPoison = 108211;
+        private const int ParalyticPoison = 108215;
+        
 
-        private static readonly HashSet<uint> MindNumbingPoisons = new HashSet<uint> { 5237 };
+            
 
-        private static readonly HashSet<uint> DeadlyPoisons = new HashSet<uint> { 2892, 43233 };
-
-        private static readonly HashSet<uint> WoundPoisons = new HashSet<uint> { 10918, 43235 };
-
-        //public static bool MainHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.MainHand != null && StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 0; } }
-        public static bool MainHandNeedsPoison
+        public static int NeedLethalPosion()
         {
-            get
+            switch (SingularSettings.Instance.Rogue.LethalPoison)
             {
-                return StyxWoW.Me.Inventory.Equipped.MainHand != null &&
-                       StyxWoW.Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == 0
-                       && StyxWoW.Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass != WoWItemWeaponClass.FishingPole;
+                case LethalPoisonType.Deadly:
+                    if (SpellManager.HasSpell(DeadlyPoison) && !StyxWoW.Me.HasAura(DeadlyPoison))
+                        return DeadlyPoison;
+                    break;
+                case LethalPoisonType.Wound:
+                    if (SpellManager.HasSpell(WoundPoison) && !StyxWoW.Me.HasAura(WoundPoison))
+                        return WoundPoison;
+                    break;
+
+                default:
+                    return 0;
+
+
             }
+            return 0;
         }
-        public static bool OffHandNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.OffHand != null && StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 0; } }
 
-        public static bool ThrownNeedsPoison { get { return StyxWoW.Me.Inventory.Equipped.Ranged != null && StyxWoW.Me.Inventory.Equipped.Ranged.IsThrownWeapon && StyxWoW.Me.Inventory.Equipped.Ranged.TemporaryEnchantment.Id == 0; } }
 
-        public static WoWItem MainHandPoison
+        public static int NeedNonLethalPosion()
         {
-            get
+            switch (SingularSettings.Instance.Rogue.NonLethalPoison)
             {
-                switch (SingularSettings.Instance.Rogue.MHPoison)
-                {
-                    case PoisonType.Instant:
-                        return StyxWoW.Me.CarriedItems.Where(i => InstantPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.Crippling:
-                        return StyxWoW.Me.CarriedItems.Where(i => CripplingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.MindNumbing:
-                        return
-                            StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.Deadly:
-                        return StyxWoW.Me.CarriedItems.Where(i => DeadlyPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.Wound:
-                        return StyxWoW.Me.CarriedItems.Where(i => WoundPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    default:
-                        return null;
-                }
+                case NonLethalPoisonType.Crippling:
+                    if (SpellManager.HasSpell(CripplingPoison) && !StyxWoW.Me.HasAura(CripplingPoison))
+                        return CripplingPoison;
+                    break;
+                case NonLethalPoisonType.Leeching:
+                    if (SpellManager.HasSpell(LeechingPoison) && !StyxWoW.Me.HasAura(LeechingPoison))
+                        return MindNumbingPoison;
+                    break;
+                case NonLethalPoisonType.MindNumbing:
+                    if (SpellManager.HasSpell(MindNumbingPoison) && !StyxWoW.Me.HasAura(MindNumbingPoison))
+                        return MindNumbingPoison;
+                    break;
+                case NonLethalPoisonType.Paralytic:
+                    if (SpellManager.HasSpell(ParalyticPoison) && !StyxWoW.Me.HasAura(ParalyticPoison))
+                        return ParalyticPoison;
+                    break;
+                default:
+                    return 0;
+
+
             }
+            return 0;
         }
 
-        public static WoWItem OffHandPoison
-        {
-            get
-            {
-                switch (SingularSettings.Instance.Rogue.OHPoison)
-                {
-                    case PoisonType.Instant:
-                        return StyxWoW.Me.CarriedItems.Where(i => InstantPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.Crippling:
-                        return StyxWoW.Me.CarriedItems.Where(i => CripplingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.MindNumbing:
-                        return
-                            StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.Deadly:
-                        return StyxWoW.Me.CarriedItems.Where(i => DeadlyPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.Wound:
-                        return StyxWoW.Me.CarriedItems.Where(i => WoundPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    default:
-                        return null;
-                }
-            }
-        }
 
-        public static WoWItem ThrownPoison
-        {
-            get
-            {
-                switch (SingularSettings.Instance.Rogue.ThrownPoison)
-                {
-                    case PoisonType.Instant:
-                        return StyxWoW.Me.CarriedItems.Where(i => InstantPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.Crippling:
-                        return StyxWoW.Me.CarriedItems.Where(i => CripplingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.MindNumbing:
-                        return
-                            StyxWoW.Me.CarriedItems.Where(i => MindNumbingPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.Deadly:
-                        return StyxWoW.Me.CarriedItems.Where(i => DeadlyPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    case PoisonType.Wound:
-                        return StyxWoW.Me.CarriedItems.Where(i => WoundPoisons.Contains(i.Entry)).OrderByDescending(i => i.Entry).FirstOrDefault();
-                    default:
-                        return null;
-                }
-            }
-        }
     }
 }

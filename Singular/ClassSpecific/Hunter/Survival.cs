@@ -76,7 +76,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Powershot"),
                 Spell.Cast("Barrage"),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.Cast("Cobra Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
+                Spell.Cast("Steady Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                 Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
                 Spell.Cast("Explosive Shot"),
                 Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
@@ -86,10 +86,9 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
                 Spell.Cast("Stampede"),
                 Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 50 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 50 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
                 Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 67),
-                Spell.Cast("Cobra Shot"),
-                Spell.Cast("Steady Shot", ret => !SpellManager.HasSpell("Cobra Shot")),
+                Spell.Cast("Steady Shot"),
 
               
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -142,19 +141,30 @@ namespace Singular.ClassSpecific.Hunter
                            !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
 
                 // Rotation
-                Spell.Buff("Wing Clip"),
-                Spell.Cast("Scatter Shot", ret => StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
-                Spell.Cast("Raptor Strike"),
-                Spell.Buff("Serpent Sting", true),
-                Spell.Cast("Kill Shot"),
+                Spell.Buff("A Murder of Crows"),
+                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
+                Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
+                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.HasAura("Locked and Load")),
+                Spell.Cast("Glaive Toss"),
+                Spell.Cast("Powershot"),
+                Spell.Cast("Barrage"),
+                Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
+                Spell.Cast("Steady Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
+                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
                 Spell.Cast("Explosive Shot"),
-                Spell.Cast("Black Arrow"),
-                Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 40),
+                Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
+                Spell.Buff("Black Arrow", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Black Arrow")),
+                Spell.Cast("Multi-Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
+                Spell.Cast("Dire Beast"),
+                Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
+                Spell.Cast("Stampede"),
+                Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 50 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 67),
                 Spell.CastOnGround("Flare", ret => StyxWoW.Me.Location),
                 Common.CreateHunterTrapBehavior("Snake Trap", false),
                 Common.CreateHunterTrapBehavior("Immolation Trap", false),
-                Spell.Cast("Cobra Shot"),
-                Spell.Cast("Steady Shot", ret => !SpellManager.HasSpell("Cobra Shot")),
+                Spell.Cast("Steady Shot"),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -226,7 +236,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Powershot"),
                 Spell.Cast("Barrage"),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.Cast("Cobra Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
+                Spell.Cast("Steady Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                 Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
                 Spell.Cast("Explosive Shot"),
                 Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
@@ -236,10 +246,9 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
                 Spell.Cast("Stampede"),
                 Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 50 && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 50 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
                 Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 67),
-                Spell.Cast("Cobra Shot"),
-                Spell.Cast("Steady Shot", ret => !SpellManager.HasSpell("Cobra Shot")),
+                Spell.Cast("Steady Shot"),
 
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)

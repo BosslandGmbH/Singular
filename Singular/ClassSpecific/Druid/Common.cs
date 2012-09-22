@@ -4,7 +4,7 @@ using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
 using Styx;
-
+using Styx.Common;
 using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;

@@ -260,6 +260,7 @@ namespace Singular.Helpers
                     {
                         canCast = SpellManager.CanCast(name, onUnit(ret), false, checkMovement(ret));
 
+                        
                         if (canCast)
                         {
                             WoWUnit target = onUnit(ret);

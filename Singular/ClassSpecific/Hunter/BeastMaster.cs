@@ -158,7 +158,12 @@ namespace Singular.ClassSpecific.Hunter
 
                 Common.CreateHunterTrapBehavior("Snake Trap", false),
                 Common.CreateHunterTrapBehavior("Immolation Trap", false),
-                new Action(ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(ret => ret.Entry == 76089).UseContainerItem()),
+                new Action(ctx =>
+                               {
+                                   var firstOrDefault = StyxWoW.Me.CarriedItems.FirstOrDefault(ret => ret.Entry == 76089);
+                                   if (firstOrDefault != null)
+                                          firstOrDefault.UseContainerItem();
+                               }),
 
                 Spell.BuffSelf("Deterrence", ctx => StyxWoW.Me.HealthPercent < 30),
 
@@ -171,6 +176,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                 Spell.Cast("Steady Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
+                Spell.CastOnGround("Binding Shot", ret => StyxWoW.Me.CurrentTarget.Location),
                 Spell.CastOnGround("Flare", ret => StyxWoW.Me.Location),
                 Spell.Cast("Stampede"),
                 Spell.Cast("Rapid Fire"),

@@ -87,7 +87,7 @@ namespace Singular.ClassSpecific.Rogue
 
                 Spell.BuffSelf("Vanish",ret => StyxWoW.Me.HealthPercent < 20),
 
-                Spell.BuffSelf("Vendetta", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
+                Spell.Buff("Vendetta", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
                 Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && !StyxWoW.Me.HasAura("Slice and Dice")),
                 Spell.Buff("Rupture", true, ret => (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rupture",true).TotalSeconds < 3)),
                 Spell.Buff("Envenom", true, ret => (StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3 && StyxWoW.Me.ComboPoints > 0) || StyxWoW.Me.ComboPoints == 5),
@@ -158,7 +158,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Garrote",
                     ret => (StyxWoW.Me.HasAura("Vanish") || StyxWoW.Me.IsStealthed) &&
                            StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.BuffSelf("Vendetta"),
+                Spell.Buff("Vendetta"),
                 Spell.BuffSelf("Slice and Dice", ret => StyxWoW.Me.RawComboPoints > 0 && !StyxWoW.Me.HasAura("Slice and Dice")),
                 Spell.Buff("Rupture", true, ret => (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
                 Spell.Buff("Envenom", true, ret => (StyxWoW.Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3 && StyxWoW.Me.ComboPoints > 0) || StyxWoW.Me.ComboPoints == 5),
@@ -236,7 +236,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Garrote", 
                     ret => (StyxWoW.Me.HasAura("Vanish") || StyxWoW.Me.IsStealthed) &&
                            StyxWoW.Me.CurrentTarget.MeIsBehind),
-                Spell.BuffSelf("Vendetta", 
+                Spell.Buff("Vendetta", 
                     ret => StyxWoW.Me.CurrentTarget.IsBoss() && 
                            (StyxWoW.Me.CurrentTarget.HealthPercent < 35 || TalentManager.IsSelected(13))),
 

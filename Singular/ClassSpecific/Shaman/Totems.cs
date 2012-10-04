@@ -48,8 +48,6 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateTotemsBehavior()
         {
             Composite tb;
-            tb = CreateTotemsNormalBehavior();
-
             if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
                 tb = CreateTotemsPvPBehavior();
             else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances )
@@ -97,21 +95,22 @@ namespace Singular.ClassSpecific.Shaman
                     ret => (bool) ret && !Exist( WoWTotem.StoneBulwark)),
 
                 Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(),
-                    ret => Me.HealthPercent < 50 && !Exist( WoWTotem.EarthElemental)),
-
-                new PrioritySelector( 
-                    ctx => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && u.IsPlayer && u.Combat ),
-
-                    Spell.BuffSelf(WoWTotem.Earthgrab.ToSpellId(),
-                        ret => (bool)ret && !Exist( WoWTotem.StoneBulwark, WoWTotem.EarthElemental, WoWTotem.Earthbind )),
-
-                    Spell.BuffSelf(WoWTotem.Earthbind.ToSpellId(),
-                        ret => (bool)ret && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental, WoWTotem.Earthgrab))
-                    ),
+                    ret => Me.HealthPercent < SingularSettings.Instance.Shaman.StoneBulwarkTotemPercent && !Exist( WoWTotem.EarthElemental)),
 
                 Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
-                    ret => Me.Fleeing && !Exist( WoWTotem.StoneBulwark, WoWTotem.EarthElemental )),
-                   
+                    ret => Unit.GroupMembers.Any( f=> f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor)
+                        && !Exist( WoWTotem.StoneBulwark, WoWTotem.EarthElemental ))),
+
+                new PrioritySelector(
+                    ctx => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && u.IsPlayer && u.Combat),
+
+                    Spell.BuffSelf(WoWTotem.Earthgrab.ToSpellId(),
+                        ret => (bool)ret && !Exist(WoWTotemType.Earth)),
+
+                    Spell.BuffSelf(WoWTotem.Earthbind.ToSpellId(),
+                        ret => (bool)ret && !Exist(WoWTotemType.Earth))
+                    ),
+
 
                 // fire totems
                 fireTotemBehavior,
@@ -141,7 +140,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 Spell.Cast("Stormlash Totem",
                     ret => ((bool)ret)
-                        && Me.HasAnyAura( Me.IsHorde?"Bloodlust":"Heroism", "Timewarp", "Ancient Hysteria")
+                        && Me.HasAnyAura( Common.BloodlustName, "Timewarp", "Ancient Hysteria")
                         && !Exist(WoWTotemType.Air))
 
                 );
@@ -210,11 +209,10 @@ namespace Singular.ClassSpecific.Shaman
         { 
             get 
             { 
-#if PRE_504_TOTEM_LOGIC
-                return TotemsInRange == 0 && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0; 
-#else
-                return false;
-#endif
+                return TotemsInRange == 0 
+                    && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0
+                    && !Unit.NearbyFriendlyPlayers.Any( f => f.Combat )
+                    && !StyxWoW.Me.Totems.Any( t => t.WoWTotem == WoWTotem.FireElemental || t.WoWTotem == WoWTotem.EarthElemental ); 
             } 
         }
 
@@ -293,7 +291,13 @@ namespace Singular.ClassSpecific.Shaman
             return Me.Totems[(int)type - 1];
         }
 
-        public static int TotemsInRange { get { return TotemsInRangeOf(StyxWoW.Me); } }
+        public static int TotemsInRange 
+        { 
+            get 
+            {
+                return TotemsInRangeOf(StyxWoW.Me);
+            }
+        }
 
         public static int TotemsInRangeOf(WoWUnit unit)
         {

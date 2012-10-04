@@ -9,15 +9,15 @@ using Styx.CommonBot;
 
 namespace Singular.ClassSpecific.Monk
 {
-    // Basic low level monk class routine by Laria and CnG
-    public class Lowbie
+    public class Windwalker
     {
-       
-        [Behavior(BehaviorType.Combat | BehaviorType.Pull, WoWClass.Monk, 0)]
-        public static Composite CreateLowbieMonkCombat()
+
+        [Behavior(BehaviorType.Combat | BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker)]
+ 
+        public static Composite CreateWindwalkerMonkCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
+               Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
@@ -29,13 +29,13 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Blackout Kick", ret => StyxWoW.Me.CurrentChi >= 2),
                 Spell.Cast("Jab"),
                 //Only roll to get to the mob quicker. 
-                Spell.Cast("Roll", ret => StyxWoW.Me.CurrentTarget.Distance.Between(5, 20)),
-                Movement.CreateMoveToMeleeBehavior(true)
+                Spell.Cast("Roll", ret => StyxWoW.Me.CurrentTarget.Distance >= 5 && StyxWoW.Me.CurrentTarget.Distance <= 20),
+                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 
-        
-    
+
+
     }
-     
+
 }

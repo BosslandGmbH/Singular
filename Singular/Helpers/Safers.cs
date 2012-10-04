@@ -34,6 +34,10 @@ namespace Singular.Helpers
                                    TankManager.TargetingTimer.IsFinished && StyxWoW.Me.Combat && TankManager.Instance.FirstUnit != null &&
                                    (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget != TankManager.Instance.FirstUnit),
                             new Sequence(
+                // pending spells like mage blizard cause targeting to fail.
+                                new DecoratorContinue(ctx => StyxWoW.Me.CurrentPendingCursorSpell != null,
+                                    new Action(ctx => Lua.DoString("SpellStopTargeting()"))),
+
                                 new Action(
                                     ret =>
                                     {
@@ -88,6 +92,7 @@ namespace Singular.Helpers
                                 ret => ret != null,
                                 new Sequence(
                                     new Action(ret => Logger.Write(Color.Orange, "Current target is not the best target. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
+
                                     new Action(ret => ((WoWUnit)ret).Target()),
                                     new WaitContinue(
                                         2,
@@ -149,6 +154,9 @@ namespace Singular.Helpers
                                     ret => ret != null,
                                     new Sequence(
                                         new Action(ret => Logger.Write(Color.Orange, "Current target is invalid. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
+                                        // pending spells like mage blizard cause targeting to fail.
+                                        new DecoratorContinue(ctx => StyxWoW.Me.CurrentPendingCursorSpell != null,
+                                            new Action(ctx => Lua.DoString("SpellStopTargeting()"))),
                                         new Action(ret => ((WoWUnit)ret).Target()),
                                         new WaitContinue(
                                             2,

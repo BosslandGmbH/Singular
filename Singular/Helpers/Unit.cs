@@ -33,7 +33,11 @@ namespace Singular.Helpers
         {
             get
             {
-                ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids;
+                // Grab party+raid member + myself GUIDs
+                ulong[] guids =
+                    StyxWoW.Me.GroupInfo.RaidMemberGuids.Union(StyxWoW.Me.GroupInfo.PartyMemberGuids).Union(new[]
+                        {StyxWoW.Me.Guid}).Distinct().ToArray();
+
                 return (
                     from p in ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
                     where p.IsFriendly && guids.Any(g => g == p.Guid)
@@ -47,10 +51,7 @@ namespace Singular.Helpers
         /// </summary>
         public static IEnumerable<WoWPartyMember> GroupMemberInfos
         {
-            get
-            {
-                return StyxWoW.Me.GroupInfo.RaidMembers;
-            }
+            get { return StyxWoW.Me.GroupInfo.RaidMembers.Union(StyxWoW.Me.GroupInfo.PartyMembers).Distinct(); }
         }
 
 

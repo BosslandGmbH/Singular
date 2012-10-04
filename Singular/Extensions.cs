@@ -49,6 +49,8 @@ namespace Singular
             return sb.ToString();
         }
 
+        public static bool ShowPlayerNames { get; set; }
+
         public static string SafeName(this WoWObject obj)
         {
             if (obj.IsMe)
@@ -62,7 +64,7 @@ namespace Singular
                 if (RaFHelper.Leader == obj)
                     return "Tank";
 
-                name = ((WoWPlayer)obj).Class.ToString();
+                name = ShowPlayerNames ? ((WoWPlayer)obj).Name : ((WoWPlayer)obj).Class.ToString();
             }
             else if (obj is WoWUnit && obj.ToUnit().IsPet)
             {

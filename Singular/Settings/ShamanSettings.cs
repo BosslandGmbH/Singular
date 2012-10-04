@@ -23,9 +23,43 @@ namespace Singular.Settings
     internal class ShamanSettings : Styx.Helpers.Settings
     {
         public ShamanSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, SingularSettings.SettingsPath + "Shaman.xml"))
+            : base(Path.Combine(SingularSettings.SettingsPath, "Shaman.xml"))
         {
         }
+
+        #region Context Late Loading Wrappers
+
+        private ShamanHealSettings _battleground;
+        private ShamanHealSettings _instance;
+        private ShamanHealSettings _normal;
+
+        [Browsable(false)]
+        public ShamanHealSettings Battleground { get { return _battleground ?? (_battleground = new ShamanHealSettings( WoWContext.Battlegrounds )); } }
+
+        [Browsable(false)]
+        public ShamanHealSettings Instance { get { return _instance ?? (_instance = new ShamanHealSettings( WoWContext.Instances )); } }
+
+        [Browsable(false)]
+        public ShamanHealSettings Normal { get { return _normal ?? (_normal = new ShamanHealSettings( WoWContext.Normal )); } }
+
+        [Browsable(false)]
+        public ShamanHealSettings Heal { get { return HealLookup(Singular.SingularRoutine.CurrentWoWContext); } }
+        
+        public ShamanHealSettings HealLookup( WoWContext ctx)
+        {
+            if (ctx == WoWContext.Battlegrounds)
+                return Battleground;
+            if (ctx == WoWContext.Instances)
+                return Instance;
+            return Normal;
+        }
+
+        #endregion
+
+
+        #region Category: Common
+
+        #endregion
 
         #region Category: Enhancement
         [Setting]
@@ -33,7 +67,7 @@ namespace Singular.Settings
         [Category("Enhancement")]
         [DisplayName("Feral Spirit")]
         [Description("Selecet on what type of fight you would like to cast Feral Spirit")]
-        public CastOn CastOn  { get; set; }
+        public CastOn FeralSpiritCastOn  { get; set; }
 
         [Setting]
         [DefaultValue(true)]
@@ -62,83 +96,154 @@ namespace Singular.Settings
         #region Category: Restoration
 
         [Setting]
-        [DefaultValue(45)]
+        [DefaultValue(85)]
         [Category("Restoration")]
-        [DisplayName("Heal % Ascendance")]
+        [DisplayName("% Healing Stream Totem")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealAscendance { get; set; }
+        public int HealHealingStreamTotem { get; set; }
 
-        [Setting]
-        [DefaultValue(15)]
-        [Category("Restoration")]
-        [DisplayName("Heal % Oh Shoot!")]
-        [Description("Health % to cast Oh Shoot Heal (Ancestral Swiftness + Greater Healing Wave).  Disabled if set to 0, on cooldown, or talent not selected.")]
-        public int HealAncestralSwiftness { get; set; }
+        #endregion
 
-        [Setting]
-        [DefaultValue(16)]
-        [Category("Restoration")]
-        [DisplayName("Heal % Healing Surge")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealHealingSurge { get; set; }
-
-        [Setting]
-        [DefaultValue(49)]
-        [Category("Restoration")]
-        [DisplayName("Heal % Unleash Elements")]
-        [Description("Health % to cast this ability at. Set to 0 to disable as direct heal, but may still be cast as a buff.")]
-        public int HealUnleashElements { get; set; }
-
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Restoration")]
-        [DisplayName("Heal % Greater Healing Wave")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealGreaterHealingWave { get; set; }
-
-        [Setting]
-        [DefaultValue(48)]
-        [Category("Restoration")]
-        [DisplayName("Heal % Spirit Link Totem")]
-        [Description("Health % to cast this ability at.  Only valid in a group. Set to 0 to disable.")]
-        public int HealSpiritLinkTotem { get; set; }
+        #region Talents
 
         [Setting]
         [DefaultValue(47)]
-        [Category("Restoration")]
-        [DisplayName("Heal % Healing Tide Totem")]
+        [Category("Talents")]
+        [DisplayName("Healing Tide Totem %")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealHealingTideTotem { get; set; }
+        public int HealingTideTotemPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(47)]
+        [Category("Talents")]
+        [DisplayName("Stone Bulwark Totem %")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int StoneBulwarkTotemPercent { get; set; }
+
+        #endregion
+    }
+
+    internal class ShamanHealSettings : Singular.Settings.HealerSettings
+    {
+        private ShamanHealSettings()
+            : base("", WoWContext.None)
+        {
+        }
+
+        public ShamanHealSettings(WoWContext ctx)
+            : base("Shaman", ctx)
+        {
+
+            // bit of a hack.  using SavedToFile setting to catch if we have
+            // .. written settings yet.  if not, do context specific initialization 
+            // .. here since we don't want same DefaultValue() for every context
+            if (SavedToFile)
+                return;
+
+            SavedToFile = true;
+            if (ctx == Singular.WoWContext.Battlegrounds)
+            {
+                HealingWave = 90;
+                ChainHeal = 89;
+                HealingRain = 88;
+                GreaterHealingWave = 70;
+                Ascendance = 40;
+                SpiritLinkTotem = 48;
+                HealingSurge = 50;
+                AncestralSwiftness = 35;
+                HealingStreamTotem = 87;
+                HealingTideTotemPercent = 49;
+            }
+            else if (ctx == Singular.WoWContext.Instances)
+            {
+                HealingWave = 90;
+                ChainHeal = 89;
+                HealingRain = 88;
+                GreaterHealingWave = 70;
+                Ascendance = 40;
+                SpiritLinkTotem = 48;
+                HealingSurge = 50;
+                AncestralSwiftness = 20;
+                HealingStreamTotem = 87;
+                HealingTideTotemPercent = 49;
+            }
+            // omit case for WoWContext.Normal and let it use DefaultValue() values
+        }
+
+        [Setting]
+        [Browsable(false)]
+        [DefaultValue(false)]
+        public bool SavedToFile { get; set; }
 
         [Setting]
         [DefaultValue(70)]
         [Category("Restoration")]
-        [DisplayName("Heal % Healing Wave")]
+        [DisplayName("% Healing Wave")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealHealingWave { get; set; }
-
-        [Setting]
-        [DefaultValue(85)]
-        [Category("Restoration")]
-        [DisplayName("Heal % Healing Stream Totem")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealHealingStreamTotem { get; set; }
+        public int HealingWave { get; set; }
 
         [Setting]
         [DefaultValue(92)]
         [Category("Restoration")]
-        [DisplayName("Heal % Chain Heal")]
+        [DisplayName("% Chain Heal")]
         [Description("Health % to cast this ability at. Must heal minimum 2 people in party, 3 in a raid. Set to 0 to disable.")]
-        public int HealChainHeal { get; set; }
+        public int ChainHeal { get; set; }
 
         [Setting]
         [DefaultValue(91)]
         [Category("Restoration")]
-        [DisplayName("Heal % Healing Rain")]
+        [DisplayName("% Healing Rain")]
         [Description("Health % to cast this ability at. Must heal minimum of 3 people in party, 4 in a raid. Set to 0 to disable.")]
-        public int HealHealingRain { get; set; }
+        public int HealingRain { get; set; }
 
-        #endregion
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Greater Healing Wave")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int GreaterHealingWave { get; set; }
+
+        [Setting]
+        [DefaultValue(45)]
+        [Category("Restoration")]
+        [DisplayName("% Ascendance")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Ascendance { get; set; }
+
+        [Setting]
+        [DefaultValue(16)]
+        [Category("Restoration")]
+        [DisplayName("% Healing Surge")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HealingSurge { get; set; }
+
+        [Setting]
+        [DefaultValue(15)]
+        [Category("Restoration")]
+        [DisplayName("% Oh Shoot!")]
+        [Description("Health % to cast Oh Shoot Heal (Ancestral Swiftness + Greater Healing Wave).  Disabled if set to 0, on cooldown, or talent not selected.")]
+        public int AncestralSwiftness { get; set; }
+
+        [Setting]
+        [DefaultValue(48)]
+        [Category("Restoration")]
+        [DisplayName("% Spirit Link Totem")]
+        [Description("Health % to cast this ability at.  Only valid in a group. Set to 0 to disable.")]
+        public int SpiritLinkTotem { get; set; }
+
+        [Setting]
+        [DefaultValue(85)]
+        [Category("Restoration")]
+        [DisplayName("% Healing Stream Totem")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HealingStreamTotem { get; set; }
+
+        [Setting]
+        [DefaultValue(47)]
+        [Category("Talents")]
+        [DisplayName("Healing Tide Totem %")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HealingTideTotemPercent { get; set; }
 
     }
 }

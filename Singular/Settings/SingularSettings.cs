@@ -50,6 +50,12 @@ namespace Singular.Settings
 
         public static SingularSettings Instance { get { return _instance ?? (_instance = new SingularSettings()); } }
 
+        public static bool IsTrinketUsageWanted(TrinketUsage usage)
+        {
+            return usage == SingularSettings.Instance.Trinket1Usage
+                || usage == SingularSettings.Instance.Trinket2Usage;
+        }
+
         #region Category: General
 
         [Setting]
@@ -97,14 +103,14 @@ namespace Singular.Settings
         [DefaultValue(30)]
         [Category("General")]
         [DisplayName("Potion Health")]
-        [Description("Minimum health to use a health pot or health stone at.")]
+        [Description("Health % to use a health pot/trinket/stone at.")]
         public int PotionHealth { get; set; }
 
         [Setting]
         [DefaultValue(30)]
         [Category("General")]
         [DisplayName("Potion Mana")]
-        [Description("Minimum mana to use a mana pot at.")]
+        [Description("Mana % to use a mana pot/trinket at. (used for all energy forms)")]
         public int PotionMana { get; set; }
 
         #endregion
@@ -143,6 +149,13 @@ namespace Singular.Settings
         [Description("Ignore healing targets when their health is above this value.")]
         public int IgnoreHealTargetsAboveHealth { get; set; }
 
+        [Setting]
+        [DefaultValue(75)]
+        [Category("Healing")]
+        [DisplayName("Max Heal Target Range")]
+        [Description("Max distance that we will see a heal target (max value: 100)")]
+        public int MaxHealTargetRange { get; set; }
+
         #endregion
 
         #region Category: Items
@@ -153,18 +166,6 @@ namespace Singular.Settings
         [DisplayName("Use Flasks")]
         [Description("Uses Flask of the North or Flask of Enhancement.")]
         public bool UseAlchemyFlasks { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Items")]
-        [DisplayName("Use First Trinket")]
-        public bool Trinket1 { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Items")]
-        [DisplayName("Use Second Trinket")]
-        public bool Trinket2 { get; set; }
 
         [Setting]
         [DefaultValue(TrinketUsage.Never)]

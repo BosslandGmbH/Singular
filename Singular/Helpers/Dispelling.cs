@@ -75,8 +75,8 @@ namespace Singular.Helpers
                         return true;
                     case WoWClass.Priest:
                         return true;
-					//case WoWClass.Monk
-						//return true;
+					case WoWClass.Monk:
+						return true;
                 }
                 return false;
             }
@@ -94,8 +94,8 @@ namespace Singular.Helpers
                         return true;
                     case WoWClass.Paladin:
                         return true;
-                        //case WoWClass.Monk:
-                        //return true;
+                    case WoWClass.Monk:
+                        return true;
                 }
                 return false;
             }
@@ -144,8 +144,8 @@ namespace Singular.Helpers
                     case WoWClass.Priest:
                         return true;
 
-                        //case WoWClass.Monk: // Monks need the passive talent "internal medicine" ~lvl 20
-                        //return StyxWoW.Me.HasAura("Internal Medicine");
+                    case WoWClass.Monk: // Monks need the passive talent "internal medicine" ~lvl 20
+                        return StyxWoW.Me.HasAura("Internal Medicine");
                 }
                 return false;
             }

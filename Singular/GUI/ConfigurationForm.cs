@@ -12,6 +12,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -41,6 +42,7 @@ namespace Singular.GUI
             //HealTargeting.Instance.OnTargetListUpdateFinished += new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished);
             pgGeneral.SelectedObject = SingularSettings.Instance;
             SingularSettings main = SingularSettings.Instance;
+
             Styx.Helpers.Settings toSelect = null;
             switch (StyxWoW.Me.Class)
             {
@@ -64,6 +66,9 @@ namespace Singular.GUI
                     break;
                 case WoWClass.Shaman:
                     toSelect = main.Shaman;
+                    pgHealBattleground.SelectedObject = main.Shaman.Battleground;
+                    pgHealInstance.SelectedObject = main.Shaman.Instance;
+                    pgHealNormal.SelectedObject = main.Shaman.Normal;
                     break;
                 case WoWClass.Mage:
                     toSelect = main.Mage;
@@ -82,8 +87,32 @@ namespace Singular.GUI
                 pgClass.SelectedObject = toSelect;
             }
 
+            InitializeContextDropdown();
+
             if (!timer1.Enabled)
                 timer1.Start();
+        }
+
+        private void InitializeContextDropdown()
+        {
+            if (pgHealBattleground.SelectedObject != null)
+                cboHealContext.Items.Add(WoWContext.Battlegrounds);
+            if (pgHealInstance.SelectedObject != null)
+                cboHealContext.Items.Add(WoWContext.Instances);
+            if (pgHealNormal.SelectedObject != null)
+                cboHealContext.Items.Add(WoWContext.Normal);
+
+            cboHealContext.Enabled = cboHealContext.Items.Count > 0;
+
+            try
+            {
+                cboHealContext.SelectedItem = Singular.SingularRoutine.CurrentWoWContext;
+            }
+            catch
+            {
+                if ( cboHealContext.Enabled)
+                    cboHealContext.SelectedIndex = 0;
+            }
         }
 
         private void Instance_OnTargetListUpdateFinished(object context)
@@ -108,9 +137,17 @@ namespace Singular.GUI
             {
                 ((Styx.Helpers.Settings)pgGeneral.SelectedObject).Save();
                 if (pgClass.SelectedObject != null)
-                {
                     ((Styx.Helpers.Settings)pgClass.SelectedObject).Save();
-                }
+
+                if (pgHealBattleground.SelectedObject != null)
+                    ((Styx.Helpers.Settings)pgHealBattleground.SelectedObject).Save();
+
+                if (pgHealInstance.SelectedObject != null)
+                    ((Styx.Helpers.Settings)pgHealInstance.SelectedObject).Save();
+
+                if (pgHealNormal.SelectedObject != null)
+                    ((Styx.Helpers.Settings)pgHealNormal.SelectedObject).Save();
+
                 Close();
             }
             catch (Exception ex)
@@ -145,6 +182,28 @@ namespace Singular.GUI
         private void ConfigurationForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             timer1.Stop();
+        }
+
+        private void ShowPlayerNames_CheckedChanged(object sender, EventArgs e)
+        {
+            Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
+        }
+
+        private void cboHealContext_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            WoWContext ctx = (WoWContext) cboHealContext.SelectedItem;
+            bool isBG = ctx == WoWContext.Battlegrounds;
+            bool isInst = ctx == WoWContext.Instances;
+            bool isNorm = ctx == WoWContext.Normal;
+
+            pgHealBattleground.Enabled = isBG;
+            pgHealBattleground.Visible = isBG;
+
+            pgHealInstance.Enabled = isInst;
+            pgHealInstance.Visible = isInst;
+
+            pgHealNormal.Enabled = isNorm;
+            pgHealNormal.Visible = isNorm;
         }
     }
 }

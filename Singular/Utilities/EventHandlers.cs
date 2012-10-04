@@ -24,29 +24,20 @@ namespace Singular.Utilities
             if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds &&
                 !StyxWoW.Me.CurrentMap.IsRaid)
                 AttachCombatLogEvent();
+
+            SingularRoutine.OnWoWContextChanged += HandleContextChanged;
         }
 
-        internal static void PlayerOnMapChanged(BotEvents.Player.MapChangedEventArgs args)
+        internal static void HandleContextChanged(object sender, WoWContextEventArg e)
         {
             // Since we hooked this in ctor, make sure we are the selected CC
             if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
-                return;
-
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds ||
-                StyxWoW.Me.CurrentMap.IsRaid)
+                return; 
+            
+            if (e.CurrentContext == WoWContext.Battlegrounds || StyxWoW.Me.CurrentMap.IsRaid)
                 DetachCombatLogEvent();
             else
                 AttachCombatLogEvent();
-
-            //Why would we create same behaviors all over ?
-            if (SingularRoutine.LastWoWContext == SingularRoutine.CurrentWoWContext)
-            {
-                return;
-            }
-
-            Logger.Write("Context changed. New context: " + SingularRoutine.CurrentWoWContext +
-                         ". Rebuilding behaviors.");
-            SingularRoutine.Instance.CreateBehaviors();
         }
 
         private static void AttachCombatLogEvent()

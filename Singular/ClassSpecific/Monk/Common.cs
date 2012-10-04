@@ -15,61 +15,62 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Monk
-{ /*
+{
+
     public class Common
     {
-        [Spec(WoWSpec.WindwalkerMonk)]
-        [Spec(WoWSpec.MistweaverMonk)]
-        [Spec(WoWSpec.BrewmasterMonk)]
 
-        [Spec((WoWSpec)0)]
-        [Context(WoWContext.All)]
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkMistweaver)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker)]
         private static Composite CreateMonkPreCombatBuffs()
         {
             return
                 new PrioritySelector(
-                    Spell.Cast("Legacy of the Emperor",
-                        ret => StyxWoW.Me,
-                        ret =>
-                        {
-                            var players = new List<WoWPlayer>();
+                    Spell.Cast("Legacy of the Emperor", // +5% stats
+                               ret => StyxWoW.Me,
+                               ret =>
+                               Unit.NearbyGroupMembers.Any(
+                                   p =>
+                                   p.IsAlive &&
+                                   !p.HasAnyAura("Blessing of Kings", "Mark of the Wild", "Legacy of the Emperor","Embrace of the Shale Spider"))),
 
-                            if (StyxWoW.Me.GroupInfo.IsInRaid)
-                                players.AddRange(StyxWoW.Me.RaidMembers);
-                            else if (StyxWoW.Me.GroupInfo.IsInParty)
-                                players.AddRange(StyxWoW.Me.PartyMembers);
+                    Spell.Cast("Legacy of the White Tiger", // +5% crit
+                               ret => StyxWoW.Me,
+                               ret =>
+                                   {
+                                       var players = new List<WoWPlayer>();
 
-                            players.Add(StyxWoW.Me);
+                                       if (StyxWoW.Me.GroupInfo.IsInRaid)
+                                           players.AddRange(StyxWoW.Me.RaidMembers);
+                                       else if (StyxWoW.Me.GroupInfo.IsInParty)
+                                           players.AddRange(StyxWoW.Me.PartyMembers);
 
-                            return players.Any(
-                                        p => p.DistanceSqr < 40 * 40 && p.IsAlive &&        
-                                             !p.HasAura("Blessing of Kings") &&
-                                             !p.HasAura("Mark of the Wild") &&
-                                             !p.HasAura("Legacy of the Emperor")
-                                             );
-                        }),
-                    Spell.Cast("Legacy of the White Tiger",
-                        ret => StyxWoW.Me,
-                        ret =>
-                        {
-                            var players = new List<WoWPlayer>();
+                                       players.Add(StyxWoW.Me);
 
-                            if (StyxWoW.Me.GroupInfo.IsInRaid)
-                                players.AddRange(StyxWoW.Me.RaidMembers);
-                            else if (StyxWoW.Me.GroupInfo.IsInParty)
-                                players.AddRange(StyxWoW.Me.PartyMembers);
-
-                            players.Add(StyxWoW.Me);
-
-                            return players.Any(
-                                        p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
-                                             !p.HasAura("Legacy of the White Tiger") &&
-                                              ((p.HasAura("Legacy of the Emperor)") && !p.HasMyAura("Legacy of the Emperor)")) ||
-                                               p.HasAura("Blessing of Kings") ||
-                                               p.HasAura("Mark of the Wild")));
-                        })
+                                       return players.Any(
+                                           p =>
+                                           p.DistanceSqr < 40*40 && p.IsAlive &&
+                                           !p.HasAnyAura("Legacy of the White Tiger", "Leader of the Pack",
+                                                         "Dalaran Brilliance", "Arcane Brilliance"));
+                                       }
+                        )
                     );
         }
+
+        [Behavior(BehaviorType.Rest, WoWClass.Monk )]
+        public static Composite CreateMonkRest()
+        {
+            return new PrioritySelector(
+
+                // Rest up damnit! Do this first, so we make sure we're fully rested.
+                Rest.CreateDefaultRestBehaviour(),
+                // Can we res people?
+                Spell.Resurrect("Resuscitate")
+                );
+        }
+
+
     }
-   */
 }

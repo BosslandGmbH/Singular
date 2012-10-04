@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Mage
 {
     public static class Common
     {
-   
+
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
         public static Composite CreateMageBuffs()
@@ -61,23 +61,23 @@ namespace Singular.ClassSpecific.Mage
                             new Action(ctx => ((WoWGameObject)ctx).Interact()),
                             new WaitContinue(2, ctx => false, new ActionAlwaysSucceed())))),
 
-                new Decorator(ctx => SpellManager.CanCast("Ritual of Refreshment") && !Gotfood && ShouldSummonTable,
+                new Decorator(ctx => SpellManager.CanCast("Conjure Refreshment Table") && !Gotfood && ShouldSummonTable,
                     new Sequence(
                         new DecoratorContinue(ctx => StyxWoW.Me.IsMoving,
                             new Sequence(
                                 new Action(ctx => WoWMovement.MoveStop()),
                                 new WaitContinue(2, ctx => !StyxWoW.Me.IsMoving, new ActionAlwaysSucceed()))),
-                        new Action(ctx => SpellManager.Cast("Ritual of Refreshment")),
+                        new Action(ctx => SpellManager.Cast("Conjure Refreshment Table")),
                         new WaitContinue(2, ctx => StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
-                        new WaitContinue(30, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()))),
+                        new WaitContinue(10, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()))),
 
                 Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !ShouldSummonTable),
-             
-                new Decorator(ret => !HaveManaGem && SpellManager.CanCast("Conjure Mana Gem"), 
+
+                new Decorator(ret => !HaveManaGem && SpellManager.CanCast("Conjure Mana Gem"),
                     new Sequence(
-                        new Action(ret =>Logger.Write("Casting Conjure Mana Gem")),
+                        new Action(ret => Logger.Write("Casting Conjure Mana Gem")),
                         new Action(ret => SpellManager.Cast(759)))),
-                                  
+
                 new Decorator(
                     ret =>
                     TalentManager.CurrentSpec == WoWSpec.MageFrost && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
@@ -85,15 +85,18 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
+
         private static readonly uint[] MageFoodIds = new uint[]
                                                          {
-                                                             65500,
-                                                             65515,
-                                                             65516,
-                                                             65517,
-                                                             43518,
-                                                             43523,
-                                                             65499
+                                                            80610, 
+                                                            65500,
+                                                            65515,
+                                                            65516,
+                                                            65517,
+                                                            43518,
+                                                            43523,
+                                                            65499
+//Conjured Mana Pudding - MoP Lvl 85+
                                                          };
 
         private const uint ArcanePowder = 17020;
@@ -102,16 +105,16 @@ namespace Singular.ClassSpecific.Mage
         {
             get
             {
-                return SingularSettings.Instance.Mage.SummonTableIfInParty && SpellManager.HasSpell("Ritual of Refreshment") && StyxWoW.Me.BagItems.Any(i => i.Entry == ArcanePowder) &&
+                return SingularSettings.Instance.Mage.SummonTableIfInParty && SpellManager.HasSpell("Conjure Refreshment Table") &&
                        StyxWoW.Me.PartyMembers.Count(p => p.DistanceSqr < 40 * 40) >= 2;
             }
         }
 
-       static readonly uint[] RefreshmentTableIds = new uint[]
+        static readonly uint[] RefreshmentTableIds = new uint[]
                                          {
                                              186812,
                                              207386,
-                                             207387
+                                             207387 //This is the one for level 85 - not sure if we need to add another at 90
                                          };
 
         static private WoWGameObject MageTable

@@ -224,6 +224,30 @@ namespace Singular.Helpers
                 new Action(ret => Navigator.MoveTo(toUnit(ret).Location)));
         }
 
+        /// <summary>
+        ///   Creates a move to location behavior that stops when in range of target. Will return RunStatus.Success if it has reached the location, or stopped in range.
+        /// </summary>
+        /// <remarks>
+        ///   Created 9/25/2012.
+        /// </remarks>
+        /// <param name = "toUnit">unit to move towards</param>
+        /// <param name = "range">The range.</param>
+        /// <returns>.</returns>
+        public static Composite CreateMoveToRangeAndStopBehavior(UnitSelectionDelegate toUnit, DynamicRangeRetriever range)
+        {
+            return
+                new Decorator(
+                    ret => !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && toUnit(ret) != StyxWoW.Me,
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => (StyxWoW.Me.Location.Distance(toUnit(ret).Location) > range(ret) || !toUnit(ret).InLineOfSight),
+                            new Action(ret => Navigator.MoveTo(toUnit(ret).Location))),
+                        new Decorator(
+                            ret => StyxWoW.Me.IsMoving,
+                            new Action(ret => Navigator.PlayerMover.MoveStop()))
+                            )
+                        );
+        }
     }
 
     public delegate WoWPoint LocationRetriever(object context);

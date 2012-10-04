@@ -13,87 +13,47 @@
 
 using System;
 using System.Reflection;
-using Singular.Dynamics;
+using System.Windows.Forms;
 using Singular.GUI;
 using Singular.Helpers;
 using Singular.Managers;
-using Singular.Settings;
 using Singular.Utilities;
 using Styx;
 using Styx.CommonBot;
 using Styx.CommonBot.Routines;
 using Styx.Helpers;
-using Styx.TreeSharp;
-using Styx.WoWInternals.DBC;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
-    public class SingularRoutine : CombatRoutine
+    public partial class SingularRoutine : CombatRoutine
     {
-        private Composite _combatBehavior;
-        private Composite _combatBuffsBehavior;
-        private Composite _healBehavior;
-        private ulong _lastTargetGuid;
-        private WoWClass _myClass;
-        private Composite _preCombatBuffsBehavior;
-        private Composite _pullBehavior;
-        private Composite _pullBuffsBehavior;
-        private Composite _restBehavior;
-
         public SingularRoutine()
         {
             Instance = this;
 
-            // Yes, we are hooking in ctor. To be able to refresh behaviors before a botbase caches us, we need to do that
-            BotEvents.Player.OnMapChanged += EventHandlers.PlayerOnMapChanged;
+            // Do this now, so we ensure we update our context when needed.
+            BotEvents.Player.OnMapChanged += e =>
+                {
+                    // Don't run this handler if we're not the current routine!
+                    if (RoutineManager.Current.Name != Name)
+                        return;
+
+                    // Only ever update the context. All our internal handlers will use the context changed event
+                    // so we're not reliant on anything outside of ourselves for updates.
+                    UpdateContext();
+                };
         }
 
         public static SingularRoutine Instance { get; private set; }
 
-        public override string Name { get { return "Singular v3 $Revision$"; } }
+        public override string Name { get { return "Singular v3"; } }
 
         public override WoWClass Class { get { return StyxWoW.Me.Class; } }
 
         public override bool WantButton { get { return true; } }
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-
-        internal static WoWContext LastWoWContext { get; set; }
-
-        internal static WoWContext CurrentWoWContext
-        {
-            get
-            {
-                Map map = StyxWoW.Me.CurrentMap;
-
-                if (map.IsBattleground || map.IsArena)
-                {
-                    return WoWContext.Battlegrounds;
-                }
-
-                if (map.IsDungeon)
-                {
-                    return WoWContext.Instances;
-                }
-
-                return WoWContext.Normal;
-            }
-        }
-
-        public override Composite CombatBehavior { get { return _combatBehavior; } }
-
-        public override Composite CombatBuffBehavior { get { return _combatBuffsBehavior; } }
-
-        public override Composite HealBehavior { get { return _healBehavior; } }
-
-        public override Composite PreCombatBuffBehavior { get { return _preCombatBuffsBehavior; } }
-
-        public override Composite PullBehavior { get { return _pullBehavior; } }
-
-        public override Composite PullBuffBehavior { get { return _pullBuffsBehavior; } }
-
-        public override Composite RestBehavior { get { return _restBehavior; } }
 
         private static bool IsMounted
         {
@@ -109,35 +69,30 @@ namespace Singular
             }
         }
 
-        internal static event EventHandler<WoWContextEventArg> OnWoWContextChanged;
-
         public override void OnButtonPress()
         {
-            new ConfigurationForm().ShowDialog();
+            DialogResult dr = new ConfigurationForm().ShowDialog();
+            if (dr == DialogResult.OK || dr == DialogResult.Yes)
+            {
+                Logger.WriteDebug("Settings saved, rebuilding behaviors...");
+                Initialize();
+            }
         }
 
         public override void Pulse()
         {
-            if (_lastTargetGuid != StyxWoW.Me.CurrentTargetGuid)
-            {
-                _lastTargetGuid = StyxWoW.Me.CurrentTargetGuid;
-                // Don't print this shit if we don't need to. Kthx.
-                if (_lastTargetGuid != 0)
-                {
-                    // Add other target switch info stuff here.
+            // No pulsing if we're loading or out of the game.
+            if (!StyxWoW.IsInGame || !StyxWoW.IsInWorld)
+                return;
 
-                    Logger.WriteDebug("Switched targets!");
-                    Logger.WriteDebug("Melee Distance: " + Spell.MeleeRange);
-                    //Logger.Write("Me.MaxHealth = {0}", StyxWoW.Me.MaxHealth.ToString());
-                    Logger.WriteDebug("Health: " + StyxWoW.Me.CurrentTarget.MaxHealth);
-                    Logger.WriteDebug("Level: " + StyxWoW.Me.CurrentTarget.Level);
-                }
-            }
+            // Update the current context, check if we need to rebuild any behaviors.
+            UpdateContext();
 
             // Double cast shit
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow.Subtract(t).TotalMilliseconds >= 2500);
+
             //Only pulse for classes with pets
-            switch (_myClass)
+            switch (StyxWoW.Me.Class)
             {
                 case WoWClass.Hunter:
                 case WoWClass.DeathKnight:
@@ -150,17 +105,13 @@ namespace Singular
             if (HealerManager.NeedHealTargeting)
                 HealerManager.Instance.Pulse();
 
-            if (Group.MeIsTank && CurrentWoWContext != WoWContext.Battlegrounds && (Me.GroupInfo.IsInParty || Me.GroupInfo.IsInRaid))
+            if (Group.MeIsTank && CurrentWoWContext != WoWContext.Battlegrounds &&
+                (Me.GroupInfo.IsInParty || Me.GroupInfo.IsInRaid))
                 TankManager.Instance.Pulse();
         }
 
         public override void Initialize()
         {
-            //Caching current class here to avoid issues with loading screens where Class return None and we cant build behaviors
-            _myClass = Me.Class;
-
-            RoutineManager.Reloaded += RoutineManager_Reloaded;
-
             Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
             Logger.Write("Determining talent spec.");
             try
@@ -173,7 +124,22 @@ namespace Singular
             }
             Logger.Write("Current spec is " + TalentManager.CurrentSpec.ToString().CamelToSpaced());
 
-            if (!CreateBehaviors())
+            // Update the current WoWContext, and fire an event for the change.
+            UpdateContext();
+
+            // NOTE: Hook these events AFTER the context update.
+            OnWoWContextChanged += (orig, ne) =>
+                {
+                    Logger.Write("Context changed, re-creating behaviors");
+                    RebuildBehaviors();
+                };
+            RoutineManager.Reloaded += (s, e) =>
+                {
+                    Logger.Write("Routines were reloaded, re-creating behaviors");
+                    RebuildBehaviors();
+                };
+
+            if (!RebuildBehaviors())
             {
                 return;
             }
@@ -183,113 +149,8 @@ namespace Singular
             EventHandlers.Init();
             MountManager.Init();
             //Logger.Write("Combat log event handler started.");
-        }
 
-        private void RoutineManager_Reloaded(object sender, EventArgs e)
-        {
-            Logger.Write("Routines were reloaded, re-creating behaviors");
-            CreateBehaviors();
-        }
-
-        public bool CreateBehaviors()
-        {
-            Logger.PrintStackTrace("CreateBehaviors called.");
-            // let behaviors be notified if context changes.
-            if (OnWoWContextChanged != null)
-                OnWoWContextChanged(this, new WoWContextEventArg(CurrentWoWContext, LastWoWContext));
-
-            //Caching the context to not recreate same behaviors repeatedly.
-            LastWoWContext = CurrentWoWContext;
-
-            // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
-            if (!EnsureComposite(true, BehaviorType.Combat, out _combatBehavior))
-            {
-                return false;
-            }
-
-            if (!EnsureComposite(true, BehaviorType.Pull, out _pullBehavior))
-            {
-                return false;
-            }
-
-            // If there's no class-specific resting, just use the default, which just eats/drinks when low.
-            if (!EnsureComposite(false, BehaviorType.Rest, out _restBehavior))
-            {
-                Logger.Write("Using default rest behavior.");
-                _restBehavior = Helpers.Rest.CreateDefaultRestBehaviour();
-            }
-
-            // These are optional. If they're not implemented, we shouldn't stop because of it.
-            EnsureComposite(false, BehaviorType.CombatBuffs, out _combatBuffsBehavior);
-            // This is a small bugfix. Just to ensure we always pop trinkets, etc.
-            if (_combatBuffsBehavior == null)
-                _combatBuffsBehavior = new PrioritySelector();
-            EnsureComposite(false, BehaviorType.Heal, out _healBehavior);
-            EnsureComposite(false, BehaviorType.PullBuffs, out _pullBuffsBehavior);
-            EnsureComposite(false, BehaviorType.PreCombatBuffs, out _preCombatBuffsBehavior);
-
-            // Since we can be lazy, we're going to fix a bug right here and now.
-            // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
-            // 4/11/2012 - Changed to use a LockSelector to increased performance.
-            if (_preCombatBuffsBehavior != null)
-            {
-                _preCombatBuffsBehavior =
-                    new Decorator(
-                        ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                        new LockSelector(_preCombatBuffsBehavior));
-            }
-
-            if (_combatBuffsBehavior != null)
-            {
-                _combatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport,
-                    new LockSelector( //Item.CreateUseAlchemyBuffsBehavior(),
-                        Item.CreateUseTrinketsBehavior(),
-                        //Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana),
-                        _combatBuffsBehavior));
-            }
-
-            // There are some classes that uses spells in rest behavior. Basicly we don't want Rest to be called while flying.
-            if (_restBehavior != null)
-            {
-                _restBehavior =
-                    new Decorator(
-                        ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                        new LockSelector(_restBehavior));
-            }
-
-            // Wrap all the behaviors with a LockSelector which basically wraps the child bahaviors with a framelock.
-            // This will generally reduce the time it takes to pulse the behavior thus increasing performance of the cc
-            if (_healBehavior != null)
-            {
-                _healBehavior = new LockSelector(_healBehavior);
-            }
-
-            if (_pullBuffsBehavior != null)
-            {
-                _pullBuffsBehavior = new LockSelector(_pullBuffsBehavior);
-            }
-
-            _combatBehavior = new LockSelector(_combatBehavior);
-
-            _pullBehavior = new LockSelector(_pullBehavior);
-            return true;
-        }
-
-        private bool EnsureComposite(bool error, BehaviorType type, out Composite composite)
-        {
-            Logger.WriteDebug("Creating " + type + " behavior.");
-            int count = 0;
-            composite = CompositeBuilder.GetComposite(_myClass, TalentManager.CurrentSpec, type, CurrentWoWContext,
-                out count);
-            if ((composite == null || count <= 0) && error)
-            {
-                StopBot(
-                    string.Format(
-                        "Singular currently does not support {0} for this class/spec combination, in this context! [{1}, {2}, {3}]",
-                        type, _myClass, TalentManager.CurrentSpec, CurrentWoWContext));
-                return false;
-            }
-            return composite != null;
+            Instance.RebuildBehaviors();
         }
 
         private static void StopBot(string reason)
@@ -297,44 +158,5 @@ namespace Singular
             Logger.Write(reason);
             TreeRoot.Stop();
         }
-
-        #region Nested type: LockSelector
-
-        /// <summary>
-        /// This behavior wraps the child behaviors in a 'FrameLock' which can provide a big performance improvement 
-        /// if the child behaviors makes multiple api calls that internally run off a frame in WoW in one CC pulse.
-        /// </summary>
-        private class LockSelector : PrioritySelector
-        {
-            public LockSelector(params Composite[] children) : base(children)
-            {
-            }
-
-            public override RunStatus Tick(object context)
-            {
-                using (StyxWoW.Memory.AcquireFrame())
-                {
-                    return base.Tick(context);
-                }
-            }
-        }
-
-        #endregion
-
-        #region Nested type: WoWContextEventArg
-
-        public class WoWContextEventArg : EventArgs
-        {
-            public readonly WoWContext CurrentContext;
-            public readonly WoWContext PreviousContext;
-
-            public WoWContextEventArg(WoWContext currentContext, WoWContext prevContext)
-            {
-                CurrentContext = currentContext;
-                PreviousContext = prevContext;
-            }
-        }
-
-        #endregion
     }
 }

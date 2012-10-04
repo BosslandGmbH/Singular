@@ -132,7 +132,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.BuffSelf("Elemental Mastery",
                             ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.Elite || u.IsPlayer) &&
-                                !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+                                !StyxWoW.Me.HasAnyAura(Common.BloodlustName , "Time Warp", "Ancient Hysteria")),
 
                         Common.CreateShamanInCombatBuffs(true),
 
@@ -149,12 +149,12 @@ namespace Singular.ClassSpecific.Shaman
 
                                 Spell.BuffSelf("Astral Shift", ret => StyxWoW.Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 5),
 
-                                Spell.BuffSelf( StyxWoW.Me.IsHorde ? "Bloodlust" : "Heroism", 
+                                Spell.BuffSelf( Common.BloodlustName , 
                                     ret => Unit.NearbyUnitsInCombatWithMe.Count() >= 5 ||
                                         Unit.NearbyUnitsInCombatWithMe.Any( u => u.Elite || u.IsPlayer )),
 
                                 Spell.BuffSelf("Elemental Mastery", ret =>
-                                    !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "Ancient Hysteria")),
+                                    !StyxWoW.Me.HasAnyAura(Common.BloodlustName , "Time Warp", "Ancient Hysteria")),
 
                                 Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location, req => 
                                     (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) &&

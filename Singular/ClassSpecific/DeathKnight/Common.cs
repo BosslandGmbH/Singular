@@ -147,11 +147,16 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.BuffSelf(
                         "Blood Presence",
                         ret => TalentManager.CurrentSpec == WoWSpec.DeathKnightBlood),
+                    
+                    Spell.BuffSelf(
+                        "Frost Presence",
+                        ret => TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost),
+
                     Spell.BuffSelf(
                         "Unholy Presence",
                         ret =>
-                        TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy ||
-                        TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost),
+                        TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy),
+
                     Spell.BuffSelf(
                         "Horn of Winter",
                         ret =>

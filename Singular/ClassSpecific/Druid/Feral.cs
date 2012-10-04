@@ -107,14 +107,18 @@ namespace Singular.ClassSpecific.Druid
                 //TODO: Add Trinkets / Engeneering gloves here while Tiger's Fury is active
                 Spell.Cast("Tiger's Fury",
                            ret =>
+                           SpellManager.HasSpell("Tiger's Fury") &&
                            SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds < 1 && Common.energy <= 35 &&
-                           !StyxWoW.Me.ActiveAuras.ContainsKey("Omen of Clarity")),
+                           !StyxWoW.Me.ActiveAuras.ContainsKey("Clearcasting")),
                 Spell.Cast("Berserk",
                            ret =>
+                           SpellManager.HasSpell("Berserk") &
                            SpellManager.Spells["Berserk"].CooldownTimeLeft.TotalSeconds < 1 &&
                            (StyxWoW.Me.HasAura("Tiger's Fury") ||
                             (CalculateTimeToDeath(StyxWoW.Me.CurrentTarget) < 15 &&
-                             SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds > 6))),
+                             ((SpellManager.HasSpell("Tiger's Fury") &&
+                               SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds > 6) ||
+                              !SpellManager.HasSpell("Tiger's Fury"))))),
                 Spell.Cast("Nature's Vigil",
                            ret =>
                            SpellManager.HasSpell("Nature's Vigil") &&
@@ -133,7 +137,7 @@ namespace Singular.ClassSpecific.Druid
                            StyxWoW.Me.CurrentTarget.HealthPercent <= 25),
                 Spell.Cast(106832,
                            ret =>
-                           StyxWoW.Me.ActiveAuras.ContainsKey("Omen of Clarity") &&
+                           StyxWoW.Me.ActiveAuras.ContainsKey("Clearcasting") &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Thrash", true).TotalSeconds < 3 &&
                            !StyxWoW.Me.HasAura("Dream of Cenarius")),
                 Spell.Cast("Savage Roar",
@@ -194,8 +198,10 @@ namespace Singular.ClassSpecific.Druid
                                StyxWoW.Me.ComboPoints >= 5 &&
                                StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 3 &&
                                (StyxWoW.Me.HasAura("Berserk") ||
-                                StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds <=
-                                SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds) &&
+                                (SpellManager.HasSpell("Tiger's Fury") &&
+                                 StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds <=
+                                 SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds) ||
+                                !SpellManager.HasSpell("Tiger's Fury")) &&
                                StyxWoW.Me.CurrentTarget.HealthPercent > 25)
                     ),
                 Spell.Cast("Rip",
@@ -203,11 +209,13 @@ namespace Singular.ClassSpecific.Druid
                            StyxWoW.Me.ComboPoints >= 5 && CalculateTimeToDeath(StyxWoW.Me.CurrentTarget) >= 6 &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 2.0 &&
                            (StyxWoW.Me.HasAura("Berserk") ||
-                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds <=
-                            SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds)),
+                            (SpellManager.HasSpell("Tiger's Fury") &&
+                             StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds <=
+                             SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds)
+                            || !SpellManager.HasSpell("Tiger's Fury"))),
                 Spell.Cast(106832,
                            ret =>
-                           StyxWoW.Me.ActiveAuras.ContainsKey("Omen of Clarity") &&
+                           StyxWoW.Me.ActiveAuras.ContainsKey("Clearcasting") &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Thrash", true).TotalSeconds < 3),
                 Spell.Cast("Ravage",
                            ret =>
@@ -248,21 +256,21 @@ namespace Singular.ClassSpecific.Druid
                            StyxWoW.Me.GetAuraTimeLeft(127538, true).TotalSeconds <= 6 &&
                            StyxWoW.Me.ComboPoints >= 5 &&
                            (((StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds +
-                              (8 - (Common.ExtendedRip*2))) > 6 &&
+                              (8 - (Common.ExtendedRip * 2))) > 6 &&
                              (SpellManager.HasSpell("Soul of the Forest") || StyxWoW.Me.HasAura("Berserk"))) ||
                             (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds +
-                             (8 - (Common.ExtendedRip*2))) > 10) && StyxWoW.Me.CurrentTarget.HasMyAura("Rip")),
+                             (8 - (Common.ExtendedRip * 2))) > 10) && StyxWoW.Me.CurrentTarget.HasMyAura("Rip")),
                 Spell.Cast("Ferocious Bite",
                            ret =>
                            StyxWoW.Me.ComboPoints >= 5 &&
                            (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds +
-                            (8 - (Common.ExtendedRip*2))) > 6 && StyxWoW.Me.CurrentTarget.HasMyAura("Rip") &&
+                            (8 - (Common.ExtendedRip * 2))) > 6 && StyxWoW.Me.CurrentTarget.HasMyAura("Rip") &&
                            (SpellManager.HasSpell("Soul of the Forest") || StyxWoW.Me.HasAura("Berserk"))),
                 Spell.Cast("Ferocious Bite",
                            ret =>
                            StyxWoW.Me.ComboPoints >= 5 &&
                            (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds +
-                            (8 - (Common.ExtendedRip*2))) > 10 && StyxWoW.Me.CurrentTarget.HasMyAura("Rip")),
+                            (8 - (Common.ExtendedRip * 2))) > 10 && StyxWoW.Me.CurrentTarget.HasMyAura("Rip")),
                 Spell.Cast("Rake",
                            ret =>
                            CalculateTimeToDeath(StyxWoW.Me.CurrentTarget) >= 8.5 &&
@@ -272,13 +280,15 @@ namespace Singular.ClassSpecific.Druid
                            CalculateTimeToDeath(StyxWoW.Me.CurrentTarget) >= 8.5 &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rake", true).TotalSeconds < 3.0 &&
                            (StyxWoW.Me.HasAura("Berserk") ||
-                            (SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds + 0.8) >=
-                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rake", true).TotalSeconds)),
+                            (SpellManager.HasSpell("Tiger's Fury") &&
+                             (SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds + 0.8) >=
+                             StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rake", true).TotalSeconds) ||
+                            !SpellManager.HasSpell("Tiger's Fury"))),
                 Spell.Cast("Ravage",
                            ret =>
                            (StyxWoW.Me.HasAura("Incarnation: King of the Jungle") ||
                             (StyxWoW.Me.HasAura("Prowl") && StyxWoW.Me.CurrentTarget.MeIsBehind)) &&
-                           StyxWoW.Me.ActiveAuras.ContainsKey("Omen of Clarity")),
+                           StyxWoW.Me.ActiveAuras.ContainsKey("Clearcasting")),
                 new Decorator(
                     ret =>
                     !(StyxWoW.Me.HasAura("Incarnation: King of the Jungle") ||
@@ -290,7 +300,7 @@ namespace Singular.ClassSpecific.Druid
                                    (StyxWoW.Me.HasAura(5217) || StyxWoW.Me.HasAura(106951)),
                             Spell.Cast("Shred",
                                        ret =>
-                                       StyxWoW.Me.ActiveAuras.ContainsKey("Omen of Clarity"))
+                                       StyxWoW.Me.ActiveAuras.ContainsKey("Clearcasting"))
                             ),
                         new Decorator(
                             ret => !(StyxWoW.Me.CurrentTarget.MeIsBehind || StyxWoW.Me.CurrentTarget.IsShredBoss() ||
@@ -298,7 +308,7 @@ namespace Singular.ClassSpecific.Druid
                                      (StyxWoW.Me.HasAura(5217) || StyxWoW.Me.HasAura(106951))),
                             Spell.Cast("Mangle",
                                        ret =>
-                                       StyxWoW.Me.ActiveAuras.ContainsKey("Omen of Clarity"))
+                                       StyxWoW.Me.ActiveAuras.ContainsKey("Clearcasting"))
                             ))
                     ),
                 new Decorator(
@@ -310,9 +320,9 @@ namespace Singular.ClassSpecific.Druid
                                    ret =>
                                    StyxWoW.Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalSeconds > 1 &&
                                    !(Common.energy +
-                                     (Common.energyregen*
+                                     (Common.energyregen *
                                       (StyxWoW.Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalSeconds - 1)) <
-                                     (4 - StyxWoW.Me.ComboPoints)*20)),
+                                     (4 - StyxWoW.Me.ComboPoints) * 20)),
                         Spell.Cast("Ravage",
                                    ret =>
                                    ((StyxWoW.Me.ComboPoints < 5 &&
@@ -335,9 +345,9 @@ namespace Singular.ClassSpecific.Druid
                                        ret =>
                                        StyxWoW.Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalSeconds > 1 &&
                                        !(Common.energy +
-                                         (Common.energyregen*
+                                         (Common.energyregen *
                                           (StyxWoW.Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalSeconds - 1)) <
-                                         (4 - StyxWoW.Me.ComboPoints)*20))
+                                         (4 - StyxWoW.Me.ComboPoints) * 20))
                             ),
                         new Decorator(
                             ret => !(StyxWoW.Me.CurrentTarget.MeIsBehind || StyxWoW.Me.CurrentTarget.IsShredBoss() ||
@@ -347,9 +357,9 @@ namespace Singular.ClassSpecific.Druid
                                        ret =>
                                        StyxWoW.Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalSeconds > 1 &&
                                        !(Common.energy +
-                                         (Common.energyregen*
+                                         (Common.energyregen *
                                           (StyxWoW.Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalSeconds - 1)) <
-                                         (4 - StyxWoW.Me.ComboPoints)*20))
+                                         (4 - StyxWoW.Me.ComboPoints) * 20))
                             ))
                     ),
                 new Decorator(
@@ -411,6 +421,7 @@ namespace Singular.ClassSpecific.Druid
                            ret =>
                            StyxWoW.Me.ComboPoints >= 5 &&
                            StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Thrash", true).TotalSeconds < 6 &&
+                           SpellManager.HasSpell("Tiger's Fury") &&
                            SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds < 3.0),
                 Spell.Cast(106832,
                            ret =>
@@ -428,7 +439,9 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Ravage",
                                    ret => StyxWoW.Me.HasAura("Tiger's Fury") || StyxWoW.Me.HasAura("Berserk")),
                         Spell.Cast("Ravage",
-                                   ret => SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds < 3.0),
+                                   ret =>
+                                   SpellManager.HasSpell("Tiger's Fury") &&
+                                   SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds < 3.0),
                         Spell.Cast("Ravage", ret => Common.energytime_to_max <= 1.0)
                         )
                     ),
@@ -471,7 +484,8 @@ namespace Singular.ClassSpecific.Druid
                                    (StyxWoW.Me.HasAura(5217) || StyxWoW.Me.HasAura(106951)),
                             Spell.Cast("Shred",
                                        ret =>
-                                       (SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds < 3.0))
+                                       (SpellManager.HasSpell("Tiger's Fury") &&
+                                        SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds < 3.0))
                             ),
                         new Decorator(
                             ret => !(StyxWoW.Me.CurrentTarget.MeIsBehind || StyxWoW.Me.CurrentTarget.IsShredBoss() ||
@@ -479,7 +493,8 @@ namespace Singular.ClassSpecific.Druid
                                      (StyxWoW.Me.HasAura(5217) || StyxWoW.Me.HasAura(106951))),
                             Spell.Cast("Mangle",
                                        ret =>
-                                       (SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds < 3.0))
+                                       (SpellManager.HasSpell("Tiger's Fury") &&
+                                        SpellManager.Spells["Tiger's Fury"].CooldownTimeLeft.TotalSeconds < 3.0))
                             ))
                     ),
                 new Decorator(
@@ -558,8 +573,8 @@ namespace Singular.ClassSpecific.Druid
                 * time_diff/hp_diff = x/first_life_max
                 * x = time_diff*first_life_max/hp_diff
                 */
-                long fullTime = timeDiff*_firstLifeMax/hpDiff;
-                long pastFirstTime = (_firstLifeMax - _firstLife)*timeDiff/hpDiff;
+                long fullTime = timeDiff * _firstLifeMax / hpDiff;
+                long pastFirstTime = (_firstLifeMax - _firstLife) * timeDiff / hpDiff;
                 long calcTime = _firstTime - pastFirstTime + fullTime - _currentTime;
                 if (calcTime < 1) calcTime = 1;
                 //calc_time is a int value for time to die (seconds) so there's no need to do SecondsToTime(calc_time)

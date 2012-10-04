@@ -67,6 +67,7 @@ namespace Singular.Dynamics
                             behavior, wowClass.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced(),
                             attribute.PriorityLevel));
 
+                        // if it blows up here, you defined a method with the exact same attribute and priority as one already found
                         matchedMethods.Add(attribute, mi.Invoke(null, null) as Composite);
                     }
                 }
@@ -90,7 +91,7 @@ namespace Singular.Dynamics
 
         private static bool IsMatchingMethod(BehaviorAttribute attribute, WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context)
         {
-            if (attribute.SpecificClass != wowClass)
+            if (attribute.SpecificClass != wowClass && attribute.SpecificClass != WoWClass.None)
                 return false;
             if ((attribute.Type & behavior) == 0)
                 return false;

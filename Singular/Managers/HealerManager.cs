@@ -116,15 +116,14 @@ namespace Singular.Managers
                     continue;
                 }
 
-                // If we have movement turned off or we are inside battlegrounds, ignore people who aren't in range.
-                // Almost all healing is 40 yards, so we'll use that.
-                if (p.DistanceSqr > 40*40)
+                // If we have movement turned off, ignore people who aren't in range.
+                // Almost all healing is 40 yards, so we'll use that. If in Battlegrounds use a slightly larger value to expane our 
+                // healing range, but not too large that we are running all over the bg zone 
+                // note: reordered following tests so only one floating point distance comparison done due to evalution of DisableAllMovement
+                if ((SingularSettings.Instance.DisableAllMovement && p.DistanceSqr > 40*40) || p.DistanceSqr > SingularSettings.Instance.MaxHealTargetRange * SingularSettings.Instance.MaxHealTargetRange)
                 {
-                    if (SingularSettings.Instance.DisableAllMovement || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                    {
-                        units.RemoveAt(i);
-                        continue;
-                    }
+                    units.RemoveAt(i);
+                    continue;
                 }
             }
 

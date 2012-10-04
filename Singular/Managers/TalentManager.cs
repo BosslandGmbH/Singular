@@ -63,7 +63,7 @@ namespace Singular.Managers
             if (CurrentSpec != oldSpec)
             {
                 Logger.Write("Your spec has been changed. Rebuilding behaviors");
-                SingularRoutine.Instance.CreateBehaviors();
+                SingularRoutine.Instance.RebuildBehaviors();
             }
         }
 
@@ -77,31 +77,33 @@ namespace Singular.Managers
 
                 Talents.Clear();
 
-                var numTalents = Lua.GetReturnVal<int>("return GetNumTalents()", 0);
-                for (int index = 1; index <= numTalents; index++)
+                // Always 18 talents. 6 rows of 3 talents.
+                for (int index = 1; index <= 6 * 3; index++)
                 {
-                    var selected = Lua.GetReturnVal<bool>(string.Format("local t= select(5,GetTalentInfo({0})) if t == true then return 1 end return nil", index), 0);
-                    var t = new Talent { Index = index, Selected = selected };
+                    var selected =
+                        Lua.GetReturnVal<bool>(
+                            string.Format(
+                                "local t= select(5,GetTalentInfo({0})) if t == true then return 1 end return nil", index),
+                            0);
+                    var t = new Talent {Index = index, Selected = selected};
                     Talents.Add(t);
                 }
 
                 Glyphs.Clear();
 
-                var glyphCount = Lua.GetReturnVal<int>("return GetNumGlyphSockets()", 0);
-
-                if (glyphCount != 0)
+                // 6 glyphs all the time. Plain and simple!
+                for (int i = 1; i <= 6; i++)
                 {
-                    for (int i = 1; i <= glyphCount; i++)
-                    {
-                        List<string> glyphInfo = Lua.GetReturnValues(String.Format("return GetGlyphSocketInfo({0})", i));
+                    List<string> glyphInfo = Lua.GetReturnValues(String.Format("return GetGlyphSocketInfo({0})", i));
 
-                        // add check for 4 members before access because empty sockets weren't returning 'nil' as documented
-                        if (glyphInfo != null && glyphInfo.Count >= 4 && glyphInfo[3] != "nil" && !string.IsNullOrEmpty(glyphInfo[3]))
-                        {
-                            Glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name.Replace("Glyph of ", ""));
-                        }
+                    // add check for 4 members before access because empty sockets weren't returning 'nil' as documented
+                    if (glyphInfo != null && glyphInfo.Count >= 4 && glyphInfo[3] != "nil" &&
+                        !string.IsNullOrEmpty(glyphInfo[3]))
+                    {
+                        Glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name.Replace("Glyph of ", ""));
                     }
                 }
+
             }
 
         }

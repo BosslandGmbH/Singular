@@ -52,6 +52,32 @@ namespace Singular.Helpers
 
         }
 
+        public static Composite UseEquippedTrinket(TrinketUsage usage)
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => usage == SingularSettings.Instance.Trinket1Usage,
+                    new PrioritySelector(
+                        ctx => StyxWoW.Me.Inventory.GetItemBySlot((uint) WoWInventorySlot.Trinket1 ),
+                        new Decorator( 
+                            ctx => ctx != null && CanUseEquippedItem((WoWItem)ctx),
+                            new Action(ctx => UseItem((WoWItem)ctx))
+                            )
+                        )
+                    ),
+                new Decorator(
+                    ret => usage == SingularSettings.Instance.Trinket2Usage,
+                    new PrioritySelector(
+                        ctx => StyxWoW.Me.Inventory.GetItemBySlot((uint) WoWInventorySlot.Trinket2 ),
+                        new Decorator( 
+                            ctx => ctx != null && CanUseEquippedItem((WoWItem)ctx),
+                            new Action(ctx => UseItem((WoWItem)ctx))
+                            )
+                        )
+                    )
+                );
+        }
+
         /// <summary>
         ///  Creates a behavior to use an item, in your bags or paperdoll.
         /// </summary>
@@ -134,7 +160,7 @@ namespace Singular.Helpers
                 new Decorator(
                     ret => StyxWoW.Me.HealthPercent < healthPercent,
                     new PrioritySelector(
-                        ctx => FindFirstUsableItemBySpell("Healthstone", "Healing Potion"),
+                        ctx => FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
                         new Decorator(
                             ret => ret != null,
                             new Sequence(
@@ -145,7 +171,7 @@ namespace Singular.Helpers
                 new Decorator(
                     ret => StyxWoW.Me.ManaPercent < manaPercent,
                     new PrioritySelector(
-                        ctx => FindFirstUsableItemBySpell("Restore Mana"),
+                        ctx => FindFirstUsableItemBySpell("Restore Mana", "Water Spirit"),
                         new Decorator(
                             ret => ret != null,
                             new Sequence(
@@ -190,18 +216,18 @@ namespace Singular.Helpers
                         useIt = true;
                     }
                     break;
-                //case TrinketUsage.LowPower:
-                //    // We use the PowerPercent here, since it applies to ALL types of power. (Runic, Mana, Rage, Energy, Focus)
-                //    if (StyxWoW.Me.PowerPercent < percent)
-                //    {
-                //        useIt = true;
-                //    }
-                //    break;
-                //case TrinketUsage.LowHealth:
-                //    if (StyxWoW.Me.HealthPercent < percent)
-                //    {
-                //        useIt = true;
-                //    }
+                case TrinketUsage.LowPower:
+                    // We use the PowerPercent here, since it applies to ALL types of power. (Runic, Mana, Rage, Energy, Focus)
+                    if (StyxWoW.Me.PowerPercent < SingularSettings.Instance.PotionMana )
+                    {
+                        useIt = true;
+                    }
+                    break;
+                case TrinketUsage.LowHealth:
+                    if (StyxWoW.Me.HealthPercent < SingularSettings.Instance.PotionHealth )
+                    {
+                        useIt = true;
+                    }
                     break;
             }
 
@@ -233,22 +259,23 @@ namespace Singular.Helpers
                 );
         }
 
-
-        public static Composite CreateUseTrinketsBehavior()
-        {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => SingularSettings.Instance.Trinket1,
-                    new Decorator(
-                        ret => UseTrinket(true),
-                        new ActionAlwaysSucceed())),
-                new Decorator(
-                    ret => SingularSettings.Instance.Trinket2,
-                    new Decorator(
-                        ret => UseTrinket(false),
-                        new ActionAlwaysSucceed()))
-                );
-        }
+        // 
+        // see Generic.cs for trinket support
+        //public static Composite CreateUseTrinketsBehavior()
+        //{
+        //    return new PrioritySelector(
+        //        new Decorator(
+        //            ret => SingularSettings.Instance.Trinket1,
+        //            new Decorator(
+        //                ret => UseTrinket(true),
+        //                new ActionAlwaysSucceed())),
+        //        new Decorator(
+        //            ret => SingularSettings.Instance.Trinket2,
+        //            new Decorator(
+        //                ret => UseTrinket(false),
+        //                new ActionAlwaysSucceed()))
+        //        );
+        //}
 
         public static bool RangedIsType(WoWItemWeaponClass wepType)
         {

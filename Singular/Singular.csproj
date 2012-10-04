@@ -93,20 +93,18 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="fasmdll_managed, Version=1.0.4641.37836, Culture=neutral, PublicKeyToken=f20f8f99ca0718ca, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\fasmdll_managed.dll</HintPath>
+    <Reference Include="fasmdll_managed">
+      <HintPath>..\Honorbuddy\fasmdll_managed.dll</HintPath>
     </Reference>
-    <Reference Include="Honorbuddy, Version=2.0.0.5975, Culture=neutral, PublicKeyToken=50a565ab5c01ae50, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Honorbuddy.exe</HintPath>
+    <Reference Include="Honorbuddy">
+      <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.SQLite, Version=1.0.81.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
+    <Reference Include="System.Data.SQLite, Version=1.0.60.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\System.Data.SQLite.dll</HintPath>
+      <HintPath>..\Honorbuddy\System.Data.SQLite.dll</HintPath>
     </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
@@ -114,13 +112,11 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Tripper.RecastManaged, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b2150347bb351956, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Tripper.RecastManaged.dll</HintPath>
+    <Reference Include="Tripper.RecastManaged">
+      <HintPath>..\Honorbuddy\Tripper.RecastManaged.dll</HintPath>
     </Reference>
-    <Reference Include="Tripper.Tools, Version=1.0.0.0, Culture=neutral, PublicKeyToken=c40611ce03f849a2, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Tripper.Tools.dll</HintPath>
+    <Reference Include="Tripper.Tools">
+      <HintPath>..\Honorbuddy\Tripper.Tools.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -146,8 +142,11 @@
     <Compile Include="ClassSpecific\Mage\Fire.cs" />
     <Compile Include="ClassSpecific\Mage\Frost.cs" />
     <Compile Include="ClassSpecific\Mage\Lowbie.cs" />
+    <Compile Include="ClassSpecific\Monk\Brewmaster.cs" />
     <Compile Include="ClassSpecific\Monk\Common.cs" />
     <Compile Include="ClassSpecific\Monk\Lowbie.cs" />
+    <Compile Include="ClassSpecific\Monk\Mistweaver.cs" />
+    <Compile Include="ClassSpecific\Monk\Windwalker.cs" />
     <Compile Include="ClassSpecific\Paladin\Common.cs" />
     <Compile Include="ClassSpecific\Paladin\Holy.cs" />
     <Compile Include="ClassSpecific\Paladin\Lowbie.cs" />
@@ -204,6 +203,7 @@
     <Compile Include="Managers\SpellImmunityManager.cs" />
     <Compile Include="Settings\DeathKnightSettings.cs" />
     <Compile Include="Settings\DruidSettings.cs" />
+    <Compile Include="Settings\HealerSettings.cs" />
     <Compile Include="Settings\HunterSettings.cs" />
     <Compile Include="Settings\MageSettings.cs" />
     <Compile Include="Settings\MonkSettings.cs" />
@@ -214,6 +214,9 @@
     <Compile Include="Settings\SingularSettings.cs" />
     <Compile Include="Settings\WarlockSettings.cs" />
     <Compile Include="Settings\WarriorSettings.cs" />
+    <Compile Include="SingularRoutine.Context.cs">
+      <DependentUpon>SingularRoutine.cs</DependentUpon>
+    </Compile>
     <Compile Include="SingularRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Managers\TalentManager.cs" />
@@ -233,7 +236,11 @@
   <ItemGroup>
     <Content Include="CONTRIBUTORS.txt" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Compile Include="SingularRoutine.Behaviors.cs">
+      <DependentUpon>SingularRoutine.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) == Jim (

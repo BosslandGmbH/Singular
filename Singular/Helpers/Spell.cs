@@ -20,6 +20,7 @@ using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using Styx.WoWInternals.World;
 using Action = Styx.TreeSharp.Action;
 
 namespace Singular.Helpers
@@ -75,12 +76,34 @@ namespace Singular.Helpers
         /// <param name="spell"></param>
         /// <param name="unit"></param>
         /// <returns>Minimum spell range</returns>
+
         public static float ActualMinRange(this WoWSpell spell, WoWUnit unit)
         {
             if (spell.MinRange == 0)
                 return 0;
             // 0.3 margin for error
             return unit != null ? spell.MinRange + unit.CombatReach + 1.6666667f : spell.MinRange;
+        }
+
+        public static double TimeToEnergyCap()
+        {
+
+            double timetoEnergyCap;
+            double playerEnergy;
+            double ER_Rate;
+
+            playerEnergy = Lua.GetReturnVal<int>("return UnitMana(\"player\");", 0); // current Energy 
+            ER_Rate = EnergyRegen();
+            timetoEnergyCap = (100 - playerEnergy) * (1.0 / ER_Rate); // math 
+
+            return timetoEnergyCap;
+        }
+
+        public static double EnergyRegen()
+        {
+            double energyRegen;
+            energyRegen = Lua.GetReturnVal<float>("return GetPowerRegen()", 1); // rate of energy regen
+            return energyRegen;
         }
 
         #region Properties
@@ -120,7 +143,7 @@ namespace Singular.Helpers
                         StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
                         return RunStatus.Failure;
 
-                    if (faceDuring && StyxWoW.Me.ChanneledCastingSpellId == 0)
+                    if (faceDuring && StyxWoW.Me.ChanneledSpell == null ) // .ChanneledCastingSpellId == 0)
                         Movement.CreateFaceTargetBehavior();
 
                     // return RunStatus.Running;
@@ -245,86 +268,12 @@ namespace Singular.Helpers
         public static Composite Cast(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
             SimpleBooleanDelegate requirements)
         {
-            return new Decorator(ret =>
-                {
-                    //Logger.WriteDebug("Casting spell: " + name);
-                    //Logger.WriteDebug("Requirements: " + requirements(ret));
-                    //Logger.WriteDebug("OnUnit: " + onUnit(ret));
-                    //Logger.WriteDebug("CanCast: " + SpellManager.CanCast(name, onUnit(ret), false));
-
-                    bool minReqs = requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null &&
-                                   name != null;
-                    bool canCast = false;
-                    bool inRange = false;
-                    if (minReqs)
-                    {
-                        canCast = SpellManager.CanCast(name, onUnit(ret), false, checkMovement(ret));
-
-                        
-                        if (canCast)
+            return new Decorator(ret =>requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null && SpellManager.CanCast(name, onUnit(ret), true, checkMovement(ret)), 
+                    new Action(ret =>
                         {
-                            WoWUnit target = onUnit(ret);
-                            // We're always in range of ourselves. So just ignore this bit if we're casting it on us
-                            if (target.IsMe)
-                            {
-                                inRange = true;
-                            }
-                            else
-                            {
-                                WoWSpell spell;
-                                if (SpellManager.Spells.TryGetValue(name, out spell))
-                                {
-                                    float minRange = spell.ActualMinRange(target);
-                                    float maxRange = spell.ActualMaxRange(target);
-                                    double targetDistance = target.Distance;
-
-                                    // RangeId 1 is "Self Only". This should make life easier for people to use self-buffs, or stuff like Starfall where you cast it as a pseudo-buff.
-                                    if (spell.IsSelfOnlySpell)
-                                        inRange = true;
-                                        // RangeId 2 is melee range. Huzzah :)
-                                    else if (spell.IsMeleeSpell)
-                                        inRange = targetDistance < MeleeRange;
-                                    else
-                                        inRange = targetDistance < maxRange &&
-                                                  targetDistance > (minRange == 0 ? minRange : minRange + 3);
-                                }
-                            }
-                        }
-                    }
-
-                    return minReqs && canCast && inRange;
-                },
-                new Sequence(
-                    new DecoratorContinue(
-                        ret =>
-                        StyxWoW.Me.Mounted && !name.Contains("Aura") && !name.Contains("Presence") &&
-                        !name.Contains("Stance"), Common.CreateDismount("Casting spell")), new Action(ret =>
-                            {
-                                Logger.Write("Casting " + name + " on " + onUnit(ret).SafeName());
-                                SpellManager.Cast(name, onUnit(ret));
-
-                                //WoWSpell spell;
-                                //if (SpellManager.Spells.TryGetValue(name, out spell))
-                                //{
-                                //    // This is here to prevent cancelling funneled and channeled spells right after the cast. /raphus
-                                //    if (spell.IsFunnel || spell.IsChanneled)
-                                //    {
-                                //        Thread.Sleep(500);
-                                //    }
-                                //}
-                            }),
-                    // changed to WaitContinue to avoid using Thread.Sleep as it freezes Wow momentarily because behaviors are now wrapped in framelock. /highvoltz
-                    new WaitContinue(TimeSpan.FromMilliseconds(500), ret =>
-                        {
-                            WoWSpell spell;
-                            if (SpellManager.Spells.TryGetValue(name, out spell))
-                            {
-                                // This is here to prevent cancelling funneled and channeled spells right after the cast. /raphus
-                                if (spell.IsFunnel /* || spell.IsChanneled*/)
-                                    return false;
-                            }
-                            return true;
-                        }, new ActionAlwaysSucceed())));
+                            Logger.Write(string.Format("Casting {0} on {1}", name, onUnit(ret).SafeName()));
+                            SpellManager.Cast(name, onUnit(ret));
+                        }));
         }
 
         #endregion
@@ -389,12 +338,10 @@ namespace Singular.Helpers
         public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return
-                new Decorator(
-                    ret =>
-                    requirements != null && requirements(ret) && onUnit != null && onUnit(ret) != null &&
-                    SpellManager.CanCast(spellId, onUnit(ret),true), new Action(ret =>
+                new Decorator(ret => requirements != null && requirements(ret) && onUnit != null && onUnit(ret) != null && SpellManager.CanCast(spellId, onUnit(ret),true), 
+                    new Action(ret =>
                         {
-                            Logger.Write("Casting " + spellId + " on " + onUnit(ret).SafeName());
+                            Logger.Write(string.Format("Casting {0} on {1}", spellId, onUnit(ret).SafeName()));
                             SpellManager.Cast(spellId);
                         }));
         }
@@ -408,7 +355,7 @@ namespace Singular.Helpers
 
         public static Composite Buff(string name, params string[] buffNames)
         {
-            return Buff(name, ret => true, buffNames);
+            return buffNames.Length > 0 ? Buff(name, ret => true, buffNames) : Buff(name, ret => true, name);
         }
 
         public static Composite Buff(string name, bool myBuff)
@@ -775,7 +722,7 @@ namespace Singular.Helpers
                     }, new ActionAlwaysSucceed()), new WaitContinue(10, ret =>
                         {
                             // Let channeled heals been cast till end.
-                            if (StyxWoW.Me.ChanneledCastingSpellId != 0)
+                            if (StyxWoW.Me.ChanneledSpell != null) // .ChanneledCastingSpellId != 0)
                             {
                                 return false;
                             }
@@ -857,7 +804,7 @@ namespace Singular.Helpers
                     ret =>
                     requirements(ret) && onLocation != null && SpellManager.CanCast(spell) &&
                     (StyxWoW.Me.Location.Distance(onLocation(ret)) <= SpellManager.Spells[spell].MaxRange ||
-                     SpellManager.Spells[spell].MaxRange == 0),
+                     SpellManager.Spells[spell].MaxRange == 0) && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Location, onLocation(ret)),
                     new Sequence(
                         new Action(ret => Logger.Write("Casting {0} at location {1}", spell, onLocation(ret))),
                         new Action(ret => SpellManager.Cast(spell)),

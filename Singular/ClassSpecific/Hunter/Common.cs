@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Hunter
         }
 
         // Disable pet growl in instances but enable it outside.
-        static void SingularRoutine_OnWoWContextChanged(object sender, SingularRoutine.WoWContextEventArg e)
+        static void SingularRoutine_OnWoWContextChanged(object sender, WoWContextEventArg e)
         {
             Lua.DoString(e.CurrentContext == WoWContext.Instances
                              ? "DisableSpellAutocast(GetSpellInfo(2649))"

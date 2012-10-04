@@ -38,7 +38,14 @@
             this.pgGeneral = new System.Windows.Forms.PropertyGrid();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.pgClass = new System.Windows.Forms.PropertyGrid();
+            this.tabPage4 = new System.Windows.Forms.TabPage();
+            this.label3 = new System.Windows.Forms.Label();
+            this.cboHealContext = new System.Windows.Forms.ComboBox();
+            this.pgHealInstance = new System.Windows.Forms.PropertyGrid();
+            this.pgHealBattleground = new System.Windows.Forms.PropertyGrid();
+            this.pgHealNormal = new System.Windows.Forms.PropertyGrid();
             this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
             this.button1 = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.lblHealTargets = new System.Windows.Forms.Label();
@@ -46,6 +53,7 @@
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
+            this.tabPage4.SuspendLayout();
             this.tabPage3.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -80,6 +88,7 @@
             // 
             // btnSaveAndClose
             // 
+            this.btnSaveAndClose.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnSaveAndClose.Location = new System.Drawing.Point(229, 331);
             this.btnSaveAndClose.Name = "btnSaveAndClose";
             this.btnSaveAndClose.Size = new System.Drawing.Size(96, 23);
@@ -92,6 +101,7 @@
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage4);
             this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Top;
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
@@ -139,8 +149,68 @@
             this.pgClass.Size = new System.Drawing.Size(323, 276);
             this.pgClass.TabIndex = 0;
             // 
+            // tabPage4
+            // 
+            this.tabPage4.Controls.Add(this.label3);
+            this.tabPage4.Controls.Add(this.cboHealContext);
+            this.tabPage4.Controls.Add(this.pgHealInstance);
+            this.tabPage4.Controls.Add(this.pgHealBattleground);
+            this.tabPage4.Controls.Add(this.pgHealNormal);
+            this.tabPage4.Location = new System.Drawing.Point(4, 22);
+            this.tabPage4.Name = "tabPage4";
+            this.tabPage4.Size = new System.Drawing.Size(329, 282);
+            this.tabPage4.TabIndex = 3;
+            this.tabPage4.Text = "Group Healing";
+            this.tabPage4.UseVisualStyleBackColor = true;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(6, 9);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(101, 13);
+            this.label3.TabIndex = 5;
+            this.label3.Text = "Healing Context:";
+            // 
+            // cboHealContext
+            // 
+            this.cboHealContext.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboHealContext.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cboHealContext.FormattingEnabled = true;
+            this.cboHealContext.Location = new System.Drawing.Point(113, 5);
+            this.cboHealContext.Name = "cboHealContext";
+            this.cboHealContext.Size = new System.Drawing.Size(208, 21);
+            this.cboHealContext.TabIndex = 4;
+            this.cboHealContext.SelectedIndexChanged += new System.EventHandler(this.cboHealContext_SelectedIndexChanged);
+            // 
+            // pgHealInstance
+            // 
+            this.pgHealInstance.Location = new System.Drawing.Point(0, 32);
+            this.pgHealInstance.Name = "pgHealInstance";
+            this.pgHealInstance.PropertySort = System.Windows.Forms.PropertySort.NoSort;
+            this.pgHealInstance.Size = new System.Drawing.Size(329, 250);
+            this.pgHealInstance.TabIndex = 3;
+            // 
+            // pgHealBattleground
+            // 
+            this.pgHealBattleground.Location = new System.Drawing.Point(0, 32);
+            this.pgHealBattleground.Name = "pgHealBattleground";
+            this.pgHealBattleground.PropertySort = System.Windows.Forms.PropertySort.NoSort;
+            this.pgHealBattleground.Size = new System.Drawing.Size(329, 250);
+            this.pgHealBattleground.TabIndex = 0;
+            // 
+            // pgHealNormal
+            // 
+            this.pgHealNormal.Location = new System.Drawing.Point(0, 32);
+            this.pgHealNormal.Name = "pgHealNormal";
+            this.pgHealNormal.PropertySort = System.Windows.Forms.PropertySort.NoSort;
+            this.pgHealNormal.Size = new System.Drawing.Size(329, 250);
+            this.pgHealNormal.TabIndex = 1;
+            // 
             // tabPage3
             // 
+            this.tabPage3.Controls.Add(this.ShowPlayerNames);
             this.tabPage3.Controls.Add(this.button1);
             this.tabPage3.Controls.Add(this.groupBox1);
             this.tabPage3.Location = new System.Drawing.Point(4, 22);
@@ -150,6 +220,17 @@
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "Debugging";
             this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // ShowPlayerNames
+            // 
+            this.ShowPlayerNames.AutoSize = true;
+            this.ShowPlayerNames.Location = new System.Drawing.Point(80, 116);
+            this.ShowPlayerNames.Name = "ShowPlayerNames";
+            this.ShowPlayerNames.Size = new System.Drawing.Size(188, 17);
+            this.ShowPlayerNames.TabIndex = 2;
+            this.ShowPlayerNames.Text = "Show Player Names in Log Output";
+            this.ShowPlayerNames.UseVisualStyleBackColor = true;
+            this.ShowPlayerNames.CheckedChanged += new System.EventHandler(this.ShowPlayerNames_CheckedChanged);
             // 
             // button1
             // 
@@ -206,7 +287,10 @@
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
+            this.tabPage4.ResumeLayout(false);
+            this.tabPage4.PerformLayout();
             this.tabPage3.ResumeLayout(false);
+            this.tabPage3.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
@@ -230,5 +314,12 @@
         private System.Windows.Forms.Label lblHealTargets;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.CheckBox ShowPlayerNames;
+        private System.Windows.Forms.TabPage tabPage4;
+        private System.Windows.Forms.ComboBox cboHealContext;
+        private System.Windows.Forms.PropertyGrid pgHealInstance;
+        private System.Windows.Forms.PropertyGrid pgHealBattleground;
+        private System.Windows.Forms.PropertyGrid pgHealNormal;
+        private System.Windows.Forms.Label label3;
     }
 }

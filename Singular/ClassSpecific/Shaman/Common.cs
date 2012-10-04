@@ -52,6 +52,14 @@ namespace Singular.ClassSpecific.Shaman
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
+        public static string BloodlustName
+        {
+            get
+            {
+                return Me.IsHorde ? "Bloodlust" : "Heroism";
+            }
+        }
+
         /// <summary>
         /// builds behaviors to cast Racial or Profession buffs during Combat 
         /// so they are used one at a time (don't cast Blood Fury if Bloodlust active.) 
@@ -60,28 +68,36 @@ namespace Singular.ClassSpecific.Shaman
         /// <returns></returns>
         public static Composite CreateShamanInCombatBuffs( bool mutuallyExclude )
         {
-            string Lust = Me.IsHorde ? "Bloodlust" : "Heroism";
+            PrioritySelector ps = new PrioritySelector();
+            List<string> aurasToAvoid = new List<string>();
+           
+            if ( Me.Race == WoWRace.Orc )
+                ps.AddChild( Spell.BuffSelf("Blood Fury", ret => SingularSettings.Instance.UseRacials && (!Me.IsInInstance || Me.HasAura(BloodlustName))));
 
-            Composite inCombatBuffs = 
-                    new PrioritySelector(
+            if (Me.Race == WoWRace.Troll )
+                ps.AddChild( Spell.BuffSelf("Berserking", ret => SingularSettings.Instance.UseRacials));
 
-                        Spell.BuffSelf("Blood Fury",
-                            ret => SingularSettings.Instance.UseRacials && Me.Race == WoWRace.Orc && (!Me.IsInInstance || Me.HasAura(Lust))),
-                        Spell.BuffSelf("Berserking",
-                            ret => SingularSettings.Instance.UseRacials && Me.Race == WoWRace.Troll ),
-                        Spell.BuffSelf("Lifeblood",
-                            ret => SingularSettings.Instance.UseRacials)
+            if (SpellManager.HasSpell("Lifeblood"))
+            {
+                aurasToAvoid.Add("Lifeblood");
+                ps.AddChild(Spell.BuffSelf("Lifeblood", ret => SingularSettings.Instance.UseRacials));
+            }
 
-                        );
+            if (Me.Specialization == WoWSpec.ShamanElemental)
+                aurasToAvoid.Add("Elemental Mastery");
+
+            aurasToAvoid.Add(BloodlustName);
+            aurasToAvoid.Add("Time Warp");
+            aurasToAvoid.Add("Ancient Hysteria");
 
             if ( mutuallyExclude )
             {
-                inCombatBuffs = new Decorator( 
-                                    ret => !Me.HasAnyAura("Elemental Mastery", "Lifeblood", Lust, "Time Warp", "Ancient Hysteria"),
-                                    inCombatBuffs );
+                return new Decorator( 
+                    ret => !Me.HasAnyAura( aurasToAvoid.ToArray()),
+                    ps );
             }
 
-            return inCombatBuffs;
+            return ps;
         }
 
         #region IMBUE SUPPORT
@@ -231,6 +247,17 @@ namespace Singular.ClassSpecific.Shaman
             }
         }
 
+
+        public static bool Players(this CastOn c)
+        {
+            return c == CastOn.All || c == CastOn.Players;
+        }
+
+        public static bool Bosses(this CastOn c)
+        {
+            return c == CastOn.All || c == CastOn.Bosses;
+        }
+
         #region NON-RESTO HEALING
 
         public static Composite CreateShamanNonHealBehavior()
@@ -253,7 +280,7 @@ namespace Singular.ClassSpecific.Shaman
                             Spell.BuffSelf(
                                 "Healing Tide Totem",
                                 ret => Unit.NearbyFriendlyPlayers.Any(
-                                        p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingTideTotem
+                                        p => p.HealthPercent < SingularSettings.Instance.Shaman.HealingTideTotemPercent
                                             && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
                             Spell.BuffSelf(
                                 "Healing Stream Totem",
@@ -271,5 +298,6 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         #endregion
+
     }
 }

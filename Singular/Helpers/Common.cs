@@ -84,7 +84,6 @@ namespace Singular.Helpers
                     ret => onUnit != null && onUnit(ret) != null && onUnit(ret).IsCasting && onUnit(ret).CanInterruptCurrentSpellCast
                 /* && PreventDoubleInterrupt*/,
                     new PrioritySelector(
-                        Spell.Cast("Quaking Palm", onUnit),
                         Spell.Cast("Rebuke", onUnit),
                         Spell.Cast("Avenger's Shield", onUnit),
                         Spell.Cast("Hammer of Justice", onUnit),
@@ -100,6 +99,9 @@ namespace Singular.Helpers
                         Spell.Cast("Wind Shear", onUnit),
 
                         Spell.Cast("Pummel", onUnit),
+
+                        Spell.Cast("Spear Hand Strike", onUnit), 
+
                         // AOE interrupt
                         Spell.Cast("Disrupting Shout", onUnit),
                         // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
@@ -122,7 +124,9 @@ namespace Singular.Helpers
                         // Racials last.
                         Spell.Cast("Arcane Torrent", onUnit),
                 // Don't waste stomp on bosses. They can't be stunned 99% of the time!
-                        Spell.Cast("War Stomp", onUnit, ret => !onUnit(ret).IsBoss() && onUnit(ret).Distance < 8)
+                        Spell.Cast("War Stomp", onUnit, ret => !onUnit(ret).IsBoss() && onUnit(ret).Distance < 8),
+                        Spell.Cast("Quaking Palm", onUnit)
+
                         ));
         }
 

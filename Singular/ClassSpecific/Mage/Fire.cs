@@ -30,9 +30,8 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.WaitForCast(true),
-                new Decorator (ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire),
-                    Spell.Cast("Frostfire Bolt")),
-                Spell.Cast("Pyroblast"),
+                new Decorator(ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire),
+                               Spell.Cast("Frostfire Bolt")),
                 Spell.Cast("Fireball"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -57,8 +56,7 @@ namespace Singular.ClassSpecific.Mage
                 // Cooldowns
                 Spell.BuffSelf("Evocation",
                     ret => StyxWoW.Me.ManaPercent < 30 || (TalentManager.HasGlyph("Evocation") && StyxWoW.Me.HealthPercent < 50)),
-                Spell.BuffSelf("Mage Ward", ret => StyxWoW.Me.HealthPercent <= 80),
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 60),
+                Spell.BuffSelf("Ice Barrier", ret => StyxWoW.Me.HealthPercent <= 99),
 
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3,
@@ -72,6 +70,8 @@ namespace Singular.ClassSpecific.Mage
                     ret => StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 90) &&
                            StyxWoW.Me.CurrentTarget.DistanceSqr <= 8 * 8),
 
+                Spell.Cast("Incanter's Ward", ret => StyxWoW.Me.CurrentTarget.DistanceSqr <= 6 * 6),
+
                 new Decorator(
                     ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 10 * 10 && u.IsCrowdControlled()),
                     new PrioritySelector(
@@ -83,16 +83,15 @@ namespace Singular.ClassSpecific.Mage
 
                 Common.CreateMagePolymorphOnAddBehavior(),
                 // Rotation
+                Spell.Cast("Deep Freeze",
+                     ret => StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),
 
-                Spell.Cast("Frostfire Bolt", ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
-                 Spell.Cast("Living Bomb", ret => !StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") || (StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds <= 2)),
-                 Spell.Cast("Inferno Blast", ret => StyxWoW.Me.HasAura("Heating Up")),
-                 Spell.Cast("Frost Bomb", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 1),
-                Spell.Cast("Combustion", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") && StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast") ),
-               
+                Spell.Cast("Counterspell", ret => StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.CanInterruptCurrentSpellCast),
+                Spell.Cast("Mage Bomb", ret => !StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") || (StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds <= 2)),
+                Spell.Cast("Fire Blast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Heating Up")),
+                Spell.Cast("Combustion", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") && StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast")),
                 Spell.Cast("Pyroblast", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Pyroblast!")),
                 Spell.Cast("Fireball", ret => !SpellManager.HasSpell("Scorch")),
-                Spell.Cast("Frostfire bolt", ret => !SpellManager.HasSpell("Fireball")),
                 Spell.Cast("Scorch"),
                 Movement.CreateMoveToTargetBehavior(true, 39f)
                 );
@@ -117,15 +116,20 @@ namespace Singular.ClassSpecific.Mage
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                     new ActionIdle()),
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                Spell.BuffSelf("Blink", ret => StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted()),
+                Spell.BuffSelf("Blink", ret => StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted() || Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 2 * 2)), //Dist check for Melee beating me up.
                 Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
+                Spell.BuffSelf("Ice Barrier", ret => StyxWoW.Me.HealthPercent <= 90),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") && !u.HasAura("Frost Nova") && !u.Stunned)),
                 Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
                 // Cooldowns
                 Spell.BuffSelf("Evocation", ret => StyxWoW.Me.ManaPercent < 30),
                 Spell.BuffSelf("Mirror Image"),
                 Spell.BuffSelf("Mage Ward", ret => StyxWoW.Me.HealthPercent <= 75),
-
+                Spell.Cast("Deep Freeze", ret => 
+                            StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") ||
+                            StyxWoW.Me.CurrentTarget.HasAura("Freeze") ||
+                            StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),
+                Spell.Cast("Counter Spell", ret => (StyxWoW.Me.CurrentTarget.Class == WoWClass.Paladin ||StyxWoW.Me.CurrentTarget.Class == WoWClass.Priest || StyxWoW.Me.CurrentTarget.Class == WoWClass.Druid || StyxWoW.Me.CurrentTarget.Class == WoWClass.Shaman) && StyxWoW.Me.CurrentTarget.IsCasting && StyxWoW.Me.CurrentTarget.HealthPercent >= 20),
                 Spell.Cast("Dragon's Breath",
                     ret => StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 90) &&
                            StyxWoW.Me.CurrentTarget.DistanceSqr <= 8 * 8),
@@ -133,8 +137,8 @@ namespace Singular.ClassSpecific.Mage
                 Spell.Cast("Fire Blast",
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact")),
                 // Rotation
-                 Spell.Cast("Frostfire Bolt", ret => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
-                 Spell.Cast("Living Bomb", ret => !StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") || (StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds <= 2)),
+                
+                Spell.Cast("Mage Bomb", ret => !StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") || (StyxWoW.Me.CurrentTarget.HasAura("Living Bomb") && StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds <= 2)),
                  Spell.Cast("Inferno Blast", ret => StyxWoW.Me.HasAura("Heating Up")),
                  Spell.Cast("Frost Bomb", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 1),
                 Spell.Cast("Combustion", ret => StyxWoW.Me.CurrentTarget.HasMyAura("Ignite") && StyxWoW.Me.CurrentTarget.HasMyAura("Pyroblast")),

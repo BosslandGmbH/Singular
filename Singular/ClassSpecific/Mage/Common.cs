@@ -13,12 +13,13 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Styx;
+using Styx.Common;
 
 namespace Singular.ClassSpecific.Mage
 {
     public static class Common
     {
-
+   
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
         public static Composite CreateMageBuffs()
@@ -61,7 +62,7 @@ namespace Singular.ClassSpecific.Mage
                             new Action(ctx => ((WoWGameObject)ctx).Interact()),
                             new WaitContinue(2, ctx => false, new ActionAlwaysSucceed())))),
 
-                new Decorator(ctx => SpellManager.CanCast("Conjure Refreshment Table") && !Gotfood && ShouldSummonTable,
+                new Decorator(ctx => ShouldSummonTable && !Gotfood && SpellManager.CanCast("Conjure Refreshment Table"),
                     new Sequence(
                         new DecoratorContinue(ctx => StyxWoW.Me.IsMoving,
                             new Sequence(
@@ -72,12 +73,12 @@ namespace Singular.ClassSpecific.Mage
                         new WaitContinue(10, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()))),
 
                 Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !ShouldSummonTable),
-
-                new Decorator(ret => !HaveManaGem && SpellManager.CanCast("Conjure Mana Gem"),
+             
+                new Decorator(ret => !HaveManaGem && SpellManager.CanCast("Conjure Mana Gem"), 
                     new Sequence(
                         new Action(ret => Logger.Write("Casting Conjure Mana Gem")),
                         new Action(ret => SpellManager.Cast(759)))),
-
+                                  
                 new Decorator(
                     ret =>
                     TalentManager.CurrentSpec == WoWSpec.MageFrost && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
@@ -85,18 +86,18 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
-
         private static readonly uint[] MageFoodIds = new uint[]
                                                          {
-                                                            80610, 
-                                                            65500,
-                                                            65515,
-                                                            65516,
-                                                            65517,
-                                                            43518,
-                                                            43523,
-                                                            65499
-//Conjured Mana Pudding - MoP Lvl 85+
+                                                             65500,
+                                                             65515,
+                                                             65516,
+                                                             65517,
+                                                             43518,
+                                                             43523,
+                                                             65499, //Conjured Mana Cake - Pre Cata Level 85
+                                                             80610, //Conjured Mana Pudding - MoP Lvl 85+
+                                                             80618  //Conjured Mana Buns 
+                                                             //This is where i made a change.
                                                          };
 
         private const uint ArcanePowder = 17020;
@@ -110,7 +111,7 @@ namespace Singular.ClassSpecific.Mage
             }
         }
 
-        static readonly uint[] RefreshmentTableIds = new uint[]
+       static readonly uint[] RefreshmentTableIds = new uint[]
                                          {
                                              186812,
                                              207386,
@@ -142,7 +143,8 @@ namespace Singular.ClassSpecific.Mage
                                                           : 0);
             }
         }
-
+        
+   
         public static bool Gotfood { get { return StyxWoW.Me.BagItems.Any(item => MageFoodIds.Contains(item.Entry)); } }
 
         private static bool HaveManaGem { get { return StyxWoW.Me.BagItems.Any(i => i.Entry == 36799 || i.Entry == 81901); } }

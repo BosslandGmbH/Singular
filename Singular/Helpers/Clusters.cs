@@ -8,6 +8,21 @@ namespace Singular.Helpers
 {
     internal static class Clusters
     {
+        public static IEnumerable<WoWUnit> GetCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, ClusterType type, float clusterRange)
+        {
+            switch (type)
+            {
+                case ClusterType.Radius:
+                    return GetRadiusCluster(target, otherUnits, clusterRange);
+                case ClusterType.Chained:
+                    return GetChainedCluster(target, otherUnits, clusterRange);
+                case ClusterType.Cone:
+                    return GetConeCluster(target, otherUnits, clusterRange);
+                default:
+                    throw new ArgumentOutOfRangeException("type");
+            }
+        }
+
         public static int GetClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, ClusterType type, float clusterRange)
         {
             if (otherUnits.Count() == 0)
@@ -47,35 +62,53 @@ namespace Singular.Helpers
             }
         }
 
-        private static int GetConeClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
+        private static IEnumerable<WoWUnit> GetConeCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
         {
             var targetLoc = target.Location;
-            return otherUnits.Count(u => target.IsSafelyFacing(u, 90f) && u.Location.Distance(targetLoc) <= distance); // most (if not all) cone spells are 90 degrees
+            // most (if not all) player cone spells are 90 degrees.
+            return otherUnits.Where(u => target.IsSafelyFacing(u, 90) && u.Location.Distance(targetLoc) <= distance);
+        }
+
+        private static int GetConeClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
+        {
+            return GetConeCluster(target, otherUnits, distance).Count();
+        }
+
+        private static IEnumerable<WoWUnit> GetRadiusCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float radius)
+        {
+            var targetLoc = target.Location;
+            return otherUnits.Where(u => u.Location.DistanceSqr(targetLoc) <= radius * radius);
         }
 
         private static int GetRadiusClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float radius)
         {
-            var targetLoc = target.Location;
-            return otherUnits.Count(u => u.Location.DistanceSqr(targetLoc) <= radius * radius);
+            return GetRadiusCluster(target, otherUnits, radius).Count();
         }
 
         private static int GetChainedClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float chainRange)
         {
-            var unitCounters = otherUnits.Select(u => GetUnitsChainWillJumpTo(target, otherUnits.ToList(), chainRange).Count);
-
-            return unitCounters.Max() + 1;
+            return GetChainedCluster(target, otherUnits, chainRange).Count();
         }
 
-        private static List<WoWUnit> GetUnitsChainWillJumpTo(WoWUnit target, List<WoWUnit> otherUnits, float chainRange)
+        static IEnumerable<WoWUnit> GetChainedCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float chainRange)
         {
-            var targetLoc = target.Location;
-            var targetGuid = target.Guid;
-            for (int i = otherUnits.Count - 1; i >= 0; i--)
+            var chainRangeSqr = chainRange * chainRange;
+            var chainedTargets = new List<WoWUnit> { target };
+            WoWUnit chainTarget;
+            while ((chainTarget = GetChainTarget(target, otherUnits, chainedTargets, chainRangeSqr)) != null)
             {
-                if (otherUnits[i].Guid == targetGuid || otherUnits[i].Location.DistanceSqr(targetLoc) > chainRange)
-                    otherUnits.RemoveAt(i);
+                chainedTargets.Add(chainTarget);
+                target = chainTarget;
             }
-            return otherUnits;
+            return chainedTargets;
+        }
+
+        static WoWUnit GetChainTarget(WoWUnit from, IEnumerable<WoWUnit> otherUnits, List<WoWUnit> currentChainTargets, float chainRangeSqr)
+        {
+            return otherUnits
+                .Where(u => !currentChainTargets.Contains(u) && from.Location.DistanceSqr(u.Location) <= chainRangeSqr)
+                .OrderBy(u => from.Location.DistanceSqr(u.Location))
+                .FirstOrDefault();
         }
     }
 }

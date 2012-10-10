@@ -161,7 +161,7 @@ namespace Singular.ClassSpecific.Priest
             return new PrioritySelector(
 
                 new Decorator(
-                    ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                    ret => !Unit.NearbyGroupMembers.Any(),
                     new PrioritySelector(
                         Safers.EnsureTarget(),
                         Movement.CreateMoveToLosBehavior(),
@@ -174,11 +174,10 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Buff("Shadow Word: Pain", true),
                         Spell.Cast("Penance"),
                         Spell.Cast("Holy Fire"),
-                        Spell.Cast("Smite", ret => !SpellManager.HasSpell("Power Word: Solace")),
-                        Spell.Cast("Smite", ret => (StyxWoW.Me.ManaPercent >= 10 && SpellManager.HasSpell("Power Word: Solace"))),
+                        Spell.Cast("Smite", ret => !SpellManager.HasSpell("Power Word: Solace") || StyxWoW.Me.ManaPercent >= 10),
                         Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 10),
                         //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)
+                        Movement.CreateMoveToTargetBehavior(true, 30)
                         ))
                 );
         }

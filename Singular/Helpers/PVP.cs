@@ -1,11 +1,23 @@
 ﻿using System.Linq;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using System;
 
 namespace Singular.Helpers
 {
     internal static class PVP
     {
+        /// <summary>
+        /// determines if you are inside a battleground/arena prior to start.  this was previously
+        /// known as the preparation phase easily identified by a Preparation or Arena Preparation
+        /// buff, however those auras were removed in MoP
+        /// </summary>
+        /// <returns>true if in Battleground/Arena prior to start, false otherwise</returns>
+        public static bool IsBattlegroundPrep()
+        {
+            return Battlegrounds.IsInsideBattleground && DateTime.Now < Battlegrounds.BattlefieldStartTime;
+        }
+
         //public static bool IsCrowdControlled(this WoWUnit unit)
         //{
         //    return unit.GetAllAuras().Any(a => a.IsHarmful &&

@@ -10,6 +10,8 @@ using Styx;
 using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
+using System;
+using Styx.WoWInternals;
 
 
 namespace Singular.ClassSpecific.Paladin
@@ -48,56 +50,28 @@ namespace Singular.ClassSpecific.Paladin
                     );
         }
 
+
+        /// <summary>
+        /// cast Blessing of Kings or Blessing of Might based upon configuration setting.
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private static Composite CreatePaladinBlessBehavior()
         {
             return
                 new PrioritySelector(
-                    Spell.Cast("Blessing of Kings",
-                        ret => StyxWoW.Me,
-                        ret =>
-                        {
-                            if (SingularSettings.Instance.Paladin.Blessings == PaladinBlessings.Might)
-                                return false;
-                            var players = new List<WoWPlayer>();
 
-                            if (StyxWoW.Me.GroupInfo.IsInRaid)
-                                players.AddRange(StyxWoW.Me.RaidMembers);
-                            else if (StyxWoW.Me.GroupInfo.IsInParty)
-                                players.AddRange(StyxWoW.Me.PartyMembers);
+                        PartyBuff.BuffGroup( 
+                            "Blessing of Kings", 
+                            ret => SingularSettings.Instance.Paladin.Blessings == PaladinBlessings.Auto || SingularSettings.Instance.Paladin.Blessings == PaladinBlessings.Kings,
+                            "Blessing of Might"),
 
-                            players.Add(StyxWoW.Me);
-
-                            return players.Any(
-                                        p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
-                                             !p.HasAura("Blessing of Kings") &&
-                                             !p.HasAura("Mark of the Wild") &&
-                                             !p.HasAura("Embrace of the Shale Spider") &&
-                                             !p.HasAura("Legacy of the Emperor")
-                                             );
-                        }),
-                    Spell.Cast("Blessing of Might",
-                        ret => StyxWoW.Me,
-                        ret =>
-                        {
-                            var players = new List<WoWPlayer>();
-
-                            if (StyxWoW.Me.GroupInfo.IsInRaid)
-                                players.AddRange(StyxWoW.Me.RaidMembers);
-                            else if (StyxWoW.Me.GroupInfo.IsInParty)
-                                players.AddRange(StyxWoW.Me.PartyMembers);
-
-                            players.Add(StyxWoW.Me);
-
-                            return players.Any(
-                                        p => p.DistanceSqr < 40 * 40 && p.IsAlive &&
-                                             !p.HasAura("Blessing of Might") &&
-                                             (SingularSettings.Instance.Paladin.Blessings == PaladinBlessings.Might ||
-                                             ((p.HasAura("Blessing of Kings") && !p.HasMyAura("Blessing of Kings")) ||
-                                               p.HasAura("Mark of the Wild") || 
-                                               p.HasAura("Grace of Air")
-                                               )));
-                        })
+                        PartyBuff.BuffGroup(
+                            "Blessing of Might",
+                            ret => SingularSettings.Instance.Paladin.Blessings == PaladinBlessings.Auto || SingularSettings.Instance.Paladin.Blessings == PaladinBlessings.Might, 
+                            "Blessing of Kings")
                     );
         }
+
     }
 }

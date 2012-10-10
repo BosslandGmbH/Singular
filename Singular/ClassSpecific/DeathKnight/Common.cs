@@ -160,8 +160,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.BuffSelf(
                         "Horn of Winter",
                         ret =>
-                        !StyxWoW.Me.HasAura("Horn of Winter") && !StyxWoW.Me.HasAura("Battle Shout") &&
-                        !StyxWoW.Me.HasAura("Roar of Courage"))
+                        !StyxWoW.Me.HasPartyBuff( PartyBuffType.AttackPower))
                     );
         }
 

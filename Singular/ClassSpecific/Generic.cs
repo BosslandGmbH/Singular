@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific
 {
     public static class Generic
     {
-        [Behavior(BehaviorType.Rest, priority:999)]
+        [Behavior(BehaviorType.PreCombatBuffs, priority:999)]
         // [IgnoreBehaviorCount(BehaviorType.Combat), IgnoreBehaviorCount(BehaviorType.Rest)]
         public static Composite CreateFlasksBehaviour()
         {
@@ -45,12 +45,17 @@ namespace Singular.ClassSpecific
 
             PrioritySelector ps = new PrioritySelector();
 
-            if ( SingularSettings.IsTrinketUsageWanted(TrinketUsage.OnCooldown) || SingularSettings.IsTrinketUsageWanted(TrinketUsage.OnCooldownInCombat))
+            if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.OnCooldown))
             {
-                ps.AddChild( Item.UseEquippedTrinket(TrinketUsage.OnCooldown));
+                ps.AddChild(Item.UseEquippedTrinket(TrinketUsage.OnCooldown));
             }
 
-            if ( SingularSettings.IsTrinketUsageWanted(TrinketUsage.LowHealth))
+            if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.OnCooldownInCombat))
+            {
+                ps.AddChild(Item.UseEquippedTrinket(TrinketUsage.OnCooldownInCombat));
+            }
+
+            if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.LowHealth))
             {
                 ps.AddChild( new Decorator( ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.PotionHealth,
                                             Item.UseEquippedTrinket( TrinketUsage.LowHealth)));
@@ -104,6 +109,12 @@ namespace Singular.ClassSpecific
                             ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any(unit => unit.CurrentTargetGuid == StyxWoW.Me.Guid),
                         Spell.Cast("Shadowmeld"))
                     ));
+        }
+
+        [Behavior(BehaviorType.Combat, priority: 997)]
+        public static Composite CreatePotionAndHealthstoneBehavior()
+        {
+            return Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana);
         }
     }
 }

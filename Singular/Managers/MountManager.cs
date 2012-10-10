@@ -1,5 +1,7 @@
 ﻿using Styx;
 using Styx.CommonBot;
+using Styx.WoWInternals;
+using System;
 
 namespace Singular.Managers
 {
@@ -16,7 +18,7 @@ namespace Singular.Managers
             if (e.Destination == WoWPoint.Zero)
                 return;
 
-            if (e.Destination.DistanceSqr(StyxWoW.Me.Location) < 60 * 60)
+            if (e.Destination.DistanceSqr(StyxWoW.Me.Location) < 60 * 60 && (!Battlegrounds.IsInsideBattleground || DateTime.Now > Battlegrounds.BattlefieldStartTime ))
             {
                 if (SpellManager.HasSpell("Ghost Wolf") && TalentManager.IsSelected(6))
                 {

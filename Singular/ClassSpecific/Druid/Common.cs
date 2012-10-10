@@ -83,21 +83,13 @@ namespace Singular.ClassSpecific.Druid
         {
             // Cast motw if player doesn't have it or if in instance/bg, out of combat and 'Buff raid with Motw' is true or if in instance and in combat and both CatRaidRebuff and 'Buff raid with Motw' are true
             return new PrioritySelector(
-                Spell.Cast(
+
+                PartyBuff.BuffGroup( 
                     "Mark of the Wild",
-                    ret => StyxWoW.Me,
-                    ret =>
-                    !StyxWoW.Me.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")
-                    ||
-                    (SingularSettings.Instance.Druid.BuffRaidWithMotw &&
-                     (!StyxWoW.Me.Combat || (StyxWoW.Me.Combat && SingularSettings.Instance.Druid.CatRaidRebuff))
-                     && !StyxWoW.Me.HasAura("Prowl")
-                     && Unit.NearbyFriendlyPlayers.Any(unit =>
-                                                       unit.Distance <= 30f &&
-                                                       !unit.IsDead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
-                                                       !unit.HasAnyAura("Mark of the Wild",
-                                                                        "Embrace of the Shale Spider",
-                                                                        "Blessing of Kings"))))
+                    ret => SingularSettings.Instance.Druid.BuffRaidWithMotw && !StyxWoW.Me.HasAura("Prowl")
+                        && (!StyxWoW.Me.Combat || SingularSettings.Instance.Druid.CatRaidRebuff)
+                    )
+
                 /*   This logic needs work. 
                 new Decorator(
                     ret =>

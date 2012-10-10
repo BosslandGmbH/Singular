@@ -51,8 +51,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf("Battle Shout",
                                ret =>
                                (SingularSettings.Instance.Warrior.UseWarriorShouts) &&
-                               !StyxWoW.Me.HasAnyAura("Horn of Winter", "Roar of Courage", "Strength of Earth Totem",
-                                                      "Battle Shout")),
+                               !StyxWoW.Me.HasPartyBuff(PartyBuffType.AttackPower)),
                 Spell.BuffSelf("Commanding Shout",
                                ret =>
                                StyxWoW.Me.RagePercent < 20 &&

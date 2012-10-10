@@ -222,7 +222,7 @@ namespace Singular.Utilities
                         }
 
                         BotPoi.Clear("Blacklisting evading mob");
-                        StyxWoW.SleepForLagDuration();
+                        // StyxWoW.SleepForLagDuration();
                     }
                     else if (e.Args[14].ToString() == "IMMUNE")
                     {

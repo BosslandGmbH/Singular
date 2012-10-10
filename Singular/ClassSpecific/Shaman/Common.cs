@@ -265,8 +265,6 @@ namespace Singular.ClassSpecific.Shaman
             return
                 new PrioritySelector(
 
-                    Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana),
-
                     new Decorator(
                         ret => !StyxWoW.Me.Combat,
                             Spell.Heal(

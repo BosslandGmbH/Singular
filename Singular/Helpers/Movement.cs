@@ -18,6 +18,7 @@ using Styx.Helpers;
 using Styx.Pathing;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
+using System;
 
 namespace Singular.Helpers
 {
@@ -224,29 +225,59 @@ namespace Singular.Helpers
                 new Action(ret => Navigator.MoveTo(toUnit(ret).Location)));
         }
 
+
+        private static WoWPoint lastMoveToRangeSpot = WoWPoint.Empty;
+
         /// <summary>
-        ///   Creates a move to location behavior that stops when in range of target. Will return RunStatus.Success if it has reached the location, or stopped in range.
+        ///   Movement for Ranged Classes or Ranged Pulls.  Move to Unit at range behavior 
+        ///   that stops in line of spell sight in range of target. Moves a maximum of 
+        ///   10 yds at a time to minimize run past. will also only move towards unit if
+        ///   not currently moving (to allow bot/human momvement precendence.)
         /// </summary>
         /// <remarks>
         ///   Created 9/25/2012.
         /// </remarks>
         /// <param name = "toUnit">unit to move towards</param>
         /// <param name = "range">The range.</param>
-        /// <returns>.</returns>
+        /// <returns>.</returns>       
         public static Composite CreateMoveToRangeAndStopBehavior(UnitSelectionDelegate toUnit, DynamicRangeRetriever range)
         {
             return
                 new Decorator(
-                    ret => !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && toUnit(ret) != StyxWoW.Me,
+
+                    ret => !SingularSettings.Instance.DisableAllMovement,
+
                     new PrioritySelector(
+                        // save check for whether we are in range to avoid duplicate calls
+                        ctx => toUnit != null && toUnit(ctx) != null && toUnit(ctx).Distance < range(ctx) && toUnit(ctx).InLineOfSpellSight,
+
                         new Decorator(
-                            ret => (StyxWoW.Me.Location.Distance(toUnit(ret).Location) > range(ret) || !toUnit(ret).InLineOfSight),
-                            new Action(ret => Navigator.MoveTo(toUnit(ret).Location))),
+                            ret => ((bool)ret) && StyxWoW.Me.IsMoving,
+                            new Action(ret => Navigator.PlayerMover.MoveStop())
+                            ),
+
                         new Decorator(
-                            ret => StyxWoW.Me.IsMoving,
-                            new Action(ret => Navigator.PlayerMover.MoveStop()))
+                            ret => !((bool)ret) && (!StyxWoW.Me.IsMoving || StyxWoW.Me.Location.DistanceSqr(lastMoveToRangeSpot) < 3*3),
+                            new Action(ret => {
+                                    WoWPoint[] spots = Navigator.GeneratePath( StyxWoW.Me.Location, toUnit(ret).Location);
+                                    if ( spots.GetLength(0) > 0 )
+                                    {
+                                        if (  spots[0].Distance(toUnit(ret).Location) < range(ret) )
+                                        {
+                                            float spotDist = spots[0].Distance(StyxWoW.Me.Location);
+                                            float moveToDistFromSpot = spotDist - 10;
+                                            if (moveToDistFromSpot > 0)
+                                            {
+                                                spots[0] = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, spots[0], moveToDistFromSpot );
+                                            }
+                                        }
+
+                                        Navigator.MoveTo(spots[0]);
+                                    }
+                                })
                             )
-                        );
+                        )
+                    );
         }
     }
 

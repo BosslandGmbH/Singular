@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using Bots.DungeonBuddy.Helpers;
+using Styx;
 using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Helpers
@@ -18,6 +19,8 @@ namespace Singular.Helpers
                     return GetChainedCluster(target, otherUnits, clusterRange);
                 case ClusterType.Cone:
                     return GetConeCluster(target, otherUnits, clusterRange);
+                case ClusterType.Path:
+                    return GetPathCluster(target, otherUnits, clusterRange);
                 default:
                     throw new ArgumentOutOfRangeException("type");
             }
@@ -36,6 +39,8 @@ namespace Singular.Helpers
                     return GetChainedClusterCount(target, otherUnits, clusterRange);
                 case ClusterType.Cone:
                     return GetConeClusterCount(target, otherUnits, clusterRange);
+                case ClusterType.Path:
+                    return GetPathClusterCount(target, otherUnits, clusterRange);
                 default:
                     throw new ArgumentOutOfRangeException("type");
             }
@@ -55,6 +60,10 @@ namespace Singular.Helpers
                 case ClusterType.Chained:
                     return (from u in units
                             select new { Count = GetChainedClusterCount(u, units, clusterRange), Unit = u }).OrderByDescending(a => a.Count).
+                        FirstOrDefault().Unit;
+                case ClusterType.Path:
+                    return (from u in units
+                            select new { Count = GetPathClusterCount(u, units, clusterRange), Unit = u }).OrderByDescending(a => a.Count).
                         FirstOrDefault().Unit;
                 // coned doesn't have a best unit, since we are the source
                 default:
@@ -101,6 +110,18 @@ namespace Singular.Helpers
                 target = chainTarget;
             }
             return chainedTargets;
+        }
+
+        private static IEnumerable<WoWUnit> GetPathCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
+        {
+            var myLoc = StyxWoW.Me.Location;
+            var targetLoc = target.Location;
+            return otherUnits.Where(u => u.Location.GetNearestPointOnSegment(myLoc,targetLoc).Distance(u.Location) <= distance);
+        }
+
+        private static int GetPathClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
+        {
+            return GetPathCluster(target, otherUnits, distance).Count();
         }
 
         static WoWUnit GetChainTarget(WoWUnit from, IEnumerable<WoWUnit> otherUnits, List<WoWUnit> currentChainTargets, float chainRangeSqr)

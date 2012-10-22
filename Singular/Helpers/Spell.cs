@@ -22,6 +22,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.WoWInternals.World;
 using Action = Styx.TreeSharp.Action;
+using Singular.Settings;
 
 namespace Singular.Helpers
 {
@@ -31,24 +32,32 @@ namespace Singular.Helpers
 
     internal static class Spell
     {
+        public static float MeleeDistance(this WoWUnit mob)
+        {
+            if (mob == null)
+                return 0;
+
+            if (mob.IsPlayer)
+                return 3.5f;
+
+            return Math.Max(5f, StyxWoW.Me.CombatReach + 1.3333334f + mob.CombatReach);
+        }
+
         public static float MeleeRange
         {
             get
             {
-                // If we have no target... then give nothing.
-                // if (StyxWoW.Me.CurrentTargetGuid == 0)  // chg to GotTarget due to non-zero vals with no target in Guid
-                if (!StyxWoW.Me.GotTarget) 
-                    return 0f;
-
-                if (StyxWoW.Me.CurrentTarget.IsPlayer)
-                    return 3.5f;
-
-                return Math.Max(5f, StyxWoW.Me.CombatReach + 1.3333334f + StyxWoW.Me.CurrentTarget.CombatReach);
+                return StyxWoW.Me.CurrentTarget.MeleeDistance();
             }
         }
 
         public static float SafeMeleeRange { get { return Math.Max(MeleeRange - 1f, 5f); } }
 
+        /// <summary>
+        /// gets the current Cooldown remaining for the spell
+        /// </summary>
+        /// <param name="spell"></param>
+        /// <returns>TimeSpan representing cooldown remaining, TimeSpan.MaxValue if spell unknown</returns>
         public static TimeSpan GetSpellCooldown(string spell)
         {
             if (SpellManager.HasSpell(spell))
@@ -113,6 +122,13 @@ namespace Singular.Helpers
         #endregion
 
         #region Wait
+
+        public static bool IsGlobalCooldown(bool faceDuring = false, bool allowLagTollerance = true)
+        {
+            uint latency = allowLagTollerance ? StyxWoW.WoWClient.Latency : 0;
+            TimeSpan gcdTimeLeft = SpellManager.GlobalCooldownLeft;
+            return gcdTimeLeft.TotalMilliseconds > latency;
+        }
 
         /// <summary>
         ///   Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
@@ -690,6 +706,15 @@ namespace Singular.Helpers
             return Heal(name, ret => true, onUnit, requirements);
         }
 
+
+        public static Composite Heal(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
+            SimpleBooleanDelegate requirements, bool allowLagTollerance = false)
+        {
+            return Heal(name, checkMovement, onUnit, requirements, 
+                ret => onUnit(ret).HealthPercent > SingularSettings.Instance.IgnoreHealTargetsAboveHealth, 
+                false);
+        }
+
         /// <summary>
         ///   Creates a behavior to cast a heal spell by name, with special requirements, on a specific unit. Heal behaviors will make sure
         ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
@@ -701,36 +726,66 @@ namespace Singular.Helpers
         /// <param name="checkMovement"></param>
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
+        /// <param name="cancel">The cancel cast in progress delegate</param>
+        /// <param name="allowLagTollerance">allow next spell to queue before this one completes</param>
         /// <returns>.</returns>
         public static Composite Heal(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements)
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel, bool allowLagTollerance = false)
         {
-            return new Sequence(Cast(name, checkMovement, onUnit, requirements),
-                // Little bit wait here to catch casting
-                new WaitContinue(1, ret =>
-                    {
-                        WoWSpell spell;
-                        if (SpellManager.Spells.TryGetValue(name, out spell))
-                        {
-                            if (spell.CastTime == 0)
-                                return true;
+            return new PrioritySelector(
 
-                            return StyxWoW.Me.IsCasting;
-                        }
+                // save context of currently in a GCD or IsCasting before our Cast
+                ctx => (bool)(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null),
+                
+                new Sequence(
+                    
+                    Cast(name, checkMovement, onUnit, requirements),
 
-                        return true;
-                    }, new ActionAlwaysSucceed()), new WaitContinue(10, ret =>
-                        {
+                    // if saved context indicates action was in progress (so we queued this one) then wait briefly for its progress to finish
+                    new WaitContinue( 
+                        new TimeSpan(0, 0, 0, 0, (int) StyxWoW.WoWClient.Latency * 2),
+                        ret => !((bool)ret) || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null),
+                        new ActionAlwaysSucceed()
+                        ),
+
+                    // now for non-instant spell, wait for .IsCasting to be true
+                    new WaitContinue(1, 
+                        ret => {
+                            WoWSpell spell;
+                            if (SpellManager.Spells.TryGetValue(name, out spell))
+                            {
+                                if (spell.CastTime == 0)
+                                    return true;
+
+                                return StyxWoW.Me.IsCasting;
+                            }
+
+                            return true;
+                            }, 
+                        new ActionAlwaysSucceed()
+                        ), 
+                    
+                    // finally, wait at this point until heal completes
+                    new WaitContinue(10, 
+                        ret => {
                             // Let channeled heals been cast till end.
                             if (StyxWoW.Me.ChanneledSpell != null) // .ChanneledCastingSpellId != 0)
                             {
                                 return false;
                             }
 
-                            // Interrupted or finished casting. Continue
+                            // Interrupted or finished casting. Continue (note: following test doesn't deal with latency)
                             if (!StyxWoW.Me.IsCasting)
                             {
                                 return true;
+                            }
+
+                            // when doing lag tolerance, don't wait for spell to complete before considering finished
+                            if (allowLagTollerance)
+                            {
+                                TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
+                                if (castTimeLeft != TimeSpan.Zero && castTimeLeft.TotalMilliseconds < (StyxWoW.WoWClient.Latency * 2))
+                                    return true;
                             }
 
                             // 500ms left till cast ends. Shall continue for next spell
@@ -739,14 +794,21 @@ namespace Singular.Helpers
                             //    return true;
                             //}
 
-                            // If requirements don't meet anymore, stop casting and let it continue
-                            if (!requirements(ret))
+                            // temporary hack - checking requirements won't work -- either need global value or cancelDelegate
+                            // if ( onUnit(ret).HealthPercent > SingularSettings.Instance.IgnoreHealTargetsAboveHealth) // (!requirements(ret))
+                            if ( cancel(ret) )
                             {
                                 SpellManager.StopCasting();
+                                Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name, onUnit(ret).SafeName(), onUnit(ret).HealthPercent);
                                 return true;
                             }
+
                             return false;
-                        }, new ActionAlwaysSucceed()));
+                        }, 
+                        new ActionAlwaysSucceed()
+                        )
+                    )
+                );
         }
 
         #endregion

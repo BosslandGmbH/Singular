@@ -115,6 +115,7 @@ namespace Singular.Helpers
                         Spell.Cast("Bash", onUnit, ret => !onUnit(ret).IsBoss()),
                         Spell.Cast("Skull Bash (Cat)", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat),
                         Spell.Cast("Skull Bash (Bear)", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear),
+                        Spell.Cast("Mighty Bash", onUnit, ret => !onUnit(ret).IsBoss() && onUnit(ret).IsWithinMeleeRange ),
                         Spell.Cast("Solar Beam", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin),
 
                         Spell.Cast("Strangulate", onUnit),

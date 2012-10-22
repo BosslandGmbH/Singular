@@ -181,6 +181,21 @@ namespace Singular.Settings
         [Description("Regrowth will be used at this value")]
         public int NonRestoRegrowth { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Combat Rez")]
+        [Description("If set to true, it will rez while in combat.")]
+        public bool UseRebirth { get; set; }
+
+        [Setting]
+        [DefaultValue(35)]
+        [Category("Common")]
+        [DisplayName("Renewal Health")]
+        [Description("Renewal will be used at this value. ")]
+        public int RenewalHealth { get; set; }
+
+
         // Start of IloveAnimals settings.
 
         [Setting]
@@ -315,7 +330,6 @@ namespace Singular.Settings
         [Description("Savage Defense will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int TankSavageDefense { get; set; }
 
-
         [Setting]
         [DefaultValue(20)]
         [Category("Guardian")]
@@ -336,9 +350,6 @@ namespace Singular.Settings
         [DisplayName("Barkskin Health")]
         [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int TankFeralBarkskin { get; set; }
-
-
-
 
         #endregion
 
@@ -472,13 +483,6 @@ namespace Singular.Settings
         [DisplayName("Cat - Rebuff infight")]
         [Description("If set to true, it will rebuff Mark of the Wild infight.")]
         public bool CatRaidRebuff { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Feral Raid / Instance")]
-        [DisplayName("Cat - Rez infight")]
-        [Description("If set to true, it will rez while infight.")]
-        public bool CatRaidRezz { get; set; }
 
         [Setting]
         [DefaultValue(true)]

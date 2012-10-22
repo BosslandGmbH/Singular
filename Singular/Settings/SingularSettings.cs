@@ -20,6 +20,15 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
+    enum AllowMovementType
+    {
+        None,
+        ClassSpecificOnly,
+        All,
+        Auto
+        
+    }
+
     internal class SingularSettings : Styx.Helpers.Settings
     {
         private static SingularSettings _instance;
@@ -56,14 +65,41 @@ namespace Singular.Settings
                 || usage == SingularSettings.Instance.Trinket2Usage;
         }
 
+        // this is the old setting.  kept for compatability until removed from code
+        public bool DisableAllMovement
+        {
+            get
+            {
+                if (AllowMovement != AllowMovementType.Auto)
+                    return AllowMovement == AllowMovementType.None;
+
+                return SingularRoutine.IsBotInUse("LazyRaider");
+            }
+        }
+
+        public bool IsCombatRoutineMovementAllowed()
+        {
+            if (AllowMovement != AllowMovementType.Auto)
+                return AllowMovement >= AllowMovementType.ClassSpecificOnly;
+
+            return !SingularRoutine.IsBotInUse("LazyRaider");
+        }
+
         #region Category: General
 
         [Setting]
-        [DefaultValue(false)]
+        [DefaultValue(AllowMovementType.Auto)]
         [Category("Movement")]
-        [DisplayName("Disable Movement")]
-        [Description("Disable all movement within the CC. This will NOT stop it from charging, blinking, etc. Only moving towards units, and facing will be disabled.")]
-        public bool DisableAllMovement { get; set; }
+        [DisplayName("Allow Movement")]
+        [Description("Controls movement allowed within the CC. None: prevent all movement; ClassSpecificOnly: only Charge/HeroicThrow/Blink/Disengage/etc; All: all movement allowed; Auto: same as None if LazyRaider used, otherwise same as All")]
+        public AllowMovementType AllowMovement { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Movement")]
+        [DisplayName("Allow Kiting")]
+        [Description("Controls if movement to evade an enemy during combat is allowed.")]
+        public bool AllowKiting { get; set; }
 
         [Setting]
         [DefaultValue(false)]

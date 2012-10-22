@@ -55,6 +55,19 @@ namespace Singular.Settings
         [Category("Brewmaster")]
         [DisplayName("Use Avert Harm")]
         public bool UseAvertHarm { get; set; }
+
+        [Setting]
+        [Styx.Helpers.DefaultValue(6)]
+        [Category("Brewmaster")]
+        [DisplayName("Elusive Brew Min. Stack")]
+        [Description("Elusive Brew is used when player has this many stacks of Elusive Brew or more")]
+        public float ElusiveBrewMinumumStackCount { get; set; }
+
+        [Setting]
+        [Styx.Helpers.DefaultValue(true)]
+        [Category("Brewmaster")]
+        [DisplayName("Use Elusive Brew")]
+        public bool UseElusiveBrew { get; set; }
         #endregion
 
 

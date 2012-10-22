@@ -17,9 +17,12 @@ namespace Singular
 
     public enum ClusterType
     {
+        // Circular cluster centered around 'target'
         Radius,
         Chained,
-        Cone
+        Cone,
+        // returns a cluster of units that are between LocalPlayer location and 'target'
+        Path
     }
 
     public enum CastOn

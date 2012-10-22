@@ -10,6 +10,9 @@ using Styx.CommonBot.Routines;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Common = Singular.ClassSpecific.Druid.Common;
+using Singular.Settings;
+using System.Globalization;
+using Styx.Common;
 
 #endregion
 
@@ -52,7 +55,7 @@ namespace Singular.Utilities
             if (
                 !Lua.Events.AddFilter(
                     "COMBAT_LOG_EVENT_UNFILTERED",
-                    "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED' or args[2] == 'SPELL_DAMAGE' or args[2] == 'SPELL_AURA_REFRESH' or args[2] == 'SPELL_AURA_REMOVED'or args[2] == 'SPELL_MISSED' or args[2] == 'RANGE_MISSED' or args[2] =='SWING_MISSED'"))
+                    "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED' or args[2] == 'SPELL_MISSED' or args[2] == 'RANGE_MISSED' or args[2] == 'SWING_MISSED' or args[2] == 'SPELL_CAST_FAILED'"))
             {
                 Logger.Write(
                     "ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
@@ -61,7 +64,7 @@ namespace Singular.Utilities
             Logger.WriteDebug("Attached combat log");
             _combatLogAttached = true;
         }
-
+        
         private static void DetachCombatLogEvent()
         {
             if (!_combatLogAttached)
@@ -75,105 +78,37 @@ namespace Singular.Utilities
         private static void HandleCombatLog(object sender, LuaEventArgs args)
         {
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
-            //Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
+
+            if (e.SourceGuid != StyxWoW.Me.Guid)
+                return;
+
+            // Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
+
             switch (e.Event)
             {
+                default:
+                    Logger.WriteDebug("[CombatLog] filter out this event -- " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
+                    break;
+
+                case "SPELL_CAST_FAILED":
+                    if (SingularSettings.Instance.EnableDebugLogging)
+                    {
+                        Logger.WriteDebug("[CombatLog] {0}:{1} cast of {2}#{3} on {4}:{5} failed: '{6}'",
+                            e.SourceName,
+                            e.SourceGuid,
+                            e.SpellName,
+                            e.SpellId,
+                            e.DestName,
+                            e.DestGuid);
+                    }
+                    break;
+
                 case "SPELL_AURA_APPLIED":
-                    if (e.SourceGuid == StyxWoW.Me.Guid)
-                    {
-                        if (e.SpellId == 1822)
-                        {
-                            Common.RakeMultiplier = 1;
-                            //TF
-                            if (StyxWoW.Me.HasAura(5217))
-                                Common.RakeMultiplier = Common.RakeMultiplier*1.15;
-                            //Savage Roar
-                            if (StyxWoW.Me.HasAura(127538))
-                                Common.RakeMultiplier = Common.RakeMultiplier*1.3;
-                            //Doc
-                            if (StyxWoW.Me.HasAura(108373))
-                                Common.RakeMultiplier = Common.RakeMultiplier*1.25;
-                        }
-                        if (e.SpellId == 1079)
-                        {
-                            Common.ExtendedRip = 0;
-                            Common.RipMultiplier = 1;
-                            //TF
-                            if (StyxWoW.Me.HasAura(5217))
-                                Common.RipMultiplier = Common.RipMultiplier*1.15;
-                            //Savage Roar
-                            if (StyxWoW.Me.HasAura(127538))
-                                Common.RipMultiplier = Common.RipMultiplier*1.3;
-                            //Doc
-                            if (StyxWoW.Me.HasAura(108373))
-                                Common.RipMultiplier = Common.RipMultiplier*1.25;
-                        }
-                    }
-                    break;
-
-                case "SPELL_AURA_REFRESH":
-                    if (e.SourceGuid == StyxWoW.Me.Guid)
-                    {
-                        if (e.SpellId == 1822)
-                        {
-                            Common.RakeMultiplier = 1;
-                            //TF
-                            if (StyxWoW.Me.HasAura(5217))
-                                Common.RakeMultiplier = Common.RakeMultiplier*1.15;
-                            //Savage Roar
-                            if (StyxWoW.Me.HasAura(127538))
-                                Common.RakeMultiplier = Common.RakeMultiplier*1.3;
-                            //Doc
-                            if (StyxWoW.Me.HasAura(108373))
-                                Common.RakeMultiplier = Common.RakeMultiplier*1.25;
-                        }
-                        if (e.SpellId == 1079)
-                        {
-                            Common.ExtendedRip = 0;
-                            Common.RipMultiplier = 1;
-                            //TF
-                            if (StyxWoW.Me.HasAura(5217))
-                                Common.RipMultiplier = Common.RipMultiplier*1.15;
-                            //Savage Roar
-                            if (StyxWoW.Me.HasAura(127538))
-                                Common.RipMultiplier = Common.RipMultiplier*1.3;
-                            //Doc
-                            if (StyxWoW.Me.HasAura(108373))
-                                Common.RipMultiplier = Common.RipMultiplier*1.25;
-                        }
-                    }
-                    break;
-
-                case "SPELL_DAMAGE":
-                    if (e.SourceGuid == StyxWoW.Me.Guid)
-                    {
-                        if (e.SpellId == 5221 || e.SpellId == 114236 || e.SpellId == 102545)
-                            //Normal Shred, Glyphed Shred, Ravage
-                            Common.ExtendedRip = Common.ExtendedRip + 1;
-                    }
-                    break;
-
-                case "SPELL_AURA_REMOVED":
-                    if (e.SourceGuid == StyxWoW.Me.Guid)
-                    {
-                        if (e.SpellId == 1822)
-                        {
-                            Common.RakeMultiplier = 0;
-                        }
-                        if (e.SpellId == 1079)
-                        {
-                            Common.ExtendedRip = 0;
-                            Common.RipMultiplier = 0;
-                        }
-                    }
-                    break;
                 case "SPELL_CAST_SUCCESS":
                     if (e.SourceGuid != StyxWoW.Me.Guid)
                     {
                         return;
                     }
-                    if (StyxWoW.Me.Class == WoWClass.Druid)
-                        Common.prevSwift = e.SpellId == 132158;
 
                     // Update the last spell we cast. So certain classes can 'switch' their logic around.
                     Spell.LastSpellCast = e.SpellName;
@@ -212,6 +147,19 @@ namespace Singular.Utilities
 
                 case "SPELL_MISSED":
                 case "RANGE_MISSED":
+                    // DoT casting spam can occur when running on test dummy with low +hit
+                    //  ..  and multiple misses occurring. this should help troubleshoot
+                    //  ..  false reports of flawed rotation
+                    if (SingularSettings.Instance.EnableDebugLogging)
+                    {
+                        Logging.WriteToFileSync(LogLevel.Diagnostic, "[CombatLog] {0} {1}#{2} {3}",
+                            e.Event,
+                            e.SpellName,
+                            e.SpellId,
+                            e.Args[14]
+                            );
+                    }
+
                     if (e.Args[14].ToString() == "EVADE")
                     {
                         Logger.Write("Mob is evading ranged attack. Blacklisting it!");
@@ -222,7 +170,7 @@ namespace Singular.Utilities
                         }
 
                         BotPoi.Clear("Blacklisting evading mob");
-                        // StyxWoW.SleepForLagDuration();
+                        StyxWoW.SleepForLagDuration();
                     }
                     else if (e.Args[14].ToString() == "IMMUNE")
                     {

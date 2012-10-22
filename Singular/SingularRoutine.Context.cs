@@ -84,5 +84,50 @@ namespace Singular
             }
                 
         }
+
+
+        public static string GetBotName()
+        {
+            BotBase bot = GetBot();
+            string sFoundName = "[null]";
+
+            if (bot != null)
+                sFoundName = bot.Name;
+
+            return sFoundName;
+        }
+
+        public static BotBase GetBot()
+        {
+            BotBase bot = null;
+
+            if (TreeRoot.Current != null)
+            {
+                if (!(TreeRoot.Current is NewMixedMode.MixedModeEx))
+                    bot = TreeRoot.Current;
+                else
+                {
+                    NewMixedMode.MixedModeEx mmb = (NewMixedMode.MixedModeEx)TreeRoot.Current;
+                    if (mmb != null)
+                    {
+                        string sPrimary = mmb.PrimaryBot != null ? mmb.PrimaryBot.Name : "[primary null]";
+                        string sSecondary = mmb.SecondaryBot != null ? mmb.SecondaryBot.Name : "[secondary null]";
+                        if (CurrentWoWContext == WoWContext.Battlegrounds || CurrentWoWContext == WoWContext.Instances)
+                            bot = mmb.SecondaryBot;
+                        else
+                            bot = mmb.PrimaryBot;
+                    }
+                }
+            }
+
+            return bot;
+        }
+
+        public static bool IsBotInUse(string botNameContains)
+        {
+            return GetBotName().ToUpper().Contains(botNameContains.ToUpper());
+        }
+
+
     }
 }

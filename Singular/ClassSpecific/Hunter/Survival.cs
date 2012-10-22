@@ -23,6 +23,7 @@ namespace Singular.ClassSpecific.Hunter
                 Safers.EnsureTarget(),
                 Spell.BuffSelf("Disengage",
                                ret =>
+                                SingularSettings.Instance.IsCombatRoutineMovementAllowed() &&
                                SingularSettings.Instance.Hunter.UseDisengage &&
                                StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
                 //Common.CreateHunterBackPedal(),
@@ -106,7 +107,7 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterCallPetBehavior(false),
 
                 Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage", ret => StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
+                Spell.BuffSelf("Disengage", ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() && StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
                 Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -183,6 +184,7 @@ namespace Singular.ClassSpecific.Hunter
                 Safers.EnsureTarget(),
                 Spell.BuffSelf("Disengage",
                                ret =>
+                                SingularSettings.Instance.IsCombatRoutineMovementAllowed() &&
                                SingularSettings.Instance.Hunter.UseDisengage &&
                                StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
                 //Common.CreateHunterBackPedal(),

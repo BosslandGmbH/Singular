@@ -70,7 +70,7 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Hammer of the Righteous"),
                         Spell.Cast("Judgment"),
                         Spell.Cast("Avenger's Shield", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Grand Crusader")),
-                        Spell.Cast("Consecration"),
+                        Spell.Cast("Consecration", ret => !StyxWoW.Me.IsMoving ),
                         Spell.Cast("Avenger's Shield"),
                         Spell.Cast("Holy Wrath"),
                         Movement.CreateMoveToMeleeBehavior(true)
@@ -82,7 +82,7 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.Cast("Crusader Strike"),
                 Spell.Cast("Judgment"),
                 Spell.Cast("Avenger's Shield", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Grand Crusader")),
-                Spell.Cast("Consecration"),
+                Spell.Cast("Consecration", ret => !StyxWoW.Me.IsMoving),
                 Spell.Cast("Holy Wrath"),
                 Spell.BuffSelf("Sacred Shield", ret => SpellManager.HasSpell("Sacred Shield")),
                 Movement.CreateMoveToMeleeBehavior(true));

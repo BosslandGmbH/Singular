@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return
                 new PrioritySelector(
-                    Spell.Heal("Healing Wave", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 60)
+                    Spell.Heal("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 60)
                     );
         }
         [Behavior(BehaviorType.Combat, WoWClass.Shaman, 0)]

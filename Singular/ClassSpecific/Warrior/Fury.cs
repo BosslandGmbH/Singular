@@ -68,14 +68,20 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(
                     ret => StyxWoW.Me.Level < 50,
                     new PrioritySelector(
-                        Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance.Between(12, 25)),
+                        Spell.Cast("Charge",
+                            ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() 
+                                && StyxWoW.Me.CurrentTarget.Distance.Between(12, 25)),
                         Spell.Cast("Heroic Throw", ret => !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun")),
                         Spell.Cast("Throw"),
                         Movement.CreateMoveToTargetBehavior(true, 5f))),
 
                 // Get closer to target
-                Spell.Cast("Charge", ret => PreventDoubleIntercept && StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance.Between(10, 40) && PreventDoubleIntercept),
+                Spell.Cast("Charge", 
+                    ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed()
+                        && PreventDoubleIntercept && StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
+                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
+                    ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() 
+                        && StyxWoW.Me.CurrentTarget.Distance.Between(10, 40) && PreventDoubleIntercept),
 
                 // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)
@@ -134,7 +140,9 @@ namespace Singular.ClassSpecific.Warrior
                         )),
 
                 //Heroic Leap
-                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location, ret => StyxWoW.Me.CurrentTarget.Distance > 9 && PreventDoubleIntercept),
+                Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
+                    ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() 
+                        && StyxWoW.Me.CurrentTarget.Distance > 9 && PreventDoubleIntercept),
 
                 // ranged slow
                 Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows),

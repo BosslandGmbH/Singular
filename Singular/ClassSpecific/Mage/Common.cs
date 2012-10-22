@@ -174,7 +174,7 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => ret != null && !SingularSettings.Instance.DisableAllMovement,
                     new PrioritySelector(
-                        Spell.BuffSelf("Blink"),
+                        Spell.BuffSelf("Blink", ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() ),
                         new Action(
                             ret =>
                             {

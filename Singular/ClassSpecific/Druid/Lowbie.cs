@@ -11,7 +11,7 @@ namespace Singular.ClassSpecific.Druid
     public class Lowbie
     {
 
-        [Behavior(BehaviorType.Pull, WoWClass.Druid)]
+        [Behavior(BehaviorType.Pull, WoWClass.Druid, 0)]
         public static Composite CreateLowbieDruidPull()
         {
             return new PrioritySelector(
@@ -25,7 +25,7 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Druid)]
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, 0)]
         public static Composite CreateLowbieDruidCombat()
         {
             return new PrioritySelector(

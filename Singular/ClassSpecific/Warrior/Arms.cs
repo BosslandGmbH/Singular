@@ -61,6 +61,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast(
                     "Charge",
                     ret =>
+                    SingularSettings.Instance.IsCombatRoutineMovementAllowed() &&
                     StyxWoW.Me.CurrentTarget.Distance >= 10 && StyxWoW.Me.CurrentTarget.Distance < 25 &&
                     SingularSettings.Instance.Warrior.UseWarriorCloser &&
                     Common.PreventDoubleCharge),
@@ -68,6 +69,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.CastOnGround(
                     "Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
                     ret =>
+                    SingularSettings.Instance.IsCombatRoutineMovementAllowed() && 
                     StyxWoW.Me.CurrentTarget.Distance > 9 && !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun", 1) &&
                     SingularSettings.Instance.Warrior.UseWarriorCloser &&
                     Common.PreventDoubleCharge),

@@ -71,7 +71,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.BuffSelf("Chakra: Sanctuary"), // all 3 are avail with a cd in holy - add them to the UI manager for holy priest - default Sanctuary
                         Spell.Cast(
                             "Prayer of Mending",
-                            ret => (WoWUnit)ret,
+                            ret => healTarget,
                             ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && !((WoWUnit)ret).HasMyAura("Prayer of Mending", 3) &&
                                    Group.Tanks.Where(t => t != healTarget).All(p => !p.HasMyAura("Prayer of Mending"))),
                         Spell.Heal(
@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Power Infusion", ret => healTarget.GetPredictedHealthPercent() < 40 || StyxWoW.Me.ManaPercent <= 20),
                         Spell.Heal(
                             "Flash Heal",
-                            ret => (WoWUnit)ret,
+                            ret => healTarget,
                             ret => StyxWoW.Me.HasAura("Surge of Light") && healTarget.GetPredictedHealthPercent() <= 90),
                         Spell.Heal(
                             "Flash Heal",

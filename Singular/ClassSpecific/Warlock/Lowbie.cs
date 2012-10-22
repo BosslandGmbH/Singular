@@ -11,18 +11,7 @@ namespace Singular.ClassSpecific.Warlock
 {
     public class Lowbie
     {
-        #region Common
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warlock, 0, priority:1)]
-        public static Composite CreateLowbieWarlockPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.WaitForCast(false),
-                Pet.CreateSummonPet("Imp")
-                );
-        }
-
-        #endregion
 
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, 0, priority: 1)]
         public static Composite CreateLowbieWarlockCombat()

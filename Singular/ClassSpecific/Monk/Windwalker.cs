@@ -8,143 +8,202 @@ using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
+using Singular.Settings;
+using Styx.WoWInternals;
 
 namespace Singular.ClassSpecific.Monk
 {
     public class Windwalker
     {
-        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker)]
-        public static Composite CreateWindwalkerMonkCombat()
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
+        #region NORMAL
+        [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal )]
+        public static Composite CreateWindwalkerMonkPullNormal()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                CreateWindwalkerMonkCombatCommon(),
-                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) < 5,
-                              CreateWindwalkerMonkCombatSingleTarget()),
-                new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) >= 5,
-                              CreateWindwalkerMonkCombatAoE())
-                );
-        }
 
-        private static Composite CreateWindwalkerMonkCombatCommon()
-        {
-            return new PrioritySelector(
-                // use chisphere if Talent Power Strikes Available, ChiSphere nearby, chi < 4
+                Spell.WaitForCast(true),
 
                 new Decorator(
-                    ret =>
-                    StyxWoW.Me.HasAura("Bloodlust") || StyxWoW.Me.HasAura("Heroism") || StyxWoW.Me.HasAura("Time Warp")
-                    || StyxWoW.Me.HasAura("Ancient Hysteria")
-                    /*|| targettimetodie <= 60 , function still needs to be written*/,
-                    new Action(abc =>
-                                   {
-                                       WoWItem item = StyxWoW.Me.BagItems.Find(ret => ret.Entry == 76089);
-                                       if (item != null) item.Use();
-                                   })),
-                Spell.Cast("Chi Brew",
-                           ret =>
-                           TalentManager.IsSelected(9) && StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) == 0),
-                Spell.Cast("Rising Sun Kick", ret =>
-                                              ((StyxWoW.Me.CurrentTarget.HasAura("Rising Sun Kick") &&
-                                                StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Rising Sun Kick", true).
-                                                    TotalSeconds < 3)
-                                               ||
-                                               (!StyxWoW.Me.CurrentTarget.HasAura("Rising Sun Kick")) &&
-                                               StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) >= 2)),
-                Spell.Cast("Tiger Palm", ret => (StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) >= 1)
-                                                && (
-                                                       !StyxWoW.Me.HasAura("Tiger Power") ||
-                                                       (StyxWoW.Me.HasAura("Tiger Power") &&
-                                                        StyxWoW.Me.Auras["Tiger Power"].StackCount < 3) ||
-                                                       (StyxWoW.Me.HasAura("Tiger Power") &&
-                                                        StyxWoW.Me.GetAuraTimeLeft("Tiger Power", true).TotalSeconds < 3)
-                                                   )),
-                Spell.Cast("Tigereye Brew",
-                           ret =>
-                           !StyxWoW.Me.HasAura("Tigereye Bew") ||
-                           (StyxWoW.Me.HasAura("Tigereye Bew") && (StyxWoW.Me.Auras["Tigereye Brew"].StackCount == 10))),
-                Spell.Cast("Energizing Brew", ret => Spell.TimeToEnergyCap() > 5),
-                Spell.Cast("Invoke Xuen, the White Tiger", ret => TalentManager.IsSelected(17)),
-                Spell.Cast("Rushing Jade Wind", ret => TalentManager.IsSelected(16))
-                );
-        }
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        // Spell.Cast("Flying Serpent Kick", ret => Me.CurrentTarget.Distance > 25),
+                        Spell.Cast("Roll", ret => Me.CurrentTarget.Distance.Between( 15, 20 )),
+                        Spell.Cast("Grapple Weapon", ret => Me.CurrentTarget.Distance < 40 && !Me.CurrentTarget.Disarmed ),
+                        Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
+                        Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
+                        Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
+                        Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 14)
+                        )),
 
-        private static Composite CreateWindwalkerMonkCombatSingleTarget()
-        {
-            return new PrioritySelector(
-                Spell.Cast("Rising Sun Kick"),
-                Spell.Cast("Fists of Fury",
-                           ret =>
-                           (!StyxWoW.Me.HasAura("Energizing Brew") && (Spell.TimeToEnergyCap() > 5) &&
-                            StyxWoW.Me.GetAuraTimeLeft("Tiger Power", true).TotalSeconds > 4
-                            && (StyxWoW.Me.HasAura("Tiger Power") && StyxWoW.Me.Auras["Tiger Power"].StackCount == 3))),
-                Spell.Cast("Blackout Kick", ret => StyxWoW.Me.HasAura("Combo Breaker: Blackout Kick")),
-                Spell.Cast("Blackout Kick",
-                           ret =>
-                           StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) >= 3 && Spell.TimeToEnergyCap() <= 2),
-                Spell.Cast("Tiger Palm", ret =>
-                                         (
-                                             (StyxWoW.Me.HasAura("Combobreaker: Tiger Palm") &&
-                                              Spell.TimeToEnergyCap() >= 2)
-                                             ||
-                                             StyxWoW.Me.HasAura("Combobreaker: Tiger Palm") &&
-                                             StyxWoW.Me.GetAuraTimeLeft("Combobreaker Tiger Palm", true).TotalSeconds <=
-                                             2
-                                         )
-                    ),
-                Spell.Cast("Tiger Palm",
-                           ret =>
-                           TalentManager.IsSelected(8) && StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) <= 3),
-                Spell.Cast("Tiger Palm",
-                           ret =>
-                           TalentManager.IsSelected(9) && StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) <= 2),
-                Spell.Cast("Jab", ret => TalentManager.IsSelected(7) &&
-                                         (
-                                             (SpellManager.Spells["Power Strikes"].CooldownTimeLeft >
-                                              TimeSpan.FromSeconds(0)) &&
-                                             StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) <= 2)
-                                         ||
-                                         (!SpellManager.Spells["Power Strikes"].Cooldown.Equals(false) &&
-                                          (StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) <= 1))
-                    ),
-                Spell.Cast("Blackout Kick", ret =>
-                                            ((StyxWoW.Me.CurrentEnergy +
-                                              (Spell.EnergyRegen()*
-                                               (SpellManager.Spells["Rising Sun Kick"].CooldownTimeLeft.TotalSeconds))) >
-                                             40)
-                                            ||
-                                            (StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) == 4 &&
-                                             !TalentManager.IsSelected(8))
-                                            ||
-                                            (StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) == 5 &&
-                                             TalentManager.IsSelected(8))
-                    ),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 
-        private static Composite CreateWindwalkerMonkCombatAoE()
+        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal)]
+        public static Composite CreateWindwalkerMonkCombatNormal()
         {
             return new PrioritySelector(
-                Spell.Cast("Rising Sun Kick", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.LightForce) == 4),
-                Spell.Cast("Spinning Crane Kick")
-                );
-        }
-
-
-        [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker)]
-        public static Composite CreateWindwalkerMonkPull()
-        {
-            return new PrioritySelector(
+                Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
+
+                Spell.WaitForCast(true),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+
+                        new Decorator(
+                            ret => SingularSettings.Instance.EnableDebugLogging,
+                            new Action( ret => {
+                                Logger.WriteDebug(".... health={0:F1}%, energy={1}%, chi={2}, tp3stk={3}, tptime={4} ms",
+                                    Me.HealthPercent,
+                                    Me.CurrentEnergy,
+                                    Me.CurrentChi,
+                                    Me.HasAura("Tiger Power", 3),
+                                    Me.GetAuraTimeLeft("Tiger Power", true).TotalMilliseconds);
+                                return RunStatus.Failure;
+                                })
+                            ),
+
+                        Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
+
+                        // AoE behavior
+                        Spell.Cast("Rising Sun Kick"),
+
+                        Spell.Cast("Paralysis", 
+                            onu => Unit.NearbyUnfriendlyUnits
+                                .FirstOrDefault( u => u.IsCasting && u.Distance.Between( 9, 20) && Me.IsSafelyFacing(u) )),
+
+                        Spell.Cast("Rising Sun Kick"),
+                        Spell.Cast("Fists of Fury"),
+                        Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance <= 8 ) >= 4),
+
+                        Spell.Cast("Tiger Palm",
+                            ret => Me.CurrentChi > 0
+                                && (!Me.HasAura("Tiger Power", 3) || Me.GetAuraTimeLeft("Tiger Power", true).TotalSeconds < 4)),
+
+                        // chi dump
+                        Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
+
+                        // free Tiger Palm or Blackout Kick... do before Jab
+                        Spell.Cast("Blackout Kick", ret => Me.HasAura("Combo Breaker: Blackout Kick")),
+                        Spell.Cast("Tiger Palm", ret => Me.HasAura("Combo Breaker: Tiger Palm")),
+
+                        Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
+                        )
+                    ),
+
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
+        }
+
+        #endregion
+        #region BATTLEGROUNDS
+
+        [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Battlegrounds  )]
+        public static Composite CreateWindwalkerMonkPullBattlegrounds()
+        {
+            // replace with battleground specific logic 
+            return CreateWindwalkerMonkPullNormal();
+        }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Battlegrounds)]
+        public static Composite CreateWindwalkerMonkCombatBattlegrounds()
+        {
+            // replace with instance specific logic 
+            return CreateWindwalkerMonkCombatNormal();
+        }
+
+        #endregion
+
+        #region INSTANCES
+
+        [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances )]
+        public static Composite CreateWindwalkerMonkPullInstances()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateAutoAttack(true),
+
+                Spell.WaitForCast(true),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 15 )
+                        )
+                    ),
+
+                Movement.CreateMoveToMeleeBehavior(true)
+                );
+        }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances)]
+        public static Composite CreateWindwalkerMonkCombatInstances()
+        {
+            return CreateWindwalkerMonkCombatNormal();
+        }
+
+        #endregion
+
+
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker)]
+        public static Composite CreateWindwalkerMonkCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(true),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Stance of the Fierce Tiger"),
+                        Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40 ),
+                        Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura( "Tigereye Brew", 10)),
+                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk.FortifyingBrewPercent),
+                        Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4)
+                        )
+                    )
+                );
+        }
+
+        [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal | WoWContext.Battlegrounds)]
+        public static Composite CreateWindwalkerMonkHeal()
+        {
+            return 
+                new PrioritySelector(
+                    Spell.WaitForCast(true),
+
+                    new Decorator(
+                        ret => !Spell.IsGlobalCooldown(),
+                        new PrioritySelector(
+
+                            // healing sphere keeps spell on cursor for up to 3 casts... need to stop targeting after 1
+                            new Sequence(
+                                Spell.CastOnGround("Healing Sphere", 
+                                    ctx => Me.Location, 
+                                    ret => Me.HealthPercent < 65 && Me.EnergyPercent > 60 && !Common.AnySpheres( SphereType.Healing, 1f), 
+                                    false),
+                                new DecoratorContinue(
+                                    ret => Me.CurrentPendingCursorSpell != null,
+                                    new Action(ret => Lua.DoString("SpellStopTargeting()"))
+                                    )
+                                ),
+
+                            Spell.Heal( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
+                            Spell.Heal( "Chi Wave", ctx => Me, ret => Me.HealthPercent < SingularSettings.Instance.Monk.ChiWavePercent)
+                            )
+                        )
+                    );
         }
     }
 }

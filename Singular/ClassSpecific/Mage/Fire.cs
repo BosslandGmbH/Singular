@@ -13,6 +13,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
+using Singular.Settings;
 
 namespace Singular.ClassSpecific.Mage
 {
@@ -116,7 +117,7 @@ namespace Singular.ClassSpecific.Mage
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                     new ActionIdle()),
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                Spell.BuffSelf("Blink", ret => StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted() || Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 2 * 2)), //Dist check for Melee beating me up.
+                Spell.BuffSelf("Blink", ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() && (StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted() || Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 2 * 2))), //Dist check for Melee beating me up.
                 Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
                 Spell.BuffSelf("Ice Barrier", ret => StyxWoW.Me.HealthPercent <= 90),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") && !u.HasAura("Frost Nova") && !u.Stunned)),
@@ -186,7 +187,7 @@ namespace Singular.ClassSpecific.Mage
                         Spell.CastOnGround("Blast Wave",
                             ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location),
                         Spell.Cast("Dragon's Breath",
-                            ret => Clusters.GetClusterCount(StyxWoW.Me.CurrentTarget,
+                            ret => Clusters.GetClusterCount(StyxWoW.Me,
                                                             Unit.NearbyUnitsInCombatWithMe,
                                                             ClusterType.Cone, 15f) >= 3),
                         Spell.CastOnGround("Flamestrike",

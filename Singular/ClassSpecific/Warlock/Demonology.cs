@@ -14,22 +14,7 @@ namespace Singular.ClassSpecific.Warlock
 {
     public class Demonology
     {
-        #region Common
-
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warlock, WoWSpec.WarlockDemonology, priority:1)]
-        public static Composite CreateWarlockDemonologyPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.WaitForCast(false),
-                Pet.CreateSummonPet("Wrathguard"),
-                Pet.CreateSummonPet("Felguard"),
-                Spell.Buff("Dark Intent",
-                    ret => StyxWoW.Me.PartyMembers.OrderByDescending(p => p.MaxHealth).FirstOrDefault(),
-                    ret => !StyxWoW.Me.HasAura("Dark Intent"))
-                );
-        }
-
-        #endregion
+    
 
         #region Normal Rotation
 

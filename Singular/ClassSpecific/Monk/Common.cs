@@ -16,6 +16,13 @@ using Rest = Singular.Helpers.Rest;
 namespace Singular.ClassSpecific.Monk
 {
 
+    public enum SphereType
+    {
+        Chi = 3145,     // created by After Life
+        Life = 3319,    // created by After Life
+        Healing = 2866  // created by Healing Sphere spell
+    }
+
     public class Common
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
@@ -41,7 +48,14 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkRest()
         {
             return new PrioritySelector(
-
+                new Decorator(
+                    ret => Me.HealthPercent < 95 && AnySpheres(SphereType.Life),
+                    CreateMoveToSphereBehavior( SphereType.Life)
+                    ),
+                new Decorator(
+                    ret => Me.CurrentChi < Me.MaxChi && AnySpheres(SphereType.Chi),
+                    CreateMoveToSphereBehavior( SphereType.Chi )
+                    ),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 Rest.CreateDefaultRestBehaviour(),
                 // Can we res people?
@@ -76,8 +90,8 @@ namespace Singular.ClassSpecific.Monk
         /// without checking if another is in progress, since Monks need to cast during
         /// a channeled cast already in progress
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="unit"></param>
+        /// <param name="name">name of the spell to cast</param>
+        /// <param name="unit">unit spell is targeted at</param>
         /// <returns></returns>
         public static bool CanCastLikeMonk(string name, WoWUnit unit)
         {
@@ -156,20 +170,73 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 new Decorator(ret => requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null && CanCastLikeMonk(name, onUnit(ret)),
-                    new Sequence(
-                        new Action(ret =>
-                        {
-                            Logger.Write(Color.Aquamarine, string.Format("*{0} on {1} at {2:F1} yds at {3:F1}%", name, onUnit(ret).SafeName(), onUnit(ret).Distance, onUnit(ret).HealthPercent));
-                            SpellManager.Cast(name, onUnit(ret));
-                        }),
-                // now wait for a point that a client cast status flag has kicked in
-                        new WaitContinue(
-                            new TimeSpan(0, 0, 0, 0, 500),
-                            ret => SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null,
-                            new ActionAlwaysSucceed()
+                    new PrioritySelector(
+
+                        // set context to whether currently busy with GCD or Cast
+                        ctx => (bool)(SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null),
+
+                        new Sequence(
+                            // cast the spell
+                            new Action(ret =>
+                            {
+                                Logger.Write(Color.Aquamarine, string.Format("*{0} on {1} at {2:F1} yds at {3:F1}%", name, onUnit(ret).SafeName(), onUnit(ret).Distance, onUnit(ret).HealthPercent));
+                                SpellManager.Cast(name, onUnit(ret));
+                            }),
+                            // if spell was in progress before cast (we queued this one) then wait in progress one to finish
+                            new WaitContinue( 
+                                new TimeSpan(0, 0, 0, 0, (int) StyxWoW.WoWClient.Latency << 1),
+                                ret => !((bool)ret) || !(SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null),
+                                new ActionAlwaysSucceed()
+                                ),
+                            // wait for this cast to appear on the GCD or Spell Casting indicators
+                            new WaitContinue(
+                                new TimeSpan(0, 0, 0, 0, (int) StyxWoW.WoWClient.Latency << 1),
+                                ret => SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null,
+                                new ActionAlwaysSucceed()
+                                )
                             )
                         )
                     )
+                );
+        }
+
+
+        public static WoWObject FindSphere(SphereType typ, float range = 20f)
+        {
+            range *= range;
+            return ObjectManager.ObjectList
+                .Where(o => o.Type == WoWObjectType.AiGroup && o.Entry == (uint)typ && o.DistanceSqr < range)
+                .OrderBy( o => o.DistanceSqr )
+                .FirstOrDefault();
+        }
+
+        public static bool AnySpheres(SphereType typ, float range = 20f)
+        {
+            WoWObject sphere = FindSphere(typ, range);
+            return sphere != null && sphere.Distance < 20;
+        }
+
+        public static WoWPoint FindSphereLocation(SphereType typ, float range = 20f)
+        {
+            WoWObject sphere = FindSphere(typ, range);
+            return sphere != null ? sphere.Location : WoWPoint.Empty;
+        }
+
+        private static ulong lastSphere = 0;
+        public static Composite CreateMoveToSphereBehavior(SphereType typ)
+        {
+            return new Sequence(
+                new Action(ret =>
+                {
+                    WoWObject sph = FindSphere(typ);
+                    if (sph != null && sph.Guid != lastSphere)
+                    {
+                        lastSphere = sph.Guid;
+                        Logger.WriteDebug("CreateMonkRest: Moving {0:F1} yds to {1} Sphere {2}", sph.Distance, typ.ToString(), lastSphere );
+                    }
+                }),
+                Movement.CreateMoveToLocationBehavior(ret => FindSphereLocation(SphereType.Life), true, ret => 0f),
+                new ActionAlwaysSucceed()
                 );
         }
 

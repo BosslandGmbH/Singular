@@ -107,7 +107,9 @@ namespace Singular.ClassSpecific
                         ret => SingularSettings.Instance.ShadowmeldThreatDrop && SpellManager.CanCast("Shadowmeld") && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) &&
                             !Unit.GroupMemberInfos.Any(pm => pm.Guid == StyxWoW.Me.Guid && pm.Role == WoWPartyMember.GroupRole.Tank) &&
                             ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any(unit => unit.CurrentTargetGuid == StyxWoW.Me.Guid),
-                        Spell.Cast("Shadowmeld"))
+                        Spell.Cast("Shadowmeld")),
+                    Spell.Cast( "Blood Fury" ),
+                    Spell.Cast( "Berserking" )
                     ));
         }
 

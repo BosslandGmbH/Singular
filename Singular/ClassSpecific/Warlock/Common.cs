@@ -17,14 +17,9 @@ namespace Singular.ClassSpecific.Warlock
 {
     public class Common
     {
-        private static bool NeedToCreateHealthStone
-        {
-            get
-            {
-                return !StyxWoW.Me.CarriedItems.Any(i => i.ItemSpells.Any(s => s.ActualSpell != null && s.ActualSpell.Name == "Healthstone"));
-            }
-        }
-
+    
+        private static bool HaveHealthStone { get { return StyxWoW.Me.BagItems.Any(i => i.Entry == 5512); } }
+        //5512 - healthstone
         private static bool NeedToCreateSoulStone
         {
             get
@@ -32,30 +27,56 @@ namespace Singular.ClassSpecific.Warlock
                 return !StyxWoW.Me.CarriedItems.Any(i => i.ItemSpells.Any(s => s.ActualSpell != null && s.ActualSpell.Name == "Soulstone Resurrection"));
             }
         }
+        public static Composite UseHealthStoneBehavior() { return UseHealthStoneBehavior(ret => true); }
 
+        public static Composite UseHealthStoneBehavior(SimpleBooleanDelegate requirements)
+        {
+            return new PrioritySelector(
+                ctx => StyxWoW.Me.BagItems.FirstOrDefault(i => i.Entry == 5512),
+                new Decorator(
+                    ret => ret != null && StyxWoW.Me.HealthPercent < 100 && ((WoWItem)ret).Cooldown == 0 && requirements(ret),
+                    new Sequence(
+                        new Action(ret => Logger.Write("Using {0}", ((WoWItem)ret).Name)),
+                        new Action(ret => ((WoWItem)ret).Use())))
+                );
+        }
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warlock)]
         public static Composite CreateWarlockPreCombatBuffs()
         {
             return new PrioritySelector(
                 Spell.WaitForCast(true),
-                Spell.BuffSelf("Create Healthstone", ret => NeedToCreateHealthStone),
-                Spell.BuffSelf("Create Soulstone", ret => NeedToCreateSoulStone),
-                new Decorator(
-                    ret => !StyxWoW.Me.HasAura("Soulstone Resurrection"),
-                    new PrioritySelector(
-                        ctx => Item.FindFirstUsableItemBySpell("Soulstone Resurrection"),
-                        new Decorator(
-                            ret => ret != null,
-                            new Sequence(
-                                new Action(ret => Logger.Write("Using soulstone on myself")),
-                                new Action(ret => WoWMovement.MoveStop()),
-                                new Action(ret => StyxWoW.Me.ClearTarget()),
-                                new Action(ret => ((WoWItem)ret).Use()),
-                                new WaitContinue(System.TimeSpan.FromMilliseconds(500), ret => false, new ActionAlwaysSucceed()))))),
-                //Spell.BuffSelf("Demon Armor", ret => !StyxWoW.Me.HasAura("Demon Armor") && !SpellManager.HasSpell("Fel Armor")),
-                //Spell.BuffSelf("Fel Armor", ret => !StyxWoW.Me.HasAura("Fel Armor")),
-                Spell.BuffSelf("Soul Link", ret => !StyxWoW.Me.HasAura("Soul Link") && StyxWoW.Me.GotAlivePet),
-                Spell.BuffSelf("Health Funnel", ret => StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && StyxWoW.Me.Pet.HealthPercent < 60 && StyxWoW.Me.HealthPercent > 40)
+                Spell.BuffSelf("Create Healthstone", ret => !HaveHealthStone),
+                Spell.BuffSelf("Soulstone", ret => !StyxWoW.Me.HasAura("Soulstone")),
+                Spell.Buff("Dark Intent", ret => !StyxWoW.Me.HasAura("Dark Intent")),
+                new Decorator(ret => !StyxWoW.Me.GotAlivePet,
+                new Switch<WoWSpec>(ctx => StyxWoW.Me.Specialization,
+                                            new SwitchArgument<WoWSpec>(WoWSpec.None, 
+                                                new PrioritySelector(
+                                                new Decorator(ret => SpellManager.HasSpell("Summon Voidwalker"),
+                                                    new Action(ret => PetManager.CallPet("Voidwalker"))),
+                                                new Decorator(ret => !SpellManager.HasSpell("Summon Voidwalker"),
+                                                    new Action(ret => PetManager.CallPet("Imp"))))),
+                                            new SwitchArgument<WoWSpec>(WoWSpec.WarlockAffliction, 
+                                                new PrioritySelector(
+                                                new Decorator(ret => SpellManager.HasSpell("Summon Felhunter"),
+                                                    new Action(ret => PetManager.CallPet("Felhunter"))),
+                                                new Decorator(ret => !SpellManager.HasSpell("Summon Felhunter"),
+                                                    new Action(ret => PetManager.CallPet("Voidwalker"))))),
+                                            new SwitchArgument<WoWSpec>(WoWSpec.WarlockDemonology,
+                                                new PrioritySelector(
+                                                new Decorator(ret => SpellManager.HasSpell("Summon Felguard"),
+                                                    new Action(ret => PetManager.CallPet("Felguard"))),
+                                                new Decorator(ret => !SpellManager.HasSpell("Summon Felguard"),
+                                                    new Action(ret => PetManager.CallPet("Voidwalker"))))),
+                                            new SwitchArgument<WoWSpec>(WoWSpec.WarlockDestruction,  
+                                                new PrioritySelector(
+                                                new Decorator(ret => SpellManager.HasSpell("Summon Felhunter"),
+                                                    new Action(ret => PetManager.CallPet("Felhunter"))),
+                                                new Decorator(ret => !SpellManager.HasSpell("Summon Felhunter"),
+                                                    new Action(ret => PetManager.CallPet("Voidwalker")))))
+                                            ))
+                                        
+                //Spell.BuffSelf("Health Funnel", ret => StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && StyxWoW.Me.Pet.HealthPercent < 60 && StyxWoW.Me.HealthPercent > 40)
                 );
         }
 
@@ -79,10 +100,7 @@ namespace Singular.ClassSpecific.Warlock
                     new Action(ctx => SpellManager.StopCasting())),
                 Spell.WaitForCast(false),
                 Spell.BuffSelf("Life Tap", ret => StyxWoW.Me.ManaPercent < 80 && StyxWoW.Me.HealthPercent > 60 && !StyxWoW.Me.HasAnyAura("Drink", "Food")),
-                new Decorator(ret=>(StyxWoW.Me.CurrentSoulShards <= 2 || StyxWoW.Me.HealthPercent <= 55) && !StyxWoW.Me.HasAnyAura("Drink", "Food"),
-                    new PrioritySelector(
-                        Spell.BuffSelf("Soul Harvest"),
-                        new WaitContinue(System.TimeSpan.FromMilliseconds(500), ret => false, new ActionAlwaysSucceed()))),
+                UseHealthStoneBehavior(ret => StyxWoW.Me.HealthPercent < 80),
                 Rest.CreateDefaultRestBehaviour()
                 );
         }

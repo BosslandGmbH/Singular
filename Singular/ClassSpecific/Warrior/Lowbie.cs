@@ -6,6 +6,7 @@ using Styx;
 
 
 using Styx.TreeSharp;
+using Singular.Settings;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -54,7 +55,10 @@ namespace Singular.ClassSpecific.Warrior
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
                 // charge
-                Spell.Cast("Charge", ret => StyxWoW.Me.CurrentTarget.Distance > 10 && StyxWoW.Me.CurrentTarget.Distance < 25),
+                Spell.Cast("Charge",
+                    ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() 
+                        && StyxWoW.Me.CurrentTarget.Distance > 10 
+                        && StyxWoW.Me.CurrentTarget.Distance < 25),
                 Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)), Spell.Cast(
                     "Shoot",
                     ret =>

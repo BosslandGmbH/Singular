@@ -17,21 +17,7 @@ namespace Singular.ClassSpecific.Warlock
 {
     public class Destruction
     {
-        #region Common
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warlock, WoWSpec.WarlockDestruction, priority:1)]
-        public static Composite CreateWarlockDestructionPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.WaitForCast(false),
-                Pet.CreateSummonPet("Imp"),
-                Spell.Buff("Dark Intent",
-                    ret => StyxWoW.Me.PartyMembers.OrderByDescending(p => p.MaxHealth).FirstOrDefault(),
-                    ret => !StyxWoW.Me.HasAura("Dark Intent"))
-                );
-        }
-
-        #endregion
 
         #region Normal Rotation
 

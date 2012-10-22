@@ -34,21 +34,38 @@ namespace Singular.ClassSpecific.Hunter
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Hunter)]
-        public static Composite CreateHunterBuffs()
+        public static Composite CreateHunterPreBuffs()
         {
             return new PrioritySelector(
                 Spell.WaitForCast(true),
                 Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
                 Spell.BuffSelf("Track Hidden"),
+
                 new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && StyxWoW.Me.GotAlivePet,
                     new Action(ctx => SpellManager.Cast("Dismiss Pet"))),
 
                 new Decorator(ctx => !SingularSettings.Instance.DisablePetUsage,
                     new PrioritySelector(
                         CreateHunterCallPetBehavior(true),
-                        Spell.Cast("Mend Pet", ret => (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !StyxWoW.Me.Pet.HasAura("Mend Pet"))
+                        Spell.Cast("Mend Pet", ret => (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !StyxWoW.Me.Pet.HasAura("Mend Pet")),
+                        Spell.Buff("Misdirection", 
+                            ctx => StyxWoW.Me.Pet, 
+                            ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.IsInGroup())
                         )
                     )
+                );
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Hunter, (WoWSpec) int.MaxValue )]
+        public static Composite CreateHunterCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(true),
+                Spell.Buff("Misdirection", 
+                    ctx => StyxWoW.Me.Pet, 
+                    ret => StyxWoW.Me.GotAlivePet 
+                        && StyxWoW.Me.Combat 
+                        && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 100))
                 );
         }
 

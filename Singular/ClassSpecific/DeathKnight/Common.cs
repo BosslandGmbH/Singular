@@ -100,24 +100,30 @@ namespace Singular.ClassSpecific.DeathKnight
         #region Pull
 
         // All DKs should be throwing death grip when not in intances. It just speeds things up, and makes a mess for PVP :)
-        [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, (WoWSpec)int.MaxValue,
-            WoWContext.Normal | WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, (WoWSpec)int.MaxValue, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateDeathKnightNormalAndPvPPull()
         {
-            return new PrioritySelector(Movement.CreateMoveToLosBehavior(), Movement.CreateFaceTargetBehavior(),
-                                        new Sequence(
-                                            Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
-                                            new DecoratorContinue(ret => StyxWoW.Me.IsMoving,
-                                                                  new Action(ret => Navigator.PlayerMover.MoveStop())),
-                                            new WaitContinue(1, new ActionAlwaysSucceed())), Spell.Cast("Howling Blast"),
-                                        Spell.Cast("Icy Touch"), Movement.CreateMoveToMeleeBehavior(true));
+            return new PrioritySelector(
+                Movement.CreateMoveToLosBehavior(), 
+                Movement.CreateFaceTargetBehavior(),
+                new Sequence(
+                    Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
+                    new DecoratorContinue(
+                        ret => StyxWoW.Me.IsMoving,
+                        new Action(ret => Navigator.PlayerMover.MoveStop())
+                        ),
+                    new WaitContinue(1, new ActionAlwaysSucceed())
+                    ), 
+                Spell.Cast("Howling Blast"),
+                Spell.Cast("Icy Touch"), Movement.CreateMoveToMeleeBehavior(true)
+                );
         }
 
         // Non-blood DKs shouldn't be using Death Grip in instances. Only tanks should!
         // You also shouldn't be a blood DK if you're DPSing. Thats just silly. (Like taking a prot war as DPS... you just don't do it)
         [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, WoWSpec.DeathKnightUnholy, WoWContext.Instances)]
         [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, WoWSpec.DeathKnightFrost, WoWContext.Instances)]
-        [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, 0, WoWContext.Instances)]
+        // [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, 0, WoWContext.Instances)]
         public static Composite CreateDeathKnightFrostAndUnholyInstancePull()
         {
             return

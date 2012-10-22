@@ -17,24 +17,7 @@ namespace Singular.ClassSpecific.Warlock
 {
     public class Affliction
     {
-        #region Common
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warlock, WoWSpec.WarlockAffliction, priority:1)]
-        public static Composite CreateWarlockAfflictionPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.WaitForCast(false),
-                Pet.CreateSummonPet("Felhunter"),
-                new Decorator(
-                    ret => !SpellManager.HasSpell("Summon Felhunter"),
-                    Pet.CreateSummonPet("Voidwalker")),
-                Spell.Buff("Dark Intent", 
-                    ret => StyxWoW.Me.PartyMembers.OrderByDescending(p => p.MaxHealth).FirstOrDefault(), 
-                    ret => !StyxWoW.Me.HasAura("Dark Intent"))
-                );
-        }
-
-        #endregion
 
         #region Normal Rotation
 

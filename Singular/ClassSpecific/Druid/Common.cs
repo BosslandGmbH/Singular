@@ -1,15 +1,16 @@
 ﻿#region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Settings;
 using Styx;
-using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 
 #endregion
@@ -18,11 +19,11 @@ namespace Singular.ClassSpecific.Druid
 {
     public class Common
     {
-        public static bool prevSwift;
-        public static double RipMultiplier;
-        public static double RakeMultiplier;
-        public static double ExtendedRip;
         public static ShapeshiftForm WantedDruidForm { get; set; }
+        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid; } }
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
+        public const WoWSpec DruidAllSpecs = WoWSpec.DruidBalance | WoWSpec.DruidFeral | WoWSpec.DruidGuardian | WoWSpec.DruidRestoration;
 
         public static List<WoWUnit> EnemyUnits
         {
@@ -58,24 +59,6 @@ namespace Singular.ClassSpecific.Druid
             get { return (100 - energy)*(1.0/energyregen); }
         }
 
-        public static double tick_multiplier
-        {
-            get
-            {
-                double tick_multiplier = 1;
-                //Tigers Fury
-                if (StyxWoW.Me.HasAura(5217))
-                    tick_multiplier = tick_multiplier*1.15;
-                //Savage Roar
-                if (StyxWoW.Me.HasAura(127538))
-                    tick_multiplier = tick_multiplier*1.3;
-                //Doc
-                if (StyxWoW.Me.HasAura(108373))
-                    tick_multiplier = tick_multiplier*1.25;
-                return tick_multiplier;
-            }
-        }
-
         #region PreCombat Buffs
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid)]
@@ -86,24 +69,24 @@ namespace Singular.ClassSpecific.Druid
 
                 PartyBuff.BuffGroup( 
                     "Mark of the Wild",
-                    ret => SingularSettings.Instance.Druid.BuffRaidWithMotw && !StyxWoW.Me.HasAura("Prowl")
-                        && (!StyxWoW.Me.Combat || SingularSettings.Instance.Druid.CatRaidRebuff)
+                    ret => DruidSettings.BuffRaidWithMotw && !Me.HasAura("Prowl")
+                        && (!Me.Combat || DruidSettings.CatRaidRebuff)
                     )
 
                 /*   This logic needs work. 
                 new Decorator(
                     ret =>
-                    !StyxWoW.Me.HasAura("Bear Form") &&
-                    SingularSettings.Instance.Druid.PvPStealth && (Battlegrounds.IsInsideBattleground 
-                    || StyxWoW.Me.CurrentMap.IsArena) &&
-                    !StyxWoW.Me.Mounted && !StyxWoW.Me.HasAura("Travel Form"),
+                    !Me.HasAura("Bear Form") &&
+                    DruidSettings.PvPStealth && (Battlegrounds.IsInsideBattleground 
+                    || Me.CurrentMap.IsArena) &&
+                    !Me.Mounted && !Me.HasAura("Travel Form"),
                     Spell.BuffSelf("Cat Form")
                     ),
                 new Decorator(
                     ret =>
-                    StyxWoW.Me.HasAura("Cat Form") &&
-                    (SingularSettings.Instance.Druid.PvPStealth && (Battlegrounds.IsInsideBattleground 
-                    || StyxWoW.Me.CurrentMap.IsArena)),
+                    Me.HasAura("Cat Form") &&
+                    (DruidSettings.PvPStealth && (Battlegrounds.IsInsideBattleground 
+                    || Me.CurrentMap.IsArena)),
                     Spell.BuffSelf("Prowl")
                     )*/
                 );
@@ -113,23 +96,85 @@ namespace Singular.ClassSpecific.Druid
 
         #region Combat Buffs
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec) int.MaxValue, WoWContext.Instances)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, DruidAllSpecs, WoWContext.Normal)]
+        public static Composite CreateDruidNormalCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(true),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
+                        Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < 50 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+                        Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+                        Spell.Cast("Hibernate", 
+                            ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                                u => !u.IsMoving && u.Distance > 10 && Me.CurrentTarget != u
+                                    && (u.IsBeast || u.IsDragon)))
+                        )
+                    )
+                );
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec)int.MaxValue, WoWContext.Instances)]
         public static Composite CreateDruidInstanceCombatBuffs()
         {
-            const uint mapleSeedId = 17034;
-
             return new PrioritySelector(
                 ctx =>
                 Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ??
                 Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead),
                 new Decorator(
-                    ret => ret != null && Item.HasItem(mapleSeedId),
+                    ret => ret != null ,
                     new PrioritySelector(
                         Spell.WaitForCast(true),
                         Movement.CreateMoveToLosBehavior(ret => (WoWPlayer) ret),
-                        new Decorator(ret => SingularSettings.Instance.Druid.CatRaidRezz,
+                        new Decorator(ret => DruidSettings.UseRebirth,
                                       Spell.Cast("Rebirth", ret => (WoWPlayer) ret)),
                         Movement.CreateMoveToTargetBehavior(true, 35f)))
+                );
+        }
+
+        #endregion
+
+        #region Heal
+
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidFeral)]
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidGuardian)]
+        public static Composite CreateDruidNonRestoHealNormal()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(true),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+
+                    new Sequence(
+                        new PrioritySelector(
+
+                            Spell.Heal("Healing Touch",
+                                       ret => Me.HealthPercent <= 75
+                                           && Me.ActiveAuras.ContainsKey("Predator's Swiftness")),
+
+                            Spell.Buff("Might of Ursoc", ret => Me.HealthPercent < 20),
+                            Spell.Heal("Renewal", ret => Me.HealthPercent < DruidSettings.RenewalHealth ),
+                            Spell.Cast("Cenarion Ward", ctx => Me, ret => Me.HealthPercent < 75 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+
+                            new Decorator(
+                                ret => Me.HealthPercent < 60 && Spell.GetSpellCooldown("Nature's Swiftness") == TimeSpan.Zero,
+                                new Sequence(
+                                    Spell.BuffSelf("Nature's Swiftness"),
+                                    Spell.Heal("Healing Touch")
+                                    )
+                                ),
+
+                            Spell.Heal("Rejuvenation", ret => Me.HealthPercent <= 60 && !Me.HasAura("Rejuvenation")),
+
+                            Spell.Heal("Healing Touch", ret => Me.HealthPercent <= 25)
+                            ),
+
+                        new Action( ret => Logger.Write( "DRUID.HEAL"))
+                        )
+                    )
                 );
         }
 
@@ -143,224 +188,36 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceAndDruidFeralRest()
         {
             return new PrioritySelector(
+                Spell.WaitForCast(false),
                 new Decorator(
-                    ret =>
-                    !StyxWoW.Me.GroupInfo.IsInRaid && !StyxWoW.Me.IsInInstance && !Battlegrounds.IsInsideBattleground
-                    &&
-                    (StyxWoW.Me.ZoneId != 3702 && StyxWoW.Me.ZoneId != 4378 && StyxWoW.Me.ZoneId != 3698 &&
-                     StyxWoW.Me.ZoneId != 3968 && StyxWoW.Me.ZoneId != 4406),
-                    CreateNonRestoHeals()),
-                new Decorator(
-                    ret =>
-                    (StyxWoW.Me.GroupInfo.IsInRaid ||
-                     StyxWoW.Me.IsInInstance) && SingularSettings.Instance.Druid.RaidHealNonCombat && !StyxWoW.Me.Combat,
-                    CreateNonRestoHeals()),
-                new Decorator(
-                    ret =>
-                    (Battlegrounds.IsInsideBattleground ||
-                     StyxWoW.Me.ZoneId == 3702 || StyxWoW.Me.ZoneId == 4378 || StyxWoW.Me.ZoneId == 3698 ||
-                     StyxWoW.Me.ZoneId == 3968 || StyxWoW.Me.ZoneId == 4406) &&
-                    (SingularSettings.Instance.Druid.PvPpHealBool ||
-                     (SingularSettings.Instance.Druid.PvPpHealBool == false && !StyxWoW.Me.Combat)),
-                    CreateNonRestoPvPHeals()),
-                Rest.CreateDefaultRestBehaviour(),
-                Spell.Resurrect("Revive")
+                    ret => !Spell.IsGlobalCooldown(false,false), 
+                    new PrioritySelector(
+                        Spell.Heal( "Healing Touch", ctx => Me, ret => Me.GetPredictedHealthPercent(true) <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth ),
+                        Rest.CreateDefaultRestBehaviour(),
+                        Spell.Resurrect("Revive")
+                        )
+                    )
                 );
         }
 
         #endregion
 
-        #region Non Resto Healing
 
-        public static Composite CreateNonRestoHeals()
-        {
-            return
-                new Decorator(
-                    ret => !SingularSettings.Instance.Druid.NoHealBalanceAndFeral && !StyxWoW.Me.HasAura("Drink"),
-                    new PrioritySelector(
-                        Spell.WaitForCast(false, false),
-                        Spell.Heal("Healing Touch",
-                                   ret =>
-                                   StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoprocc &&
-                                   StyxWoW.Me.ActiveAuras.ContainsKey("Predator's Swiftness")),
-                        Spell.Heal("Regrowth",
-                                   ret =>
-                                   StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoprocc &&
-                                   StyxWoW.Me.ActiveAuras.ContainsKey("Predator's Swiftness") &&
-                                   !SpellManager.HasSpell("Healing Touch")),
-                        Spell.Heal("Regrowth",
-                                   ret =>
-                                   StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoRegrowth &&
-                                   !StyxWoW.Me.HasAura("Regrowth")),
-                        Spell.Heal("Lifebloom",
-                                   ret =>
-                                   StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoLifebloom &&
-                                   !StyxWoW.Me.HasAura("Lifebloom", 3)),
-                        Spell.Heal("Rejuvenation",
-                                   ret =>
-                                   StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoRejuvenation &&
-                                   !StyxWoW.Me.HasAura("Rejuvenation")),
-                        Spell.Heal("Healing Touch",
-                                   ret =>
-                                   StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoHealingTouch)
-                        )
-                    );
-        }
-
-        public static Composite CreateNonRestoPvPHeals()
-        {
-            return
-                new PrioritySelector(
-                    new Decorator(ret => SingularSettings.Instance.Druid.PvPGrasp && EnemyUnits.Count >= 2,
-                                  Spell.Cast("Nature's Grasp")
-                        ),
-                    new Decorator(
-                        ret =>
-                        (SingularSettings.Instance.Druid.PvPpHealBool ||
-                         (SingularSettings.Instance.Druid.PvPpHealBool == false && !StyxWoW.Me.Combat)) &&
-                        !StyxWoW.Me.HasAura("Drink"),
-                        new PrioritySelector(
-                            Spell.WaitForCast(false, false),
-                            Spell.Heal("Healing Touch",
-                                       ret =>
-                                       StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.PvPProcc &&
-                                       StyxWoW.Me.ActiveAuras.ContainsKey("Predator's Swiftness")),
-                            Spell.Heal("Regrowth",
-                                       ret =>
-                                       StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.PvPProcc &&
-                                       StyxWoW.Me.ActiveAuras.ContainsKey("Predator's Swiftness") &&
-                                       !SpellManager.HasSpell("Healing Touch")),
-                            Spell.Heal("Regrowth",
-                                       ret =>
-                                       StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.PvPRegrowth &&
-                                       !StyxWoW.Me.HasAura("Regrowth")),
-                            Spell.Heal("Lifebloom",
-                                       ret =>
-                                       StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.PvPLifeBloom &&
-                                       !StyxWoW.Me.HasAura("Lifebloom", 3)),
-                            Spell.Heal("Rejuvenation",
-                                       ret =>
-                                       StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.PvPReju &&
-                                       !StyxWoW.Me.HasAura("Rejuvenation")),
-                            Spell.Heal("Healing Touch",
-                                       ret =>
-                                       StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.PvPHealingTouch)
-                            )
-                        )
-                    );
-        }
-
-        public static Composite CreateRaidCatHeal()
-        {
-            return
-                new Decorator(
-                    ret => !SingularSettings.Instance.Druid.NoHealBalanceAndFeral,
-                    new PrioritySelector(
-                        Spell.WaitForCast(false, false),
-                        Spell.Heal("Healing Touch",
-                                   ret =>
-                                   StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.RaidCatProccHeal &&
-                                   StyxWoW.Me.ActiveAuras.ContainsKey("Predator's Swiftness")),
-                        Spell.Heal("Regrowth",
-                                   ret =>
-                                   StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.RaidCatProccHeal &&
-                                   StyxWoW.Me.ActiveAuras.ContainsKey("Predator's Swiftness") &&
-                                   !SpellManager.HasSpell("Healing Touch"))
-                        )
-                    );
-        }
-
-        #endregion
-
-        /* Original PreCombat Buffs
-#region PreCombat Buffs
-
-[Class(WoWClass.Druid)]
-[Behavior(BehaviorType.PreCombatBuffs)]
-[Spec(WoWSpec.DruidBalance)]
-[Spec(WoWSpec.DruidFeral)]
-[Spec(WoWSpec.DruidRestoration)]
-[Spec((WoWSpec)0)]
-[Context(WoWContext.All)]
-public static Composite CreateDruidPreCombatBuff()
-{
-    return new PrioritySelector(
-       Spell.Cast(
-           "Mark of the Wild",
-           ret => StyxWoW.Me,
-           ret => !StyxWoW.Me.HasAura("Prowl") &&
-                  (Unit.NearbyFriendlyPlayers.Any(unit =>
-                       !unit.IsDead && !unit.IsGhost && unit.IsInMyPartyOrRaid &&
-                       !unit.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")) || 
-                  !StyxWoW.Me.HasAnyAura("Mark of the Wild", "Embrace of the Shale Spider", "Blessing of Kings")))
-        );
-}
-
-#endregion
-*/
-
-        /* Original Combat Buffs
-        #region Combat Buffs
-
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.CombatBuffs)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Spec(WoWSpec.DruidFeral)]
-        [Spec(WoWSpec.DruidRestoration)]
-        [Context(WoWContext.Instances)]
-        public static Composite CreateDruidInstanceCombatBuffs()
-        {
-            const uint mapleSeedId = 17034;
-
-            return new PrioritySelector(
-                ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead),
-                new Decorator(
-                    ret => ret != null && Item.HasItem(mapleSeedId),
-                    new PrioritySelector(
-                        Spell.WaitForCast(true),
-                        Movement.CreateMoveToLosBehavior(ret => (WoWPlayer)ret),
-                        Spell.Cast("Rebirth", ret => (WoWPlayer)ret),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)))
-                );
-        }
-
-        #endregion
-        */
-
-        /* Original Rest
-        #region Rest
-
-        [Class(WoWClass.Druid)]
-        [Behavior(BehaviorType.Rest)]
-        [Spec(WoWSpec.DruidBalance)]
-        [Spec(WoWSpec.DruidFeral)]
-        [Context(WoWContext.All)]
-        public static Composite CreateBalanceAndDruidFeralRest()
-        {
-            return new PrioritySelector(
-                CreateNonRestoHeals(),
-                Rest.CreateDefaultRestBehaviour(),
-                Spell.Resurrect("Revive")
-                );
-        }
-
-        #endregion
-        */
-
+#if NOT_IN_USE
         public static Composite CreateEscapeFromCc()
         {
             return
                 new PrioritySelector(
                     Spell.Cast("Dash",
                                ret =>
-                               SingularSettings.Instance.Druid.PvPRooted &&
-                               StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted) &&
-                               StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat),
+                               DruidSettings.PvPRooted &&
+                               Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted) &&
+                               Me.Shapeshift == ShapeshiftForm.Cat),
                     new Decorator(
                         ret =>
-                        (SingularSettings.Instance.Druid.PvPRooted &&
-                         StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted) &&
-                         StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat && SpellManager.HasSpell("Dash") &&
+                        (DruidSettings.PvPRooted &&
+                         Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted) &&
+                         Me.Shapeshift == ShapeshiftForm.Cat && SpellManager.HasSpell("Dash") &&
                          SpellManager.Spells["Dash"].Cooldown),
                         new Sequence(
                             new Action(ret => SpellManager.Cast(WoWSpell.FromId(77764))
@@ -368,10 +225,10 @@ public static Composite CreateDruidPreCombatBuff()
                             )),
                     new Decorator(
                         ret =>
-                        (SingularSettings.Instance.Druid.PvPSnared &&
-                         StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Snared) &&
-                         !StyxWoW.Me.ActiveAuras.ContainsKey("Crippling Poison") &&
-                         StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat),
+                        (DruidSettings.PvPSnared &&
+                         Me.HasAuraWithMechanic(WoWSpellMechanic.Snared) &&
+                         !Me.ActiveAuras.ContainsKey("Crippling Poison") &&
+                         Me.Shapeshift == ShapeshiftForm.Cat),
                         new Sequence(
                             new Action(ret => Lua.DoString("RunMacroText(\"/Cast !Cat Form\")")
                                 )
@@ -379,10 +236,10 @@ public static Composite CreateDruidPreCombatBuff()
                         ),
                     new Decorator(
                         ret =>
-                        (SingularSettings.Instance.Druid.PvPSnared &&
-                         StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Snared) &&
-                         !StyxWoW.Me.ActiveAuras.ContainsKey("Crippling Poison") &&
-                         StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear),
+                        (DruidSettings.PvPSnared &&
+                         Me.HasAuraWithMechanic(WoWSpellMechanic.Snared) &&
+                         !Me.ActiveAuras.ContainsKey("Crippling Poison") &&
+                         Me.Shapeshift == ShapeshiftForm.Bear),
                         new Sequence(
                             new Action(ret => Lua.DoString("RunMacroText(\"/Cast !Bear Form\")")
                                 )
@@ -399,8 +256,8 @@ public static Composite CreateDruidPreCombatBuff()
                     Unit.NearbyUnfriendlyUnits.OrderByDescending(u => u.CurrentHealth).FirstOrDefault(IsViableForCyclone),
                     new Decorator(
                         ret =>
-                        ret != null && SingularSettings.Instance.Druid.PvPccAdd &&
-                        StyxWoW.Me.ActiveAuras.ContainsKey("Predator's Swiftness") &&
+                        ret != null && DruidSettings.PvPccAdd &&
+                        Me.ActiveAuras.ContainsKey("Predator's Swiftness") &&
                         Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")),
                         new PrioritySelector(
                             Spell.Buff("Cyclone", ret => (WoWUnit) ret))));
@@ -414,7 +271,7 @@ public static Composite CreateDruidPreCombatBuff()
             if (unit.CreatureType != WoWCreatureType.Beast && unit.CreatureType != WoWCreatureType.Humanoid)
                 return false;
 
-            if (StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == unit)
+            if (Me.CurrentTarget != null && Me.CurrentTarget == unit)
                 return false;
 
             if (!unit.Combat)
@@ -423,12 +280,13 @@ public static Composite CreateDruidPreCombatBuff()
             if (!unit.IsTargetingMeOrPet && !unit.IsTargetingMyPartyMember)
                 return false;
 
-            if (StyxWoW.Me.GroupInfo.IsInParty &&
-                StyxWoW.Me.PartyMembers.Any(p => p.CurrentTarget != null && p.CurrentTarget == unit))
+            if (Me.GroupInfo.IsInParty &&
+                Me.PartyMembers.Any(p => p.CurrentTarget != null && p.CurrentTarget == unit))
                 return false;
 
             return true;
         }
+#endif
 
         #region Nested type: Talents
 
@@ -456,27 +314,5 @@ public static Composite CreateDruidPreCombatBuff()
 
         #endregion
 
-        /* Original Non Resto Healing
-        #region Non Resto Healing
-
-        public static Composite CreateNonRestoHeals()
-        {
-            return
-                new Decorator(
-                    ret => !SingularSettings.Instance.Druid.NoHealBalanceAndFeral && !StyxWoW.Me.HasAura("Drink"),
-                    new PrioritySelector(
-                        Spell.WaitForCast(false,false),
-                        Spell.Heal("Rejuvenation",
-                            ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoRejuvenation &&
-                                    !StyxWoW.Me.HasAura("Rejuvenation")),
-                        Spell.Heal("Regrowth",
-                            ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoRegrowth &&
-                                    !StyxWoW.Me.HasAura("Regrowth")),
-                        Spell.Heal("Healing Touch",
-                            ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.NonRestoHealingTouch)));
-        }
-
-        #endregion
-         */
-    }
+   }
 }

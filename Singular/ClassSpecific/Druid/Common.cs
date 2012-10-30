@@ -12,6 +12,8 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
+using Styx.CommonBot;
+using Singular.Managers;
 
 #endregion
 
@@ -120,17 +122,21 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateDruidInstanceCombatBuffs()
         {
             return new PrioritySelector(
-                ctx =>
-                Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ??
-                Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead),
-                new Decorator(
-                    ret => ret != null ,
-                    new PrioritySelector(
-                        Spell.WaitForCast(true),
-                        Movement.CreateMoveToLosBehavior(ret => (WoWPlayer) ret),
-                        new Decorator(ret => DruidSettings.UseRebirth,
-                                      Spell.Cast("Rebirth", ret => (WoWPlayer) ret)),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)))
+
+                CreateRebirthBehavior( ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead)),
+
+                Spell.BuffSelf( "Celestial Alignment", ret => Me.CurrentTarget != null && Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && Me.HasAnyAura(Shaman.Common.BloodlustName, "Time Warp", "Ancient Hysteria")),
+
+                // to do:  time ICoE at start of eclipse
+                Spell.BuffSelf( "Incarnation: Chosen of Elune" ),
+
+                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => true ),
+
+                Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
+                Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < 50 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+                Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+
+                Spell.BuffSelf( "Nature's Vigil" )
                 );
         }
 
@@ -152,27 +158,29 @@ namespace Singular.ClassSpecific.Druid
                         new PrioritySelector(
 
                             Spell.Heal("Healing Touch",
-                                       ret => Me.HealthPercent <= 75
-                                           && Me.ActiveAuras.ContainsKey("Predator's Swiftness")),
+                                       ret => Me.HealthPercent <= 80
+                                           && Me.ActiveAuras.ContainsKey("Predatory Swiftness")),
 
-                            Spell.Buff("Might of Ursoc", ret => Me.HealthPercent < 20),
                             Spell.Heal("Renewal", ret => Me.HealthPercent < DruidSettings.RenewalHealth ),
-                            Spell.Cast("Cenarion Ward", ctx => Me, ret => Me.HealthPercent < 75 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+                            Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 75 || Unit.NearbyUnitsInCombatWithMe.Count() >= 2),
+
+                            new Throttle( Spell.BuffSelf("Nature's Swiftness", ret => Me.HealthPercent < 60)),
+                            Spell.Heal("Healing Touch", ret => Me.HasAura("Nature's Swiftness")),
 
                             new Decorator(
-                                ret => Me.HealthPercent < 60 && Spell.GetSpellCooldown("Nature's Swiftness") == TimeSpan.Zero,
-                                new Sequence(
-                                    Spell.BuffSelf("Nature's Swiftness"),
+                                ret => Me.HealthPercent < 40,
+                                new PrioritySelector(
+
+                                    Spell.Cast("Disorienting Roar", ret => Me.HealthPercent <= 25 && Unit.NearbyUnfriendlyUnits.Any(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet))),
+                                    Spell.Cast("Might of Ursoc", ret => Me.HealthPercent < 25),
+
+                                    // heal out of form at this point (try to Barkskin at least)
+                                    new Throttle( Spell.BuffSelf( "Barkskin")),
+                                    Spell.Heal("Rejuvenation", ret => !Me.HasAura("Rejuvenation")),
                                     Spell.Heal("Healing Touch")
                                     )
-                                ),
-
-                            Spell.Heal("Rejuvenation", ret => Me.HealthPercent <= 60 && !Me.HasAura("Rejuvenation")),
-
-                            Spell.Heal("Healing Touch", ret => Me.HealthPercent <= 25)
-                            ),
-
-                        new Action( ret => Logger.Write( "DRUID.HEAL"))
+                                )
+                            )
                         )
                     )
                 );
@@ -192,8 +200,14 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(false,false), 
                     new PrioritySelector(
-                        Spell.Heal( "Healing Touch", ctx => Me, ret => Me.GetPredictedHealthPercent(true) <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth ),
+
+                        Spell.Heal( "Healing Touch", 
+                            ctx => Me, 
+                            ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food")
+                                && Me.GetPredictedHealthPercent(true) <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth ),
+
                         Rest.CreateDefaultRestBehaviour(),
+
                         Spell.Resurrect("Revive")
                         )
                     )
@@ -201,7 +215,34 @@ namespace Singular.ClassSpecific.Druid
         }
 
         #endregion
+             
 
+        public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
+        {
+            if ( !DruidSettings.UseRebirth )
+                return new PrioritySelector();
+
+            if ( onUnit == null)
+            {
+                Logger.WriteDebug( "CreateRebirthBehavior: error - onUnit == null");
+                return new PrioritySelector();
+            }
+
+            return new PrioritySelector(
+                ctx => onUnit(ctx),
+                new Decorator(
+                    ret => onUnit(ret) != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
+                    new PrioritySelector(
+                        Spell.WaitForCast(true),
+                        Movement.CreateMoveToRangeAndStopBehavior( ret => (WoWUnit) ret, range => 40f),
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            Spell.Cast("Rebirth", ret => (WoWUnit) ret)
+                            )
+                        )
+                    )
+                );
+        }
 
 #if NOT_IN_USE
         public static Composite CreateEscapeFromCc()
@@ -257,7 +298,7 @@ namespace Singular.ClassSpecific.Druid
                     new Decorator(
                         ret =>
                         ret != null && DruidSettings.PvPccAdd &&
-                        Me.ActiveAuras.ContainsKey("Predator's Swiftness") &&
+                        Me.ActiveAuras.ContainsKey("Predatory Swiftness") &&
                         Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")),
                         new PrioritySelector(
                             Spell.Buff("Cyclone", ret => (WoWUnit) ret))));

@@ -20,15 +20,23 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                Spell.PreventDoubleCast("Immolate"),
+                Helpers.Common.CreateAutoAttack(false),
                 Spell.WaitForCast(true),
-                Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
-                Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),
-                Spell.Buff("Immolate"),
-                Spell.Buff("Corruption"),
-                Spell.Cast("Shadow Bolt"),
+
+                new Decorator( 
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        
+                        // Spell.PreventDoubleCast("Immolate"),
+                        Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),
+                        Spell.Cast("Drain Life", ret => StyxWoW.Me.HealthPercent < 70),
+                        Spell.Buff("Immolate"),
+                        Spell.Buff("Corruption"),
+                        Spell.Cast("Shadow Bolt")
+                        )
+                    ),
+
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }

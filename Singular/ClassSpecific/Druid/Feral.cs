@@ -95,98 +95,47 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
 
+                        // updated time to death tracking values before we need them
+                        new Action( ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; } ),
+
                         TimeToDeathExtension.CreateWriteDebugTimeToDeath(),
 
                         //Single target
                         Spell.Cast("Faerie Fire", ret =>!Me.CurrentTarget.HasAura("Weakened Armor", 3)),
 
-#if NOT_YET
-                        new Decorator(
-                            ret => SpellManager.HasSpell("Dream of Cenarius"),
-                            new PrioritySelector(
-                                Spell.Cast("Healing Touch",
-                                           ret => Me.HasAura("Predatory Swiftness") 
-                                               && Me.ComboPoints >= 5 
-                                               && !Me.HasAura("Dream of Cenarius", 2)),
-                                Spell.Cast("Healing Touch",
-                                           ret => Me.HasAura("Predatory Swiftness") 
-                                               && Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalSeconds <= 1 
-                                               && !Me.HasAura("Dream of Cenarius")),
-                                Spell.BuffSelf("Nature's Swiftness"),
-                                Spell.Cast("Healing Touch", ret => Me.HasAura("Nature's Swiftness"))
-                                )
-                            ),
-#endif
+                        new Throttle( Spell.Cast("Savage Roar", ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery")))),
 
-                        Spell.Cast("Savage Roar",
-                            ret => Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds <= 3
-                                && (Me.ComboPoints > 0 || TalentManager.HasGlyph("Stampeding Roar"))),
+                        new Throttle( Spell.BuffSelf("Tiger's Fury", 
+                                   ret => Common.energy <= 35 
+                                       && !Me.ActiveAuras.ContainsKey("Clearcasting")
+                                       && !Me.HasAura("Berserk")
+                                       )),
 
-                        Spell.BuffSelf("Tiger's Fury",
-                                   ret => Spell.GetSpellCooldown("Tiger's Fury").TotalSeconds < 1 
-                                       && Common.energy <= 35 
-                                       && !Me.ActiveAuras.ContainsKey("Clearcasting")),
-
-                        Spell.BuffSelf("Berserk",
-                                   ret => Spell.GetSpellCooldown("Berserk").TotalSeconds < 1
-                                       && (Me.HasAura("Tiger's Fury") || (Me.CurrentTarget.TimeToDeath() < 15 && Spell.GetSpellCooldown("Tiger's Fury").TotalSeconds > 6))),
-
-                        Spell.Cast("Nature's Vigil", ret => Me.HasAura("Berserk")),
-
+                        new Throttle( Spell.BuffSelf("Berserk", ret => Me.HasAura("Tiger's Fury") && (Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer ))),
+                        new Throttle( Spell.Cast("Nature's Vigil", ret => Me.HasAura("Berserk"))),
                         Spell.Cast("Incarnation", ret => Me.HasAura("Berserk")),
 
                         // bite if rip good for awhile or target dying soon
                         Spell.Cast("Ferocious Bite", 
                             ret => Me.ComboPoints >= 5
-                                && Me.CurrentTarget.IsWithinMeleeRange
-                                && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds > 6 || Me.CurrentTarget.TimeToDeath() < 6),
-
-                        // bite if rip expiring soon and we can refresh
-                        Spell.Cast("Ferocious Bite", 
-                            ret => Me.ComboPoints > 0
-                                && Me.CurrentTarget.IsWithinMeleeRange
-                                && Me.CurrentTarget.HealthPercent <= 25 
-                                && (Me.CurrentTarget.HasAura("Rip") 
-                                && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 4 )),
+                                && (Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds > 6 || Me.CurrentTarget.TimeToDeath() < 6)),
 
                         Spell.Cast("Rip",
                             ret => Me.ComboPoints >= 5
-                                && Me.CurrentTarget.IsWithinMeleeRange
-                                && Me.CurrentTarget.TimeToDeath() >= 6 
-                                && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 6.0 
-                                && Me.CurrentTarget.HealthPercent > 25),
+                                && Me.CurrentTarget.TimeToDeath() >= 7
+                                && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 1),
 
-                        Spell.Cast("Thrash",
-                            ret => Me.ActiveAuras.ContainsKey("Clearcasting")
-                                && Me.CurrentTarget.IsWithinMeleeRange
-                                && Me.CurrentTarget.GetAuraTimeLeft("Thrash", true).TotalSeconds < 3),
+                        Spell.Cast("Ravage"),
 
-#if DPS_POTION_CHECK
-                        new Decorator(
-                            ret =>
-                            (SpellManager.HasSpell("Dream of Cenarius") && Me.ComboPoints >= 5 &&
-                             Me.CurrentTarget.HealthPercent <= 25 &&
-                             Me.HasAura("Dream of Cenarius")) ||
-                            (!SpellManager.HasSpell("Dream of Cenarius") && Me.HasAura("Berserk") &&
-                             Me.CurrentTarget.HealthPercent <= 25) ||
-                            CalculateTimeToDeath(Me.CurrentTarget) <= 40,
-                            Item.UseItem(76089) // Virmen's Bite
-                            ),
-#endif
-                        Spell.Cast("Ravage",
-                            ret => Me.CurrentTarget.HealthPercent > 80 && Me.CurrentTarget.IsWithinMeleeRange),
-
-                        Spell.Buff("Rake",
-                            ret => Me.CurrentTarget.TimeToDeath() > 6 && Me.CurrentTarget.IsWithinMeleeRange),
+                        Spell.Buff("Rake", ret => Me.CurrentTarget.GetAuraTimeLeft("Rake", true).TotalSeconds < 3),
 
                         Spell.Cast("Shred", 
-                            ret =>  Me.CurrentTarget.IsWithinMeleeRange
-                                && (Me.CurrentTarget.MeIsSafelyBehind || (TalentManager.HasGlyph("Shred") && (Me.HasAnyAura("Tiger's Fury", "Berserk"))))),
+                            ret =>  (Me.CurrentTarget.MeIsSafelyBehind || (TalentManager.HasGlyph("Shred") && (Me.HasAnyAura("Tiger's Fury", "Berserk"))))),
 
-                        Spell.Cast("Mangle", ret => Me.CurrentTarget.IsWithinMeleeRange),
+                        Spell.Cast("Mangle"),
 
                         Spell.CastOnGround("Force of Nature", 
-                            u => StyxWoW.Me.CurrentTarget.Location,
+                            u => (Me.CurrentTarget ?? Me) .Location,
                             ret => StyxWoW.Me.CurrentTarget != null 
                                 && StyxWoW.Me.CurrentTarget.Distance < 40
                                 && SpellManager.HasSpell("Force of Nature"))

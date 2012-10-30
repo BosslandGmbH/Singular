@@ -38,19 +38,26 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 Spell.WaitForCast(true),
-                Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
-                Spell.BuffSelf("Track Hidden"),
-
-                new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && StyxWoW.Me.GotAlivePet,
-                    new Action(ctx => SpellManager.Cast("Dismiss Pet"))),
-
-                new Decorator(ctx => !SingularSettings.Instance.DisablePetUsage,
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        CreateHunterCallPetBehavior(true),
-                        Spell.Cast("Mend Pet", ret => (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !StyxWoW.Me.Pet.HasAura("Mend Pet")),
-                        Spell.Buff("Misdirection", 
-                            ctx => StyxWoW.Me.Pet, 
-                            ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.IsInGroup())
+                        Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
+                        Spell.BuffSelf("Track Hidden"),
+
+                        new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && StyxWoW.Me.GotAlivePet,
+                            new Action(ctx => SpellManager.Cast("Dismiss Pet"))),
+
+                        new Decorator(ctx => !SingularSettings.Instance.DisablePetUsage,
+                            new PrioritySelector(
+                                CreateHunterCallPetBehavior(true),
+                                Spell.Cast("Mend Pet", ret => (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !StyxWoW.Me.Pet.HasAura("Mend Pet")),
+                                new Throttle(
+                                    Spell.Cast("Misdirection", 
+                                        ctx => StyxWoW.Me.Pet, 
+                                        ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.IsInGroup() && !StyxWoW.Me.HasAura("Misdirection"))
+                                    )
+                                )
+                            )
                         )
                     )
                 );
@@ -61,11 +68,19 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 Spell.WaitForCast(true),
-                Spell.Buff("Misdirection", 
-                    ctx => StyxWoW.Me.Pet, 
-                    ret => StyxWoW.Me.GotAlivePet 
-                        && StyxWoW.Me.Combat 
-                        && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 100))
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        new Throttle(
+                            Spell.Cast("Misdirection", 
+                                ctx => StyxWoW.Me.Pet, 
+                                ret => StyxWoW.Me.GotAlivePet 
+                                    && StyxWoW.Me.Combat
+                                    && !StyxWoW.Me.HasAura("Misdirection")
+                                    && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 100))
+                            )
+                        )
+                    )
                 );
         }
 

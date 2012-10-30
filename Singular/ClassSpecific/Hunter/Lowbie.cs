@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(),
-                Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.CreateAutoAttack(false),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Always keep it up on our target!
                 Spell.Buff("Hunter's Mark"),

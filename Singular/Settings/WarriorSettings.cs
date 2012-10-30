@@ -21,9 +21,10 @@ namespace Singular.Settings
 {
     public enum WarriorStance
     {
-        BattleStance,
-        BerserkerStance,
-        DefensiveStance
+        Auto,
+        BattleStance        = Styx.ShapeshiftForm.BattleStance ,
+        BerserkerStance     = Styx.ShapeshiftForm.BerserkerStance ,
+        DefensiveStance     = Styx.ShapeshiftForm.DefensiveStance 
     }
 
     public enum WarriorShout
@@ -92,13 +93,6 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("DPS")]
-        [DisplayName("true for Battle Shout, false for Commanding")]
-        [Description("True / False if you would like the cc to use Battleshout/Commanding")]
-        public bool UseWarriorShouts { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("DPS")]
         [DisplayName("Slows")]
         [Description("True / False if you would like the cc to use slows ie. Hammstring, Piercing Howl")]
         public bool UseWarriorSlows { get; set; }
@@ -106,7 +100,7 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("DPS")]
-        [DisplayName("Use Charge/Intercept/Heroic Leap?")]
+        [DisplayName("Use Charge/Heroic Leap?")]
         [Description("True / False if you would like the cc to use any gap closers")]
         public bool UseWarriorCloser { get; set; }
         #endregion
@@ -116,13 +110,13 @@ namespace Singular.Settings
         [Category("General")]
         [DisplayName("Warrior Shout")]
         [Description("The shout to use to keep the buff up, or use for low-rage situations.")]
-        public WarriorShout UseShout { get; set; }
+        public WarriorShout Shout { get; set; }
 
         [Setting]
-        [DefaultValue(WarriorStance.BattleStance)]
+        [DefaultValue(WarriorStance.Auto)]
         [Category("DPS")]
         [DisplayName("Warrior DPS Stance")]
         [Description("The stance to use while DPSing. Battle stance if there is little incoming damage, Berserker otherwise. Protection will always use Defensive stance.")]
-        public WarriorStance WarriorDpsStance { get; set; }
+        public WarriorStance Stance { get; set; }
     }
 }

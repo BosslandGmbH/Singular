@@ -15,10 +15,25 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                var tmp = ChargeTimer.IsFinished;
-                if (tmp)
-                    ChargeTimer.Reset();
-                return tmp;
+                var stance = SingularSettings.Instance.Warrior.Stance;
+                if (stance == WarriorStance.Auto)
+                {
+                    switch (Me.Specialization)
+                    {
+                        case WoWSpec.WarriorArms:
+                            stance = WarriorStance.BattleStance;
+                            break;
+                        case WoWSpec.WarriorFury:
+                            stance = WarriorStance.BerserkerStance;
+                            break;
+                        default:
+                        case WoWSpec.WarriorProtection:
+                            stance = WarriorStance.DefensiveStance;
+                            break;
+                    }
+                }
+
+                return stance ;
             }
         }
     }

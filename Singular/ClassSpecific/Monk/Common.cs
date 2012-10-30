@@ -12,6 +12,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
+using Singular.Settings;
 
 namespace Singular.ClassSpecific.Monk
 {
@@ -225,18 +226,21 @@ namespace Singular.ClassSpecific.Monk
         private static ulong lastSphere = 0;
         public static Composite CreateMoveToSphereBehavior(SphereType typ)
         {
-            return new Sequence(
-                new Action(ret =>
-                {
-                    WoWObject sph = FindSphere(typ);
-                    if (sph != null && sph.Guid != lastSphere)
+            return new Decorator( 
+                ret => !SingularSettings.Instance.DisableAllMovement,
+                new Sequence(
+                    new Action(ret =>
                     {
-                        lastSphere = sph.Guid;
-                        Logger.WriteDebug("CreateMonkRest: Moving {0:F1} yds to {1} Sphere {2}", sph.Distance, typ.ToString(), lastSphere );
-                    }
-                }),
-                Movement.CreateMoveToLocationBehavior(ret => FindSphereLocation(SphereType.Life), true, ret => 0f),
-                new ActionAlwaysSucceed()
+                        WoWObject sph = FindSphere(typ);
+                        if (sph != null && sph.Guid != lastSphere)
+                        {
+                            lastSphere = sph.Guid;
+                            Logger.WriteDebug("CreateMonkRest: Moving {0:F1} yds to {1} Sphere {2}", sph.Distance, typ.ToString(), lastSphere );
+                        }
+                    }),
+                    Movement.CreateMoveToLocationBehavior(ret => FindSphereLocation(SphereType.Life), true, ret => 0f),
+                    new ActionAlwaysSucceed()
+                    )
                 );
         }
 

@@ -11,6 +11,8 @@ using Rest = Singular.Helpers.Rest;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Settings;
+using Singular.Managers;
+using Styx.Common;
 
 
 namespace Singular.ClassSpecific.Shaman
@@ -18,6 +20,9 @@ namespace Singular.ClassSpecific.Shaman
     public class Elemental
     {
         #region Common
+
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman; } }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental)]
         public static Composite CreateShamanElementalPreCombatBuffs()
@@ -98,13 +103,30 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 40 * 40,
                     Totems.CreateTotemsNormalBehavior()),
 
-                Spell.Cast("Lightning Bolt"),
+                // grinding or questing, if target meets these cast Flame Shock if possible
+                // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
+                // 2. area has another player competing for mobs (we want to tag the mob quickly)
+                new Decorator(
+                    ret => StyxWoW.Me.CurrentTarget.Distance < 12
+                        || ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).Any(p => p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 40 * 40),
+                    new PrioritySelector(
+                        Spell.Buff("Flame Shock", true),
+                        Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
+                        Spell.Cast("Earth Shock", ret => !SpellManager.HasSpell("Flame Shock"))
+                        )
+                    ),
 
+                // have a big attack loaded up, so don't waste it
                 Spell.Cast("Earth Shock",
                     ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
 
-                Spell.Cast("Unleash Weapon",
-                    ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
+                // otherwise, start with Lightning Bolt so we can follow with an instant
+                // to maximize damage at initial aggro
+                Spell.Cast("Lightning Bolt", ret => !StyxWoW.Me.IsMoving || StyxWoW.Me.HasAura("Spiritwalker's Grace") || TalentManager.HasGlyph("Unleashed Lightning")),
+
+                // we are moving so throw an instant of some type
+                Spell.Cast("Flame Shock"),
+                Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -114,6 +136,9 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanElementalNormalCombat()
         {
             return new PrioritySelector(
+
+                new ThrottlePasses( 1, CreateElementalDiagnosticOutputBehavior()),
+
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -288,6 +313,36 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
                 Spell.Cast("Lightning Bolt"),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
+                );
+        }
+
+        #endregion
+
+        #region Diagnostics
+
+        private static Composite CreateElementalDiagnosticOutputBehavior()
+        {
+            return new Decorator(
+                ret => SingularSettings.Instance.EnableDebugLogging,
+                new Action(ret =>
+                {
+                    uint lstks = !Me.HasAura("Lightning Shield") ? 0 : Me.ActiveAuras["Lightning Shield"].StackCount;
+
+                    string line = string.Format(".... h={0:F1}%/m={1:F1}%, lstks={2}",
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        lstks
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target == null)
+                        line += ", target=(null)";
+                    else
+                        line += string.Format(", target={0}, th={1:F1}%", target.Name, target.HealthPercent);
+
+                    Logging.WriteToFileSync(LogLevel.Diagnostic, line);
+                    return RunStatus.Success;
+                })
                 );
         }
 

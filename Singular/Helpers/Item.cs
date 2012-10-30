@@ -11,11 +11,17 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using System.Collections.Generic;
 using Action = Styx.TreeSharp.Action;
+using Styx.Helpers;
+using Styx.Common;
+using Styx.CommonBot;
+using System.Drawing;
 
 namespace Singular.Helpers
 {
     internal static class Item
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } } 
+
         public static bool HasItem(uint itemId)
         {
             return StyxWoW.Me.CarriedItems.Any(i => i.Entry == itemId);
@@ -109,7 +115,7 @@ namespace Singular.Helpers
 
         private static void UseItem(WoWItem item)
         {
-            Logger.Write("Using item: " + item.Name);
+            Logger.Write( Color.DodgerBlue, "Using item: " + item.Name);
             item.Use();
         }
 
@@ -169,7 +175,7 @@ namespace Singular.Helpers
                                 Helpers.Common.CreateWaitForLagDuration()))
                         )),
                 new Decorator(
-                    ret => StyxWoW.Me.ManaPercent < manaPercent,
+                    ret => Me.PowerType == WoWPowerType.Mana && StyxWoW.Me.ManaPercent < manaPercent,
                     new PrioritySelector(
                         ctx => FindFirstUsableItemBySpell("Restore Mana", "Water Spirit"),
                         new Decorator(
@@ -254,8 +260,11 @@ namespace Singular.Helpers
                             new Sequence(
                                 new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                Helpers.Common.CreateWaitForLagDuration()))
-                        ))
+                                Helpers.Common.CreateWaitForLagDuration(stopIf => StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")))
+                                )
+                            )
+                        )
+                    )
                 );
         }
 
@@ -286,5 +295,190 @@ namespace Singular.Helpers
             }
             return false;
         }
+
+
+        public static void WriteCharacterGearAndSetupInfo()
+        {
+            if (GlobalSettings.Instance.LogLevel < LogLevel.Normal)
+                return;
+
+            uint totalItemLevel;
+            SecondaryStats ss;          //create within frame (does series of LUA calls)
+
+            using (StyxWoW.Memory.AcquireFrame())
+            {
+                totalItemLevel = CalcTotalGearScore();
+                ss = new SecondaryStats();
+            }
+
+            Logger.WriteFile("");
+            Logger.WriteFile("Equipped Total Item Level  : {0}", totalItemLevel);
+            Logger.WriteFile("Equipped Average Item Level: {0:F0}", ((double)totalItemLevel) / 17.0);
+            Logger.WriteFile("");
+            Logger.WriteFile("Health:      {0}", Me.MaxHealth);
+            Logger.WriteFile("Agility:     {0}", Me.Agility);
+            Logger.WriteFile("Intellect:   {0}", Me.Intellect);
+            Logger.WriteFile("Spirit:      {0}", Me.Spirit);
+            Logger.WriteFile("");
+            Logger.WriteFile("Hit(M/R):    {0}/{1}", ss.MeleeHit, ss.SpellHit);
+            Logger.WriteFile("Expertise:   {0}", ss.Expertise);
+            Logger.WriteFile("Mastery:     {0:F2}", ss.Mastery);
+            Logger.WriteFile("Crit:        {0:F2}", ss.Crit);
+            Logger.WriteFile("Haste(M/R):  {0}/{1}", ss.MeleeHaste, ss.SpellHaste);
+            Logger.WriteFile("SpellPen:    {0}", ss.SpellPen);
+            Logger.WriteFile("PvP Resil:   {0}", ss.Resilience);
+            Logger.WriteFile("PvP Power:   {0}", ss.PvpPower);
+            Logger.WriteFile("");
+
+            if (!Singular.Managers.TalentManager.Glyphs.Any())
+                Logger.WriteFile("--- no glyphs equipped");
+            else
+            {
+                foreach (string glyphName in Singular.Managers.TalentManager.Glyphs.OrderBy(g => g).Select(g => g).ToList())
+                {
+                    Logger.WriteFile("--- {0}", glyphName );
+                }
+            }
+
+            Logger.WriteFile("");
+        }
+
+        public static uint CalcTotalGearScore()
+        {
+            uint totalItemLevel = 0;
+            for (uint slot = 0; slot < Me.Inventory.Equipped.Slots; slot++)
+            {
+                WoWItem item = Me.Inventory.Equipped.GetItemBySlot(slot);
+                if (item != null && IsItemImportantToGearScore(item))
+                {
+                    uint itemLvl = GearScore(item);
+                    totalItemLevel += itemLvl;
+                    // Logger.WriteFile("  good:  item[{0}]: {1}  [{2}]", slot, itemLvl, item.Name);
+                }
+            }
+
+            // double main hand score if have a 2H equipped
+            if (Me.Inventory.Equipped.MainHand != null && Me.Inventory.Equipped.MainHand.ItemInfo.InventoryType == InventoryType.TwoHandWeapon)
+                totalItemLevel += GearScore(Me.Inventory.Equipped.MainHand);
+
+            return totalItemLevel;
+        }
+
+        private static uint GearScore(WoWItem item)
+        {
+            uint iLvl = 0;
+            try
+            {
+                if (item != null)
+                    iLvl = (uint)item.ItemInfo.Level;
+            }
+            catch
+            {
+                ;
+            }
+
+            return iLvl;
+        }
+
+        private static bool IsItemImportantToGearScore(WoWItem item)
+        {
+            if (item != null && item.ItemInfo != null)
+            {
+                switch (item.ItemInfo.InventoryType)
+                {
+                    case InventoryType.Head:
+                    case InventoryType.Neck:
+                    case InventoryType.Shoulder:
+                    case InventoryType.Cloak:
+                    case InventoryType.Body:
+                    case InventoryType.Chest:
+                    case InventoryType.Robe:
+                    case InventoryType.Wrist:
+                    case InventoryType.Hand:
+                    case InventoryType.Waist:
+                    case InventoryType.Legs:
+                    case InventoryType.Feet:
+                    case InventoryType.Finger:
+                    case InventoryType.Trinket:
+                    case InventoryType.Relic:
+                    case InventoryType.Ranged:
+                    case InventoryType.Thrown:
+
+                    case InventoryType.Holdable:
+                    case InventoryType.Shield:
+                    case InventoryType.TwoHandWeapon:
+                    case InventoryType.Weapon:
+                    case InventoryType.WeaponMainHand:
+                    case InventoryType.WeaponOffHand:
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        class SecondaryStats
+        {
+            public float MeleeHit { get; set; }
+            public float SpellHit { get; set; }
+            public float Expertise { get; set; }
+            public float MeleeHaste { get; set; }
+            public float SpellHaste { get; set; }
+            public float SpellPen { get; set; }
+            public float Mastery { get; set; }
+            public float Crit { get; set; }
+            public float Resilience { get; set; }
+            public float PvpPower { get; set; }
+
+            public SecondaryStats()
+            {
+                Refresh();
+            }
+
+            public void Refresh()
+            {
+                MeleeHit = Lua.GetReturnVal<float>("return GetCombatRating(CR_HIT_MELEE)", 0);
+                SpellHit = Lua.GetReturnVal<float>("return GetCombatRating(CR_HIT_SPELL)", 0);
+                Expertise = Lua.GetReturnVal<float>("return GetCombatRating(CR_EXPERTISE)", 0);
+                MeleeHaste = Lua.GetReturnVal<float>("return GetCombatRating(CR_HASTE_MELEE)", 0);
+                SpellHaste = Lua.GetReturnVal<float>("return GetCombatRating(CR_HASTE_SPELL)", 0);
+                SpellPen = Lua.GetReturnVal<float>("return GetSpellPenetration()", 0);
+                Mastery = Lua.GetReturnVal<float>("return GetCombatRating(CR_MASTERY)", 0);
+                Crit = Lua.GetReturnVal<float>("return GetCritChance()", 0);               
+                Resilience = Lua.GetReturnVal<float>("return GetCombatRating(COMBAT_RATING_RESILIENCE_CRIT_TAKEN)", 0);
+                PvpPower = Lua.GetReturnVal<float>("return GetCombatRating(CR_PVP_POWER)", 0);
+            }
+
+        }
+
+        public static Composite CreateUseBandageBehavior()
+        {
+            return new Decorator( 
+
+                ret => SingularSettings.Instance.UseBandages && Me.HealthPercent < 95 && SpellManager.HasSpell( "First Aid") && !Me.HasAura( "Recently Bandaged") && !Me.ActiveAuras.Any( a => a.Value.IsHarmful ),
+
+                new PrioritySelector(
+
+                    ctx => Me.CarriedItems
+                        .Where(b => b.ItemInfo.ContainerClass == WoWItemContainerClass.Bandage 
+                            && b.ItemInfo.RecipeClass == WoWItemRecipeClass.FirstAid 
+                            && Me.GetSkill(SkillLine.FirstAid).CurrentValue >= b.ItemInfo.RequiredSkillLevel 
+                            && CanUseItem(b))
+                        .OrderByDescending( b => b.ItemInfo.RequiredSkillLevel  )
+                        .FirstOrDefault(),
+
+                    new Decorator( 
+                        ret => ret != null,
+
+                        new Sequence(
+                            new Action( ret => UseItem((WoWItem)ret) ),
+                            new WaitContinue( new TimeSpan(0,0,0,0,750), ret => Me.IsCasting || Me.IsChanneling, new ActionAlwaysSucceed()),
+                            new WaitContinue(6, ret => (!Me.IsCasting && !Me.IsChanneling) || Me.HealthPercent > 99, new ActionAlwaysSucceed())
+                            )
+                        )
+                    )
+                );
+        }
+
     }
 }

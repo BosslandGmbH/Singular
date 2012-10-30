@@ -192,6 +192,13 @@ namespace Singular.Settings
         [Description("Max distance that we will see a heal target (max value: 100)")]
         public int MaxHealTargetRange { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Healing")]
+        [DisplayName("Use Bandages")]
+        [Description("Use bandages in inventory to heal")]
+        public bool UseBandages { get; set; }
+
         #endregion
 
         #region Category: Items

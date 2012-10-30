@@ -94,15 +94,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="fasmdll_managed">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Honorbuddy\fasmdll_managed.dll</HintPath>
     </Reference>
     <Reference Include="Honorbuddy">
+      <SpecificVersion>False</SpecificVersion>
+      <ExecutableExtension>.exe</ExecutableExtension>
       <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.SQLite, Version=1.0.60.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=AMD64">
+    <Reference Include="System.Data.SQLite">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Honorbuddy\System.Data.SQLite.dll</HintPath>
     </Reference>
@@ -113,9 +116,11 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="Tripper.RecastManaged">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Honorbuddy\Tripper.RecastManaged.dll</HintPath>
     </Reference>
     <Reference Include="Tripper.Tools">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Honorbuddy\Tripper.Tools.dll</HintPath>
     </Reference>
   </ItemGroup>
@@ -187,7 +192,7 @@
     <Compile Include="Dynamics\CompositeBuilder.cs" />
     <Compile Include="Helpers\Group.cs" />
     <Compile Include="Helpers\Item.cs" />
-    <Compile Include="Helpers\Kiting.cs" />
+    <Compile Include="Helpers\Kite.cs" />
     <Compile Include="Helpers\Movement.cs" />
     <Compile Include="Helpers\Party.cs" />
     <Compile Include="Helpers\Pet.cs" />
@@ -195,6 +200,7 @@
     <Compile Include="Helpers\Rest.cs" />
     <Compile Include="Helpers\Safers.cs" />
     <Compile Include="Helpers\Spell.cs" />
+    <Compile Include="Helpers\Throttle.cs" />
     <Compile Include="Helpers\Unit.cs" />
     <Compile Include="Lists\BossList.cs" />
     <Compile Include="Lists\CataHeroicDpsList.cs" />
@@ -249,7 +255,6 @@
 )
 if $(ConfigurationName) == Raphus (
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\Buddy\Honorbuddy\Source\trunk\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
-
 )
 
 if $(ConfigurationName) == Bobby53 (
@@ -259,8 +264,8 @@ if $(ConfigurationName) == Bobby53 (
 )
 
 if $(ConfigurationName) == HighVoltz (
-echo copying files to HB folder
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "E:\Buddy\Honorbuddy\Routines\Singular\" /v /i /f  /s /y 
+ if not exist excludes.txt echo _ReSharper.Singular &gt; excludes.txt
+   xcopy.exe "$(ProjectDir)*.cs" "..\..\..\Honorbuddy\Routines\Singular\" /v /i /f  /s /y /EXCLUDE:excludes.txt
 )
 
 

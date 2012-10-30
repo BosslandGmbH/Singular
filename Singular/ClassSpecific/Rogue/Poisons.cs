@@ -80,7 +80,7 @@ namespace Singular.ClassSpecific.Rogue
                     break;
                 case NonLethalPoisonType.Leeching:
                     if (SpellManager.HasSpell(LeechingPoison) && !StyxWoW.Me.HasAura(LeechingPoison))
-                        return MindNumbingPoison;
+                        return LeechingPoison;
                     break;
                 case NonLethalPoisonType.MindNumbing:
                     if (SpellManager.HasSpell(MindNumbingPoison) && !StyxWoW.Me.HasAura(MindNumbingPoison))

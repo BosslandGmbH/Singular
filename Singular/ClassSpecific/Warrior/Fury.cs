@@ -16,32 +16,7 @@ namespace Singular.ClassSpecific.Warrior
     {
         private static string[] _slows;
 
-        public static ShapeshiftForm SelectedStance
-        {
-            get
-            {
-                var stance = SingularSettings.Instance.Warrior.WarriorDpsStance;
-                if (stance == WarriorStance.BattleStance)
-                    return ShapeshiftForm.BattleStance;
-                return ShapeshiftForm.BerserkerStance;
-            }
-        }
-
-        public static string SelectedShout
-        {
-            get { return SingularSettings.Instance.Warrior.UseShout.ToString().CamelToSpaced(); }
-        }
-
         #region Normal
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior, WoWSpec.WarriorFury)]
-        public static Composite CreateFuryNormalPreCombatBuffs()
-        {
-            return
-                new PrioritySelector(
-                    Spell.BuffSelf(SingularSettings.Instance.Warrior.WarriorDpsStance.ToString().CamelToSpaced(), ret => StyxWoW.Me.Shapeshift != SelectedStance), 
-                    Spell.BuffSelf(SelectedShout));
-        }
-
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorFury)]
         public static Composite CreateFuryNormalPull()
         {
@@ -214,7 +189,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Heroic Throw"),
 
                 // Shout when we need to pool some rage.
-                Spell.Cast(SelectedShout, ret => !TargetSmashed && StyxWoW.Me.CurrentRage < 70),
+                Spell.Cast(Common.SelectedShout, ret => !TargetSmashed && StyxWoW.Me.CurrentRage < 70),
 
                 // Fill with WS when BT/CS aren't about to come off CD, and we have some rage to spend.
                 Spell.Cast("Wild Strike", ret => !WithinExecuteRange && BTCD.TotalSeconds >= 1 && CSCD.TotalSeconds >= 1.6 && StyxWoW.Me.CurrentRage >= 60),

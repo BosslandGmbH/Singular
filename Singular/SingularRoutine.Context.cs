@@ -6,6 +6,8 @@ using Styx;
 using Styx.CommonBot;
 using Styx.CommonBot.Routines;
 using Styx.WoWInternals.DBC;
+using System.Drawing;
+using Singular.Helpers;
 
 namespace Singular
 {
@@ -72,6 +74,7 @@ namespace Singular
 
             if(current != _lastContext && OnWoWContextChanged!=null)
             {
+                DescribeContext();
                 try
                 {
                     OnWoWContextChanged(this, new WoWContextEventArg(current, _lastContext));
@@ -85,6 +88,56 @@ namespace Singular
                 
         }
 
+        public static void DescribeContext()
+        {
+            Logger.Write(Color.LightGreen, "Your Level {0}{1} {2} {3} Build is", Me.Level, Me.Race.ToString().CamelToSpaced(), SpecializationName(), Me.Class.ToString() );
+
+            string sRunningAs = "";
+
+            if (Me.CurrentMap == null)
+                sRunningAs = "Solo";
+            else
+            {
+                if (Me.CurrentMap.IsArena)
+                    sRunningAs = " Arena ";
+                else if (Me.CurrentMap.IsBattleground)
+                    sRunningAs = " Battleground ";
+                else if (Me.CurrentMap.IsScenario)
+                    sRunningAs = " Scenario ";
+                else if (Me.CurrentMap.IsDungeon)
+                    sRunningAs = " Dungeon ";
+                else if (Me.CurrentMap.IsRaid)
+                    sRunningAs = " Raid ";
+                else if (Me.CurrentMap.IsInstance)
+                    sRunningAs = " Instance ";
+
+                if (!Me.IsInGroup())
+                    sRunningAs = "Solo " + sRunningAs;
+                else
+                    sRunningAs = string.Format("{0}m {1}", Me.CurrentMap.MaxPlayers, sRunningAs);
+            }
+
+            Logger.Write(Color.LightGreen, "... running the {0} bot {1}in {2}",
+                 GetBotName(),
+                 sRunningAs,
+                 Me.RealZoneText
+                );
+
+            Item.WriteCharacterGearAndSetupInfo();
+        }
+
+        private static string SpecializationName()
+        {
+            if (Me.Specialization == WoWSpec.None)
+                return "Lowbie";
+
+            string spec = Me.Specialization.ToString().CamelToSpaced();
+            int idxLastSpace = spec.LastIndexOf(' ');
+            if (idxLastSpace >= 0 && ++idxLastSpace < spec.Length)
+                spec = spec.Substring(idxLastSpace);
+
+            return spec;
+        }
 
         public static string GetBotName()
         {
@@ -127,7 +180,6 @@ namespace Singular
         {
             return GetBotName().ToUpper().Contains(botNameContains.ToUpper());
         }
-
 
     }
 }

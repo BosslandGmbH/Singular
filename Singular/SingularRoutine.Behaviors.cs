@@ -4,6 +4,8 @@ using Singular.Managers;
 using Singular.Settings;
 using Styx;
 using Styx.TreeSharp;
+using Singular.ClassSpecific;
+using System.Drawing;
 
 namespace Singular
 {
@@ -24,7 +26,7 @@ namespace Singular
         public override Composite PullBuffBehavior { get { return _pullBuffsBehavior; } }
         public override Composite RestBehavior { get { return _restBehavior; } }
 
-        public bool RebuildBehaviors()
+        public bool RebuildBehaviors(bool silent = false)
         {
             Logger.PrintStackTrace("RebuildBehaviors called.");
 
@@ -46,47 +48,66 @@ namespace Singular
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
             if (!EnsureComposite(false, BehaviorType.Rest, out _restBehavior))
             {
-                Logger.Write("Using default rest behavior.");
+                if ( !silent)
+                    Logger.WriteDebug("Using default rest behavior.");
                 _restBehavior = Helpers.Rest.CreateDefaultRestBehaviour();
             }
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
             EnsureComposite(false, BehaviorType.CombatBuffs, out _combatBuffsBehavior);
-            // This is a small bugfix. Just to ensure we always pop trinkets, etc.
-            if (_combatBuffsBehavior == null)
-                _combatBuffsBehavior = new PrioritySelector();
             EnsureComposite(false, BehaviorType.Heal, out _healBehavior);
             EnsureComposite(false, BehaviorType.PullBuffs, out _pullBuffsBehavior);
             EnsureComposite(false, BehaviorType.PreCombatBuffs, out _preCombatBuffsBehavior);
 
+#if SHOW_BEHAVIOR_LOAD_DESCRIPTION
+            // display concise single line describing what behaviors we are loading
+            if (!silent)
+            {
+                string sMsg = "";
+                if (_healBehavior != null)
+                    sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " Heal";
+                if (_pullBuffsBehavior != null)
+                    sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " PullBuffs";
+                if (_pullBehavior != null)
+                    sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " Pull";
+                if (_preCombatBuffsBehavior != null)
+                    sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " PreCombatBuffs";
+                if (_combatBuffsBehavior != null)
+                    sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " CombatBuffs";
+                if (_combatBehavior != null)
+                    sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " Combat";
+                if (_restBehavior != null)
+                    sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " Rest";
+
+                Logger.Write(Color.LightGreen, "Loaded{0} behaviors for {1}: {2}", Me.Specialization.ToString().CamelToSpaced(), SingularRoutine.CurrentWoWContext.ToString(), sMsg);
+            }
+#endif
+
             // Since we can be lazy, we're going to fix a bug right here and now.
             // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
             // 4/11/2012 - Changed to use a LockSelector to increased performance.
-            if (_preCombatBuffsBehavior != null)
-            {
-                _preCombatBuffsBehavior =
-                    new Decorator(
-                        ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                        new LockSelector(_preCombatBuffsBehavior));
-            }
+            _preCombatBuffsBehavior =
+                new Decorator(
+                    ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                    new LockSelector(
+                        Item.CreateUseAlchemyBuffsBehavior(),
+                        // Generic.CreateFlasksBehaviour(),
+                        _preCombatBuffsBehavior ?? new PrioritySelector()
+                        ));
 
-            if (_combatBuffsBehavior != null)
-            {
-                _combatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport,
-                    new LockSelector( //Item.CreateUseAlchemyBuffsBehavior(),
-                        // Item.CreateUseTrinketsBehavior(),
-                        //Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana),
-                        _combatBuffsBehavior));
-            }
+            _combatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport,
+                new LockSelector( 
+                    Generic.CreateUseTrinketsBehaviour(),
+                    Generic.CreatePotionAndHealthstoneBehavior(),
+                    Generic.CreateRacialBehaviour(),
+                    _combatBuffsBehavior ?? new PrioritySelector()));
 
             // There are some classes that uses spells in rest behavior. Basicly we don't want Rest to be called while flying.
-            if (_restBehavior != null)
-            {
-                _restBehavior =
-                    new Decorator(
-                        ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                        new LockSelector(_restBehavior));
-            }
+            _restBehavior =
+                new Decorator(
+                    ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                    new LockSelector(_restBehavior ?? new PrioritySelector())
+                    );
 
             // Wrap all the behaviors with a LockSelector which basically wraps the child bahaviors with a framelock.
             // This will generally reduce the time it takes to pulse the behavior thus increasing performance of the cc

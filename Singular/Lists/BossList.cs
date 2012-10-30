@@ -12,6 +12,9 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
+using Styx;
+using Styx.Patchables;
 
 
 namespace Singular.Lists
@@ -20,8 +23,16 @@ namespace Singular.Lists
     {
         #region Boss Entries
 
+        public static HashSet<string> CurrentMapBosses { get; private set; }
+
+
         static BossList()
         {
+            // contains the list of all the 5 man and raid bosses.
+            CurrentMapBosses = new HashSet<string>();
+            SingularRoutine.OnWoWContextChanged +=
+                (sender, arg) => CurrentMapBosses = new HashSet<string>(StyxWoW.Db[ClientDb.DungeonEncounter].Where(r => r.GetField<int>(1) == StyxWoW.Me.MapId).Select(r => r.GetStringField(5)));
+
             foreach (var bossId in _dummies)
             {
                 _bosses.Add(bossId);
@@ -60,9 +71,10 @@ namespace Singular.Lists
                 56471, // Mutated Corruption 
             };
 
-
+        // this list should only contain bosses that are not found in 5 mans and raids.
         private static HashSet<uint> _bosses = new HashSet<uint>
                     {
+                        /*
                         //Ragefire Chasm
                         11517, //Oggleflint
                         11520, //Taragaman the Hungerer
@@ -1180,6 +1192,7 @@ namespace Singular.Lists
                         // Heart of Fear	            
                         // Mogu'shan Vaults	        
                         // Terrace of Endless Spring
+                         */
                     };
 
         #endregion

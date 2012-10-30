@@ -43,7 +43,7 @@ namespace Singular.Dynamics
                             mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(
                                 mi => mi.ReturnType.IsAssignableFrom(typeof (Composite))));
                 }
-                Logger.Write("Added " + _methods.Count + " methods");
+                Logger.WriteDebug("Added " + _methods.Count + " methods");
             }
             var matchedMethods = new Dictionary<BehaviorAttribute, Composite>();
 
@@ -63,7 +63,7 @@ namespace Singular.Dynamics
                     // Check if our behavior matches with what we want. If not, don't add it!
                     if (IsMatchingMethod(attribute, wowClass, spec, behavior, context))
                     {
-                        Logger.Write(string.Format("Matched {0} to behavior {1} for {2} {3} with priority {4}", mi.Name,
+                        Logger.WriteDebug(string.Format("Matched {0} to behavior {1} for {2} {3} with priority {4}", mi.Name,
                             behavior, wowClass.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced(),
                             attribute.PriorityLevel));
 

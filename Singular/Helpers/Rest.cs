@@ -44,6 +44,7 @@ namespace Singular.Helpers
                         new Decorator(
                             ret => SingularSettings.Instance.WaitForResSickness && StyxWoW.Me.HasAura("Resurrection Sickness"),
                             new Action(ret => { })),
+                       
                 // Wait while cannibalizing
                         new Decorator(
                             ret => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Cannibalize" &&
@@ -62,6 +63,13 @@ namespace Singular.Helpers
                                 Helpers.Common.CreateWaitForLagDuration(),
                                 new Action(ret => SpellManager.Cast("Cannibalize")),
                                 new WaitContinue(1, ret => false, new ActionAlwaysSucceed()))),
+
+                // use a bandage if enabled (it's quicker)
+                        new Decorator(
+                            ret => StyxWoW.Me.IsAlive && StyxWoW.Me.HealthPercent <= SingularSettings.Instance.MinHealth,
+                            Item.CreateUseBandageBehavior()
+                            ),
+
                 // Check if we're allowed to eat (and make sure we have some food. Don't bother going further if we have none.
                         new Decorator(
                             ret =>

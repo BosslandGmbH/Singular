@@ -93,13 +93,13 @@ namespace Singular.Utilities
                 case "SPELL_CAST_FAILED":
                     if (SingularSettings.Instance.EnableDebugLogging)
                     {
-                        Logger.WriteDebug("[CombatLog] {0}:{1} cast of {2}#{3} on {4}:{5} failed: '{6}'",
+                        Logger.WriteDebug("[CombatLog] {0}:{1} cast of {2}#{3} failed: '{6}'",
                             e.SourceName,
                             e.SourceGuid,
                             e.SpellName,
                             e.SpellId,
-                            e.DestName,
-                            e.DestGuid);
+                            e.Args[14]
+                            );
                     }
                     break;
 
@@ -152,7 +152,8 @@ namespace Singular.Utilities
                     //  ..  false reports of flawed rotation
                     if (SingularSettings.Instance.EnableDebugLogging)
                     {
-                        Logging.WriteToFileSync(LogLevel.Diagnostic, "[CombatLog] {0} {1}#{2} {3}",
+                        Logger.WriteFile(
+                            "[CombatLog] {0} {1}#{2} {3}",
                             e.Event,
                             e.SpellName,
                             e.SpellId,

@@ -23,6 +23,8 @@ using Styx.CommonBot;
 using Styx.CommonBot.Routines;
 using Styx.Helpers;
 using Styx.WoWInternals.WoWObjects;
+using System.Drawing;
+using Styx.WoWInternals;
 
 namespace Singular
 {
@@ -74,8 +76,8 @@ namespace Singular
             DialogResult dr = new ConfigurationForm().ShowDialog();
             if (dr == DialogResult.OK || dr == DialogResult.Yes)
             {
-                Logger.WriteDebug("Settings saved, rebuilding behaviors...");
-                Initialize();
+                Logger.WriteDebug(Color.LightGreen, "Settings saved, rebuilding behaviors...");
+                RebuildBehaviors();
             }
         }
 
@@ -113,6 +115,12 @@ namespace Singular
         public override void Initialize()
         {
             Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
+
+            // save some support info in case we need
+            Logger.WriteFile("{0:F1} days since Windows was restarted", TimeSpan.FromMilliseconds(Environment.TickCount).TotalHours / 24.0);
+            Logger.WriteFile("{0} FPS currently in WOW", GetFPS());
+            Logger.WriteFile("{0} ms of Latency in WOW", StyxWoW.WoWClient.Latency);
+
             Logger.Write("Determining talent spec.");
             try
             {
@@ -130,7 +138,7 @@ namespace Singular
             // NOTE: Hook these events AFTER the context update.
             OnWoWContextChanged += (orig, ne) =>
                 {
-                    Logger.Write("Context changed, re-creating behaviors");
+                    Logger.Write(Color.LightGreen, "Context changed, re-creating behaviors");
                     RebuildBehaviors();
                 };
             RoutineManager.Reloaded += (s, e) =>
@@ -139,18 +147,24 @@ namespace Singular
                     RebuildBehaviors();
                 };
 
-            if (!RebuildBehaviors())
+            // create silently since will creating again right after this
+            if (!RebuildBehaviors(true))
             {
                 return;
             }
-            Logger.Write("Behaviors created!");
+            Logger.WriteDebug("Verified behaviors can be created!");
 
             // When we actually need to use it, we will.
             EventHandlers.Init();
             MountManager.Init();
             //Logger.Write("Combat log event handler started.");
 
-            Instance.RebuildBehaviors();
+            // create silently since Start button will create a context change (at least first Start)
+            // .. which will build behaviors again
+            Instance.RebuildBehaviors(true);
+            Logger.WriteDebug("Behaviors created!");
+
+            Logger.Write("Initialization complete!");
         }
 
         private static void StopBot(string reason)
@@ -158,5 +172,20 @@ namespace Singular
             Logger.Write(reason);
             TreeRoot.Stop();
         }
+
+        private static uint GetFPS()
+        {
+            try
+            {
+                return (uint)Lua.GetReturnVal<float>("return GetFramerate()", 0);
+            }
+            catch
+            {
+
+            }
+
+            return 0;
+        }
+
     }
 }

@@ -167,7 +167,18 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CreateWaitForLagDuration()
         {
-            return new WaitContinue(TimeSpan.FromMilliseconds((StyxWoW.WoWClient.Latency * 2) + 150), ret => false, new ActionAlwaysSucceed());
+            // return new WaitContinue(TimeSpan.FromMilliseconds((StyxWoW.WoWClient.Latency * 2) + 150), ret => false, new ActionAlwaysSucceed());
+            return CreateWaitForLagDuration(ret => false);
+        }
+
+        /// <summary>
+        /// Allows waiting for SleepForLagDuration() but ending sooner if condition is met
+        /// </summary>
+        /// <param name="orUntil">if true will stop waiting sooner than lag maximum</param>
+        /// <returns></returns>
+        public static Composite CreateWaitForLagDuration( CanRunDecoratorDelegate orUntil)
+        {
+            return new WaitContinue(TimeSpan.FromMilliseconds((StyxWoW.WoWClient.Latency * 2) + 150), orUntil, new ActionAlwaysSucceed());
         }
 
         private static readonly WaitTimer InterruptTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));

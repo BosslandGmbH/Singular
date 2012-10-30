@@ -32,6 +32,27 @@ namespace Singular.Helpers
 
     internal static class Spell
     {
+        public static WoWDynamicObject GetGroundEffectBySpellId(int spellId)
+        {
+            return ObjectManager.GetObjectsOfType<WoWDynamicObject>().FirstOrDefault(o => o.SpellId == spellId);
+        }
+
+        public static bool IsStandingInGroundEffect(bool harmful=true)
+        {
+            foreach(var obj in ObjectManager.GetObjectsOfType<WoWDynamicObject>())
+            {
+                if (obj.Distance <= obj.Radius)
+                {
+                    // We're standing in this.
+                    if (obj.Caster.IsFriendly && !harmful)
+                        return true;
+                    if (obj.Caster.IsHostile && harmful)
+                        return true;
+                }
+            }
+            return false;
+        }
+
         public static float MeleeDistance(this WoWUnit mob)
         {
             if (mob == null)
@@ -60,8 +81,10 @@ namespace Singular.Helpers
         /// <returns>TimeSpan representing cooldown remaining, TimeSpan.MaxValue if spell unknown</returns>
         public static TimeSpan GetSpellCooldown(string spell)
         {
-            if (SpellManager.HasSpell(spell))
-                return SpellManager.Spells[spell].CooldownTimeLeft;
+            SpellFindResults sfr;
+            if ( SpellManager.FindSpell(spell, out sfr))
+                return (sfr.Override ?? sfr.Original).CooldownTimeLeft;
+
             return TimeSpan.MaxValue;
         }
 
@@ -715,6 +738,10 @@ namespace Singular.Helpers
                 false);
         }
 
+        // used by Spell.Heal() - save fact we are queueing this Heal spell if a spell cast/gcd is in progress already.  this could only occur during 
+        // .. the period of latency at the end of a cast where Singular allows you to begin the next one
+        private static bool IsSpellBeingQueued = false;
+
         /// <summary>
         ///   Creates a behavior to cast a heal spell by name, with special requirements, on a specific unit. Heal behaviors will make sure
         ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
@@ -732,81 +759,78 @@ namespace Singular.Helpers
         public static Composite Heal(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
             SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel, bool allowLagTollerance = false)
         {
-            return new PrioritySelector(
-
+            return new Sequence(
+                    
                 // save context of currently in a GCD or IsCasting before our Cast
-                ctx => (bool)(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null),
-                
-                new Sequence(
-                    
-                    Cast(name, checkMovement, onUnit, requirements),
+                new Action( ret => IsSpellBeingQueued = (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null)),
 
-                    // if saved context indicates action was in progress (so we queued this one) then wait briefly for its progress to finish
-                    new WaitContinue( 
-                        new TimeSpan(0, 0, 0, 0, (int) StyxWoW.WoWClient.Latency * 2),
-                        ret => !((bool)ret) || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null),
-                        new ActionAlwaysSucceed()
-                        ),
+                Cast(name, checkMovement, onUnit, requirements),
 
-                    // now for non-instant spell, wait for .IsCasting to be true
-                    new WaitContinue(1, 
-                        ret => {
-                            WoWSpell spell;
-                            if (SpellManager.Spells.TryGetValue(name, out spell))
-                            {
-                                if (spell.CastTime == 0)
-                                    return true;
+                // continue if not queueing spell, or we reahed end of cast/gcd of spell in progress
+                new WaitContinue( 
+                    new TimeSpan(0, 0, 0, 0, (int) StyxWoW.WoWClient.Latency * 2),
+                    ret => !IsSpellBeingQueued || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null),
+                    new ActionAlwaysSucceed()
+                    ),
 
-                                return StyxWoW.Me.IsCasting;
-                            }
-
-                            return true;
-                            }, 
-                        new ActionAlwaysSucceed()
-                        ), 
-                    
-                    // finally, wait at this point until heal completes
-                    new WaitContinue(10, 
-                        ret => {
-                            // Let channeled heals been cast till end.
-                            if (StyxWoW.Me.ChanneledSpell != null) // .ChanneledCastingSpellId != 0)
-                            {
-                                return false;
-                            }
-
-                            // Interrupted or finished casting. Continue (note: following test doesn't deal with latency)
-                            if (!StyxWoW.Me.IsCasting)
-                            {
+                // now for non-instant spell, wait for .IsCasting to be true
+                new WaitContinue(1, 
+                    ret => {
+                        WoWSpell spell;
+                        if (SpellManager.Spells.TryGetValue(name, out spell))
+                        {
+                            if (spell.CastTime == 0)
                                 return true;
-                            }
 
-                            // when doing lag tolerance, don't wait for spell to complete before considering finished
-                            if (allowLagTollerance)
-                            {
-                                TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
-                                if (castTimeLeft != TimeSpan.Zero && castTimeLeft.TotalMilliseconds < (StyxWoW.WoWClient.Latency * 2))
-                                    return true;
-                            }
+                            return StyxWoW.Me.IsCasting;
+                        }
 
-                            // 500ms left till cast ends. Shall continue for next spell
-                            //if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < 500)
-                            //{
-                            //    return true;
-                            //}
-
-                            // temporary hack - checking requirements won't work -- either need global value or cancelDelegate
-                            // if ( onUnit(ret).HealthPercent > SingularSettings.Instance.IgnoreHealTargetsAboveHealth) // (!requirements(ret))
-                            if ( cancel(ret) )
-                            {
-                                SpellManager.StopCasting();
-                                Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name, onUnit(ret).SafeName(), onUnit(ret).HealthPercent);
-                                return true;
-                            }
-
-                            return false;
+                        return true;
                         }, 
-                        new ActionAlwaysSucceed()
-                        )
+                    new ActionAlwaysSucceed()
+                    ), 
+                    
+                // finally, wait at this point until heal completes
+                new WaitContinue(10, 
+                    ret => {
+                        // Let channeled heals been cast till end.
+                        if (StyxWoW.Me.ChanneledSpell != null) // .ChanneledCastingSpellId != 0)
+                        {
+                            return false;
+                        }
+
+                        // Interrupted or finished casting. Continue (note: following test doesn't deal with latency)
+                        if (!StyxWoW.Me.IsCasting)
+                        {
+                            return true;
+                        }
+
+                        // when doing lag tolerance, don't wait for spell to complete before considering finished
+                        if (allowLagTollerance)
+                        {
+                            TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
+                            if (castTimeLeft != TimeSpan.Zero && castTimeLeft.TotalMilliseconds < (StyxWoW.WoWClient.Latency * 2))
+                                return true;
+                        }
+
+                        // 500ms left till cast ends. Shall continue for next spell
+                        //if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < 500)
+                        //{
+                        //    return true;
+                        //}
+
+                        // temporary hack - checking requirements won't work -- either need global value or cancelDelegate
+                        // if ( onUnit(ret).HealthPercent > SingularSettings.Instance.IgnoreHealTargetsAboveHealth) // (!requirements(ret))
+                        if ( cancel(ret) )
+                        {
+                            SpellManager.StopCasting();
+                            Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name, onUnit(ret).SafeName(), onUnit(ret).HealthPercent);
+                            return true;
+                        }
+
+                        return false;
+                    }, 
+                    new ActionAlwaysSucceed()
                     )
                 );
         }

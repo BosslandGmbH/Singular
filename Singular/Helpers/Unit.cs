@@ -316,7 +316,7 @@ namespace Singular.Helpers
 
         public static bool IsBoss(this WoWUnit unit)
         {
-            return Lists.BossList.BossIds.Contains(unit.Entry);
+            return Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry);
         }
 
         public static bool IsTrainingDummy(this WoWUnit unit)
@@ -567,7 +567,7 @@ namespace Singular.Helpers
                         if (timeNow != lastReportedTime || guid != StyxWoW.Me.CurrentTargetGuid )
                         {
                             lastReportedTime = timeNow;
-                            Logging.WriteToFileSync(LogLevel.Diagnostic, "TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}", 
+                            Logger.WriteFile(LogLevel.Diagnostic, "TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}", 
                                 StyxWoW.Me.CurrentTarget.SafeName(),
                                 StyxWoW.Me.CurrentTarget.Guid,
                                 StyxWoW.Me.CurrentTarget.Entry, 

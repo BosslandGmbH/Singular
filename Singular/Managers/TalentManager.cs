@@ -17,6 +17,7 @@ using System.Linq;
 
 using Styx;
 using Styx.WoWInternals;
+using System.Drawing;
 
 namespace Singular.Managers
 {
@@ -51,7 +52,7 @@ namespace Singular.Managers
         /// <returns></returns>
         public static bool HasGlyph(string glyphName)
         {
-            return Glyphs.Count > 0 && Glyphs.Contains(glyphName);
+            return Glyphs.Any() && Glyphs.Contains(glyphName);
         }
 
         private static void UpdateTalentManager(object sender, LuaEventArgs args)
@@ -62,7 +63,7 @@ namespace Singular.Managers
 
             if (CurrentSpec != oldSpec)
             {
-                Logger.Write("Your spec has been changed. Rebuilding behaviors");
+                Logger.Write( Color.LightGreen, "Your spec has been changed. Rebuilding behaviors");
                 SingularRoutine.Instance.RebuildBehaviors();
             }
         }

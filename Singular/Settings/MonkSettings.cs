@@ -26,6 +26,28 @@ namespace Singular.Settings
         #region Common
 
         [Setting]
+        [Styx.Helpers.DefaultValue(true)]
+        [Category("Spheres")]
+        [DisplayName("Move to Spheres")]
+        [Description("Allow moving to spheres for Chi and Health")]
+        public bool MoveToSpheres { get; set; }
+
+        [Setting]
+        [Styx.Helpers.DefaultValue(15)]
+        [Category("Spheres")]
+        [DisplayName("Max Range at Rest")]
+        [Description("Max distance willing to move when resting")]
+        public int SphereDistanceAtRest { get; set; }
+
+        [Setting]
+        [Styx.Helpers.DefaultValue(5)]
+        [Category("Spheres")]
+        [DisplayName("Max Range in Combat")]
+        [Description("Max distance willing to move during combat")]
+        public int SphereDistanceInCombat { get; set; }
+
+
+        [Setting]
         [Styx.Helpers.DefaultValue(60)]
         [Category("Common")]
         [DisplayName("Fortifying Brew Percent")]

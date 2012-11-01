@@ -59,18 +59,18 @@ namespace Singular.Helpers
         ///   Created 5/1/2011.
         /// </remarks>
         /// <returns>.</returns>
-        public static Composite CreateFaceTargetBehavior()
+        public static Composite CreateFaceTargetBehavior(float viewDegrees = 70f)
         {
             return CreateFaceTargetBehavior(ret => StyxWoW.Me.CurrentTarget);
         }
 
-        public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit)
+        public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 70f)
         {
             return new Decorator(
                 ret =>
                 !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && 
                 !StyxWoW.Me.IsMoving && !toUnit(ret).IsMe && 
-                !StyxWoW.Me.IsSafelyFacing(toUnit(ret), 70f),
+                !StyxWoW.Me.IsSafelyFacing(toUnit(ret), viewDegrees ),
                 new Action(ret =>
                                {
                                    StyxWoW.Me.CurrentTarget.Face();

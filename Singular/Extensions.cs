@@ -16,6 +16,8 @@ using Styx;
 using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using System.Collections.Generic;
+using Styx.Pathing;
 
 namespace Singular
 {
@@ -81,6 +83,34 @@ namespace Singular
         public static bool IsWanding(this LocalPlayer me)
         {
             return StyxWoW.Me.AutoRepeatingSpellId == 5019;
+        }
+
+
+        public static bool IsAerialTarget(this WoWUnit u)
+        {
+            float height = HeightOffTheGround(u);
+            if ( height > 5f && height < float.MaxValue)
+                return true;
+            return false;
+        }
+
+        public static float HeightOffTheGround(this WoWUnit u)
+        {
+            float minDiff = float.MaxValue;
+            var pt = new WoWPoint( u.Location.X, u.Location.Y, u.Location.Z);
+
+            List<float> listMeshZ = Navigator.FindHeights( pt.X, pt.Y);
+            foreach (var meshZ in listMeshZ)
+            {
+                var diff = pt.Z - meshZ;
+                if (diff >= 0 && diff < minDiff)
+                {
+                    minDiff = diff;
+                    pt.Z = meshZ;
+                }
+            }
+
+            return minDiff;
         }
     }
 }

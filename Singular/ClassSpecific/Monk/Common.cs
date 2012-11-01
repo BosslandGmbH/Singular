@@ -26,6 +26,7 @@ namespace Singular.ClassSpecific.Monk
 
     public class Common
     {
+        private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk; } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk)]
@@ -50,12 +51,12 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => Me.HealthPercent < 95 && AnySpheres(SphereType.Life),
-                    CreateMoveToSphereBehavior( SphereType.Life)
+                    ret => Me.HealthPercent < 95 && AnySpheres(SphereType.Life, MonkSettings.SphereDistanceAtRest ),
+                    CreateMoveToSphereBehavior( SphereType.Life, MonkSettings.SphereDistanceAtRest )
                     ),
                 new Decorator(
-                    ret => Me.CurrentChi < Me.MaxChi && AnySpheres(SphereType.Chi),
-                    CreateMoveToSphereBehavior( SphereType.Chi )
+                    ret => Me.CurrentChi < Me.MaxChi && AnySpheres(SphereType.Chi, MonkSettings.SphereDistanceAtRest),
+                    CreateMoveToSphereBehavior(SphereType.Chi, MonkSettings.SphereDistanceAtRest)
                     ),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 Rest.CreateDefaultRestBehaviour(),
@@ -202,44 +203,99 @@ namespace Singular.ClassSpecific.Monk
         }
 
 
-        public static WoWObject FindSphere(SphereType typ, float range = 20f)
+        public static WoWObject FindClosestSphere(SphereType typ, float range)
         {
             range *= range;
             return ObjectManager.ObjectList
-                .Where(o => o.Type == WoWObjectType.AiGroup && o.Entry == (uint)typ && o.DistanceSqr < range)
+                .Where(o => o.Type == WoWObjectType.AiGroup && o.Entry == (uint)typ && o.DistanceSqr < range && !Blacklist.Contains(o.Guid) )
                 .OrderBy( o => o.DistanceSqr )
                 .FirstOrDefault();
         }
 
-        public static bool AnySpheres(SphereType typ, float range = 20f)
+        public static bool AnySpheres(SphereType typ, float range)
         {
-            WoWObject sphere = FindSphere(typ, range);
+            WoWObject sphere = FindClosestSphere(typ, range);
             return sphere != null && sphere.Distance < 20;
         }
 
-        public static WoWPoint FindSphereLocation(SphereType typ, float range = 20f)
+        public static WoWPoint FindSphereLocation(SphereType typ, float range)
         {
-            WoWObject sphere = FindSphere(typ, range);
+            WoWObject sphere = FindClosestSphere(typ, range);
             return sphere != null ? sphere.Location : WoWPoint.Empty;
         }
 
-        private static ulong lastSphere = 0;
-        public static Composite CreateMoveToSphereBehavior(SphereType typ)
+        private static ulong guidSphere = 0;
+        private static WoWPoint locSphere = WoWPoint.Empty;
+        private static DateTime timeAbortSphere = DateTime.Now;
+
+        public static Composite CreateMoveToSphereBehavior(SphereType typ, float range)
         {
             return new Decorator( 
-                ret => !SingularSettings.Instance.DisableAllMovement,
-                new Sequence(
+                ret => MonkSettings.MoveToSpheres && !SingularSettings.Instance.DisableAllMovement,
+
+                new PrioritySelector(
+
+                    // check we haven't gotten out of range due to fall / pushback / port / etc
+                    new Decorator( 
+                        ret => guidSphere != 0 && Me.Location.Distance(locSphere) > range,
+                        new Action(ret => { guidSphere = 0; locSphere = WoWPoint.Empty; })
+                        ),
+
+                    // validate the sphere we are moving to
                     new Action(ret =>
                     {
-                        WoWObject sph = FindSphere(typ);
-                        if (sph != null && sph.Guid != lastSphere)
+                        WoWObject sph = FindClosestSphere(typ, range);
+                        if (sph == null)
                         {
-                            lastSphere = sph.Guid;
-                            Logger.WriteDebug("CreateMonkRest: Moving {0:F1} yds to {1} Sphere {2}", sph.Distance, typ.ToString(), lastSphere );
+                            guidSphere = 0; locSphere = WoWPoint.Empty;
+                            return RunStatus.Failure;
                         }
+
+                        if (sph.Guid == guidSphere)
+                            return RunStatus.Failure;
+
+                        guidSphere = sph.Guid;
+                        locSphere = sph.Location;
+                        timeAbortSphere = DateTime.Now + TimeSpan.FromSeconds(5);
+                        Logger.WriteDebug("MoveToSphere: Moving {0:F1} yds to {1} Sphere {2} @ {3}", sph.Distance, typ, guidSphere, locSphere);
+                        return RunStatus.Failure;
                     }),
-                    Movement.CreateMoveToLocationBehavior(ret => FindSphereLocation(SphereType.Life), true, ret => 0f),
-                    new ActionAlwaysSucceed()
+
+                    new Decorator( 
+                        ret => DateTime.Now > timeAbortSphere, 
+                        new Action( ret => {
+                            Logger.WriteDebug("MoveToSphere: blacklisting timed out {0} sphere {1} at {2}", typ, guidSphere, locSphere);
+                            Blacklist.Add( guidSphere, TimeSpan.FromMinutes(5));
+                            })
+                        ),
+
+                    // move to the sphere if out of range
+                    new Decorator(
+                        ret => guidSphere != 0 && Me.Location.Distance(locSphere) > 1,
+                        Movement.CreateMoveToLocationBehavior(ret => locSphere, true, ret => 0f)
+                        ),
+
+                    // pause briefly until its consumed
+                    new Wait( 
+                        1, 
+                        ret => {  
+                            WoWObject sph = FindClosestSphere(typ, range);
+                            return sph == null || sph.Guid != guidSphere ;
+                            },
+                        new ActionAlwaysFail()
+                        ),
+                        
+                    // still exist?  black list it then
+                    new Decorator( 
+                        ret => {  
+                            WoWObject sph = FindClosestSphere(typ, range);
+                            return sph != null && sph.Guid == guidSphere ;
+                            },
+                        new Action( ret => {
+                            Logger.WriteDebug("MoveToSphere: blacklisting unconsumed {0} sphere {1} at {2}", typ, guidSphere, locSphere);
+                            Blacklist.Add( guidSphere, TimeSpan.FromMinutes(5));
+                            })
+                        )
                     )
                 );
         }

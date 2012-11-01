@@ -38,7 +38,7 @@ namespace Singular.GUI
 
         private void ConfigurationForm_Load(object sender, EventArgs e)
         {
-            lblVersion.Text = string.Format("v{0}", Assembly.GetExecutingAssembly().GetName().Version) + " [$Revision$]";
+            lblVersion.Text = string.Format("Version {0}", Assembly.GetExecutingAssembly().GetName().Version);
             //HealTargeting.Instance.OnTargetListUpdateFinished += new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished);
             pgGeneral.SelectedObject = SingularSettings.Instance;
             SingularSettings main = SingularSettings.Instance;

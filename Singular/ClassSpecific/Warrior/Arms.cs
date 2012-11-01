@@ -48,11 +48,11 @@ namespace Singular.ClassSpecific.Warrior
                 //Dismount
                 new Decorator(ret => StyxWoW.Me.Mounted,
                               Helpers.Common.CreateDismount("Pulling")),
+
                 //Shoot flying targets
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying,
                     new PrioritySelector(
-                        Spell.WaitForCast(),
                         Spell.Cast("Heroic Throw"),
                         Spell.Cast("Throw"),
                         Movement.CreateMoveToTargetBehavior(true, 27f)

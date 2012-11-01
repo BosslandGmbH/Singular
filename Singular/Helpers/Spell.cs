@@ -308,11 +308,14 @@ namespace Singular.Helpers
             SimpleBooleanDelegate requirements)
         {
             return new Decorator(ret =>requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null && SpellManager.CanCast(name, onUnit(ret), true, checkMovement(ret)), 
+                new Throttle(
                     new Action(ret =>
                         {
                             Logger.Write(string.Format("Casting {0} on {1}", name, onUnit(ret).SafeName()));
                             SpellManager.Cast(name, onUnit(ret));
-                        }));
+                        })
+                    )
+                );
         }
 
         #endregion

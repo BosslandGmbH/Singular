@@ -16,6 +16,7 @@ namespace Singular.ClassSpecific.Monk
     public class Windwalker
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk; } }
 
         #region NORMAL
         [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal )]
@@ -24,27 +25,34 @@ namespace Singular.ClassSpecific.Monk
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Movement.CreateFaceTargetBehavior(2f),
                 Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(true),
 
+                // close distance if at range
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                       // close distance if at range
-                        new Decorator(
-                            ret => !Me.IsSafelyFacing( Me.CurrentTarget, 10f),
-                            new Action( ret => {
-                                StyxWoW.Me.CurrentTarget.Face();
-                                return RunStatus.Failure;
-                                }) 
-                            ),
 
+#if NOT_NOW
+                        //only use Spinning Fire Blossom on flying targets presently
                         new Decorator(
-                            ret => Me.IsSafelyFacing( Me.CurrentTarget, 10f) && Me.CurrentTarget.Distance > 10,
+                            ret => Me.CurrentTarget.IsAerialTarget(),
                             new PrioritySelector(
-                                Spell.Cast("Flying Serpent Kick",  ret => TalentManager.HasGlyph("Flying Serpent Kick")),
+                                new Action( ret => {
+                                    Logger.WriteDebug( "{0} is an aerial target", Me.CurrentTarget.SafeName());
+                                    return RunStatus.Failure;
+                                    }),
+                                Movement.CreateFaceTargetBehavior(2f),
+                                new Throttle(1, 5, Spell.Cast("Spinning Fire Blossom", ret => Me.CurrentTarget.Distance.Between(10,40) && Me.IsSafelyFacing(Me.CurrentTarget, 1f)))
+                                )
+                            ),
+#endif
+                        new Decorator(
+                            ret => !Me.CurrentTarget.IsAerialTarget() && Me.CurrentTarget.Distance > 10,
+                            new PrioritySelector(
+                                Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
                                 Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
                                 )
                             ),
@@ -53,10 +61,43 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
                         Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                         Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
-                        Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 14)
+                        Spell.Cast("Roll", ret => !Me.CurrentTarget.IsAerialTarget() && Me.CurrentTarget.Distance > 12)
                         )),
 
+                new Decorator( 
+                    ret => Me.CurrentTarget.IsAerialTarget(), 
+                    Movement.CreateMoveToTargetBehavior(true, 35f )
+                    ),
+
                 Movement.CreateMoveToMeleeBehavior(true)
+                );
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal | WoWContext.Battlegrounds )]
+        public static Composite CreateWindwalkerMonkCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(true),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Stance of the Fierce Tiger"),
+
+                        Spell.Buff("Touch of Karma",
+                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(
+                                u => u.IsTargetingMeOrPet
+                                    && (u.IsPlayer || SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds)
+                                    && (u.IsWithinMeleeRange || (u.Distance < 20 && TalentManager.HasGlyph("Touch of Karma")))),
+                            ret => Me.CurrentChi >= 2 && Me.HealthPercent < 70),
+
+                        Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
+                        Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
+                        Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
+                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk.FortifyingBrewPercent),
+                        Spell.BuffSelf("Zen Sphere", ctx => Me.HealthPercent < 90 && Me.CurrentChi >= 4),
+                        Spell.BuffSelf("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) >= 2)
+                        )
+                    )
                 );
         }
 
@@ -85,24 +126,13 @@ namespace Singular.ClassSpecific.Monk
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        new Decorator(
-                            ret => SingularSettings.Instance.EnableDebugLogging,
-                            new Action( ret => {
-                                Logger.WriteDebug(".... health={0:F1}%, energy={1}%, chi={2}, tp3stk={3}, tptime={4} ms",
-                                    Me.HealthPercent,
-                                    Me.CurrentEnergy,
-                                    Me.CurrentChi,
-                                    Me.HasAura("Tiger Power", 3),
-                                    Me.GetAuraTimeLeft("Tiger Power", true).TotalMilliseconds);
-                                return RunStatus.Failure;
-                                })
-                            ),
+                        CreateWindwalkerDiagnosticBehavior(),
+
+                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
                         // AoE behavior
-                        Spell.Cast("Rising Sun Kick"),
-
                         Spell.Cast("Paralysis", 
                             onu => Unit.NearbyUnfriendlyUnits
                                 .FirstOrDefault( u => u.IsCasting && u.Distance.Between( 9, 20) && Me.IsSafelyFacing(u) )),
@@ -110,7 +140,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Rising Sun Kick"),
 
                         Spell.Cast("Fists of Fury", 
-                            ret => Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
+                            ret => Unit.NearbyUnfriendlyUnits.Count( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 2),
 
                         Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance <= 8 ) >= 4),
 
@@ -171,19 +201,9 @@ namespace Singular.ClassSpecific.Monk
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        new Decorator(
-                            ret => SingularSettings.Instance.EnableDebugLogging,
-                            new Action(ret =>
-                            {
-                                Logger.WriteDebug(".... health={0:F1}%, energy={1}%, chi={2}, tp3stk={3}, tptime={4} ms",
-                                    Me.HealthPercent,
-                                    Me.CurrentEnergy,
-                                    Me.CurrentChi,
-                                    Me.HasAura("Tiger Power", 3),
-                                    Me.GetAuraTimeLeft("Tiger Power", true).TotalMilliseconds);
-                                return RunStatus.Failure;
-                            })
-                            ),
+                        CreateWindwalkerDiagnosticBehavior(),
+
+                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
@@ -264,6 +284,26 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances )]
+        public static Composite CreateWindwalkerMonkInstanceCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(true),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Stance of the Fierce Tiger"),
+                        Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
+                        Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
+                        Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
+                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk.FortifyingBrewPercent),
+                        Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4),
+                        Spell.BuffSelf("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Me.CurrentTarget.IsBoss && Me.CurrentTarget.IsWithinMeleeRange)
+                        )
+                    )
+                );
+        }
+
         [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances)]
         public static Composite CreateWindwalkerMonkCombatInstances()
         {
@@ -273,33 +313,6 @@ namespace Singular.ClassSpecific.Monk
         #endregion
 
 
-
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker)]
-        public static Composite CreateWindwalkerMonkCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.WaitForCast(true),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        Spell.BuffSelf("Stance of the Fierce Tiger"),
-
-                        Spell.Buff("Touch of Karma", 
-                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( 
-                                u => u.IsTargetingMeOrPet 
-                                    && (u.IsPlayer || SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds) 
-                                    && (u.IsWithinMeleeRange || (u.Distance < 20 && TalentManager.HasGlyph("Touch of Karma")))),
-                            ret => Me.CurrentChi >= 2 && Me.HealthPercent < 70),
-
-                        Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
-                        Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
-                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk.FortifyingBrewPercent),
-                        Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4)
-
-                        )
-                    )
-                );
-        }
 
         [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateWindwalkerMonkHeal()
@@ -314,8 +327,8 @@ namespace Singular.ClassSpecific.Monk
 
                             // not likely, but if one close don't waste it
                             new Decorator(
-                                ret => Me.HealthPercent < 80 && Common.AnySpheres(SphereType.Life, 10),
-                                Common.CreateMoveToSphereBehavior(SphereType.Life)
+                                ret => Me.HealthPercent < 80 && Common.AnySpheres(SphereType.Life, MonkSettings.SphereDistanceInCombat ),
+                                Common.CreateMoveToSphereBehavior(SphereType.Life, MonkSettings.SphereDistanceInCombat)
                                 ),
 
                             // healing sphere keeps spell on cursor for up to 3 casts... need to stop targeting after 1
@@ -372,6 +385,28 @@ namespace Singular.ClassSpecific.Monk
                 target = Me;
 
             return target;
+        }
+
+        private static Composite CreateWindwalkerDiagnosticBehavior()
+        {
+            return new ThrottlePasses( 1, 1,
+                new Decorator(
+                    ret => SingularSettings.Instance.EnableDebugLogging,
+                    new Action( ret => {
+                        Logger.WriteDebug(".... health={0:F1}%, energy={1}%, chi={2}, tp3stk={3}, tptime={4}, tgt={5:F1} @ {6:F1}, ",
+                            Me.HealthPercent,
+                            Me.CurrentEnergy,
+                            Me.CurrentChi,
+                            Me.HasAura("Tiger Power", 3),
+                            Me.GetAuraTimeLeft("Tiger Power", true).TotalMilliseconds,
+                            Me.CurrentTarget == null ? 0f : Me.CurrentTarget.HealthPercent ,
+                            (Me.CurrentTarget ?? Me).Distance
+                            );
+                        return RunStatus.Failure;
+                        })
+                    )
+                );
+
         }
     }
 }

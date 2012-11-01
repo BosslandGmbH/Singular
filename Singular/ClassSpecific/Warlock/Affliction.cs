@@ -58,18 +58,21 @@ namespace Singular.ClassSpecific.Warlock
 
                 new Decorator(ret=> StyxWoW.Me.CurrentTarget.HealthPercent > 20.0f, 
                     new PrioritySelector(
-                Spell.Cast("Agony", ret => AgonyTime < 3),
-                Spell.Cast("Corruption", ret => CorruptionTime < 3),
-                Spell.Cast("Unstable Affliction", ret => UnstableAfflictionTime < 3),
-                Spell.Cast("Haunt", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Haunt")),
-                Spell.Cast("Malefic Grasp")
-                )) ,
+                        Spell.Cast("Agony", ret => AgonyTime < 3),
+                        Spell.Cast("Corruption", ret => CorruptionTime < 3),
+                        Spell.Cast("Unstable Affliction", ret => UnstableAfflictionTime < 3),
+                        Spell.Cast("Haunt", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Haunt")),
+                        Spell.Cast("Malefic Grasp")
+                        )
+                    ),
                  new Decorator(ret=> StyxWoW.Me.CurrentTarget.HealthPercent <= 20.0f, 
                      new PrioritySelector(
                          Spell.BuffSelf("Soulburn",ret => (AgonyTime < 3 || CorruptionTime < 3 || UnstableAfflictionTime < 3) && !StyxWoW.Me.HasAura("Soulburn")),
                          Spell.Cast("Soul Swap", ret => StyxWoW.Me.HasAura("Soulburn")),
                          Spell.Buff("Haunt"),
-                Spell.Cast("Drain Soul"))),
+                         Spell.Cast("Drain Soul")
+                        )
+                    ),
 
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)

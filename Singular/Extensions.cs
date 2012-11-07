@@ -11,6 +11,7 @@
 
 #endregion
 
+using System.Linq;
 using System.Text;
 using Styx;
 using Styx.CommonBot;
@@ -18,6 +19,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using System.Collections.Generic;
 using Styx.Pathing;
+using Singular.Helpers;
 
 namespace Singular
 {
@@ -86,31 +88,38 @@ namespace Singular
         }
 
 
+        /// <summary>
+        /// determines if a target is off the ground far enough that you can
+        /// reach it with melee spells if standing directly under.
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <returns>true if above melee reach</returns>
         public static bool IsAerialTarget(this WoWUnit u)
         {
             float height = HeightOffTheGround(u);
-            if ( height > 5f && height < float.MaxValue)
+            if ( height == float.MaxValue )
+                return false;   // make this true if better to assume aerial 
+
+            if (height > Spell.MeleeRange)
                 return true;
+
             return false;
         }
 
+        /// <summary>
+        /// calculate a unit's vertical distance (height) above ground level (mesh).  this is the units position
+        /// relative to the ground and is independent of any other character.  
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <returns>float.MinValue if can't determine, otherwise distance off ground</returns>
         public static float HeightOffTheGround(this WoWUnit u)
         {
-            float minDiff = float.MaxValue;
-            var pt = new WoWPoint( u.Location.X, u.Location.Y, u.Location.Z);
-
-            List<float> listMeshZ = Navigator.FindHeights( pt.X, pt.Y);
-            foreach (var meshZ in listMeshZ)
-            {
-                var diff = pt.Z - meshZ;
-                if (diff >= 0 && diff < minDiff)
-                {
-                    minDiff = diff;
-                    pt.Z = meshZ;
-                }
-            }
-
-            return minDiff;
+            var unitLoc = new WoWPoint( u.Location.X, u.Location.Y, u.Location.Z);         
+            var listMeshZ = Navigator.FindHeights( unitLoc.X, unitLoc.Y).Where( h => h <= unitLoc.Z);
+            if (listMeshZ.Any())
+                return unitLoc.Z - listMeshZ.Max();
+            
+            return float.MaxValue;
         }
     }
 }

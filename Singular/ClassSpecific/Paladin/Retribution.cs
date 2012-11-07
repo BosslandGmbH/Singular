@@ -93,9 +93,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
 
                     //2	Let's keep up Insight instead of Truth for grinding.  Keep up Righteousness if we need to AoE.  
-                //Spell.BuffSelf("Seal of Insight", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4 || StyxWoW.Me.GroupInfo.IsInParty),
-                    Spell.BuffSelf("Seal of Truth", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4),
-                    Spell.BuffSelf("Seal of Righteousness", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
+                    Common.CreatePaladinSealBehavior(),
 
                     //7	Blow buffs seperatly.  No reason for stacking while grinding.
                     Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
@@ -150,10 +148,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
 
                     //  Buffs
-                    //Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.CurrentTarget.Entry != 28781 && !StyxWoW.Me.CurrentTarget.HasAura("Horde Flag") && !StyxWoW.Me.CurrentTarget.HasAura("Alliance Flag")),
-                    //Spell.BuffSelf("Seal of Justice", ret => StyxWoW.Me.CurrentTarget.Entry == 28781 || StyxWoW.Me.CurrentTarget.HasAura("Horde Flag") || StyxWoW.Me.CurrentTarget.HasAura("Alliance Flag")),
-                    Spell.BuffSelf("Seal of Truth", ret => SpellManager.HasSpell("Seal of Truth") && !StyxWoW.Me.ActiveAuras.ContainsKey("Seal of Truth")),
-
+                    Common.CreatePaladinSealBehavior(),
 
 
                     Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && StyxWoW.Me.CurrentTarget.Distance < 6 &&
@@ -206,8 +201,7 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
 
                     //2	seal_of_truth
-                    Spell.BuffSelf("Seal of Truth", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4),
-                    Spell.BuffSelf("Seal of Righteousness", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4 || !SpellManager.HasSpell("Seal of Truth")),
+                    Common.CreatePaladinSealBehavior(),
 
                     //7	guardian_of_ancient_kings,if=cooldown.Holy Avenger.remains<10
                     Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && StyxWoW.Me.CurrentTarget.IsBoss() &&

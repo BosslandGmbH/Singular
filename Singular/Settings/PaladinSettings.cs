@@ -19,9 +19,29 @@ using Singular.ClassSpecific.Paladin;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
+using Styx.CommonBot;
+using Styx;
 
 namespace Singular.Settings
 {
+
+    public enum PaladinBlessings
+    {
+        Auto,
+        Kings,
+        Might
+    }
+
+    public enum PaladinSeal
+    {
+        None = 0,
+        Auto = 1,
+        Command,
+        Truth,
+        Insight,
+        Righteousness,
+        Justice
+    }
 
     internal class PaladinSettings : Styx.Helpers.Settings
     {
@@ -29,7 +49,8 @@ namespace Singular.Settings
             : base(Path.Combine(SingularSettings.SettingsPath, "Paladin.xml"))
         {
         }
-        
+
+
         #region Common
         /*
         [Setting]
@@ -51,8 +72,15 @@ namespace Singular.Settings
         [DefaultValue(PaladinBlessings.Auto)]
         [Category("Common")]
         [DisplayName("Blessings")]
-        [Description("Which Blessing to cast")]
+        [Description("Which Blessing to cast (Auto: best choice)")]
         public PaladinBlessings Blessings { get; set; }
+
+        [Setting]
+        [DefaultValue(PaladinSeal.Auto)]
+        [Category("Common")]
+        [DisplayName("Seal")]
+        [Description("Which Seal to cast (None: user controlled, Auto: best choice)")]
+        public PaladinSeal Seal { get; set; }
 
         [Setting]
         [DefaultValue(30)]

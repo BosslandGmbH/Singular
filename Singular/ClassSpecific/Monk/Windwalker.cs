@@ -8,6 +8,8 @@ using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
+
 using Singular.Settings;
 using Styx.WoWInternals;
 
@@ -57,12 +59,13 @@ namespace Singular.ClassSpecific.Monk
                                 )
                             ),
 
-                        Spell.Cast("Grapple Weapon", ret => Me.CurrentTarget.Distance < 40 && !Me.CurrentTarget.Disarmed ),
+                        new Throttle( 1, 5, Spell.Cast("Grapple Weapon", ret => !Me.Elite && Me.CurrentTarget.Distance < 40 && !Me.CurrentTarget.Disarmed )),
                         Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
                         Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                         Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                         Spell.Cast("Roll", ret => !Me.CurrentTarget.IsAerialTarget() && Me.CurrentTarget.Distance > 12)
-                        )),
+                        )
+                    ),
 
                 new Decorator( 
                     ret => Me.CurrentTarget.IsAerialTarget(), 

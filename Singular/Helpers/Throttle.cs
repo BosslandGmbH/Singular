@@ -259,6 +259,13 @@ namespace Singular.Helpers
                 yield break;
             }
 
+            // check not present in Decorator, but adding here
+            if (DecoratedChild == null)
+            {
+                yield return RunStatus.Failure;
+                yield break;
+            }
+
             DecoratedChild.Start(context);
 
             RunStatus childStatus;

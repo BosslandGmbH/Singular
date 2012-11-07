@@ -93,7 +93,7 @@ namespace Singular.Utilities
                 case "SPELL_CAST_FAILED":
                     if (SingularSettings.Instance.EnableDebugLogging)
                     {
-                        Logger.WriteDebug("[CombatLog] {0}:{1} cast of {2}#{3} failed: '{6}'",
+                        Logger.WriteDebug("[CombatLog] {0}:{1} cast of {2}#{3} failed: '{4}'",
                             e.SourceName,
                             e.SourceGuid,
                             e.SpellName,

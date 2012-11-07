@@ -66,12 +66,12 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new Throttle(TimeSpan.FromMilliseconds(500),
                 new Decorator(
-                    ret => ret != null,
+                    ret => Me.CurrentTarget != null,
 
                     new PrioritySelector(
                         Spell.Cast("Charge",
                             ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed()
-                                && ((WoWUnit)ret).Distance >= 10 && ((WoWUnit)ret).Distance < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)
+                                && Me.CurrentTarget.Distance >= 10 && Me.CurrentTarget.Distance < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)
                                 && WarriorSettings.UseWarriorCloser),
 
                         Spell.CastOnGround("Heroic Leap",

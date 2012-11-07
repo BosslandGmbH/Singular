@@ -377,13 +377,6 @@ namespace Singular.ClassSpecific.DeathKnight
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateAutoAttack(true),
-                    new Sequence(
-                        Spell.Cast("Death Grip",
-                                    ret => SingularSettings.Instance.EnableTaunting && StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
-                        new DecoratorContinue(
-                            ret => StyxWoW.Me.IsMoving,
-                            new Action(ret => Navigator.PlayerMover.MoveStop())),
-                        new WaitContinue(1, new ActionAlwaysSucceed())),
                     Spell.Cast("Outbreak"),
                     Spell.Cast("Icy Touch"),
                     Movement.CreateMoveToTargetBehavior(true, 5f),
@@ -409,20 +402,29 @@ namespace Singular.ClassSpecific.DeathKnight
                                           SingularSettings.Instance.DeathKnight.VampiricBloodPercent),
                     Spell.BuffSelf("Bone Shield"),
 
+                // Taunts
+                    new Decorator( 
+                        ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.Any(),
 
-                    new Sequence(
-                        Spell.Cast("Death Grip",
-                                    ret => SingularSettings.Instance.EnableTaunting &&
-                                           StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
-                        new DecoratorContinue(
-                            ret => StyxWoW.Me.IsMoving,
-                            new Action(ret => Navigator.PlayerMover.MoveStop())),
-                        new WaitContinue(1, new ActionAlwaysSucceed())
+                        new Throttle( TimeSpan.FromSeconds(1),
+                            new PrioritySelector(
+                                Spell.Cast("Dark Command",
+                                    ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
+                                    ret => true),
+
+                                new Sequence(
+                                    Spell.Cast("Death Grip",
+                                        ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
+                                        ret => TankManager.Instance.NeedToTaunt.Any()   /*recheck just before referencing member*/
+                                            && TankManager.Instance.NeedToTaunt.FirstOrDefault().DistanceSqr > 10 * 10),
+                                    new DecoratorContinue(
+                                        ret => StyxWoW.Me.IsMoving,
+                                        new Action(ret => Navigator.PlayerMover.MoveStop())),
+                                    new WaitContinue(1, new ActionAlwaysSucceed())
+                                    )
+                                )
+                            )
                         ),
-
-                    Spell.Cast("Dark Command",
-                        ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
-                        ret => SingularSettings.Instance.EnableTaunting),
 
                 // Start AoE section
                 new PrioritySelector(ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),

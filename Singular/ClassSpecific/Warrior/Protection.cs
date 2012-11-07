@@ -110,7 +110,7 @@ namespace Singular.ClassSpecific.Warrior
                             // Spell.Cast("Demoralizing Banner", ret => !Me.CurrentTarget.IsBoss && UseAOE),
 
                             // Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss),
-                            // Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss),
+                            Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss),
                             Spell.Cast("Berserker Rage"),
                             // new Action(ret => { UseTrinkets(); return RunStatus.Failure; }),
                             Spell.Cast("Deadly Calm", ret => Me.CurrentRage >= RageDump)
@@ -157,12 +157,12 @@ namespace Singular.ClassSpecific.Warrior
 
                         // Multi-target?  get the debuff on them
                         new Decorator(
-                            ret => !Me.CurrentTarget.IsBoss && UseAOE,
+                            ret => UseAOE,
                             new PrioritySelector(
                                 Spell.Cast("Thunder Clap"),
                                 Spell.Cast("Bladestorm", ret => AoeCount >= 4),
                                 Spell.Cast("Shockwave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 3),
-                                Spell.Cast("Dragon Roar")
+                                Spell.Cast("Dragon Roar", ret => Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)
                                 )
                             ),
 
@@ -184,7 +184,13 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Devastate"),
 
                         //Charge
-                        Common.CreateChargeBehavior()
+                        Common.CreateChargeBehavior(),
+
+                        new Action( ret => {
+                            if ( Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && Me.IsSafelyFacing(Me.CurrentTarget))
+                                Logger.WriteDebug("--- we did nothing!");
+                            return RunStatus.Failure;
+                            })
                         )
                     ),
 
@@ -194,13 +200,23 @@ namespace Singular.ClassSpecific.Warrior
 
         static Composite CreateTauntBehavior()
         {
-            return new Throttle( 
+            // limit all taunt attempts to 1 per second max since Mocking Banner and Taunt have no GCD
+            // .. it will keep us from casting both for the same mob we lost aggro on
+            return new Throttle( 1, 1,
                 new PrioritySelector(
                     Spell.CastOnGround("Mocking Banner",
                         ret => (TankManager.Instance.NeedToTaunt.FirstOrDefault() ?? Me).Location,
-                        ret => Clusters.GetCluster(TankManager.Instance.NeedToTaunt.FirstOrDefault(), TankManager.Instance.NeedToTaunt, ClusterType.Radius, 15f).Count() >= 2),
+                        ret => TankManager.Instance.NeedToTaunt.Any() && Clusters.GetCluster(TankManager.Instance.NeedToTaunt.FirstOrDefault(), TankManager.Instance.NeedToTaunt, ClusterType.Radius, 15f).Count() >= 2),
 
-                    Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault())
+                    Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault()),
+
+                    Spell.Cast("Storm Bolt", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(i => i.Distance < 30 && Me.IsSafelyFacing(i))),
+
+                    Spell.Cast("Intervene", 
+                        ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(
+                            m => Group.Healers.Any( h => m.CurrentTargetGuid == h.Guid && h.Distance < 25)),
+                        ret => !SingularSettings.Instance.DisableAllMovement && Group.Healers.Count( h => h.IsAlive && h.Distance < 40) == 1
+                        )
                     )
                 );
         }
@@ -223,7 +239,15 @@ namespace Singular.ClassSpecific.Warrior
                         return RunStatus.Failure;
                     }),
 
-                    Spell.Cast("Disrupting Shout", ctx => intTarget)
+                    Spell.Cast("Disrupting Shout", ctx => intTarget),
+
+                    new Action(ret =>
+                    {
+                        intTarget = Unit.NearbyUnfriendlyUnits.FirstOrDefault(i => i.IsCasting && i.CanInterruptCurrentSpellCast && i.Distance < 30 && Me.IsSafelyFacing(i));
+                        return RunStatus.Failure;
+                    }),
+
+                    Spell.Cast("Storm Bolt", ctx => intTarget)
                     )
                 );
         }
@@ -275,11 +299,15 @@ namespace Singular.ClassSpecific.Warrior
                     ret => SingularSettings.Instance.EnableDebugLogging,
                     new Action(ret =>
                         {
-                        WoWUnit target = Me.CurrentTarget ?? Me;
-                        Logger.WriteFile(LogLevel.Diagnostic, ".... h={0:F1}%/r={1:F1}%, Ultim={2}",
+                        Logger.WriteDebug(".... h={0:F1}%/r={1:F1}%, Ultim={2}, Targ={3} {4:F1}% @ {5:F1} yds Melee={6} Facing={7}",
                             Me.HealthPercent,
                             Me.CurrentRage,
-                            Me.ActiveAuras.ContainsKey("Ultimatum")
+                            HasUltimatum,
+                            !Me.GotTarget ? "(null)" : Me.CurrentTarget.Name,
+                            !Me.GotTarget ? 0 : Me.CurrentTarget.HealthPercent,
+                            !Me.GotTarget ? 0 : Me.CurrentTarget.Distance,
+                            !Me.GotTarget ? false : Me.CurrentTarget.IsWithinMeleeRange ,
+                            !Me.GotTarget ? false : Me.IsSafelyFacing( Me.CurrentTarget  )
                             );
                         return RunStatus.Failure;
                         })

@@ -84,11 +84,13 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.BuffSelf("Battle Stance"),
 
-                        Spell.Cast("Recklessness", ret => Me.CurrentTarget.IsBoss),
+                        Spell.Cast("Recklessness", ret => (Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && Me.CurrentTarget.IsWithinMeleeRange ),
                         Spell.Cast("Skull Banner", ret => Me.CurrentTarget.IsBoss),
-                        Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss),
 
-                        Spell.Cast("Bloodbath"),
+                        Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss),
+                        Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss),
+                        // Spell.Cast("Storm Bolt"),  // in normal rotation
+
                         Spell.Cast("Deadly Calm", ret => StyxWoW.Me.HasAura("Taste for Blood")),
 
                         // Execute is up, so don't care just cast
@@ -140,7 +142,7 @@ namespace Singular.ClassSpecific.Warrior
                                 Spell.Cast("Mortal Strike"),
                                 Spell.Cast("Overpower"),
                                 Spell.Cast("Storm Bolt"),
-                                Spell.Cast("Dragon Roar"),
+                                Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
                                 Spell.Cast("Slam"),
                                 Spell.Cast("Battle Shout"))
                             ),
@@ -160,7 +162,7 @@ namespace Singular.ClassSpecific.Warrior
                                 //HeroicLeap(),
 
                                 Spell.Cast("Storm Bolt"),
-                                Spell.Cast("Dragon Roar"),
+                                Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
                                 Spell.Cast("Overpower"),
 
                                 // Rage dump!

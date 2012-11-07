@@ -52,7 +52,6 @@ namespace Singular.ClassSpecific.Paladin
             return
                 new PrioritySelector(
                     Spell.BuffSelf("Seal of Command")
-                    //Spell.BuffSelf("Devotion Aura")
                     );
         }
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, 0)]
@@ -61,7 +60,6 @@ namespace Singular.ClassSpecific.Paladin
             return
                 new PrioritySelector(
                     Spell.BuffSelf("Seal of Command")
-                    //Spell.BuffSelf("Devotion Aura")
                     );
         }
     }

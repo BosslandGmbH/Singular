@@ -41,19 +41,20 @@ namespace Singular.ClassSpecific.Druid
                 Spell.WaitForCast(),
 
                 new Decorator(
-                    ret => !SpellManager.GlobalCooldown, 
+                    ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
 
                         //Shoot flying targets
                         new Decorator(
-                            ret => Me.CurrentTarget.IsFlying,
+                            ret => Me.CurrentTarget.IsAerialTarget(),
                             new PrioritySelector(
                                 Spell.Buff("Faerie Fire", ret => Me.CurrentTarget.Distance < 35),
                                 Spell.Cast("Moonfire", ret => Me.CurrentTarget.Distance < 40),
                                 Movement.CreateMoveToTargetBehavior(true, 27f)
                                 )),
 
-                        Spell.Buff("Prowl", ret => !Me.Combat ),
+                        Spell.Cast("Wild Charge" ),
+                        Spell.Buff("Prowl", ret => !Me.Combat && !Me.HasAura( "Prowl")),
                         Spell.Cast("Pounce", ret => Me.HasAura("Prowl") && Me.CurrentTarget.IsWithinMeleeRange ),
                         Spell.Buff("Rake", ret => Me.CurrentTarget.IsWithinMeleeRange ),
                         Spell.Cast("Mangle", ret => Me.CurrentTarget.IsWithinMeleeRange )

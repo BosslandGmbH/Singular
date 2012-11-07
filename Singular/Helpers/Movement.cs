@@ -227,7 +227,7 @@ namespace Singular.Helpers
 
 
         private static WoWPoint lastMoveToRangeSpot = WoWPoint.Empty;
-
+        private static bool inRange = false;
         /// <summary>
         ///   Movement for Ranged Classes or Ranged Pulls.  Move to Unit at range behavior 
         ///   that stops in line of spell sight in range of target. Moves a maximum of 
@@ -245,19 +245,22 @@ namespace Singular.Helpers
             return
                 new Decorator(
 
-                    ret => !SingularSettings.Instance.DisableAllMovement,
+                    ret => !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null,
 
                     new PrioritySelector(
                         // save check for whether we are in range to avoid duplicate calls
-                        ctx => toUnit != null && toUnit(ctx) != null && toUnit(ctx).Distance < range(ctx) && toUnit(ctx).InLineOfSpellSight,
+                        new Action( ret => {
+                            inRange = toUnit(ret).Distance < range(ret) && toUnit(ret).InLineOfSpellSight;
+                            return RunStatus.Failure;
+                        }),
 
                         new Decorator(
-                            ret => ((bool)ret) && StyxWoW.Me.IsMoving,
+                            ret => inRange && StyxWoW.Me.IsMoving,
                             new Action(ret => Navigator.PlayerMover.MoveStop())
                             ),
 
                         new Decorator(
-                            ret => !((bool)ret) && (!StyxWoW.Me.IsMoving || StyxWoW.Me.Location.DistanceSqr(lastMoveToRangeSpot) < 3*3),
+                            ret => !inRange && (!StyxWoW.Me.IsMoving || StyxWoW.Me.Location.DistanceSqr(lastMoveToRangeSpot) < 3 * 3),
                             new Action(ret => {
                                     WoWPoint[] spots = Navigator.GeneratePath( StyxWoW.Me.Location, toUnit(ret).Location);
                                     if ( spots.GetLength(0) > 0 )

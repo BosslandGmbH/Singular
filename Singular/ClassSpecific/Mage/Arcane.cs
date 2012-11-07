@@ -34,8 +34,9 @@ namespace Singular.ClassSpecific.Mage
 
 
                     Spell.Cast("FrostFire Bolt", ret => !SpellManager.HasSpell("Arcane Blast")),
-                    Movement.CreateMoveToTargetBehavior(true, 39f),
-                    Spell.Cast("Arcane Blast")
+                    Spell.Cast("Arcane Blast"),
+                    Movement.CreateMoveToTargetBehavior(true, 39f)
+                    
                     );
         }
         [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Normal)]
@@ -54,18 +55,27 @@ namespace Singular.ClassSpecific.Mage
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                     new ActionIdle()),
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
+                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75 && StyxWoW.Me.ManaPercent < 30),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.HasAura("Frost Nova"))),
                 Common.CreateMagePolymorphOnAddBehavior(),
+                          Spell.BuffSelf("Evocation",
+                    ret => StyxWoW.Me.ManaPercent < 30 || (TalentManager.HasGlyph("Evocation") && StyxWoW.Me.HealthPercent < 50)),
+                Spell.BuffSelf("Ice Barrier", ret => StyxWoW.Me.HealthPercent <= 99),
+
+                new Decorator(
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3,
+                    new PrioritySelector(
+                        Spell.BuffSelf("Mirror Image")
+                        )),
+                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
+                    Spell.Cast("Incanter's Ward", ret => StyxWoW.Me.CurrentTarget.DistanceSqr <= 6 * 6),
 
 
 
 
-
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.ManaPercent < 30),
-                Spell.BuffSelf("Evocation", ret => StyxWoW.Me.ManaPercent < 30 && (StyxWoW.Me.HasAura("Mana Shield") || !SpellManager.HasSpell("Mana Shield"))),
+     
+               
                 Spell.BuffSelf("Arcane Power"),
-                Spell.BuffSelf("Mirror Image"),
                 Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.HasAura("Arcane Missiles!")),
                 Spell.Cast("Arcane Barrage", ret => StyxWoW.Me.GetAuraByName("Arcane Charge") != null && StyxWoW.Me.GetAuraByName("Arcane Charge").StackCount >= 4),
                 Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast")),

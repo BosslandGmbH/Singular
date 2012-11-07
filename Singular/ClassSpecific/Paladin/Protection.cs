@@ -40,9 +40,7 @@ namespace Singular.ClassSpecific.Paladin
 
                 // Seal twisting. If our mana gets stupid low, just throw on insight to get some mana back quickly, then put our main seal back on.
                 // This is Seal of Truth once we get it, Righteousness when we dont.
-                Spell.BuffSelf("Seal of Insight", ret => StyxWoW.Me.ManaPercent < 5),
-                Spell.BuffSelf("Seal of Truth", ret => StyxWoW.Me.ManaPercent >= 5),
-                Spell.BuffSelf("Seal of Righteousness", ret => StyxWoW.Me.ManaPercent >= 5 && !SpellManager.HasSpell("Seal of Truth")),
+                Common.CreatePaladinSealBehavior(),
 
                 // Defensive
                 Spell.BuffSelf("Hand of Freedom",

@@ -1,18 +1,15 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
 
 using System;
 using System.Reflection;
+using System.Linq;
 using System.Windows.Forms;
 using Singular.GUI;
 using Singular.Helpers;
@@ -25,6 +22,9 @@ using Styx.Helpers;
 using Styx.WoWInternals.WoWObjects;
 using System.Drawing;
 using Styx.WoWInternals;
+using System.IO;
+using System.Collections.Generic;
+using Styx.Common;
 
 namespace Singular
 {
@@ -114,12 +114,7 @@ namespace Singular
 
         public override void Initialize()
         {
-            Logger.Write("Starting Singular v" + Assembly.GetExecutingAssembly().GetName().Version);
-
-            // save some support info in case we need
-            Logger.WriteFile("{0:F1} days since Windows was restarted", TimeSpan.FromMilliseconds(Environment.TickCount).TotalHours / 24.0);
-            Logger.WriteFile("{0} FPS currently in WOW", GetFPS());
-            Logger.WriteFile("{0} ms of Latency in WOW", StyxWoW.WoWClient.Latency);
+            WriteSupportInfo();
 
             Logger.Write("Determining talent spec.");
             try
@@ -157,6 +152,7 @@ namespace Singular
             // When we actually need to use it, we will.
             EventHandlers.Init();
             MountManager.Init();
+            SoulstoneManager.Init();
             //Logger.Write("Combat log event handler started.");
 
             // create silently since Start button will create a context change (at least first Start)
@@ -165,6 +161,61 @@ namespace Singular
             Logger.WriteDebug("Behaviors created!");
 
             Logger.Write("Initialization complete!");
+        }
+
+        private static void WriteSupportInfo()
+        {
+            string singularName = "Singular v" + Assembly.GetExecutingAssembly().GetName().Version;
+            Logger.Write("Starting " + singularName);
+
+            // save some support info in case we need
+            Logger.WriteFile("{0:F1} days since Windows was restarted", TimeSpan.FromMilliseconds(Environment.TickCount).TotalHours / 24.0);
+            Logger.WriteFile("{0} FPS currently in WOW", GetFPS());
+            Logger.WriteFile("{0} ms of Latency in WOW", StyxWoW.WoWClient.Latency);
+            Logger.WriteFile("{0} local system time", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"));
+
+            // verify installed source integrity 
+            try
+            {
+                string singularFolder = GetSingularSourcePath();
+
+                FileCheckList actual = new FileCheckList();
+                actual.Generate(singularFolder);
+
+                FileCheckList certified = new FileCheckList();
+                certified.Load(Path.Combine(singularFolder, "singular.xml"));
+
+                List<FileCheck> err = certified.Compare(actual);
+
+                List<FileCheck> fcerrors = FileCheckList.Test(GetSingularSourcePath());
+                if (!fcerrors.Any())
+                    Logger.Write("Installation: integrity verififed for {0}", Assembly.GetExecutingAssembly().GetName().Version);
+                else
+                {
+                    Logger.Write(Color.HotPink, "Installation: modified by user - forum support not available", singularName);
+                    Logger.WriteFile("=== following {0} files with issues ===", fcerrors.Count);
+                    foreach (var fc in fcerrors)
+                    {
+                        if ( !File.Exists( fc.Name ))
+                            Logger.WriteFile(Styx.Common.LogLevel.Diagnostic, "   deleted: {0} {1}", fc.Size, fc.Name);
+                        else if ( certified.Filelist.Any( f => 0 == String.Compare( f.Name, fc.Name, true)))
+                            Logger.WriteFile(Styx.Common.LogLevel.Diagnostic, "   changed: {0} {1}", fc.Size, fc.Name);
+                        else
+                            Logger.WriteFile(Styx.Common.LogLevel.Diagnostic, "   inserted {0} {1}", fc.Size, fc.Name);
+                    }
+                    Logger.WriteFile(Styx.Common.LogLevel.Diagnostic, "");
+                }
+            }
+            catch (FileNotFoundException e)
+            {
+                Logger.Write(Color.HotPink, "Installation: file missing - forum support not available");
+                Logger.Write(Color.HotPink, "missing file: {0}", e.FileName );
+            }
+            catch (Exception e)
+            {
+                Logger.Write(Color.HotPink, "Installation: verification error - forum support not available");
+                Logger.WriteFile(e.ToString());
+            }
         }
 
         private static void StopBot(string reason)
@@ -187,5 +238,29 @@ namespace Singular
             return 0;
         }
 
+        public static string GetSingularSourcePath()
+        {
+            // bit of a hack, but source code folder for the assembly is only 
+            // .. available from the filename of the .dll
+            FileCheck fc = new FileCheck();
+            Assembly singularDll = Assembly.GetExecutingAssembly();
+            FileInfo fi = new FileInfo(singularDll.Location);
+            int len = fi.Name.LastIndexOf("_");
+            string folderName = fi.Name.Substring(0, len);
+
+            folderName = Path.Combine(Styx.Helpers.GlobalSettings.Instance.CombatRoutinesPath, folderName);
+
+            // now check if relative path and if so, append to honorbuddy folder
+            if (!Path.IsPathRooted(folderName))
+                folderName = Path.Combine(GetHonorBuddyFolder(), folderName);
+
+            return folderName;
+        }
+
+        public static string GetHonorBuddyFolder()
+        {
+            string hbpath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+            return hbpath;
+        }
     }
 }

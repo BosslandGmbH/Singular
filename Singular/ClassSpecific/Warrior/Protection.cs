@@ -97,7 +97,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Throttle(    // throttle these because most are off the GCD
                     new Decorator( ret => !Spell.IsGlobalCooldown(),
                         new PrioritySelector(
-                            Spell.Cast("Demoralizing Shout"),
+                            Spell.Cast("Demoralizing Shout", ret => Unit.NearbyUnfriendlyUnits.Any( m => m.Distance < (m.MeleeDistance() + 5))),
                             Spell.BuffSelf("Shield Wall", ret => Me.HealthPercent < WarriorSettings.WarriorShieldWallHealth),
                             Spell.BuffSelf("Shield Barrier", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBarrierHealth),
                             Spell.BuffSelf("Shield Block", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBlockHealth),
@@ -141,7 +141,8 @@ namespace Singular.ClassSpecific.Warrior
 
                         CreateDiagnosticOutputBehavior(),
 
-                        Spell.Cast("Victory Rush"),
+                        Spell.Cast("Impending Victory"),
+                        Spell.Cast("Victory Rush", ret => Me.HasAura("Victorious")),
 
                         Spell.Cast("Execute", 
                             ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances 
@@ -152,6 +153,9 @@ namespace Singular.ClassSpecific.Warrior
                             ret => SingularSettings.Instance.EnableTaunting && Me.IsInInstance,
                             CreateTauntBehavior()
                             ),
+
+                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior.UseWarriorSlows),
+                        Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior.UseWarriorSlows),
 
                         CreateProtectionInterrupt(),
 

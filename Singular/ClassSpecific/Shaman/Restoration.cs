@@ -192,35 +192,31 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateRestoShamanHealingOnlyBehavior(bool selfOnly, bool moveInRange)
         {
             HealerManager.NeedHealTargeting = true;
-            PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
+            List<HealSpell> spells = new List<HealSpell>();
 
-            behavs.AddBehavior( HealthToPriority( SingularSettings.Instance.Shaman.Heal.AncestralSwiftness), 
-                "Unleash Elements", 
-                "Unleash Elements",
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.AncestralSwiftness-1, "Unleash Elements",
                 Spell.Buff("Unleash Elements",
                     ret => (WoWUnit)ret,
                     ret => (Me.IsMoving || ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.AncestralSwiftness)
                         && Common.IsImbuedForHealing(Me.Inventory.Equipped.MainHand)
                         ));
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.AncestralSwiftness),
-                String.Format("Ancestral Swiftness @ {0}%", SingularSettings.Instance.Shaman.Heal.AncestralSwiftness), 
-                "Ancestral Swiftness",
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.AncestralSwiftness, "Ancestral Swiftness",
                 new Sequence(
                     Spell.BuffSelf("Ancestral Swiftness", ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.AncestralSwiftness),
                     Spell.Heal("Greater Healing Wave", ret => (WoWUnit)ret)
                     ));
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.GreaterHealingWave), "Greater Healing Wave", "Greater Healing Wave",
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.GreaterHealingWave , "Greater Healing Wave",
                 Spell.Heal("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.GreaterHealingWave));
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingWave), "Healing Wave", "Healing Wave", 
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.HealingWave , "Healing Wave", 
                 Spell.Heal("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.HealingWave));
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingSurge), "Healing Surge", "Healing Surge", 
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.HealingSurge , "Healing Surge", 
                 Spell.Heal("Healing Surge", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.HealingSurge));
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.ChainHeal), "Chain Heal", "Chain Heal", 
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.ChainHeal , "Chain Heal", 
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
@@ -234,20 +230,22 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingRain), "Healing Rain", "Healing Rain",
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.HealingRain , "Healing Rain",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
                         context => Clusters.GetBestUnitForCluster(Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f),
                         Spell.CastOnGround(
-                            "Healing Rain", 
-                            ret => ((WoWPlayer)ret).Location,
-                            ret => (StyxWoW.Me.GroupInfo.IsInRaid ? 3 : 2) < Clusters.GetClusterCount((WoWPlayer)ret, Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f))
+                            "Healing Rain", ret => ((WoWPlayer)ret).Location,
+                            ret =>
+                            Clusters.GetClusterCount((WoWPlayer)ret, Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f) >
+                            // If we're in a raid, check for 4 players. If we're just in a party, check for 3.
+                            (StyxWoW.Me.GroupInfo.IsInRaid ? 3 : 2))
                         )
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.SpiritLinkTotem), "Spirit Link Totem", "Spirit Link Totem",
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.SpiritLinkTotem , "Spirit Link Totem",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
@@ -258,7 +256,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingTideTotemPercent), "Healing Tide Totem", "Healing Tide Totem",
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.HealingTideTotemPercent , "Healing Tide Totem",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
@@ -268,7 +266,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingStreamTotem), "Healing Stream Totem", "Healing Stream Totem",
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.HealingStreamTotem , "Healing Stream Totem",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
@@ -279,7 +277,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.Ascendance), "Ascendance", "Ascendance",
+            AddHealSpell(spells, SingularSettings.Instance.Shaman.Heal.Ascendance , "Ascendance",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.BuffSelf(
@@ -290,8 +288,8 @@ namespace Singular.ClassSpecific.Shaman
                 );
 
 
-            behavs.OrderBehaviors();
-            behavs.ListBehaviors();
+            spells = spells.OrderBy(hs => hs.Pct).ToList();
+            ListHealSpells(spells);
 
 
             return new PrioritySelector(
@@ -349,7 +347,8 @@ namespace Singular.ClassSpecific.Shaman
                                     && (((WoWPlayer)ret).GetPredictedHealthPercent() > 15 || Spell.GetSpellCooldown("Ancestral Swiftness").TotalMinutes > 0f) // use Ancestral Swiftness value to check
                                 ),
 
-                            behavs.GenerateBehaviorTree(),
+                            new PrioritySelector(
+                                spells.Select(hs => hs.behavior).ToArray()),
 
                             Spell.Heal("Riptide",
                                 ret => GetBestRiptideTarget((WoWPlayer)ret),
@@ -454,58 +453,44 @@ namespace Singular.ClassSpecific.Shaman
             }
         }
 
-        private static int HealthToPriority(int nHealth)
+
+        class HealSpell
         {
-            return nHealth == 0 ? 0 : 1000 - nHealth;
+            public int Pct  { get; set; }
+            public string SpellName  { get; set; }
+            public Composite behavior  { get; set; }
+
+            public HealSpell(int p, string s, Composite bt)
+            {
+                Pct = p;
+                SpellName = s;
+                behavior = bt;
+            }
         }
 
-        class PrioritizedBehaviorList
+        private static void AddHealSpell(List<HealSpell> spells, int p, string n, Composite bt)
         {
-            class PrioritizedBehavior
-            {
-                public int Priority { get; set; }
-                public string Name { get; set; }
-                public Composite behavior { get; set; }
+            if (p <= 0)
+                Logger.WriteDebug("Skipping heal spell {0} configured for {1}%", n, p);
+            else if (!SpellManager.HasSpell(n))
+                Logger.WriteDebug("Skipping heal spell {0} not known by this character", n, p);
+            else
+                spells.Add(new HealSpell(p, n, bt));
+        }
 
-                public PrioritizedBehavior(int p, string s, Composite bt)
+        private static DateTime NextListCall = DateTime.Now;
+
+        private static void ListHealSpells(List<HealSpell> spells)
+        {
+            if (DateTime.Now > NextListCall)
+            {
+                foreach (HealSpell hs in spells)
                 {
-                    Priority = p;
-                    Name = s;
-                    behavior = bt;
+                    Logger.WriteDebug(Color.LightGreen, "   Heal @ {0}% using [{1}]", hs.Pct, hs.SpellName);
                 }
-            }
 
-            List<PrioritizedBehavior> blist = new List<PrioritizedBehavior>();
-
-            public void AddBehavior(int pri, string behavName, string spellName, Composite bt)
-            {
-                if (pri <= 0)
-                    Logger.WriteDebug("Skipping Behavior [{0}] configured for Priority {1}", behavName, pri);
-                else if (!String.IsNullOrEmpty(spellName) && !SpellManager.HasSpell(spellName))
-                    Logger.WriteDebug("Skipping Behavior [{0}] since spell '{1}' is not known by this character", behavName, spellName);
-                else
-                    blist.Add(new PrioritizedBehavior(pri, behavName, bt));
-            }
-
-            public void OrderBehaviors()
-            {
-                blist = blist.OrderBy(b => -b.Priority).ToList();
-            }
-
-            public Composite GenerateBehaviorTree()
-            {
-                blist = blist.OrderBy(b => b.Priority).ToList();
-                return new PrioritySelector(blist.Select(b => b.behavior).ToArray());
-            }
-
-            public void ListBehaviors()
-            {
-                foreach (PrioritizedBehavior hs in blist)
-                {
-                    Logger.WriteDebug(Color.LightGreen, "   Priority {0} for Behavior [{1}]", hs.Priority, hs.Name);
-                }
+                NextListCall = DateTime.Now + new TimeSpan(0, 0, 0, 0, 1000);
             }
         }
-        
     }
 }

@@ -1,12 +1,8 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -186,6 +182,13 @@ namespace Singular.Settings
         [DisplayName("Use Wand")]
         [Description("Uses wand if we're oom")]
         public bool UseWand { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Speed Buff")]
+        [Description("Cast Tier 2 movement buff when running out of combat")]
+        public bool UseSpeedBuff { get; set; }
 
         #endregion
 

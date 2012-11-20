@@ -1,12 +1,8 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -256,26 +252,34 @@ namespace Singular.Helpers
 
                         new Decorator(
                             ret => inRange && StyxWoW.Me.IsMoving,
-                            new Action(ret => Navigator.PlayerMover.MoveStop())
+                            new Action(ret => {
+                                Logger.WriteDebug("MoveToRangeAndStop:  stopping - within {0:F1} yds and LoSS of {1}", range(ret), StyxWoW.Me.CurrentTarget.SafeName());
+                                Navigator.PlayerMover.MoveStop();
+                                })
                             ),
 
                         new Decorator(
                             ret => !inRange && (!StyxWoW.Me.IsMoving || StyxWoW.Me.Location.DistanceSqr(lastMoveToRangeSpot) < 3 * 3),
                             new Action(ret => {
                                     WoWPoint[] spots = Navigator.GeneratePath( StyxWoW.Me.Location, toUnit(ret).Location);
-                                    if ( spots.GetLength(0) > 0 )
+                                    if (spots.GetLength(0) > 0)
                                     {
-                                        if (  spots[0].Distance(toUnit(ret).Location) < range(ret) )
+                                        if ( spots[0].Distance(toUnit(ret).Location) < range(ret))
                                         {
-                                            float spotDist = spots[0].Distance(StyxWoW.Me.Location);
-                                            float moveToDistFromSpot = spotDist - 10;
+                                            float spotDistFromMe = spots[0].Distance(StyxWoW.Me.Location);
+                                            float moveToDistFromSpot = spotDistFromMe - 10;
                                             if (moveToDistFromSpot > 0)
                                             {
-                                                spots[0] = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, spots[0], moveToDistFromSpot );
+                                                spots[0] = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, spots[0], moveToDistFromSpot);
                                             }
                                         }
 
-                                        Navigator.MoveTo(spots[0]);
+                                        lastMoveToRangeSpot = spots[0];
+                                        Navigator.MoveTo(lastMoveToRangeSpot);
+                                    }
+                                    else
+                                    {
+                                        Logger.WriteDebug("MoveToRangeAndStop:  unable to calculate path to {0} @ {1:F1} yds and LoSS={2}", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance, StyxWoW.Me.CurrentTarget.InLineOfSpellSight  );
                                     }
                                 })
                             )

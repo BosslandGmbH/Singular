@@ -303,5 +303,13 @@ namespace Singular.Helpers
                         )
                     );
         }
+
+        public static bool WeHaveBloodlust
+        {
+            get
+            {
+                return StyxWoW.Me.HasAnyAura(StyxWoW.Me.IsHorde ? "Bloodlust" : "Heroism", "Time Warp", "Ancient Hysteria");
+            }
+        }
     }
 }

@@ -180,86 +180,59 @@ namespace Singular.ClassSpecific.Mage
 
         #region Instance Rotation
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.Instances)]
-        public static Composite CreateMageFrostInstancePullAndCombat()
+        public static Composite CreateMageFrostInstanceCombat()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
                 Spell.WaitForCast(true),
 
-                // We want our pet alive !
                 new Decorator(
                     ret => !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
                     new Sequence(
                         new Action(ret => PetManager.CallPet("Summon Water Elemental")),
                         Helpers.Common.CreateWaitForLagDuration())),
 
-                // Defensive stuff
                 new Decorator(
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
+                    ret => StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental") && StyxWoW.Me.Pet.Distance > 40,
+                    new Sequence(
+                        new Action(ret => PetManager.CallPet("Summon Water Elemental")),
+                        Helpers.Common.CreateWaitForLagDuration())),
+
+                new Decorator(ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                     new ActionIdle()),
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 20 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
 
-                // Cooldowns
-                Spell.BuffSelf("Evocation", ret => StyxWoW.Me.ManaPercent < 30),
-                Spell.BuffSelf("Mirror Image"),
-                Spell.BuffSelf("Mage Ward", ret => StyxWoW.Me.HealthPercent <= 75),
-                Spell.BuffSelf("Icy Veins"),
+                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 20),
 
-                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
-                // AoE comes first
-                new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(10).Count() >= 4,
                     new PrioritySelector(
-                        Spell.CastOnGround("Flamestrike",
-                            ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location,
-                            ret => !ObjectManager.GetObjectsOfType<WoWDynamicObject>().Any(o =>
-                                        o.CasterGuid == StyxWoW.Me.Guid && o.Spell.Name == "Flamestrike" &&
-                                        o.Location.Distance(
-                                            Clusters.GetBestUnitForCluster(Unit.NearbyUnitsInCombatWithMe, ClusterType.Radius, 8f).Location) < o.Radius)),
-                        Spell.Cast("Cone of Cold",
-                            ret => Clusters.GetClusterCount(StyxWoW.Me,
-                                                            Unit.NearbyUnfriendlyUnits,
-                                                            ClusterType.Cone, 15f) >= 3),
-                        Spell.CastOnGround("Blizzard",
-                            ret => StyxWoW.Me.CurrentTarget.Location),
-                        Spell.Cast("Arcane Explosion",
-                            ret => Clusters.GetClusterCount(StyxWoW.Me,
-                                                            Unit.NearbyUnfriendlyUnits,
-                                                            ClusterType.Radius,
-                                                            10f) >= 3),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)
-                        )),
+                        Spell.Cast("Frost Bomb"),
+                        Spell.Cast("Flamestrike"),
+                        Spell.Cast("Frozen Orb"),
+                        Spell.Cast("Ice Lance", ret => StyxWoW.Me.HasAura("Fingers of Frost")),
+                        Spell.Cast("Arcane Explosion"),
+                        Movement.CreateMoveToTargetBehavior(true, 10f))),
 
-                Spell.BuffSelf("Time Warp",
-                    ret => !StyxWoW.Me.GroupInfo.IsInRaid && StyxWoW.Me.CurrentTarget.HealthPercent > 20 && StyxWoW.Me.CurrentTarget.IsBoss() &&
-                           !StyxWoW.Me.HasAura("Temporal Displacement")),
+                Spell.Cast("Frost Bomb"),
+                Spell.Cast("Forzen Orb"),
 
-                // Rotation
-                Spell.Cast("Frost Bomb", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3),
-                Spell.Cast("Deep Freeze",
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") ||
-                           StyxWoW.Me.CurrentTarget.HasAura("Freeze") ||
-                           StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),
+                Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invocation")),
+                Spell.Cast("Deep Freeze", ret => StyxWoW.Me.HasAura("Fingers of Frost") ||
+                    StyxWoW.Me.CurrentTarget.HasAura("Freeze") || StyxWoW.Me.CurrentTarget.HasAura("Frost Nova")),
 
-                Pet.CreateCastPetActionOnLocation("Freeze"),
-                Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Arcane Missiles!")),
-                new Decorator(
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Brain Freeze"),
-                    new PrioritySelector(
-                        Spell.Cast("Frostfire Bolt"),
-                        Spell.Cast("Fireball")
-                        )),
-                Spell.Cast("Ice Lance",
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Fingers of Frost") ||
-                           StyxWoW.Me.CurrentTarget.HasAura("Freeze") ||
-                           StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") ||
-                           StyxWoW.Me.IsMoving),
-                Spell.Cast("Frostbolt", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-                Spell.Cast("Frostfire Bolt"),
-                Movement.CreateMoveToTargetBehavior(true, 39f)
+                Spell.Cast("Frostbolt", ret => (StyxWoW.Me.CurrentTarget.HasAura("Frostbolt") && StyxWoW.Me.CurrentTarget.Auras["Frostbolt"].StackCount < 3) || StyxWoW.Me.HasAura("Presence of Mind")),
+                Pet.CreateCastPetActionOnLocation("Freeze", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(8), ClusterType.Radius, 8).Location),
+
+                Spell.Cast("Evocation"),
+                Spell.Cast("Icy Veins"),
+                Spell.Cast("Mirror Image"),
+
+                Spell.Cast("Frostfire Bolt", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) || StyxWoW.Me.HasAura("Brain Freeze")),
+                Spell.Cast("Ice Lance", ret => StyxWoW.Me.HasAura("Fingers of Frost")),
+                Spell.Cast("Frostbolt"),
+                Movement.CreateMoveToTargetBehavior(true, 30f)
                 );
         }
 

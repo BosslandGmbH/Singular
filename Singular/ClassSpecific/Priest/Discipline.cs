@@ -22,15 +22,23 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Spell.WaitForCast(),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
                 // Heal self before resting. There is no need to eat while we have 100% mana
-                CreateDiscHealOnlyBehavior(true),
+                        CreateDiscHealOnlyBehavior(true),
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour(),
+                        Rest.CreateDefaultRestBehaviour(),
                 // Can we res people?
-                Spell.Resurrect("Resurrection"),
+                        Spell.Resurrect("Resurrection"),
                 // Make sure we're healing OOC too!
-                CreateDiscHealOnlyBehavior(false, false)
+                        CreateDiscHealOnlyBehavior(false, false),
+                // now buff our movement if possible
+                        Common.CreatePriestMovementBuff("Rest")
+                        )
+                    )
                 );
+
         }
 
         public static Composite CreateDiscHealOnlyBehavior()
@@ -127,9 +135,8 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Cast("Penance"),
                                 Spell.Cast("Holy Fire"),
-                                Spell.Cast("Smite", ret => !SpellManager.HasSpell("Power Word: Solace")),
-                                Spell.Cast("Smite", ret => (StyxWoW.Me.ManaPercent >= 10 && SpellManager.HasSpell("Power Word: Solace"))),
-                                Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 10),
+                                Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
+                                Spell.Cast("Smite"),
                                 //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
                                 Movement.CreateMoveToTargetBehavior(true, 35f)
                                 )),
@@ -145,12 +152,38 @@ namespace Singular.ClassSpecific.Priest
                         // TODO: Add smite healing. Atonement is now specced as all discs. (Its useless otherwise)
                         )));
         }
-        [Behavior(BehaviorType.Heal, WoWClass.Priest, WoWSpec.PriestDiscipline)]
+
+        [Behavior(BehaviorType.Heal, WoWClass.Priest, WoWSpec.PriestDiscipline )]
         public static Composite CreateDiscHealComposite()
         {
             return
                 new PrioritySelector(
-                    CreateDiscHealOnlyBehavior());
+                    // group healing
+                    new Decorator(
+                        ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                        CreateDiscHealOnlyBehavior(false, true)),
+                    // solo healing
+                    new Decorator(
+                        ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                        new PrioritySelector(
+                            Spell.Heal("Flash Heal",
+                                ctx => StyxWoW.Me,
+                                ret => StyxWoW.Me.HealthPercent <= 20 // check actual health for low health situations
+                                    || (!StyxWoW.Me.Combat && StyxWoW.Me.GetPredictedHealthPercent(true) <= 85)),
+
+                            Spell.BuffSelf("Renew",
+                                ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 75),
+
+                            Spell.Heal("Greater Heal",
+                                ctx => StyxWoW.Me,
+                                ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50),
+
+                            Spell.Heal("Flash Heal",
+                                ctx => StyxWoW.Me,
+                                ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50)
+                            )
+                        )
+                    );
         }
 
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
@@ -158,27 +191,25 @@ namespace Singular.ClassSpecific.Priest
         [Behavior(BehaviorType.Combat|BehaviorType.Pull,WoWClass.Priest,WoWSpec.PriestDiscipline)]
         public static Composite CreateDiscCombatComposite()
         {
-            return new PrioritySelector(
-
-                new Decorator(
-                    ret => !Unit.NearbyGroupMembers.Any(),
-                    new PrioritySelector(
-                        Safers.EnsureTarget(),
-                        Movement.CreateMoveToLosBehavior(),
-                        Movement.CreateFaceTargetBehavior(),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                        Spell.Cast("Mindbender"),
-                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
-                        //Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
-                        Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
-                        Spell.Buff("Shadow Word: Pain", true),
-                        Spell.Cast("Penance"),
-                        Spell.Cast("Holy Fire"),
-                        Spell.Cast("Smite", ret => !SpellManager.HasSpell("Power Word: Solace") || StyxWoW.Me.ManaPercent >= 10),
-                        Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 10),
-                        //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
-                        Movement.CreateMoveToTargetBehavior(true, 30)
-                        ))
+            return new Decorator(
+                ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                new PrioritySelector(
+                    Safers.EnsureTarget(),
+                    Movement.CreateMoveToLosBehavior(),
+                    Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                    Spell.Cast("Mindbender"),
+                    Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
+                //Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
+                    Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
+                    Spell.Buff("Shadow Word: Pain", true),
+                    Spell.Cast("Penance"),
+                    Spell.Cast("Holy Fire"),
+                    Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
+                    Spell.Cast("Smite"),
+                //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
+                    Movement.CreateMoveToTargetBehavior(true, 30)
+                    )
                 );
         }
     }

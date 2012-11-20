@@ -47,11 +47,9 @@ namespace Singular.ClassSpecific.DeathKnight
                     ),
                 // *** Cool downs ***
                 Spell.BuffSelf("Unholy Frenzy",
-                               ret =>
-                               StyxWoW.Me.CurrentTarget.IsWithinMeleeRange &&
-                               !StyxWoW.Me.HasAura("Heroism") && !StyxWoW.Me.HasAura("Bloodlust") &&
-                               !StyxWoW.Me.HasAura("Time Warp") && !StyxWoW.Me.HasAura("Ancient Hysteria") &&
-                               Common.UseLongCoolDownAbility),
+                               ret => StyxWoW.Me.CurrentTarget.IsWithinMeleeRange 
+                                   && !PartyBuff.WeHaveBloodlust
+                                    && Common.UseLongCoolDownAbility),
                 Spell.Cast("Summon Gargoyle",
                            ret =>
                            SingularSettings.Instance.DeathKnight.UseSummonGargoyle && Common.UseLongCoolDownAbility),
@@ -167,8 +165,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.BuffSelf("Unholy Frenzy",
                                ret =>
                                StyxWoW.Me.CurrentTarget.IsWithinMeleeRange &&
-                               !StyxWoW.Me.HasAura("Heroism") && !StyxWoW.Me.HasAura("Bloodlust") &&
-                               !StyxWoW.Me.HasAura("Time Warp") && !StyxWoW.Me.HasAura("Ancient Hysteria") &&
+                               !PartyBuff.WeHaveBloodlust &&
                                Common.UseLongCoolDownAbility),
                 Spell.Cast("Summon Gargoyle",
                            ret =>
@@ -277,8 +274,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.BuffSelf("Unholy Frenzy",
                                ret =>
                                StyxWoW.Me.CurrentTarget.IsWithinMeleeRange &&
-                               !StyxWoW.Me.HasAura("Heroism") && !StyxWoW.Me.HasAura("Bloodlust") &&
-                               !StyxWoW.Me.HasAura("Time Warp") && !StyxWoW.Me.HasAura("Ancient Hysteria") &&
+                               !PartyBuff.WeHaveBloodlust &&
                                Common.UseLongCoolDownAbility),
                 Spell.Cast("Summon Gargoyle",
                            ret =>

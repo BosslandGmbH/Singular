@@ -109,8 +109,9 @@ namespace Singular.ClassSpecific
                                 !Unit.GroupMemberInfos.Any(pm => pm.Guid == StyxWoW.Me.Guid && pm.Role == WoWPartyMember.GroupRole.Tank) &&
                                 ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any(unit => unit.CurrentTargetGuid == StyxWoW.Me.Guid),
                             Spell.Cast("Shadowmeld")),
-                        Spell.Cast( "Blood Fury" ),
-                        Spell.Cast( "Berserking" )
+                        Spell.Cast("Lifeblood", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAnyAura("Lifeblood", "Berserking")),
+                        Spell.Cast("Berserking", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAnyAura("Lifeblood", "Berserking")),
+                        Spell.Cast("Blood Fury")
                         )
                     )
                 );

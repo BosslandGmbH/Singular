@@ -113,9 +113,11 @@ namespace Singular.ClassSpecific.DeathKnight
                         new Action(ret => Navigator.PlayerMover.MoveStop())
                         ),
                     new WaitContinue(1, new ActionAlwaysSucceed())
-                    ), 
+                    ),
+                Spell.Cast("Outbreak"),
                 Spell.Cast("Howling Blast"),
-                Spell.Cast("Icy Touch"), Movement.CreateMoveToMeleeBehavior(true)
+                Spell.Cast("Icy Touch"), 
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 
@@ -271,9 +273,10 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.BuffSelf("Lichborne", ret => StyxWoW.Me.IsCrowdControlled()),
                     Spell.BuffSelf("Desecrated Ground", ret => TalentManager.IsSelected((int)DeathKnightTalents.DesecratedGround) && StyxWoW.Me.IsCrowdControlled()),
                     
-                    new PrioritySelector(ctx => StyxWoW.Me.PartyMembers.FirstOrDefault( u=> u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight),
-                        Spell.Cast("Raise Ally", ctx => ctx as WoWUnit, ctx => ctx != null)
-                        ),
+                    Spell.Cast("Raise Ally", 
+                        ctx => StyxWoW.Me.PartyMembers.FirstOrDefault( u=> u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight), 
+                        ret => SingularSettings.Instance.DeathKnight.UseRaiseAlly ),
+
                     // *** Offensive Cooldowns ***
 
                     Spell.BuffSelf("Raise Dead",

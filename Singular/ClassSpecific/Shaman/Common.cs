@@ -1,12 +1,8 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -30,6 +26,8 @@ using CommonBehaviors.Actions;
 
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
+using Styx.CommonBot.POI;
+using Singular.Dynamics;
 
 namespace Singular.ClassSpecific.Shaman
 {
@@ -48,56 +46,139 @@ namespace Singular.ClassSpecific.Shaman
         Rockbiter = 3021
     }
 
+    public enum ShamanTalents
+    {
+        NaturesGuardian = 1,
+        StoneBulwarkTotem,
+        AstralShift,
+        FrozenPower,
+        EarthgrabTotem,
+        WindwalkTotem,
+        CallOfTheElements,
+        TotemicRestoration,
+        TotemicProjection,
+        ElementalMastery,
+        AncestralSwiftness,
+        EchoOfTheElements,
+        HealingTideTotem,
+        AncestralGuidance,
+        Conductivity,
+        UnleashedFury,
+        PrimalElementalist,
+        ElementalBlast
+    }
+
     public static class Common
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        #region Local Helpers
 
-        public static string BloodlustName
+        private const int StressMobCount = 3;
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman; } }
+
+        #endregion
+
+        #region Status and Config Helpers
+
+        public static string BloodlustName { get { return Me.IsHorde ? "Bloodlust" : "Heroism"; } }
+        public static string SatedName { get { return Me.IsHorde ? "Sated" : "Exhaustion"; } }
+        public static bool AnyHealersNearby { get { return Group.Healers.Any(h => h.IsAlive && h.Distance < 60); } }
+
+        public static bool HasTalent(ShamanTalents tal)
+        {
+            return TalentManager.IsSelected((int)tal);
+        }
+
+        public static bool StressfulSituation
+        {
+            get 
+            {
+                return Unit.NearbyUnitsInCombatWithMe.Count() >= StressMobCount
+                    || Unit.NearbyUnfriendlyUnits.Any(u => u.Combat && u.IsTargetingMeOrPet && (u.IsPlayer || (u.Elite && u.Level + 8 > Me.Level)));
+            }
+        }
+
+        public static bool ActingAsHealer
         {
             get
             {
-                return Me.IsHorde ? "Bloodlust" : "Heroism";
+                return ShamanSettings.AllowOffHealHeal
+                    && Me.IsInGroup() && !Me.GroupInfo.IsInRaid
+                    && !Common.AnyHealersNearby;
+            }
+        }
+
+        public static bool NeedToOffHealSomeone
+        {
+            get
+            {
+                return ShamanSettings.AllowOffHealHeal
+                    && Me.IsInGroup() && !Me.GroupInfo.IsInRaid
+                    && (!Common.AnyHealersNearby || Unit.NearbyGroupMembers.Any(m => m.IsAlive && m.HealthPercent < 30));
             }
         }
 
         /// <summary>
-        /// builds behaviors to cast Racial or Profession buffs during Combat 
-        /// so they are used one at a time (don't cast Blood Fury if Bloodlust active.) 
-        /// This is most useful for grinding/questing
+        /// checks if pvp fight is worth popping lust by comparing # of combatants
+        /// from each faction.  must be atleast 3 on each side with the difference
+        /// being approx 33% at most.  additionally requires atleast 3 or more
+        /// friendlies to not be sated
         /// </summary>
-        /// <returns></returns>
-        public static Composite CreateShamanInCombatBuffs( bool mutuallyExclude )
+        public static bool IsPvpFightWorthLusting
         {
-            PrioritySelector ps = new PrioritySelector();
-            List<string> aurasToAvoid = new List<string>();
-           
-            if ( Me.Race == WoWRace.Orc )
-                ps.AddChild( Spell.BuffSelf("Blood Fury", ret => SingularSettings.Instance.UseRacials && (!Me.IsInInstance || Me.HasAura(BloodlustName))));
-
-            if (Me.Race == WoWRace.Troll )
-                ps.AddChild( Spell.BuffSelf("Berserking", ret => SingularSettings.Instance.UseRacials));
-
-            if (SpellManager.HasSpell("Lifeblood"))
+            get
             {
-                aurasToAvoid.Add("Lifeblood");
-                ps.AddChild(Spell.BuffSelf("Lifeblood", ret => SingularSettings.Instance.UseRacials));
+                int friends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive);
+                int enemies = Unit.NearbyUnfriendlyUnits.Count();
+
+                if (friends < 3 || enemies < 3)
+                    return false;
+
+                int readyfriends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive && !f.HasAura(SatedName));
+                if (readyfriends < 3)
+                    return false;
+
+                int diff = Math.Abs(friends - enemies);
+                return diff <= ((friends / 3) + 1);
             }
+        }
 
-            if (Me.Specialization == WoWSpec.ShamanElemental)
-                aurasToAvoid.Add("Elemental Mastery");
+        #endregion
 
-            aurasToAvoid.Add(BloodlustName);
-            aurasToAvoid.Add("Time Warp");
-            aurasToAvoid.Add("Ancient Hysteria");
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.All, 1)]
+        public static Composite CreateShamanCombatBuffs()
+        {
+            return new PrioritySelector(
 
-            if ( mutuallyExclude )
-            {
-                return new Decorator( 
-                    ret => !Me.HasAnyAura( aurasToAvoid.ToArray()),
-                    ps );
-            }
+                Totems.CreateTotemsBehavior(),
 
-            return ps;
+                Spell.BuffSelf( "Astral Shift", ret => Me.HealthPercent < 50),
+
+                new Decorator( 
+                    ret => ShamanSettings.UseBloodlust 
+                        && !SingularSettings.Instance.DisableAllMovement 
+                        && Common.StressfulSituation,
+
+                    new PrioritySelector(
+                        Spell.BuffSelf( Common.BloodlustName, 
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
+
+                        Spell.BuffSelf(Common.BloodlustName,
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds
+                                && IsPvpFightWorthLusting),
+
+                        Spell.BuffSelf( Common.BloodlustName, 
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances  
+                                && !Me.GroupInfo.IsInRaid  
+                                && Me.CurrentTarget.IsBoss )
+                        )
+                    ),
+
+                Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust),
+
+                Spell.BuffSelf("Spiritwalker's Grace", ret => Me.IsMoving && Me.Combat)
+
+                );
         }
 
         #region IMBUE SUPPORT
@@ -260,39 +341,102 @@ namespace Singular.ClassSpecific.Shaman
 
         #region NON-RESTO HEALING
 
-        public static Composite CreateShamanNonHealBehavior()
+        public static Composite CreateShamanDpsShieldBehavior()
         {
-            return
-                new PrioritySelector(
+            return new PrioritySelector(
+                ctx => ActingAsHealer,
+                Spell.BuffSelf("Water Shield", ret => (bool)ret),
+                Spell.BuffSelf("Lightning Shield", ret => !(bool)ret)
+                );
+        }
 
-                    new Decorator(
-                        ret => !StyxWoW.Me.Combat,
-                            Spell.Heal(
-                                "Healing Surge",
-                                ret => StyxWoW.Me,
-                                ret => StyxWoW.Me.HealthPercent <= 70)
-                        ),
-                    new Decorator(
-                        ret => StyxWoW.Me.Combat,
-                        new PrioritySelector(
-                            Spell.BuffSelf(
-                                "Healing Tide Totem",
-                                ret => Unit.NearbyFriendlyPlayers.Any(
-                                        p => p.HealthPercent < SingularSettings.Instance.Shaman.HealingTideTotemPercent
-                                            && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
-                            Spell.BuffSelf(
-                                "Healing Stream Totem",
-                                ret => !Totems.Exist(WoWTotemType.Water)
-                                    && Unit.NearbyFriendlyPlayers.Any(
-                                        p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingStreamTotem
-                                            && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
-                            Spell.Heal(
-                                "Healing Surge",
-                                ret => StyxWoW.Me,
-                                ret => StyxWoW.Me.HealthPercent <= 30)
+        public static Composite CreateShamanDpsHealBehavior()
+        {
+            return new PrioritySelector(
+
+                // use predicted health for non-combat healing to reduce drinking downtime and help
+                // .. avoid unnecessary heal casts
+                new Decorator(
+                    ret => !StyxWoW.Me.Combat,
+                    Spell.Heal("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.GetPredictedHealth(true) <= 85)
+                    ),
+
+                new Decorator(
+                    ret => Me.Combat,
+
+                    new PrioritySelector(
+
+                        // save myself if possible
+                        new Decorator(
+                            ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
+                                && Me.HealthPercent < 20,
+                            new Sequence( 
+                                Spell.BuffSelf("Ancestral Swiftness", ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.AncestralSwiftness),
+                                Spell.Heal("Greater Healing Wave", ret => (WoWUnit)ret)
+                                )
+                            ),
+
+                        // use non-predicted health as we only off-heal when its already an emergency
+                        new Decorator(
+                            ret => NeedToOffHealSomeone,
+                            Restoration.CreateRestoShamanHealingOnlyBehavior()
+                            ),
+
+                        // use non-predicted health as a trigger for totems
+                        new Decorator(
+                            ret => !Common.AnyHealersNearby,
+                            new PrioritySelector(
+                                Spell.BuffSelf(
+                                    "Healing Tide Totem",
+                                    ret => !Me.IsMoving
+                                        && Unit.GroupMembers.Any(
+                                            p => p.HealthPercent < SingularSettings.Instance.Shaman.HealingTideTotemPercent
+                                                && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
+                                Spell.BuffSelf(
+                                    "Healing Stream Totem",
+                                    ret => !Me.IsMoving 
+                                        && !Totems.Exist(WoWTotemType.Water)
+                                        && Unit.GroupMembers.Any(
+                                            p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingStreamTotem
+                                                && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
+
+                                // use actual health for following, not predicted as its a low health value
+                                // .. and its okay for multiple heals at that point
+                                Spell.Heal(
+                                    "Healing Surge",
+                                    ret => StyxWoW.Me,
+                                    ret => StyxWoW.Me.HealthPercent <= 30)
+                                )
                             )
                         )
-                    );
+                    )
+                );
+        }
+
+        public static DateTime GhostWolfRequest;
+
+        public static Decorator CreateShamanMovementBuff()
+        {
+            return new Decorator(
+                ret => ShamanSettings.UseGhostWolf
+                    && !SingularSettings.Instance.DisableAllMovement
+                    && SingularRoutine.CurrentWoWContext != WoWContext.Instances 
+                    && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
+                    && Me.IsAlive
+                    && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport 
+                    && SpellManager.HasSpell("Ghost Wolf")
+                    && (BotPoi.Current == null || BotPoi.Current.Type == PoiType.None || BotPoi.Current.Location.Distance(Me.Location) > 10)
+                    && !Me.IsAboveTheGround(),
+                new PrioritySelector(
+                    Spell.WaitForCast(),
+                    new Decorator(
+                        ret => Me.IsChanneling || Spell.IsGlobalCooldown(),
+                        new ActionAlwaysSucceed()
+                        ),
+                    Spell.BuffSelf("Ghost Wolf"),
+                    Helpers.Common.CreateWaitForLagDuration()
+                    )
+                );
         }
 
         #endregion

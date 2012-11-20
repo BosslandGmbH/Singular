@@ -14,15 +14,8 @@ namespace Singular.ClassSpecific.Shaman
 {
     class Lowbie
     {
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, 0)]
+        [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbiePreCombatBuffs()
-        {
-            return
-                new PrioritySelector(
-                    Spell.BuffSelf("Lightning Shield"));
-        }
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, 0)]
-        public static Composite CreateShamanLowbieCombatBuffs()
         {
             return
                 new PrioritySelector(
@@ -58,7 +51,6 @@ namespace Singular.ClassSpecific.Shaman
                     Movement.CreateFaceTargetBehavior(),
                     Spell.WaitForCast(true),
                     Helpers.Common.CreateAutoAttack(true),
-                    Common.CreateShamanInCombatBuffs(true),
                     Spell.Cast("Earth Shock"),      // always use
                     Spell.Cast("Primal Strike"),    // always use
                     Spell.Cast("Lightning Bolt"),                   

@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Linq;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
@@ -11,6 +12,7 @@ using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
+using System.Collections.Generic;
 
 #endregion
 
@@ -18,12 +20,10 @@ namespace Singular.ClassSpecific.Druid
 {
     public class Feral
     {
-        private static DruidSettings DruidSettings
-        {
-            get { return SingularSettings.Instance.Druid; }
-        }
+        public delegate IEnumerable<WoWUnit> EnumWoWUnitDelegate(object context);
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid; } }
 
         #region Common
 
@@ -46,15 +46,16 @@ namespace Singular.ClassSpecific.Druid
 
                         //Shoot flying targets
                         new Decorator(
-                            ret => Me.CurrentTarget.IsAerialTarget(),
+                            ret => Me.CurrentTarget.IsAboveTheGround(),
                             new PrioritySelector(
                                 Spell.Buff("Faerie Fire", ret => Me.CurrentTarget.Distance < 35),
                                 Spell.Cast("Moonfire", ret => Me.CurrentTarget.Distance < 40),
                                 Movement.CreateMoveToTargetBehavior(true, 27f)
                                 )),
 
+                        Spell.BuffSelf("Cat Form"),
                         Spell.Cast("Wild Charge" ),
-                        Spell.Buff("Prowl", ret => !Me.Combat && !Me.HasAura( "Prowl")),
+                        Spell.BuffSelf("Prowl", ret => !Me.Combat),
                         Spell.Cast("Pounce", ret => Me.HasAura("Prowl") && Me.CurrentTarget.IsWithinMeleeRange ),
                         Spell.Buff("Rake", ret => Me.CurrentTarget.IsWithinMeleeRange ),
                         Spell.Cast("Mangle", ret => Me.CurrentTarget.IsWithinMeleeRange )
@@ -101,13 +102,15 @@ namespace Singular.ClassSpecific.Druid
 
                         TimeToDeathExtension.CreateWriteDebugTimeToDeath(),
 
+                        CreateFeralAoeCombat(),
+
                         //Single target
                         Spell.Cast("Faerie Fire", ret =>!Me.CurrentTarget.HasAura("Weakened Armor", 3)),
 
                         new Throttle( Spell.Cast("Savage Roar", ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery")))),
 
                         new Throttle( Spell.BuffSelf("Tiger's Fury", 
-                                   ret => Common.energy <= 35 
+                                   ret => Me.EnergyPercent <= 35 
                                        && !Me.ActiveAuras.ContainsKey("Clearcasting")
                                        && !Me.HasAura("Berserk")
                                        )),
@@ -146,6 +149,59 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
+
+        private static IEnumerable<WoWUnit> _aoeColl;
+
+        private static Composite CreateFeralAoeCombat()
+        {
+            return new PrioritySelector(
+
+                new Action( ret => {
+                    _aoeColl = Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 8f);
+                    return RunStatus.Failure;
+                    }),
+
+                new Decorator(ret => _aoeColl.Count() >= 3 && !_aoeColl.Any( m => m.IsCrowdControlled()),
+
+                    new PrioritySelector(
+
+                        Spell.Cast("Savage Roar", ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
+
+                        Spell.Cast("Thrash", ret => _aoeColl.Any(m => !m.HasMyAura("Thash"))),
+
+                        Spell.BuffSelf("Tiger's Fury",
+                            ret => Me.EnergyPercent <= 35
+                                && !Me.ActiveAuras.ContainsKey("Clearcasting")
+                                && !Me.HasAura("Berserk")),
+
+                        // bite if rip good for awhile or target dying soon
+                        Spell.Cast("Ferocious Bite",
+                            ret => Me.ComboPoints >= 5
+                                && (Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds > 6 || Me.CurrentTarget.TimeToDeath() < 8)),
+
+                        Spell.Cast("Rip",
+                            ret => Me.ComboPoints >= 5
+                                && Me.CurrentTarget.TimeToDeath() >= 8
+                                && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 1),
+
+                        Spell.Cast("Swipe", ret => Me.CurrentTarget.IsWithinMeleeRange),
+
+                        Movement.CreateMoveToMeleeBehavior(true)
+                        )
+                    ),
+
+                // otherwise, try and keep Rake up on mobs allowing some AoE dmg without breaking CC
+                Spell.Cast( "Rake", 
+                    ret => _aoeColl.FirstOrDefault( 
+                        m => m.Guid != Me.CurrentTargetGuid 
+                            && m.IsWithinMeleeRange 
+                            && !m.HasMyAura("Rake") 
+                            && Me.IsSafelyFacing(m) 
+                            && !m.IsCrowdControlled()))
+                );
+        }
+
+
 
     }
 }

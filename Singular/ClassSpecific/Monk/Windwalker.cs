@@ -52,23 +52,23 @@ namespace Singular.ClassSpecific.Monk
                             ),
 #endif
                         new Decorator(
-                            ret => !Me.CurrentTarget.IsAerialTarget() && Me.CurrentTarget.Distance > 10,
+                            ret => !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 10,
                             new PrioritySelector(
                                 Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
                                 Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
                                 )
                             ),
 
-                        new Throttle( 1, 5, Spell.Cast("Grapple Weapon", ret => !Me.Elite && Me.CurrentTarget.Distance < 40 && !Me.CurrentTarget.Disarmed )),
+                        Common.GrappleWeapon(),
                         Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
                         Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                         Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
-                        Spell.Cast("Roll", ret => !Me.CurrentTarget.IsAerialTarget() && Me.CurrentTarget.Distance > 12)
+                        Spell.Cast("Roll", ret => !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12)
                         )
                     ),
 
                 new Decorator( 
-                    ret => Me.CurrentTarget.IsAerialTarget(), 
+                    ret => Me.CurrentTarget.IsAboveTheGround(), 
                     Movement.CreateMoveToTargetBehavior(true, 35f )
                     ),
 
@@ -208,6 +208,8 @@ namespace Singular.ClassSpecific.Monk
 
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
+                        Spell.Cast( "Leg Sweep", ret => Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange && !u.IsCrowdControlled() )),
+
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
                         Spell.Buff("Paralysis",
@@ -334,17 +336,7 @@ namespace Singular.ClassSpecific.Monk
                                 Common.CreateMoveToSphereBehavior(SphereType.Life, MonkSettings.SphereDistanceInCombat)
                                 ),
 
-                            // healing sphere keeps spell on cursor for up to 3 casts... need to stop targeting after 1
-                            new Sequence(
-                                Spell.CastOnGround("Healing Sphere", 
-                                    ctx => Me.Location, 
-                                    ret => Me.HealthPercent < 65 && Me.EnergyPercent > 60 && !Common.AnySpheres( SphereType.Healing, 1f), 
-                                    false),
-                                new DecoratorContinue(
-                                    ret => Me.CurrentPendingCursorSpell != null,
-                                    new Action(ret => Lua.DoString("SpellStopTargeting()"))
-                                    )
-                                ),
+                            Common.CreateHealingSphereBehavior(),
 
                             Spell.Heal( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
 

@@ -27,40 +27,6 @@ namespace Singular.ClassSpecific.Druid
 
         public const WoWSpec DruidAllSpecs = WoWSpec.DruidBalance | WoWSpec.DruidFeral | WoWSpec.DruidGuardian | WoWSpec.DruidRestoration;
 
-        public static List<WoWUnit> EnemyUnits
-        {
-            get
-            {
-                return
-                    ObjectManager.GetObjectsOfType<WoWUnit>(true, false)
-                        .Where(unit =>
-                               !unit.IsFriendly
-                               && (unit.IsTargetingMeOrPet
-                                   || unit.IsTargetingMyPartyMember
-                                   || unit.IsTargetingMyRaidMember
-                                   || unit.IsPlayer)
-                               && !unit.IsNonCombatPet
-                               && !unit.IsCritter
-                               && unit.DistanceSqr
-                               <= 15*15).ToList();
-            }
-        }
-
-        public static double energy
-        {
-            get { return Lua.GetReturnVal<int>("return UnitMana(\"player\");", 0); }
-        }
-
-        public static double energyregen
-        {
-            get { return Lua.GetReturnVal<float>("return GetPowerRegen()", 1); }
-        }
-
-        public static double energytime_to_max
-        {
-            get { return (100 - energy)*(1.0/energyregen); }
-        }
-
         #region PreCombat Buffs
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid)]
@@ -125,7 +91,7 @@ namespace Singular.ClassSpecific.Druid
 
                 CreateRebirthBehavior( ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead)),
 
-                Spell.BuffSelf( "Celestial Alignment", ret => Me.CurrentTarget != null && Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && Me.HasAnyAura(Shaman.Common.BloodlustName, "Time Warp", "Ancient Hysteria")),
+                Spell.BuffSelf("Celestial Alignment", ret => Me.CurrentTarget != null && Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
 
                 // to do:  time ICoE at start of eclipse
                 Spell.BuffSelf( "Incarnation: Chosen of Elune" ),

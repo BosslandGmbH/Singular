@@ -1,12 +1,8 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -59,6 +55,27 @@ namespace Singular.Settings
 
         #region Category: Common
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Ghost Wolf")]
+        [Description("Cast Ghost Wolf while running on foot or indoors")]
+        public bool UseGhostWolf { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Off-heal Allowed")]
+        [Description("Off-heal anyone below 30% or no healers nearby (never in raids)")]
+        public bool AllowOffHealHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Use Bloodlust/Heroism")]
+        [Description("Lust when appropriate (never when movement disabled)")]
+        public bool UseBloodlust { get; set; }
+
         #endregion
 
         #region Category: Enhancement
@@ -69,12 +86,6 @@ namespace Singular.Settings
         [Description("Selecet on what type of fight you would like to cast Feral Spirit")]
         public CastOn FeralSpiritCastOn  { get; set; }
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Enhancement")]
-        [DisplayName("Enhancement Heal")]
-        public bool EnhancementHeal { get; set; }
-
         #endregion
 
         #region Category: Elemental
@@ -84,12 +95,6 @@ namespace Singular.Settings
         [Category("Elemental")]
         [DisplayName("Enable AOE Support")]
         public bool IncludeAoeRotation { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Elemental")]
-        [DisplayName("Elemental Heal")]
-        public bool ElementalHeal { get; set; }
 
         #endregion
 

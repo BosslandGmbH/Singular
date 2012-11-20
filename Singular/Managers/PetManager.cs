@@ -1,12 +1,8 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -174,8 +170,6 @@ namespace Singular.Managers
                     {
                         Logger.Write(string.Format("[Pet] Calling out my {0}", petName));
                         bool result = SpellManager.Cast("Summon " + petName);
-                        //if (result)
-                        //    StyxWoW.SleepForLagDuration();
                         return result;
                     }
                     break;
@@ -185,8 +179,6 @@ namespace Singular.Managers
                     {
                         Logger.Write("[Pet] Calling out Water Elemental");
                         bool result = SpellManager.Cast("Summon Water Elemental");
-                        //if (result)   - All calls to this method are now placed in a sequence that uses WaitContinue 
-                        //    StyxWoW.SleepForLagDuration();
                         return result;
                     }
                     break;
@@ -198,8 +190,6 @@ namespace Singular.Managers
                         {
                             Logger.Write(string.Format("[Pet] Calling out pet #{0}", petName));
                             bool result = SpellManager.Cast("Call Pet " + petName);
-                            //if (result)
-                            //    StyxWoW.SleepForLagDuration();
                             return result;
                         }
                     }

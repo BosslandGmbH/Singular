@@ -1,12 +1,8 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -29,6 +25,7 @@ namespace Singular.Helpers
     public delegate WoWUnit UnitSelectionDelegate(object context);
 
     public delegate bool SimpleBooleanDelegate(object context);
+    public delegate string SimpleStringDelegate(object context);
 
     internal static class Spell
     {
@@ -53,15 +50,32 @@ namespace Singular.Helpers
             return false;
         }
 
-        public static float MeleeDistance(this WoWUnit mob)
+        /// <summary>
+        /// get melee distance between two units
+        /// </summary>
+        /// <param name="unit">unit</param>
+        /// <param name="me">Me if null, otherwise second unit</param>
+        /// <returns></returns>
+        public static float MeleeDistance(this WoWUnit unit, WoWUnit me = null)
         {
-            if (mob == null)
+            // abort if mob null
+            if (unit == null)
                 return 0;
 
-            if (mob.IsPlayer)
+            // optional arg implying Me, then make sure not Mob also
+            if (me == null)
+            {
+                if ( unit.IsMe)
+                    return 0;
+
+                me = StyxWoW.Me;
+            }
+
+            // pvp, then keep it close
+            if (unit.IsPlayer && me.IsPlayer)
                 return 3.5f;
 
-            return Math.Max(5f, StyxWoW.Me.CombatReach + 1.3333334f + mob.CombatReach);
+            return Math.Max(5f, me.CombatReach + 1.3333334f + unit.CombatReach);
         }
 
         public static float MeleeRange
@@ -151,6 +165,14 @@ namespace Singular.Helpers
             uint latency = allowLagTollerance ? StyxWoW.WoWClient.Latency : 0;
             TimeSpan gcdTimeLeft = SpellManager.GlobalCooldownLeft;
             return gcdTimeLeft.TotalMilliseconds > latency;
+        }
+
+        public static TimeSpan GetSpellCastTime(string s)
+        {
+            SpellFindResults sfr;
+            if (SpellManager.FindSpell(s, out sfr))
+                return TimeSpan.FromMilliseconds((sfr.Override ?? sfr.Original).CastTime);
+            return TimeSpan.Zero;
         }
 
         /// <summary>
@@ -314,6 +336,20 @@ namespace Singular.Helpers
                             Logger.Write(string.Format("Casting {0} on {1}", name, onUnit(ret).SafeName()));
                             SpellManager.Cast(name, onUnit(ret));
                         })
+                    )
+                );
+        }
+
+        public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
+            SimpleBooleanDelegate requirements)
+        {
+            return new Decorator(ret => requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null && name(ret) != null && SpellManager.CanCast(name(ret), onUnit(ret), true, checkMovement(ret)),
+                new Throttle(
+                    new Action(ret =>
+                    {
+                        Logger.Write(string.Format("Casting {0} on {1}", name(ret), onUnit(ret).SafeName()));
+                        SpellManager.Cast(name(ret), onUnit(ret));
+                    })
                     )
                 );
         }
@@ -524,7 +560,7 @@ namespace Singular.Helpers
                     buffNames.All(b => myBuff ? !onUnit(ret).HasMyAura(b) : !onUnit(ret).HasAura(b)),
                     new Sequence( // new Action(ctx => _lastBuffCast = name),
                         Cast(name, onUnit, requirements),
-                        new DecoratorContinue(ret => SpellManager.Spells[name].CastTime > 0,
+                        new DecoratorContinue(ret => Spell.GetSpellCastTime(name) > TimeSpan.Zero,
                             new Sequence(new WaitContinue(1, ret => StyxWoW.Me.IsCasting,
                                 new Action(ret => UpdateDoubleCastDict(name)))))));
         }
@@ -762,12 +798,32 @@ namespace Singular.Helpers
         public static Composite Heal(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
             SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel, bool allowLagTollerance = false)
         {
+            return Heal(n => name, checkMovement, onUnit, requirements, cancel, allowLagTollerance);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a heal spell by name, with special requirements, on a specific unit. Heal behaviors will make sure
+        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name="checkMovement"></param>
+        /// <param name = "onUnit">The on unit.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <param name="cancel">The cancel cast in progress delegate</param>
+        /// <param name="allowLagTollerance">allow next spell to queue before this one completes</param>
+        /// <returns>.</returns>
+        public static Composite Heal(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel, bool allowLagTollerance = false)
+        {
             return new Sequence(
                     
                 // save context of currently in a GCD or IsCasting before our Cast
                 new Action( ret => IsSpellBeingQueued = (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null)),
 
-                Cast(name, checkMovement, onUnit, requirements),
+                Cast( n => name(n), checkMovement, onUnit, requirements),
 
                 // continue if not queueing spell, or we reahed end of cast/gcd of spell in progress
                 new WaitContinue( 
@@ -780,7 +836,7 @@ namespace Singular.Helpers
                 new WaitContinue(1, 
                     ret => {
                         WoWSpell spell;
-                        if (SpellManager.Spells.TryGetValue(name, out spell))
+                        if (SpellManager.Spells.TryGetValue(name(ret), out spell))
                         {
                             if (spell.CastTime == 0)
                                 return true;
@@ -827,7 +883,7 @@ namespace Singular.Helpers
                         if ( cancel(ret) )
                         {
                             SpellManager.StopCasting();
-                            Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name, onUnit(ret).SafeName(), onUnit(ret).HealthPercent);
+                            Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name(ret), onUnit(ret).SafeName(), onUnit(ret).HealthPercent);
                             return true;
                         }
 

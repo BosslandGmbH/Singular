@@ -1,12 +1,8 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -58,16 +54,14 @@ namespace Singular.ClassSpecific.Shaman
             return tb;
         }
 
-        private const int StressMobCount = 3;
-
         public static Composite CreateTotemsNormalBehavior()
         {
             // create Fire Totems behavior first, then wrap if needed
             Composite fireTotemBehavior =
                 new PrioritySelector(
                     Spell.BuffSelf("Fire Elemental",
-                        ret => ((bool)ret)
-                            || (Unit.NearbyUnitsInCombatWithMe.Count() >= StressMobCount && !SpellManager.CanBuff(WoWTotem.EarthElemental.ToSpellId(), false))),
+                        ret => Common.StressfulSituation && !SpellManager.CanBuff(WoWTotem.EarthElemental.ToSpellId(), false)),
+
 /*  Magma - handle within AoE DPS logic only
                     Spell.BuffSelf("Magma Totem",
                         ret => Unit.NearbyUnitsInCombatWithMe.Count(u => u.Distance <= GetTotemRange(WoWTotem.Magma)) >= StressMobCount
@@ -80,69 +74,73 @@ namespace Singular.ClassSpecific.Shaman
                     );
 
             if ( Me.Specialization == WoWSpec.ShamanRestoration )
-                fireTotemBehavior = new Decorator(ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0, fireTotemBehavior);
+                fireTotemBehavior = new Decorator(ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid), fireTotemBehavior);
 
             // now 
             return new PrioritySelector(
 
-                // check for stress - enemy player or elite within 8 levels nearby
-                // .. dont use NearbyUnitsInCombatWithMe since it checks .Tagged and we only care if we are being attacked 
-                ctx => Unit.NearbyUnitsInCombatWithMe.Count() >= StressMobCount
-                    || Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && (u.IsPlayer || (u.Elite && u.Level + 8 > Me.Level))),
-
-                // earth totems
-                Spell.BuffSelf(WoWTotem.EarthElemental.ToSpellId(),
-                    ret => (bool) ret && !Exist( WoWTotem.StoneBulwark)),
-
-                Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(),
-                    ret => Me.HealthPercent < SingularSettings.Instance.Shaman.StoneBulwarkTotemPercent && !Exist( WoWTotem.EarthElemental)),
-
                 Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
-                    ret => Unit.GroupMembers.Any( f=> f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor)
-                        && !Exist( WoWTotem.StoneBulwark, WoWTotem.EarthElemental ))),
+                    ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor)
+                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental))),
 
-                new PrioritySelector(
-                    ctx => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && u.IsPlayer && u.Combat),
+                new Decorator(
+                    ret => !Me.IsMoving || (Me.GotTarget && Me.CurrentTarget.Distance < (Me.MeleeDistance(Me.CurrentTarget) + 3)),
+                    new PrioritySelector(
 
-                    Spell.BuffSelf(WoWTotem.Earthgrab.ToSpellId(),
-                        ret => (bool)ret && !Exist(WoWTotemType.Earth)),
+                        // check for stress - enemy player or elite within 8 levels nearby
+                        // .. dont use NearbyUnitsInCombatWithMe since it checks .Tagged and we only care if we are being attacked 
+                        ctx => Common.StressfulSituation ,
 
-                    Spell.BuffSelf(WoWTotem.Earthbind.ToSpellId(),
-                        ret => (bool)ret && !Exist(WoWTotemType.Earth))
-                    ),
+                        // earth totems
+                        Spell.BuffSelf(WoWTotem.EarthElemental.ToSpellId(),
+                            ret => ((bool) ret || Group.Tanks.Any( t => t.IsDead && t.Distance < 40)) && !Exist( WoWTotem.StoneBulwark)),
+
+                        Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(),
+                            ret => Me.HealthPercent < SingularSettings.Instance.Shaman.StoneBulwarkTotemPercent && !Exist( WoWTotem.EarthElemental)),
+
+                        new PrioritySelector(
+                            ctx => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && u.IsPlayer && u.Combat),
+
+                            Spell.BuffSelf(WoWTotem.Earthgrab.ToSpellId(),
+                                ret => (bool)ret && !Exist(WoWTotemType.Earth)),
+
+                            Spell.BuffSelf(WoWTotem.Earthbind.ToSpellId(),
+                                ret => (bool)ret && !Exist(WoWTotemType.Earth))
+                            ),
 
 
-                // fire totems
-                fireTotemBehavior,
+                        // fire totems
+                        fireTotemBehavior,
 
-                // water totems
-                Spell.Cast("Mana Tide Totem", ret => ((bool)ret) && StyxWoW.Me.ManaPercent < 80
-                    && !Exist( WoWTotem.HealingTide )),
+                        // water totems
+                        Spell.Cast("Mana Tide Totem", ret => ((bool)ret) && StyxWoW.Me.ManaPercent < 80
+                            && !Exist( WoWTotem.HealingTide )),
 
-/* Healing...: handle within Helaing logic
-                Spell.Cast("Healing Tide Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 50
-                    && !Exist(WoWTotem.ManaTide)),
+        /* Healing...: handle within Helaing logic
+                        Spell.Cast("Healing Tide Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 50
+                            && !Exist(WoWTotem.ManaTide)),
 
-                Spell.Cast("Healing Stream Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 80
-                    && !Exist( WoWTotemType.Water)),
-*/
+                        Spell.Cast("Healing Stream Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 80
+                            && !Exist( WoWTotemType.Water)),
+        */
 
-                // air totems
-                Spell.Cast("Grounding Totem",
-                    ret => ((bool) ret)
-                        && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)
-                        && !Exist(WoWTotemType.Air)),
+                        // air totems
+                        Spell.Cast("Grounding Totem",
+                            ret => ((bool) ret)
+                                && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)
+                                && !Exist(WoWTotemType.Air)),
 
-                Spell.Cast("Capacitor Totem",
-                    ret => ((bool) ret)
-                        && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))
-                        && !Exist(WoWTotemType.Air)),
+                        Spell.Cast("Capacitor Totem",
+                            ret => ((bool) ret)
+                                && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))
+                                && !Exist(WoWTotemType.Air)),
 
-                Spell.Cast("Stormlash Totem",
-                    ret => ((bool)ret)
-                        && Me.HasAnyAura( Common.BloodlustName, "Timewarp", "Ancient Hysteria")
-                        && !Exist(WoWTotemType.Air))
-
+                        Spell.Cast("Stormlash Totem",
+                            ret => ((bool)ret)
+                                && PartyBuff.WeHaveBloodlust
+                                && !Exist(WoWTotemType.Air))
+                        )
+                    )
                 );
 
         }
@@ -163,23 +161,31 @@ namespace Singular.ClassSpecific.Shaman
         /// <remarks>
         ///   Created 3/26/2011.
         /// </remarks>
-        public static void RecallTotems()
+        public static Composite CreateRecallTotems()
         {
-            Logger.Write("Recalling totems!");
-            if (SpellManager.HasSpell("Totemic Recall"))
-            {
-                SpellManager.Cast("Totemic Recall");
-                return;
-            }
+            return new Decorator(
+                ret => Totems.NeedToRecallTotems,
+                new Throttle(
+                    new Styx.TreeSharp.Action( delegate
+                    {
+                        Logger.Write("Recalling totems!");
+                        if (SpellManager.HasSpell("Totemic Recall"))
+                        {
+                            SpellManager.Cast("Totemic Recall");
+                            return;
+                        }
 
-            List<WoWTotemInfo> totems = StyxWoW.Me.Totems;
-            foreach (WoWTotemInfo t in totems)
-            {
-                if (t != null && t.Unit != null)
-                {
-                    DestroyTotem(t.Type);
-                }
-            }
+                        List<WoWTotemInfo> totems = StyxWoW.Me.Totems;
+                        foreach (WoWTotemInfo t in totems)
+                        {
+                            if (t != null && t.Unit != null)
+                            {
+                                DestroyTotem(t.Type);
+                            }
+                        }
+                    })
+                    )
+                );
         }
 
         /// <summary>

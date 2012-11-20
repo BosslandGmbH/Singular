@@ -300,5 +300,28 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
+        public static Sequence CreateHealingSphereBehavior()
+        {
+            // healing sphere keeps spell on cursor for up to 3 casts... need to stop targeting after 1
+            return new Sequence(
+                Spell.CastOnGround("Healing Sphere",
+                    ctx => Me.Location,
+                    ret => Me.HealthPercent < 65 && Me.EnergyPercent > 60 && !Common.AnySpheres(SphereType.Healing, 1f),
+                    false),
+                new DecoratorContinue(
+                    ret => Me.CurrentPendingCursorSpell != null,
+                    new Action(ret => Lua.DoString("SpellStopTargeting()"))
+                    )
+                );
+}
+
+        /// <summary>
+        /// cast grapple weapon, dealing with issues of mobs immune to that spell
+        /// </summary>
+        /// <returns></returns>
+        public static Composite GrappleWeapon()
+        {
+            return new Throttle(1, 5, Spell.Cast("Grapple Weapon", ret => !Me.Elite && Me.CurrentTarget.Distance < 40 && !Me.CurrentTarget.Disarmed));
+        }
     }
 }

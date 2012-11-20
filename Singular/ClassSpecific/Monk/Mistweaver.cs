@@ -11,7 +11,6 @@ using Styx;
 using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;
-using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Singular.Settings;
@@ -19,44 +18,28 @@ using Singular.Settings;
 
 namespace Singular.ClassSpecific.Monk
 {
-
+    // wowraids.org/mistweaver
     public class Mistweaver
     {
         private const int SOOTHING_MIST = 115175;
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk; } }
 
-        [Behavior(BehaviorType.Combat | BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkMistweaver)]
-        public static Composite CreateMistweaverMonkCombatBehavior()
-        {
-            return new PrioritySelector(
-                CreateMistweaverMonkHealing(false)
-#if NOTYET
-                ,
-                new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateAutoAttack(true),
-
-                    Common.CastLikeMonk("Blackout Kick", ret => Me.CurrentChi >= 2 && (!Me.HasAura("Serpent's Zeal", 2) || Me.GetAuraTimeLeft("Serpent's Zeal", true).TotalSeconds < 5)),
-                    Common.CastLikeMonk("Tiger Palm", ret => Me.CurrentChi >= 1 && (!Me.HasAura("Vital Mists", 5) || Me.GetAuraTimeLeft("Vital Mists", true).TotalSeconds < 5)),
-                    Common.CastLikeMonk("Expel Harm", ret => Me, ret => Me.HealthPercent < 90 && Me.CurrentChi < Me.MaxChi),
-                    Common.CastLikeMonk("Jab", ret => Me.CurrentChi < Me.MaxChi),
-                    new Decorator( ret => !Me.IsCasting,
-                        new PrioritySelector(
-                            Common.CastLikeMonk("Roll", ret => Me.CurrentTarget.Distance >= 10 && Me.CurrentTarget.Distance <= 25),
-                            Movement.CreateMoveToMeleeBehavior(true)
-                            )
-                        )
-                    )
-#endif
-                );
-        }
 
         [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkMistweaver)]
         public static Composite CreateMistweaverMonkHealBehavior()
         {
-            return CreateMistweaverMonkHealing(false);
+            return new PrioritySelector(
+                new Decorator(
+                    ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    CreateMistweaverMonkHealing(false)
+                    ),
+
+                new Decorator(
+                    ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe) && Me.HealthPercent < 65,
+                    CreateMistweaverMonkHealing(true)
+                    )
+                );
         }
 
         [Behavior(BehaviorType.Rest, WoWClass.Monk, WoWSpec.MonkMistweaver)]
@@ -67,7 +50,111 @@ namespace Singular.ClassSpecific.Monk
                 Rest.CreateDefaultRestBehaviour(),
                 Spell.Resurrect("Resuscitate"),
                 CreateMistweaverMonkHealing(false)
-                );               
+                );
+        }
+
+        [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkMistweaver)]
+        public static Composite CreateMistweaverMonkPullBehavior()
+        {
+            return new Decorator(
+                ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+
+                new PrioritySelector(
+                    Safers.EnsureTarget(),
+                    Movement.CreateMoveToLosBehavior(),
+                    Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.CreateAutoAttack(true),
+
+                    Spell.WaitForCast(),
+
+                    new Decorator(
+                        ret => !Spell.IsGlobalCooldown(), 
+
+                        new PrioritySelector(
+                            Spell.BuffSelf("Stance of the Fierce Tiger"),
+
+                            // Pull
+                            Common.GrappleWeapon(),
+                            Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
+                            Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
+                            Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
+                            Spell.Cast("Roll", ret => !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12),
+                            Spell.Cast("Jab")
+                            )
+                        ), 
+
+                    Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12),
+
+                    Movement.CreateMoveToMeleeBehavior(true)
+                    )
+                );
+
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkMistweaver )]
+        public static Composite CreateHolyCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Stance of the Wise Serpent", ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe)),
+                        Spell.BuffSelf("Stance of the Fierce Tiger", ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe))
+                        )
+                    )
+                );
+        }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkMistweaver)]
+        public static Composite CreateMistweaverMonkCombatBehavior()
+        {
+            return new Decorator(
+                ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+
+                new PrioritySelector(
+                    Safers.EnsureTarget(),
+                    Movement.CreateMoveToLosBehavior(),
+                    Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.CreateAutoAttack(true),
+
+                    Spell.WaitForCast(),
+
+                    new Decorator(
+                        ret => !Spell.IsGlobalCooldown(), 
+
+                        new PrioritySelector(
+                            Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                            Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
+
+                            Spell.Cast("Paralysis",
+                                onu => Unit.NearbyUnfriendlyUnits
+                                    .FirstOrDefault(u => u.IsCasting && u.Distance.Between(9, 20) && Me.IsSafelyFacing(u))),
+
+                            Spell.Cast("Fists of Fury",
+                                ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 2),
+
+                            Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
+
+                            Spell.Cast("Tiger Palm",
+                                ret => Me.CurrentChi > 0
+                                    && (!Me.HasAura("Tiger Power", 3) || Me.GetAuraTimeLeft("Tiger Power", true).TotalSeconds < 4)),
+
+                            // chi dump
+                            Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
+
+                            Spell.Cast("Expel Harm", ret => Me.CurrentChi < (Me.MaxChi - 2) || Me.HealthPercent < 80),
+
+                            Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
+                            )
+                        ), 
+
+                    Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12),
+
+                    Movement.CreateMoveToMeleeBehavior(true)
+                    )
+                );
         }
 
         public static Composite CreateMistweaverMonkHealing(bool selfOnly)
@@ -79,7 +166,7 @@ namespace Singular.ClassSpecific.Monk
                 ctx => ChooseBestMonkHealTarget(selfOnly ? Me : HealerManager.Instance.FirstUnit),
                 
                 // if channeling soothing mist and they aren't best target, cancel the cast
-                new Decorator(ret => Me.ChanneledCastingSpellId == SOOTHING_MIST && Me.ChannelObject != null && Me.ChannelObject != (WoWObject)ret,
+                new Decorator(ret => Me.ChanneledCastingSpellId == SOOTHING_MIST && Me.ChannelObject != null && Me.ChannelObject != ((WoWUnit)ret),
                     new Sequence(
                         new Action( ret => Logger.Write( System.Drawing.Color.OrangeRed, "/stopcasting: cancel {0} on {1} @ {2:F1}", Me.ChanneledSpell.Name, Me.ChannelObject.SafeName(), Me.ChannelObject.ToUnit().HealthPercent) ),
                         new Action( ret => SpellManager.StopCasting() ),
@@ -89,45 +176,41 @@ namespace Singular.ClassSpecific.Monk
 
                 new Decorator(ret => Me.IsCasting && (Me.ChanneledSpell == null || Me.ChanneledSpell.Id != SOOTHING_MIST), new Action(ret => { return RunStatus.Success; })),
 
-                new Decorator(ret => ((WoWUnit)ret) != null && ((WoWUnit)ret).GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
-                
+                new Decorator(ret => !SpellManager.GlobalCooldown,
+
                     new PrioritySelector(
 
-                        ShowHealTarget(ret => (WoWUnit)ret),
+                        new Decorator(ret => ((WoWUnit)ret) != null && ((WoWUnit)ret).GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
+                
+                            new PrioritySelector(
 
-                        new Decorator(ret => !SpellManager.GlobalCooldown,
+                                ShowHealTarget(ret => ((WoWUnit)ret)),
 
-                            new Sequence( 
+                                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
 
-                                new PrioritySelector(
-                                    Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                                Common.CastLikeMonk("Fortifying Brew", ret => Me, ret => Me.HealthPercent < 40),
 
-                                    Common.CastLikeMonk("Fortifying Brew", ret => Me, ret => Me.HealthPercent < 40),
+                                Common.CastLikeMonk("Mana Tea", ret => Me, ret => Me.ManaPercent < 60 && Me.HasAura("Mana Tea", 2)),
 
-                                    Common.CastLikeMonk("Mana Tea", ret => Me, ret => Me.ManaPercent < 60 && Me.HasAura("Mana Tea", 2)),
+                                Common.CastLikeMonk("Surging Mist", ret => ((WoWUnit)ret),
+                                    ret => ((WoWUnit)ret).HealthPercent < 30 && Me.HasAura("Vital Mists", 5)),
 
-                                    new PrioritySelector(
-                                        Common.CastLikeMonk("Surging Mist", ret => (WoWUnit)ret,
-                                            ret => ((WoWUnit)ret).HealthPercent < 30 && Me.HasAura("Vital Mists", 5)),
+                                Common.CastLikeMonk("Soothing Mist", ret => ((WoWUnit)ret),
+                                    ret => ((WoWUnit)ret).HealthPercent < 90 && Me.ChanneledSpell == null),
 
-                                        Common.CastLikeMonk("Soothing Mist", ret => (WoWUnit)ret,
-                                            ret => ((WoWUnit)ret).HealthPercent < 90 && Me.ChanneledSpell == null),
+                                Common.CastLikeMonk("Surging Mist", ret => ((WoWUnit)ret),
+                                    ret => ((WoWUnit)ret).HealthPercent < 60),
 
-                                        Common.CastLikeMonk("Surging Mist", ret => (WoWUnit)ret,
-                                            ret => ((WoWUnit)ret).HealthPercent < 60),
-
-                                        Common.CastLikeMonk("Enveloping Mist", ret => (WoWUnit)ret,
-                                            ret => ((WoWUnit)ret).HealthPercent < 89 && Me.CurrentChi >= 3)
-                                        )
-                                    )
+                                Common.CastLikeMonk("Enveloping Mist", ret => ((WoWUnit)ret),
+                                    ret => ((WoWUnit)ret).HealthPercent < 89 && Me.CurrentChi >= 3)
                                 )
-                            ),
-
-                        new Decorator(
-                            ret => !Me.IsCasting,
-                            Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, ret => 38f)
                             )
                         )
+                    ),
+
+                new Decorator(
+                    ret => !Me.IsCasting,
+                    Movement.CreateMoveToRangeAndStopBehavior(ret => ((WoWUnit)ret), ret => 38f)
                     )
                 );
 
@@ -142,7 +225,7 @@ namespace Singular.ClassSpecific.Monk
                         ret => onUnit(ret) == null && guidLastHealTarget != 0,
                         new Action( ret => {
                             guidLastHealTarget = 0;
-                            Logger.WriteDebug(Color.LightGreen, "Heal Target - none", ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).HealthPercent, ((WoWUnit)ret).Distance);
+                            Logger.WriteDebug(Color.LightGreen, "Heal Target - none");
                             return RunStatus.Failure;
                         })
                         ),
@@ -151,8 +234,8 @@ namespace Singular.ClassSpecific.Monk
                         ret => onUnit(ret) != null && guidLastHealTarget != onUnit(ret).Guid,
                         new Action(ret =>
                         {
-                            guidLastHealTarget = ((WoWUnit)ret).Guid;
-                            Logger.WriteDebug(Color.LightGreen, "Heal Target - {0} {1:F1}% @ {2:F1} yds", ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).HealthPercent, ((WoWUnit)ret).Distance);
+                            guidLastHealTarget = onUnit(ret).Guid;
+                            Logger.WriteDebug(Color.LightGreen, "Heal Target - {0} {1:F1}% @ {2:F1} yds", onUnit(ret).SafeName(), onUnit(ret).HealthPercent, onUnit(ret).Distance);
                             return RunStatus.Failure;
                         })),
 

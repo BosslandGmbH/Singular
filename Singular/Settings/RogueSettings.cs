@@ -1,12 +1,8 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -26,6 +22,13 @@ namespace Singular.Settings
             : base(Path.Combine(SingularSettings.SettingsPath, "Rogue.xml"))
         {
         }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Use Sprint")]
+        [Description("Sprint to close destinations or when unable to mount")]
+        public bool UseSprint { get; set; }
 
         [Setting]
         [DefaultValue(LethalPoisonType.Deadly)]

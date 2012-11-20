@@ -207,6 +207,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.BuffSelf("Moonkin Form"),
                         Spell.BuffSelf("Barkskin", 
                             ret => StyxWoW.Me.IsCrowdControlled() || StyxWoW.Me.HealthPercent < 40),
+
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                         // Spread MF/IS

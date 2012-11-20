@@ -152,7 +152,7 @@ namespace Singular.Utilities
                     //  ..  false reports of flawed rotation
                     if (SingularSettings.Instance.EnableDebugLogging)
                     {
-                        Logger.WriteFile(
+                        Logger.WriteDebug(
                             "[CombatLog] {0} {1}#{2} {3}",
                             e.Event,
                             e.SpellName,

@@ -141,17 +141,6 @@ namespace Singular
 
         public static string GetBotName()
         {
-            BotBase bot = GetBot();
-            string sFoundName = "[null]";
-
-            if (bot != null)
-                sFoundName = bot.Name;
-
-            return sFoundName;
-        }
-
-        public static BotBase GetBot()
-        {
             BotBase bot = null;
 
             if (TreeRoot.Current != null)
@@ -163,17 +152,14 @@ namespace Singular
                     NewMixedMode.MixedModeEx mmb = (NewMixedMode.MixedModeEx)TreeRoot.Current;
                     if (mmb != null)
                     {
-                        string sPrimary = mmb.PrimaryBot != null ? mmb.PrimaryBot.Name : "[primary null]";
-                        string sSecondary = mmb.SecondaryBot != null ? mmb.SecondaryBot.Name : "[secondary null]";
-                        if (CurrentWoWContext == WoWContext.Battlegrounds || CurrentWoWContext == WoWContext.Instances)
-                            bot = mmb.SecondaryBot;
-                        else
-                            bot = mmb.PrimaryBot;
+                        if (mmb.SecondaryBot.RequirementsMet)
+                            return mmb.SecondaryBot != null ? "Mixed:" + mmb.SecondaryBot.Name : "Mixed:[secondary null]";
+                        return mmb.PrimaryBot != null ? "Mixed:" + mmb.PrimaryBot.Name : "Mixed:[primary null]";
                     }
                 }
             }
 
-            return bot;
+            return bot.Name;
         }
 
         public static bool IsBotInUse(string botNameContains)

@@ -24,16 +24,27 @@ namespace Singular.ClassSpecific.Shaman
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman; } }
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental)]
-        public static Composite CreateShamanElementalPreCombatBuffs()
+        [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal|WoWContext.Instances)]
+        public static Composite CreateShamanElementalPreCombatBuffsNormal()
+        {
+            return new PrioritySelector(
+                Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
+
+                Common.CreateShamanDpsShieldBehavior(),
+
+                Totems.CreateRecallTotems()
+                );
+        }
+
+        [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Battlegrounds )]
+        public static Composite CreateShamanElementalPreCombatBuffsPvp()
         {
             return new PrioritySelector(
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
                 Spell.BuffSelf("Lightning Shield"),
 
-                new Decorator(ret => Totems.NeedToRecallTotems,
-                    new Action(ret => Totems.RecallTotems()))
+                Totems.CreateRecallTotems()
                 );
         }
 
@@ -44,44 +55,24 @@ namespace Singular.ClassSpecific.Shaman
                 new PrioritySelector(
                     new Decorator(
                         ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                        CreateShamanElementalHeal()),
+                        Common.CreateShamanDpsHealBehavior()
+                        ),
                     Rest.CreateDefaultRestBehaviour(),
-                    Spell.Resurrect("Ancestral Spirit")
+                    Spell.Resurrect("Ancestral Spirit"),
+                    Common.CreateShamanMovementBuff()
                     );
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal | WoWContext.Instances)]
         public static Composite CreateShamanElementalHeal()
         {
-            Composite healBT =
-                new Decorator(
-                    ret => !StyxWoW.Me.Combat || (Group.Healers.Any() && !Group.Healers.Any(h => h.IsAlive)),
-                    Common.CreateShamanNonHealBehavior()
-                    );
-
-            // only include group healing logic if we are configured for group heal and in an Instance
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && SingularSettings.Instance.Shaman.ElementalHeal )
-            {
-                healBT =new Decorator(
-                            ret => !StyxWoW.Me.GroupInfo.IsInRaid,
-                            new PrioritySelector(
-                                // Heal the party in dungeons if the healer is dead
-                                new Decorator(
-                                    ret => StyxWoW.Me.CurrentMap.IsDungeon && Group.Healers.Count(h => h.IsAlive) == 0,
-                                    Restoration.CreateRestoShamanHealingOnlyBehavior()),
-
-                                healBT
-                                )
-                            );
-            }
-
-            return healBT;
+            return Common.CreateShamanDpsHealBehavior( );
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Battlegrounds )]
         public static Composite CreateShamanElementalPvPHeal()
         {
-            return Common.CreateShamanNonHealBehavior();
+            return Common.CreateShamanDpsHealBehavior( );
         }
 
         #endregion
@@ -137,8 +128,6 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                new ThrottlePasses( 1, CreateElementalDiagnosticOutputBehavior()),
-
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -147,6 +136,8 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator( 
                     ret => !Common.InGCD,
                     new PrioritySelector(
+                        CreateElementalDiagnosticOutputBehavior(),
+
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                         new Decorator( 
@@ -154,14 +145,6 @@ namespace Singular.ClassSpecific.Shaman
                             Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue)),
                     
                         Spell.BuffSelf("Lightning Shield"),
-
-                        Spell.BuffSelf("Elemental Mastery",
-                            ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.Elite || u.IsPlayer) &&
-                                !StyxWoW.Me.HasAnyAura(Common.BloodlustName , "Time Warp", "Ancient Hysteria")),
-
-                        Common.CreateShamanInCombatBuffs(true),
-
-                        Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving),
 
                         Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance < 10f ) >= 3),
 
@@ -172,21 +155,16 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
                                 new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
 
-                                Spell.BuffSelf("Astral Shift", ret => StyxWoW.Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 5),
-
-                                Spell.BuffSelf( Common.BloodlustName , 
-                                    ret => Unit.NearbyUnitsInCombatWithMe.Count() >= 5 ||
-                                        Unit.NearbyUnitsInCombatWithMe.Any( u => u.Elite || u.IsPlayer )),
-
-                                Spell.BuffSelf("Elemental Mastery", ret =>
-                                    !StyxWoW.Me.HasAnyAura(Common.BloodlustName , "Time Warp", "Ancient Hysteria")),
-
                                 Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location, req => 
                                     (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) &&
                                     Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
 
                                 Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
-                                )),
+                                )
+                            ),
+
+                        Spell.Cast("Elemental Blast"),
+                        Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 
                         Spell.Buff("Flame Shock", true),
 
@@ -234,13 +212,6 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.BuffSelf("Lightning Shield"),
 
-                        Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
-
-                        Spell.BuffSelf("Elemental Mastery",
-                            ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat &&
-                                   (!SpellManager.HasSpell("Spiritwalker's Grace") ||
-                                   SpellManager.Spells["Spiritwalker's Grace"].Cooldown && !StyxWoW.Me.HasAura("Spiritwalker's Grace"))),
-
                         Spell.BuffSelf("Thunderstorm", ret => StyxWoW.Me.IsStunned() && Unit.NearbyUnfriendlyUnits.Any( u => u.Distance < 10f)),
 
                         Totems.CreateTotemsPvPBehavior(),
@@ -254,7 +225,11 @@ namespace Singular.ClassSpecific.Shaman
                                 Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
                                 )),
 
+                        Spell.Cast("Elemental Blast"),
+                        Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
+
                         Spell.Buff("Flame Shock", true),
+
                         Spell.Cast("Lava Burst"),
                         Spell.Cast("Earth Shock",
                             ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
@@ -282,36 +257,43 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
-
-                Spell.BuffSelf("Lightning Shield"),
-                Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
-
-                Spell.BuffSelf("Elemental Mastery", ret => StyxWoW.Me.Combat),
-
-                Totems.CreateTotemsInstanceBehavior(),
-
-                new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                new PrioritySelector(
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        new Action(act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
-                        Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
-                        Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
-                        )),
-                
-                Spell.Buff("Flame Shock", true),
-                Spell.Cast("Lava Burst"),
-                Spell.Cast("Earth Shock", 
-                    ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
-                           StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
-                Spell.Cast("Unleash Elements",
-                    ret => StyxWoW.Me.IsMoving 
-                        && !StyxWoW.Me.HasAura("Spiritwalker's Grace")
-                        && Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
-                Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
-                Spell.Cast("Lightning Bolt"),
+                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+
+                        Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
+
+                        Spell.BuffSelf("Lightning Shield"),
+
+                        Totems.CreateTotemsInstanceBehavior(),
+
+                        new Decorator(
+                            ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            new PrioritySelector(
+                                new Action(act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
+                                Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
+                                Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
+                                )),
+
+                        Spell.Cast("Elemental Blast"),
+                        Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
+
+                        Spell.Buff("Flame Shock", true),
+
+                        Spell.Cast("Lava Burst"),
+                        Spell.Cast("Earth Shock", 
+                            ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
+                                   StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
+                        Spell.Cast("Unleash Elements",
+                            ret => StyxWoW.Me.IsMoving 
+                                && !StyxWoW.Me.HasAura("Spiritwalker's Grace")
+                                && Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
+                        Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                        Spell.Cast("Lightning Bolt")
+                        )
+                    ),
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
@@ -322,27 +304,32 @@ namespace Singular.ClassSpecific.Shaman
 
         private static Composite CreateElementalDiagnosticOutputBehavior()
         {
-            return new Decorator(
-                ret => SingularSettings.Instance.EnableDebugLogging,
-                new Action(ret =>
-                {
-                    uint lstks = !Me.HasAura("Lightning Shield") ? 0 : Me.ActiveAuras["Lightning Shield"].StackCount;
+            return new Throttle( 1,
+                new Decorator(
+                    ret => SingularSettings.Instance.EnableDebugLogging,
+                    new Action(ret =>
+                    {
+                        uint lstks = !Me.HasAura("Lightning Shield") ? 0 : Me.ActiveAuras["Lightning Shield"].StackCount;
 
-                    string line = string.Format(".... h={0:F1}%/m={1:F1}%, lstks={2}",
-                        Me.HealthPercent,
-                        Me.ManaPercent,
-                        lstks
-                        );
+                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, lstks={2}",
+                            Me.HealthPercent,
+                            Me.ManaPercent,
+                            lstks
+                            );
 
-                    WoWUnit target = Me.CurrentTarget;
-                    if (target == null)
-                        line += ", target=(null)";
-                    else
-                        line += string.Format(", target={0}, th={1:F1}%", target.Name, target.HealthPercent);
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target == null)
+                            line += ", target=(null)";
+                        else
+                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tloss={3}",
+                                target.Name,
+                                target.Distance,
+                                target.HealthPercent,
+                                target.InLineOfSpellSight);
 
-                    Logging.WriteToFileSync(LogLevel.Diagnostic, line);
-                    return RunStatus.Success;
-                })
+                        Logger.WriteDebug(line);
+                        return RunStatus.Success;
+                    }))
                 );
         }
 

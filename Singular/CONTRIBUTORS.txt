@@ -1,6 +1,6 @@
-﻿$Revision$
-$Date$
-$HeadURL$
+﻿// $LastChangedBy$
+// $LastChangedDate$
+// $Revision$
 
 Apoc - Lead
 raphus - Bunch o shit

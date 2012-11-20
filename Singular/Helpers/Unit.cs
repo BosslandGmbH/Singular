@@ -92,11 +92,11 @@ namespace Singular.Helpers
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMe
         {
-            get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => ValidUnit(p) && p.DistanceSqr <= 40 * 40 && p.Combat && p.TaggedByMe).ToList(); }
+            get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => ValidUnit(p) && p.DistanceSqr <= 40 * 40 && p.Combat && (p.TaggedByMe || p.IsTargetingMeOrPet)).ToList(); }
         }
 
 
-        static bool ValidUnit(WoWUnit p)
+        public static bool ValidUnit(WoWUnit p)
         {
             if (IgnoreMobs.Contains(p.Entry))
                 return false;
@@ -105,12 +105,16 @@ namespace Singular.Helpers
             if (!p.CanSelect || !p.Attackable)
                 return false;
 
-            // Ignore friendlies!
-            if (p.IsFriendly)
-                return false;
-
             // Duh
             if (p.IsDead)
+                return false;
+
+            // check for enemy players here as friendly only seems to work on npc's
+            if (p.IsPlayer && p.ToPlayer().IsHorde != StyxWoW.Me.IsHorde)
+                return true;
+
+            // Ignore friendlies!
+            if (p.IsFriendly)
                 return false;
 
             // Dummies/bosses are valid by default. Period.
@@ -297,21 +301,29 @@ namespace Singular.Helpers
 #else
             return unit.Stunned 
                 || unit.Rooted 
-                || auras.Any( 
-                    a => a.Spell != null 
-                        && a.Spell.SpellEffects.Any(    
-                            se => se.AuraType == WoWApplyAuraType.ModConfuse 
-                                || se.AuraType == WoWApplyAuraType.ModCharm 
-                                || se.AuraType == WoWApplyAuraType.ModFear 
-                                || se.AuraType == WoWApplyAuraType.ModDecreaseSpeed 
-                                || se.AuraType == WoWApplyAuraType.ModPacify 
-                                || se.AuraType == WoWApplyAuraType.ModPacifySilence 
-                                || se.AuraType == WoWApplyAuraType.ModPossess 
-                                || se.AuraType == WoWApplyAuraType.ModRoot 
-                                // aurse.AuraType == WoWApplyAuraType.ModSilence 
-                                || se.AuraType == WoWApplyAuraType.ModStun
-                            ));
+                || unit.HasAuraWithEffect(
+                        WoWApplyAuraType.ModConfuse, 
+                        WoWApplyAuraType.ModCharm, 
+                        WoWApplyAuraType.ModFear, 
+                        WoWApplyAuraType.ModDecreaseSpeed, 
+                        WoWApplyAuraType.ModPacify, 
+                        WoWApplyAuraType.ModPacifySilence, 
+                        WoWApplyAuraType.ModPossess, 
+                        WoWApplyAuraType.ModRoot, 
+                        WoWApplyAuraType.ModStun );
 #endif
+        }
+
+        // this one optimized for single applytype lookup
+        public static bool HasAuraWithEffect(this WoWUnit unit, WoWApplyAuraType applyType)
+        {
+            return unit.Auras.Values.Any(a => a.Spell != null && a.Spell.SpellEffects.Any(se => applyType == se.AuraType));
+        }
+
+        public static bool HasAuraWithEffect(this WoWUnit unit, params WoWApplyAuraType[] applyType)
+        {
+            var hashes = new HashSet<WoWApplyAuraType>(applyType);
+            return unit.Auras.Values.Any( a => a.Spell != null && a.Spell.SpellEffects.Any(se => hashes.Contains(se.AuraType)));
         }
 
         public static bool IsBoss(this WoWUnit unit)
@@ -322,6 +334,19 @@ namespace Singular.Helpers
         public static bool IsTrainingDummy(this WoWUnit unit)
         {
             return Lists.BossList.TrainingDummies.Contains(unit.Entry);
+        }
+
+        /// <summary>
+        /// checks if unit is targeting you, your minions, a group member, or group pets
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <returns>true if targeting your guys, false if not</returns>
+        public static bool IsTargetingUs(this WoWUnit u)
+        {
+            return u.IsTargetingMeOrPet
+                || u.IsTargetingAnyMinion
+                || Unit.GroupMemberInfos.Any(m => m.Guid == u.CurrentTargetGuid);
+
         }
 
         public static bool IsShredBoss(this WoWUnit unit)

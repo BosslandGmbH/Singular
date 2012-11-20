@@ -1,12 +1,8 @@
 ﻿#region Revision Info
 
 // This file is part of Singular - A community driven Honorbuddy CC
-// $Author$
-// $Date$
-// $HeadURL$
 // $LastChangedBy$
 // $LastChangedDate$
-// $LastChangedRevision$
 // $Revision$
 
 #endregion
@@ -94,7 +90,7 @@ namespace Singular
         /// </summary>
         /// <param name="u">unit</param>
         /// <returns>true if above melee reach</returns>
-        public static bool IsAerialTarget(this WoWUnit u)
+        public static bool IsAboveTheGround(this WoWUnit u)
         {
             float height = HeightOffTheGround(u);
             if ( height == float.MaxValue )

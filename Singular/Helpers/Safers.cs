@@ -29,26 +29,28 @@ namespace Singular.Helpers
                     ret => !SingularSettings.Instance.DisableAllTargeting,
                     new PrioritySelector(
                         new Decorator(
-                // DisableTankTargeting is a user-setting. NeedTankTargeting is an internal one. Make sure both are turned on.
+                            // DisableTankTargeting is a user-setting. NeedTankTargeting is an internal one. Make sure both are turned on.
                             ret => !SingularSettings.Instance.DisableTankTargetSwitching && Group.MeIsTank &&
                                    TankManager.TargetingTimer.IsFinished && StyxWoW.Me.Combat && TankManager.Instance.FirstUnit != null &&
                                    (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget != TankManager.Instance.FirstUnit),
                             new Sequence(
-                // pending spells like mage blizard cause targeting to fail.
+                                // pending spells like mage blizard cause targeting to fail.
                                 new DecoratorContinue(ctx => StyxWoW.Me.CurrentPendingCursorSpell != null,
-                                    new Action(ctx => Lua.DoString("SpellStopTargeting()"))),
-
+                                    new Action(ctx => Lua.DoString("SpellStopTargeting()"))
+                                    ),
                                 new Action(
                                     ret =>
                                     {
                                         Logger.WriteDebug("Targeting first unit of TankTargeting");
                                         TankManager.Instance.FirstUnit.Target();
                                     }),
-                                    Helpers.Common.CreateWaitForLagDuration(),
-                                    new Action(ret => TankManager.TargetingTimer.Reset()))),
+                                Helpers.Common.CreateWaitForLagDuration(),
+                                new Action(ret => TankManager.TargetingTimer.Reset())
+                                )
+                            ),
 
                         new PrioritySelector(
-                            ctx =>
+                            ctx => 
                             {
                                 // We are making sure we have the proper target in all cases here.
 
@@ -65,13 +67,13 @@ namespace Singular.Helpers
                                     return null;
 
                                 // Check botpoi first and make sure our target is set to POI's object.
-                                if (BotPoi.Current.Type == PoiType.Kill)
+                                if (BotPoi.Current.Type == PoiType.Kill )
                                 {
                                     var obj = BotPoi.Current.AsObject;
 
                                     if (obj != null)
                                     {
-                                        if (StyxWoW.Me.CurrentTarget != obj)
+                                        if (StyxWoW.Me.CurrentTarget != obj && (obj as WoWUnit).IsAlive )
                                             return obj;
                                     }
                                 }
@@ -98,7 +100,10 @@ namespace Singular.Helpers
                                         2,
                                         ret => StyxWoW.Me.CurrentTarget != null &&
                                                 StyxWoW.Me.CurrentTarget == (WoWUnit)ret,
-                                        new ActionAlwaysSucceed())))),
+                                        new ActionAlwaysSucceed())
+                                    )
+                                )
+                            ),
                         new Decorator(
                             ret => StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.IsDead,
                             new PrioritySelector(
@@ -109,7 +114,7 @@ namespace Singular.Helpers
                                     if (rafLeader != null && rafLeader.IsValid && !rafLeader.IsMe && rafLeader.Combat &&
                                         rafLeader.CurrentTarget != null && rafLeader.CurrentTarget.IsAlive && !Blacklist.Contains(rafLeader.CurrentTarget))
                                     {
-                                        return rafLeader;
+                                        return rafLeader.CurrentTarget;
                                     }
 
                                     // Check bot poi.
@@ -149,7 +154,7 @@ namespace Singular.Helpers
                                     // And there's nothing left, so just return null, kthx.
                                     return null;
                                 },
-                // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
+                                // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
                                 new Decorator(
                                     ret => ret != null,
                                     new Sequence(
@@ -162,8 +167,14 @@ namespace Singular.Helpers
                                             2,
                                             ret => StyxWoW.Me.CurrentTarget != null &&
                                                    StyxWoW.Me.CurrentTarget == (WoWUnit)ret,
-                                            new ActionAlwaysSucceed()))),
-                                new ActionAlwaysSucceed()))));
+                                            new ActionAlwaysSucceed())
+                                        )
+                                    ),
+                                new ActionAlwaysSucceed()
+                                )
+                            )
+                        )
+                    );
         }
     }
 }

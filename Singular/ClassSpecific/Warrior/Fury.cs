@@ -1,4 +1,5 @@
-﻿using Singular.Dynamics;
+﻿using System.Linq;
+using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
@@ -134,14 +135,19 @@ namespace Singular.ClassSpecific.Warrior
                 // engineering gloves
                 Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
-                // AOE
-                new Decorator(ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
+                // AOE 
+                // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)
+                new Decorator(  // Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
+                    ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance <= (u.MeleeDistance() + 3) ) >= 3,
+                        
                     new PrioritySelector(
                         Spell.Cast("Dragon Roar"),
                 // Only pop RB when we have a few stacks of meat cleaver. Increased DPS by quite a bit.
-                        Spell.Cast("Raging Blow", ret => StyxWoW.Me.HasAura("Meat Cleaver", 3)),
+                        Spell.Cast("Raging Blow", ret => StyxWoW.Me.CurrentTarget.IsWithinMeleeRange && StyxWoW.Me.HasAura("Meat Cleaver", 3)),
                         Spell.Cast("Whirlwind"),
-                        Spell.Cast("Cleave"))),
+                        Spell.Cast("Cleave")
+                        )
+                    ),
 
                 // Use the single target rotation!
                 SingleTarget(),

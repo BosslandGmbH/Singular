@@ -127,12 +127,15 @@ namespace Singular.ClassSpecific.Warrior
                                 ret => Me.HealthPercent < 35 || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && StyxWoW.Me.HealthPercent < 90),
                                 new PrioritySelector(
                                     Spell.Cast("Impending Victory"),
-                                    Spell.Cast("Victory Rush")
+                                    Spell.Cast("Victory Rush", ret => Me.HasAura("Victorious"))
                                     )
                                 )
                             ),
 
-                        CreateArmsAoeCombat( ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance < 6f)),
+                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior.UseWarriorSlows),
+                        Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior.UseWarriorSlows),
+
+                        CreateArmsAoeCombat(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1))),
 
 #region EXECUTE AVAILABLE
                         new Decorator( ret => Me.CurrentTarget.HealthPercent <= 20,
@@ -152,8 +155,9 @@ namespace Singular.ClassSpecific.Warrior
                         new Decorator(ret => Me.CurrentTarget.HealthPercent > 20,
                             new PrioritySelector(
                                 // Only drop DC if we need to use HS for TFB. This lets us avoid breaking HS as a rage dump, when we don't want it to be one.
-                                new Throttle( Spell.Cast("Deadly Calm", ret => NeedTasteForBloodDump)),
-                                new Throttle( Spell.Cast("Heroic Strike", ret => NeedHeroicStrikeDump)),
+                                Spell.Cast("Deadly Calm", ret => NeedTasteForBloodDump),
+                                Spell.Cast("Cleave", ret => NeedHeroicStrikeDump && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) > 1),
+                                Spell.Cast("Heroic Strike", ret => NeedHeroicStrikeDump ),
 
                                 Spell.Cast("Colossus Smash", ret => !StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash")),
                                 Spell.Cast("Execute"),

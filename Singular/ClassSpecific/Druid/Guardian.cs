@@ -36,8 +36,7 @@ namespace Singular.ClassSpecific.Druid
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
                 //Dismount
-                new Decorator(ret => Me.Mounted,
-                              Helpers.Common.CreateDismount("Pulling")),
+                new Decorator(ret => Me.Mounted, Helpers.Common.CreateDismount("Pulling")),
 
                 Spell.WaitForCast(true),
 
@@ -76,15 +75,33 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Bear Form"),
-                
-                Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankSavageDefense && Me.GetAuraTimeLeft("Savage Defense", true).TotalSeconds < 1),
-                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
-                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
+
+                // Enrage = 20 rage when popped. + 10 over time.
+                // We use it as a "get to 60 asap" cooldown. That's basically it.
+                Spell.BuffSelf("Enrage", ret=>StyxWoW.Me.CurrentRage <= 40),
+
+                // Ursoc first. Gives us a total HP% boost.
                 Spell.BuffSelf("Might of Ursoc", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankMightOfUrsoc),
-                Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankSurvivalInstinctsHealth),
+                // Renewal after, for more health gain if we're still low with ursoc up.
+                Spell.Cast("Renewal", ret => Me.HealthPercent < SingularSettings.Instance.Druid.RenewalHealth),
+
+                Spell.BuffSelf("Survival Instincts",
+                    ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankSurvivalInstinctsHealth),
+
                 Spell.BuffSelf("Barkskin", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankFeralBarkskin),
-                Spell.Cast("Renewal", ret => Me.HealthPercent < SingularSettings.Instance.Druid.RenewalHealth)
-                
+
+                // 2 cases for FR.
+                // 1) We have > 60 rage, and below the FR setting. (70 by default)
+                // 2) We're really low, and have 15+ rage. Enough to get *some* heal out of it.
+                Spell.BuffSelf("Frenzied Regeneration",
+                    ret =>
+                    Me.HealthPercent < SingularSettings.Instance.Druid.TankFrenziedRegenerationHealth &&
+                    Me.CurrentRage >= 60),
+
+                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
+
+                // SD basically on cooldown. Let it drop off so we can pool more rage.
+                Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankSavageDefense)
                 );
         }
 
@@ -104,40 +121,30 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.WaitForCast(true),
 
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
+                new PrioritySelector(
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                    Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
 
-                        // keep weakened blows up on targets if not present. Skip if Berserking so GCD's saved for Mangle
-                        Spell.Cast("Thrash", ret => !Me.HasAura("Berserk") && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 8 && u.GetAuraTimeLeft("Thrash", true).TotalSeconds < 3)),
+                    Spell.Cast("Mangle"),
+                    Spell.Cast("Thrash"),
 
-                        new Decorator(
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 2,
-                            new PrioritySelector(
-                                Spell.Cast("Berserk"),
-                                Spell.Cast("Mangle"),
-                                Spell.Cast("Thrash"),
-                                Spell.Cast("Swipe"),
-                                Spell.Cast("Lacerate"),
-                                Spell.Cast("Faerie Fire"),
-                                Movement.CreateMoveToMeleeBehavior(true),
-                                new ActionAlwaysSucceed() // so we dont go down the rest of the tree?
-                                )
-                            ),
+                    Aoe(),
 
-                        Spell.Cast("Mangle"),
-                        Spell.Buff("Faerie Fire"),
-                        Spell.Cast("Lacerate"),
-                        Spell.Cast("Maul", ret=>Me.CurrentRage >= 90),
-                        Spell.Cast("Swipe")
-                        )
+                    Spell.Cast("Lacerate"),
+                    Spell.Buff("Faerie Fire")
                     ),
 
+
                 Movement.CreateMoveToMeleeBehavior(true)
-            )
-            ;
+                );
+        }
+
+        static Composite Aoe()
+        {
+            return new Decorator(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 2,
+                new PrioritySelector(
+                    Spell.Cast("Berserk"),
+                    Spell.Cast("Swipe")));
         }
     }
 }

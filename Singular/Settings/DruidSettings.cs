@@ -185,7 +185,7 @@ namespace Singular.Settings
         public bool UseRebirth { get; set; }
 
         [Setting]
-        [DefaultValue(35)]
+        [DefaultValue(70)]
         [Category("Common")]
         [DisplayName("Renewal Health")]
         [Description("Renewal will be used at this value. ")]
@@ -313,21 +313,21 @@ namespace Singular.Settings
 
         #region Guardian
         [Setting]
-        [DefaultValue(40)]
+        [DefaultValue(70)]
         [Category("Guardian")]
         [DisplayName("Frenzied Regeneration Health")]
-        [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 30 if glyphed. 15 if not.)")]
+        [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 60 if glyphed. 70 if not.)")]
         public int TankFrenziedRegenerationHealth { get; set; }
 
         [Setting]
-        [DefaultValue(30)]
+        [DefaultValue(100)]
         [Category("Guardian")]
         [DisplayName("Savage Defense Health")]
         [Description("Savage Defense will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int TankSavageDefense { get; set; }
 
         [Setting]
-        [DefaultValue(20)]
+        [DefaultValue(35)]
         [Category("Guardian")]
         [DisplayName("Might of Ursoc Health")]
         [Description("Might of Ursoc will be used at this value. Set this to 100 to enable on cooldown usage.")]
@@ -341,7 +341,7 @@ namespace Singular.Settings
         public int TankSurvivalInstinctsHealth { get; set; }
 
         [Setting]
-        [DefaultValue(50)]
+        [DefaultValue(80)]
         [Category("Guardian")]
         [DisplayName("Barkskin Health")]
         [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage.")]

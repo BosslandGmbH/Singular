@@ -137,9 +137,7 @@ namespace Singular.ClassSpecific.Monk
 
                             Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
 
-                            Spell.Cast("Tiger Palm",
-                                ret => Me.CurrentChi > 0
-                                    && (!Me.HasAura("Tiger Power", 3) || Me.GetAuraTimeLeft("Tiger Power", true).TotalSeconds < 4)),
+                            Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
 
                             // chi dump
                             Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),

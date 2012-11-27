@@ -24,7 +24,7 @@ namespace Singular.Managers
 
             if (e.Destination.Distance(StyxWoW.Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance && (!Battlegrounds.IsInsideBattleground || DateTime.Now > Battlegrounds.BattlefieldStartTime))
             {
-                if (SpellManager.HasSpell("Ghost Wolf") && SingularSettings.Instance.Shaman.UseGhostWolf)
+                if (StyxWoW.Me.Class == WoWClass.Shaman && SpellManager.HasSpell("Ghost Wolf") && SingularSettings.Instance.Shaman.UseGhostWolf)
                 {
                     e.Cancel = true;
                     if (!StyxWoW.Me.HasAura("Ghost Wolf"))
@@ -33,7 +33,7 @@ namespace Singular.Managers
                         SpellManager.Cast("Ghost Wolf");
                     }
                 }
-                else if (SpellManager.HasSpell("Travel Form"))
+                else if (StyxWoW.Me.Class == WoWClass.Druid && SpellManager.HasSpell("Travel Form"))
                 {
                     e.Cancel = true;
 
@@ -42,18 +42,6 @@ namespace Singular.Managers
                         Logger.Write("Using Travel Form instead of mounting.");
                         SpellManager.Cast("Travel Form");
                     }
-                }
-                else if (StyxWoW.Me.IsMoving && SpellManager.HasSpell("Angelic Feathers") && SingularSettings.Instance.Priest.UseSpeedBuff)
-                {
-                    Logger.Write("Using Angelic Feathers instead of mounting");
-                    SpellManager.Cast("Angelic Feathers");
-                    SpellManager.ClickRemoteLocation(StyxWoW.Me.Location);
-                    Lua.DoString("SpellStopTargeting()");
-                }
-                else if (SpellManager.HasSpell("Sprint") && SingularSettings.Instance.Rogue.UseSprint )
-                {
-                    Logger.Write("Using Sprint instead of mounting");
-                    SpellManager.Cast("Sprint");
                 }
             }
         }

@@ -1,12 +1,4 @@
-﻿#region Revision Info
-
-// This file is part of Singular - A community driven Honorbuddy CC
-// $LastChangedBy$
-// $LastChangedDate$
-// $Revision$
-
-#endregion
-
+﻿
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -185,7 +177,7 @@ namespace Singular.Settings
         public bool UseRebirth { get; set; }
 
         [Setting]
-        [DefaultValue(70)]
+        [DefaultValue(35)]
         [Category("Common")]
         [DisplayName("Renewal Health")]
         [Description("Renewal will be used at this value. ")]
@@ -313,21 +305,21 @@ namespace Singular.Settings
 
         #region Guardian
         [Setting]
-        [DefaultValue(70)]
+        [DefaultValue(40)]
         [Category("Guardian")]
         [DisplayName("Frenzied Regeneration Health")]
-        [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 60 if glyphed. 70 if not.)")]
+        [Description("FR will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 30 if glyphed. 15 if not.)")]
         public int TankFrenziedRegenerationHealth { get; set; }
 
         [Setting]
-        [DefaultValue(100)]
+        [DefaultValue(30)]
         [Category("Guardian")]
         [DisplayName("Savage Defense Health")]
         [Description("Savage Defense will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int TankSavageDefense { get; set; }
 
         [Setting]
-        [DefaultValue(35)]
+        [DefaultValue(20)]
         [Category("Guardian")]
         [DisplayName("Might of Ursoc Health")]
         [Description("Might of Ursoc will be used at this value. Set this to 100 to enable on cooldown usage.")]
@@ -341,7 +333,7 @@ namespace Singular.Settings
         public int TankSurvivalInstinctsHealth { get; set; }
 
         [Setting]
-        [DefaultValue(80)]
+        [DefaultValue(50)]
         [Category("Guardian")]
         [DisplayName("Barkskin Health")]
         [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage.")]

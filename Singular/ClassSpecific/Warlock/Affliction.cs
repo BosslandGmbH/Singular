@@ -136,9 +136,9 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     ret => _mobCount >= 2,
                     new PrioritySelector(
-                        CreateApplyDotsBehavior(ctx => TargetsInCombat.FirstOrDefault(m => Common.AuraMissing(m, "Agony")), soulBurn => true)
+                        CreateApplyDotsBehavior(ctx => TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Agony")), soulBurn => true)
                         // , CreateApplyDotsBehavior( ctx => TargetsInCombat.FirstOrDefault(m => Common.AuraMissing(m,"Corruption")), soulBurn => true)
-                        , CreateApplyDotsBehavior(ctx => TargetsInCombat.FirstOrDefault(m => Common.AuraMissing(m, "Unstable Affliction")), soulBurn => true)
+                        , CreateApplyDotsBehavior(ctx => TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Unstable Affliction")), soulBurn => true)
                         )
                     )
                 );
@@ -157,16 +157,16 @@ namespace Singular.ClassSpecific.Warlock
                         ret => soulBurn(ret)
                             && onUnit != null && onUnit(ret) != null
                             && SpellManager.HasSpell("Soul Swap")
-                            && (Me.HasAura("Pandemic") || Common.AuraMissing(onUnit(ret), "Agony") || Common.AuraMissing(onUnit(ret), "Corruption") || Common.AuraMissing(onUnit(ret), "Unstable Affliction"))
+                            && (Me.HasAura("Pandemic") || onUnit(ret).HasAuraExpired("Agony") || onUnit(ret).HasAuraExpired("Corruption") || onUnit(ret).HasAuraExpired("Unstable Affliction"))
                             && onUnit(ret).InLineOfSpellSight
                             && Me.CurrentSoulShards > 0),
 
                     CreateCastSoulSwap( onUnit ),
 
-                    Spell.Cast("Agony", ctx => onUnit(ctx), ret => Common.AuraMissing(onUnit(ret), "Agony")),
-                    Spell.Cast("Corruption", ctx => onUnit(ctx), ret => Common.AuraMissing(onUnit(ret), "Corruption")),
-                    Common.BuffWithCastTime("Unstable Affliction", ctx => onUnit(ctx), req => Common.AuraMissing(onUnit(req), "Unstable Affliction")),
-                    Common.BuffWithCastTime("Haunt", ctx => onUnit(ctx), req => Common.AuraMissing(onUnit(req), "Haunt") || Me.CurrentSoulShards == Me.MaxSoulShards)
+                    Spell.Cast("Agony", ctx => onUnit(ctx), ret => onUnit(ret).HasAuraExpired("Agony")),
+                    Spell.Cast("Corruption", ctx => onUnit(ctx), ret => onUnit(ret).HasAuraExpired("Corruption")),
+                    Common.BuffWithCastTime("Unstable Affliction", ctx => onUnit(ctx), req => onUnit(req).HasAuraExpired("Unstable Affliction")),
+                    Common.BuffWithCastTime("Haunt", ctx => onUnit(ctx), req => onUnit(req).HasAuraExpired("Haunt") || Me.CurrentSoulShards == Me.MaxSoulShards)
                     );
         }
 
@@ -179,7 +179,7 @@ namespace Singular.ClassSpecific.Warlock
                     ret => Me.HasAura("Soulburn")
                         && onUnit != null && onUnit(ret) != null
                         && onUnit(ret).IsAlive
-                        && (Common.AuraMissing(onUnit(ret), "Agony") || Common.AuraMissing(onUnit(ret), "Corruption") || Common.AuraMissing(onUnit(ret), "Unstable Affliction"))
+                        && (onUnit(ret).HasAuraExpired("Agony") || onUnit(ret).HasAuraExpired("Corruption") || onUnit(ret).HasAuraExpired("Unstable Affliction"))
                         && onUnit(ret).Distance <= 40
                         && onUnit(ret).InLineOfSpellSight,
                     new Action(ret =>

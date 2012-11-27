@@ -1,7 +1,4 @@
-﻿// $LastChangedBy$
-// $LastChangedDate$
-// $Revision$
-
+﻿
 Apoc - Lead
 raphus - Bunch o shit
 Nuok - Numerous patches & fixes

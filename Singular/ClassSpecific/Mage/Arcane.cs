@@ -60,7 +60,6 @@ namespace Singular.ClassSpecific.Mage
                 Common.CreateMagePolymorphOnAddBehavior(),
                           Spell.BuffSelf("Evocation",
                     ret => StyxWoW.Me.ManaPercent < 30 || (TalentManager.HasGlyph("Evocation") && StyxWoW.Me.HealthPercent < 50)),
-                Spell.BuffSelf("Ice Barrier", ret => StyxWoW.Me.HealthPercent <= 99),
 
                 new Decorator(
                     ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3,

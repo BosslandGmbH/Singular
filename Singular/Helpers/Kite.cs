@@ -20,6 +20,11 @@ using Styx.Helpers;
 
 namespace Singular.Helpers
 {
+    /// <summary>
+    /// class which implements kiting.  finds the closest safest spot that can be navigated to and moves there. 
+    /// can be configured to perform behaviors while running away (back to target), while jump turning (facing target),
+    /// or both.  any abilities cast during these phases must be instant
+    /// </summary>
     public static class Kite
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
@@ -43,13 +48,17 @@ namespace Singular.Helpers
         const int DISTANCE_TOO_FAR_FROM_DESTINATION = 30;
 
         /// <summary>
-        /// 
+        /// creates a behavior that provides kiting support.  intent is to move to closest safest spot possible away from target
+        /// while optionally performing behaviors while moving there
         /// </summary>
         /// <param name="runawayAttack">behavior to use while running away (should not require facing target.) should be null if not needed</param>
         /// <param name="jumpturnAttack">behavior to use in middle of jump turn (while facing target.)  should be null if not needed</param>
         /// <returns></returns>
         public static Composite CreateKitingBehavior(Composite runawayAttack, Composite jumpturnAttack)
         {
+            if (!SingularSettings.Instance.AllowKiting)
+                return new PrioritySelector();
+
             return
                 new PrioritySelector(
                     new Decorator(
@@ -74,7 +83,7 @@ namespace Singular.Helpers
                 //  .. a minimum wait of 250 ms after movement has started in the correct direction
                                     new WaitContinue(new TimeSpan(0, 0, 0, 0, 250), r => Me.IsDirectlyFacing(safeSpot), new ActionAlwaysSucceed()),
                                     new WaitContinue(new TimeSpan(0, 0, 0, 0, 500), r => Me.IsMoving, new ActionAlwaysSucceed()),  // wait till we are moving (should be very quick)
-                                    new WaitContinue(new TimeSpan(0, 0, 0, 0, 250), r => !Me.IsMoving, new ActionAlwaysFail()),    // wait for 250ms, failing if we stop moving
+                                    new WaitContinue(new TimeSpan(0, 0, 0, 0, 250), r => !Me.IsMoving, new Action( r => { return RunStatus.Failure; } )),    // wait for 250ms, failing if we stop moving
 
                                     new Action(ret =>
                                     {
@@ -142,8 +151,8 @@ namespace Singular.Helpers
                                 new PrioritySelector(
                                     new Sequence(
                                         new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: entering NonFaceAttack behavior")),
-                                        runawayAttack ?? new ActionAlwaysFail(),
-                                        new ActionAlwaysFail()
+                                        runawayAttack ?? new Action( r => { return RunStatus.Failure; } ),
+                                        new Action( r => { return RunStatus.Failure; } )
                                         ),
                                     new Action(delegate
             {
@@ -157,8 +166,8 @@ namespace Singular.Helpers
                                 new PrioritySelector(
                                     new Sequence(
                                         new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: entering AttackNoJumpTurn behavior")),
-                                        jumpturnAttack ?? new ActionAlwaysFail(),
-                                        new ActionAlwaysFail()
+                                        jumpturnAttack ?? new Action( r => { return RunStatus.Failure; } ),
+                                        new Action( r => { return RunStatus.Failure; } )
                                         ),
                                     new Action(delegate
             {
@@ -353,8 +362,8 @@ namespace Singular.Helpers
                                 new PrioritySelector(
                                     new Sequence(
                                         new ActionDebugString("JT: entering Attack behavior"),
-                                        jumpturnAttack ?? new ActionAlwaysFail(),
-                                        new ActionAlwaysFail()
+                                        jumpturnAttack ?? new Action( r => { return RunStatus.Failure; } ),
+                                        new Action( r => { return RunStatus.Failure; } )
                                         ),
                                     new Action(delegate
             {
@@ -876,7 +885,7 @@ namespace Singular.Helpers
             WoWPoint ptDestination = new WoWPoint();
             List<WoWPoint> mobLocations = new List<WoWPoint>();
             float arcIncrement = ((float)Math.PI * 2) / RaysToCheck;
-
+            
             mobLocations = AllEnemyMobLocationsToCheck;
             double minSafeDistSqr = MinSafeDistance * MinSafeDistance;
 
@@ -963,7 +972,7 @@ namespace Singular.Helpers
                         }
                     }
 
-                    Logger.WriteDebug(Color.Cyan, "SafeArea: Found mob-free location ({0:F1} yd radius) at degrees={1:F1} dist={2:F1} on point check# {3}", MinSafeDistance, WoWMathHelper.RadiansToDegrees(checkFacing), distFromOrigin, countPointsChecked);
+                    Logger.WriteDebug(Color.Cyan, "SafeArea: Found mob-free location ({0:F1} yd radius) at degrees={1:F1} dist={2:F1} on point check# {3} at {4}, {5}, {6}", MinSafeDistance, WoWMathHelper.RadiansToDegrees(checkFacing), distFromOrigin, countPointsChecked, ptDestination.X, ptDestination.Y, ptDestination.Z);
                     Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.Now - startFind).TotalMilliseconds);
                     return ptDestination;
                 }

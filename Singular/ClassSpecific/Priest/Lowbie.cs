@@ -24,9 +24,7 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 40),
 
                 Spell.Buff("Shadow Word: Pain"),
-                Spell.Cast("Mind Blast"),
                 Spell.Cast("Smite"),
-                //Helpers.Common.CreateUseWand(), // we no longer have wands or shoot
                 Movement.CreateMoveToTargetBehavior(true, 25f)
                 );
         }

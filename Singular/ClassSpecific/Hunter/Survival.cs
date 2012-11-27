@@ -21,12 +21,9 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterCallPetBehavior(true),
 
                 Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage",
-                               ret =>
-                                SingularSettings.Instance.IsCombatRoutineMovementAllowed() &&
-                               SingularSettings.Instance.Hunter.UseDisengage &&
-                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
-                //Common.CreateHunterBackPedal(),
+
+                Common.CreateHunterAvoidanceBehavior(null, null),
+
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 new Decorator(
@@ -35,12 +32,6 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                Spell.BuffSelf("Aspect of the Fox", ret => StyxWoW.Me.IsMoving),
-                Spell.BuffSelf("Aspect of the Hawk",
-                               ret => !StyxWoW.Me.IsMoving &&
-                               !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") &&
-                               !StyxWoW.Me.HasAura("Aspect of the Hawk")),
 
                 Helpers.Common.CreateAutoAttack(true),
 
@@ -107,8 +98,8 @@ namespace Singular.ClassSpecific.Hunter
                 Common.CreateHunterCallPetBehavior(false),
 
                 Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage", ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() && StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
-                Common.CreateHunterBackPedal(),
+                Common.CreateHunterAvoidanceBehavior( null, null ),
+
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
@@ -122,8 +113,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
 
                 Spell.Cast("Concussive Shot", ret => StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid),
-                Spell.Buff("Hunter's Mark"),
-                Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
+
                 // Defensive Stuff
                 Spell.Cast(
                     "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
@@ -139,7 +129,7 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.BuffSelf("Rapid Fire",
                     ret => (StyxWoW.Me.HasAura("Call of the Wild") ||
                            !StyxWoW.Me.PetSpells.Any(s => s.Spell != null && s.Spell.Name == "Call of the Wild" && s.Spell.CooldownTimeLeft.TotalSeconds < 60)) &&
-                           !StyxWoW.Me.HasAnyAura("Bloodlust", "Heroism", "Time Warp", "The Beast Within")),
+                           !PartyBuff.WeHaveBloodlust),
 
                 // Rotation
                 Spell.Buff("A Murder of Crows"),
@@ -182,12 +172,8 @@ namespace Singular.ClassSpecific.Hunter
                Common.CreateHunterCallPetBehavior(true),
 
                 Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage",
-                               ret =>
-                                SingularSettings.Instance.IsCombatRoutineMovementAllowed() &&
-                               SingularSettings.Instance.Hunter.UseDisengage &&
-                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
-                //Common.CreateHunterBackPedal(),
+                Common.CreateHunterAvoidanceBehavior(null, null),
+
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 new Decorator(
@@ -196,12 +182,6 @@ namespace Singular.ClassSpecific.Hunter
 
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                Spell.BuffSelf("Aspect of the Fox", ret => StyxWoW.Me.IsMoving),
-                Spell.BuffSelf("Aspect of the Hawk",
-                               ret => !StyxWoW.Me.IsMoving &&
-                               !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") &&
-                               !StyxWoW.Me.HasAura("Aspect of the Hawk")),
 
                 Helpers.Common.CreateAutoAttack(true),
 

@@ -1,12 +1,4 @@
-﻿#region Revision Info
-
-// This file is part of Singular - A community driven Honorbuddy CC
-// $LastChangedBy$
-// $LastChangedDate$
-// $Revision$
-
-#endregion
-
+﻿
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -31,6 +23,14 @@ namespace Singular.Settings
         Felguard    = 30146
     }
 
+    public enum Soulstone
+    {
+        None = 0,
+        Auto,
+        Self,
+        Ressurect
+    }
+
     internal class WarlockSettings : Styx.Helpers.Settings
     {
 
@@ -52,6 +52,13 @@ namespace Singular.Settings
         [DisplayName("Use Fear")]
         [Description("Use Fear when low health or controlling adds")]
         public bool UseFear { get; set; }
+
+        [Setting]
+        [DefaultValue(Soulstone.Auto)]
+        [Category("Common")]
+        [DisplayName("Use Soulstone")]
+        [Description("Controls usage -- Auto: Instances=Ressurect, Normal/Battleground=Self, Disabled Movement=None")]
+        public Soulstone UseSoulstone { get; set; }
 
 
 #region Setting Helpers

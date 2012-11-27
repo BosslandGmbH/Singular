@@ -1,12 +1,4 @@
-﻿#region Revision Info
-
-// This file is part of Singular - A community driven Honorbuddy CC
-// $LastChangedBy$
-// $LastChangedDate$
-// $Revision$
-
-#endregion
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;

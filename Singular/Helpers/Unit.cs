@@ -215,6 +215,45 @@ namespace Singular.Helpers
             return auras.Any(a => hashes.Contains(a.Name));
         }
 
+
+        /// <summary>
+        /// aura considered expired if spell of same name as aura is known and aura not present or has less than specified time remaining
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <param name="aura">name of aura with spell of same name that applies</param>
+        /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
+        public static bool HasAuraExpired(this WoWUnit u, string aura, int secs = 3)
+        {
+            return u.HasAuraExpired(aura, aura, secs);
+        }
+
+
+        /// <summary>
+        /// aura considered expired if spell is known and aura not present or has less than specified time remaining
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <param name="spell">spell that applies aura</param>
+        /// <param name="aura">aura</param>
+        /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
+        public static bool HasAuraExpired(this WoWUnit u, string spell, string aura, int secs = 3)
+        {
+            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, true).TotalSeconds < secs;
+        }
+
+
+        /// <summary>
+        /// aura considered expired if aura not present or less than specified time remaining.  differs from HasAuraExpired since it
+        /// assumes you have learned the spell which applies it already
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <param name="aura">aura</param>
+        /// <returns>true aura missing or less than 'secs' time left, otherwise false</returns>
+        public static bool HasKnownAuraExpired(this WoWUnit u, string aura, int secs = 3)
+        {
+            return u.GetAuraTimeLeft(aura, true).TotalSeconds < secs;
+        }
+
+
         /// <summary>
         ///  Checks for the auras on a specified unit. Returns true if the unit has any aura with any of the mechanics in the mechanics list.
         /// </summary>

@@ -15,7 +15,6 @@ using Styx.TreeSharp;
 using CommonBehaviors.Actions;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
-using System;
 using Styx.CommonBot.POI;
 
 namespace Singular.ClassSpecific.Warlock
@@ -83,7 +82,15 @@ namespace Singular.ClassSpecific.Warlock
                             Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 80 && Me.HealthPercent > 60 && !Me.HasAnyAura("Drink", "Food")),
                             Helpers.Common.CreateWaitForLagDuration()
                             ),
-                        Rest.CreateDefaultRestBehaviour()
+                        Rest.CreateDefaultRestBehaviour(),
+
+                        new Decorator( 
+                            ret => GetCurrentPet() != WarlockPet.None 
+                                && Me.Pet.HealthPercent < 85
+                                && Me.Pet.Distance < 45
+                                && Me.Pet.InLineOfSpellSight,
+                            Spell.Heal(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => !Me.GotAlivePet || Me.Pet.HealthPercent > 95)
+                            )
                         )
                     )
                 );
@@ -102,13 +109,20 @@ namespace Singular.ClassSpecific.Warlock
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         new Throttle( 4, Spell.Cast("Create Healthstone", ret => !HaveHealthStone)),
-                        Spell.BuffSelf("Soulstone", ret => !Me.HasAura("Soulstone")),
+                        Spell.BuffSelf("Soulstone", ret => NeedToSoulstoneMyself()),
                         CreateWarlockSummonPet(),
                         PartyBuff.BuffGroup("Dark Intent"),
                         Spell.BuffSelf( "Grimoire of Sacrifice", ret => GetCurrentPet() != WarlockPet.None )
                         )
                     )
                 );
+        }
+
+        private static bool NeedToSoulstoneMyself()
+        {
+            bool cast = WarlockSettings.UseSoulstone == Soulstone.Self 
+                || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext != WoWContext.Instances && !SingularSettings.Instance.DisableAllMovement );
+            return cast;
         }
 
         #endregion
@@ -125,9 +139,14 @@ namespace Singular.ClassSpecific.Warlock
                     new PrioritySelector( 
                         Item.CreateUsePotionAndHealthstone( 50, 0),
 
+                        new Decorator( 
+                            ret => Me.IsInGroup() && WarlockSettings.UseSoulstone != Soulstone.None && WarlockSettings.UseSoulstone != Soulstone.Self,
+                            CreateWarlockRessurectBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead))
+                            ),
+
                         // fear anything nott my target within 8yds 
                         Spell.Buff("Fear", 
-                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds) && u.IsTargetingMeOrPet && u.Guid != Me.CurrentTargetGuid && u.Distance < 8f),
+                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f),
                             req => WarlockSettings.UseFear),
 
                         // fear my target if my health is dangerously low and his isn't
@@ -245,7 +264,7 @@ namespace Singular.ClassSpecific.Warlock
                                 ret => GetCurrentPet() != WarlockPet.None, 
                                 new Sequence(
                                     new Action( ret => Logger.WriteDebug("Summon Pet:  live {0} detected", GetCurrentPet().ToString())),
-                                    new ActionAlwaysFail()
+                                    new Action( r => { return RunStatus.Failure; } )
                                     )
                                 )
                             )
@@ -296,17 +315,6 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.BuffSelf("Soulburn", ret => Me.CurrentSoulShards > 0 && requirements(ret)),
                 new Wait(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Soulburn"), new Action(ret => { return RunStatus.Success; }))
                 );
-        }
-
-        /// <summary>
-        /// checks if aura missing for known spells only
-        /// </summary>
-        /// <param name="u">unit</param>
-        /// <param name="s">true if known and less than 3 secs left, otherwise false</param>
-        /// <returns></returns>
-        public static bool AuraMissing(WoWUnit u, string s)
-        {
-            return SpellManager.HasSpell(s) && u.GetAuraTimeLeft(s, true).TotalSeconds < 3;
         }
 
         /// <summary>
@@ -411,6 +419,38 @@ namespace Singular.ClassSpecific.Warlock
         }
 
         #endregion
+
+        public static Composite CreateWarlockRessurectBehavior(UnitSelectionDelegate onUnit)
+        {
+            if (!UseSoulstoneForBattleRez())
+                return new PrioritySelector();
+
+            if (onUnit == null)
+            {
+                Logger.WriteDebug("CreateWarlockRessurectBehavior: error - onUnit == null");
+                return new PrioritySelector();
+            }
+
+            return new Decorator(
+                ret => onUnit(ret) != null && onUnit(ret).IsDead && SpellManager.CanCast( "Soulstone", onUnit(ret), true, true),
+                new PrioritySelector(
+                    Spell.WaitForCast(true),
+                    Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, range => 40f),
+                    new Decorator(
+                        ret => !Spell.IsGlobalCooldown(),
+                        Spell.Cast("Soulstone", ret => (WoWUnit)ret)
+                        )
+                    )
+                );
+        }
+
+        private static bool UseSoulstoneForBattleRez()
+        {
+            bool cast = WarlockSettings.UseSoulstone == Soulstone.Ressurect
+                || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext == WoWContext.Instances);
+            return cast;
+        }
+
 
     }
 }

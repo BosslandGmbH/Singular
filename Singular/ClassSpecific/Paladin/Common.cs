@@ -133,12 +133,10 @@ namespace Singular.ClassSpecific.Paladin
             }
 
             if (!SpellManager.HasSpell(SealSpell(bestSeal)))
-            {
-                if ( bestSeal != Settings.PaladinSeal.Truth && SpellManager.HasSpell("Seal of Truth"))
-                    bestSeal = Settings.PaladinSeal.Truth;
-                else
-                    bestSeal = Settings.PaladinSeal.Command;
-            }
+                bestSeal = Settings.PaladinSeal.Command;
+
+            if (bestSeal == Settings.PaladinSeal.Command && SpellManager.HasSpell("Seal of Truth"))
+                bestSeal = Settings.PaladinSeal.Truth;
 
             return bestSeal;
         }

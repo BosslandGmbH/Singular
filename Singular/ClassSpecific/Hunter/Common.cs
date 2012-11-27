@@ -14,14 +14,24 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
 using System.Drawing;
+using Styx.CommonBot.POI;
 
 namespace Singular.ClassSpecific.Hunter
 {
     public class Common
     {
+        #region Common
+
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
+        private static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
         private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter; } }
+
+        #endregion
+
+        #region Manage Growl for Instances
 
         static Common()
         {
@@ -37,28 +47,40 @@ namespace Singular.ClassSpecific.Hunter
                              : "EnableSpellAutocast(GetSpellInfo(2649))");
         }
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Hunter)]
-        public static Composite CreateHunterPreBuffs()
+        #endregion
+
+        [Behavior(BehaviorType.Rest, WoWClass.Hunter)]
+        public static Composite CreateHunterRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.BuffSelf("Aspect of the Hawk", ret => !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") && !StyxWoW.Me.HasAura("Aspect of the Hawk")),
-                        Spell.BuffSelf("Track Hidden"),
+                        Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
 
-                        new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && StyxWoW.Me.GotAlivePet,
-                            new Action(ctx => SpellManager.Cast("Dismiss Pet"))),
+                        CreateHunterCallPetBehavior(true),
 
-                        new Decorator(ctx => !SingularSettings.Instance.DisablePetUsage,
-                            new PrioritySelector(
-                                CreateHunterCallPetBehavior(true),
-                                Spell.Cast("Mend Pet", ret => Me.GotAlivePet && (StyxWoW.Me.Pet.HealthPercent < 70 || (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet"))) && !StyxWoW.Me.Pet.HasAura("Mend Pet"))
+                        new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
+                            new Sequence(
+                                new Action(ctx => SpellManager.Cast("Dismiss Pet")),
+                                new WaitContinue(1, ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )
-                            )
+                            ),
+
+                        Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85)
                         )
                     )
+                );
+        }
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Hunter)]
+        public static Composite CreateHunterPreCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(true),
+                Spell.BuffSelf("Track Hidden"),
+                Spell.BuffSelf("Aspect of the Hawk", ret => !Me.IsMoving && !Me.HasAnyAura("Aspect of the Hawk", "Aspect of the Iron Hawk"))
                 );
         }
 
@@ -70,14 +92,14 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        new Throttle(
-                            Spell.Cast("Misdirection",
-                                ctx => StyxWoW.Me.Pet,
-                                ret => StyxWoW.Me.GotAlivePet
-                                    && StyxWoW.Me.Combat
-                                    && !StyxWoW.Me.HasAura("Misdirection")
-                                    && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 100))
-                            )
+
+                        Spell.Cast("Misdirection",
+                            ctx => Pet,
+                            ret => Me.GotAlivePet
+                                && !Me.HasAura("Misdirection")
+                                && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 100)),
+
+                        new Throttle(Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(Target)))
                         )
                     )
                 );
@@ -91,34 +113,72 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        new Throttle(
-                            Spell.Cast("Misdirection",
-                                ctx => StyxWoW.Me.Pet,
-                                ret => StyxWoW.Me.GotAlivePet
-                                    && StyxWoW.Me.Combat
-                                    && !StyxWoW.Me.HasAura("Misdirection")
-                                    && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 100))
-                            )
+
+                        Common.CreateHunterCallPetBehavior(true),
+
+                        Spell.BuffSelf("Aspect of the Hawk", ret => !Me.IsMoving && !Me.HasAnyAura("Aspect of the Hawk", "Aspect of the Iron Hawk")),
+
+                        Spell.Cast("Misdirection",
+                            ctx => Pet,
+                            ret => Me.GotAlivePet
+                                && !Me.HasAura("Misdirection")
+                                && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 100)),
+
+                        new Throttle(Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target))),
+
+                        Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPercent),
+
+                        // Buffs - don't stack and save for bosses, enemy players, or multiple mobs
+                        new Decorator(
+                            ret => Target != null && Target.IsAlive && (Target.IsBoss || Target.IsPlayer || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 1),
+                            new PrioritySelector(
+                                new Decorator( 
+                                    ret => !Me.HasAnyAura( "Bestial Wrath", "Dire Beast", "Lynx Rush", "Glaive Toss", "Stampede" ),
+                                    new PrioritySelector(
+                                        Spell.BuffSelf( "Bestial Wrath"),
+                                        Spell.BuffSelf( "Dire Beast"),
+                                        Spell.BuffSelf( "Lynx Rush"),
+                                        Spell.BuffSelf( "Stampede", ret => PartyBuff.WeHaveBloodlust || !Me.IsInGroup()),
+                                        Spell.BuffSelf( "Rapid Fire")
+                                        )
+                                    ),
+
+                                Spell.Cast("Rabid", 
+                                    ret => Me.HasAura("Bestial Wrath") 
+                                        && Me.GotAlivePet 
+                                        && Pet.Location.Distance(Pet.CurrentTarget.Location) < Pet.MeleeDistance(Pet.CurrentTarget)),
+
+                                Spell.Buff("A Murder of Crows"),
+                                Spell.Cast("Blink Strike", ctx => Me.GotAlivePet),
+                                Spell.Cast("Powershot"),
+                                Spell.Cast("Barrage")
+                                )
+                            ),
+
+                        Spell.Buff("Readiness", ret => Me.HasAnyAura( "Bestial Wrath", "Rapid Fire", "Lynx Rush", "Dire Beast")),
+                        Spell.Cast("Fervor", ctx => Me.FocusPercent < 50)
+
                         )
                     )
                 );
         }
 
+
         public static Composite CreateHunterBackPedal()
         {
             return
                 new Decorator(
-                    ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.CurrentTarget.Distance <= Spell.MeleeRange + 5f &&
-                           StyxWoW.Me.CurrentTarget.IsAlive &&
-                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
-                            StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me ||
-                            StyxWoW.Me.CurrentTarget.IsStunned()),
+                    ret => !SingularSettings.Instance.DisableAllMovement && Target.Distance <= Spell.MeleeRange + 5f &&
+                           Target.IsAlive &&
+                           (Target.CurrentTarget == null ||
+                            Target.CurrentTarget != Me ||
+                            Target.IsStunned()),
                     new Action(
                         ret =>
                         {
-                            var moveTo = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, StyxWoW.Me.CurrentTarget.Location, Spell.MeleeRange + 10f);
+                            var moveTo = WoWMathHelper.CalculatePointFrom(Me.Location, Target.Location, Spell.MeleeRange + 10f);
 
-                            if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                            if (Navigator.CanNavigateFully(Me.Location, moveTo))
                             {
                                 Navigator.MoveTo(moveTo);
                                 return RunStatus.Success;
@@ -130,12 +190,12 @@ namespace Singular.ClassSpecific.Hunter
 
         public static Composite CreateHunterTrapBehavior(string trapName)
         {
-            return CreateHunterTrapBehavior(trapName, ret => StyxWoW.Me.CurrentTarget);
+            return CreateHunterTrapBehavior(trapName, ret => Target);
         }
 
         public static Composite CreateHunterTrapBehavior(string trapName, bool useLauncher)
         {
-            return CreateHunterTrapBehavior(trapName, useLauncher, ret => StyxWoW.Me.CurrentTarget);
+            return CreateHunterTrapBehavior(trapName, useLauncher, ret => Target);
         }
 
         public static Composite CreateHunterTrapBehavior(string trapName, UnitSelectionDelegate onUnit)
@@ -153,7 +213,7 @@ namespace Singular.ClassSpecific.Hunter
                         Spell.BuffSelf(trapName, ret => !useLauncher),
                         Spell.BuffSelf("Trap Launcher", ret => useLauncher),
                         new Decorator(
-                            ret => StyxWoW.Me.HasAura("Trap Launcher"),
+                            ret => Me.HasAura("Trap Launcher"),
                             new Sequence(
                 /*new Switch<string>(ctx => trapName,
                     new SwitchArgument<string>("Freezing Trap",
@@ -174,40 +234,48 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterTrapOnAddBehavior(string trapName)
         {
             return new PrioritySelector(
-                ctx => Unit.NearbyUnfriendlyUnits.OrderBy(u => u.DistanceSqr).
-                                                  FirstOrDefault(
-                                                        u => u.Combat && u != StyxWoW.Me.CurrentTarget &&
-                                                             (!u.IsMoving || u.IsPlayer) && u.DistanceSqr < 40 * 40),
+                ctx => Unit.NearbyUnfriendlyUnits.OrderBy(u => u.DistanceSqr)
+                    .FirstOrDefault( u => u.Combat && u != Target && (!u.IsMoving || u.IsPlayer) && u.DistanceSqr < 40 * 40),
                 new Decorator(
-                    ret => ret != null && SpellManager.HasSpell(trapName) && !SpellManager.Spells[trapName].Cooldown,
+                    ret => ret != null && SpellManager.HasSpell(trapName) && Spell.GetSpellCooldown(trapName) != TimeSpan.Zero ,
                     new PrioritySelector(
                         Spell.BuffSelf("Trap Launcher"),
                         new Decorator(
-                            ret => StyxWoW.Me.HasAura("Trap Launcher"),
+                            ret => Me.HasAura("Trap Launcher"),
                             new Sequence(
-                                new Action(ret => Lua.DoString(string.Format("CastSpellByName(\"{0}\")", trapName))),
+                                Spell.Cast( trapName, on => (WoWUnit) on ),
+                                // new Action(ret => Lua.DoString(string.Format("CastSpellByName(\"{0}\")", trapName))),
                                 new WaitContinue(TimeSpan.FromMilliseconds(200), ret => false, new ActionAlwaysSucceed()),
-                                new Action(ret => SpellManager.ClickRemoteLocation(((WoWUnit)ret).Location)))))));
+                                new Action(ret => SpellManager.ClickRemoteLocation(((WoWUnit)ret).Location))
+                                )
+                            )
+                        )
+                    )
+                );
         }
 
         public static Composite CreateHunterCallPetBehavior(bool reviveInCombat)
         {
             return new Decorator(
-                ret =>  !SingularSettings.Instance.DisablePetUsage && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished,
+                ret =>  !SingularSettings.Instance.DisablePetUsage && !Me.GotAlivePet && PetManager.PetTimer.IsFinished && !Me.Mounted && !Me.OnTaxi,
                 new PrioritySelector(
                     Spell.WaitForCast(),
                     new Decorator(
-                        ret => StyxWoW.Me.Pet != null && (!StyxWoW.Me.Combat || reviveInCombat),
+                        ret => Pet != null && (!Me.Combat || reviveInCombat),
                         new PrioritySelector(
                             Movement.CreateEnsureMovementStoppedBehavior(),
-                            Spell.BuffSelf("Revive Pet"))),
+                            Spell.BuffSelf("Revive Pet")
+                            )
+                        ),
                     new Sequence(
-                        new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetSlot)),
+                        new Action(ret => PetManager.CallPet(SingularSettings.Instance.Hunter.PetNumber.ToString())),
                         Helpers.Common.CreateWaitForLagDuration(),
-                        new WaitContinue(2, ret => StyxWoW.Me.GotAlivePet || StyxWoW.Me.Combat, new ActionAlwaysSucceed()),
+                        new WaitContinue(2, ret => Me.GotAlivePet || Me.Combat, new ActionAlwaysSucceed()),
                         new Decorator(
-                            ret => !StyxWoW.Me.GotAlivePet && (!StyxWoW.Me.Combat || reviveInCombat),
-                            Spell.BuffSelf("Revive Pet")))
+                            ret => !Me.GotAlivePet && (!Me.Combat || reviveInCombat),
+                            Spell.BuffSelf("Revive Pet")
+                            )
+                        )
                     )
                 );
         }
@@ -224,7 +292,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterAvoidanceBehavior(Composite nonfacingAttack, Composite jumpturnAttack)
         {
             return new Decorator(
-                ret => !SingularSettings.Instance.DisableAllMovement,
+                ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed(),
                 new PrioritySelector(
                     new Decorator(
                         ret => HunterSettings.UseDisengage, 
@@ -289,12 +357,17 @@ namespace Singular.ClassSpecific.Hunter
                             new PrioritySelector(
                                     new Decorator(ret => !useRocketJump, Spell.BuffSelf("Disengage")),
                                     new Decorator(ret => useRocketJump, Spell.BuffSelf("Rocket Jump")),
-                                    new Action(ret => Logger.Write(Color.Cyan, "DIS: {0} cast appears to have failed", useRocketJump ? "Rocket Jump" : "Disengage"))
+                                    new Action(ret => {
+                                        Logger.Write(Color.Cyan, "DIS: {0} cast appears to have failed", useRocketJump ? "Rocket Jump" : "Disengage");
+                                        return RunStatus.Failure;
+                                        })
                                     ),
+                            new WaitContinue( 1, req => !Me.IsAlive || !Me.IsFalling, new ActionAlwaysSucceed()),
                             new Action(ret =>
                             {
                                 NextDisengageAllowed = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 750));
                                 Logger.Write(Color.Cyan, "DIS: finished {0} cast", useRocketJump ? "Rocket Jump" : "Disengage");
+                                Logger.WriteDebug("DIS: {0:F1} yds from current {1} to safespot {2}", Me.Location.Distance(safeSpot), Me.Location, safeSpot);
                                 if (Kite.IsKitingActive())
                                     Kite.EndKiting(String.Format("BP: Interrupted by {0}", useRocketJump ? "Rocket Jump" : "Disengage"));
                                 return RunStatus.Success;
@@ -339,7 +412,7 @@ namespace Singular.ClassSpecific.Hunter
             sa.MinScanDistance = 16;    // average disengage distance on flat ground
             sa.MaxScanDistance = sa.MinScanDistance;
             sa.RaysToCheck = 36;
-            sa.LineOfSightMob = Me.CurrentTarget;
+            sa.LineOfSightMob = Target;
             sa.MobToRunFrom = mobToGetAwayFrom;
             sa.CheckLineOfSightToSafeLocation = true;
             sa.CheckSpellLineOfSightToMob = false;
@@ -358,7 +431,6 @@ namespace Singular.ClassSpecific.Hunter
 
             return true;
         }
-
 
     }
 }

@@ -1,12 +1,4 @@
-﻿#region Revision Info
-
-// This file is part of Singular - A community driven Honorbuddy CC
-// $LastChangedBy$
-// $LastChangedDate$
-// $Revision$
-
-#endregion
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +15,7 @@ using Styx.WoWInternals.WoWObjects;
 
 using Styx.TreeSharp;
 using CommonBehaviors.Actions;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.ClassSpecific.Shaman
 {
@@ -147,12 +140,12 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateTotemsPvPBehavior()
         {
-            return new Decorator(ret => false, new ActionAlwaysFail());
+            return new Decorator(ret => false, new Action( r => { return RunStatus.Failure; } ));
         }
 
         public static Composite CreateTotemsInstanceBehavior()
         {
-            return new Decorator(ret => false, new ActionAlwaysFail());
+            return new Decorator(ret => false, new Action( r => { return RunStatus.Failure; } ));
         }
 
         /// <summary>

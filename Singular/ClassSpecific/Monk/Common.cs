@@ -282,7 +282,7 @@ namespace Singular.ClassSpecific.Monk
                             WoWObject sph = FindClosestSphere(typ, range);
                             return sph == null || sph.Guid != guidSphere ;
                             },
-                        new ActionAlwaysFail()
+                        new Action( r => { return RunStatus.Failure; } )
                         ),
                         
                     // still exist?  black list it then
@@ -306,7 +306,7 @@ namespace Singular.ClassSpecific.Monk
             return new Sequence(
                 Spell.CastOnGround("Healing Sphere",
                     ctx => Me.Location,
-                    ret => Me.HealthPercent < 65 && Me.EnergyPercent > 60 && !Common.AnySpheres(SphereType.Healing, 1f),
+                    ret => Me.HealthPercent < 65 && Me.EnergyPercent > 40 && !Common.AnySpheres(SphereType.Healing, 1f),
                     false),
                 new DecoratorContinue(
                     ret => Me.CurrentPendingCursorSpell != null,

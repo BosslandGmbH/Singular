@@ -1,12 +1,4 @@
-﻿#region Revision Info
-
-// This file is part of Singular - A community driven Honorbuddy CC
-// $LastChangedBy$
-// $LastChangedDate$
-// $Revision$
-
-#endregion
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -115,6 +107,17 @@ namespace Singular.Helpers
             // 0.3 margin for error
             return unit != null ? spell.MaxRange + unit.CombatReach + 1f : spell.MaxRange;
         }
+
+        public static float ActualMaxRange(string name, WoWUnit unit)
+        {
+            SpellFindResults sfr;
+            if (!SpellManager.FindSpell(name, out sfr))
+                return 0f;
+
+            WoWSpell spell = sfr.Override ?? sfr.Original;
+            return spell.ActualMaxRange(unit);
+        }
+
 
         /// <summary>
         /// Returns minimum spell range based on hitbox of unit. 
@@ -326,7 +329,7 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns>.</returns>
-        public static Composite Cast(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
+        public static Composite Cast(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit, 
             SimpleBooleanDelegate requirements)
         {
             return new Decorator(ret =>requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null && SpellManager.CanCast(name, onUnit(ret), true, checkMovement(ret)), 
@@ -340,8 +343,81 @@ namespace Singular.Helpers
                 );
         }
 
-        public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements)
+
+        /// <summary>
+        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation) on the current target.  
+        ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 11/25/2012.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <returns>.</returns>
+        public static Composite Cast(SimpleStringDelegate name)
+        {
+            return Cast(name, ret => true, onUnit => StyxWoW.Me.CurrentTarget, req => true);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation) on a specific unit. 
+        ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 11/25/2012.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name = "onUnit">The on unit.</param>
+        /// <returns>.</returns>
+        public static Composite Cast(SimpleStringDelegate name, UnitSelectionDelegate onUnit)
+        {
+            return Cast(name, ret => true, onUnit, req => true);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation), with special requirements, 
+        ///   on the current target. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 11/25/2012.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate requirements)
+        {
+            return Cast(name, ret => true, onUnit => StyxWoW.Me.CurrentTarget, requirements);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation), with special requirements, 
+        ///   on a specific unit. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 11/25/2012.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name = "onUnit">The on unit.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite Cast(SimpleStringDelegate name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return Cast(name, ret => true, onUnit, requirements);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation), with special requirements, 
+        ///   on a specific unit, optionally checking if moving and whether cast is allowed during movement. 
+        ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 11/25/2012.
+        /// </remarks>
+        /// <param name = "name">The name.</param>
+        /// <param name="checkMovement">True to check if moving and cast allowed</param>
+        /// <param name = "onUnit">The on unit.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return new Decorator(ret => requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null && name(ret) != null && SpellManager.CanCast(name(ret), onUnit(ret), true, checkMovement(ret)),
                 new Throttle(
@@ -821,14 +897,14 @@ namespace Singular.Helpers
             return new Sequence(
                     
                 // save context of currently in a GCD or IsCasting before our Cast
-                new Action( ret => IsSpellBeingQueued = (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null)),
+                new Action(ret => IsSpellBeingQueued = (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling)),
 
                 Cast( n => name(n), checkMovement, onUnit, requirements),
 
                 // continue if not queueing spell, or we reahed end of cast/gcd of spell in progress
                 new WaitContinue( 
-                    new TimeSpan(0, 0, 0, 0, (int) StyxWoW.WoWClient.Latency * 2),
-                    ret => !IsSpellBeingQueued || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null),
+                    TimeSpan.FromMilliseconds(500),
+                    ret => !IsSpellBeingQueued || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling),
                     new ActionAlwaysSucceed()
                     ),
 
@@ -841,7 +917,7 @@ namespace Singular.Helpers
                             if (spell.CastTime == 0)
                                 return true;
 
-                            return StyxWoW.Me.IsCasting;
+                            return StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling;
                         }
 
                         return true;
@@ -852,34 +928,23 @@ namespace Singular.Helpers
                 // finally, wait at this point until heal completes
                 new WaitContinue(10, 
                     ret => {
-                        // Let channeled heals been cast till end.
-                        if (StyxWoW.Me.ChanneledSpell != null) // .ChanneledCastingSpellId != 0)
-                        {
-                            return false;
-                        }
-
-                        // Interrupted or finished casting. Continue (note: following test doesn't deal with latency)
-                        if (!StyxWoW.Me.IsCasting)
+                        // Interrupted or finished casting. 
+                        if (!StyxWoW.Me.IsCasting && !StyxWoW.Me.IsChanneling)
                         {
                             return true;
                         }
 
-                        // when doing lag tolerance, don't wait for spell to complete before considering finished
-                        if (allowLagTollerance)
+                        // channel spells fall through to cancel test
+                        
+                        // for casted spells and lag tolerance enabled, check before end of cast if we are done
+                        if (allowLagTollerance && StyxWoW.Me.IsCasting )
                         {
                             TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
                             if (castTimeLeft != TimeSpan.Zero && castTimeLeft.TotalMilliseconds < (StyxWoW.WoWClient.Latency * 2))
                                 return true;
                         }
 
-                        // 500ms left till cast ends. Shall continue for next spell
-                        //if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < 500)
-                        //{
-                        //    return true;
-                        //}
-
-                        // temporary hack - checking requirements won't work -- either need global value or cancelDelegate
-                        // if ( onUnit(ret).HealthPercent > SingularSettings.Instance.IgnoreHealTargetsAboveHealth) // (!requirements(ret))
+                        // check cancel delegate if we are finished
                         if ( cancel(ret) )
                         {
                             SpellManager.StopCasting();
@@ -887,6 +952,7 @@ namespace Singular.Helpers
                             return true;
                         }
 
+                        // continue casting/channeling at this point
                         return false;
                     }, 
                     new ActionAlwaysSucceed()
@@ -962,6 +1028,7 @@ namespace Singular.Helpers
 
                         new Action(ret => SpellManager.ClickRemoteLocation(onLocation(ret)))));
         }
+
         #endregion
 
         #region Resurrect

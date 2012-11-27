@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Mage
    
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
-        public static Composite CreateMageBuffs()
+        public static Composite CreateMagePreCombatBuffs()
         {
             return new PrioritySelector(
                 new Decorator(
@@ -83,6 +83,14 @@ namespace Singular.ClassSpecific.Mage
                     ret =>
                     TalentManager.CurrentSpec == WoWSpec.MageFrost && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
                     new Action(ret => SpellManager.Cast("Summon Water Elemental")))
+                );
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Mage)]
+        public static Composite CreateMageCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.BuffSelf("Ice Barrier")
                 );
         }
 

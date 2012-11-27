@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Warlock
 
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Common.BuffWithCastTime("Immolate", on => Me.CurrentTarget, ret => Common.AuraMissing(Me.CurrentTarget, "Immolate")),
+                        Common.BuffWithCastTime("Immolate", on => Me.CurrentTarget, ret => Me.CurrentTarget.HasAuraExpired("Immolate")),
                         Spell.Cast("Incinerate")
                         )
                     ),
@@ -87,7 +87,7 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent > 20 && BackdraftStacks < 3),
 
                         Spell.Cast("Conflagrate"),
-                        Common.BuffWithCastTime("Immolate", on => Me.CurrentTarget, ret => Common.AuraMissing(Me.CurrentTarget, "Immolate")),
+                        Common.BuffWithCastTime("Immolate", on => Me.CurrentTarget, ret => Me.CurrentTarget.HasAuraExpired("Immolate")),
                         Spell.Cast("Drain Life", ret => Me.HealthPercent < 40 && !Group.Healers.Any(h => h.IsAlive && h.Distance < 40)),
                         Spell.Cast("Incinerate"),
 

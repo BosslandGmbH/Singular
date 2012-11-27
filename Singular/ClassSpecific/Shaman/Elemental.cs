@@ -321,11 +321,13 @@ namespace Singular.ClassSpecific.Shaman
                         if (target == null)
                             line += ", target=(null)";
                         else
-                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tloss={3}",
+                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tlos={3}, tloss={4}",
                                 target.Name,
                                 target.Distance,
                                 target.HealthPercent,
-                                target.InLineOfSpellSight);
+                                target.InLineOfSight,
+                                target.InLineOfSpellSight
+                                );
 
                         Logger.WriteDebug(line);
                         return RunStatus.Success;

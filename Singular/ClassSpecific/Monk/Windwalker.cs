@@ -147,9 +147,7 @@ namespace Singular.ClassSpecific.Monk
 
                         Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance <= 8 ) >= 4),
 
-                        Spell.Cast("Tiger Palm",
-                            ret => Me.CurrentChi > 0
-                                && (!Me.HasAura("Tiger Power", 3) || Me.GetAuraTimeLeft("Tiger Power", true).TotalSeconds < 4)),
+                        Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")),
 
                         // chi dump
                         Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
@@ -227,9 +225,7 @@ namespace Singular.ClassSpecific.Monk
                         
                         Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
 
-                        Spell.Cast("Tiger Palm",
-                            ret => Me.CurrentChi > 0
-                                && (!Me.HasAura("Tiger Power", 3) || Me.GetAuraTimeLeft("Tiger Power", true).TotalSeconds < 4)),
+                        Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
                                     
                         // chi dump
                         Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
@@ -388,11 +384,11 @@ namespace Singular.ClassSpecific.Monk
                 new Decorator(
                     ret => SingularSettings.Instance.EnableDebugLogging,
                     new Action( ret => {
-                        Logger.WriteDebug(".... health={0:F1}%, energy={1}%, chi={2}, tp3stk={3}, tptime={4}, tgt={5:F1} @ {6:F1}, ",
+                        Logger.WriteDebug(".... health={0:F1}%, energy={1}%, chi={2}, tpower={3}, tptime={4}, tgt={5:F1} @ {6:F1}, ",
                             Me.HealthPercent,
                             Me.CurrentEnergy,
                             Me.CurrentChi,
-                            Me.HasAura("Tiger Power", 3),
+                            Me.HasAura("Tiger Power"),
                             Me.GetAuraTimeLeft("Tiger Power", true).TotalMilliseconds,
                             Me.CurrentTarget == null ? 0f : Me.CurrentTarget.HealthPercent ,
                             (Me.CurrentTarget ?? Me).Distance

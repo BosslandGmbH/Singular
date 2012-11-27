@@ -43,6 +43,20 @@ namespace Singular.Utilities
                 AttachCombatLogEvent();
         }
 
+        /// <summary>
+        /// time of last "Target not in line of sight" spell failure.
+        /// Used by movement functions for situations where the standard
+        /// LoS and LoSS functions are true but still fails in WOW.
+        /// See CreateMoveToLosBehavior() for usage
+        /// </summary>
+        public static DateTime LastLineOfSightError { get; set; }
+
+        /// <summary>
+        /// the value of SPELL_FAILED_LINE_OF_SIGHT for localized
+        /// testing of a specific cast failure we need to identify
+        /// </summary>
+        private static string LocalizedLineOfSightError;
+        
         private static void AttachCombatLogEvent()
         {
             if (_combatLogAttached)
@@ -52,15 +66,22 @@ namespace Singular.Utilities
             // This ensures we only capture certain combat log events, not all of them.
             // This saves on performance, and possible memory leaks. (Leaks due to Lua table issues.)
             Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
-            if (
-                !Lua.Events.AddFilter(
-                    "COMBAT_LOG_EVENT_UNFILTERED",
-                    "return args[2] == 'SPELL_CAST_SUCCESS' or args[2] == 'SPELL_AURA_APPLIED' or args[2] == 'SPELL_MISSED' or args[2] == 'RANGE_MISSED' or args[2] == 'SWING_MISSED' or args[2] == 'SPELL_CAST_FAILED'"))
+
+            string filterCriteria =
+                "return args[2] == 'SPELL_CAST_SUCCESS'"
+                + " or args[2] == 'SPELL_AURA_APPLIED'"
+                + " or args[2] == 'SPELL_MISSED'"
+                + " or args[2] == 'RANGE_MISSED'"
+                + " or args[2] == 'SWING_MISSED'"
+                + " or args[2] == 'SPELL_CAST_FAILED'";
+
+            Logger.WriteDebug("Combat Log Filter: {0}", filterCriteria);
+            if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", filterCriteria ))
             {
-                Logger.Write(
-                    "ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
+                Logger.Write( "ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
             }
 
+            LocalizedLineOfSightError = Lua.GetReturnVal<string>("return SPELL_FAILED_LINE_OF_SIGHT", 0);
             Logger.WriteDebug("Attached combat log");
             _combatLogAttached = true;
         }
@@ -90,16 +111,20 @@ namespace Singular.Utilities
                     Logger.WriteDebug("[CombatLog] filter out this event -- " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
                     break;
 
+                // spell_cast_failed only passes filter in Singular debug mode
                 case "SPELL_CAST_FAILED":
-                    if (SingularSettings.Instance.EnableDebugLogging)
+                    Logger.WriteDebug("[CombatLog] {0}:{1} cast of {2}#{3} failed: '{4}'",
+                        e.SourceName,
+                        e.SourceGuid,
+                        e.SpellName,
+                        e.SpellId,
+                        e.Args[14]
+                        );
+
+                    if ( e.Args[14].ToString() == LocalizedLineOfSightError )
                     {
-                        Logger.WriteDebug("[CombatLog] {0}:{1} cast of {2}#{3} failed: '{4}'",
-                            e.SourceName,
-                            e.SourceGuid,
-                            e.SpellName,
-                            e.SpellId,
-                            e.Args[14]
-                            );
+                        LastLineOfSightError = DateTime.Now;
+                        Logger.WriteFile("[CombatLog] cast fail due to los reported at {0}", LastLineOfSightError.ToString("HH:mm:ss.fff"));
                     }
                     break;
 
@@ -114,11 +139,13 @@ namespace Singular.Utilities
                     Spell.LastSpellCast = e.SpellName;
                     //Logger.WriteDebug("Successfully cast " + Spell.LastSpellCast);
 
-                    // Force a wait for all summoned minions. This prevents double-casting it.
-                    if (StyxWoW.Me.Class == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
-                    {
-                        StyxWoW.SleepForLagDuration();
-                    }
+                    // following commented block should not be needed since rewrite of Pet summon
+                    //
+                    //// Force a wait for all summoned minions. This prevents double-casting it.
+                    //if (StyxWoW.Me.Class == WoWClass.Warlock && e.SpellName.StartsWith("Summon "))
+                    //{
+                    //    StyxWoW.SleepForLagDuration();
+                    //}
                     break;
 
                 case "SWING_MISSED":

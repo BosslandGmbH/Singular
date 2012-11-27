@@ -206,13 +206,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.Buff("Chains of Ice",
                         ret => StyxWoW.Me.CurrentTarget.Fleeing && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
-                    new Sequence(
-                        Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
-                        new DecoratorContinue(
-                            ret => StyxWoW.Me.IsMoving,
-                            new Action(ret => Navigator.PlayerMover.MoveStop())),
-                        new WaitContinue(1, new ActionAlwaysSucceed())
-                        ),
+                Common.CreateDeathGripBehavior(),
 
                 // Start AoE section
                 new PrioritySelector(ctx => _nearbyUnfriendlyUnits =Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
@@ -293,15 +287,8 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.WaitForCast(),
                     Helpers.Common.CreateAutoAttack(true),
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                    Spell.BuffSelf("Blood Presence"),        
-                    new Sequence(
-                        Spell.Cast("Death Grip",
-                                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
-                        new DecoratorContinue(
-                            ret => StyxWoW.Me.IsMoving,
-                            new Action(ret => Navigator.PlayerMover.MoveStop())),
-                        new WaitContinue(1, new ActionAlwaysSucceed())
-                        ),
+                    Spell.BuffSelf("Blood Presence"),
+                    Common.CreateDeathGripBehavior(),
                     Spell.Buff("Chains of Ice",
                         ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
 

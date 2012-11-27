@@ -27,14 +27,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                                 (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
                                                 u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
-                new Sequence(
-                    Spell.Cast("Death Grip",
-                                ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
-                    new DecoratorContinue(
-                        ret => StyxWoW.Me.IsMoving,
-                        new Action(ret => Navigator.PlayerMover.MoveStop())),
-                    new WaitContinue(1, new ActionAlwaysSucceed())
-                    ),
+                Common.CreateDeathGripBehavior(),
                 Spell.Cast("Death Coil"),
                 Spell.Buff("Icy Touch", true, "Frost Fever"),
                 Spell.Buff("Plague Strike", true, "Blood Plague"),

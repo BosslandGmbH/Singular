@@ -1,12 +1,4 @@
-﻿#region Revision Info
-
-// This file is part of Singular - A community driven Honorbuddy CC
-// $LastChangedBy$
-// $LastChangedDate$
-// $Revision$
-
-#endregion
-
+﻿
 using System;
 using System.Reflection;
 using System.Linq;
@@ -25,6 +17,7 @@ using Styx.WoWInternals;
 using System.IO;
 using System.Collections.Generic;
 using Styx.Common;
+using Singular.Settings;
 
 namespace Singular
 {
@@ -81,6 +74,8 @@ namespace Singular
             }
         }
 
+        private static ulong _guidLastTarget = 0;
+
         public override void Pulse()
         {
             // No pulsing if we're loading or out of the game.
@@ -93,6 +88,32 @@ namespace Singular
             // Double cast shit
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow.Subtract(t).TotalMilliseconds >= 2500);
 
+            // Target Debug Output
+            if (SingularSettings.Instance.EnableDebugLogging)
+            {
+                if ((Me.CurrentTargetGuid != _guidLastTarget))
+                {
+                    if (_guidLastTarget == 0 && Me.CurrentTarget == null)
+                    {
+                        _guidLastTarget = Me.CurrentTargetGuid;
+                        Logger.WriteDebug("CurrentTarget set to:  (null)");
+                    }
+                    else if (_guidLastTarget != 0 && Me.CurrentTarget != null)
+                    {
+                        _guidLastTarget = Me.CurrentTargetGuid;
+                        Logger.WriteDebug("CurrentTarget set to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}",
+                            Me.CurrentTarget.SafeName(),
+                            Me.CurrentTarget.HealthPercent,
+                            Me.CurrentTarget.MaxHealth,
+                            Me.CurrentTarget.Distance,
+                            Me.CurrentTarget.CombatReach,
+                            Me.CurrentTarget.IsPlayer,
+                            Me.CurrentTarget.IsHostile
+                            );
+                    }
+                }
+            }
+
             //Only pulse for classes with pets
             switch (StyxWoW.Me.Class)
             {
@@ -103,6 +124,7 @@ namespace Singular
                     PetManager.Pulse();
                     break;
             }
+
 
             if (HealerManager.NeedHealTargeting)
                 HealerManager.Instance.Pulse();

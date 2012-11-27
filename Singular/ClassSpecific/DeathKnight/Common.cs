@@ -20,6 +20,9 @@ namespace Singular.ClassSpecific.DeathKnight
     {
         internal const uint Ghoul = 26125;
 
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static DeathKnightSettings DeathKnightSettings { get { return SingularSettings.Instance.DeathKnight; } }
+
         private static DeathKnightSettings Settings
         {
             get { return SingularSettings.Instance.DeathKnight; }
@@ -106,14 +109,7 @@ namespace Singular.ClassSpecific.DeathKnight
             return new PrioritySelector(
                 Movement.CreateMoveToLosBehavior(), 
                 Movement.CreateFaceTargetBehavior(),
-                new Sequence(
-                    Spell.Cast("Death Grip", ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
-                    new DecoratorContinue(
-                        ret => StyxWoW.Me.IsMoving,
-                        new Action(ret => Navigator.PlayerMover.MoveStop())
-                        ),
-                    new WaitContinue(1, new ActionAlwaysSucceed())
-                    ),
+                Common.CreateDeathGripBehavior(),
                 Spell.Cast("Outbreak"),
                 Spell.Cast("Howling Blast"),
                 Spell.Cast("Icy Touch"), 
@@ -312,6 +308,19 @@ namespace Singular.ClassSpecific.DeathKnight
                                    (BloodRuneSlotsActive == 0 || FrostRuneSlotsActive == 0 || UnholyRuneSlotsActive == 0)),
                     Spell.Cast("Plague Leech", ret => CanCastPlagueLeech)
                     );
+        }
+
+        #endregion
+
+        #region Death Grip
+
+        public static Composite CreateDeathGripBehavior()
+        {
+            return new Sequence(
+                Spell.Cast("Death Grip", ret => Me.CurrentTarget.DistanceSqr > 10 * 10 && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe)),
+                new DecoratorContinue( ret => StyxWoW.Me.IsMoving, new Action(ret => Navigator.PlayerMover.MoveStop())),
+                new WaitContinue(1, new ActionAlwaysSucceed())
+                );
         }
 
         #endregion

@@ -1,12 +1,4 @@
-﻿#region Revision Info
-
-// This file is part of Singular - A community driven Honorbuddy CC
-// $LastChangedBy$
-// $LastChangedDate$
-// $Revision$
-
-#endregion
-
+﻿
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -27,10 +19,10 @@ namespace Singular.Settings
         #region Category: Pet
 
         [Setting]
-        [DefaultValue("1")]
+        [DefaultValue(1)]
         [Category("Pet")]
-        [DisplayName("Pet Slot")]
-        public string PetSlot { get; set; }
+        [DisplayName("Pet Number ( 1 thru 5 )")]
+        public int PetNumber { get; set; }
 
         [Setting]
         [DefaultValue(70)]

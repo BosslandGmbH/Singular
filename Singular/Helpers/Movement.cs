@@ -1,12 +1,4 @@
-﻿#region Revision Info
-
-// This file is part of Singular - A community driven Honorbuddy CC
-// $LastChangedBy$
-// $LastChangedDate$
-// $Revision$
-
-#endregion
-
+﻿
 using Singular.Settings;
 
 using Styx;
@@ -15,6 +7,10 @@ using Styx.Pathing;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using System;
+using Styx.WoWInternals.World;
+using Styx.WoWInternals.WoWObjects;
+using Singular.Utilities;
+using Styx.CommonBot.POI;
 
 namespace Singular.Helpers
 {
@@ -106,6 +102,7 @@ namespace Singular.Helpers
                     CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, ret => range));
         }
 
+#if USE_OLD_VERSION
         /// <summary>
         ///   Creates a move to melee range behavior. Will return RunStatus.Success if it has reached the location, or stopped in range. Best used at the end of a rotation.
         /// </summary>
@@ -119,6 +116,34 @@ namespace Singular.Helpers
         {
             return CreateMoveToMeleeBehavior(ret => StyxWoW.Me.CurrentTarget.Location, stopInRange);
         }
+#else
+
+        /// <summary>
+        /// Creates a move to melee range behavior.  Tests .IsWithinMeleeRange so we know whether WoW thinks
+        /// we are within range, which is more important than our distance calc.  For players keep moving 
+        /// until 2 yds away so we stick to them in pvp
+        /// </summary>
+        /// <param name="stopInRange"></param>
+        /// <returns></returns>
+        public static Composite CreateMoveToMeleeBehavior(bool stopInRange)
+        {
+            return new Decorator(
+                ret => !SingularSettings.Instance.DisableAllMovement,
+                new PrioritySelector(
+                    new Decorator(
+                        ret => stopInRange 
+                            && StyxWoW.Me.IsWithinMeleeRange 
+                            && (!StyxWoW.Me.IsPlayer || StyxWoW.Me.CurrentTarget.Distance < 2),
+                        new PrioritySelector(
+                            CreateEnsureMovementStoppedBehavior(),
+                            new Action(ret => RunStatus.Success)
+                            )
+                        ),
+                    new Action(ret => Navigator.MoveTo(StyxWoW.Me.CurrentTarget.Location))
+                    )
+                );
+        }
+#endif
 
         public static Composite CreateMoveToMeleeBehavior(LocationRetriever location, bool stopInRange)
         {
@@ -215,12 +240,27 @@ namespace Singular.Helpers
         public static Composite CreateMoveToLosBehavior(UnitSelectionDelegate toUnit)
         {
             return new Decorator(
-                ret =>
-                !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && 
-                toUnit(ret) != StyxWoW.Me && !toUnit(ret).InLineOfSpellSight,
+                ret => !SingularSettings.Instance.DisableAllMovement 
+                    && toUnit != null 
+                    && toUnit(ret) != null 
+                    && toUnit(ret) != StyxWoW.Me 
+                    && (!toUnit(ret).InLineOfSpellSight || (FalsePositiveLineOfSightTest && !toUnit(ret).IsWithinMeleeRange)),
                 new Action(ret => Navigator.MoveTo(toUnit(ret).Location)));
         }
 
+        /// <summary>
+        /// true if a Target not in line of sight spell failure occurred
+        /// recently.  This is a necessary test because in some circumstances
+        /// .InLineOfSight and .InLineOfSpellSight will return true while
+        /// the WOW Game Client fails the spell cast.  See EventHandler.cs
+        /// </summary>
+        public static bool FalsePositiveLineOfSightTest
+        {
+            get
+            {
+                return (DateTime.Now - EventHandlers.LastLineOfSightError).TotalMilliseconds < 1500;
+            }
+        }
 
         private static WoWPoint lastMoveToRangeSpot = WoWPoint.Empty;
         private static bool inRange = false;
@@ -246,7 +286,9 @@ namespace Singular.Helpers
                     new PrioritySelector(
                         // save check for whether we are in range to avoid duplicate calls
                         new Action( ret => {
-                            inRange = toUnit(ret).Distance < range(ret) && toUnit(ret).InLineOfSpellSight;
+                            inRange = toUnit(ret).Distance < range(ret) 
+                                && toUnit(ret).InLineOfSpellSight 
+                                && !FalsePositiveLineOfSightTest;
                             return RunStatus.Failure;
                         }),
 
@@ -279,12 +321,37 @@ namespace Singular.Helpers
                                     }
                                     else
                                     {
-                                        Logger.WriteDebug("MoveToRangeAndStop:  unable to calculate path to {0} @ {1:F1} yds and LoSS={2}", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance, StyxWoW.Me.CurrentTarget.InLineOfSpellSight  );
+                                        Logger.WriteDebug("MoveToRangeAndStop:  unable to calculate path to {0} @ {1:F1} yds and LoSS={2}", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance, StyxWoW.Me.CurrentTarget.InLineOfSpellSight);
                                     }
                                 })
                             )
                         )
                     );
+        }
+
+        public static Composite CreateWorgenDarkFlightBehavior()
+        {
+            return new Decorator(
+                ret => SingularSettings.Instance.UseRacials 
+                    && !SingularSettings.Instance.DisableAllMovement 
+                    && StyxWoW.Me.IsAlive 
+                    && StyxWoW.Me.IsMoving
+                    && !StyxWoW.Me.Mounted
+                    && !StyxWoW.Me.IsOnTransport
+                    && !StyxWoW.Me.OnTaxi
+                    && StyxWoW.Me.Race == WoWRace.Worgen 
+                    && !StyxWoW.Me.HasAnyAura("Darkflight")
+                    && (BotPoi.Current == null || BotPoi.Current.Type == PoiType.None || BotPoi.Current.Location.Distance(StyxWoW.Me.Location) > 10)
+                    && !StyxWoW.Me.IsAboveTheGround(),
+
+                new PrioritySelector(
+                    Spell.WaitForCast(),
+                    new Decorator(
+                        ret => !Spell.IsGlobalCooldown(),
+                        Spell.BuffSelf("Darkflight")
+                        )
+                    )
+                );
         }
     }
 

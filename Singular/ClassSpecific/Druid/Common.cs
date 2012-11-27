@@ -25,7 +25,7 @@ namespace Singular.ClassSpecific.Druid
         private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid; } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
-        public const WoWSpec DruidAllSpecs = WoWSpec.DruidBalance | WoWSpec.DruidFeral | WoWSpec.DruidGuardian | WoWSpec.DruidRestoration;
+        public const WoWSpec DruidAllSpecs = (WoWSpec)int.MaxValue;
 
         #region PreCombat Buffs
 

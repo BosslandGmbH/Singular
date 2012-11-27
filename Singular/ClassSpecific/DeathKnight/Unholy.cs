@@ -35,16 +35,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Buff("Chains of Ice",
                            ret =>
                            StyxWoW.Me.CurrentTarget.Fleeing && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-                new Sequence(
-                    Spell.Cast("Death Grip",
-                               ret =>
-                               StyxWoW.Me.CurrentTarget.DistanceSqr > 10*10 &&
-                               (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.TaggedByMe)),
-                    new DecoratorContinue(
-                        ret => StyxWoW.Me.IsMoving,
-                        new Action(ret => Navigator.PlayerMover.MoveStop())),
-                    new WaitContinue(1, new ActionAlwaysSucceed())
-                    ),
+                Common.CreateDeathGripBehavior(),
                 // *** Cool downs ***
                 Spell.BuffSelf("Unholy Frenzy",
                                ret => StyxWoW.Me.CurrentTarget.IsWithinMeleeRange 

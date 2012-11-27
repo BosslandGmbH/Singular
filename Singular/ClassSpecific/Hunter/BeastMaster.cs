@@ -13,91 +13,81 @@ using Styx.Helpers;
 using Styx.Pathing;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.ClassSpecific.Hunter
 {
     public class BeastMaster
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter; } }
+
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull|BehaviorType.Combat,WoWClass.Hunter,WoWSpec.HunterBeastMastery,WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull|BehaviorType.Combat,WoWClass.Hunter,WoWSpec.HunterBeastMastery,WoWContext.Normal | WoWContext.Instances )]
         public static Composite CreateBeastMasterHunterNormalPullAndCombat()
         {
             return new PrioritySelector(
-                Common.CreateHunterCallPetBehavior(true),
 
                 Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage",
-                               ret =>
-                                SingularSettings.Instance.IsCombatRoutineMovementAllowed() &&
-                               SingularSettings.Instance.Hunter.UseDisengage &&
-                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
+
                 //Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
-                    Movement.CreateEnsureMovementStoppedBehavior()),
-
+            
                 Spell.WaitForCast(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
 
-                Spell.BuffSelf("Aspect of the Fox", ret => StyxWoW.Me.IsMoving),
-                Spell.BuffSelf("Aspect of the Hawk",
-                               ret => !StyxWoW.Me.IsMoving &&
-                               !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") &&
-                               !StyxWoW.Me.HasAura("Aspect of the Hawk")),
+                        Common.CreateHunterAvoidanceBehavior( null, null ),
 
-                Helpers.Common.CreateAutoAttack(true),
+                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                        
+                        new Decorator(
+                            ret => Me.CurrentTarget.Distance < 35f,
+                            Movement.CreateEnsureMovementStoppedBehavior()
+                            ),
 
-                Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+                        Helpers.Common.CreateAutoAttack(true),
 
-                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
-                Spell.Buff("Concussive Shot",
-                           ret =>
-                           StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                           StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
+                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
 
-                // Defensive Stuff
+                        Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
-                Spell.Cast(
-                    "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
-                                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
-                                            StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
+                        Spell.Buff("Concussive Shot",
+                            ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid 
+                                && Me.CurrentTarget.Distance > Spell.MeleeRange),
 
-                Spell.Cast("Mend Pet",
-                           ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                                  (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
-                                   (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
+                        // Defensive Stuff
+                        Spell.Cast( "Intimidation", 
+                            ret => Me.GotTarget 
+                                && Me.CurrentTarget.IsAlive 
+                                && Me.GotAlivePet 
+                                && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
 
-                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
+                        Common.CreateHunterTrapOnAddBehavior("Freeizng Trap"),
 
-                // Rotation
+                        // AoE Rotation
+                        new Decorator( 
+                            ret => !(Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
+                            new PrioritySelector(
+                                Spell.Cast( "Multi-Shot", ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where( u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
+                                Spell.Cast( "Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
+                                Spell.Cast( "Cobra Shot")
+                                )
+                            ),
 
-                Spell.BuffSelf("Focus Fire", ctx => StyxWoW.Me.HasAura("Frenzy")),
+                        // Single Target Rotation
+                        Spell.Buff("Serpent Sting"),
+                        Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Me.Pet.GotTarget && Me.Pet.Location.Distance(Me.Pet.CurrentTarget.Location) < 25f),
+                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
+                        Spell.BuffSelf("Focus Fire", ctx => Me.HasAura("Frenzy", 5)),
 
-                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
-                Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
-                Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.Cast("Steady Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.Cast("Stampede"),
-                Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
-                Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
-                Spell.Cast("Kill Command", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Spell.MeleeRange),
-                Spell.Buff("A Murder of Crows"),
-                Spell.Cast("Glaive Toss"),
-                Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
-                Spell.Cast("Dire Beast", ctx => StyxWoW.Me.FocusPercent <= 90),
-                Spell.Cast("Barrage"),
-                Spell.Cast("Powershot"),
-                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
-                Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
-                Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
-                Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 60 || StyxWoW.Me.HasAura("The Beast Within")),
-                Spell.Cast("Steady Shot"),
-
+                        Spell.Cast("Arcane Shot", ret => Me.FocusPercent > 60 || Me.HasAnyAura("Thrill of the Hunt", "The Beast Within")),
+                        Spell.Cast("Cobra Shot")
+                        )
+                    ),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -111,90 +101,76 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateBeastMasterHunterPvPPullAndCombat()
         {
             return new PrioritySelector(
-                Common.CreateHunterCallPetBehavior(true),
-
                 Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage",
-                               ret =>
-                                SingularSettings.Instance.IsCombatRoutineMovementAllowed() &&
-                               SingularSettings.Instance.Hunter.UseDisengage &&
-                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f && Navigator.CanNavigateFully(StyxWoW.Me.Location,WoWMathHelper.CalculatePointBehind(StyxWoW.Me.Location,StyxWoW.Me.Rotation, 30))),
-                //Common.CreateHunterBackPedal(),
+
+                Common.CreateHunterAvoidanceBehavior(null, null),
+
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
+                    ret => Me.CurrentTarget.Distance < 35f,
                     Movement.CreateEnsureMovementStoppedBehavior()),
 
                 Spell.WaitForCast(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                Spell.BuffSelf("Aspect of the Fox", ret => StyxWoW.Me.IsMoving),
-                Spell.BuffSelf("Aspect of the Hawk",
-                               ret => !StyxWoW.Me.IsMoving &&
-                               !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") &&
-                               !StyxWoW.Me.HasAura("Aspect of the Hawk")),
+                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
 
                 Helpers.Common.CreateAutoAttack(true),
 
                 Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
 
-                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
+                Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
                 Spell.Buff("Concussive Shot",
                            ret =>
-                           StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                           StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
+                           Me.CurrentTarget.CurrentTargetGuid == Me.Guid &&
+                           Me.CurrentTarget.Distance > Spell.MeleeRange),
 
                 // Defensive Stuff
 
                 Spell.Cast(
-                    "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
-                                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
-                                            StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
+                    "Intimidation", ret => Me.CurrentTarget.IsAlive && Me.GotAlivePet &&
+                                           (Me.CurrentTarget.CurrentTarget == null ||
+                                            Me.CurrentTarget.CurrentTarget == Me)),
 
                 Spell.Cast("Mend Pet",
-                           ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                                  (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
-                                   (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
+                           ret => Me.GotAlivePet && !Me.Pet.HasAura("Mend Pet") &&
+                                  Me.Pet.HealthPercent < HunterSettings.MendPetPercent),
 
                 Common.CreateHunterTrapBehavior("Snake Trap", false),
                 Common.CreateHunterTrapBehavior("Immolation Trap", false),
                 new Action(ctx =>
                                {
-                                   var firstOrDefault = StyxWoW.Me.CarriedItems.FirstOrDefault(ret => ret.Entry == 76089);
+                                   var firstOrDefault = Me.CarriedItems.FirstOrDefault(ret => ret.Entry == 76089);
                                    if (firstOrDefault != null)
                                           firstOrDefault.UseContainerItem();
                                }),
 
-                Spell.BuffSelf("Deterrence", ctx => StyxWoW.Me.HealthPercent < 30),
+                Spell.BuffSelf("Deterrence", ctx => Me.HealthPercent < 30),
 
                 // Rotation
 
-                Spell.BuffSelf("Focus Fire", ctx => StyxWoW.Me.HasAura("Frenzy")),
+                Spell.BuffSelf("Focus Fire", ctx => Me.HasAura("Frenzy")),
 
-                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
-                Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
+                Spell.Buff("Serpent Sting", ctx => !Me.CurrentTarget.HasAura("Serpent Sting")),
+                Spell.Cast("Fervor", ctx => Me.FocusPercent <= 65 && Me.HasAura("Frenzy") && Me.Auras["Frenzy"].StackCount >= 5),
+                Spell.BuffSelf("Bestial Wrath", ctx => Me.FocusPercent > 60 && !Me.HasAura("The Beast Within")),
                 Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                 Spell.Cast("Steady Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.CastOnGround("Binding Shot", ret => StyxWoW.Me.CurrentTarget.Location),
-                Spell.CastOnGround("Flare", ret => StyxWoW.Me.Location),
+                Spell.CastOnGround("Binding Shot", ret => Me.CurrentTarget.Location),
+                Spell.CastOnGround("Flare", ret => Me.Location),
                 Spell.Cast("Stampede"),
                 Spell.Cast("Rapid Fire"),
-                Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
-                Spell.Cast("Kill Command", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Spell.MeleeRange),
+                Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
+                Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Me.Pet.Location.Distance(Me.CurrentTarget.Location) < Spell.MeleeRange),
                 Spell.Buff("A Murder of Crows"),
                 Spell.Cast("Glaive Toss"),
-                Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
-                Spell.Cast("Dire Beast", ctx => StyxWoW.Me.FocusPercent <= 90),
+                Spell.Buff("Lynx Rush", ctx => Me.GotAlivePet && Me.Pet.Location.Distance(Me.CurrentTarget.Location) < 10),
+                Spell.Cast("Dire Beast", ctx => Me.FocusPercent <= 90),
                 Spell.Cast("Barrage"),
                 Spell.Cast("Powershot"),
-                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
-                Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
-                Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
-                Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 60 || StyxWoW.Me.HasAura("The Beast Within")),
-                Spell.Cast("Steady Shot"),
+                Spell.Cast("Blink Strike", ctx => Me.GotAlivePet),
+                Spell.Cast("Readiness", ctx => Me.HasAura("Rapid Fire")),
+                Spell.Cast("Arcane Shot", ret => Me.FocusPercent > 60 || Me.HasAnyAura("Thrill of the Hunt", "The Beast Within")),
+                Spell.Cast("Cobra Shot"),
 
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -203,91 +179,5 @@ namespace Singular.ClassSpecific.Hunter
 
         #endregion
 
-        #region Instance Rotation
-
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterBeastMastery, WoWContext.Instances)]
-        public static Composite CreateBeastMasterHunterInstancePullAndCombat()
-        {
-            return new PrioritySelector(
-                Common.CreateHunterCallPetBehavior(true),
-
-                Safers.EnsureTarget(),
-                Spell.BuffSelf("Disengage",
-                               ret =>
-                                SingularSettings.Instance.IsCombatRoutineMovementAllowed() &&
-                               SingularSettings.Instance.Hunter.UseDisengage &&
-                               StyxWoW.Me.CurrentTarget.Distance < Spell.MeleeRange + 3f),
-                //Common.CreateHunterBackPedal(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
-                    Movement.CreateEnsureMovementStoppedBehavior()),
-
-                Spell.WaitForCast(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                Spell.BuffSelf("Aspect of the Fox", ret => StyxWoW.Me.IsMoving),
-                Spell.BuffSelf("Aspect of the Hawk",
-                               ret => !StyxWoW.Me.IsMoving &&
-                               !StyxWoW.Me.HasAura("Aspect of the Iron Hawk") &&
-                               !StyxWoW.Me.HasAura("Aspect of the Hawk")),
-
-                Helpers.Common.CreateAutoAttack(true),
-
-                Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
-
-                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
-                Spell.Buff("Concussive Shot",
-                           ret =>
-                           StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                           StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
-
-                // Defensive Stuff
-
-                Spell.Cast(
-                    "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
-                                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
-                                            StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
-
-                Spell.Cast("Mend Pet",
-                           ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                                  (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
-                                   (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
-
-                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
-
-                // Rotation
-
-                Spell.BuffSelf("Focus Fire", ctx => StyxWoW.Me.HasAura("Frenzy")),
-
-                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
-                Spell.BuffSelf("Bestial Wrath", ctx => StyxWoW.Me.FocusPercent > 60 && !StyxWoW.Me.HasAura("The Beast Within")),
-                Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.Cast("Steady Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.Cast("Stampede"),
-                Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
-                Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
-                Spell.Cast("Kill Command", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < Spell.MeleeRange),
-                Spell.Buff("A Murder of Crows"),
-                Spell.Cast("Glaive Toss"),
-                Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
-                Spell.Cast("Dire Beast", ctx => StyxWoW.Me.FocusPercent <= 90),
-                Spell.Cast("Barrage"),
-                Spell.Cast("Powershot"),
-                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
-                Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
-                Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
-                Spell.Cast("Arcane Shot", ret => StyxWoW.Me.FocusPercent > 60 || StyxWoW.Me.HasAura("The Beast Within")),
-                Spell.Cast("Steady Shot"),
-
-
-                Movement.CreateMoveToTargetBehavior(true, 35f)
-                );
-        }
-
-        #endregion
     }
 }

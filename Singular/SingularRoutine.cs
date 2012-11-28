@@ -187,7 +187,7 @@ namespace Singular
 
         private static void WriteSupportInfo()
         {
-            string singularName = "Singular v" + Assembly.GetExecutingAssembly().GetName().Version;
+            string singularName = "Singular v" + GetSingularVersion();
             Logger.Write("Starting " + singularName);
 
             // save some support info in case we need
@@ -214,7 +214,7 @@ namespace Singular
                     Logger.Write("Installation: integrity verififed for {0}", Assembly.GetExecutingAssembly().GetName().Version);
                 else
                 {
-                    Logger.Write(Color.HotPink, "Installation: modified by user - forum support not available", singularName);
+                    Logger.Write(Color.HotPink, "Installation: modified by user - forum support may not available", singularName);
                     Logger.WriteFile("=== following {0} files with issues ===", fcerrors.Count);
                     foreach (var fc in fcerrors)
                     {

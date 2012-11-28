@@ -54,7 +54,7 @@ namespace Singular.Managers
 
                 if (StyxWoW.Me.IsAlive)
                 {
-                    Logger.Write(Color.Aquamarine, "Ressurected by something other than ShamWOW...");
+                    Logger.Write(Color.Aquamarine, "Ressurected by something other than Singular...");
                     return;
                 }
 

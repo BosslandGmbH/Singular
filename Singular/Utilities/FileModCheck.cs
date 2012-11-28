@@ -47,7 +47,12 @@ namespace Singular.Utilities
             DirectoryInfo di = new DirectoryInfo(sPath);
 
             foreach (var fi in di.EnumerateFiles("*.cs", SearchOption.AllDirectories))
-                Filelist.Add(new FileCheck(fi.FullName));
+            {
+                if (fi.Name.ToLower() != "assemblyinfo.cs")
+                {
+                    Filelist.Add(new FileCheck(fi.FullName));
+                }
+            }
 
             // get length of fullpath
             string sDelims = "\\/:";

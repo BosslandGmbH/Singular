@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>11/27/2012 15:58:09</ScanTime>
+  <ScanTime>11/28/2012 16:16:00</ScanTime>
   <FileList>
     <File Hash="29528" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="18005" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -87,11 +87,10 @@
     <File Hash="6786" Name="Managers\HealerManager.cs" />
     <File Hash="1834" Name="Managers\MountManager.cs" />
     <File Hash="6788" Name="Managers\PetManager.cs" />
-    <File Hash="2857" Name="Managers\SoulstoneManager.cs" />
+    <File Hash="2858" Name="Managers\SoulstoneManager.cs" />
     <File Hash="816" Name="Managers\SpellImmunityManager.cs" />
     <File Hash="3728" Name="Managers\TalentManager.cs" />
     <File Hash="4461" Name="Managers\TankManager.cs" />
-    <File Hash="1426" Name="Properties\AssemblyInfo.cs" />
     <File Hash="6359" Name="Settings\DeathKnightSettings.cs" />
     <File Hash="18337" Name="Settings\DruidSettings.cs" />
     <File Hash="1021" Name="Settings\HealerSettings.cs" />
@@ -107,11 +106,12 @@
     <File Hash="3704" Name="Settings\WarriorSettings.cs" />
     <File Hash="7934" Name="SingularRoutine.Behaviors.cs" />
     <File Hash="5534" Name="SingularRoutine.Context.cs" />
-    <File Hash="11091" Name="SingularRoutine.cs" />
+    <File Hash="11066" Name="SingularRoutine.cs" />
+    <File Hash="981" Name="SingularRoutine.Version.cs" />
     <File Hash="2800" Name="Utilities\CombatLog.cs" />
     <File Hash="1450" Name="Utilities\Enumeration.cs" />
     <File Hash="8973" Name="Utilities\EventHandlers.cs" />
-    <File Hash="3443" Name="Utilities\FileModCheck.cs" />
+    <File Hash="3576" Name="Utilities\FileModCheck.cs" />
     <File Hash="5798" Name="Utilities\Logger.cs" />
   </FileList>
 </FileCheckData>

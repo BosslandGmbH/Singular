@@ -229,6 +229,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Managers\TalentManager.cs" />
     <Compile Include="Managers\TankManager.cs" />
+    <Compile Include="SingularRoutine.Version.cs" >
+      <DependentUpon>SingularRoutine.cs</DependentUpon>
+    </Compile>
     <Compile Include="Utilities\CombatLog.cs" />
     <Compile Include="Utilities\Enumeration.cs" />
     <Compile Include="Extensions.cs" />

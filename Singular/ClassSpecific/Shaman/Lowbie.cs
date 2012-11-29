@@ -86,7 +86,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new Throttle(1,
                 new Decorator(
-                    ret => SingularSettings.Instance.EnableDebugLogging,
+                    ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
                         uint lstks = !Me.HasAura("Lightning Shield") ? 0 : Me.ActiveAuras["Lightning Shield"].StackCount;

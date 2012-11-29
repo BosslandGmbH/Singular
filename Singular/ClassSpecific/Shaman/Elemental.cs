@@ -13,6 +13,7 @@ using Singular.Helpers;
 using Singular.Settings;
 using Singular.Managers;
 using Styx.Common;
+using System.Drawing;
 
 
 namespace Singular.ClassSpecific.Shaman
@@ -134,7 +135,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.WaitForCast(true),
 
                 new Decorator( 
-                    ret => !Common.InGCD,
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         CreateElementalDiagnosticOutputBehavior(),
 
@@ -201,7 +202,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.WaitForCast(true),
 
                 new Decorator( 
-                    ret => !Common.InGCD,
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
@@ -306,7 +307,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new Throttle( 1,
                 new Decorator(
-                    ret => SingularSettings.Instance.EnableDebugLogging,
+                    ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
                         uint lstks = !Me.HasAura("Lightning Shield") ? 0 : Me.ActiveAuras["Lightning Shield"].StackCount;
@@ -321,15 +322,16 @@ namespace Singular.ClassSpecific.Shaman
                         if (target == null)
                             line += ", target=(null)";
                         else
-                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tlos={3}, tloss={4}",
+                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, face={3} tlos={4}, tloss={5}",
                                 target.Name,
                                 target.Distance,
                                 target.HealthPercent,
+                                Me.IsSafelyFacing(target, 70f),
                                 target.InLineOfSight,
                                 target.InLineOfSpellSight
                                 );
 
-                        Logger.WriteDebug(line);
+                        Logger.WriteDebug(Color.Yellow, line);
                         return RunStatus.Success;
                     }))
                 );

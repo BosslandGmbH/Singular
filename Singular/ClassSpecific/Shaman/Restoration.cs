@@ -34,8 +34,17 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateRestoShamanHealingBuffs()
         {
             return new PrioritySelector(
-                // Keep WS up at all times. Period.
-                Spell.BuffSelf("Water Shield"),
+
+                ctx => Unit.NearbyGroupMembers.Any(m=>m.IsAlive),
+
+                // limit to one cast every 10 seconds to avoid needlessly spamming 
+                // .. shields back and forth due to group member moving in/out of range
+                new Throttle( 10,
+                    new PrioritySelector(
+                        Spell.BuffSelf("Water Shield", ret => (bool)ret),
+                        Spell.BuffSelf("Lightning Shield", ret => !(bool)ret)
+                        )
+                    ),
 
                 Common.CreateShamanImbueMainHandBehavior( Imbue.Earthliving, Imbue.Flametongue)
 

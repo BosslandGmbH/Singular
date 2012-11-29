@@ -72,9 +72,17 @@ namespace Singular.ClassSpecific.Shaman
             // now 
             return new PrioritySelector(
 
+                new Decorator(
+                    ret => Me.Fleeing,
+                    new ActionDebugString( 
+                        ret => string.Format( "I AM FEARED: cntFeared={0}, otherTotems={1}",
+                            Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor)),
+                            Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)))
+                    ),
+
                 Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
-                    ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor)
-                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental))),
+                    ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor))
+                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
 
                 new Decorator(
                     ret => !Me.IsMoving || (Me.GotTarget && Me.CurrentTarget.Distance < (Me.MeleeDistance(Me.CurrentTarget) + 3)),

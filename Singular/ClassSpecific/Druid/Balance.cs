@@ -156,7 +156,7 @@ namespace Singular.ClassSpecific.Druid
         private static Composite CreateBalanceDiagnosticOutputBehavior()
         {
             return new Decorator(
-                ret => SingularSettings.Instance.EnableDebugLogging,
+                ret => SingularSettings.Debug,
                 new Action(ret =>
                 {
                     WoWUnit target = Me.CurrentTarget ?? Me;

@@ -310,7 +310,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new ThrottlePasses( 1,
                 new Decorator(
-                    ret => SingularSettings.Instance.EnableDebugLogging,
+                    ret => SingularSettings.Debug,
                     new Action(ret =>
                         {
                         WoWUnit target = Me.CurrentTarget ?? Me;

@@ -340,7 +340,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new Throttle(1,
                 new Decorator(
-                    ret => SingularSettings.Instance.EnableDebugLogging,
+                    ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
                         uint lstks = !Me.HasAura("Maelstrom Weapon") ? 0 : Me.ActiveAuras["Maelstrom Weapon"].StackCount;

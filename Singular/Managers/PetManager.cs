@@ -12,16 +12,6 @@ using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.Managers
 {
-    public enum PetType
-    {
-        // These are CreatureFamily IDs. See 'CurrentPet' for usage.
-        None = 0,
-        Imp = 23,
-        Felguard = 29,
-        Voidwalker = 16,
-        Felhunter = 15,
-        Succubus = 17,
-    }
 
     internal class PetManager
     {
@@ -46,21 +36,6 @@ namespace Singular.Managers
                         PetTimer.Reset();
                     }
                 };
-        }
-
-        public static PetType CurrentPetType
-        {
-            get
-            {
-                WoWUnit myPet = StyxWoW.Me.Pet;
-                if (myPet == null)
-                {
-                    return PetType.None;
-                }
-                WoWCache.CreatureCacheEntry c;
-                myPet.GetCachedInfo(out c);
-                return (PetType) c.FamilyID;
-            }
         }
 
         public static bool HavePet { get { return StyxWoW.Me.GotAlivePet; } }

@@ -89,7 +89,7 @@ namespace Singular
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow.Subtract(t).TotalMilliseconds >= 2500);
 
             // Target Debug Output
-            if (SingularSettings.Instance.EnableDebugLogging)
+            if (SingularSettings.Debug)
             {
                 if ((Me.CurrentTargetGuid != _guidLastTarget))
                 {
@@ -211,7 +211,7 @@ namespace Singular
 
                 List<FileCheck> fcerrors = FileCheckList.Test(GetSingularSourcePath());
                 if (!fcerrors.Any())
-                    Logger.Write("Installation: integrity verififed for {0}", Assembly.GetExecutingAssembly().GetName().Version);
+                    Logger.Write("Installation: integrity verififed for {0}", GetSingularVersion());
                 else
                 {
                     Logger.Write(Color.HotPink, "Installation: modified by user - forum support may not available", singularName);

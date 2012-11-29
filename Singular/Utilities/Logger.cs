@@ -76,7 +76,7 @@ namespace Singular
         {
             System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);
 
-            if (SingularSettings.Instance.EnableDebugLogging)
+            if (SingularSettings.Debug)
             {
                 Logging.Write(newColor, "[Singular-DEBUG] " + message, args);
             }

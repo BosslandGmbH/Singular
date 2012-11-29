@@ -8,6 +8,7 @@ using Styx.WoWInternals.WoWObjects;
 using System.Collections.Generic;
 using Styx.Pathing;
 using Singular.Helpers;
+using Singular.Settings;
 
 namespace Singular
 {
@@ -41,6 +42,15 @@ namespace Singular
             return sb.ToString();
         }
 
+        private static string Right(string s, int c)
+        {
+            return s.Substring(c > s.Length ? 0 : s.Length - c);
+        }
+        public static string UnitID(ulong guid)
+        {
+            return Right(string.Format("{0:X4}", guid), 4);
+        }
+
         public static bool ShowPlayerNames { get; set; }
 
         public static string SafeName(this WoWObject obj)
@@ -66,6 +76,9 @@ namespace Singular
             {
                 name = obj.Name;
             }
+
+            if (SingularSettings.Debug)
+                return name + "." + UnitID(obj.Guid);
 
             return name;
         }

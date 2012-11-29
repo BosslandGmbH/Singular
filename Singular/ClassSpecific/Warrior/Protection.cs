@@ -300,7 +300,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new ThrottlePasses( 1,
                 new Decorator(
-                    ret => SingularSettings.Instance.EnableDebugLogging,
+                    ret => SingularSettings.Debug,
                     new Action(ret =>
                         {
                         Logger.WriteDebug(".... h={0:F1}%/r={1:F1}%, Ultim={2}, Targ={3} {4:F1}% @ {5:F1} yds Melee={6} Facing={7}",

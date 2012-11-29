@@ -11,6 +11,7 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Singular.Settings;
 using Styx.Common;
+using System.Diagnostics;
 
 namespace Singular.Helpers
 {
@@ -473,17 +474,19 @@ namespace Singular.Helpers
             return StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid;
         }
 
-        private const int UnitIncomingHealsCountIndex = 1203;
-        private const int UnitIncomingHealsListIndex = 1204;
-
         public static uint GetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
         {
+            // Reversing note: CGUnit_C::GetPredictedHeals
+            const int PredictedHealsCount = 0x1300;
+            const int PredictedHealsArray = 0x1304;
+
+            Debug.Assert(unit != null);
             uint health = unit.CurrentHealth;
-            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + UnitIncomingHealsCountIndex * 4);
+            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
             if (incomingHealsCnt == 0)
                 return health;
 
-            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + UnitIncomingHealsListIndex * 4);
+            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
 
             var heals = StyxWoW.Memory.Read<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
             return heals.Where(heal => includeMyHeals || !includeMyHeals && heal.OwnerGuid != StyxWoW.Me.Guid)
@@ -492,7 +495,7 @@ namespace Singular.Helpers
 
         public static float GetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)
         {
-            return (float)unit.GetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
+             return (float)unit.GetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -625,7 +628,7 @@ namespace Singular.Helpers
             return new Action(
                 ret =>
                 {
-                    if (SingularSettings.Instance.EnableDebugLogging && StyxWoW.Me.CurrentTarget != null)
+                    if (SingularSettings.Debug && StyxWoW.Me.CurrentTarget != null)
                     {
                         long timeNow = StyxWoW.Me.CurrentTarget.TimeToDeath();
                         if (timeNow != lastReportedTime || guid != StyxWoW.Me.CurrentTargetGuid )

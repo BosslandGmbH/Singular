@@ -53,7 +53,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateFaceTargetBehavior(float viewDegrees = 70f)
         {
-            return CreateFaceTargetBehavior(ret => StyxWoW.Me.CurrentTarget);
+            return CreateFaceTargetBehavior(ret => StyxWoW.Me.CurrentTarget, viewDegrees );
         }
 
         public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 70f)

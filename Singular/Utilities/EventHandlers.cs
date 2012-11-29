@@ -50,13 +50,15 @@ namespace Singular.Utilities
         /// See CreateMoveToLosBehavior() for usage
         /// </summary>
         public static DateTime LastLineOfSightError { get; set; }
+        public static DateTime LastUnitNotInfrontError { get; set; }
 
         /// <summary>
-        /// the value of SPELL_FAILED_LINE_OF_SIGHT for localized
-        /// testing of a specific cast failure we need to identify
+        /// the value of localized values for testing certain types of spell failures
         /// </summary>
         private static string LocalizedLineOfSightError;
-        
+        private static string LocalizedUnitNotInfrontError;
+
+
         private static void AttachCombatLogEvent()
         {
             if (_combatLogAttached)
@@ -82,6 +84,8 @@ namespace Singular.Utilities
             }
 
             LocalizedLineOfSightError = Lua.GetReturnVal<string>("return SPELL_FAILED_LINE_OF_SIGHT", 0);
+            LocalizedUnitNotInfrontError = Lua.GetReturnVal<string>("return SPELL_FAILED_UNIT_NOT_INFRONT", 0);
+                     
             Logger.WriteDebug("Attached combat log");
             _combatLogAttached = true;
         }
@@ -113,9 +117,8 @@ namespace Singular.Utilities
 
                 // spell_cast_failed only passes filter in Singular debug mode
                 case "SPELL_CAST_FAILED":
-                    Logger.WriteDebug("[CombatLog] {0}:{1} cast of {2}#{3} failed: '{4}'",
-                        e.SourceName,
-                        e.SourceGuid,
+                    Logger.WriteDebug("[CombatLog] {0} cast of {1}#{2} failed: '{3}'",
+                        e.SourceUnit == null ? "null-unit." + Extensions.UnitID(e.SourceGuid) : e.SourceUnit.SafeName(),
                         e.SpellName,
                         e.SpellId,
                         e.Args[14]
@@ -177,7 +180,7 @@ namespace Singular.Utilities
                     // DoT casting spam can occur when running on test dummy with low +hit
                     //  ..  and multiple misses occurring. this should help troubleshoot
                     //  ..  false reports of flawed rotation
-                    if (SingularSettings.Instance.EnableDebugLogging)
+                    if (SingularSettings.Debug)
                     {
                         Logger.WriteDebug(
                             "[CombatLog] {0} {1}#{2} {3}",

@@ -15,6 +15,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Priest
 {
@@ -111,6 +112,9 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        CreateShadowDiagnosticOutputBehavior(),
+
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                         Spell.BuffSelf("Shadow Form"),
 
@@ -325,6 +329,44 @@ namespace Singular.ClassSpecific.Priest
             }
         }
 
+
+        #endregion
+
+        #region Diagnostics
+
+        private static Composite CreateShadowDiagnosticOutputBehavior()
+        {
+            return new Throttle(1,
+                new Decorator(
+                    ret => SingularSettings.Debug,
+                    new Action(ret =>
+                    {
+                        uint orbs = Me.GetCurrentPower(WoWPowerType.ShadowOrbs);
+
+                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, orbs={2}",
+                            Me.HealthPercent,
+                            Me.ManaPercent,
+                            orbs
+                            );
+
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target == null)
+                            line += ", target=(null)";
+                        else
+                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tface={3}, tlos={4}, tloss={5}",
+                                target.Name,
+                                target.Distance,
+                                target.HealthPercent,
+                                Me.IsSafelyFacing(target,70f),
+                                target.InLineOfSight,
+                                target.InLineOfSpellSight
+                                );
+
+                        Logger.WriteDebug(Color.Wheat, line);
+                        return RunStatus.Success;
+                    }))
+                );
+        }
 
         #endregion
     }

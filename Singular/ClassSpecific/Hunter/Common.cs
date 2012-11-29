@@ -57,6 +57,8 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+                        Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85),
+
                         Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
 
                         CreateHunterCallPetBehavior(true),
@@ -66,9 +68,7 @@ namespace Singular.ClassSpecific.Hunter
                                 new Action(ctx => SpellManager.Cast("Dismiss Pet")),
                                 new WaitContinue(1, ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )
-                            ),
-
-                        Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85)
+                            )
                         )
                     )
                 );
@@ -80,7 +80,10 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 Spell.WaitForCast(true),
                 Spell.BuffSelf("Track Hidden"),
-                Spell.BuffSelf("Aspect of the Hawk", ret => !Me.IsMoving && !Me.HasAnyAura("Aspect of the Hawk", "Aspect of the Iron Hawk"))
+                Spell.BuffSelf("Aspect of the Hawk", ret => !Me.IsMoving && !Me.HasAnyAura("Aspect of the Hawk", "Aspect of the Iron Hawk")),
+
+                Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85),
+                CreateHunterCallPetBehavior(true)
                 );
         }
 
@@ -105,6 +108,14 @@ namespace Singular.ClassSpecific.Hunter
                 );
         }
 
+        private static bool ScaryNPC
+        {
+            get
+            {
+                return Target.MaxHealth > (StyxWoW.Me.MaxHealth * 3) && !Me.IsInInstance;
+            }
+        }
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Hunter)]
         public static Composite CreateHunterCombatBuffs()
         {
@@ -127,37 +138,34 @@ namespace Singular.ClassSpecific.Hunter
                         new Throttle(Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target))),
 
                         Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPercent),
+                        Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 30 || Pet.HealthPercent < 10 ),
 
-                        // Buffs - don't stack and save for bosses, enemy players, or multiple mobs
+                        // Buffs - don't stack the next two
+                        Spell.Buff("Bestial Wrath", true, ret => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero, "The Beast Within"),
+
+                        Spell.Cast("Stampede", ret => PartyBuff.WeHaveBloodlust || !Me.IsInGroup()),
+
+                        Spell.Cast("A Murder of Crows"),
+                        Spell.Cast("Blink Strike", ctx => Me.GotAlivePet),
+                        Spell.Cast("Lynx Rush", ret => Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
+
+                        Spell.Cast("Glaive Toss"),
+                        Spell.Cast("Powershot"),
+                        Spell.Cast("Barrage"),
+
+                        Spell.Cast("Dire Beast"),
+                        Spell.Cast("Fervor", ctx => Me.FocusPercent < 50),
+
+                        // for long cooldowns, spend only when worthwhile                      
                         new Decorator(
-                            ret => Target != null && Target.IsAlive && (Target.IsBoss || Target.IsPlayer || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 1),
+                            ret => Pet != null && Target != null && Target.IsAlive 
+                                && (Target.IsBoss || Target.IsPlayer || ScaryNPC || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
                             new PrioritySelector(
-                                new Decorator( 
-                                    ret => !Me.HasAnyAura( "Bestial Wrath", "Dire Beast", "Lynx Rush", "Glaive Toss", "Stampede" ),
-                                    new PrioritySelector(
-                                        Spell.BuffSelf( "Bestial Wrath"),
-                                        Spell.BuffSelf( "Dire Beast"),
-                                        Spell.BuffSelf( "Lynx Rush"),
-                                        Spell.BuffSelf( "Stampede", ret => PartyBuff.WeHaveBloodlust || !Me.IsInGroup()),
-                                        Spell.BuffSelf( "Rapid Fire")
-                                        )
-                                    ),
-
-                                Spell.Cast("Rabid", 
-                                    ret => Me.HasAura("Bestial Wrath") 
-                                        && Me.GotAlivePet 
-                                        && Pet.Location.Distance(Pet.CurrentTarget.Location) < Pet.MeleeDistance(Pet.CurrentTarget)),
-
-                                Spell.Buff("A Murder of Crows"),
-                                Spell.Cast("Blink Strike", ctx => Me.GotAlivePet),
-                                Spell.Cast("Powershot"),
-                                Spell.Cast("Barrage")
+                                Spell.Buff("Rapid Fire", ret => !Me.HasAura("The Beast Within")),
+                                Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within")),
+                                Spell.Buff("Readiness", ret => Spell.GetSpellCooldown("Rapid Fire").TotalSeconds > 30)
                                 )
-                            ),
-
-                        Spell.Buff("Readiness", ret => Me.HasAnyAura( "Bestial Wrath", "Rapid Fire", "Lynx Rush", "Dire Beast")),
-                        Spell.Cast("Fervor", ctx => Me.FocusPercent < 50)
-
+                            )
                         )
                     )
                 );

@@ -170,7 +170,7 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new Throttle(1,
                 new Decorator(
-                    ret => SingularSettings.Instance.EnableDebugLogging,
+                    ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
                         WoWUnit target = Me.CurrentTarget ?? Me;

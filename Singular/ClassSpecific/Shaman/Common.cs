@@ -312,15 +312,6 @@ namespace Singular.ClassSpecific.Shaman
         #endregion
 
 
-        public static bool InGCD
-        {
-            get
-            {
-                return SpellManager.GlobalCooldown;
-            }
-        }
-
-
         public static bool Players(this CastOn c)
         {
             return c == CastOn.All || c == CastOn.Players;
@@ -349,8 +340,8 @@ namespace Singular.ClassSpecific.Shaman
                 // use predicted health for non-combat healing to reduce drinking downtime and help
                 // .. avoid unnecessary heal casts
                 new Decorator(
-                    ret => !StyxWoW.Me.Combat,
-                    Spell.Heal("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.GetPredictedHealth(true) <= 85)
+                    ret => !Me.Combat,
+                    Spell.Heal("Healing Surge", ret => Me, ret => Me.GetPredictedHealth(true) <= 85)
                     ),
 
                 new Decorator(
@@ -361,10 +352,10 @@ namespace Singular.ClassSpecific.Shaman
                         // save myself if possible
                         new Decorator(
                             ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
-                                && Me.HealthPercent < 20,
+                                && Me.HealthPercent < 25,
                             new Sequence( 
-                                Spell.BuffSelf("Ancestral Swiftness", ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.AncestralSwiftness),
-                                Spell.Heal("Greater Healing Wave", ret => (WoWUnit)ret)
+                                Spell.BuffSelf("Ancestral Swiftness", ret => Me.GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.AncestralSwiftness),
+                                Spell.Heal("Healing Surge", ret => Me)
                                 )
                             ),
 
@@ -396,8 +387,8 @@ namespace Singular.ClassSpecific.Shaman
                                 // .. and its okay for multiple heals at that point
                                 Spell.Heal(
                                     "Healing Surge",
-                                    ret => StyxWoW.Me,
-                                    ret => StyxWoW.Me.HealthPercent <= 30)
+                                    ret => Me,
+                                    ret => Me.HealthPercent <= 30)
                                 )
                             )
                         )

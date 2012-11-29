@@ -382,7 +382,7 @@ namespace Singular.ClassSpecific.Monk
         {
             return new ThrottlePasses( 1, 1,
                 new Decorator(
-                    ret => SingularSettings.Instance.EnableDebugLogging,
+                    ret => SingularSettings.Debug,
                     new Action( ret => {
                         Logger.WriteDebug(".... health={0:F1}%, energy={1}%, chi={2}, tpower={3}, tptime={4}, tgt={5:F1} @ {6:F1}, ",
                             Me.HealthPercent,

@@ -74,6 +74,16 @@ namespace Singular.Settings
             return !SingularRoutine.IsBotInUse("LazyRaider");
         }
 
+        [Browsable(false)]
+        public static bool Debug
+        {
+            get
+            {
+                return SingularSettings.Instance.EnableDebugLogging || (GlobalSettings.Instance.LogLevel > Styx.Common.LogLevel.Normal);
+            }
+        }
+
+
         #region Category: General
 
         [Setting]

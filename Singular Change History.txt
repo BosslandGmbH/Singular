@@ -1,0 +1,463 @@
+--- Release 3.0.0.1287 ---
+
+General
+
+fixed - movement issue for some ranged classes periodically running to melee range before attacking.  Note, some Quest profiles change the Pull Distance to force that behavior, so please check before posting any issues with your ranged toon doing this.
+
+
+
+Hunter
+
+change- All Specs - Hunters have a new class specific option Allow Kiting, which defaults to false.
+
+fixed - All Specs - Trap errors occuring on non-English clients
+
+
+
+Shaman
+
+*new* - Elemental - support for Hex / Bind Elemental on adds out of AoE range of current target
+
+fixed - Enhancement - Feral Spirit correctly recognizes setting in Battlegrounds and Instances
+
+change- All Specs - will Lust in Normal Context if not in group and in a stressful combat situation
+
+change- All Specs - Ascendance cast in Normal Context if in stressful combat situation
+
+change- All Specs - Ancestral Guidance if health less than 60% in a stressful combat situation
+
+
+--- Release 3.0.0.1271 ---
+
+General
+
+fixed - character name output in log when debug mode enabled and spell cast fails
+
+fixed - incorrect version number was being reported when passing integrity check
+
+*new* - Singular debug output now enabled either by toggling Singular setting or HonorBuddy Log Level
+
+
+Hunter
+
+fixed - All Specs - now correctly casts buffs. also casts short duration cooldowns more frequently.
+
+fixed - Beast Master - Focus Fire now restricted to 5 stacks of Frenzy.  Stacks are kept until Beastial Wrath not active
+
+fixed - Beast Master - Beastial Wrath saved until Kill Command not on cooldown to maximize opportunity to cast twice while buff active
+
+fixed - All Specs - Mend Pet during rest invoked before sitting to eat
+
+
+Shaman
+
+change- Resto - will cast Lightning Shield when not in a group or no living group members nearby
+
+
+
+--- Release 3.0.0.1256 ---
+
+General 
+
+fixed - issue affecting many specs in Singular (Guardian Druid, Retribution Paladin, and Resto Shaman were among those reported.)  The Predicted Health Percent function which factors in incoming heals uses offsets which have changed with WOW 5.1.  Method for healing temporarily changed to actual Health Percent until offsets are updated, which will fix all exceptions reported where log files were provided
+
+fixed - Version information and integrity check no longer uses a file which HonorBuddy during its build and packagine process.  Users doing a new install should no longer see the "pink" message
+
+change- debug mode will append unique numbers to the end of target name to uniquely identify mobs having the same name.  Only occurs when debug mode enabled
+
+change- debug mode for Singular can be activated either by setting Singular setting to true or HonorBuddy Log Level setting to Verbose or Diagnostic
+
+
+
+--- Release 3.0.0.1230 ---
+
+General
+
+change- additional current target info if Singular debugging enabled
+
+fixed - line of sight issue fixed.  HonorBuddy sometimes reports mob is in line of sight while WOW client indicates that it is not.  If detects that a spell failed for line of sight reasons, will move towards the current target for brief period attempting to get into line of sight
+
+fixed - infrequent move to melee problem (all melee specs) should no longer cause character to stop barely out of range of mobs hovering off ground
+
+*new* - Worgen's will use Dark Flight to buff running speed while not mounted if Use Racials setting is true
+
+
+Death Knight
+
+change- Frost - revision of Normal and Instance spell priorities to align with Elitist Jerks, including improved AoE
+
+change- Frost - disease application now prioritizes abilities that don't require runes (Unholy Blight, ) over those that do
+
+change- Frost - addition of keeping Necrotic Strike buff on in PVP
+
+
+Druid 
+
+change- Guardian - revised rotation to better match Icy Veins, with the exception of AoE which favors quick Berserk and Mangle spam.
+
+change- All Specs - Renewal Health setting changed to 35 (was 70)
+
+change- Guardian - Frenzied Regeneration Health setting changed to 40 (was 70)
+
+change- Guardian - Savage Defense Health setting changed to 20 (was 35)
+
+change- Guardian - Barkskin Health setting changed to 50 (was 80)
+
+
+
+Hunter
+
+change- All Specs - Aspect of the Fox removed for WOW Patch 5.1
+
+*new* - All Specs - addition of smart Disengage, which finds a safe landing spot and rotates to aim for it.  Disengage usage remains disabled by default
+
+fixed - Beast Master - now includes Cobra Shot in rotation
+
+fixed - All Specs - casts Mend Pet during Rest
+
+fixed - All Specs - localization error for all traps, preventing use of traps on non-english clients
+
+change- All Specs - Pet Slot string setting changed to Pet Number integer setting (only accepts numbers)
+
+
+Mage
+
+fixed - All Specs - changed so Ice Barrier buff uptime is 100% 
+
+
+Monk
+
+change- All Specs - Tiger Power buff no longer stacks for WWOW Patch 5.1
+
+change- All Specs - Healing Sphere energy required reduced to 40
+
+change- All Specs - Tiger Power now renewed when less than 3 seconds remaining
+
+
+Paladin
+
+fixed - All Specs - bug occuring when high level Paladin selects Seal of Command as active seal
+
+
+Shaman
+
+change- Lowbie - now correctly heals at 35% (down from 60%)
+
+change- Lowbie - now moves to within 25 yds of mob on PUll (up from 20)
+
+chagne- Restoration - fix to maintain Tidal Waves via Riptide
+
+
+Warlock
+
+fixed - All Specs - now Health Funnels as needed during rest.  
+
+*new* - All Specs - support for user configurable use of Soulstone ability.  May now be used as traditional Soulstone or battle rez.  See Warlock Settings for available options
+
+
+
+--- Release 3.0.0.1175 ---
+
+GENERAL
+
+- Singular files are now integrity checked for user modification. To receive support, a complete log file is required so we have the version and settings information needed to assist you.
+
+- support for Soulstone ressurection by all classes, and ankh by Shaman
+
+- support for Lifeblood added for all classes
+
+- fix for ranged class movement
+
+- minor targeting fix to assist tank rather than target it
+
+- change to recognize both tagged mobs and those targeting character as being in combat
+
+- Singular debug output will now write spell cast failures reported by WoW to Log window rather than just log file.
+
+
+DEATH KNIGHT
+
+*new* - All Specs - added "Use Raise Ally" setting to allow control over automatic or user controlled battle rez
+
+change- All Specs - normal and battleground Pull uses Outbreak at highest priority
+
+
+DRUID
+
+fixed - Feral - will force Cat Form prior to casting Wild Charge
+
+*new* - Feral - added AoE attack sequence
+
+
+MAGE
+
+change- Frost - in Instances, will resummon Water Elemental if it is more than 40 yards away
+
+change- Frost - Instance spell priority revised
+
+
+MONK
+
+change- Mistweaver - enable Solo combat to allow use of Mixed bot
+
+fixed - Mistweaver - corrected bug that created issues at times with channeled spells for /use: items at times
+
+*new* - Mistweaver - support for Mana Tea and Fortifying Brew
+
+*new* - Windwalker - support for Leg Sweep
+
+
+PRIEST
+
+*new* - All Specs - will buff speed for non-combat movement on foot if Angelic Feathers or Body and Soul talents are taken.  See Priest option "Use Speed Buff"
+
+fixed - Discipline - now supports solo combat allowing use of Mixed bot.  
+
+fixed - Holy - now supports solo combat allowing use of Mixed bot.
+
+*new* - Holy - supports switching to Chakra: Chastise for DPS and Chakra: Sanctuary for Healing.  Will revised in upcoming release to allow user selection of healing Chakra
+
+fixed - Shadow - now supports improved healing before drinking/eating at Rest 
+
+fixed - Shadow - improved self-healing while grinding and in battlegrounds
+
+change- Shadow - Normal rotation now more aware of fast dying mobs.  Also 
+
+change- Shadow - Normal rotation now recognizes Glyph of Mind Spike along with minor changes to adjust to mobs dying fast
+
+*new* - Shadow - Instance rotation has improved AoE support along with rolling DoTs and support for Halo
+
+
+SHAMAN
+
+*new* - All Specs - added Use Ghost Wolf setting to control Singulars use of that spell.
+
+*new* - All Specs - if running on foot, will cast Ghost Wolf unless Use Ghost Wolf setting is false.
+
+*new* - Enhancement - setting Off-Heal Allowed added. When true, Shaman will off-heal if a group member falls below 30% or the healer dies
+
+*new* - Elemental - setting Off-Heal Allowed added. When true, Shaman will off-heal if a group member falls below 30% or the healer dies
+
+*new* - All Specs - setting "Use Bloodlust" to control casting during solo, battleground, and dungeon play.  Bloodlust never cast if movement is disabled (since user is there and should cast manually.)
+
+*new* - Elemental - setting to enable AOE rotation (defaults to true.)  Allows you to disable for an encounter you want to restrict spell selection to single target only.
+
+*new* - All Specs - support for Astral Shift 
+
+*new* - Elemental - improved support for self-healing when solo or battlegrounds
+
+*new* - Enhancement - improved support for self-healing when solo or battlegrounds
+
+*new* - All Specs - Earth Elemental now correctly cast in Instances when tank dies
+
+*new* - Elemental - support for Elemental Blast and Unleashed Fury talents
+
+*new* - Enhancement - support for Elemental Blast and Unleashed Fury talents
+
+*new* - Enhancement - improved recognition and use of Maelstrom Procs
+
+
+
+WARLOCK
+
+*new* - Affliction - complete rewrite.  Supports solo, battleground, and group play with all abilities.  PVP specific logic not added yet
+
+*new* - Destruction - complete rewrite.  Supports solo, battleground, and group play with all abilities.  PVP specific logic not added yet
+
+*new* - All Specs - setting "Use Fear" allows you to disable the use of Fear 
+
+
+
+WARRIOR
+
+fixed - All Specs - Victory Rush spam corrected
+
+*new* - Arms - support for Hamstring and Piercing Howl on players
+
+fixed - Arms - addition of missing Cleave cast
+
+fixed - All Specs - now correctly calculates AoE situations with multiple mobs having large hitboxes
+
+fixed - Fury - only cast Raging Blow if current target within melee range
+
+fixed - Protection - only cast Demoralizing Shout if mobs within 10yds
+
+*new* - Proteciton - support for Hamstring and Piercing Howl on players
+
+
+
+--- Release 3.0.0.1085 ---
+
+General
+
+fixed - aerial target detection
+
+fixed - exception occurring with failed spell casts when Singular Debug Logging enabled
+
+fixed - exception sometimes impacting all classes spell priorities (rotations)
+
+
+Death Knight
+
+Blood - change - Death Grip in instances saved for use as taunt if needed; no longer cast on Pull
+
+Blood - fixed - Death Grip cast on current target instead of taunt target during combat if taunt needed
+
+Blood - fixed - taunts are throttled, so should no longer cast Death Grip followed by Dark Command on same target
+
+
+Druid
+
+Feral - fixed - detection of targets above the ground.  
+
+Feral - new - support for Wild Charge
+
+
+Hunter
+
+General - fixed - no longer casts Mend Pet if alive pet not present
+
+General - fixed - Misdirection pre-buffing only done immediately prior to pull as opposed to keeping buff up during rest
+
+
+Mage
+
+Arcane - fixed - issue with cast of Arcane Blast during Pull
+
+Arcane - change - change to priority of Evocation. now cast if mana < 30% or glyphed and health < 50%
+
+Arcane - fixed - Mana Shield now only cast if Health < 75% and Mana < 30%
+
+Arcane - new - Ice Barrier cast if health < 99%
+
+Arcane - change - Mirror Image only cast if 3 or more enemies targeting mage and/or pet
+
+Arcane - new - Incanter's Ward cast if current target within 6 yds
+
+
+Monk
+
+Windwalker - fixed - Grapple Weapon attempted a maximum of once per Pull, eliminating potential for spam if target cannot be disarmed
+
+
+Paladin
+
+All Specs - new - Seal setting; supports None (for manual control), Auto (for best choice given spec and environment), or specific Seals
+
+
+Warrior
+
+Arms - fixed - Charge and Heroic Leap casting
+
+Arms - fixed - Recklessness and Dragon Roar no longer cast only on boss or wasted at range
+
+Arms - fixed - Bloodbath only cast on bosses
+
+Arms - fixed - Dragon Roar no longer cast only on boss or wasted at range
+
+Protection - fixed - Charge and Heroic Leap casting
+
+Protection - fixed - several exception interfering with rotation
+
+Protection - fixed - Bloodbath only cast on bosses
+
+Protection - fixed - Dragon Roar no longer at range
+
+
+--- Release 3.0.0.1057 ---
+
+General
+
+Version # - the version number for Singular will be updated with each release.  Please be sure to provide a log file with any problem or question you have.
+
+Log Window - reduced message output at startup.  if viewing the selected behavior names is necessary enable Debug Logging in Singular.
+
+Log File - additional info (stats, glyphs, fps, latency, etc.) written to log file only to provide additional detail for Support of users providing a log file.
+
+Healing - added support for using Bandages during Rest if first aid trained and some are in inventory.  Setting 'Use Bandages' controls this and defaults to false.  this was added to reduce downtime while levelling.  support for In-Combat use of bandages will be looked at in the future
+
+Boss List - dynamically detects Bosses (previously were maintained in a list, requiring updates for new content.)
+
+
+Druid 
+
+Balance - changed group Innervate to support party as well (not just raids)
+
+Balance - added AoE rotation with Mushroom Detonate, Force of Nature, Starfall, and DoTs
+
+Balance - added Celestial Alignment and Incarnation
+
+Feral - several fixes to spell priority, including intermittent Savage Roar spam
+
+All - should heal without leaving form unless cooldowns exhausted and no other option, in which case will use Disorienting Roar, Might of Ursoc, and Barkskin before healing.  Additionally will consolidate Rejuv and Healing Touch use in that case
+
+All - Healing touch should no longer cancel eating/drinking while Resting
+
+
+Hunter
+
+Lowbie - removed pet attack; control over pet isn't available till 10 and no longer a lowbie
+
+All - support for Misdirection to pet while not in a group, or if in group and no living tank within 100yds
+
+
+Mage
+
+Arcane - Pull issues resolved
+
+
+Monk 
+
+All - added settings for controlling Life/Chi sphere pickup
+
+All - fixed zig-zag issue occurring with conflict in movement when looting and moving to sphere at same time
+
+Windwalker - added support for Flying Serpent Kick (if glyphed) and Chi Wave
+
+Windwalker - monitor Fists of Fury and cancel cast if targets dead or out of melee range
+
+Windwalker - fixed cast of Fists of Fury when target outside of melee range
+
+Windwalker - added Expel Harm into spell priority for Chi generation and in fight healing.  previously only used at point health was low
+
+Windwalker - added PvP support with Paralysis, multi-target interrupts, and Touch of Karma
+
+Windwalker - added in Combat consumption of spheres
+
+Windwalker - Roll should be more directionally accurate
+
+
+All - fixed issue of moving to spheres when disable movement setting is active
+
+
+Rogue
+
+All - fixed issue with Leeching Poison causing to apply/spam Mindnumbing
+
+
+
+Shaman
+
+Elemental - added intelligent auto select of Pull spell priority, favoring an instant cast if in an area with other players or target is already within 12 yds
+
+
+Warlock
+
+Lowbie - removed pet attack; control over pet isn't available till 10 and no longer a lowbie
+
+
+
+Warrior
+
+Arms - rewrite of Arms completed.  should use all abilities needed for soloing and group play. 
+
+Arms - recognizes the Shout setting selection
+
+Protection - rewrite of Protection completed.  should use all abilities needed for soloing and group play including correctly using survival cooldowns based upon settings
+
+Settings - Stance now allows choosing a stance or selecting Auto (allowing to automatically choose the best one based on your spec.)
+
+Settings - redundant Shout settings removed
+
+
+

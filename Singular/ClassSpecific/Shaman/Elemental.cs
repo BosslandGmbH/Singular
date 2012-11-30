@@ -156,6 +156,28 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
                                 new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
 
+                                // hex someone if they are 12 yds or more
+                                new PrioritySelector(
+                                    ctx => Unit.NearbyUnfriendlyUnits
+                                        .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
+                                                && ( u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet ))
+                                                && u.Distance.Between(15,30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
+                                        .OrderByDescending(u => u.Distance)
+                                        .FirstOrDefault(),
+                                    Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
+                                     ),
+
+                                // bind someone if we can
+                                new PrioritySelector(
+                                    ctx => Unit.NearbyUnfriendlyUnits
+                                        .Where(u => u.CreatureType == WoWCreatureType.Elemental
+                                                && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                                && u.Distance.Between(15,30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
+                                        .OrderByDescending(u => u.Distance)
+                                        .FirstOrDefault(),
+                                    Spell.Cast("Bind Elemental", onUnit => (WoWUnit)onUnit)
+                                     ),
+
                                 Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location, req => 
                                     (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) &&
                                     Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
@@ -184,7 +206,8 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                // Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
                 );
         }
 

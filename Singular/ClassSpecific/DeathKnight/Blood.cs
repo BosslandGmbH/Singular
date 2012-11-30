@@ -255,16 +255,17 @@ namespace Singular.ClassSpecific.DeathKnight
                                 ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost), 
                                 "Frost Fever"),
                     Spell.Buff("Plague Strike", true, "Blood Plague"),
+
                     // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
-                    Spell.Cast("Death Coil",
-                                ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
-                    Spell.Cast("Death Coil",
-                                ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
+                    Spell.Cast("Death Coil", ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
+                    Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
                     Spell.Cast("Rune Strike"),
+
                     new Sequence(
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                         new Action(ret => DeathStrikeTimer.Reset())),
                     Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                    Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
                     Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
   
@@ -333,11 +334,10 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.Buff("Plague Strike", true,"Blood Plague"),
 
                 // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
-                    Spell.Cast("Death Coil",
-                                ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
-                    Spell.Cast("Death Coil",
-                                ret => StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
+                    Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
                     Spell.Cast("Rune Strike"),
+                    Spell.Cast("Death Coil", ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
+                    Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange ),
                     Spell.Buff("Necrotic Strike"),
                     new Sequence(
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
@@ -447,7 +447,13 @@ namespace Singular.ClassSpecific.DeathKnight
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                                 new Action(ret => DeathStrikeTimer.Reset())),
                             Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
-                            Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
+                            new Decorator(
+                                ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount,
+                                new PrioritySelector(
+                                    Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+                                    Spell.Cast("Heart Strike")
+                                    )
+                                ),
                             Spell.Cast("Rune Strike"),
                             Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                             Movement.CreateMoveToMeleeBehavior(true)
@@ -468,7 +474,13 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                         new Action(ret => DeathStrikeTimer.Reset())),
                     Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
-                    Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
+                    new Decorator(
+                        ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount,
+                        new PrioritySelector(
+                            Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+                            Spell.Cast("Heart Strike")
+                            )
+                        ),
                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                     Movement.CreateMoveToMeleeBehavior(true)
                     );

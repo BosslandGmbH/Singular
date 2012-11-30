@@ -343,9 +343,10 @@ namespace Singular.ClassSpecific.Priest
                     {
                         uint orbs = Me.GetCurrentPower(WoWPowerType.ShadowOrbs);
 
-                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, orbs={2}",
+                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, moving={2}, orbs={3}",
                             Me.HealthPercent,
                             Me.ManaPercent,
+                            Me.IsMoving,
                             orbs
                             );
 

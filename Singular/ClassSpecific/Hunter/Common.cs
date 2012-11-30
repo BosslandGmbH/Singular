@@ -233,8 +233,7 @@ namespace Singular.ClassSpecific.Hunter
                     new SwitchArgument<string>("Snake Trap",
                         new Action(ret => SpellManager.CastSpellById(34600)))
                     ),*/
-
-                                new Action(ret => Lua.DoString(string.Format("CastSpellByName(\"{0}\")", trapName))),
+                                Spell.Cast( trapName, onUnit),
                                 new WaitContinue(TimeSpan.FromMilliseconds(200), ret => false, new ActionAlwaysSucceed()),
                                 new Action(ret => SpellManager.ClickRemoteLocation(onUnit(ret).Location)))))));
         }
@@ -251,8 +250,7 @@ namespace Singular.ClassSpecific.Hunter
                         new Decorator(
                             ret => Me.HasAura("Trap Launcher"),
                             new Sequence(
-                                Spell.Cast( trapName, on => (WoWUnit) on ),
-                                // new Action(ret => Lua.DoString(string.Format("CastSpellByName(\"{0}\")", trapName))),
+                                Spell.Cast(trapName, onUnit => (WoWUnit)onUnit),
                                 new WaitContinue(TimeSpan.FromMilliseconds(200), ret => false, new ActionAlwaysSucceed()),
                                 new Action(ret => SpellManager.ClickRemoteLocation(((WoWUnit)ret).Location))
                                 )
@@ -306,7 +304,7 @@ namespace Singular.ClassSpecific.Hunter
                         ret => HunterSettings.UseDisengage, 
                         Common.CreateDisengageBehavior()
                         ),
-                    new Decorator(ret => Common.NextDisengageAllowed <= DateTime.Now,
+                    new Decorator(ret => Common.NextDisengageAllowed <= DateTime.Now && HunterSettings.AllowKiting,
                         new PrioritySelector(
                             Kite.CreateKitingBehavior(nonfacingAttack, jumpturnAttack),
                             CreateHunterBackPedal()
@@ -329,7 +327,7 @@ namespace Singular.ClassSpecific.Hunter
                     ret => IsDisengageNeeded(),
                     new Sequence(
                         new ActionDebugString(ret => "face away from or towards safespot as needed"),
-                        new Action(delegate
+                        new Action(ret =>
                         {
                             if (useRocketJump)
                                 needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, safeSpot);

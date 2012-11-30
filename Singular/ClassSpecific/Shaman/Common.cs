@@ -148,12 +148,13 @@ namespace Singular.ClassSpecific.Shaman
 
                 new Decorator( 
                     ret => ShamanSettings.UseBloodlust 
-                        && !SingularSettings.Instance.DisableAllMovement 
-                        && Common.StressfulSituation,
+                        && !SingularSettings.Instance.DisableAllMovement,
 
                     new PrioritySelector(
                         Spell.BuffSelf( Common.BloodlustName, 
-                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
+                                && !Unit.GroupMembers.Any( m => m.IsAlive && m.Distance < 100)
+                                && Common.StressfulSituation ),
 
                         Spell.BuffSelf(Common.BloodlustName,
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds
@@ -165,6 +166,8 @@ namespace Singular.ClassSpecific.Shaman
                                 && Me.CurrentTarget.IsBoss )
                         )
                     ),
+
+                Spell.BuffSelf("Ascendance", ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal && Common.StressfulSituation),
 
                 Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust),
 
@@ -348,6 +351,8 @@ namespace Singular.ClassSpecific.Shaman
                     ret => Me.Combat,
 
                     new PrioritySelector(
+
+                        Spell.BuffSelf("Ancestral Guidance", ret => Me.HealthPercent < (Common.StressfulSituation ? 60 : 40)),
 
                         // save myself if possible
                         new Decorator(

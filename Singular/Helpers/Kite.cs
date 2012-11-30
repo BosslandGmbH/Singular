@@ -56,9 +56,6 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CreateKitingBehavior(Composite runawayAttack, Composite jumpturnAttack)
         {
-            if (!SingularSettings.Instance.AllowKiting)
-                return new PrioritySelector();
-
             return
                 new PrioritySelector(
                     new Decorator(
@@ -96,36 +93,36 @@ namespace Singular.Helpers
                                         return RunStatus.Success;
                                     }),
 
-                                    new Action(delegate
-            {
-                if (jumpturnAttack != null)
-                {
-                    if (JumpTurn.IsJumpTurnInProgress())
-                    {
-                        bstate = State.JumpTurnAndAttack;
-                        Logger.WriteDebug(Color.Cyan, "BP: transition error - active jumpturn? forcing state JumpTurn");
-                        return RunStatus.Failure;
-                    }
+                                    new Action(ret =>
+                                    {
+                                        if (jumpturnAttack != null)
+                                        {
+                                            if (JumpTurn.IsJumpTurnInProgress())
+                                            {
+                                                bstate = State.JumpTurnAndAttack;
+                                                Logger.WriteDebug(Color.Cyan, "BP: transition error - active jumpturn? forcing state JumpTurn");
+                                                return RunStatus.Failure;
+                                            }
 
-                    if (Me.IsMoving && Me.IsSafelyFacing(Me.CurrentTarget, 120f))
-                    {
-                        bstate = State.AttackWithoutJumpTurn;
-                        Logger.WriteDebug(Color.Cyan, "BP: already facing so transition from Moving to AttackNoJumpTurn");
-                        return RunStatus.Failure;
-                    }
+                                            if (Me.IsMoving && Me.IsSafelyFacing(Me.CurrentTarget, 120f))
+                                            {
+                                                bstate = State.AttackWithoutJumpTurn;
+                                                Logger.WriteDebug(Color.Cyan, "BP: already facing so transition from Moving to AttackNoJumpTurn");
+                                                return RunStatus.Failure;
+                                            }
 
-                    if (JumpTurn.IsJumpTurnNeeded())
-                    {
-                        bstate = State.JumpTurnAndAttack;
-                        Logger.WriteDebug(Color.Cyan, "BP: transition from Moving to JumpTurn");
-                        return RunStatus.Failure;
-                    }
-                }
-                return RunStatus.Success;
-            })
+                                            if (JumpTurn.IsJumpTurnNeeded())
+                                            {
+                                                bstate = State.JumpTurnAndAttack;
+                                                Logger.WriteDebug(Color.Cyan, "BP: transition from Moving to JumpTurn");
+                                                return RunStatus.Failure;
+                                            }
+                                        }
+                                        return RunStatus.Success;
+                                    })
                                     )
                 /*
-                                                new Action( delegate {
+                                                new Action( ret => {
                                                     Navigator.MoveTo( safeSpot );
                                                     if (attackBehavior != null )
                                                     {
@@ -154,11 +151,11 @@ namespace Singular.Helpers
                                         runawayAttack ?? new Action( r => { return RunStatus.Failure; } ),
                                         new Action( r => { return RunStatus.Failure; } )
                                         ),
-                                    new Action(delegate
-            {
-                Logger.WriteDebug(Color.Cyan, "BP: transition from NonFaceAttack to Moving");
-                bstate = State.Moving;
-            })
+                                    new Action(ret =>
+                                    {
+                                        Logger.WriteDebug(Color.Cyan, "BP: transition from NonFaceAttack to Moving");
+                                        bstate = State.Moving;
+                                    })
                                     )
                                 ),
 
@@ -169,11 +166,11 @@ namespace Singular.Helpers
                                         jumpturnAttack ?? new Action( r => { return RunStatus.Failure; } ),
                                         new Action( r => { return RunStatus.Failure; } )
                                         ),
-                                    new Action(delegate
-            {
-                Logger.WriteDebug(Color.Cyan, "BP: transition from AttackNoJumpTurn to Moving");
-                bstate = State.Moving;
-            })
+                                    new Action(ret => 
+                                    {
+                                        Logger.WriteDebug(Color.Cyan, "BP: transition from AttackNoJumpTurn to Moving");
+                                        bstate = State.Moving;
+                                    })
                                     )
                                 ),
 
@@ -181,11 +178,11 @@ namespace Singular.Helpers
                                 new PrioritySelector(
                                     JumpTurn.CreateBehavior(jumpturnAttack),
                                     new Decorator(ret => !JumpTurn.IsJumpTurnInProgress(),
-                                        new Action(delegate
-            {
-                bstate = State.Moving;
-                Logger.WriteDebug(Color.Cyan, "BP: transition from JumpTurn to Moving");
-            })
+                                        new Action(ret => 
+                                        {
+                                            bstate = State.Moving;
+                                            Logger.WriteDebug(Color.Cyan, "BP: transition from JumpTurn to Moving");
+                                        })
                                         )
                                     )
                                 ),
@@ -196,19 +193,16 @@ namespace Singular.Helpers
 
                     new Decorator(
                         ret => IsKitingNeeded(),
-                        new Action(delegate
-            {
-                bstate = State.Moving;
-                Logger.WriteDebug(Color.Cyan, "Back Peddle");
-            }))
+                        new Action(ret =>
+                        {
+                            bstate = State.Moving;
+                            Logger.WriteDebug(Color.Cyan, "Back Peddle");
+                        }))
                     );
         }
 
         private static bool IsKitingNeeded()
         {
-            if (SingularSettings.Instance.DisableAllMovement || !SingularSettings.Instance.AllowKiting)
-                return false;
-
             // note:  PullDistance MUST be longer than our out of melee distance (DISTANCE_WE_NEED_TO_START_BACK_PEDDLING)
             // otherwise it will run back and forth
             if (IsKitingActive() || !Me.IsAlive || Me.IsCasting)
@@ -317,22 +311,22 @@ namespace Singular.Helpers
 
                             new Decorator(ret => jstate == State.Jump,
                                 new Sequence(
-                                    new Action(delegate
-            {
-                // jump up
-                Logger.WriteDebug(Color.Cyan, "JT: enter Jump state");
-                WoWMovement.Move(WoWMovement.MovementDirection.JumpAscend);
-            }),
+                                    new Action(ret =>
+                                    {
+                                        // jump up
+                                        Logger.WriteDebug(Color.Cyan, "JT: enter Jump state");
+                                        WoWMovement.Move(WoWMovement.MovementDirection.JumpAscend);
+                                    }),
                                     new WaitContinue(new TimeSpan(0, 0, 0, 0, 100), ret => false, new ActionAlwaysSucceed()),
                                     new PrioritySelector(
                                         new Wait(new TimeSpan(0, 0, 0, 0, 250), ret => StyxWoW.Me.MovementInfo.IsAscending || StyxWoW.Me.MovementInfo.IsDescending || StyxWoW.Me.MovementInfo.IsFalling, new ActionAlwaysSucceed()),
                                         new Action(ret => { EndJumpTurn("JT: timed out waiting for JumpAscend to occur"); return RunStatus.Failure; })
                                         ),
-                                    new Action(delegate
-            {
-                Logger.WriteDebug(Color.Cyan, "JT: transition from Jump to Face");
-                jstate = State.Face;
-            })
+                                    new Action(ret =>
+                                    {
+                                        Logger.WriteDebug(Color.Cyan, "JT: transition from Jump to Face");
+                                        jstate = State.Face;
+                                    })
                                     )
                                 ),
                             new Decorator(ret => jstate == State.Face,
@@ -342,20 +336,20 @@ namespace Singular.Helpers
                                         new Wait(new TimeSpan(0, 0, 0, 0, 500), ret => StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 20f), new ActionAlwaysSucceed()),
                                         new Action(ret => Logger.WriteDebug("JT: timed out waiting for SafelyFacing to occur"))
                                         ),
-                                    new Action(delegate
-            {
-                WoWMovement.StopFace();
-                if (StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 20f))
-                {
-                    Logger.WriteDebug(Color.Cyan, "JT: transition from Face to Attack");
-                    jstate = State.Attack;
-                }
-                else
-                {
-                    Logger.WriteDebug(Color.Cyan, "JT: transition from Face to FaceRestore");
-                    jstate = State.FaceRestore;
-                }
-            })
+                                    new Action(ret =>
+                                    {
+                                        WoWMovement.StopFace();
+                                        if (StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget, 20f))
+                                        {
+                                            Logger.WriteDebug(Color.Cyan, "JT: transition from Face to Attack");
+                                            jstate = State.Attack;
+                                        }
+                                        else
+                                        {
+                                            Logger.WriteDebug(Color.Cyan, "JT: transition from Face to FaceRestore");
+                                            jstate = State.FaceRestore;
+                                        }
+                                    })
                                     )
                                 ),
                             new Decorator(ret => jstate == State.Attack,
@@ -365,11 +359,11 @@ namespace Singular.Helpers
                                         jumpturnAttack ?? new Action( r => { return RunStatus.Failure; } ),
                                         new Action( r => { return RunStatus.Failure; } )
                                         ),
-                                    new Action(delegate
-            {
-                Logger.WriteDebug(Color.Cyan, "JT: transition from Attack to FaceRestore");
-                jstate = State.FaceRestore;
-            })
+                                    new Action(ret =>
+                                    {
+                                        Logger.WriteDebug(Color.Cyan, "JT: transition from Attack to FaceRestore");
+                                        jstate = State.FaceRestore;
+                                    })
                                     )
                                 ),
                             new Decorator(ret => jstate == State.FaceRestore,
@@ -381,19 +375,19 @@ namespace Singular.Helpers
                                     new Action(ret => Navigator.MoveTo(Kite.safeSpot)),
                                     new WaitContinue(new TimeSpan(0, 0, 0, 0, 250), ret => StyxWoW.Me.IsDirectlyFacing(originalFacing), new ActionAlwaysSucceed()),
 
-                                    new Action(delegate
-            {
-                Logger.WriteDebug(Color.Cyan, "JT: transition from FaceRestore to EndJump");
-                WoWMovement.StopFace();
-                jstate = State.EndJump;
-            })
+                                    new Action(ret =>
+                                    {
+                                        Logger.WriteDebug(Color.Cyan, "JT: transition from FaceRestore to EndJump");
+                                        WoWMovement.StopFace();
+                                        jstate = State.EndJump;
+                                    })
                                     )
                                 ),
                             new Decorator(ret => jstate == State.EndJump,
-                                new Action(delegate
-            {
-                EndJumpTurn("JT: transition from EndJump to None");
-            })
+                                new Action(ret =>
+                                {
+                                    EndJumpTurn("JT: transition from EndJump to None");
+                                })
                                 ),
 
                             new Action(ret => Logger.WriteDebug(Color.Cyan, "JT: fell through with state {0}", jstate.ToString()))
@@ -401,12 +395,12 @@ namespace Singular.Helpers
                         ),
                     new Decorator(
                         ret => IsJumpTurnNeeded(),
-                        new Action(delegate
-            {
-                originalFacing = StyxWoW.Me.RenderFacing;
-                jstate = State.Jump;
-                Logger.WriteDebug(Color.Cyan, "Jump Turn");
-            })
+                        new Action(ret =>
+                        {
+                            originalFacing = StyxWoW.Me.RenderFacing;
+                            jstate = State.Jump;
+                            Logger.WriteDebug(Color.Cyan, "Jump Turn");
+                        })
                         )
                     );
         }
@@ -525,7 +519,7 @@ namespace Singular.Helpers
 
                                 // new DecoratorContinue(ret => Me.IsMoving, new Action( a => movementCheck = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 1000)))),
                                 new Decorator(ret => movementCheck < DateTime.Now && !Me.IsMoving, 
-                                    new Action( delegate {
+                                    new Action( ret => {
                                         if (Me.Stunned || Me.IsStunned())
                                             EndKiting("BPWJ: stunned so cancelling");
                                         else if (Me.Rooted || Me.IsRooted())

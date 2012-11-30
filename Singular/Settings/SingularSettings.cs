@@ -94,14 +94,6 @@ namespace Singular.Settings
         public AllowMovementType AllowMovement { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("Movement")]
-        [DisplayName("Allow Kiting")]
-        [Description("Controls if movement to evade an enemy during combat is allowed.")]
-        [Browsable(false)]
-        public bool AllowKiting { get; set; }
-
-        [Setting]
         [DefaultValue(false)]
         [Category("General")]
         [DisplayName("Use Instance Rotation (Needs a restart !)")]

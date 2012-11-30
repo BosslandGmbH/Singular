@@ -245,7 +245,10 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.BuffSelf("Lightning Shield"),
                         Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
-                        Spell.BuffSelf("Feral Spirit"),
+                        Spell.BuffSelf("Feral Spirit", ret =>
+                            SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.All
+                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.Elite)
+                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Players && Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet))),
 
                         Spell.Cast("Elemental Blast"),
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
@@ -296,7 +299,10 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.BuffSelf("Lightning Shield"),
                         Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
-                        Spell.BuffSelf("Feral Spirit"),
+                        Spell.BuffSelf("Feral Spirit", ret =>
+                            SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.All
+                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.IsBoss )
+                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Players && Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet))),
 
                         new Decorator(
                             ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,

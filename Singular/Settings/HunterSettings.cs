@@ -41,6 +41,13 @@ namespace Singular.Settings
         [Description("Will be used in battlegrounds no matter what this is set")]
         public bool UseDisengage { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Movement")]
+        [DisplayName("Allow Kiting")]
+        [Description("Controls if movement to evade an enemy during combat is allowed.")]
+        public bool AllowKiting { get; set; }
+
         #endregion
     }
 }

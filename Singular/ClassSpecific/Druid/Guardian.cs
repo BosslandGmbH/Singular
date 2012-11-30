@@ -76,14 +76,21 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Bear Form"),
+
+                // Enrage ourselves back up to 60 rage for SD/FR usage.
+                Spell.BuffSelf("Enrage", ret=>StyxWoW.Me.RagePercent <= 40),
+
+                // Symbiosis
+                Spell.BuffSelf("Bone Shield"),
+                Spell.BuffSelf("Elusive Brew", ret=>StyxWoW.Me.HealthPercent <= 60),
                 
-                Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankSavageDefense && Me.GetAuraTimeLeft("Savage Defense", true).TotalSeconds < 1),
-                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
+                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
                 Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
-                Spell.BuffSelf("Might of Ursoc", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankMightOfUrsoc),
-                Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankSurvivalInstinctsHealth),
-                Spell.BuffSelf("Barkskin", ret => Me.HealthPercent < SingularSettings.Instance.Druid.TankFeralBarkskin),
-                Spell.Cast("Renewal", ret => Me.HealthPercent < SingularSettings.Instance.Druid.RenewalHealth)
+                Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent < Settings.TankSavageDefense),
+                Spell.BuffSelf("Might of Ursoc", ret => Me.HealthPercent < Settings.TankMightOfUrsoc),
+                Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent < Settings.TankSurvivalInstinctsHealth),
+                Spell.BuffSelf("Barkskin", ret => Me.HealthPercent < Settings.TankFeralBarkskin),
+                Spell.Cast("Renewal", ret => Me.HealthPercent < Settings.RenewalHealth)
                 
                 );
         }
@@ -104,40 +111,31 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.WaitForCast(true),
 
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
                         Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
-
-                        // keep weakened blows up on targets if not present. Skip if Berserking so GCD's saved for Mangle
-                        Spell.Cast("Thrash", ret => !Me.HasAura("Berserk") && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 8 && u.GetAuraTimeLeft("Thrash", true).TotalSeconds < 3)),
+                        
+                        Spell.Cast("Mangle"),
+                        Spell.Cast("Thrash"),
 
                         new Decorator(
                             ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 2,
                             new PrioritySelector(
                                 Spell.Cast("Berserk"),
-                                Spell.Cast("Mangle"),
-                                Spell.Cast("Thrash"),
-                                Spell.Cast("Swipe"),
-                                Spell.Cast("Lacerate"),
-                                Spell.Cast("Faerie Fire"),
-                                Movement.CreateMoveToMeleeBehavior(true),
-                                new ActionAlwaysSucceed() // so we dont go down the rest of the tree?
+                                Spell.Cast("Swipe")
                                 )
                             ),
-
-                        Spell.Cast("Mangle"),
-                        Spell.Buff("Faerie Fire"),
                         Spell.Cast("Lacerate"),
-                        Spell.Cast("Maul", ret=>Me.CurrentRage >= 90),
-                        Spell.Cast("Swipe")
-                        )
-                    ),
+                        Spell.Buff("Faerie Fire"),
+                        Spell.Cast("Maul", ret=> Me.CurrentRage >= 90 && StyxWoW.Me.HasAura("Tooth and Claw")),
+
+                        // Symbiosis
+                        Spell.Cast("Consecration")
+                        ),
+                    
 
                 Movement.CreateMoveToMeleeBehavior(true)
-            )
-            ;
+            );
         }
     }
 }

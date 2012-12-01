@@ -330,14 +330,21 @@ namespace Singular.Helpers
             Logger.WriteFile("PvP Power:   {0}", ss.PvpPower);
             Logger.WriteFile("");
 
-            if (!Singular.Managers.TalentManager.Glyphs.Any())
-                Logger.WriteFile("--- no glyphs equipped");
-            else
+            string talentMask = "";
+            foreach (var t in Singular.Managers.TalentManager.Talents)
             {
-                foreach (string glyphName in Singular.Managers.TalentManager.Glyphs.OrderBy(g => g).Select(g => g).ToList())
+                if (t.Selected)
                 {
-                    Logger.WriteFile("--- {0}", glyphName );
+                    talentMask += (talentMask == "" ? "" : ", ");
+                    talentMask += t.Index.ToString();
                 }
+            }
+
+            Logger.WriteFile("Talents Selected: [{0}]", talentMask);
+            Logger.WriteFile("Glyphs Equipped: {0}", Singular.Managers.TalentManager.Glyphs.Count());
+            foreach (string glyphName in Singular.Managers.TalentManager.Glyphs.OrderBy(g => g).Select(g => g).ToList())
+            {
+                Logger.WriteFile("--- {0}", glyphName );
             }
 
             Logger.WriteFile("");

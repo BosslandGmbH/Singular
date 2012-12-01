@@ -168,12 +168,12 @@ namespace Singular.Settings
         [Description("Hymn of Hope will be used at this value")]
         public int HymnofHopeMana { get; set; }
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Use Wand")]
-        [Description("Uses wand if we're oom")]
-        public bool UseWand { get; set; }
+        //[Setting]
+        //[DefaultValue(false)]
+        //[Category("Common")]
+        //[DisplayName("Use Wand")]
+        //[Description("Uses wand if we're oom")]
+        //public bool UseWand { get; set; }
 
         [Setting]
         [DefaultValue(true)]

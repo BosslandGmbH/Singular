@@ -195,8 +195,8 @@ namespace Singular.Helpers
                     if (!StyxWoW.Me.IsCasting)
                         return RunStatus.Failure;
 
-                    if (StyxWoW.Me.IsWanding())
-                        return RunStatus.Failure;
+                    //if (StyxWoW.Me.IsWanding())
+                    //    return RunStatus.Failure;
 
                     if (StyxWoW.Me.ChannelObjectGuid > 0)
                         return RunStatus.Failure;

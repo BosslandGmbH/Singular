@@ -103,10 +103,8 @@ namespace Singular.ClassSpecific.Priest
                                         ctx => StyxWoW.Me.Location,
                                         ret => true,
                                         false),
-                                    new DecoratorContinue(
-                                        ret => StyxWoW.Me.CurrentPendingCursorSpell != null,
-                                        new Action(ret => Lua.DoString("SpellStopTargeting()"))
-                                        )
+                                    Helpers.Common.CreateWaitForLagDuration( orUntil => StyxWoW.Me.CurrentPendingCursorSpell != null ),
+                                    new Action(ret => Lua.DoString("SpellStopTargeting()"))
                                     )
                                 )
                             )

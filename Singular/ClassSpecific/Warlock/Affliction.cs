@@ -95,7 +95,7 @@ namespace Singular.ClassSpecific.Warlock
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
                         new Action( ret => {
-                            _mobCount = TargetsInCombat.Count();
+                            _mobCount = Common.TargetsInCombat.Count();
                             return RunStatus.Failure;
                             }),
 
@@ -130,7 +130,7 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     ret => _mobCount >= 4 && SpellManager.HasSpell("Seed of Corruption"),
                     new PrioritySelector(
-                        ctx => TargetsInCombat.FirstOrDefault( m => !m.HasAura( "Seed of Corruption")),
+                        ctx => Common.TargetsInCombat.FirstOrDefault( m => !m.HasAura( "Seed of Corruption")),
                         Spell.BuffSelf( "Soulburn", ret => ret != null),
                         Spell.Cast( "Seed of Corruption", ret => (WoWUnit) ret)
                         )
@@ -138,9 +138,9 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     ret => _mobCount >= 2,
                     new PrioritySelector(
-                        CreateApplyDotsBehavior(ctx => TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Agony")), soulBurn => true)
+                        CreateApplyDotsBehavior(ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Agony")), soulBurn => true)
                         // , CreateApplyDotsBehavior( ctx => TargetsInCombat.FirstOrDefault(m => Common.AuraMissing(m,"Corruption")), soulBurn => true)
-                        , CreateApplyDotsBehavior(ctx => TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Unstable Affliction")), soulBurn => true)
+                        , CreateApplyDotsBehavior(ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Unstable Affliction")), soulBurn => true)
                         )
                     )
                 );
@@ -206,23 +206,15 @@ namespace Singular.ClassSpecific.Warlock
             return (u ?? Me.CurrentTarget).GetAuraTimeLeft("Unstable Affliction", true).TotalSeconds;
         }
 
-        public static IEnumerable<WoWUnit> TargetsInCombat
-        {
-            get
-            {
-                return Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && u.IsTargetingUs() && !u.IsCrowdControlled() && StyxWoW.Me.IsSafelyFacing(u));
-            }
-        }
-
         private WoWUnit GetBestAoeTarget()
         {
             WoWUnit unit = null;
             
             if ( SpellManager.HasSpell( "Seed of Corruption"))
-                unit = Clusters.GetBestUnitForCluster(TargetsInCombat.Where(m => !m.HasAura("Seed of Corruption")), ClusterType.Radius, 15f);
+                unit = Clusters.GetBestUnitForCluster(Common.TargetsInCombat.Where(m => !m.HasAura("Seed of Corruption")), ClusterType.Radius, 15f);
 
             if (SpellManager.HasSpell("Agony"))
-                unit = TargetsInCombat.FirstOrDefault(t => !t.HasMyAura("Agony"));
+                unit = Common.TargetsInCombat.FirstOrDefault(t => !t.HasMyAura("Agony"));
 
             return unit;
         }

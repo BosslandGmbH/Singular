@@ -229,7 +229,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Managers\TalentManager.cs" />
     <Compile Include="Managers\TankManager.cs" />
-    <Compile Include="SingularRoutine.Version.cs" >
+    <Compile Include="SingularRoutine.Version.cs">
       <DependentUpon>SingularRoutine.cs</DependentUpon>
     </Compile>
     <Compile Include="Utilities\CombatLog.cs" />
@@ -247,6 +247,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="CONTRIBUTORS.txt" />
+    <None Include="SingularRoutine.Version.tmpl" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="SingularRoutine.Behaviors.cs">
@@ -275,6 +276,11 @@ if $(ConfigurationName) == HighVoltz (
 
 
 ECHO Copied</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>if $(ConfigurationName) == Bobby53 (
+SubWCRev.exe $(ProjectDir) $(ProjectDir)SingularRoutine.Version.tmpl $(ProjectDir)SingularRoutine.Version.cs
+)</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

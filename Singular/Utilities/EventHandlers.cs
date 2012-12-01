@@ -77,7 +77,6 @@ namespace Singular.Utilities
                 + " or args[2] == 'SWING_MISSED'"
                 + " or args[2] == 'SPELL_CAST_FAILED'";
 
-            Logger.WriteDebug("Combat Log Filter: {0}", filterCriteria);
             if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", filterCriteria ))
             {
                 Logger.Write( "ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");

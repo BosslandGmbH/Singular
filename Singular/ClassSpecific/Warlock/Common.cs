@@ -174,8 +174,10 @@ namespace Singular.ClassSpecific.Warlock
                             Spell.Buff("Fear", on => Me.CurrentTarget, ret => WarlockSettings.UseFear && Me.HealthPercent < Me.CurrentTarget.HealthPercent && Me.HealthPercent < 35)
                             ),
 
-                        Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction && Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3),
-                        Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3),
+                        Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
+                        Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
+                        Spell.BuffSelf("Dark Soul: Knowledge", ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800 && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
+
                         Spell.BuffSelf("Summon Doomguard", ret => Me.CurrentTarget.IsBoss && PartyBuff.WeHaveBloodlust),
                         Spell.BuffSelf("Grimoire of Service", ret => Me.CurrentTarget.IsBoss),
 
@@ -387,11 +389,16 @@ namespace Singular.ClassSpecific.Warlock
                         bestPet = WarlockPet.Voidwalker;
                 }
 
+                string spellName = "Summon" + bestPet.ToString().CamelToSpaced();
                 SpellFindResults sfr;
-                if (!SpellManager.FindSpell((int)bestPet, out sfr))
+                if (!SpellManager.FindSpell(spellName, out sfr))
                 {
-                    // default: use Imp in instances to be sure no Taunt
-                    bestPet = SingularRoutine.CurrentWoWContext == WoWContext.Instances ? WarlockPet.Imp : WarlockPet.Voidwalker;
+                    if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+                        bestPet = WarlockPet.Voidwalker;
+                    else if (Me.Level >= 30)
+                        bestPet = WarlockPet.Felhunter;
+                    else
+                        bestPet = WarlockPet.Imp;
                 }
             }
 
@@ -479,7 +486,8 @@ namespace Singular.ClassSpecific.Warlock
                 ret => GetCurrentPet() != WarlockPet.None
                     && Me.Pet.HealthPercent < petMinHealth 
                     && Me.Pet.Distance < 45
-                    && Me.Pet.InLineOfSpellSight,
+                    && Me.Pet.InLineOfSpellSight
+                    && !HasTalent(WarlockTalent.SoulLink),
                 new Sequence(
                     new PrioritySelector(
                         CreateCastSoulburn(ret => Me.Specialization == WoWSpec.WarlockAffliction ),
@@ -490,5 +498,14 @@ namespace Singular.ClassSpecific.Warlock
                     )
                 );
         }
+
+        public static IEnumerable<WoWUnit> TargetsInCombat
+        {
+            get
+            {
+                return Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && u.IsTargetingUs() && !u.IsCrowdControlled() && StyxWoW.Me.IsSafelyFacing(u));
+            }
+        }
+
     }
 }

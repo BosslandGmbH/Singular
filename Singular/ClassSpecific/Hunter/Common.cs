@@ -102,7 +102,7 @@ namespace Singular.ClassSpecific.Hunter
                                 && !Me.HasAura("Misdirection")
                                 && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 100)),
 
-                        new Throttle(Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(Target)))
+                        Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death"))
                         )
                     )
                 );
@@ -135,7 +135,7 @@ namespace Singular.ClassSpecific.Hunter
                                 && !Me.HasAura("Misdirection")
                                 && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 100)),
 
-                        new Throttle(Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target))),
+                        Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death")),
 
                         Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPercent),
                         Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 30 || Pet.HealthPercent < 10 ),

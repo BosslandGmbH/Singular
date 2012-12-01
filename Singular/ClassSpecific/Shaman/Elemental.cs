@@ -43,7 +43,7 @@ namespace Singular.ClassSpecific.Shaman
             return new PrioritySelector(
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
-                Spell.BuffSelf("Lightning Shield"),
+                Common.CreateShamanDpsShieldBehavior(),
 
                 Totems.CreateRecallTotems()
                 );
@@ -89,7 +89,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
 
-                Spell.BuffSelf("Lightning Shield"),
+                Common.CreateShamanDpsShieldBehavior(),
 
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 40 * 40,
@@ -144,8 +144,8 @@ namespace Singular.ClassSpecific.Shaman
                         new Decorator( 
                             ret => Common.GetImbue( StyxWoW.Me.Inventory.Equipped.MainHand) == Imbue.None,
                             Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue)),
-                    
-                        Spell.BuffSelf("Lightning Shield"),
+
+                        Common.CreateShamanDpsShieldBehavior(),
 
                         Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance < 10f ) >= 3),
 
@@ -234,7 +234,7 @@ namespace Singular.ClassSpecific.Shaman
                             ret => Common.GetImbue(StyxWoW.Me.Inventory.Equipped.MainHand) == Imbue.None,
                             Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue)),
 
-                        Spell.BuffSelf("Lightning Shield"),
+                        Common.CreateShamanDpsShieldBehavior(),
 
                         Spell.BuffSelf("Thunderstorm", ret => StyxWoW.Me.IsStunned() && Unit.NearbyUnfriendlyUnits.Any( u => u.Distance < 10f)),
 
@@ -289,7 +289,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
-                        Spell.BuffSelf("Lightning Shield"),
+                        Common.CreateShamanDpsShieldBehavior(),
 
                         Totems.CreateTotemsInstanceBehavior(),
 

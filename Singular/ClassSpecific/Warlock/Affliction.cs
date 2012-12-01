@@ -59,7 +59,8 @@ namespace Singular.ClassSpecific.Warlock
 
                 // cancel an early drain soul if done to proc 1 soulshard
                 new Decorator(
-                    ret => Me.ChanneledSpell != null
+                    ret => Me.GotTarget
+                        && Me.ChanneledSpell != null
                         && Me.ChanneledSpell.Name == "Drain Soul"
                         && Me.CurrentSoulShards > 0
                         && Me.CurrentTarget.HealthPercent > 20 && SpellManager.HasSpell("Malefic Grasp"),
@@ -72,7 +73,8 @@ namespace Singular.ClassSpecific.Warlock
 
                 // cancel malefic grasp if target health < 20% and cast drain soul (revisit and add check for minimum # of dots)
                 new Decorator(
-                    ret => Me.ChanneledSpell != null
+                    ret => Me.GotTarget 
+                        && Me.ChanneledSpell != null
                         && Me.ChanneledSpell.Name == "Malefic Grasp"
                         && Me.CurrentSoulShards < Me.MaxSoulShards 
                         && Me.CurrentTarget.HealthPercent <= 20,
@@ -233,7 +235,7 @@ namespace Singular.ClassSpecific.Warlock
                     new Action(ret =>
                     {
                         WoWUnit target = Me.CurrentTarget ?? Me;
-                        Logger.WriteFile(LogLevel.Diagnostic, ".... h={0:F1}%/m={1:F1}%, shards={2}, agony={3}, corrupt={4}, ua={5}, haunt={6}, soulburn={7}, enemy={8}%, mobcnt={9}",
+                        Logger.WriteDebug( Color.Wheat, ".... h={0:F1}%/m={1:F1}%, shards={2}, agony={3}, corrupt={4}, ua={5}, haunt={6}, soulburn={7}, enemy={8}%, mobcnt={9}",
                             Me.HealthPercent,
                             Me.ManaPercent,
                             Me.CurrentSoulShards,

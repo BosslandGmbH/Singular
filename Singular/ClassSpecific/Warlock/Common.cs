@@ -84,13 +84,7 @@ namespace Singular.ClassSpecific.Warlock
                             ),
                         Rest.CreateDefaultRestBehaviour(),
 
-                        new Decorator( 
-                            ret => GetCurrentPet() != WarlockPet.None 
-                                && Me.Pet.HealthPercent < 85
-                                && Me.Pet.Distance < 45
-                                && Me.Pet.InLineOfSpellSight,
-                            Spell.Heal(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => !Me.GotAlivePet || Me.Pet.HealthPercent > 95)
-                            )
+                        Common.CreatWarlockHealthFunnelBehavior( 85 )
                         )
                     )
                 );
@@ -136,23 +130,49 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Spell.WaitForCast(true),
                 new Decorator( ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector( 
-                        Item.CreateUsePotionAndHealthstone( 50, 0),
+                    new PrioritySelector(
+
+                        // need combat healing?  check here since mix of buffs and abilities
+                        // heal / shield self as needed
+                        Spell.BuffSelf("Dark Regeneration", ret => Me.HealthPercent < 40),
+                        new Decorator(
+                            ret => StyxWoW.Me.HealthPercent < 40 || Me.HasAura("Dark Regeneration"),
+                            new PrioritySelector(
+                                ctx => Item.FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
+                                new Decorator(
+                                    ret => ret != null,
+                                    new Sequence(
+                                        new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                        new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                        Helpers.Common.CreateWaitForLagDuration())
+                                    )
+                                )
+                            ),
 
                         new Decorator( 
                             ret => Me.IsInGroup() && WarlockSettings.UseSoulstone != Soulstone.None && WarlockSettings.UseSoulstone != Soulstone.Self,
                             CreateWarlockRessurectBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead))
                             ),
 
-                        // fear anything nott my target within 8yds 
-                        Spell.Buff("Fear", 
-                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f),
-                            req => WarlockSettings.UseFear),
+                        new PrioritySelector(
+                            // find an add within 8 yds (not our current target)
+                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f),
 
-                        // fear my target if my health is dangerously low and his isn't
-                        Spell.Buff("Fear", 
-                            ret => WarlockSettings.UseFear 
-                                && Me.HealthPercent < Me.CurrentTarget.HealthPercent && Me.HealthPercent < 35),
+                            Spell.Buff( "Shadowfury", on => (WoWUnit) on),
+
+                            // treat as a heal, but we cast on what would be our fear target -- allow even when fear use disabled
+                            Spell.Buff("Mortal Coil", on => (WoWUnit) on ?? Me.CurrentTarget, ret => Me.HealthPercent < 50 ),
+
+                            // fear current target if my health is dangerously low and his not as much
+                            Spell.Buff("Howl of Terror", on => Me.CurrentTarget, ret => WarlockSettings.UseFear &&
+                                4 <= Unit.NearbyUnfriendlyUnits.Count(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f)),
+
+                            // fear add if multiple mobs and our health low
+                            Spell.Buff("Fear", on => (WoWUnit) on, req => WarlockSettings.UseFear && Me.HealthPercent < 50),
+
+                            // fear current target if my health is dangerously low and his not as much
+                            Spell.Buff("Fear", on => Me.CurrentTarget, ret => WarlockSettings.UseFear && Me.HealthPercent < Me.CurrentTarget.HealthPercent && Me.HealthPercent < 35)
+                            ),
 
                         Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction && Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3),
                         Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3),
@@ -172,35 +192,30 @@ namespace Singular.ClassSpecific.Warlock
                                 && GetCurrentPet() == WarlockPet.Voidwalker 
                                 && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
 
-                        Spell.BuffSelf( "Dark Regeneration", ret => Me.HealthPercent < 30 ),
+                        Spell.BuffSelf("Dark Bargain", ret => Me.HealthPercent < 30),
+                        Spell.BuffSelf("Sacrificial Pact", ret => Me.HealthPercent < 60 && GetCurrentPet() != WarlockPet.None && Me.Pet.HealthPercent > 50),
+
+                        // emergency heal needed? soulburn then fail to use drain life immediately
+                        new Sequence(
+                            CreateCastSoulburn( ret => Me.HealthPercent < 20),
+                            Spell.Cast("Drain Life")
+                            ),
+
+                        Spell.Cast("Drain Life", ret => Me.HealthPercent < 50 || Me.HasAura("Dark Regeneration")),
 
                         new Decorator(
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 4
+                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3
+                                || Me.CurrentTarget.IsBoss 
                                 || (Me.GotTarget && Me.CurrentTarget.IsPlayer && Unit.ValidUnit(Me.CurrentTarget)),
                             new PrioritySelector(
                                 Spell.BuffSelf("Dark Soul: Misery"),
                                 Spell.BuffSelf("Summon Doomguard"),
                                 Spell.BuffSelf("Grimoire of Service"),
-                                Spell.BuffSelf("Unending Resolve"),
-                                Spell.Cast("Sacrificial Pact", ret => GetCurrentPet() != WarlockPet.None && Me.Pet.HealthPercent > 60),
-                                Spell.Cast("Dark Bargain")
+                                Spell.BuffSelf("Unending Resolve")
                                 )
                             ),
 
-                        new Decorator( 
-                            ret => GetCurrentPet() != WarlockPet.None 
-                                && Me.Pet.HealthPercent < 40
-                                && Me.Pet.Distance < 45
-                                && Me.Pet.InLineOfSpellSight ,
-                            new Sequence(
-                                new PrioritySelector(
-                                    CreateCastSoulburn( ret => true),
-                                    new ActionAlwaysSucceed()
-                                    ),
-                                new Action( ret => Logger.Write( "^Health Funnel since Pet @ {0:F1}%", Me.Pet.HealthPercent )),
-                                Spell.Heal(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => false)
-                                )
-                            ),
+                        Common.CreatWarlockHealthFunnelBehavior( 40, 99),
 
                         Spell.BuffSelf("Life Tap",
                             ret => Me.ManaPercent < SingularSettings.Instance.PotionMana
@@ -226,7 +241,6 @@ namespace Singular.ClassSpecific.Warlock
                             new PrioritySelector(
                                 Spell.BuffSelf("Life Tap", ret => Me.HealthPercent > 50 && Me.HasAnyAura("Glyph of Healthstone")),
                                 Spell.BuffSelf("Life Tap", ret => Me.HealthPercent > 50 && Me.HasAnyAura("Unending Resolve")),
-                                Spell.BuffSelf("Life Tap", ret => Me.HealthPercent > 50 && Me.HasAnyAura("Dark Regeneration")),
                                 Spell.BuffSelf("Life Tap", ret => Me.HasAnyAura("Sacrificial Pact")),
                                 Spell.BuffSelf("Life Tap", ret => Me.HasAnyAura("Dark Bargain")),
                                 Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 30 && Me.HealthPercent > 60)
@@ -384,38 +398,45 @@ namespace Singular.ClassSpecific.Warlock
             return bestPet;
         }
 
-        // following enum used only for mapping Grimoire spellids to standard names
-        private enum GrimoireOfServicePet
+        /// <summary>
+        /// Pet.CreatureFamily.Id values for pets while the
+        /// Grimoire of Supremecy talent is selected.  
+        /// </summary>
+        public enum WarlockGrimoireOfSupremecyPets
         {
-            FelImp = 112866,      // Imp
-            Voidlord = 112867,    // Voidwalker
-            Shivarra = 112868,    // Succubus
-            Observer = 112869,    // Felhunter
-            Wrathguard = 112870     // Felguard
+            FelImp = 100,
+            Wrathguard = 104,
+            Voidlord = 101,
+            Observer = 103,
+            Shivarra = 102
         }
-
-        private static Dictionary<string, WarlockPet> demonMap = new Dictionary<string, WarlockPet>()
-        {
-            { "Fel Imp", WarlockPet.Imp },
-            { "Voidlord", WarlockPet.Voidwalker },
-            { "Shivarra", WarlockPet.Succubus },
-            { "Observer", WarlockPet.Felhunter },
-            { "Wrathguard", WarlockPet.Felguard }
-        };
-
-        // for some reason, Me.Pet.CreatedBySpellId is often 0 while pet exists
-        // .. Name however is always populated if Pet exists
+       
+        /// <summary>
+        /// return standard pet id associated with active pet. 
+        /// note: we map Grimoire of Supremecy pets so rest of 
+        /// Singular can treat in talent independent fashion
+        /// </summary>
+        /// <returns></returns>
         public static WarlockPet GetCurrentPet()
         {
             if (!Me.GotAlivePet)
                 return WarlockPet.None;
 
-            if (HasTalent(WarlockTalent.GrimoireOfSupremacy))
-                return demonMap[Me.Pet.CreatureFamilyInfo.Name];
+            switch ((WarlockGrimoireOfSupremecyPets) Me.Pet.CreatureFamilyInfo.Id)
+            {
+                case WarlockGrimoireOfSupremecyPets.FelImp:
+                    return WarlockPet.Imp;
+                case WarlockGrimoireOfSupremecyPets.Wrathguard:
+                    return WarlockPet.Felguard;
+                case WarlockGrimoireOfSupremecyPets.Voidlord:
+                    return WarlockPet.Voidwalker;
+                case WarlockGrimoireOfSupremecyPets.Observer:
+                    return WarlockPet.Felhunter;
+                case WarlockGrimoireOfSupremecyPets.Shivarra:
+                    return WarlockPet.Succubus;
+            }
 
-            WarlockPet Pet = WarlockPet.None;
-            Enum.TryParse<WarlockPet>(Me.Pet.CreatureFamilyInfo.Name, out Pet);
-            return Pet;
+            return (WarlockPet)Me.Pet.CreatureFamilyInfo.Id;
         }
 
         #endregion
@@ -452,5 +473,22 @@ namespace Singular.ClassSpecific.Warlock
         }
 
 
+        public static Composite CreatWarlockHealthFunnelBehavior(int petMinHealth, int petMaxHealth = 99)
+        {
+            return new Decorator(
+                ret => GetCurrentPet() != WarlockPet.None
+                    && Me.Pet.HealthPercent < petMinHealth 
+                    && Me.Pet.Distance < 45
+                    && Me.Pet.InLineOfSpellSight,
+                new Sequence(
+                    new PrioritySelector(
+                        CreateCastSoulburn(ret => Me.Specialization == WoWSpec.WarlockAffliction ),
+                        new ActionAlwaysSucceed()
+                        ),
+                    new Action(ret => Logger.Write("^Health Funnel since Pet @ {0:F1}%", Me.Pet.HealthPercent)),
+                    Spell.Heal(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth )
+                    )
+                );
+        }
     }
 }

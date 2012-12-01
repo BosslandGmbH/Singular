@@ -332,7 +332,7 @@ namespace Singular.Helpers
         public static Composite Cast(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit, 
             SimpleBooleanDelegate requirements)
         {
-            return new Decorator(ret =>requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null && SpellManager.CanCast(name, onUnit(ret), true, checkMovement(ret)), 
+            return new Decorator(ret => name != null && requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && SpellManager.CanCast(name, onUnit(ret), true, checkMovement(ret)), 
                 new Throttle(
                     new Action(ret =>
                         {
@@ -419,7 +419,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
-            return new Decorator(ret => requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null && name(ret) != null && SpellManager.CanCast(name(ret), onUnit(ret), true, checkMovement(ret)),
+            return new Decorator(ret => requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && name != null && name(ret) != null && SpellManager.CanCast(name(ret), onUnit(ret), true, checkMovement(ret)),
                 new Throttle(
                     new Action(ret =>
                     {
@@ -492,7 +492,7 @@ namespace Singular.Helpers
         public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return
-                new Decorator(ret => requirements != null && requirements(ret) && onUnit != null && onUnit(ret) != null && SpellManager.CanCast(spellId, onUnit(ret),true), 
+                new Decorator(ret => requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && SpellManager.CanCast(spellId, onUnit(ret), true), 
                     new Action(ret =>
                         {
                             Logger.Write(string.Format("Casting {0} on {1}", spellId, onUnit(ret).SafeName()));
@@ -631,9 +631,9 @@ namespace Singular.Helpers
 
             return
                 new Decorator(
-                    ret =>
-                    onUnit(ret) != null && !DoubleCastPreventionDict.ContainsKey(name) &&
-                    buffNames.All(b => myBuff ? !onUnit(ret).HasMyAura(b) : !onUnit(ret).HasAura(b)),
+                    ret => onUnit != null && onUnit(ret) != null 
+                    && name != null && !DoubleCastPreventionDict.ContainsKey(name) 
+                    && buffNames.All(b => myBuff ? !onUnit(ret).HasMyAura(b) : !onUnit(ret).HasAura(b)),
                     new Sequence( // new Action(ctx => _lastBuffCast = name),
                         Cast(name, onUnit, requirements),
                         new DecoratorContinue(ret => Spell.GetSpellCastTime(name) > TimeSpan.Zero,

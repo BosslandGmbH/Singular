@@ -49,7 +49,7 @@ namespace Singular.ClassSpecific.Shaman
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                 Common.CreateShamanImbueOffHandBehavior(Imbue.Frostbrand, Imbue.Flametongue),
 
-                Spell.BuffSelf("Lightning Shield"),
+                Common.CreateShamanDpsShieldBehavior(),
 
                 Totems.CreateRecallTotems()
                 );
@@ -132,7 +132,7 @@ namespace Singular.ClassSpecific.Shaman
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                         Common.CreateShamanImbueOffHandBehavior(Imbue.Flametongue),
 
-                        Spell.BuffSelf("Lightning Shield"),
+                        Common.CreateShamanDpsShieldBehavior(),
 
                         new Decorator(
                             ret => StyxWoW.Me.Level < 20,
@@ -177,7 +177,7 @@ namespace Singular.ClassSpecific.Shaman
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                         Common.CreateShamanImbueOffHandBehavior(Imbue.Flametongue),
 
-                        Spell.BuffSelf("Lightning Shield"),
+                        Common.CreateShamanDpsShieldBehavior(),
                         Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret => 
                             SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.All 
@@ -243,7 +243,8 @@ namespace Singular.ClassSpecific.Shaman
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                         Common.CreateShamanImbueOffHandBehavior(Imbue.Frostbrand, Imbue.Flametongue),
 
-                        Spell.BuffSelf("Lightning Shield"),
+                        Common.CreateShamanDpsShieldBehavior(),
+
                         Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret =>
                             SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.All
@@ -297,7 +298,8 @@ namespace Singular.ClassSpecific.Shaman
 
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                        Spell.BuffSelf("Lightning Shield"),
+                        Common.CreateShamanDpsShieldBehavior(),
+
                         Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret =>
                             SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.All

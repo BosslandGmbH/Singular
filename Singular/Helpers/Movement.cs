@@ -12,6 +12,7 @@ using Styx.WoWInternals.WoWObjects;
 using Singular.Utilities;
 using Styx.CommonBot.POI;
 using CommonBehaviors.Actions;
+using System.Diagnostics;
 
 namespace Singular.Helpers
 {
@@ -296,23 +297,23 @@ namespace Singular.Helpers
                             new Action(ret =>
                             {
                                 WoWPoint[] spots = Navigator.GeneratePath(StyxWoW.Me.Location, toUnit(ret).Location);
-                                if (spots.GetLength(0) > 0)
-                                {
-                                    lastMoveToRangeSpot = spots[0];
-                                    Navigator.MoveTo(lastMoveToRangeSpot);
-                                }
-                                else
+                                if (spots.GetLength(0) <= 0)
                                 {
                                     Logger.Write("MoveToRangeAndStop:  unable to calculate path to {0} @ {1:F1} yds and LoSS={2}", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance, StyxWoW.Me.CurrentTarget.InLineOfSpellSight);
                                     return RunStatus.Failure;
                                 }
 
+                                lastMoveToRangeSpot = spots[0];
+                                if (StyxWoW.Me.Location.Distance(lastMoveToRangeSpot) > 20)
+                                    lastMoveToRangeSpot = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, lastMoveToRangeSpot, 10);
+
+                                Navigator.MoveTo(lastMoveToRangeSpot);                                   
                                 return RunStatus.Success;
                             })
                             ),
 
                         new Decorator(
-                            ret => inRange && StyxWoW.Me.IsMoving,
+                            ret => inRange && StyxWoW.Me.IsMoving && StyxWoW.Me.Combat,
                             new Action(ret => {
                                 Logger.WriteDebug("MoveToRangeAndStop:  stopping - within {0:F1} yds and LoSS of {1}", range(ret), StyxWoW.Me.CurrentTarget.SafeName());
                                 Navigator.PlayerMover.MoveStop();

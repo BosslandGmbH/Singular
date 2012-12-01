@@ -30,7 +30,7 @@ namespace Singular
             // --------------------------------------------------------
 
             // return Assembly.GetExecutingAssembly().GetName().Version;
-            return new Version("3.0.0.1287");
+            return new Version("3.0.0.1301");
         }
     }
 }

@@ -14,13 +14,13 @@ namespace Singular.Settings
 {
     public enum WarlockPet
     {
-        None        = 0,
+        None        = 0,        
         Auto        = 1,
-        Imp         = 688,
-        Voidwalker  = 697,
-        Succubus    = 712,
-        Felhunter   = 691,
-        Felguard    = 30146
+        Imp         = 23,       // Pet.CreatureFamily.Id
+        Voidwalker  = 16,
+        Succubus    = 17,
+        Felhunter   = 15,
+        Felguard    = 29
     }
 
     public enum Soulstone

@@ -35,10 +35,11 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                ctx => Unit.NearbyGroupMembers.Any(m=>m.IsAlive),
+                ctx => Unit.GroupMembers.Any(m=>m.IsAlive && !m.IsMe && m.Distance < 50),
 
                 // limit to one cast every 10 seconds to avoid needlessly spamming 
-                // .. shields back and forth due to group member moving in/out of range
+                // .. heal vs dmg back and forth due to group member moving in/out of range
+
                 new Throttle( 10,
                     new PrioritySelector(
                         Spell.BuffSelf("Water Shield", ret => (bool)ret),
@@ -46,7 +47,12 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                Common.CreateShamanImbueMainHandBehavior( Imbue.Earthliving, Imbue.Flametongue)
+                new Throttle( 10,
+                    new PrioritySelector(
+                        new Decorator( ret => (bool) ret, Common.CreateShamanImbueMainHandBehavior( Imbue.Earthliving, Imbue.Flametongue) ),
+                        new Decorator( ret =>!(bool) ret, Common.CreateShamanImbueMainHandBehavior( Imbue.Flametongue) )
+                        )
+                    )
 
                 );
         }

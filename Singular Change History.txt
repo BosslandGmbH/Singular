@@ -1,3 +1,53 @@
+--- Release 3.0.0.1301 ---
+
+General
+
+fixed - Removed wanding check in WaitForCast.  this appeared to detected autoattack at times and interfere with some classes casting
+
+
+Hunter
+
+change- Recognizes Glyph of Marked for Death being equipped and suppresses casting of Hunter's Mark to save a GCD
+
+
+Warlock
+
+fixed - All Specs - bug in summoning pet affecting all users
+
+*new* - Demonology - initial implementation.  Does not support AoE presently, but resolved key with switching into and out of Metamorphosis and some oddnes with spell names.  Should work well for running solo bots at high levels, but additional testing for leveling warlocks plus AoE support still needed.  
+
+
+
+--- Release 3.0.0.1301 ---
+
+General
+
+change- movement for some ranged classes to smooth out approach during odd pull distances
+
+fixed - exception occurring infrequently as current target dies
+
+
+Shaman
+
+fixed - Elemental - shield flipping when off-healing is configured
+
+fixed - Enhancement - shield flipping when configured for off-healing
+
+change- Restoration - when solo should now always use Lightning Shield and Flametongue Imbue
+
+
+Warlock
+
+fixed - All Specs - bug impacting Summon Pet for non-English clients
+
+fixed - Affliction - exception occurring when channeling a spell (like Health Funnel) and no current target set
+
+change- All Specs - reordering of some talents/buffs to improve healing in combat
+
+change- All Specs - more conservative use of Fear if enabled
+
+
+
 --- Release 3.0.0.1287 ---
 
 General

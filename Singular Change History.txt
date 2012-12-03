@@ -1,3 +1,10 @@
+--- Release 3.0.0.1319 ---
+
+General
+
+fixed - movement bug for melee classes
+
+
 --- Release 3.0.0.1301 ---
 
 General

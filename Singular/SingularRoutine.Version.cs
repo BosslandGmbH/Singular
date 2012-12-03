@@ -17,9 +17,9 @@ namespace Singular
     /// 
     /// Singular SVN Information
     /// -------------------------
-    /// Revision 1314
-    /// Date     2012/12/01 10:34:18
-    /// Range    1276:1314
+    /// Revision 1319
+    /// Date     2012/12/02 23:29:46
+    /// Range    1318:1319
     /// 
     /// </summary>
     public partial class SingularRoutine : CombatRoutine
@@ -31,7 +31,7 @@ namespace Singular
         // return Assembly.GetExecutingAssembly().GetName().Version;
         public static Version GetSingularVersion()
         {
-            return new Version("3.0.0.1314");
+            return new Version("3.0.0.1319");
         }
     }
 }

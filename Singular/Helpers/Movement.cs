@@ -134,7 +134,7 @@ namespace Singular.Helpers
                 new PrioritySelector(
                     new Decorator(
                         ret => stopInRange 
-                            && StyxWoW.Me.IsWithinMeleeRange 
+                            && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange 
                             && (!StyxWoW.Me.IsPlayer || StyxWoW.Me.CurrentTarget.Distance < 2),
                         new PrioritySelector(
                             CreateEnsureMovementStoppedBehavior(),

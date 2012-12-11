@@ -1,3 +1,147 @@
+--- Release 3.0.0.1425 ---
+
+General
+
+*new* - Singular Hotkey Support.  See the new Hotkeys tab in the Class Config window.  Provides support for turning on/off AOE Usage, Movement, and Combat.  Some classes may not fully recognize the AOE toggle, so please carefully report any occurrences in Singular thread.
+
+*new* - Temporarily Suspend Movement.  Setup keys matching your WOW Movement keys so attempts to manually move or assist your botted character in WOW while it is stuck, completing a quest objective, etc. will temporarily disable all automatic movement for 3 seconds (configurable) from the last key you press.  This setting is turned off by default, but can be enabled with one setting change if you are using the default WOW keyboard mappings for movement keys
+
+fixed - false file modification error when Singular bundled with HonorBuddy.  You will not notice this change until the next release of HonorBuddy after .520
+
+fixed - Line of Sight error.  In some rare instances, HonorBuddy will detect a mob is in Line of Sight, while in WOW they are not. 
+
+fixed - Melee classes moving too close to mobs.  
+
+fixed - Evade bugged mob support.  Should be properly recognized and no longer retarget 
+
+fixed - Missing "Cast ssssss on Nnnnnnnn" log messages.  Duplicate line suppression was added to the HonorBuddy Log window, so if a spell/ability was cast 3 times in a row it would appear to the user it was cast only once.  Singular now works around this making sure every line output is unique
+
+fixed - Targeting in all classes.  Should no longer target or consider mobs that were created by or summoned by another unit (includes totems, bloodworms, etc.)  This will not prevent Bot from targeting these as it deems necessary, but Singular will no longer seek them out
+
+fixed - commented out conflicting version number.  Any extraneous version # reported by HonorBuddy for Singular should be 0.0.0.0
+
+change- display a notice at Start if the Pull Distance is set to less than 25 yards.  Some Questing Profiles set the Pull Distance to extremely low values temporarily.  These short pull distances can cause unexpected results which is often incorrectly attributed to the Combat Routine, so while not an error condition the notice attempts to make you aware.
+
+change- now recognizes LazyRaider and Raid Bot as manual movement bots and will automatically disable Singular movement if Disable Movement set to Auto
+
+change- Combat Log Events now captured for Raids and Battlegrounds if Debug is enabled.  Combat Log filter is more constrained and only allows receipt of events associated with spells initiated by the player.
+
+
+Death Knight
+
+*new* - All Specs - setting and support for Path of Frost.
+
+
+Druid 
+
+fixed - All Specs - corrected use of Hibernate.  Now only cast if it won't cause you to leave form -or- you are already in Caster form.  Will only attempt to Hibernate a mob that is at least 10 yds away from you and your Current Target
+
+
+Hunter 
+
+fixed - Marksman - overhaul of spell priority for all contexts
+
+fixed - Survival - overhaul of spell priority for all contexts
+
+fixed - Beast Mastery - overhaul of PVP rotation
+
+fixed - Beast Mastery - correctly uses Steady Shot for focus generation until Cobra Shot is learned at 81
+
+change- All Specs - Hunter's Mark no longer cast if Glyph of Marked for Death equipped.  
+
+change- All Specs - Hunter's Mark no longer cast in PVP unless fighting a single enemy away so no target switching likely
+
+fixed - All Specs - improved standard handling of buffs and cooldowns
+
+change- All Specs - Misdirection not cast in Battlegrounds.  Use is not an issue as it is not on the GCD and causes no adverse effects, but removed as its not needed and was being perceived as a problem by some users.
+
+*new* - All Specs - Feign Death support while Solo.  will wait a maximum of 10 seconds for 25 yd area to be clear of hostiles
+
+*new* - All Specs - Feign Death support in PVP.  Will cast to peel of Pets.  Cancels after random wait of 0 to 2 seconds
+
+*new* - All Specs - Use Feign Death setting in Class Specific tab of Class Config
+
+*new* - All Specs - Deterrence cast if low health or 3 or more mobs and Glyph of Mirrored Blades equipped
+
+*new* - All Specs - Widow Venom now supported in PVP.  Setting to use added in Class Specific tab of Class Config and defaults to false.
+
+fixed - All Specs - Blink Strike now correctly cast on current target
+
+fixed - All Specs - Lynx Rush now cast only if you have a live Pet
+
+change- All Specs - additional debug logging added to Call Pet support.  If you encounter an issue, be sure to enable Debug Logging and recreate the issue to submit in forum so sufficient detail is present
+
+*new* - All Specs - Disengage: will attempt to cast a slow or stun on nearby enemy.  Abilities attempted in order are: Ice Trap, Snake Trap (w/ Glyph of Entrapment), Explosive Trap (w/Glyph of Explosive Trap), Freezing Trap (w/Glyph of Freezing Trap), Binding Shot, concussive Shot, and Scatter Shot
+
+change- All Specs - Disengage: in PVP will only attempt to Disengage from melee classes
+
+change- All Specs - Disengage: in Normal context will only attempt Disengage if fighting a group representing more than 4 times Hunters max health or Hunters is less than 40%
+
+change- All Specs - Disengage: correctly factors in Glyph of Disengage when looking for safe landing area
+
+change- All Specs - Interrupts: in Battlegrounds will cast Silencing/Scatter/Concussive shot or use Quaking Palm, Arcane Torrent, or War Stomp on any nearby enemy currently facing (if needed) that is casting rather than only current target
+
+
+Monk
+
+fixed - Mistweaver - exception occurring for some users
+
+*new* - Windwalker - after consuming Afterlife Spheres, if health still needed at rest will cast Healing Sphere onself.  Setting added named RestHealingSphereHealth to control the minimum health that a Healing Sphere will be used (since at some point you are better off consuming food.)
+
+*new* - Brewmaster - after consuming Afterlife Spheres, if health still needed at rest will cast Healing Sphere onself.  Setting added named RestHealingSphereHealth to control the minimum health that a Healing Sphere will be used (since at some point you are better off consuming food.)
+
+
+
+Shaman
+
+*new* - All Specs - support for Hex in Normal and Battleground contexts.  Will Hex an enemy that is not the current target and 10 yds or more away from you and the current target and not already crowd controlled
+
+*new* - All Specs - support for Bind Elemental in Normal contexts.  Will Bind an enemy Elemental that is not the current target and 10 yds or more away from you and the current target and not already crowd controlled
+
+change- Elemental - suppresses use of Chain Lightning if a Crowd Controlled enemy is within range of hop
+
+change- Enhancement - suppresses use of Chain Lightning if a Crowd Controlled enemy is within range of hop
+
+fixed - Restoration - was not waiting for completion of spells prior to beginning casts in some circumstances.  This resulted in odd spell priority at times
+
+fixed - All Specs - totems now correctly cast in Battlegrounds and Instances
+
+fixed - All Specs - need for Tremor Totem now correctly recognized.
+
+*new* - All Specs - Windwalk Totem now cast if no existing Air Totem and Shaman becomes rooted or snared
+
+
+Warlock
+
+fixed - Affliction - monitoring of Malefic Grasp channel in progress.  Now upon need to switch to Drain Soul correctly waits until cancel complete before resuming initiating next cast
+
+change- Affliction - additional Drain Soul check while Soloing.  If you have no shards and enemy (non-player, non-elite) at very low health, will ignore whether DoTs are present and cast Drain Soul.  This is to maximize the opportunity for full replenishment of shards on mobs death.
+
+fixed - Affliction - wasted cast of Soulburn at mob death.  Singular was detecting point DoTs were removed from enemy at death but before they were identified as dead.  This resulted in perceived need to refresh all DoTs.  
+
+*new* - Demonology - support for Demonic Rebirth
+
+*new* - All Specs - support for Banish.  Will Banish an enemy that is not the current target and 10 yds or more away from you and the current target and not already crowd controlled.  Will remove Banish when the Banished mob becomes the current target
+
+fixed - All Specs - Summon Doomguard correctly casts on Current Target.  Only cast if current target is a Boss and have Bloodlust
+
+change- All Specs - Grimoire of Service now also cast if 3 or more mobs attacking
+
+fixed - Demonology - corrected cast/removal of Metamophosis buff occurring at some times
+
+*new* - Demonology - AoE support added.  Note: will only Hellfire for 4 or more mobs and while Metamorphosis active currently
+
+fixed - Demonology - on initial Pull, will correctly enter Metamophosis, cast Doom, then exit if Demonic Fury is less than 800
+
+fixed - Demonology - correctly keeps Metamopohisis buff at low Demonic Fury levels if Dark Soul: Knowledge is active
+
+
+Warrior
+
+change- Protection - made Ultimatum procs a high priority.  This should increase the number of Heroic Strike/Cleave casts occuring
+
+
+
 --- Release 3.0.0.1319 ---
 
 General
@@ -496,6 +640,7 @@ All - fixed issue with Leeching Poison causing to apply/spam Mindnumbing
 Shaman
 
 Elemental - added intelligent auto select of Pull spell priority, favoring an instant cast if in an area with other players or target is already within 12 yds
+
 
 
 Warlock

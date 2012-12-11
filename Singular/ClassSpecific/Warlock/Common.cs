@@ -16,6 +16,7 @@ using CommonBehaviors.Actions;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Styx.CommonBot.POI;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Warlock
 {
@@ -74,7 +75,7 @@ namespace Singular.ClassSpecific.Warlock
                 //new Decorator(
                 //    ctx => Me.CastingSpell != null && Me.CastingSpell.Name.Contains("Summon") && Me.GotAlivePet,
                 //    new Action(ctx => SpellManager.StopCasting())),
-                Spell.WaitForCast(false),
+                Spell.WaitForCastOrChannel(false),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -98,7 +99,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockPreCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(true),
+                Spell.WaitForCastOrChannel(true),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -115,7 +116,7 @@ namespace Singular.ClassSpecific.Warlock
         private static bool NeedToSoulstoneMyself()
         {
             bool cast = WarlockSettings.UseSoulstone == Soulstone.Self 
-                || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext != WoWContext.Instances && !SingularSettings.Instance.DisableAllMovement );
+                || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext != WoWContext.Instances && !MovementManager.IsMovementDisabled );
             return cast;
         }
 
@@ -128,8 +129,10 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Spell.WaitForCast(true),
-                new Decorator( ret => !Spell.IsGlobalCooldown(),
+
+                // important not to use WaitForChannel() here so channelled casts 
+                // .. can be checked in Combat behavior
+                new Decorator( ret => !Me.IsCasting && !Me.IsChanneling && !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
                         // need combat healing?  check here since mix of buffs and abilities
@@ -149,10 +152,37 @@ namespace Singular.ClassSpecific.Warlock
                                 )
                             ),
 
+                        new Decorator(
+                            ret => Me.HasAura("Demonic Rebirth") && !Me.GotAlivePet,
+                            new Sequence(
+                                new Action( r => Logger.Write( Color.White, "^Demonic Rebirth active!")),
+                                CreateWarlockSummonPet()
+                                )
+                            ),
+
                         new Decorator( 
                             ret => Me.IsInGroup() && WarlockSettings.UseSoulstone != Soulstone.None && WarlockSettings.UseSoulstone != Soulstone.Self,
                             CreateWarlockRessurectBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead))
                             ),
+
+
+                        // remove our banish if they are our CurrentTarget 
+                        Spell.Cast("Banish", ret => Me.CurrentTarget.HasMyAura( "Banish")),
+                            
+                        // banish someone if they are not current target, attacking us, and 12 yds or more away
+                        new PrioritySelector(
+                            ctx => Unit.NearbyUnfriendlyUnits
+                                .Where(
+                                    u => (u.CreatureType == WoWCreatureType.Demon || u.CreatureType == WoWCreatureType.Elemental )
+                                        && Me.CurrentTargetGuid != u.Guid
+                                        && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                        && !u.IsCrowdControlled()
+                                        && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                .OrderByDescending(u => u.Distance)
+                                .FirstOrDefault(),
+                            Spell.Cast("Banish", onUnit => (WoWUnit)onUnit)
+                            ),
+
 
                         new PrioritySelector(
                             // find an add within 8 yds (not our current target)
@@ -178,8 +208,8 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
                         Spell.BuffSelf("Dark Soul: Knowledge", ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800 && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
 
-                        Spell.BuffSelf("Summon Doomguard", ret => Me.CurrentTarget.IsBoss && PartyBuff.WeHaveBloodlust),
-                        Spell.BuffSelf("Grimoire of Service", ret => Me.CurrentTarget.IsBoss),
+                        Spell.Cast("Summon Doomguard", ret => Me.CurrentTarget.IsBoss && PartyBuff.WeHaveBloodlust),
+                        Spell.BuffSelf("Grimoire of Service", ret => Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3),
 
                         // lower threat if tanks nearby to pickup
                         Spell.BuffSelf("Soulshatter",
@@ -211,7 +241,6 @@ namespace Singular.ClassSpecific.Warlock
                                 || (Me.GotTarget && Me.CurrentTarget.IsPlayer && Unit.ValidUnit(Me.CurrentTarget)),
                             new PrioritySelector(
                                 Spell.BuffSelf("Dark Soul: Misery"),
-                                Spell.BuffSelf("Summon Doomguard"),
                                 Spell.BuffSelf("Grimoire of Service"),
                                 Spell.BuffSelf("Unending Resolve")
                                 )
@@ -462,7 +491,7 @@ namespace Singular.ClassSpecific.Warlock
             return new Decorator(
                 ret => onUnit(ret) != null && onUnit(ret).IsDead && SpellManager.CanCast( "Soulstone", onUnit(ret), true, true),
                 new PrioritySelector(
-                    Spell.WaitForCast(true),
+                    Spell.WaitForCastOrChannel(true),
                     Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, range => 40f),
                     new Decorator(
                         ret => !Spell.IsGlobalCooldown(),
@@ -490,7 +519,7 @@ namespace Singular.ClassSpecific.Warlock
                     && !HasTalent(WarlockTalent.SoulLink),
                 new Sequence(
                     new PrioritySelector(
-                        CreateCastSoulburn(ret => Me.Specialization == WoWSpec.WarlockAffliction ),
+                        CreateCastSoulburn(ret => Me.Combat && Me.Specialization == WoWSpec.WarlockAffliction ),
                         new ActionAlwaysSucceed()
                         ),
                     new Action(ret => Logger.Write("^Health Funnel since Pet @ {0:F1}%", Me.Pet.HealthPercent)),

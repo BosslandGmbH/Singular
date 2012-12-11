@@ -11,6 +11,7 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.WoWInternals.World;
 using Action = Styx.TreeSharp.Action;
 using Singular.Settings;
+using Singular.Managers;
 
 namespace Singular.Helpers
 {
@@ -40,6 +41,19 @@ namespace Singular.Helpers
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Property that all Combat Behaviors should check for whether AOE spells
+        /// are permitted.  This will be the interface which wraps all settings
+        /// toggles which may effect its on/off state
+        /// </summary>
+        public static bool UseAOE
+        {
+            get
+            {
+                return HotkeyManager.IsAoeEnabled;
+            }
         }
 
         /// <summary>
@@ -79,6 +93,31 @@ namespace Singular.Helpers
         }
 
         public static float SafeMeleeRange { get { return Math.Max(MeleeRange - 1f, 5f); } }
+
+        /// <summary>
+        /// get the effective distance between two mobs accounting for their 
+        /// combat reaches (hitboxes)
+        /// </summary>
+        /// <param name="unit">unit</param>
+        /// <param name="me">Me if null, otherwise second unit</param>
+        /// <returns></returns>
+        public static float SpellDistance(this WoWUnit unit, WoWUnit me = null)
+        {
+            // abort if mob null
+            if (unit == null)
+                return 0;
+
+            // optional arg implying Me, then make sure not Mob also
+            if (me == null)
+                me = StyxWoW.Me;
+
+            // pvp, then keep it close
+            float dist = me.Location.Distance(unit.Location);
+            dist -= me.CombatReach + unit.CombatReach;
+            return Math.Max(0, dist);
+        }
+
+
 
         /// <summary>
         /// gets the current Cooldown remaining for the spell
@@ -155,6 +194,13 @@ namespace Singular.Helpers
             return energyRegen;
         }
 
+        public static double EnergyRegenInactive()
+        {
+            double energyRegen;
+            energyRegen = Lua.GetReturnVal<float>("return GetPowerRegen()", 0); // rate of energy regen
+            return energyRegen;
+        }
+
         #region Properties
 
         internal static string LastSpellCast { get; set; }
@@ -190,29 +236,96 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite WaitForCast(bool faceDuring = false, bool allowLagTollerance = true)
         {
-            return new Action(ret =>
+            return new PrioritySelector(
+                new Decorator(
+                    ret => faceDuring,
+                    Movement.CreateFaceTargetBehavior()
+                    ),
+                new Action(ret =>
                 {
-                    if (!StyxWoW.Me.IsCasting)
-                        return RunStatus.Failure;
+                    if (IsCasting(allowLagTollerance))
+                        return RunStatus.Success;
 
-                    //if (StyxWoW.Me.IsWanding())
-                    //    return RunStatus.Failure;
+                    return RunStatus.Failure;
+                })
+                );
+        }
 
-                    if (StyxWoW.Me.ChannelObjectGuid > 0)
-                        return RunStatus.Failure;
+        public static bool IsCasting(bool allowLagTollerance = true)
+        {
+            if (!StyxWoW.Me.IsCasting)
+                return false;
 
-                    uint latency = StyxWoW.WoWClient.Latency * 2;
-                    TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
-                    if (allowLagTollerance && castTimeLeft != TimeSpan.Zero &&
-                        StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
-                        return RunStatus.Failure;
+            //if (StyxWoW.Me.IsWanding())
+            //    return RunStatus.Failure;
 
-                    if (faceDuring && StyxWoW.Me.ChanneledSpell == null ) // .ChanneledCastingSpellId == 0)
-                        Movement.CreateFaceTargetBehavior();
+            // following logic previously existed to let channels pass thru -- keeping for now
+            if (StyxWoW.Me.ChannelObjectGuid > 0)
+                return false;
 
-                    // return RunStatus.Running;
-                    return RunStatus.Success;
-                });
+            uint latency = StyxWoW.WoWClient.Latency * 2;
+            TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
+            if (allowLagTollerance // && castTimeLeft != TimeSpan.Zero 
+                && StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
+                return false;
+
+            /// -- following code does nothing since the behaviors created are not linked to execution tree
+            /// 
+            // if (faceDuring && StyxWoW.Me.ChanneledSpell == null) // .ChanneledCastingSpellId == 0)
+            //    Movement.CreateFaceTargetBehavior();
+
+            // return RunStatus.Running;
+            return true;
+        }
+
+        /// <summary>
+        ///   Creates a composite that will return a success, so long as you are currently casting. (Use this to prevent the CC from
+        ///   going down to lower branches in the tree, while casting.)
+        /// </summary>
+        /// <remarks>
+        ///   Created 13/5/2011.
+        /// </remarks>
+        /// <param name = "faceDuring">Whether or not to face during casting</param>
+        /// <param name = "allowLagTollerance">Whether or not to allow lag tollerance for spell queueing</param>
+        /// <returns></returns>
+        public static Composite WaitForChannel(bool allowLagTollerance = true)
+        {
+            return new PrioritySelector(
+                Movement.CreateFaceTargetBehavior(),
+                new Action(ret =>
+                {
+                    if (IsChannelling(allowLagTollerance))
+                        return RunStatus.Success;
+
+                    return RunStatus.Failure;
+                })
+                );
+        }
+
+        public static bool IsChannelling(bool allowLagTollerance = true)
+        {
+            if (!StyxWoW.Me.IsChanneling)
+                return false;
+
+            uint latency = StyxWoW.WoWClient.Latency * 2;
+            TimeSpan timeLeft = StyxWoW.Me.CurrentChannelTimeLeft;
+            if (allowLagTollerance && timeLeft.TotalMilliseconds < latency)
+                return false;
+
+            return true;
+        }
+
+        public static bool IsCastingOrChannelling(bool allowLagTollerance = true)
+        {
+            return IsCasting(allowLagTollerance) || IsChannelling();
+        }
+
+        public static Composite WaitForCastOrChannel(bool allowLagTollerance = true)
+        {
+            return new PrioritySelector(
+                WaitForCast(true, allowLagTollerance),
+                WaitForChannel(allowLagTollerance)
+                );
         }
 
         #endregion
@@ -937,7 +1050,7 @@ namespace Singular.Helpers
                         // channel spells fall through to cancel test
                         
                         // for casted spells and lag tolerance enabled, check before end of cast if we are done
-                        if (allowLagTollerance && StyxWoW.Me.IsCasting )
+                        if (allowLagTollerance && StyxWoW.Me.IsCasting && !StyxWoW.Me.IsChanneling )
                         {
                             TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
                             if (castTimeLeft != TimeSpan.Zero && castTimeLeft.TotalMilliseconds < (StyxWoW.WoWClient.Latency * 2))

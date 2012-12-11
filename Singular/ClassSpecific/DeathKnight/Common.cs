@@ -164,7 +164,15 @@ namespace Singular.ClassSpecific.DeathKnight
                     Spell.BuffSelf(
                         "Horn of Winter",
                         ret =>
-                        !StyxWoW.Me.HasPartyBuff( PartyBuffType.AttackPower))
+                        !StyxWoW.Me.HasPartyBuff( PartyBuffType.AttackPower)),
+
+                    // limit PoF to once every ten seconds in case there is some
+                    // .. oddness here
+                    new Throttle( 10,
+                        Spell.BuffSelf(
+                            "Path of Frost",
+                            ret => DeathKnightSettings.UsePathOfFrost )
+                            )
                     );
         }
 

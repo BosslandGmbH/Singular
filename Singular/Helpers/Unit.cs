@@ -130,6 +130,9 @@ namespace Singular.Helpers
             if (p.IsNonCombatPet || p.IsCritter)
                 return false;
 
+            if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
+                return false;
+
             return true;
         }
 
@@ -289,17 +292,24 @@ namespace Singular.Helpers
         public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, string auraName, bool fromMyAura)
         {
             WoWAura wantedAura =
-                onUnit.GetAllAuras().Where(a => a.Name == auraName && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+                onUnit.GetAllAuras().Where(a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }
 
         public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, int auraID, bool fromMyAura)
         {
-            WoWAura wantedAura =
-                onUnit.GetAllAuras().Where(a => a.SpellId == auraID && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+            WoWAura wantedAura =onUnit.GetAllAuras()
+                .Where(a => a.SpellId == auraID && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
+        }
+
+        public static void CancelAura(this WoWUnit unit, string aura)
+        {
+            WoWAura a = unit.GetAuraByName( aura );
+            if (a != null && a.Cancellable )
+                a.TryCancelAura();
         }
 
         /// <summary>

@@ -155,7 +155,7 @@ namespace Singular.ClassSpecific.Monk
                 Spell.CastOnGround("Dizzying Haze", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault().Location, ctx => TankManager.Instance.NeedToTaunt.Any(), false),
 
                 // AOE
-                new Decorator(ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3,
+                new Decorator(ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3,
                     new PrioritySelector(
                         // cast breath of fire to apply the dot.
                         Spell.Cast("Breath of Fire",ctx => Clusters.GetCluster(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8).Count(u =>u.HasAura("Dizzying Haze") && !u.HasAura("Breath of Fire")) >= 3),

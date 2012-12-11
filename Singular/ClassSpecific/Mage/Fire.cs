@@ -177,7 +177,7 @@ namespace Singular.ClassSpecific.Mage
                 Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
                 // AoE comes first
                 new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                    ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
                         Spell.Cast("Fire Blast",
                             ret => StyxWoW.Me.ActiveAuras.ContainsKey("Impact") &&

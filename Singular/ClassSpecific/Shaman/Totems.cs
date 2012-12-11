@@ -1,4 +1,6 @@
-﻿
+﻿//#define USE_ISFLEEING
+#define USE_MECHANIC
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,35 +18,15 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using CommonBehaviors.Actions;
 using Action = Styx.TreeSharp.Action;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Shaman
 {
     internal static class Totems
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
-
-        public static int ToSpellId(this WoWTotem totem)
-        {
-            return (int) (((long) totem) & ((1 << 32) - 1));
-        }
-
-        public static WoWTotemType ToType(this WoWTotem totem)
-        {
-            return (WoWTotemType) ((long) totem >> 32);
-        }
-
-
         public static Composite CreateTotemsBehavior()
         {
-            Composite tb;
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                tb = CreateTotemsPvPBehavior();
-            else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances )
-                tb = CreateTotemsInstanceBehavior();
-            else
-                tb = CreateTotemsNormalBehavior();
-
-            return tb;
+            return CreateTotemsNormalBehavior();
         }
 
         public static Composite CreateTotemsNormalBehavior()
@@ -72,18 +54,30 @@ namespace Singular.ClassSpecific.Shaman
             // now 
             return new PrioritySelector(
 
-                new Decorator(
-                    ret => Me.Fleeing,
-                    new ActionDebugString( 
-                        ret => string.Format( "I AM FEARED: cntFeared={0}, otherTotems={1}",
-                            Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor)),
-                            Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)))
+                new Throttle( 1,
+                    new Action( r => {
+                        bool ccMechanic = Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing | WoWSpellMechanic.Polymorphed | WoWSpellMechanic.Asleep);
+                        bool ccEffect = Me.HasAuraWithEffect(WoWApplyAuraType.ModFear | WoWApplyAuraType.ModPacify | WoWApplyAuraType.ModPacifySilence);
+                        bool ccAttrib = Me.Fleeing;
+                        if (ccMechanic || ccEffect || ccAttrib)
+                            Logger.WriteDebug(Color.Pink, "... FEAR CHECKED OUT --  Mechanic={0}  Effect={1}  Attrib={2}", ccMechanic, ccEffect, ccAttrib);
+                        return RunStatus.Failure;
+                        })
                     ),
 
+#if USE_ISFLEEING
                 Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
                     ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor))
                         && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
-
+#elif USE_MECHANIC
+                Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
+                    ret => Unit.GroupMembers.Any(f => f.Distance < Totems.GetTotemRange(WoWTotem.Tremor) && f.HasAuraWithMechanic(WoWSpellMechanic.Fleeing | WoWSpellMechanic.Polymorphed | WoWSpellMechanic.Asleep))
+                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
+#else
+                Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
+                    ret => Unit.GroupMembers.Any(f => f.Distance < Totems.GetTotemRange(WoWTotem.Tremor) && f.HasAuraWithEffect(WoWApplyAuraType.ModFear | WoWApplyAuraType.ModPacify | WoWApplyAuraType.ModPacifySilence))
+                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
+#endif
                 new Decorator(
                     ret => !Me.IsMoving || (Me.GotTarget && Me.CurrentTarget.Distance < (Me.MeleeDistance(Me.CurrentTarget) + 3)),
                     new PrioritySelector(
@@ -139,7 +133,11 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Stormlash Totem",
                             ret => ((bool)ret)
                                 && PartyBuff.WeHaveBloodlust
-                                && !Exist(WoWTotemType.Air))
+                                && !Exist(WoWTotemType.Air)),
+
+                        Spell.BuffSelf("Windwalk Totem", 
+                            ret => !Exist(WoWTotemType.Air) 
+                                && Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared))
                         )
                     )
                 );
@@ -148,12 +146,12 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateTotemsPvPBehavior()
         {
-            return new Decorator(ret => false, new Action( r => { return RunStatus.Failure; } ));
+            return CreateTotemsNormalBehavior();
         }
 
         public static Composite CreateTotemsInstanceBehavior()
         {
-            return new Decorator(ret => false, new Action( r => { return RunStatus.Failure; } ));
+            return CreateTotemsNormalBehavior();
         }
 
         /// <summary>
@@ -219,7 +217,7 @@ namespace Singular.ClassSpecific.Shaman
                 return TotemsInRange == 0 
                     && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0
                     && !Unit.NearbyFriendlyPlayers.Any( f => f.Combat )
-                    && !StyxWoW.Me.Totems.Any( t => t.WoWTotem == WoWTotem.FireElemental || t.WoWTotem == WoWTotem.EarthElemental ); 
+                    && !StyxWoW.Me.Totems.Any(t => totemsWeDontRecall.Any( twl => twl == t.WoWTotem )); 
             } 
         }
 
@@ -374,6 +372,28 @@ namespace Singular.ClassSpecific.Shaman
 
             return 0f;
         }
+
+
+        public static int ToSpellId(this WoWTotem totem)
+        {
+            return (int)(((long)totem) & ((1 << 32) - 1));
+        }
+
+        public static WoWTotemType ToType(this WoWTotem totem)
+        {
+            return (WoWTotemType)((long)totem >> 32);
+        }
+
+
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
+        static WoWTotem[] totemsWeDontRecall = new WoWTotem[] 
+        {
+            WoWTotem.FireElemental , 
+            WoWTotem.EarthElemental  , 
+            WoWTotem.HealingTide , 
+            WoWTotem.ManaTide 
+        };
 
         #endregion
 

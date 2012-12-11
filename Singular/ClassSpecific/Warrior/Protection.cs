@@ -159,6 +159,17 @@ namespace Singular.ClassSpecific.Warrior
 
                         CreateProtectionInterrupt(),
 
+                        // Handle Ultimatum procs - Throttle since both off GCD
+                        new Throttle(
+                            new Decorator(
+                                ret => HasUltimatum,
+                                new PrioritySelector(
+                                    Spell.Cast("Cleave", ret => UseAOE),
+                                    Spell.Cast("Heroic Strike")
+                                    )
+                                )
+                            ),
+
                         // Multi-target?  get the debuff on them
                         new Decorator(
                             ret => UseAOE,
@@ -170,19 +181,22 @@ namespace Singular.ClassSpecific.Warrior
                                 )
                             ),
 
+                        // Dump Rage - throttle Cleave and Heroic Strike since off GCD
+                        new Throttle(
+                            new Decorator(
+                                ret => Me.CurrentRage > RageDump,
+                                new PrioritySelector(
+                                    Spell.Cast("Cleave", ret => UseAOE),
+                                    Spell.Cast("Heroic Strike")
+                                    )
+                                )
+                            ),
+
                         // Generate Rage
                         Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild ),
                         Spell.Cast("Revenge", ret => Me.CurrentRage < RageBuild ),
                         Spell.Cast("Devastate", ret => !((WoWUnit)ret).HasAura("Weakened Armor", 3) && Unit.NearbyGroupMembers.Any(m => m.Class == WoWClass.Druid)),
                         Spell.Cast("Thunder Clap", ret => ((WoWUnit)ret).Distance < 8f && !((WoWUnit)ret).ActiveAuras.ContainsKey("Weakened Blows")),
-
-                        // Dump Rage - throttle Cleave and Heroic Strike since off GCD
-                        new Throttle( 
-                            new PrioritySelector(
-                                Spell.Cast("Cleave", ret => UseAOE && (Me.CurrentRage >= RageDump || HasUltimatum)),
-                                Spell.Cast("Heroic Strike", ret => Me.CurrentRage >= RageDump || HasUltimatum)
-                                )
-                            ),
 
                         // Filler
                         Spell.Cast("Devastate"),
@@ -219,7 +233,7 @@ namespace Singular.ClassSpecific.Warrior
                     Spell.Cast("Intervene", 
                         ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(
                             m => Group.Healers.Any( h => m.CurrentTargetGuid == h.Guid && h.Distance < 25)),
-                        ret => !SingularSettings.Instance.DisableAllMovement && Group.Healers.Count( h => h.IsAlive && h.Distance < 40) == 1
+                        ret => !MovementManager.IsMovementDisabled && Group.Healers.Count( h => h.IsAlive && h.Distance < 40) == 1
                         )
                     )
                 );
@@ -260,7 +274,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                return AoeCount >= 2;
+                return AoeCount >= 2 && Spell.UseAOE;
             }
         }
 

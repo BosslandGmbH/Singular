@@ -11,14 +11,12 @@ using Singular.Helpers;
 
 namespace Singular.Managers
 {
-    // This class is here to deal with Ghost Wolf/Travel Form usage for shamans and druids
     internal static class SoulstoneManager
     {
         internal static void Init()
         {
             Lua.Events.AttachEvent("PLAYER_DEAD", HandlePlayerDead);
         }
-
 
         private static void HandlePlayerDead(object sender, LuaEventArgs args)
         {
@@ -28,7 +26,7 @@ namespace Singular.Managers
             List<string> hasSoulstone = Lua.GetReturnValues("return HasSoulstone()", "hawker.lua");
             if (hasSoulstone != null && hasSoulstone.Count > 0 && !String.IsNullOrEmpty(hasSoulstone[0]) && hasSoulstone[0].ToLower() != "nil")
             {
-                if (SingularSettings.Instance.DisableAllMovement )
+                if (MovementManager.IsMovementDisabled )
                 {
                     Logger.Write(Color.Aquamarine, "Suppressing {0} behavior since movement disabled...", hasSoulstone[0]);
                     return;

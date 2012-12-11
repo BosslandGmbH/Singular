@@ -91,7 +91,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
                         new Decorator(
-                            ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
 
                                 Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount == 3),
@@ -287,7 +287,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
                         new Decorator(
-                            ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
 
                                 Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount == 3),

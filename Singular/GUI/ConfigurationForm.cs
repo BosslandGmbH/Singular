@@ -26,7 +26,9 @@ namespace Singular.GUI
 
         private void ConfigurationForm_Load(object sender, EventArgs e)
         {
-            lblVersion.Text = string.Format("Version {0}", Assembly.GetExecutingAssembly().GetName().Version);
+            // lblVersion.Text = string.Format("Version {0}", Assembly.GetExecutingAssembly().GetName().Version);
+            lblVersion.Text = string.Format("Version {0}", SingularRoutine.GetSingularVersion());
+
             //HealTargeting.Instance.OnTargetListUpdateFinished += new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished);
             pgGeneral.SelectedObject = SingularSettings.Instance;
             SingularSettings main = SingularSettings.Instance;
@@ -74,6 +76,8 @@ namespace Singular.GUI
             {
                 pgClass.SelectedObject = toSelect;
             }
+
+            pgHotkeys.SelectedObject = main.Hotkeys;
 
             InitializeContextDropdown();
 
@@ -136,6 +140,7 @@ namespace Singular.GUI
                 if (pgHealNormal.SelectedObject != null)
                     ((Styx.Helpers.Settings)pgHealNormal.SelectedObject).Save();
 
+                ((Styx.Helpers.Settings)pgHotkeys.SelectedObject).Save();
                 Close();
             }
             catch (Exception ex)

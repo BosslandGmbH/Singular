@@ -205,7 +205,9 @@
     <Compile Include="Lists\BossList.cs" />
     <Compile Include="Lists\CataHeroicDpsList.cs" />
     <Compile Include="Managers\HealerManager.cs" />
+    <Compile Include="Managers\HotkeyManager.cs" />
     <Compile Include="Managers\MountManager.cs" />
+    <Compile Include="Managers\MovementManager.cs" />
     <Compile Include="Managers\PetManager.cs" />
     <Compile Include="Managers\SoulstoneManager.cs" />
     <Compile Include="Managers\SpellImmunityManager.cs" />
@@ -213,6 +215,7 @@
     <Compile Include="Settings\DruidSettings.cs" />
     <Compile Include="Settings\HealerSettings.cs" />
     <Compile Include="Settings\HunterSettings.cs" />
+    <Compile Include="Settings\HotkeySettings.cs" />
     <Compile Include="Settings\MageSettings.cs" />
     <Compile Include="Settings\MonkSettings.cs" />
     <Compile Include="Settings\PaladinSettings.cs" />
@@ -222,6 +225,9 @@
     <Compile Include="Settings\SingularSettings.cs" />
     <Compile Include="Settings\WarlockSettings.cs" />
     <Compile Include="Settings\WarriorSettings.cs" />
+    <Compile Include="SingularRoutine.BotEvents.cs">
+      <DependentUpon>SingularRoutine.cs</DependentUpon>
+    </Compile>
     <Compile Include="SingularRoutine.Context.cs">
       <DependentUpon>SingularRoutine.cs</DependentUpon>
     </Compile>
@@ -253,6 +259,11 @@
     <Compile Include="SingularRoutine.Behaviors.cs">
       <DependentUpon>SingularRoutine.cs</DependentUpon>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="GUI\ConfigurationForm.resx">
+      <DependentUpon>ConfigurationForm.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

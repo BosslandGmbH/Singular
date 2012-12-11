@@ -40,11 +40,22 @@ namespace Singular.ClassSpecific.Warlock
 
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        new Action(ret =>
+                        {
+                            _mobCount = Common.TargetsInCombat.Count();
+                            return RunStatus.Failure;
+                        }),
+                        new Action( ret => {
+                            _mobCount = Common.TargetsInCombat.Where(t=>t.Distance <= (Me.MeleeDistance(t) + 3)).Count();
+                            return RunStatus.Failure;
+                            }),
+
                         CreateWarlockDiagnosticOutputBehavior(),
 
                         //Helpers.Common.CreateAutoAttack(true),
                         new Decorator(
-                            ret => Me.GotAlivePet && (Me.Pet.CurrentTarget == null || StyxWoW.Me.Pet.CurrentTarget != StyxWoW.Me.CurrentTarget),
+                            ret => Me.GotAlivePet && Me.GotTarget && Me.Pet.CurrentTarget != Me.CurrentTarget,
                             new Action( ret => {
                                 PetManager.CastPetAction("Attack");
                                 return RunStatus.Failure;
@@ -57,22 +68,9 @@ namespace Singular.ClassSpecific.Warlock
             #region Felguard Use
 
                         new Decorator(
-                            ret => Common.GetCurrentPet() == WarlockPet.Felguard,
-                            new PrioritySelector(
-                                new Decorator(
-                                    ret => Me.CurrentTarget.Fleeing,
-                                    Pet.CreateCastPetAction("Axe Toss")),
-
-                                new Decorator(
-                                    ret => Me.GotAlivePet && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.Pet.Location) < 10 * 10) > 1,
-                                    Pet.CreateCastPetAction("Felstorm"))
-                                )
+                            ret => Common.GetCurrentPet() == WarlockPet.Felguard && Me.CurrentTarget.Fleeing,
+                            Pet.CreateCastPetAction("Axe Toss")
                             ),
-
-                        new Action( ret => {
-                            _mobCount = Common.TargetsInCombat.Where(t=>t.Distance <= (Me.MeleeDistance(t) + 3)).Count();
-                            return RunStatus.Failure;
-                            }),
 
             #endregion
 
@@ -93,7 +91,7 @@ namespace Singular.ClassSpecific.Warlock
                             new Sequence(
                                 new Action(ret => Logger.Write( Color.White, "^Cancel Metamorphosis Buff")),
                                 // new Action(ret => Lua.DoString("CancelUnitBuff(\"player\",\"Metamorphosis\");")),
-                                new Action(ret => SpellManager.Cast("Metamorphosis", Me.CurrentTarget)),
+                                new Action( ret => Me.CancelAura( "Metamorphosis")),
                                 new WaitContinue(TimeSpan.FromMilliseconds(450), canRun => !Me.HasAura("Metamorphosis"), new ActionAlwaysSucceed())
                                 )
                             ),
@@ -101,6 +99,8 @@ namespace Singular.ClassSpecific.Warlock
 
             #region AOE
 
+                        // must appear after Mob count and Metamorphosis handling
+                        CreateDemonologyAoeBehavior(),
 
             #endregion
 
@@ -109,8 +109,11 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             ret => Me.HasAura( "Metamorphosis"),
                             new PrioritySelector(
-                                CastHack( "Metamorphosis: Doom", "Doom", on => Me.CurrentTarget, req => Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom", 5)),
-                                CastHack("Metamorphosis: Touch of Chaos", "Touch of Chaos", on => Me.CurrentTarget, req => Me.HasAura("Dark Soul: Knowledge") || !Me.CurrentTarget.HasAuraExpired("Corruption", 2))
+                                new Sequence(
+                                    CastHack( "Metamorphosis: Doom", "Doom", on => Me.CurrentTarget, req => Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom", 10)),
+                                    new WaitContinue(TimeSpan.FromMilliseconds(250), canRun => Me.CurrentTarget.HasAura("Doom"), new ActionAlwaysSucceed())
+                                    ),
+                                CastHack("Metamorphosis: Touch of Chaos", "Touch of Chaos", on => Me.CurrentTarget, req => true)
                                 )
                             ),
 
@@ -137,12 +140,18 @@ namespace Singular.ClassSpecific.Warlock
             bool hasAura = Me.HasAura("Metamorphosis");
             bool shouldCast = false;
 
-            if (!hasAura)
+            if (!hasAura && Me.GotTarget)
             {
-                // aura missing, so check if we should cast to apply 
-                shouldCast = Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom") && CurrentDemonicFury >= 60;
-                shouldCast = shouldCast || CurrentDemonicFury > 900;
-                shouldCast = shouldCast && SpellManager.CanCast("Metamorphosis", Me, false);
+                // check if we need Doom and have enough fury for 2 secs in form plus cast
+                if (CurrentDemonicFury >= 72 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom"))
+                    shouldCast = true;
+                // check if we have Corruption and we need to dump fury
+                else if (CurrentDemonicFury >= 900 && !Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
+                    shouldCast = true;
+
+                // if we need to cast, check that we can
+                if (shouldCast)
+                    shouldCast = SpellManager.CanCast("Metamorphosis", Me, false);
             }
 
             return shouldCast;
@@ -151,20 +160,25 @@ namespace Singular.ClassSpecific.Warlock
         private static bool NeedToCancelMetamorphosis()
         {
             bool hasAura = Me.HasAura("Metamorphosis");
-            bool shouldCast = false;
+            bool shouldCancel = false;
 
-            if (hasAura)
+            if (hasAura && Me.GotTarget)
             {
-                // aura present, so check if we should cast to remove
-                shouldCast = Me.CurrentTarget.HasKnownAuraExpired("Corruption");
-                shouldCast = shouldCast && !Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom");
-                shouldCast = shouldCast || CurrentDemonicFury < 800;
-
-                // check if we should stay in demon form because of buff (only if we have enough fury to cast)
-                shouldCast = shouldCast && !(Me.HasAura("Dark Soul: Knowledge") && CurrentDemonicFury >= 40);
+                if (CurrentDemonicFury < 40)
+                    shouldCancel = true;
+                // check if we should stay in demon form because of buff (only if we have enough fury for a cast)
+                if (Me.HasAura("Dark Soul: Knowledge"))
+                    shouldCancel = false;
+                // check if we should stay in demon form because of Doom falling off
+                else if ( CurrentDemonicFury >= 60 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom"))
+                    shouldCancel = false;
+                // finally... now check if we should cancel 
+                else if ( CurrentDemonicFury < 800 && Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
+                    shouldCancel = true;
+                // do not need to check CanCast() on the cancel ...
             }
 
-            return shouldCast;
+            return shouldCancel;
         }
 
         // following done because CanCast() wants spell as "Metamorphosis: Doom" while Cast() and aura name are "Doom"
@@ -183,14 +197,43 @@ namespace Singular.ClassSpecific.Warlock
 
         #endregion
 
-        private WoWUnit GetAoeDotTarget( string dotName)
+        #region AOE
+
+        private static Composite CreateDemonologyAoeBehavior()
+        {
+            return new Decorator(
+                ret => Spell.UseAOE,
+                new PrioritySelector(
+
+                    new Decorator(
+                        ret => Common.GetCurrentPet() == WarlockPet.Felguard && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.Pet.Location) < 8 * 8) > 1,
+                        Pet.CreateCastPetAction("Felstorm")
+                        ),
+
+                    new Decorator(
+                        ret => _mobCount >= 4 && Me.HasAura("Metamorphosis"),
+                        Spell.Cast( "Hellfire",  ret => SpellManager.HasSpell("Hellfire") && !Me.HasAura("Immolation Aura"))
+                        ),
+
+                    new Decorator(
+                        ret => _mobCount >= 2 && Common.TargetsInCombat.Count(t => !t.HasAuraExpired("Corruption")) < Math.Min( _mobCount, 3),
+                        Spell.Cast("Corruption", ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Corruption")))
+                        )
+                    )
+                );
+        }
+
+
+        private static WoWUnit GetAoeDotTarget( string dotName)
         {
             WoWUnit unit = null;
             if (SpellManager.HasSpell(dotName))
-                unit = Common.TargetsInCombat.FirstOrDefault(t => !t.HasMyAura(dotName));
+                unit = Common.TargetsInCombat.FirstOrDefault(t => !t.HasAuraExpired(dotName));
 
             return unit;
         }
+
+        #endregion
 
         private static Composite CreateWarlockDiagnosticOutputBehavior()
         {
@@ -204,12 +247,13 @@ namespace Singular.ClassSpecific.Warlock
 
                         string msg;
                         
-                        msg = string.Format(".... h={0:F1}%/m={1:F1}%, fury={2}, metamor={3}, mcore={4}",
+                        msg = string.Format(".... h={0:F1}%/m={1:F1}%, fury={2}, metamor={3}, mcore={4}, darksoul={5}",
                              Me.HealthPercent,
                              Me.ManaPercent,
                              CurrentDemonicFury,
                              Me.HasAura("Metamorphosis"),
-                             lstks
+                             lstks,
+                             Me.HasAura("Dark Soul: Knowledge")
                              );
 
                         if (target != null)

@@ -265,8 +265,8 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
 
                         // AoE Rotation
-                        new Decorator( 
-                            ret => AoeTargets.Count() > 1,
+                        new Decorator(
+                            ret => Spell.UseAOE && AoeTargets.Count() > 1,
                             new PrioritySelector(
                                 ctx => AoeTargets.FirstOrDefault(),
                                 Spell.Cast( "Mind Sear", ctx => BestMindSearTarget, ret => AoeTargets.Count() >= 5),

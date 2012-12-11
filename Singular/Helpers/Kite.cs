@@ -407,7 +407,7 @@ namespace Singular.Helpers
 
         public static bool IsJumpTurnNeeded()
         {
-            if (SingularSettings.Instance.DisableAllMovement)
+            if (MovementManager.IsMovementDisabled)
                 return false;
 
             if (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting)
@@ -810,7 +810,9 @@ namespace Singular.Helpers
         {
             get
             {
-                return ObjectManager.ObjectList.Where(o => o is WoWUnit && IsEnemy(o.ToUnit() )).Select(o => o.ToUnit()).ToList();
+                // return ObjectManager.ObjectList.Where(o => o is WoWUnit && IsEnemy(o.ToUnit())).Select(o => o.ToUnit()).ToList();
+                return ObjectManager.ObjectList.Where(o => o is WoWUnit && Unit.ValidUnit(o.ToUnit())).Select(o => o.ToUnit()).ToList();
+
             }
         }
 
@@ -828,8 +830,9 @@ namespace Singular.Helpers
         {
             get
             {
-                return AllEnemyMobs.Where(u =>
-                    (u.CurrentTargetGuid == Me.Guid || Me.CurrentTargetGuid == u.Guid)
+                return AllEnemyMobs.Where(u => 
+                    u.Combat 
+                    && u.CurrentTargetGuid == Me.Guid
                     && !u.IsPet
                     && StyxWoW.Me.Level < (u.Level + (u.Elite ? 12 : 5)));
             }

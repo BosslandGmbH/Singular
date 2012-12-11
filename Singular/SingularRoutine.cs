@@ -38,11 +38,15 @@ namespace Singular
                     // so we're not reliant on anything outside of ourselves for updates.
                     UpdateContext();
                 };
+
+            // install botevent handler so we can consolidate validation on whether 
+            // .. local botevent handlers should be called or not
+            SingularBotEventInitialize();
         }
 
         public static SingularRoutine Instance { get; private set; }
 
-        public override string Name { get { return "Singular v3"; } }
+        public override string Name { get { return "Singular"; } }
 
         public override WoWClass Class { get { return StyxWoW.Me.Class; } }
 
@@ -70,7 +74,10 @@ namespace Singular
             if (dr == DialogResult.OK || dr == DialogResult.Yes)
             {
                 Logger.WriteDebug(Color.LightGreen, "Settings saved, rebuilding behaviors...");
+                HotkeyManager.Update();
+                MovementManager.Update();
                 RebuildBehaviors();
+                SingularSettings.Instance.LogSettings();
             }
         }
 
@@ -132,6 +139,8 @@ namespace Singular
             if (Group.MeIsTank && CurrentWoWContext != WoWContext.Battlegrounds &&
                 (Me.GroupInfo.IsInParty || Me.GroupInfo.IsInRaid))
                 TankManager.Instance.Pulse();
+
+            HotkeyManager.Pulse();
         }
 
         public override void Initialize()
@@ -155,12 +164,12 @@ namespace Singular
             // NOTE: Hook these events AFTER the context update.
             OnWoWContextChanged += (orig, ne) =>
                 {
-                    Logger.Write(Color.LightGreen, "Context changed, re-creating behaviors");
+                    Logger.Write(Color.White, "Context changed, re-creating behaviors");
                     RebuildBehaviors();
                 };
             RoutineManager.Reloaded += (s, e) =>
                 {
-                    Logger.Write("Routines were reloaded, re-creating behaviors");
+                    Logger.Write(Color.White, "Routines were reloaded, re-creating behaviors");
                     RebuildBehaviors();
                 };
 
@@ -169,19 +178,24 @@ namespace Singular
             {
                 return;
             }
-            Logger.WriteDebug("Verified behaviors can be created!");
+            Logger.WriteDebug(Color.White, "Verified behaviors can be created!");
 
             // When we actually need to use it, we will.
             EventHandlers.Init();
             MountManager.Init();
+            HotkeyManager.Init();
+            MovementManager.Init();
             SoulstoneManager.Init();
+
             //Logger.Write("Combat log event handler started.");
 
             // create silently since Start button will create a context change (at least first Start)
             // .. which will build behaviors again
             Instance.RebuildBehaviors(true);
-            Logger.WriteDebug("Behaviors created!");
 
+            // write current settings to log file... only written at startup and when Save press in Settings UI
+            SingularSettings.Instance.LogSettings();
+            
             Logger.Write("Initialization complete!");
         }
 
@@ -211,7 +225,7 @@ namespace Singular
 
                 List<FileCheck> fcerrors = FileCheckList.Test(GetSingularSourcePath());
                 if (!fcerrors.Any())
-                    Logger.Write("Installation: integrity verififed for {0}", GetSingularVersion());
+                    Logger.Write("Installation: integrity verified for {0}", GetSingularVersion());
                 else
                 {
                     Logger.Write(Color.HotPink, "Installation: modified by user - forum support may not available", singularName);

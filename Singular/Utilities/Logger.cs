@@ -13,6 +13,8 @@ namespace Singular
 {
     public static class Logger
     {
+        static int lineNo = 0;
+
         /// <summary>
         /// write message to log window and file
         /// </summary>
@@ -33,18 +35,20 @@ namespace Singular
         }
 
         /// <summary>
-        /// write message to log window and file
+        /// write message to log window and file.  overrides log windows duplicate
+        /// line suppression by ensuring adjoining lines differ
         /// </summary>
         /// <param name="clr">color of message in window</param>
         /// <param name="message">message text with embedded parameters</param>
         /// <param name="args">replacement parameter values</param>
         public static void Write(Color clr, string message, params object[] args)
         {
+            string sUniqueChar = (lineNo++ & 1) == 0 ? "" : " ";
             System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);
             if (GlobalSettings.Instance.LogLevel >= LogLevel.Normal)
-                Logging.Write(newColor, "[Singular] " + message, args);
+                Logging.Write(newColor, "[Singular] " + message + sUniqueChar, args);
             else if (GlobalSettings.Instance.LogLevel == LogLevel.Quiet)
-                Logging.WriteToFileSync( LogLevel.Normal, "[Singular] " + message, args);
+                Logging.WriteToFileSync(LogLevel.Normal, "[Singular] " + message + sUniqueChar, args);
         }
 
         /// <summary>

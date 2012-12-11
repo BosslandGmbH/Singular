@@ -6,6 +6,7 @@ using Styx;
 using Styx.TreeSharp;
 using Singular.ClassSpecific;
 using System.Drawing;
+using CommonBehaviors.Actions;
 
 namespace Singular
 {
@@ -97,10 +98,12 @@ namespace Singular
 
             _combatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport,
                 new LockSelector( 
+                    new Decorator( ret => !HotkeyManager.IsCombatEnabled, new ActionAlwaysSucceed()),
                     Generic.CreateUseTrinketsBehaviour(),
                     Generic.CreatePotionAndHealthstoneBehavior(),
                     Generic.CreateRacialBehaviour(),
-                    _combatBuffsBehavior ?? new PrioritySelector()));
+                    _combatBuffsBehavior ?? new PrioritySelector())
+                    );
 
             // There are some classes that uses spells in rest behavior. Basicly we don't want Rest to be called while flying.
             _restBehavior =
@@ -121,7 +124,11 @@ namespace Singular
                 _pullBuffsBehavior = new LockSelector(_pullBuffsBehavior);
             }
 
-            _combatBehavior = new LockSelector(_combatBehavior);
+            _combatBehavior = 
+                new LockSelector(
+                    new Decorator(ret => !HotkeyManager.IsCombatEnabled, new ActionAlwaysSucceed()),
+                    _combatBehavior
+                    );
 
             _pullBehavior = new LockSelector(_pullBehavior);
             return true;

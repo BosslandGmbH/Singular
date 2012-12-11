@@ -29,10 +29,11 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanElementalPreCombatBuffsNormal()
         {
             return new PrioritySelector(
+                Spell.WaitForCastOrChannel(true),
+
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
                 Common.CreateShamanDpsShieldBehavior(),
-
                 Totems.CreateRecallTotems()
                 );
         }
@@ -41,10 +42,11 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanElementalPreCombatBuffsPvp()
         {
             return new PrioritySelector(
+                Spell.WaitForCastOrChannel(true),
+
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
                 Common.CreateShamanDpsShieldBehavior(),
-
                 Totems.CreateRecallTotems()
                 );
         }
@@ -54,6 +56,8 @@ namespace Singular.ClassSpecific.Shaman
         {
             return
                 new PrioritySelector(
+                    Spell.WaitForCastOrChannel(true),
+
                     new Decorator(
                         ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
                         Common.CreateShamanDpsHealBehavior()
@@ -87,7 +91,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCastOrChannel(true),
 
                 Common.CreateShamanDpsShieldBehavior(),
 
@@ -128,11 +132,10 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanElementalNormalCombat()
         {
             return new PrioritySelector(
-
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCastOrChannel(true),
 
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
@@ -152,31 +155,9 @@ namespace Singular.ClassSpecific.Shaman
                         Totems.CreateTotemsNormalBehavior(),
 
                         new Decorator(
-                            ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
                             new PrioritySelector(
                                 new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
-
-                                // hex someone if they are 12 yds or more
-                                new PrioritySelector(
-                                    ctx => Unit.NearbyUnfriendlyUnits
-                                        .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
-                                                && ( u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet ))
-                                                && u.Distance.Between(15,30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
-                                        .OrderByDescending(u => u.Distance)
-                                        .FirstOrDefault(),
-                                    Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
-                                     ),
-
-                                // bind someone if we can
-                                new PrioritySelector(
-                                    ctx => Unit.NearbyUnfriendlyUnits
-                                        .Where(u => u.CreatureType == WoWCreatureType.Elemental
-                                                && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                                                && u.Distance.Between(15,30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
-                                        .OrderByDescending(u => u.Distance)
-                                        .FirstOrDefault(),
-                                    Spell.Cast("Bind Elemental", onUnit => (WoWUnit)onUnit)
-                                     ),
 
                                 Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location, req => 
                                     (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) &&
@@ -201,7 +182,7 @@ namespace Singular.ClassSpecific.Shaman
                             !StyxWoW.Me.HasAura( "Spiritwalker's Grace") &&
                             Common.IsImbuedForDPS( StyxWoW.Me.Inventory.Equipped.MainHand)),
 
-                        Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                         Spell.Cast("Lightning Bolt")
                         )
                     ),
@@ -222,7 +203,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCastOrChannel(true),
 
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
@@ -240,15 +221,6 @@ namespace Singular.ClassSpecific.Shaman
 
                         Totems.CreateTotemsPvPBehavior(),
 
-                        new Decorator(
-                            ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
-                            new PrioritySelector(
-                                // Pop the ele on bosses
-                                Spell.BuffSelf("Fire Elemental Totem", ret => !StyxWoW.Me.Totems.Any(t => t.WoWTotem == WoWTotem.FireElemental)),
-                                Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
-                                Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
-                                )),
-
                         Spell.Cast("Elemental Blast"),
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 
@@ -261,7 +233,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Unleash Elements",
                             ret => StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")
                                 && Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
-                        Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                         Spell.Cast("Lightning Bolt")
                         )
                     ),
@@ -280,7 +252,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCastOrChannel(true),
 
                 new PrioritySelector(
                     ret => !Spell.IsGlobalCooldown(),
@@ -294,7 +266,7 @@ namespace Singular.ClassSpecific.Shaman
                         Totems.CreateTotemsInstanceBehavior(),
 
                         new Decorator(
-                            ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
                             new PrioritySelector(
                                 new Action(act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
                                 Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location),
@@ -314,7 +286,7 @@ namespace Singular.ClassSpecific.Shaman
                             ret => StyxWoW.Me.IsMoving 
                                 && !StyxWoW.Me.HasAura("Spiritwalker's Grace")
                                 && Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
-                        Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                         Spell.Cast("Lightning Bolt")
                         )
                     ),
@@ -333,7 +305,14 @@ namespace Singular.ClassSpecific.Shaman
                     ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
-                        uint lstks = !Me.HasAura("Lightning Shield") ? 0 : Me.ActiveAuras["Lightning Shield"].StackCount;
+                        uint lstks = 0;
+                        WoWAura aura = Me.GetAuraByName("Lightning Shield");
+                        if (aura != null)
+                        {
+                            lstks = aura.StackCount;
+                            if (!Me.HasAura("Lightning Shield", (int)lstks))
+                                Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  have {0} stacks but Me.HasAura('Lightning Shield', {0}) was False!!!!", lstks, lstks);
+                        }
 
                         string line = string.Format(".... h={0:F1}%/m={1:F1}%, lstks={2}",
                             Me.HealthPercent,

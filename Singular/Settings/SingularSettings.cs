@@ -5,6 +5,7 @@ using Styx;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
+using Singular.Managers;
 
 namespace Singular.Settings
 {
@@ -26,7 +27,7 @@ namespace Singular.Settings
         {
         }
 
-        private static string CharacterSettingsPath
+        public static string CharacterSettingsPath
         {
             get
             {
@@ -53,7 +54,46 @@ namespace Singular.Settings
                 || usage == SingularSettings.Instance.Trinket2Usage;
         }
 
-        // this is the old setting.  kept for compatability until removed from code
+        /// <summary>
+        /// Write all Singular Settings in effect to the Log file
+        /// </summary>
+        public void LogSettings()
+        {
+            Logger.WriteFile("");
+            LogSettings("Singular", SingularSettings.Instance);
+            LogSettings("DeathKnightSettings", _dkSettings);
+            LogSettings("DruidSettings", _druidSettings);
+            LogSettings("HunterSettings", _hunterSettings);
+            LogSettings("MageSettings", _mageSettings);
+            LogSettings("MonkSettings", _monkSettings);	
+            LogSettings("PaladinSettings", _pallySettings);
+            LogSettings("PriestSettings", _priestSettings);
+            LogSettings("RogueSettings", _rogueSettings);
+            LogSettings("ShamanSettings", _shamanSettings);
+            LogSettings("WarlockSettings", _warlockSettings);
+            LogSettings("WarriorSettings", _warriorSettings);
+            LogSettings("HotkeySettings", _hotkeySettings);
+        }
+
+        public void LogSettings(string desc, Styx.Helpers.Settings set)
+        {
+            if (set == null)
+                return;
+
+            Logger.WriteFile("====== {0} Settings ======", desc);
+            foreach (var kvp in set.GetSettings())
+            {
+                Logger.WriteFile("  {0}: {1}", kvp.Key, kvp.Value.ToString());
+            }
+
+            Logger.WriteFile("");
+        }
+
+        /// <summary>
+        /// Obsolete:  Almost all code should reference MovementManager.IsMovementDisabled
+        /// .. which will handle Hotkey processing and any context sensitive bot behavior.
+        /// .. This setting only retrieves the user setting which typically is insufficient.
+        /// </summary>
         [Browsable(false)]
         public bool DisableAllMovement
         {
@@ -62,7 +102,7 @@ namespace Singular.Settings
                 if (AllowMovement != AllowMovementType.Auto)
                     return AllowMovement == AllowMovementType.None;
 
-                return SingularRoutine.IsBotInUse("LazyRaider");
+                return MovementManager.IsManualMovementBotActive;
             }
         }
 
@@ -71,7 +111,7 @@ namespace Singular.Settings
             if (AllowMovement != AllowMovementType.Auto)
                 return AllowMovement >= AllowMovementType.ClassSpecificOnly;
 
-            return !SingularRoutine.IsBotInUse("LazyRaider");
+            return !MovementManager.IsManualMovementBotActive;
         }
 
         [Browsable(false)]
@@ -284,6 +324,8 @@ namespace Singular.Settings
 
         private WarriorSettings _warriorSettings;
 
+        private HotkeySettings _hotkeySettings;
+
         [Browsable(false)]
         public DeathKnightSettings DeathKnight { get { return _dkSettings ?? (_dkSettings = new DeathKnightSettings()); } }
 
@@ -316,6 +358,9 @@ namespace Singular.Settings
 
         [Browsable(false)]
         public WarriorSettings Warrior { get { return _warriorSettings ?? (_warriorSettings = new WarriorSettings()); } }
+
+        [Browsable(false)]
+        public HotkeySettings Hotkeys { get { return _hotkeySettings ?? (_hotkeySettings = new HotkeySettings()); } }
 
         #endregion
     }

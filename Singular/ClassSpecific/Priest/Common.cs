@@ -73,7 +73,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new Decorator(
                 ret => SingularSettings.Instance.Priest.UseSpeedBuff
-                    && !SingularSettings.Instance.DisableAllMovement 
+                    && !MovementManager.IsMovementDisabled 
                     && StyxWoW.Me.IsAlive 
                     && (!checkMoving || StyxWoW.Me.IsMoving)
                     && !StyxWoW.Me.Mounted

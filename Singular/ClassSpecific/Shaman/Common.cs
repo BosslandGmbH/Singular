@@ -85,8 +85,9 @@ namespace Singular.ClassSpecific.Shaman
         {
             get 
             {
-                return Unit.NearbyUnitsInCombatWithMe.Count() >= StressMobCount
-                    || Unit.NearbyUnfriendlyUnits.Any(u => u.Combat && u.IsTargetingMeOrPet && (u.IsPlayer || (u.Elite && u.Level + 8 > Me.Level)));
+                return SingularRoutine.CurrentWoWContext == WoWContext.Normal
+                    && (Unit.NearbyUnitsInCombatWithMe.Count() >= StressMobCount
+                    || Unit.NearbyUnfriendlyUnits.Any(u => u.Combat && u.IsTargetingMeOrPet && (u.IsPlayer || (u.Elite && u.Level + 8 > Me.Level))));
             }
         }
 
@@ -111,10 +112,13 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         /// <summary>
-        /// checks if pvp fight is worth popping lust by comparing # of combatants
-        /// from each faction.  must be atleast 3 on each side with the difference
-        /// being approx 33% at most.  additionally requires atleast 3 or more
-        /// friendlies to not be sated
+        /// checks if in a relatively balanced fight where atleast 3 of your
+        /// teammates will benefti from Bloodlust.  fight must be atleast 3 v 3
+        /// and size difference between factions nearby in fight cannot be greater
+        /// than size / 3 + 1.  For example:
+        /// 
+        /// Yes:  3 v 3, 3 v 4, 3 v 5, 6 v 9, 9 v 13
+        /// No :  2 v 3, 3 v 6, 4 v 7, 6 v 10, 9 v 14
         /// </summary>
         public static bool IsPvpFightWorthLusting
         {
@@ -137,37 +141,96 @@ namespace Singular.ClassSpecific.Shaman
 
         #endregion
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.All, 1)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Normal | WoWContext.Instances , 1)]
         public static Composite CreateShamanCombatBuffs()
         {
             return new PrioritySelector(
 
                 Totems.CreateTotemsBehavior(),
 
-                Spell.BuffSelf( "Astral Shift", ret => Me.HealthPercent < 50),
+                Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < 50),
+                Spell.BuffSelf("Shamanistic Rage", ret => Me.HealthPercent < 70 || Me.ManaPercent < 70 || Common.StressfulSituation),
 
-                new Decorator( 
-                    ret => ShamanSettings.UseBloodlust 
-                        && !SingularSettings.Instance.DisableAllMovement,
+                // hex someone if they are not current target, attacking us, and 12 yds or more away
+                new PrioritySelector(
+                    ctx => Unit.NearbyUnfriendlyUnits
+                        .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
+                                && Me.CurrentTargetGuid != u.Guid
+                                && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                && !u.IsCrowdControlled()
+                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                        .OrderByDescending(u => u.Distance)
+                        .FirstOrDefault(),
+                    Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
+                        ),
+
+                // bind someone if we can
+                new PrioritySelector(
+                    ctx => Unit.NearbyUnfriendlyUnits
+                        .Where(u => u.CreatureType == WoWCreatureType.Elemental
+                                && Me.CurrentTargetGuid != u.Guid
+                                && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                && !u.IsCrowdControlled()
+                                && u.Distance.Between(15, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                        .OrderByDescending(u => u.Distance)
+                        .FirstOrDefault(),
+                    Spell.Cast("Bind Elemental", onUnit => (WoWUnit)onUnit)
+                        ),
+
+                new Decorator(
+                    ret => ShamanSettings.UseBloodlust
+                        && !MovementManager.IsMovementDisabled,
 
                     new PrioritySelector(
-                        Spell.BuffSelf( Common.BloodlustName, 
+                        Spell.BuffSelf(Common.BloodlustName,
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
-                                && !Unit.GroupMembers.Any( m => m.IsAlive && m.Distance < 100)
-                                && Common.StressfulSituation ),
+                                && !Unit.GroupMembers.Any(m => m.IsAlive && m.Distance < 100)
+                                && Common.StressfulSituation),
 
                         Spell.BuffSelf(Common.BloodlustName,
-                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds
-                                && IsPvpFightWorthLusting),
-
-                        Spell.BuffSelf( Common.BloodlustName, 
-                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances  
-                                && !Me.GroupInfo.IsInRaid  
-                                && Me.CurrentTarget.IsBoss )
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances
+                                && !Me.GroupInfo.IsInRaid
+                                && Me.CurrentTarget.IsBoss)
                         )
                     ),
 
                 Spell.BuffSelf("Ascendance", ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal && Common.StressfulSituation),
+
+                Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust),
+
+                Spell.BuffSelf("Spiritwalker's Grace", ret => Me.IsMoving && Me.Combat)
+
+                );
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Battlegrounds , 1)]
+        public static Composite CreateShamanCombatBuffsPVP()
+        {
+            return new PrioritySelector(
+
+                Totems.CreateTotemsBehavior(),
+
+                Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < 50),
+                Spell.BuffSelf("Shamanistic Rage", ret => Me.HealthPercent < 70 || Me.ManaPercent < 70 || Common.StressfulSituation),
+
+                // hex someone if they are not current target, attacking us, and 12 yds or more away
+                new PrioritySelector(
+                    ctx => Unit.NearbyUnfriendlyUnits
+                        .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
+                                && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
+                        .OrderByDescending(u => u.Distance)
+                        .FirstOrDefault(),
+                    Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
+                    ),
+
+                Spell.BuffSelf(Common.BloodlustName,
+                    ret => ShamanSettings.UseBloodlust
+                        && !MovementManager.IsMovementDisabled
+                        && IsPvpFightWorthLusting),
+
+                Spell.BuffSelf("Ascendance",
+                    ret => ((Me.GotTarget && Me.CurrentTarget.HealthPercent > 70) || Unit.NearbyUnfriendlyUnits.Count() > 1)),
 
                 Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust),
 
@@ -340,11 +403,13 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
+                Spell.WaitForCastOrChannel(true),
+
                 // use predicted health for non-combat healing to reduce drinking downtime and help
                 // .. avoid unnecessary heal casts
                 new Decorator(
                     ret => !Me.Combat,
-                    Spell.Heal("Healing Surge", ret => Me, ret => Me.GetPredictedHealth(true) <= 85)
+                    Spell.Heal("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) <= 85)
                     ),
 
                 new Decorator(
@@ -407,7 +472,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new Decorator(
                 ret => ShamanSettings.UseGhostWolf
-                    && !SingularSettings.Instance.DisableAllMovement
+                    && !MovementManager.IsMovementDisabled
                     && SingularRoutine.CurrentWoWContext != WoWContext.Instances 
                     && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
                     && Me.IsAlive

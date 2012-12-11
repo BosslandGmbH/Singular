@@ -24,6 +24,12 @@ namespace Singular.Settings
         public bool UseArmyOfTheDead { get; set; }
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Path of Frost")]
+        public bool UsePathOfFrost { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Use Aoe In Instance [DPS]")]

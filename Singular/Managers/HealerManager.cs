@@ -108,7 +108,7 @@ namespace Singular.Managers
                 // Almost all healing is 40 yards, so we'll use that. If in Battlegrounds use a slightly larger value to expane our 
                 // healing range, but not too large that we are running all over the bg zone 
                 // note: reordered following tests so only one floating point distance comparison done due to evalution of DisableAllMovement
-                if ((SingularSettings.Instance.DisableAllMovement && p.DistanceSqr > 40*40) || p.DistanceSqr > SingularSettings.Instance.MaxHealTargetRange * SingularSettings.Instance.MaxHealTargetRange)
+                if ((MovementManager.IsMovementDisabled && p.DistanceSqr > 40*40) || p.DistanceSqr > SingularSettings.Instance.MaxHealTargetRange * SingularSettings.Instance.MaxHealTargetRange)
                 {
                     units.RemoveAt(i);
                     continue;

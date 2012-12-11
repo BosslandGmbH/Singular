@@ -124,6 +124,9 @@ namespace Singular
                 );
 
             Item.WriteCharacterGearAndSetupInfo();
+
+            if (Styx.CommonBot.Targeting.PullDistance < 25)
+                Logger.Write(Color.White, "your Pull Distance is {0:F0} yds which is low for any class!!!", Styx.CommonBot.Targeting.PullDistance);
         }
 
         private static string SpecializationName()
@@ -162,9 +165,10 @@ namespace Singular
             return bot.Name;
         }
 
-        public static bool IsBotInUse(string botNameContains)
+        public static bool IsBotInUse(params string[] nameSubstrings)
         {
-            return GetBotName().ToUpper().Contains(botNameContains.ToUpper());
+            string botName = GetBotName().ToUpper();
+            return nameSubstrings.Any( s => botName.Contains(s.ToUpper()));
         }
 
     }

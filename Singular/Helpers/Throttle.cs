@@ -206,6 +206,18 @@ namespace Singular.Helpers
         ///   returns RunStatus.Success within a given time span.  Returns Failure if limit reached, 
         ///   otherwise returns result of child
         /// </summary>
+        /// <param name = "timeFrame">time span for occurrences</param>
+        /// <param name = "child">composite children to tick (run)</param>
+        public Throttle(int Limit, TimeSpan timeFrame, Composite child)
+            : this(Limit, timeFrame, RunStatus.Failure, child)
+        {
+        }
+
+        /// <summary>
+        ///   Creates a 'throttle' composite. This composite limits the number of times the child 
+        ///   returns RunStatus.Success within a given time span.  Returns Failure if limit reached, 
+        ///   otherwise returns result of child
+        /// </summary>
         /// <param name = "Limit">max number of occurrences</param>
         /// <param name = "timeFrame">time span for occurrences in seconds</param>
         /// <param name = "child">composite children to tick (run)</param>

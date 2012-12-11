@@ -48,6 +48,21 @@ namespace Singular.Settings
         [Description("Controls if movement to evade an enemy during combat is allowed.")]
         public bool AllowKiting { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Widow Venom")]
+        [Description("True: keep debuff up on players; False: don't cast.")]
+        public bool UseWidowVenom { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Feign Death")]
+        [Description("True: use Feign Death if needed; False: don't cast.")]
+        public bool UseFeignDeath { get; set; }
+
+
         #endregion
     }
 }

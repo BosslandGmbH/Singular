@@ -14,82 +14,93 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Hunter
 {
     public class Marksman
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
+        private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter; } }
+
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull|BehaviorType.Combat,WoWClass.Hunter,WoWSpec.HunterMarksmanship,WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull|BehaviorType.Combat,WoWClass.Hunter,WoWSpec.HunterMarksmanship,WoWContext.Normal | WoWContext.Instances )]
         public static Composite CreateMarksmanHunterNormalPullAndCombat()
         {
             return new PrioritySelector(
-                Common.CreateHunterCallPetBehavior(true),
-
                 Safers.EnsureTarget(),
-
-                Common.CreateHunterAvoidanceBehavior( null, null ),
-
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+
+                Spell.WaitForCastOrChannel(),
+
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
-                    Movement.CreateEnsureMovementStoppedBehavior()),
 
-                Spell.WaitForCast(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                    ret => !Spell.IsGlobalCooldown(),
 
-                Helpers.Common.CreateAutoAttack(true),
+                    new PrioritySelector(
 
-                Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+                        CreateMarksmanDiagnosticOutputBehavior(),
 
-                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
-                Spell.Buff("Concussive Shot",
-                           ret =>
-                           StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                           StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
+                        Common.CreateMisdirectionBehavior(),
+                        Spell.Buff("Hunter's Mark", ret => Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget) && !TalentManager.HasGlyph("Marked for Death")),
 
-                // Defensive Stuff
+                        Common.CreateHunterAvoidanceBehavior(null, null),
 
-                Spell.Cast(
-                    "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
-                                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
-                                            StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
+                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
 
-                Spell.Cast("Mend Pet",
-                           ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                                  (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
-                                   (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
+                        new Decorator(
+                            ret => Me.GotTarget && Me.CurrentTarget.Distance < 35f,
+                            Movement.CreateEnsureMovementStoppedBehavior()
+                            ),
 
-                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
+                        Helpers.Common.CreateAutoAttack(true),
 
-                // Rotation
+                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
 
-                Spell.Cast("Glaive Toss"),
-                Spell.Cast("Powershot"),
-                Spell.Cast("Barrage"),
-                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
-                Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
-                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.Cast("Chimera Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent <= 90),
-                Spell.Cast("Dire Beast"),
-                Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
-                Spell.Cast("Stampede"),
-                Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
-                Spell.Cast("Steady Shot", ctx => StyxWoW.Me.HasAura("Steady Focus") && StyxWoW.Me.GetAuraTimeLeft("Steady Focus",true) < TimeSpan.FromSeconds(3)),
-                Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
-                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.HasAura("Master Marksman")),
-                Spell.Buff("A Murder of Crows"),
-                Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
-                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent > 90 || StyxWoW.Me.HasAura("Rapid Fire") || PartyBuff.WeHaveBloodlust),
-                Spell.Cast("Arcane Shot", ctx => (StyxWoW.Me.FocusPercent >= 66 || SpellManager.Spells["Chimera Shot"].CooldownTimeLeft >= TimeSpan.FromSeconds(5)) && (StyxWoW.Me.CurrentTarget.HealthPercent < 90 && !StyxWoW.Me.HasAura("Rapid Fire") && PartyBuff.WeHaveBloodlust)),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                        Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
-                Spell.Cast("Steady Shot"),
+                        Spell.Buff("Concussive Shot",
+                            ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
+                                && Me.CurrentTarget.Distance > Spell.MeleeRange),
 
+                        // Defensive Stuff
+                        Spell.Cast("Intimidation",
+                            ret => Me.GotTarget
+                                && Me.CurrentTarget.IsAlive
+                                && Me.GotAlivePet
+                                && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
+
+                        Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
+
+                        // AoE Rotation
+                        new Decorator(
+                            ret => Spell.UseAOE && !(Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
+                            new PrioritySelector(
+                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
+                                BuffSteadyFocus(),
+                                Spell.Cast("Aimed Shot", ret => Me.HasAura("Master Marksman", 3)),
+                                Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
+                                Common.CastSteadyShot(on => Me.CurrentTarget)
+                                )
+                            ),
+
+                        // Single Target Rotation
+                        Spell.Buff("Serpent Sting"),
+                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
+                        BuffSteadyFocus(),
+                        Spell.Cast("Chimera Shot"),
+                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Master Marksman", 3)),
+
+                        Spell.Cast("Arcane Shot",
+                            ret => Me.HasAura("Thrill of the Hunt")
+                                || (Me.CurrentFocus > 60 && (Me.IsMoving || Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && (u.IsPlayer || u.CurrentTargetGuid == Me.Guid))))),
+                        Spell.Cast("Aimed Shot", ret => Me.CurrentFocus > 60),
+                        Common.CastSteadyShot(on => Me.CurrentTarget)
+                        )
+                    ),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -102,72 +113,74 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateMarksmanHunterPvPPullAndCombat()
         {
             return new PrioritySelector(
-                Common.CreateHunterCallPetBehavior(false),
-
                 Safers.EnsureTarget(),
-                Common.CreateHunterAvoidanceBehavior(null, null),
-
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+
+                Spell.WaitForCastOrChannel(),
+
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
-                    Movement.CreateEnsureMovementStoppedBehavior()),
 
-                Spell.WaitForCast(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                    ret => !Spell.IsGlobalCooldown(),
 
-                Helpers.Common.CreateAutoAttack(true),
+                    new PrioritySelector(
 
-                Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+                        CreateMarksmanDiagnosticOutputBehavior(),
 
-                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
-                Spell.Buff("Concussive Shot",
-                           ret =>
-                           StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                           StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
+                        Common.CreateHunterAvoidanceBehavior(null, null),
 
-                // Defensive Stuff
+                        Common.CreateInterruptNearbyBehavior(),
+                        // Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
 
-                Spell.Cast(
-                    "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
-                                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
-                                            StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
+                        new Decorator(
+                            ret => Me.GotTarget && Me.CurrentTarget.Distance < 35f,
+                            Movement.CreateEnsureMovementStoppedBehavior()
+                            ),
 
-                Spell.Cast("Mend Pet",
-                           ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                                  (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
-                                   (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
+                        Helpers.Common.CreateAutoAttack(true),
 
-                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
-                Common.CreateHunterTrapBehavior("Snake Trap", false),
-                Common.CreateHunterTrapBehavior("Immolation Trap", false),
+                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
 
-                // Rotation
+                        Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
-                Spell.Cast("Glaive Toss"),
-                Spell.Cast("Powershot"),
-                Spell.Cast("Barrage"),
-                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
-                Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
-                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.Cast("Chimera Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent <= 90),
-                Spell.Cast("Dire Beast"),
-                Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
-                Spell.Cast("Stampede"),
-                Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
-                Spell.Cast("Steady Shot", ctx => StyxWoW.Me.HasAura("Steady Focus") && StyxWoW.Me.GetAuraTimeLeft("Steady Focus", true) < TimeSpan.FromSeconds(3)),
-                Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
-                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.HasAura("Master Marksman")),
-                Spell.Buff("A Murder of Crows"),
-                Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
-                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent > 90 || StyxWoW.Me.HasAura("Rapid Fire") || PartyBuff.WeHaveBloodlust),
-                Spell.Cast("Arcane Shot", ctx => (StyxWoW.Me.FocusPercent >= 66 || SpellManager.Spells["Chimera Shot"].CooldownTimeLeft >= TimeSpan.FromSeconds(5)) && (StyxWoW.Me.CurrentTarget.HealthPercent < 90 && !StyxWoW.Me.HasAura("Rapid Fire") && !PartyBuff.WeHaveBloodlust)),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
+                        Spell.Buff("Concussive Shot",
+                            ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
+                                && !Me.CurrentTarget.IsWithinMeleeRange ),
 
-                Spell.Cast("Steady Shot"),
+                        // Defensive Stuff
+                        Spell.Cast("Intimidation",
+                            ret => Me.GotTarget
+                                && Me.CurrentTarget.IsAlive
+                                && Me.GotAlivePet
+                                && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
 
+                        Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
+
+                        // AoE Rotation
+                        new Decorator(
+                            ret => Spell.UseAOE && !(Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
+                            new PrioritySelector(
+                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
+                                BuffSteadyFocus(),
+                                Spell.Cast("Aimed Shot", ret => Me.HasAura("Master Marksman", 3)),
+                                Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
+                                Common.CastSteadyShot(on => Me.CurrentTarget)
+                                )
+                            ),
+
+                        // Single Target Rotation
+                        Spell.Buff("Serpent Sting"),
+                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
+                        BuffSteadyFocus(),
+                        Spell.Cast("Chimera Shot"),
+                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Master Marksman", 3)),
+
+                        // don't use long casts in PVP
+                        // Spell.Cast("Aimed Shot", ret => Me.CurrentFocus > 60),
+                        Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 50),
+                        Common.CastSteadyShot(on => Me.CurrentTarget)
+                        )
+                    ),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
@@ -175,79 +188,6 @@ namespace Singular.ClassSpecific.Hunter
 
         #endregion
 
-        #region Instance Rotation
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Hunter, WoWSpec.HunterMarksmanship, WoWContext.Instances)]
-        public static Composite CreateMarksmanHunterInstancePullAndCombat()
-        {
-            return new PrioritySelector(
-                Common.CreateHunterCallPetBehavior(true),
-
-                Safers.EnsureTarget(),
-                Common.CreateHunterAvoidanceBehavior(null, null),
-
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 35f,
-                    Movement.CreateEnsureMovementStoppedBehavior()),
-
-                Spell.WaitForCast(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                Helpers.Common.CreateAutoAttack(true),
-
-                Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
-
-                Spell.Cast("Tranquilizing Shot", ctx => StyxWoW.Me.CurrentTarget.HasAura("Enraged")),
-                Spell.Buff("Concussive Shot",
-                           ret =>
-                           StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid &&
-                           StyxWoW.Me.CurrentTarget.Distance > Spell.MeleeRange),
-                Spell.Buff("Hunter's Mark", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Hunter's Mark")),
-
-                // Defensive Stuff
-
-                Spell.Cast(
-                    "Intimidation", ret => StyxWoW.Me.CurrentTarget.IsAlive && StyxWoW.Me.GotAlivePet &&
-                                           (StyxWoW.Me.CurrentTarget.CurrentTarget == null ||
-                                            StyxWoW.Me.CurrentTarget.CurrentTarget == StyxWoW.Me)),
-
-                Spell.Cast("Mend Pet",
-                           ret => StyxWoW.Me.GotAlivePet && !StyxWoW.Me.Pet.HasAura("Mend Pet") &&
-                                  (StyxWoW.Me.Pet.HealthPercent < SingularSettings.Instance.Hunter.MendPetPercent ||
-                                   (StyxWoW.Me.Pet.HappinessPercent < 90 && TalentManager.HasGlyph("Mend Pet")))),
-
-                Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
-
-                // Rotation
-
-                Spell.Cast("Glaive Toss"),
-                Spell.Cast("Powershot"),
-                Spell.Cast("Barrage"),
-                Spell.Cast("Blink Strike", ctx => StyxWoW.Me.GotAlivePet),
-                Spell.Buff("Lynx Rush", ctx => StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.Location.Distance(StyxWoW.Me.CurrentTarget.Location) < 10),
-                Spell.Buff("Serpent Sting", ctx => !StyxWoW.Me.CurrentTarget.HasAura("Serpent Sting")),
-                Spell.Cast("Multi-Shot", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) > 2),
-                Spell.Cast("Chimera Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent <= 90),
-                Spell.Cast("Dire Beast"),
-                Spell.Cast("Rapid Fire", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
-                Spell.Cast("Stampede"),
-                Spell.Cast("Readiness", ctx => StyxWoW.Me.HasAura("Rapid Fire")),
-                Spell.Cast("Steady Shot", ctx => StyxWoW.Me.HasAura("Steady Focus") && StyxWoW.Me.GetAuraTimeLeft("Steady Focus", true) < TimeSpan.FromSeconds(3)),
-                Spell.Cast("Kill Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent < 20),
-                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.HasAura("Master Marksman")),
-                Spell.Buff("A Murder of Crows"),
-                Spell.Cast("Arcane Shot", ctx => StyxWoW.Me.HasAura("Thrill of the Hunt")),
-                Spell.Cast("Aimed Shot", ctx => StyxWoW.Me.CurrentTarget.HealthPercent > 90 || StyxWoW.Me.HasAura("Rapid Fire") || PartyBuff.WeHaveBloodlust),
-                Spell.Cast("Arcane Shot", ctx => (StyxWoW.Me.FocusPercent >= 66 || SpellManager.Spells["Chimera Shot"].CooldownTimeLeft >= TimeSpan.FromSeconds(5)) && (StyxWoW.Me.CurrentTarget.HealthPercent < 90 && !StyxWoW.Me.HasAura("Rapid Fire") && !PartyBuff.WeHaveBloodlust)),
-                Spell.Cast("Fervor", ctx => StyxWoW.Me.FocusPercent <= 65 && StyxWoW.Me.HasAura("Frenzy") && StyxWoW.Me.Auras["Frenzy"].StackCount >= 5),
-
-                Spell.Cast("Steady Shot"),
-
-
-                Movement.CreateMoveToTargetBehavior(true, 35f)
-                );
-        }
 
         private static uint _castId;
         private static int _steadyCount;
@@ -277,6 +217,55 @@ namespace Singular.ClassSpecific.Hunter
             }
         }
 
-        #endregion
+        private static Composite BuffSteadyFocus()
+        {
+            if (!SpellManager.HasSpell( "Steady Focus"))
+                return new Action(ret => { return RunStatus.Failure; });
+
+            return new Throttle( 2, TimeSpan.FromMilliseconds( 2400),
+                Common.CastSteadyShot(on => Me.CurrentTarget, ret => Me.GetAuraTimeLeft("Steady Focus", false).TotalSeconds < 4)
+                );
+        }
+        
+        private static Composite CreateMarksmanDiagnosticOutputBehavior()
+        {
+            return new Decorator(
+                ret => SingularSettings.Debug,
+                new Throttle(1,
+                    new Action(ret =>
+                    {
+                        string sMsg;
+                        sMsg = string.Format(".... h={0:F1}%, focus={1:F1}, moving={2}, sfbuff={3}",
+                            Me.HealthPercent,
+                            Me.CurrentFocus,
+                            Me.IsMoving,
+                            Me.GetAuraTimeLeft(53224, false).TotalSeconds
+                            );
+
+                        if (!Me.GotAlivePet)
+                            sMsg += ", no pet";
+                        else
+                            sMsg += string.Format(", peth={0:F1}%", Me.Pet.HealthPercent);
+
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target != null)
+                        {
+                            sMsg += string.Format(
+                                ", {0}, {1:F1}%, {2:F1} yds, loss={3}",
+                                target.SafeName(),
+                                target.HealthPercent,
+                                target.Distance,
+                                target.InLineOfSpellSight
+                                );
+                        }
+
+                        Logger.WriteDebug(Color.LightYellow, sMsg);
+                        return RunStatus.Failure;
+                    })
+                    )
+                );
+        }
+
+
     }
 }

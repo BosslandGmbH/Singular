@@ -18,6 +18,7 @@ using Action = Styx.TreeSharp.Action;
 using Singular.Lists;
 using Styx.WoWInternals.WoWObjects;
 using Rest = Singular.Helpers.Rest;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Shaman
 {
@@ -32,7 +33,9 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Common.CreateShamanImbueMainHandBehavior( Imbue.Windfury, Imbue.Flametongue ),
+                Spell.WaitForCastOrChannel(true),
+
+                Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                 Common.CreateShamanImbueOffHandBehavior( Imbue.Flametongue ),
 
                 Common.CreateShamanDpsShieldBehavior(),
@@ -45,6 +48,8 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementPvpPreCombatBuffs()
         {
             return new PrioritySelector(
+
+                Spell.WaitForCastOrChannel(true),
 
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                 Common.CreateShamanImbueOffHandBehavior(Imbue.Frostbrand, Imbue.Flametongue),
@@ -60,6 +65,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return
                 new PrioritySelector(
+                    Spell.WaitForCastOrChannel(true),
                     new Decorator(
                         ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
                         Common.CreateShamanDpsHealBehavior()
@@ -75,7 +81,9 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Spell.Heal( "Healing Surge", on => Me, 
+                Spell.WaitForCastOrChannel(true),
+
+                Spell.Heal("Healing Surge", on => Me, 
                     ret => Me.GetPredictedHealthPercent(true) < 80 && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
 
                 Common.CreateShamanDpsHealBehavior()
@@ -91,23 +99,22 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Battlegrounds )]
         public static Composite CreateShamanEnhancementHealPvp()
         {
-            Composite healBT =
-                new PrioritySelector(
+            return new PrioritySelector(
 
-                    new Decorator( ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5),
-                        new PrioritySelector(
-                            Spell.Cast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.GetPredictedHealthPercent() < 75),
-                            Spell.Cast("Healing Surge", ret => (WoWPlayer)Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < 50 && p.Distance < 40).FirstOrDefault())
-                            )
-                        ),
+                Spell.WaitForCastOrChannel(true),
 
-                    new Decorator(
-                        ret => !StyxWoW.Me.Combat || (!Me.IsMoving && !Unit.NearbyUnfriendlyUnits.Any()),
-                        Common.CreateShamanDpsHealBehavior( )
+                new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5),
+                    new PrioritySelector(
+                        Spell.Cast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.GetPredictedHealthPercent() < 75),
+                        Spell.Cast("Healing Surge", ret => (WoWPlayer)Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < 50 && p.Distance < 40).FirstOrDefault())
                         )
-                    );
+                    ),
 
-            return healBT;
+                new Decorator(
+                    ret => !StyxWoW.Me.Combat || (!Me.IsMoving && !Unit.NearbyUnfriendlyUnits.Any()),
+                    Common.CreateShamanDpsHealBehavior( )
+                    )
+                );
         }
 
         #endregion
@@ -121,7 +128,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCastOrChannel(true),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -163,7 +170,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCastOrChannel(true),
                 Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
@@ -198,7 +205,8 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Lava Lash",
                             ret => StyxWoW.Me.Inventory.Equipped.OffHand != null &&
                                    StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon),
-                        Spell.BuffSelf("Fire Nova",
+                        Spell.Buff("Fire Nova",
+                            on => StyxWoW.Me.CurrentTarget,
                             ret => StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock") &&
                                    Unit.NearbyUnfriendlyUnits.Count(u => 
                                        u.IsTargetingMeOrPet &&
@@ -208,7 +216,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds < 3000 || StyxWoW.Me.GetPredictedHealthPercent(true) > 90),
                             new PrioritySelector(
-                                Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                                Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                                 Spell.Cast("Lightning Bolt")
                                 )
                             )
@@ -230,7 +238,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCastOrChannel(true),
                 new Decorator(
                     ret => !SpellManager.GlobalCooldown, 
                     new PrioritySelector(
@@ -262,7 +270,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds < 3000 || StyxWoW.Me.GetPredictedHealthPercent() > 90),
                             new PrioritySelector(
-                                Spell.Cast("Chain Lightning", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2),
+                                Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                                 Spell.Cast("Lightning Bolt")
                                 )
                             ),
@@ -287,7 +295,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCastOrChannel(true),
                 Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
@@ -307,7 +315,7 @@ namespace Singular.ClassSpecific.Shaman
                             || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Players && Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet))),
 
                         new Decorator(
-                            ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
                             new PrioritySelector(
                                 Spell.Cast("Unleash Elements"),
                                 Spell.Buff("Flame Shock", true),
@@ -346,12 +354,21 @@ namespace Singular.ClassSpecific.Shaman
 
         private static Composite CreateEnhanceDiagnosticOutputBehavior()
         {
-            return new Throttle(1,
+            return new ThrottlePasses(1,
                 new Decorator(
                     ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
-                        uint lstks = !Me.HasAura("Maelstrom Weapon") ? 0 : Me.ActiveAuras["Maelstrom Weapon"].StackCount;
+                        uint lstks = 0;
+                        WoWAura aura = Me.ActiveAuras.Where( a => a.Key == "Maelstrom Weapon").Select( d => d.Value ).FirstOrDefault();
+                        if (aura != null)
+                        {
+                            lstks = aura.StackCount;
+                            if (lstks == 0)
+                                Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  Maelstrom Weapon buff exists with 0 stacks !!!!");
+                            else if ( !Me.HasAura("Maelstrom Weapon", (int)lstks))
+                                Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  Me.HasAura('Maelstrom Weapon', {0}) was False!!!!", lstks );
+                        }
 
                         string line = string.Format(".... h={0:F1}%/m={1:F1}%, maelstrom={2}",
                             Me.HealthPercent,
@@ -371,7 +388,7 @@ namespace Singular.ClassSpecific.Shaman
                                 target.InLineOfSpellSight );
 
                         Logger.WriteDebug(line);
-                        return RunStatus.Success;
+                        return RunStatus.Failure;
                     }))
                 );
         }

@@ -41,7 +41,7 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(WarlockPet.Auto)]
-        [Category("General")]
+        [Category("Common")]
         [DisplayName("Pet")]
         [Description("The Pet to use. Auto will auto select.  Voidwalker used if choice not available.")]
         public WarlockPet Pet { get; set; }
@@ -59,7 +59,6 @@ namespace Singular.Settings
         [DisplayName("Use Soulstone")]
         [Description("Controls usage -- Auto: Instances=Ressurect, Normal/Battleground=Self, Disabled Movement=None")]
         public Soulstone UseSoulstone { get; set; }
-
 
 #region Setting Helpers
 

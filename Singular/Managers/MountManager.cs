@@ -19,7 +19,7 @@ namespace Singular.Managers
             if (e.Destination == WoWPoint.Zero)
                 return;
 
-            if (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling )
+            if (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.ChanneledSpell != null )
                 return;
 
             if (e.Destination.Distance(StyxWoW.Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance && (!Battlegrounds.IsInsideBattleground || DateTime.Now > Battlegrounds.BattlefieldStartTime))

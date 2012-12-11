@@ -332,7 +332,7 @@ namespace Singular.ClassSpecific.Monk
                                 Common.CreateMoveToSphereBehavior(SphereType.Life, MonkSettings.SphereDistanceInCombat)
                                 ),
 
-                            Common.CreateHealingSphereBehavior(),
+                            Common.CreateHealingSphereBehavior(65),
 
                             Spell.Heal( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
 

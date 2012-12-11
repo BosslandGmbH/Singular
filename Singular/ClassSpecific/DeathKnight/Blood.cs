@@ -210,14 +210,14 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // Start AoE section
                 new PrioritySelector(ctx => _nearbyUnfriendlyUnits =Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
-                    new Decorator(ret => _nearbyUnfriendlyUnits.Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    new Decorator(ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => true, false),
                             Spell.Cast("Gorefiend's Grasp", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.GorefiendsGrasp)),
                             Spell.Cast("Remorseless Winter", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.RemoreselessWinter)),
                 // spread the disease around.
                             Spell.BuffSelf("Unholy Blight",
-                                       ret =>
+                                       ret => Spell.UseAOE &&
                                        TalentManager.IsSelected((int)Common.DeathKnightTalents.UnholyBlight) &&
                                        StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10 &&
                                        !StyxWoW.Me.HasAura("Unholy Blight")),
@@ -241,7 +241,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             new Sequence(
                                 Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
                                 new Action(ret => DeathStrikeTimer.Reset())),
-                            Spell.Cast("Blood Boil", ret => _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                            Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
                             Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
                             Spell.Cast("Rune Strike"),
                             Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
@@ -296,7 +296,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // Start AoE section
                 new PrioritySelector(ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
-                    new Decorator(ret => Unit.UnfriendlyUnitsNearTarget(15f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    new Decorator(ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(15f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => true, false),
                             Spell.Cast("Gorefiend's Grasp", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.GorefiendsGrasp)),
@@ -415,7 +415,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // Start AoE section
                 new PrioritySelector(ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
-                    new Decorator(ret => _nearbyUnfriendlyUnits.Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    new Decorator(ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => true, false),
                             Spell.Cast("Gorefiend's Grasp", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.GorefiendsGrasp)),

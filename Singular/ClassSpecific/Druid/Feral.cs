@@ -161,7 +161,7 @@ namespace Singular.ClassSpecific.Druid
                     return RunStatus.Failure;
                     }),
 
-                new Decorator(ret => _aoeColl.Count() >= 3 && !_aoeColl.Any( m => m.IsCrowdControlled()),
+                new Decorator(ret => Spell.UseAOE && _aoeColl.Count() >= 3 && !_aoeColl.Any(m => m.IsCrowdControlled()),
 
                     new PrioritySelector(
 

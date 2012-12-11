@@ -13,6 +13,7 @@ using Singular.Utilities;
 using Styx.CommonBot.POI;
 using CommonBehaviors.Actions;
 using System.Diagnostics;
+using Singular.Managers;
 
 namespace Singular.Helpers
 {
@@ -30,7 +31,35 @@ namespace Singular.Helpers
             return CreateMoveToLosBehavior(ret => StyxWoW.Me.CurrentTarget);
         }
 
-       
+        public static Composite CreateMoveToLosBehavior(UnitSelectionDelegate toUnit)
+        {
+            return new Decorator(
+                ret => !MovementManager.IsMovementDisabled
+                    && toUnit != null
+                    && toUnit(ret) != null
+                    && toUnit(ret) != StyxWoW.Me
+                    && !InLineOfSpellSight(toUnit(ret)),
+                new Action(ret => Navigator.MoveTo(toUnit(ret).Location))
+                );
+        }
+
+       /// <summary>
+        /// true if Target in line of spell sight AND a spell hasn't just failed due
+        /// to a line of sight error.  This test is required for the unit we are moving
+        /// towards because WoWUnit.InLineOfSpellSight will return true while the
+        /// WOW Game Client fails the spell cast.  See EventHandler.cs for setting
+        /// LastLineOfSightError
+        /// 
+        /// Only use this for unit we are moving towards.  Not to be used when checking
+        /// ability to cast spells on various mobs
+        /// </summary>
+        /// <param name="unit">target we are moving towards</param>
+        /// <returns></returns>
+        public static bool InLineOfSpellSight(WoWUnit unit)
+        {
+            return unit.InLineOfSpellSight 
+                && ( unit.IsWithinMeleeRange || (DateTime.Now - EventHandlers.LastLineOfSightError).TotalMilliseconds > 1000);
+        }
 
         /// <summary>
         ///   Creates the ensure movement stopped behavior. Will return RunStatus.Success if it has stopped any movement, RunStatus.Failure otherwise.
@@ -42,7 +71,7 @@ namespace Singular.Helpers
         public static Composite CreateEnsureMovementStoppedBehavior()
         {
             return new Decorator(
-                ret => !SingularSettings.Instance.DisableAllMovement && StyxWoW.Me.IsMoving,
+                ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.IsMoving,
                 new Action(ret => Navigator.PlayerMover.MoveStop()));
         }
 
@@ -62,7 +91,7 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 ret =>
-                !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null && 
+                !MovementManager.IsMovementDisabled && toUnit != null && toUnit(ret) != null && 
                 !StyxWoW.Me.IsMoving && !toUnit(ret).IsMe && 
                 !StyxWoW.Me.IsSafelyFacing(toUnit(ret), viewDegrees ),
                 new Action(ret =>
@@ -100,7 +129,7 @@ namespace Singular.Helpers
         {
             return 
                 new Decorator(
-                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret) != StyxWoW.Me && !StyxWoW.Me.IsCasting,
+                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret) != StyxWoW.Me && !Spell.IsCastingOrChannelling(),
                     CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, ret => range));
         }
 
@@ -130,12 +159,10 @@ namespace Singular.Helpers
         public static Composite CreateMoveToMeleeBehavior(bool stopInRange)
         {
             return new Decorator(
-                ret => !SingularSettings.Instance.DisableAllMovement,
+                ret => !MovementManager.IsMovementDisabled,
                 new PrioritySelector(
                     new Decorator(
-                        ret => stopInRange 
-                            && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange 
-                            && (!StyxWoW.Me.IsPlayer || StyxWoW.Me.CurrentTarget.Distance < 2),
+                        ret => stopInRange && InMoveToMeleeStopRange,
                         new PrioritySelector(
                             CreateEnsureMovementStoppedBehavior(),
                             new Action(ret => RunStatus.Success)
@@ -145,13 +172,27 @@ namespace Singular.Helpers
                     )
                 );
         }
+
+        private static bool InMoveToMeleeStopRange
+        {
+            get
+            {
+                if (!StyxWoW.Me.GotTarget)
+                    return true;
+
+                if (StyxWoW.Me.CurrentTarget.IsPlayer)
+                    return StyxWoW.Me.CurrentTarget.DistanceSqr < (2 * 2);
+
+                return StyxWoW.Me.CurrentTarget.IsWithinMeleeRange;
+            }
+        }
 #endif
 
         public static Composite CreateMoveToMeleeBehavior(LocationRetriever location, bool stopInRange)
         {
             return 
                 new Decorator(
-                    ret => !StyxWoW.Me.IsCasting,
+                    ret => !Spell.IsCastingOrChannelling(),
                     CreateMoveToLocationBehavior(location, stopInRange, ret => StyxWoW.Me.CurrentTarget.IsPlayer ? 2f : Spell.MeleeRange));
         }
 
@@ -181,9 +222,9 @@ namespace Singular.Helpers
         {
             return 
                 new Decorator(
-                    ret => !SingularSettings.Instance.DisableAllMovement &&
-                            SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && 
-                            requirements(ret) && !StyxWoW.Me.IsCasting &&
+                    ret => !MovementManager.IsMovementDisabled &&
+                            SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds &&
+                            requirements(ret) && !Spell.IsCastingOrChannelling() &&
                             !Group.MeIsTank && !StyxWoW.Me.CurrentTarget.MeIsBehind &&
                             StyxWoW.Me.CurrentTarget.IsAlive &&
                             (StyxWoW.Me.CurrentTarget.CurrentTarget == null || 
@@ -222,7 +263,7 @@ namespace Singular.Helpers
             return
                 new Decorator( 
                     // Don't run if the movement is disabled.
-                    ret => !SingularSettings.Instance.DisableAllMovement,
+                    ret => !MovementManager.IsMovementDisabled,
                     new PrioritySelector(
                         new Decorator(
                             // Give it a little more than 1/2 a yard buffer to get it right. CTM is never 'exact' on where we land. So don't expect it to be.
@@ -238,31 +279,6 @@ namespace Singular.Helpers
         }
 
         #endregion
-
-        public static Composite CreateMoveToLosBehavior(UnitSelectionDelegate toUnit)
-        {
-            return new Decorator(
-                ret => !SingularSettings.Instance.DisableAllMovement 
-                    && toUnit != null 
-                    && toUnit(ret) != null 
-                    && toUnit(ret) != StyxWoW.Me 
-                    && (!toUnit(ret).InLineOfSpellSight || (FalsePositiveLineOfSightTest && !toUnit(ret).IsWithinMeleeRange)),
-                new Action(ret => Navigator.MoveTo(toUnit(ret).Location)));
-        }
-
-        /// <summary>
-        /// true if a Target not in line of sight spell failure occurred
-        /// recently.  This is a necessary test because in some circumstances
-        /// .InLineOfSight and .InLineOfSpellSight will return true while
-        /// the WOW Game Client fails the spell cast.  See EventHandler.cs
-        /// </summary>
-        public static bool FalsePositiveLineOfSightTest
-        {
-            get
-            {
-                return (DateTime.Now - EventHandlers.LastLineOfSightError).TotalMilliseconds < 1500;
-            }
-        }
 
         private static WoWPoint lastMoveToRangeSpot = WoWPoint.Empty;
         private static bool inRange = false;
@@ -283,12 +299,12 @@ namespace Singular.Helpers
             return
                 new Decorator(
 
-                    ret => !SingularSettings.Instance.DisableAllMovement && toUnit != null && toUnit(ret) != null,
+                    ret => !MovementManager.IsMovementDisabled && toUnit != null && toUnit(ret) != null,
 
                     new PrioritySelector(
                         // save check for whether we are in range to avoid duplicate calls
                         new Action( ret => {
-                            inRange = toUnit(ret).Distance < range(ret)  && toUnit(ret).InLineOfSpellSight && !FalsePositiveLineOfSightTest;
+                            inRange = toUnit(ret).Distance < range(ret)  && InLineOfSpellSight(toUnit(ret));
                             return RunStatus.Failure;
                             }),
 
@@ -332,7 +348,7 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 ret => SingularSettings.Instance.UseRacials 
-                    && !SingularSettings.Instance.DisableAllMovement 
+                    && !MovementManager.IsMovementDisabled 
                     && StyxWoW.Me.IsAlive 
                     && StyxWoW.Me.IsMoving
                     && !StyxWoW.Me.Mounted

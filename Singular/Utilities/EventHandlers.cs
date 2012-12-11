@@ -37,7 +37,7 @@ namespace Singular.Utilities
             if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
                 return; 
             
-            if (e.CurrentContext == WoWContext.Battlegrounds || StyxWoW.Me.CurrentMap.IsRaid)
+            if (!SingularSettings.Debug && (e.CurrentContext == WoWContext.Battlegrounds || StyxWoW.Me.CurrentMap.IsRaid))
                 DetachCombatLogEvent();
             else
                 AttachCombatLogEvent();
@@ -70,18 +70,18 @@ namespace Singular.Utilities
             Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
 
             string filterCriteria =
-                "return args[2] == 'SPELL_CAST_SUCCESS'"
-                + " or args[2] == 'SPELL_AURA_APPLIED'"
-                + " or args[2] == 'SPELL_MISSED'"
+                "return args[4] == UnitGUID('player')"
+                + " and (args[2] == 'SPELL_MISSED'"
                 + " or args[2] == 'RANGE_MISSED'"
                 + " or args[2] == 'SWING_MISSED'"
-                + " or args[2] == 'SPELL_CAST_FAILED'";
+                + " or args[2] == 'SPELL_CAST_FAILED')";
 
             if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", filterCriteria ))
             {
                 Logger.Write( "ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
             }
 
+            // get localized copies of spell failure error messages
             LocalizedLineOfSightError = Lua.GetReturnVal<string>("return SPELL_FAILED_LINE_OF_SIGHT", 0);
             LocalizedUnitNotInfrontError = Lua.GetReturnVal<string>("return SPELL_FAILED_UNIT_NOT_INFRONT", 0);
                      
@@ -94,6 +94,8 @@ namespace Singular.Utilities
             if (!_combatLogAttached)
                 return;
 
+            Logger.WriteDebug("Removed combat log filter");
+            Lua.Events.RemoveFilter("COMBAT_LOG_EVENT_UNFILTERED");
             Logger.WriteDebug("Detached combat log");
             Lua.Events.DetachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
             _combatLogAttached = false;
@@ -102,7 +104,6 @@ namespace Singular.Utilities
         private static void HandleCombatLog(object sender, LuaEventArgs args)
         {
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
-
             if (e.SourceGuid != StyxWoW.Me.Guid)
                 return;
 
@@ -116,9 +117,10 @@ namespace Singular.Utilities
 
                 // spell_cast_failed only passes filter in Singular debug mode
                 case "SPELL_CAST_FAILED":
-                    Logger.WriteDebug("[CombatLog] {0} cast of {1}#{2} failed: '{3}'",
-                        e.SourceUnit == null ? "null-unit." + Extensions.UnitID(e.SourceGuid) : e.SourceUnit.SafeName(),
-                        e.SpellName,
+                    Logger.WriteDebug(
+                        "[CombatLog] {0} {1}#{2} failure: '{3}'",
+                        e.Event,
+                        e.Spell.Name,
                         e.SpellId,
                         e.Args[14]
                         );
@@ -130,6 +132,7 @@ namespace Singular.Utilities
                     }
                     break;
 
+#if SOMEONE_USES_LAST_SPELL_AT_SOME_POINT
                 case "SPELL_AURA_APPLIED":
                 case "SPELL_CAST_SUCCESS":
                     if (e.SourceGuid != StyxWoW.Me.Guid)
@@ -149,19 +152,12 @@ namespace Singular.Utilities
                     //    StyxWoW.SleepForLagDuration();
                     //}
                     break;
+#endif
 
                 case "SWING_MISSED":
                     if (e.Args[11].ToString() == "EVADE")
                     {
-                        Logger.Write("Mob is evading swing. Blacklisting it!");
-                        Blacklist.Add(e.DestGuid, TimeSpan.FromMinutes(30));
-                        if (StyxWoW.Me.CurrentTargetGuid == e.DestGuid)
-                        {
-                            StyxWoW.Me.ClearTarget();
-                        }
-
-                        BotPoi.Clear("Blacklisting evading mob");
-                        StyxWoW.SleepForLagDuration();
+                        HandleEvadeBuggedMob(args, e);
                     }
                     else if (e.Args[11].ToString() == "IMMUNE")
                     {
@@ -176,15 +172,16 @@ namespace Singular.Utilities
 
                 case "SPELL_MISSED":
                 case "RANGE_MISSED":
-                    // DoT casting spam can occur when running on test dummy with low +hit
-                    //  ..  and multiple misses occurring. this should help troubleshoot
-                    //  ..  false reports of flawed rotation
+                    // Why log misses?  Because users of classes with DoTs testing on training dummies
+                    // .. that they don't have enough +Hit for will get DoT spam.  This allows easy
+                    // .. diagnosis of false reports of rotation issues where a user simply isn't geared
+                    // .. this happens more at the beginning of an expansion especially
                     if (SingularSettings.Debug)
                     {
                         Logger.WriteDebug(
                             "[CombatLog] {0} {1}#{2} {3}",
                             e.Event,
-                            e.SpellName,
+                            e.Spell.Name,
                             e.SpellId,
                             e.Args[14]
                             );
@@ -192,15 +189,7 @@ namespace Singular.Utilities
 
                     if (e.Args[14].ToString() == "EVADE")
                     {
-                        Logger.Write("Mob is evading ranged attack. Blacklisting it!");
-                        Blacklist.Add(e.DestGuid, TimeSpan.FromMinutes(30));
-                        if (StyxWoW.Me.CurrentTargetGuid == e.DestGuid)
-                        {
-                            StyxWoW.Me.ClearTarget();
-                        }
-
-                        BotPoi.Clear("Blacklisting evading mob");
-                        StyxWoW.SleepForLagDuration();
+                        HandleEvadeBuggedMob(args, e);
                     }
                     else if (e.Args[14].ToString() == "IMMUNE")
                     {
@@ -213,6 +202,37 @@ namespace Singular.Utilities
                     }
                     break;
             }
+        }
+
+        private static void HandleEvadeBuggedMob(LuaEventArgs args, CombatLogEventArgs e)
+        {
+            WoWUnit unit = e.DestUnit;
+            ulong guid = e.DestGuid;
+
+            if (unit == null && StyxWoW.Me.CurrentTarget != null)
+            {
+                unit = StyxWoW.Me.CurrentTarget;
+                guid = StyxWoW.Me.CurrentTargetGuid;
+                Logger.WriteDebug("Evade: bugged mob guid:{0}, so assuming current target instead", args.Args[7]);
+            }
+
+            if (unit != null)
+            {
+                Logger.Write("Mob {0}is evading, [{1}]. Blacklisting it!", unit.SafeName(), e.Event);
+                Blacklist.Add(unit, TimeSpan.FromMinutes(30));
+
+                if (StyxWoW.Me.CurrentTargetGuid == guid)
+                {
+                    Logger.WriteDebug("Evade: clear target");
+                    StyxWoW.Me.ClearTarget();
+                }
+
+                if (BotPoi.Current.Guid == unit.Guid)
+                    BotPoi.Clear("Blacklisting evading mob");
+            }
+
+            /// line below was originally in Evade logic, but commenting to avoid Sleeps
+            // StyxWoW.SleepForLagDuration();
         }
     }
 }

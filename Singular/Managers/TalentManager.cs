@@ -51,7 +51,7 @@ namespace Singular.Managers
 
             if (CurrentSpec != oldSpec)
             {
-                Logger.Write( Color.LightGreen, "Your spec has been changed. Rebuilding behaviors");
+                Logger.Write( Color.White, "Your spec has been changed. Rebuilding behaviors");
                 SingularRoutine.Instance.RebuildBehaviors();
             }
         }

@@ -13,6 +13,7 @@ using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Singular.Settings;
+using Singular.Managers;
 
 namespace Singular.ClassSpecific.Monk
 {
@@ -46,18 +47,41 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
-        [Behavior(BehaviorType.Rest, WoWClass.Monk )]
+        [Behavior(BehaviorType.Rest, WoWClass.Monk, WoWSpec.MonkBrewmaster)]
+        [Behavior(BehaviorType.Rest, WoWClass.Monk, WoWSpec.MonkWindwalker)]
         public static Composite CreateMonkRest()
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => Me.HealthPercent < 95 && AnySpheres(SphereType.Life, MonkSettings.SphereDistanceAtRest ),
-                    CreateMoveToSphereBehavior( SphereType.Life, MonkSettings.SphereDistanceAtRest )
+                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                    new PrioritySelector(
+                        // pickup free heals from Life Spheres
+                        new Decorator(
+                            ret => Me.HealthPercent < 95 && AnySpheres(SphereType.Life, MonkSettings.SphereDistanceAtRest ),
+                            CreateMoveToSphereBehavior( SphereType.Life, MonkSettings.SphereDistanceAtRest )
+                            ),
+                        // pickup free chi from Chi Spheres
+                        new Decorator(
+                            ret => Me.CurrentChi < Me.MaxChi && AnySpheres(SphereType.Chi, MonkSettings.SphereDistanceAtRest),
+                            CreateMoveToSphereBehavior(SphereType.Chi, MonkSettings.SphereDistanceAtRest)
+                            ),
+
+                        // heal ourselves... confirm we have spell and enough energy already or waiting for energy regen will
+                        // .. still be faster than eating
+                        new Decorator(
+                            ret => Me.HealthPercent >= MonkSettings.RestHealingSphereHealth
+                                && SpellManager.HasSpell("Healing Sphere") 
+                                && (Me.CurrentEnergy > 40 || Spell.EnergyRegenInactive() >= 10),
+                            new Sequence(
+                                // in Rest only, wait up to 4 seconds for Energy Regen and Spell Cooldownb 
+                                new Wait(4, ret => Me.Combat || (Me.CurrentEnergy >= 40 && Spell.GetSpellCooldown("Healing Sphere") == TimeSpan.Zero), new ActionAlwaysSucceed()),
+                                Common.CreateHealingSphereBehavior(Math.Max(80, SingularSettings.Instance.MinHealth)),
+                                Helpers.Common.CreateWaitForLagDuration(ret => Me.Combat)
+                                )
+                            )
+                        )
                     ),
-                new Decorator(
-                    ret => Me.CurrentChi < Me.MaxChi && AnySpheres(SphereType.Chi, MonkSettings.SphereDistanceAtRest),
-                    CreateMoveToSphereBehavior(SphereType.Chi, MonkSettings.SphereDistanceAtRest)
-                    ),
+
                 // Rest up damnit! Do this first, so we make sure we're fully rested.
                 Rest.CreateDefaultRestBehaviour(),
                 // Can we res people?
@@ -173,21 +197,18 @@ namespace Singular.ClassSpecific.Monk
             return new PrioritySelector(
                 new Decorator(ret => requirements != null && onUnit != null && requirements(ret) && onUnit(ret) != null && name != null && CanCastLikeMonk(name, onUnit(ret)),
                     new PrioritySelector(
-
-                        // set context to whether currently busy with GCD or Cast
-                        ctx => (bool)(SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null),
-
                         new Sequence(
                             // cast the spell
                             new Action(ret =>
                             {
+                                wasMonkSpellQueued = (SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null);
                                 Logger.Write(Color.Aquamarine, string.Format("*{0} on {1} at {2:F1} yds at {3:F1}%", name, onUnit(ret).SafeName(), onUnit(ret).Distance, onUnit(ret).HealthPercent));
                                 SpellManager.Cast(name, onUnit(ret));
                             }),
                             // if spell was in progress before cast (we queued this one) then wait in progress one to finish
                             new WaitContinue( 
                                 new TimeSpan(0, 0, 0, 0, (int) StyxWoW.WoWClient.Latency << 1),
-                                ret => !((bool)ret) || !(SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null),
+                                ret => !wasMonkSpellQueued || !(SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null),
                                 new ActionAlwaysSucceed()
                                 ),
                             // wait for this cast to appear on the GCD or Spell Casting indicators
@@ -202,6 +223,7 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
+        private static bool wasMonkSpellQueued = false;
 
         public static WoWObject FindClosestSphere(SphereType typ, float range)
         {
@@ -231,7 +253,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMoveToSphereBehavior(SphereType typ, float range)
         {
             return new Decorator( 
-                ret => MonkSettings.MoveToSpheres && !SingularSettings.Instance.DisableAllMovement,
+                ret => MonkSettings.MoveToSpheres && !MovementManager.IsMovementDisabled,
 
                 new PrioritySelector(
 
@@ -300,20 +322,25 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
-        public static Sequence CreateHealingSphereBehavior()
+        public static Sequence CreateHealingSphereBehavior( int sphereBelowHealth)
         {
             // healing sphere keeps spell on cursor for up to 3 casts... need to stop targeting after 1
             return new Sequence(
                 Spell.CastOnGround("Healing Sphere",
                     ctx => Me.Location,
-                    ret => Me.HealthPercent < 65 && Me.EnergyPercent > 40 && !Common.AnySpheres(SphereType.Healing, 1f),
+                    ret => Me.HealthPercent < sphereBelowHealth 
+                        && (Me.PowerType != WoWPowerType.Mana)
+                        && !Common.AnySpheres(SphereType.Healing, 1f),
                     false),
-                new DecoratorContinue(
-                    ret => Me.CurrentPendingCursorSpell != null,
-                    new Action(ret => Lua.DoString("SpellStopTargeting()"))
+                new WaitContinue( TimeSpan.FromMilliseconds(500), ret => Me.CurrentPendingCursorSpell != null, new ActionAlwaysSucceed()),
+                new Action(ret => Lua.DoString("SpellStopTargeting()")),
+                new WaitContinue( 
+                    TimeSpan.FromMilliseconds(750), 
+                    ret => Me.Combat || (Spell.GetSpellCooldown("Healing Sphere") == TimeSpan.Zero && !Common.AnySpheres(SphereType.Healing, 1f)), 
+                    new ActionAlwaysSucceed()
                     )
                 );
-}
+        }
 
         /// <summary>
         /// cast grapple weapon, dealing with issues of mobs immune to that spell

@@ -11,7 +11,7 @@ namespace Singular.Settings
         public MonkSettings()
             : base(Path.Combine(SingularSettings.SettingsPath, "Monk.xml")) { }
 
-        #region Common
+        #region Spheres
 
         [Setting]
         [Styx.Helpers.DefaultValue(true)]
@@ -34,6 +34,16 @@ namespace Singular.Settings
         [Description("Max distance willing to move during combat")]
         public int SphereDistanceInCombat { get; set; }
 
+        [Setting]
+        [Styx.Helpers.DefaultValue(45)]
+        [Category("Spheres")]
+        [DisplayName("Rest Healing Sphere Health")]
+        [Description("Min Resting Health % to cast Healing Sphere")]
+        public int RestHealingSphereHealth { get; set; }
+
+        #endregion
+
+        #region Common
 
         [Setting]
         [Styx.Helpers.DefaultValue(60)]

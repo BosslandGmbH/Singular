@@ -158,7 +158,7 @@ namespace Singular.ClassSpecific.Mage
                                         Any(p => p != null && p.HasMyAura("Focus Magic"))),
                 // AoE comes first
                 new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                    ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                     new PrioritySelector(
                         Spell.CastOnGround("Flamestrike",
                             ret => Clusters.GetBestUnitForCluster(StyxWoW.Me.Combat ? Unit.NearbyUnitsInCombatWithMe : Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,

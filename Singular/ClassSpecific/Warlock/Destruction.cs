@@ -104,28 +104,31 @@ namespace Singular.ClassSpecific.Warlock
 
         public static Composite CreateAoeBehavior()
         {
-            return new PrioritySelector(
+            return new Decorator( 
+                ret => Spell.UseAOE,
+                new PrioritySelector(
 
-                new Decorator(
-                    ret => _mobCount >= 3,
-                    new PrioritySelector(
+                    new Decorator(
+                        ret => _mobCount >= 3,
                         new PrioritySelector(
-                            ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where(u => Me.IsSafelyFacing(u)), ClusterType.Radius, 8f),
-                            Spell.CastOnGround( "Rain of Fire", 
-                                loc => ((WoWUnit)loc).Location, 
-                                req => req != null 
-                                    && !Me.HasAura( "Rain of Fire")
-                                    && 3 <= Unit.NearbyUnfriendlyUnits.Count(u => ((WoWUnit)req).Location.Distance(u.Location) <= 8))
-                            ),
-                        new PrioritySelector(
-                            ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where(u => Me.IsSafelyFacing(u)), ClusterType.Radius, 15f),
-                            new Sequence(
-                                Spell.BuffSelf( "Fire and Brimstone", req => req != null && 3 <= Unit.NearbyUnfriendlyUnits.Count(u => ((WoWUnit)req).Location.Distance(u.Location) <= 15f)),
-                                new PrioritySelector(
-                                    Spell.BuffSelf("Havoc"),
-                                    Spell.Cast("Conflagarate", onUnit => (WoWUnit) onUnit),
-                                    Spell.Buff("Immolate", onUnit => (WoWUnit)onUnit),
-                                    Spell.Cast("Incinerate", onUnit => (WoWUnit) onUnit)
+                            new PrioritySelector(
+                                ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where(u => Me.IsSafelyFacing(u)), ClusterType.Radius, 8f),
+                                Spell.CastOnGround( "Rain of Fire", 
+                                    loc => ((WoWUnit)loc).Location, 
+                                    req => req != null 
+                                        && !Me.HasAura( "Rain of Fire")
+                                        && 3 <= Unit.NearbyUnfriendlyUnits.Count(u => ((WoWUnit)req).Location.Distance(u.Location) <= 8))
+                                ),
+                            new PrioritySelector(
+                                ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where(u => Me.IsSafelyFacing(u)), ClusterType.Radius, 15f),
+                                new Sequence(
+                                    Spell.BuffSelf( "Fire and Brimstone", req => req != null && 3 <= Unit.NearbyUnfriendlyUnits.Count(u => ((WoWUnit)req).Location.Distance(u.Location) <= 15f)),
+                                    new PrioritySelector(
+                                        Spell.BuffSelf("Havoc"),
+                                        Spell.Cast("Conflagarate", onUnit => (WoWUnit) onUnit),
+                                        Spell.Buff("Immolate", onUnit => (WoWUnit)onUnit),
+                                        Spell.Cast("Incinerate", onUnit => (WoWUnit) onUnit)
+                                        )
                                     )
                                 )
                             )

@@ -1,4 +1,9 @@
-﻿
+﻿// NOTE!!!
+// ***********************
+// following file should remain commented out until Singular version is no
+// ... longer tracked separately from HonorBuddy (when we stop distributing as .zip)
+
+/*
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -34,7 +39,8 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("3.0.0.1248")]
-[assembly: AssemblyFileVersion("3.0.0.1248")]
+
+[assembly: AssemblyVersion("3.0.*.*")]
+[assembly: AssemblyFileVersion("3.0.*.*")]
+*/

@@ -180,7 +180,7 @@ namespace Singular.ClassSpecific.Mage
                                     u.Distance < Spell.MeleeRange).
                            OrderBy(u => u.DistanceSqr).FirstOrDefault(),
                 new Decorator(
-                    ret => ret != null && !SingularSettings.Instance.DisableAllMovement,
+                    ret => ret != null && !MovementManager.IsMovementDisabled,
                     new PrioritySelector(
                         Spell.BuffSelf("Blink", ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() ),
                         new Action(

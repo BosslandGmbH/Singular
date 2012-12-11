@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific.Warrior
                 // AOE 
                 // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)
                 new Decorator(  // Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
-                    ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance <= (u.MeleeDistance() + 3) ) >= 3,
+                    ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count( u => u.Distance <= (u.MeleeDistance() + 3) ) >= 3,
                         
                     new PrioritySelector(
                         Spell.Cast("Dragon Roar"),

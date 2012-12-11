@@ -75,10 +75,18 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
                         Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < 50 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
                         Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
-                        Spell.Cast("Hibernate", 
+
+                        // will hibernate only if can cast in form, or already left form for some other reason
+                        Spell.Buff("Hibernate", 
                             ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
-                                u => !u.IsMoving && u.Distance > 10 && Me.CurrentTarget != u
-                                    && (u.IsBeast || u.IsDragon)))
+                                u => (u.IsBeast || u.IsDragon)
+                                    && !u.IsMoving 
+                                    && (Me.HasAura("Predatory Swiftness") || Me.Shapeshift == ShapeshiftForm.Normal)
+                                    && (!Me.GotTarget || Me.CurrentTarget.Location.Distance(u.Location) > 10 )
+                                    && Me.CurrentTargetGuid != u.Guid
+                                    && !u.HasMyAura("Hibernate") 
+                                    )
+                                )
                         )
                     )
                 );

@@ -37,6 +37,8 @@ namespace Singular.ClassSpecific.Shaman
 
                 ctx => Unit.GroupMembers.Any(m=>m.IsAlive && !m.IsMe && m.Distance < 50),
 
+                Spell.WaitForCastOrChannel(true),
+
                 // limit to one cast every 10 seconds to avoid needlessly spamming 
                 // .. heal vs dmg back and forth due to group member moving in/out of range
 
@@ -65,8 +67,13 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateRestoShamanRest()
         {
             return new PrioritySelector(
+                Spell.WaitForCastOrChannel(true),
+
                 CreateRestoShamanHealingBuffs(),
-                CreateRestoShamanHealingOnlyBehavior(true, false),
+                new Decorator(
+                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                    CreateRestoShamanHealingOnlyBehavior(true, false)
+                    ),
                 Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
                 Spell.Resurrect("Ancestral Spirit"),
                 CreateRestoShamanHealingOnlyBehavior(false, true)
@@ -78,7 +85,8 @@ namespace Singular.ClassSpecific.Shaman
         {
             return
                 new PrioritySelector(
-                    CreateRestoShamanHealingOnlyBehavior( false, true),
+                    Spell.WaitForCastOrChannel(true),
+                    CreateRestoShamanHealingOnlyBehavior(false, true),
                     new Decorator(
                         ret => !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid),
                         Elemental.CreateShamanElementalNormalPull()
@@ -91,6 +99,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return
                 new PrioritySelector(
+                    Spell.WaitForCastOrChannel(true),
                     CreateRestoShamanHealingOnlyBehavior());
         }
 
@@ -99,6 +108,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return
                 new PrioritySelector(
+                    Spell.WaitForCastOrChannel(true),
                     CreateRestoShamanHealingOnlyBehavior(),
                     new Decorator(
                         ret => !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid),
@@ -114,8 +124,12 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateRestoShamanRestInstances()
         {
             return new PrioritySelector(
+                Spell.WaitForCastOrChannel(true),
                 CreateRestoShamanHealingBuffs(),
-                CreateRestoShamanHealingOnlyBehavior(true, false),
+                new Decorator(
+                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                    CreateRestoShamanHealingOnlyBehavior(true, false)
+                    ),
                 Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
                 Spell.Resurrect("Ancestral Spirit"),
                 CreateRestoShamanHealingOnlyBehavior(false, true)
@@ -125,15 +139,17 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Instances)]
         public static Composite CreateRestoShamanHealBehaviorInstance()
         {
-            return
-                new PrioritySelector(
-                    CreateRestoShamanHealingOnlyBehavior());
+            return new PrioritySelector(
+                Spell.WaitForCastOrChannel(true),
+                CreateRestoShamanHealingOnlyBehavior()
+                );
         }
 
         [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Instances )]
         public static Composite CreateRestoShamanCombatBehaviorInstances()
         {
             return new PrioritySelector(
+                Spell.WaitForCastOrChannel(true),
                 CreateRestoShamanHealingOnlyBehavior(),
                 // already waited on cast to complete in heal behavior
                 new Decorator(
@@ -166,8 +182,12 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateRestoShamanRestPvp()
         {
             return new PrioritySelector(
+                Spell.WaitForCastOrChannel(true),
                 CreateRestoShamanHealingBuffs(),
-                CreateRestoShamanHealingOnlyBehavior(true,false),
+                new Decorator(
+                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                    CreateRestoShamanHealingOnlyBehavior(true, false)
+                    ),
                 Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
                 Spell.Resurrect("Ancestral Spirit"),
                 CreateRestoShamanHealingOnlyBehavior(false, true)
@@ -177,19 +197,19 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Battlegrounds)]
         public static Composite CreateRestoShamanCombatBehaviorPvp()
         {
-            return
-                new PrioritySelector(
-                    CreateRestoShamanHealingOnlyBehavior(false, true)
-                    );
+            return new PrioritySelector(
+                Spell.WaitForCastOrChannel(true),
+                CreateRestoShamanHealingOnlyBehavior(false, true)
+                );
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Battlegrounds)]
         public static Composite CreateRestoShamanHealBehaviorPvp()
         {
-            return
-                new PrioritySelector(
-                    CreateRestoShamanHealingOnlyBehavior(false, true)
-                    );
+            return new PrioritySelector(
+                Spell.WaitForCastOrChannel(true),
+                CreateRestoShamanHealingOnlyBehavior(false, true)
+                );
         }
 
         #endregion
@@ -420,7 +440,7 @@ namespace Singular.ClassSpecific.Shaman
                     && p.IsHorde == p.IsHorde
                     && !p.IsHostile
                     && p.GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth
-                    && ((p.Distance < 40 && p.InLineOfSpellSight) || (!SingularSettings.Instance.DisableAllMovement && p.Distance < 80))
+                    && ((p.Distance < 40 && p.InLineOfSpellSight) || (!MovementManager.IsMovementDisabled && p.Distance < 80))
                 orderby p.GetPredictedHealthPercent()
                 select p)
                 .ToList();
@@ -524,7 +544,7 @@ namespace Singular.ClassSpecific.Shaman
             {
                 foreach (PrioritizedBehavior hs in blist)
                 {
-                    Logger.WriteDebug(Color.LightGreen, "   Priority {0} for Behavior [{1}]", hs.Priority, hs.Name);
+                    Logger.WriteDebug(Color.GreenYellow, "   Priority {0} for Behavior [{1}]", hs.Priority, hs.Name);
                 }
             }
         }

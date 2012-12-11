@@ -47,6 +47,14 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 CreateMistweaverMonkHealing(true),
+
+                // cast Mana Tea if solo (farming, grinding, etc.) and low on Mana
+                new Sequence(
+                    Spell.Cast( "Mana Tea", ctx => Me, ret => !Me.IsInGroup() && Me.HasAura( "Mana Tea") && Me.ManaPercent < SingularSettings.Instance.MinMana),
+                    new WaitContinue( TimeSpan.FromMilliseconds(500), ret => !Me.HasAura("Mana Tea"), new ActionAlwaysSucceed()),
+                    Helpers.Common.CreateWaitForLagDuration()
+                    ),
+
                 Rest.CreateDefaultRestBehaviour(),
                 Spell.Resurrect("Resuscitate"),
                 CreateMistweaverMonkHealing(false)

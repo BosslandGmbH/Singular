@@ -190,7 +190,7 @@ namespace Singular.ClassSpecific.Warrior
         private static Composite CreateArmsAoeCombat(SimpleIntDelegate aoeCount)
         {
             return new PrioritySelector(
-                new Decorator(ret => aoeCount(ret) >= 3,
+                new Decorator(ret => Spell.UseAOE && aoeCount(ret) >= 3,
                     new PrioritySelector(
                         Spell.Cast( "Thunder Clap" ),
 

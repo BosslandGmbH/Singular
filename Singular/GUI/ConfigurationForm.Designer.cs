@@ -44,6 +44,8 @@
             this.pgHealInstance = new System.Windows.Forms.PropertyGrid();
             this.pgHealBattleground = new System.Windows.Forms.PropertyGrid();
             this.pgHealNormal = new System.Windows.Forms.PropertyGrid();
+            this.tabPage5 = new System.Windows.Forms.TabPage();
+            this.pgHotkeys = new System.Windows.Forms.PropertyGrid();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
             this.button1 = new System.Windows.Forms.Button();
@@ -54,6 +56,7 @@
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.tabPage4.SuspendLayout();
+            this.tabPage5.SuspendLayout();
             this.tabPage3.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -102,6 +105,7 @@
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Controls.Add(this.tabPage4);
+            this.tabControl1.Controls.Add(this.tabPage5);
             this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Top;
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
@@ -208,6 +212,26 @@
             this.pgHealNormal.Size = new System.Drawing.Size(329, 250);
             this.pgHealNormal.TabIndex = 1;
             // 
+            // tabPage5
+            // 
+            this.tabPage5.Controls.Add(this.pgHotkeys);
+            this.tabPage5.Location = new System.Drawing.Point(4, 22);
+            this.tabPage5.Name = "tabPage5";
+            this.tabPage5.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage5.Size = new System.Drawing.Size(329, 282);
+            this.tabPage5.TabIndex = 4;
+            this.tabPage5.Text = "Hotkeys";
+            this.tabPage5.UseVisualStyleBackColor = true;
+            // 
+            // pgHotkeys
+            // 
+            this.pgHotkeys.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pgHotkeys.Location = new System.Drawing.Point(3, 3);
+            this.pgHotkeys.Name = "pgHotkeys";
+            this.pgHotkeys.PropertySort = System.Windows.Forms.PropertySort.NoSort;
+            this.pgHotkeys.Size = new System.Drawing.Size(323, 276);
+            this.pgHotkeys.TabIndex = 1;
+            // 
             // tabPage3
             // 
             this.tabPage3.Controls.Add(this.ShowPlayerNames);
@@ -289,6 +313,7 @@
             this.tabPage2.ResumeLayout(false);
             this.tabPage4.ResumeLayout(false);
             this.tabPage4.PerformLayout();
+            this.tabPage5.ResumeLayout(false);
             this.tabPage3.ResumeLayout(false);
             this.tabPage3.PerformLayout();
             this.groupBox1.ResumeLayout(false);
@@ -321,5 +346,7 @@
         private System.Windows.Forms.PropertyGrid pgHealBattleground;
         private System.Windows.Forms.PropertyGrid pgHealNormal;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TabPage tabPage5;
+        private System.Windows.Forms.PropertyGrid pgHotkeys;
     }
 }

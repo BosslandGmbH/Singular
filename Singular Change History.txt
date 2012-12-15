@@ -1,3 +1,47 @@
+--- Release 3.0.0.1446 ---
+
+Hunter 
+
+change - All Specs - Stampede now cast anytime under a Bloodlust-like effect, if solo and 3 or more enemies, or if current target is an enemy player
+
+fixed - All Specs - Readiness no longer cast immediately after Rapid Fire.  Also if BM Hunter checks that Bestial Wrath is on cooldown as well.
+
+fixed - All Specs - Hunter will attempt to Revive Pet if no pet exists.  if that fails will Cal Pet
+
+
+Monk 
+
+*new* - Windwalker - fixed cast of Xuen
+
+*new* - All Specs - added cast of Disable on hostile player that does not have a speed redux debuff already
+
+fixed - Windwalker - allow both Legends buffs to be cast
+
+
+Rogue 
+
+*new* - All Specs - added stun and bandage for all specs if Health < 15%. Must have Use Bandages option enabled and trained First Aid
+
+*new* - All Specs - added use of Recuperate in Combat.  Recuperate Health % setting in Class Specific tab is initially 0 and controls if this ability used.
+
+
+Warrior
+
+change- Arms - no longer uses Cleave in AoE situation, only used Heroic Strike as needed
+
+fixed- Arms - recognition of Taste for Blood aura
+
+change- Arms - Heroic Strike Rage dump threshhold lowered from 90% to 85%
+
+change- Protection - restored Avatar use for Boss only
+
+change- Protection - Bloodbath cast on cooldown
+
+change- Protection - Glyph of Incite handling
+
+change- Protection - disable AoE if current target is a player
+
+
 --- Release 3.0.0.1425 ---
 
 General

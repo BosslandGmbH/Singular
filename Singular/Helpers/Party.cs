@@ -249,8 +249,8 @@ namespace Singular.Helpers
             return 
                 new Decorator(
                     ret => onUnit(ret) != null 
-                        && (PartyBuffType.None != (onUnit(ret).GetMissingPartyBuffs() & GetPartyBuffForSpell(name))) 
-                        && (myMutexBuffs.Count() == 0 || !onUnit(ret).GetAllAuras().Any( a => a.CreatorGuid == StyxWoW.Me.Guid && myMutexBuffs.Contains(a.Name))),
+                        && (PartyBuffType.None != (onUnit(ret).GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))
+                        && (myMutexBuffs == null || myMutexBuffs.Count() == 0 || !onUnit(ret).GetAllAuras().Any(a => a.CreatorGuid == StyxWoW.Me.Guid && myMutexBuffs.Contains(a.Name))),
                     new Sequence(
                         Spell.Buff( name, onUnit, requirements),
                         new Action(ret =>
@@ -304,6 +304,10 @@ namespace Singular.Helpers
                     );
         }
 
+        /// <summary>
+        /// true: we have a Bloodlust-like buff, typically indicating we should cast 
+        /// other long cooldown abilities that we save for such an occassion
+        /// </summary>
         public static bool WeHaveBloodlust
         {
             get

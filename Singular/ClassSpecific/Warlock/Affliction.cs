@@ -119,6 +119,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         Spell.Cast( "Drain Life", ret => Me.HealthPercent < 40 && !Group.Healers.Any( h => h.IsAlive && h.Distance < 40)),
                         Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent >= 20 ),
+                        Spell.Cast("Shadow Bolt", ret => !SpellManager.HasSpell( "Malefic Grasp")),
                         Spell.Cast( "Drain Soul"),
 
                         Spell.Cast( "Fel Flame", ret => Me.IsMoving ),
@@ -196,6 +197,7 @@ namespace Singular.ClassSpecific.Warlock
                         && onUnit != null && onUnit(ret) != null
                         && onUnit(ret).IsAlive
                         && (onUnit(ret).HasAuraExpired("Agony") || onUnit(ret).HasAuraExpired("Corruption") || onUnit(ret).HasAuraExpired("Unstable Affliction"))
+                        && SpellManager.HasSpell("Soul Swap")
                         && onUnit(ret).Distance <= 40
                         && onUnit(ret).InLineOfSpellSight,
                     new Action(ret =>

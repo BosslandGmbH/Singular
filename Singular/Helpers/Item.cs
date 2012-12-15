@@ -458,6 +458,8 @@ namespace Singular.Helpers
 
         }
 
+        private static WoWItem bandage = null;
+
         public static Composite CreateUseBandageBehavior()
         {
             return new Decorator( 
@@ -466,13 +468,10 @@ namespace Singular.Helpers
 
                 new PrioritySelector(
 
-                    ctx => Me.CarriedItems
-                        .Where(b => b.ItemInfo.ContainerClass == WoWItemContainerClass.Bandage 
-                            && b.ItemInfo.RecipeClass == WoWItemRecipeClass.FirstAid 
-                            && Me.GetSkill(SkillLine.FirstAid).CurrentValue >= b.ItemInfo.RequiredSkillLevel 
-                            && CanUseItem(b))
-                        .OrderByDescending( b => b.ItemInfo.RequiredSkillLevel  )
-                        .FirstOrDefault(),
+                    new Action( ret => {
+                        bandage = FindBestBandage();
+                        return RunStatus.Failure;
+                    }),
 
                     new Decorator( 
                         ret => ret != null,
@@ -480,11 +479,34 @@ namespace Singular.Helpers
                         new Sequence(
                             new Action( ret => UseItem((WoWItem)ret) ),
                             new WaitContinue( new TimeSpan(0,0,0,0,750), ret => Me.IsCasting || Me.IsChanneling, new ActionAlwaysSucceed()),
-                            new WaitContinue(6, ret => (!Me.IsCasting && !Me.IsChanneling) || Me.HealthPercent > 99, new ActionAlwaysSucceed())
+                            new WaitContinue(6, ret => (!Me.IsCasting && !Me.IsChanneling) || Me.HealthPercent > 99, new ActionAlwaysSucceed()),
+                            new DecoratorContinue(
+                                ret => Me.IsCasting || Me.IsChanneling,
+                                new Sequence(
+                                    new Action( r => Logger.Write( "/cancel First Aid")),
+                                    new Action( r => SpellManager.StopCasting() )
+                                    )
+                                )
                             )
                         )
                     )
                 );
+        }
+
+        public static bool HasBandage()
+        {
+            return null != FindBestBandage();
+        }
+
+        public static WoWItem FindBestBandage()
+        {
+            return Me.CarriedItems
+                .Where(b => b.ItemInfo.ContainerClass == WoWItemContainerClass.Bandage
+                    && b.ItemInfo.RecipeClass == WoWItemRecipeClass.FirstAid
+                    && Me.GetSkill(SkillLine.FirstAid).CurrentValue >= b.ItemInfo.RequiredSkillLevel
+                    && CanUseItem(b))
+                .OrderByDescending(b => b.ItemInfo.RequiredSkillLevel)
+                .FirstOrDefault();
         }
 
     }

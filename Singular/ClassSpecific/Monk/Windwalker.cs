@@ -98,7 +98,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
                         Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk.FortifyingBrewPercent),
                         Spell.BuffSelf("Zen Sphere", ctx => Me.HealthPercent < 90 && Me.CurrentChi >= 4),
-                        Spell.BuffSelf("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) >= 2)
+                        Spell.Cast("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) >= 2)
                         )
                     )
                 );

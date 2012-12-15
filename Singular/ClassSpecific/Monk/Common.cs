@@ -30,20 +30,36 @@ namespace Singular.ClassSpecific.Monk
         private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk; } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, (WoWSpec)int.MaxValue, WoWContext.All, 1)]
         public static Composite CreateMonkPreCombatBuffs()
         {
             return new PrioritySelector(
 
-                    PartyBuff.BuffGroup(
-                        "Legacy of the Emperor",
-                        ret => true,
-                        "Legacy of the White Tiger"),
+                Spell.WaitForCastOrChannel(),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(               
+                        // behaviors handling group buffing... handles special moments like
+                        // .. during the buff spam parade during battleground preparation, etc.
+                        // .. check our own buffs in PullBuffs and CombatBuffs if needed
+                        PartyBuff.BuffGroup("Legacy of the White Tiger"),
+                        PartyBuff.BuffGroup("Legacy of the Emperor")
+                        )
+                    )
+                );
+        }
 
-                    PartyBuff.BuffGroup(
-                        "Legacy of the White Tiger",
-                        ret => true,
-                        "Legacy of the Emperor")
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, (WoWSpec)int.MaxValue, WoWContext.All, 2)]
+        public static Composite CreateMonkCombatBuffs()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(               
+                    // check our individual buffs here
+                    Spell.BuffSelf( "Legacy of the White Tiger"),
+                    Spell.BuffSelf( "Legacy of the Emperor"),
+                    Spell.Buff("Disable", ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect( WoWApplyAuraType.ModDecreaseSpeed))
+                    )
                 );
         }
 

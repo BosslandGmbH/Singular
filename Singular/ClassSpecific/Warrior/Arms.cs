@@ -156,7 +156,9 @@ namespace Singular.ClassSpecific.Warrior
                             new PrioritySelector(
                                 // Only drop DC if we need to use HS for TFB. This lets us avoid breaking HS as a rage dump, when we don't want it to be one.
                                 Spell.Cast("Deadly Calm", ret => NeedTasteForBloodDump),
-                                Spell.Cast("Cleave", ret => NeedHeroicStrikeDump && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) > 1),
+
+                                // currently makes more sense to burn through a target, so HS instead of Cleave
+                                // Spell.Cast("Cleave", ret => NeedHeroicStrikeDump && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) > 1),
                                 Spell.Cast("Heroic Strike", ret => NeedHeroicStrikeDump ),
 
                                 Spell.Cast("Colossus Smash", ret => !StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash")),
@@ -275,18 +277,23 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                var tfb = StyxWoW.Me.GetAuraByName("Taste for Blood");
+                var tfb = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Taste for Blood" && a.TimeLeft > TimeSpan.Zero && a.StackCount > 0);
                 if (tfb != null)
                 {
                     // If we have more than 3 stacks, pop HS
                     if (tfb.StackCount >= 3)
+                    {
+                        Logger.WriteDebug(Color.White, "^Taste for Blood");
                         return true;
-
+                    }
 
                     // If it's about to drop, and we have at least 2 stacks, then pop HS.
                     // If we have 1 stack, then a slam is better used here.
                     if (tfb.TimeLeft.TotalSeconds < 1 && tfb.StackCount >= 2)
+                    {
+                        Logger.WriteDebug(Color.White, "^Taste for Blood (falling off)");
                         return true;
+                    }
                 }
                 return false;
             }
@@ -297,9 +304,11 @@ namespace Singular.ClassSpecific.Warrior
             get
             {
                 // Flat out, drop HS if we need to.
-                if (StyxWoW.Me.RagePercent >= 90)
+                if (StyxWoW.Me.RagePercent >= 85)
+                {
+                    Logger.Write(Color.White, "^Rage Dump: Heroic Strike");
                     return true;
-
+                }
 
                 return NeedTasteForBloodDump;
             }

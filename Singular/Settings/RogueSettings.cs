@@ -23,6 +23,13 @@ namespace Singular.Settings
         public bool UseSprint { get; set; }
 
         [Setting]
+        [DefaultValue(50)]
+        [Category("Common")]
+        [DisplayName("Recuperate Health%")]
+        [Description("Health % to Recuperate at during Combat, 0 to disable")]
+        public int RecuperateHealth { get; set; }
+
+        [Setting]
         [DefaultValue(LethalPoisonType.Deadly)]
         [Category("Common")]
         [DisplayName("Lethal Poison")]

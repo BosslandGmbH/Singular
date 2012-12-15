@@ -523,6 +523,16 @@ namespace Singular.ClassSpecific.Warlock
                         new ActionAlwaysSucceed()
                         ),
                     new Action(ret => Logger.Write("^Health Funnel since Pet @ {0:F1}%", Me.Pet.HealthPercent)),
+
+                    // for Affliction make it a quick heal
+                    new DecoratorContinue(
+                        ret => SpellManager.HasSpell("Soulburn: Health Funnel") && Me.CurrentSoulShards > 0,
+                        new PrioritySelector(
+                            CreateCastSoulburn( ret => true ),
+                            new ActionAlwaysSucceed()
+                            )
+                        ),
+
                     Spell.Heal(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth )
                     )
                 );

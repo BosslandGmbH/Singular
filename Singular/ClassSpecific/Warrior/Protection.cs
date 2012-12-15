@@ -109,11 +109,13 @@ namespace Singular.ClassSpecific.Warrior
                             Spell.Cast("Skull Banner", ret => Me.GotTarget && Me.CurrentTarget.IsBoss),
                             // Spell.Cast("Demoralizing Banner", ret => !Me.CurrentTarget.IsBoss && UseAOE),
 
-                            // Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss),
-                            Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss),
+                            Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss),
+
+                            // cast above rage dump so we are sure have rage to do damage
+                            Spell.Cast("Bloodbath"),
                             Spell.Cast("Berserker Rage"),
                             // new Action(ret => { UseTrinkets(); return RunStatus.Failure; }),
-                            Spell.Cast("Deadly Calm", ret => Me.CurrentRage >= RageDump)
+                            Spell.Cast("Deadly Calm", ret => TalentManager.HasGlyph("Incite") || Me.CurrentRage >= RageDump)
                             )
                         )
                     )
@@ -159,16 +161,21 @@ namespace Singular.ClassSpecific.Warrior
 
                         CreateProtectionInterrupt(),
 
-                        // Handle Ultimatum procs - Throttle since both off GCD
+                        // Handle Ultimatum procs 
+                        // Handle Glyph of Incite procs
+                        // Dump Rage
                         new Throttle(
                             new Decorator(
-                                ret => HasUltimatum,
+                                ret => HasUltimatum || Me.HasAura("Glyph of Incite") || Me.CurrentRage > RageDump,
                                 new PrioritySelector(
-                                    Spell.Cast("Cleave", ret => UseAOE),
+                                    Spell.Cast("Cleave", ret => Me.IsInGroup() && UseAOE),
                                     Spell.Cast("Heroic Strike")
                                     )
                                 )
                             ),
+
+                        // Handle proccing Glyph of Incite buff
+                        Spell.Cast( "Devastate", ret => TalentManager.HasGlyph("Incite") && Me.HasAura("Deadly Calm") && !Me.HasAura("Glyph of Incite")),
 
                         // Multi-target?  get the debuff on them
                         new Decorator(
@@ -178,17 +185,6 @@ namespace Singular.ClassSpecific.Warrior
                                 Spell.Cast("Bladestorm", ret => AoeCount >= 4),
                                 Spell.Cast("Shockwave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 3),
                                 Spell.Cast("Dragon Roar", ret => Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)
-                                )
-                            ),
-
-                        // Dump Rage - throttle Cleave and Heroic Strike since off GCD
-                        new Throttle(
-                            new Decorator(
-                                ret => Me.CurrentRage > RageDump,
-                                new PrioritySelector(
-                                    Spell.Cast("Cleave", ret => UseAOE),
-                                    Spell.Cast("Heroic Strike")
-                                    )
                                 )
                             ),
 
@@ -271,9 +267,11 @@ namespace Singular.ClassSpecific.Warrior
         }
 
         static bool UseAOE
-        {
-            get
+        {            get
             {
+                if (Me.GotTarget && Me.CurrentTarget.IsPlayer)
+                    return false;
+
                 return AoeCount >= 2 && Spell.UseAOE;
             }
         }

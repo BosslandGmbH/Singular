@@ -13,11 +13,16 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
+using Singular.Settings;
+using System;
 
 namespace Singular.ClassSpecific.Rogue
 {
     public class Common
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue; } }
+
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Rogue)]
         public static Composite CreateRoguePreCombatBuffs()
         {
@@ -37,6 +42,42 @@ namespace Singular.ClassSpecific.Rogue
                     new ActionAlwaysSucceed()),
                 Rest.CreateDefaultRestBehaviour()
                 );
+        }
+
+        [Behavior(BehaviorType.Heal, WoWClass.Rogue, (WoWSpec) int.MaxValue, WoWContext.All, 1)]
+        public static Composite CreateRogueCombatHeal()
+        {
+            return new Decorator(
+                ret => !Spell.IsCastingOrChannelling() & !Spell.IsGlobalCooldown() && !Me.HasAura("Vanish") && !Me.IsStealthed,
+                new PrioritySelector(
+                    Movement.CreateFaceTargetBehavior(),
+                    new Decorator(
+                        ret => SingularSettings.Instance.UseBandages
+                            && StyxWoW.Me.HealthPercent < 15
+                            && !Unit.NearbyUnfriendlyUnits.Any(u => u.Combat && u.Guid != StyxWoW.Me.CurrentTargetGuid && u.CurrentTargetGuid == StyxWoW.Me.Guid)
+                            && Item.HasBandage(),
+                        new Sequence(
+                            new PrioritySelector(
+                                Spell.Cast("Gouge"),
+                                Spell.Cast("Blind"),
+                                new Decorator( 
+                                    ret => !Unit.NearbyUnfriendlyUnits.Any(u => !u.IsCrowdControlled()),
+                                    new ActionAlwaysSucceed()
+                                    )
+                                ),
+                            Helpers.Common.CreateWaitForLagDuration(),
+                            new WaitContinue(TimeSpan.FromMilliseconds(250), ret => Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
+                            new WaitContinue(TimeSpan.FromMilliseconds(1500), ret => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
+                            Item.CreateUseBandageBehavior()
+                            )
+                        ),
+
+                    Spell.BuffSelf("Recuperate", 
+                        ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Rogue.RecuperateHealth  
+                            && StyxWoW.Me.RawComboPoints > 0)
+                    )
+                );
+
         }
 
         public static Composite CreateApplyPoisons()

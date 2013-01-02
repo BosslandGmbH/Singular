@@ -1,3 +1,104 @@
+--- Release 3.0.0.1492 ---
+
+General
+
+change- Behavior Selection: these were previously using the Normal (solo) behaviors which was causing unexpected use of cooldowns, etc. (including Death Grip.)  Changed to use Instance behaviors.
+
+change- Behavior Selection: will now always use Instance behaviors when you are in a group.  This represents a change for those Grinding/Questing in groups or doing other World group activities that don't require entering an instance
+
+fixed - Behavior Selection: previously depended upon the BotBase you are using to reinitialize the Combat Routine whenever your Context changed (entering/leaving a Battleground, Instance, Raid, etc.)  This caused a problem for users raiding with RaidBot that would press Start before entering the instance
+
+fixed - Disable Movement: issue causing Follow Leader movement in LazyRaider to be disabled
+
+fixed - Disable Movement: problem with movement being disabled if local computer time rolled back to point before HonorBuddy was started
+
+fixed - Bandages: problem where sometimes recognized an item in bags as a bandage after all bandages were used
+
+change- Targeting: now outputs unique message anytime Singular changes the current target, indicating why it did
+
+change- Spell Cast Messages: when a cast made by Spell ID Singular will now output the spell name rather than the id
+
+change- Spell Failed/Missed Messages: previously disabled if in Raid or Battleground, but will now be enabled for those Contexts if you have Debug enabled.  Please set to 'true' if generating a log file for an issue
+
+fixed - Evade Mob Handling: exception occurring for melee characters if swing missed evade bugged mob
+
+
+Death Knight
+
+change- All Specs - slight change to Death Grip to initiate attack quicker after target enters melee range
+
+change- All Specs - Chains of Ice now used primarily to prevent targets from running away
+
+
+
+Druid 
+
+fixed - Feral - problem with Feral Druid thrash being cast on cooldown rather than to refresh debuff
+
+fixed - Feral - casting Wild Charge without Prowl
+
+
+Hunter
+
+*new* - All Specs - "Crowd Ctrl Focus Unit" setting allowing chain crowd control of only target user sets as Focus 
+
+change- All Specs - improved crowd control usage in PVP
+
+fixed - All Specs - Hunters Mark spam due to target being arcane immune
+
+fixed - All Specs - isssues with casting traps 
+
+fixed - All Specs - issue with exception or wrong target name output for trap casts
+
+fixed - All Specs - added recognition of adds already crowd controlled to avoid wasting traps
+
+
+Paladin
+
+fixed - Ret/Prot - problem with failed casts of precombat buff Righteous Fury
+
+fixed - Ret/Prot - problem with seal twisting in low mana conditions
+
+*new* - All Specs - support for use of Repentence for add control while solo
+
+fixed - Retribution - self-healing during combat 
+
+fixed - Retribution - restored use of Lay on Hands
+
+fixed - Retribution - self-heal logic prior to eating/drinking while out of combat
+
+fixed - Retribution - added AOE support.  
+
+fixed - Retribution - fixed rotations for all contexts
+
+*new* - Retribution - added support for all talents
+
+change- All Specs - removed Repentence from use as an interrupt
+
+
+Rogue
+
+*new* - All Specs - all support rewritten - combat spec tested thoroughly; Assassination and Subtlelty partially tested
+
+change- All Specs - Recuperate now cast regardless of health % if combo points on dead target will be lost if Redirect has not been learned
+
+fixed - All Specs - poisons support reworked.  note:  poisons are not applied during combat, but will be applied out of combat if missing or less than 20 minutes remaining
+
+*new* - All Specs - poison selection settings support AUto to choose typically best poisions based upon those available to character and current context
+
+*new* - All Specs - poisons correctly applied if you change contexts (and auto selection determines different poison is better) or poison selection in settings
+
+
+Warrior
+
+change- Arms - Recklessness will additionally be cast on cooldown if T14 4PC DPS Bonus is active
+
+change- Fury - Recklessness will additionally be cast on cooldown if T14 4PC DPS Bonus is active
+
+change- Prot - Recklessness, Skull Banner, and Avatar all cast on cooldown if target is boss, player (pvp), or solo and aoe count 3 or more
+
+
+
 --- Release 3.0.0.1446 ---
 
 Hunter 

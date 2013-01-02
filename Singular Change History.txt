@@ -1,4 +1,4 @@
---- Release 3.0.0.1492 ---
+--- Release 3.0.0.1496 ---
 
 General
 
@@ -21,6 +21,8 @@ change- Spell Cast Messages: when a cast made by Spell ID Singular will now outp
 change- Spell Failed/Missed Messages: previously disabled if in Raid or Battleground, but will now be enabled for those Contexts if you have Debug enabled.  Please set to 'true' if generating a log file for an issue
 
 fixed - Evade Mob Handling: exception occurring for melee characters if swing missed evade bugged mob
+
+fixed - added check for Great White Plainshawk as transport to allow combat during quest on vehicle
 
 
 Death Knight

@@ -97,12 +97,12 @@ namespace Singular
                 return;
 
             _restBehavior = new Decorator(
-                ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                 new LockSelector(new HookExecutor(BehaviorType.Rest.ToString()))
                 );
 
             _preCombatBuffsBehavior = new Decorator(
-                ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                 new LockSelector(
                     Item.CreateUseAlchemyBuffsBehavior(),
                     // Generic.CreateFlasksBehaviour(),
@@ -113,7 +113,7 @@ namespace Singular
             _pullBuffsBehavior = new LockSelector(new HookExecutor(BehaviorType.PullBuffs.ToString()));
 
             _combatBuffsBehavior = new Decorator(
-                ret => !IsMounted && !Me.IsOnTransport,
+                ret => AllowBehaviorUsage(),
                 new LockSelector(
                     new Decorator(ret => !HotkeyManager.IsCombatEnabled, new ActionAlwaysSucceed()),
                     Generic.CreateUseTrinketsBehaviour(),
@@ -134,6 +134,11 @@ namespace Singular
                     ),
                 new HookExecutor(BehaviorType.Combat.ToString())
                 );
+        }
+
+        private static bool AllowBehaviorUsage()
+        {
+            return !IsMounted && (!Me.IsOnTransport || Me.Transport.Entry == 56171);
         }
 
         /// <summary>

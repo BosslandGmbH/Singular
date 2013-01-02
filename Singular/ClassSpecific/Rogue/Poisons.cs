@@ -1,30 +1,40 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Singular.Settings;
+using Singular.Helpers;
 using Styx;
 using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using System;
 
 namespace Singular.ClassSpecific.Rogue
 {
     public enum LethalPoisonType
     {
-        Deadly,
-        Wound
+        None    = 0,
+        Auto,
+        Deadly  = 2823,
+        Wound   = 8679
     }
-
 
     public enum NonLethalPoisonType
     {
-        Crippling,
-        MindNumbing,
-        Leeching,
-        Paralytic
+        None            = 0,
+        Auto,
+        Crippling       = 3408,
+        MindNumbing     = 5761,
+        Leeching        = 108211,
+        Paralytic       = 108215
     }
 
     public static class Poisons
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue; } }
+
+        private const int RefreshAtMinutesLeft = 20;
+
         static Poisons()
         {
             //Lua.Events.AttachEvent("END_BOUND_TRADEABLE", HandleEndBoundTradeable);
@@ -35,69 +45,60 @@ namespace Singular.ClassSpecific.Rogue
             //Lua.DoString("EndBoundTradeable(" + args.Args[0] + ")");
         }
 
-        //Lethal
-        private const int DeadlyPoison = 2823;
-        private const int WoundPoison = 8679;
-
-        //Non-lethal
-        private const int CripplingPoison = 3408;
-        private const int MindNumbingPoison = 5761;
-        private const int LeechingPoison = 108211;
-        private const int ParalyticPoison = 108215;
-        
-
-            
-
-        public static int NeedLethalPosion()
+        public static LethalPoisonType NeedLethalPosion()
         {
-            switch (SingularSettings.Instance.Rogue.LethalPoison)
-            {
-                case LethalPoisonType.Deadly:
-                    if (SpellManager.HasSpell(DeadlyPoison) && !StyxWoW.Me.HasAura(DeadlyPoison))
-                        return DeadlyPoison;
-                    break;
-                case LethalPoisonType.Wound:
-                    if (SpellManager.HasSpell(WoundPoison) && !StyxWoW.Me.HasAura(WoundPoison))
-                        return WoundPoison;
-                    break;
-
-                default:
-                    return 0;
-
-
-            }
-            return 0;
+            return PoisonCheck(RogueSettings.LethalPoison);
         }
 
-
-        public static int NeedNonLethalPosion()
+        public static NonLethalPoisonType NeedNonLethalPosion()
         {
-            switch (SingularSettings.Instance.Rogue.NonLethalPoison)
-            {
-                case NonLethalPoisonType.Crippling:
-                    if (SpellManager.HasSpell(CripplingPoison) && !StyxWoW.Me.HasAura(CripplingPoison))
-                        return CripplingPoison;
-                    break;
-                case NonLethalPoisonType.Leeching:
-                    if (SpellManager.HasSpell(LeechingPoison) && !StyxWoW.Me.HasAura(LeechingPoison))
-                        return LeechingPoison;
-                    break;
-                case NonLethalPoisonType.MindNumbing:
-                    if (SpellManager.HasSpell(MindNumbingPoison) && !StyxWoW.Me.HasAura(MindNumbingPoison))
-                        return MindNumbingPoison;
-                    break;
-                case NonLethalPoisonType.Paralytic:
-                    if (SpellManager.HasSpell(ParalyticPoison) && !StyxWoW.Me.HasAura(ParalyticPoison))
-                        return ParalyticPoison;
-                    break;
-                default:
-                    return 0;
-
-
-            }
-            return 0;
+            return PoisonCheck(RogueSettings.NonLethalPoison);
         }
 
+        private static LethalPoisonType PoisonCheck(LethalPoisonType poison)
+        {
+            if (poison > LethalPoisonType.Auto && !SpellManager.HasSpell((int)poison))
+                poison = LethalPoisonType.Auto;
+
+            if (poison == LethalPoisonType.Auto)
+            {
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && SpellManager.HasSpell((int)LethalPoisonType.Wound))
+                    poison = LethalPoisonType.Wound;
+                else if (SpellManager.HasSpell((int)LethalPoisonType.Deadly))
+                    poison = LethalPoisonType.Deadly;
+                else
+                    poison = LethalPoisonType.None;
+            }
+
+            if ( poison != LethalPoisonType.None && Me.GetAuraTimeLeft((int)poison, true) < TimeSpan.FromMinutes(RefreshAtMinutesLeft))
+                return poison;
+
+            return LethalPoisonType.None;
+        }
+
+        private static NonLethalPoisonType PoisonCheck(NonLethalPoisonType poison)
+        {
+            if (poison > NonLethalPoisonType.Auto && !SpellManager.HasSpell((int)poison))
+                poison = NonLethalPoisonType.Auto;
+
+            if (poison == NonLethalPoisonType.Auto)
+            {
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && SpellManager.HasSpell((int)NonLethalPoisonType.Paralytic ))
+                    poison = NonLethalPoisonType.Paralytic;
+                else if (SpellManager.HasSpell((int)NonLethalPoisonType.Leeching ))
+                    poison = NonLethalPoisonType.Leeching;
+                else if (SpellManager.HasSpell((int)NonLethalPoisonType.Crippling))
+                    poison = NonLethalPoisonType.Crippling;
+                else
+                    poison = NonLethalPoisonType.None;
+            }
+
+
+            if ( poison != NonLethalPoisonType.None && Me.GetAuraTimeLeft((int)poison, true) < TimeSpan.FromMinutes(RefreshAtMinutesLeft))
+                return poison;
+
+            return NonLethalPoisonType.None;
+        }
 
     }
 }

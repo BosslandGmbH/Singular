@@ -49,7 +49,7 @@ namespace Singular.ClassSpecific.Hunter
                         CreateBeastMasteryDiagnosticOutputBehavior(),
 
                         Common.CreateMisdirectionBehavior(),
-                        Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(Me.CurrentTarget) && !TalentManager.HasGlyph("Marked for Death")),
+                        Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(Me.CurrentTarget) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
 
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
@@ -62,7 +62,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         Helpers.Common.CreateAutoAttack(true),
 
-                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+                        Common.CreateHunterNormalCrowdControl(),
 
                         Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
@@ -76,8 +76,6 @@ namespace Singular.ClassSpecific.Hunter
                                 && Me.CurrentTarget.IsAlive 
                                 && Me.GotAlivePet 
                                 && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
-
-                        Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
 
                         // AoE Rotation
                         new Decorator(
@@ -141,13 +139,15 @@ namespace Singular.ClassSpecific.Hunter
 
                         Helpers.Common.CreateAutoAttack(true),
 
-                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+                        Common.CreateHunterPvpCrowdControl(),
 
                         Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
                         Spell.Buff("Concussive Shot",
                             ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
                                 && Me.CurrentTarget.Distance > Spell.MeleeRange),
+
+                        // Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
 
                         // Defensive Stuff
                         Spell.Cast("Intimidation",
@@ -156,22 +156,9 @@ namespace Singular.ClassSpecific.Hunter
                                 && Me.GotAlivePet
                                 && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
 
-                        Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
-
                         Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
 
-                        // AoE Rotation
-                        new Decorator(
-                            ret => Spell.UseAOE && !(Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
-                            new PrioritySelector(
-                                Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
-                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-                                Spell.Cast("Cobra Shot"),
-                                Common.CastSteadyShot(on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot"))
-                                )
-                            ),
-
-                        // Single Target Rotation
+                        // Single Target Rotation (no AoE in PVP)
                         // ... put on or renew serpent sting
                         new PrioritySelector(
                             ctx => (int) Me.CurrentTarget.GetAuraTimeLeft("Serpent Sting", true).TotalMilliseconds,
@@ -179,7 +166,7 @@ namespace Singular.ClassSpecific.Hunter
                             Spell.Cast("Cobra Shot", time => ((int)time) > (int) Spell.GetSpellCastTime("Cobra Shot").TotalMilliseconds && ((int)time) < 4000)
                             ),
 
-                        Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < (Pet.MeleeDistance(Pet.CurrentTarget) + 20f)),
+                        Spell.Cast("Kill Command", ctx => Me.Pet == null ? null : Me.Pet.CurrentTarget, ret => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < (Pet.MeleeDistance(Pet.CurrentTarget) + 20f)),
                         Spell.BuffSelf("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
 
                         Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 60 || Me.HasAnyAura("Thrill of the Hunt", "The Beast Within")),

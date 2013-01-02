@@ -9,17 +9,15 @@ using Styx;
 using Styx.Pathing;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
     public class Unholy
     {
         private const int SuddenDoom = 81340;
-
-        private static DeathKnightSettings Settings
-        {
-            get { return SingularSettings.Instance.DeathKnight; }
-        }
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static DeathKnightSettings Settings { get { return SingularSettings.Instance.DeathKnight; } }
 
         #region Normal Rotation
 
@@ -32,10 +30,9 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                Spell.Buff("Chains of Ice",
-                           ret =>
-                           StyxWoW.Me.CurrentTarget.Fleeing && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-                Common.CreateDeathGripBehavior(),
+
+                Common.CreateGetOverHereBehavior(),
+
                 // *** Cool downs ***
                 Spell.BuffSelf("Unholy Frenzy",
                                ret => StyxWoW.Me.CurrentTarget.IsWithinMeleeRange 
@@ -141,17 +138,9 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                new Sequence(
-                    Spell.Cast("Death Grip",
-                               ret =>
-                               StyxWoW.Me.CurrentTarget.DistanceSqr > 10*10 &&
-                               (StyxWoW.Me.CurrentTarget.IsPlayer || StyxWoW.Me.CurrentTarget.TaggedByMe)),
-                    new DecoratorContinue(
-                        ret => StyxWoW.Me.IsMoving,
-                        new Action(ret => Navigator.PlayerMover.MoveStop())),
-                    new WaitContinue(1, new ActionAlwaysSucceed())
-                    ),
-                Spell.Cast("Chains of Ice", ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 8*8),
+
+                Common.CreateGetOverHereBehavior(),
+
                 // *** Cool downs ***
                 Spell.BuffSelf("Unholy Frenzy",
                                ret =>
@@ -273,7 +262,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 // Start AoE section
                 new Decorator(
                     ret =>
-                    Spell.UseAOE && Settings.UseAoeInInstance && Unit.UnfriendlyUnitsNearTarget(12f).Count() >=
+                    Spell.UseAOE && SingularSettings.Instance.DeathKnight.UseAoeInInstance && Unit.UnfriendlyUnitsNearTarget(12f).Count() >=
                     SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
                     new PrioritySelector(
                         // Diseases

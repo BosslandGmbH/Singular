@@ -62,6 +62,13 @@ namespace Singular.Settings
         [Description("True: use Feign Death if needed; False: don't cast.")]
         public bool UseFeignDeath { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Crowd Control")]
+        [DisplayName("Crowd Ctrl Focus Unit")]
+        [Description("True: Crowd Control used only for Focus Unit; False: used on any add.")]
+        public bool CrowdControlFocus { get; set; }
+
 
         #endregion
     }

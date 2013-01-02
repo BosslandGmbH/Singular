@@ -16,6 +16,8 @@ namespace Singular.Helpers
 {
     internal static class Safers
     {
+        private static Color targetColor = Color.LightCoral;
+
         /// <summary>
         ///  This behavior SHOULD be called at top of the combat behavior. This behavior won't let the rest of the combat behavior to be called
         /// if you don't have a target. Also it will find a proper target, if the current target is dead or you don't have a target and still in combat.
@@ -24,6 +26,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite EnsureTarget()
         {
+
             return
                 new Decorator(
                     ret => !SingularSettings.Instance.DisableAllTargeting,
@@ -73,8 +76,11 @@ namespace Singular.Helpers
 
                                     if (obj != null)
                                     {
-                                        if (StyxWoW.Me.CurrentTarget != obj && (obj as WoWUnit).IsAlive )
+                                        if (StyxWoW.Me.CurrentTarget != obj && (obj as WoWUnit).IsAlive)
+                                        {
+                                            Logger.Write(targetColor, "Current target is not BotPOI.  Switching to " + obj.SafeName() + "!");
                                             return obj;
+                                        }
                                     }
                                 }
 
@@ -85,7 +91,10 @@ namespace Singular.Helpers
                                 if (firstUnit != null)
                                 {
                                     if (StyxWoW.Me.CurrentTarget != firstUnit)
+                                    {
+                                        Logger.Write(targetColor, "Current target is not Bots first choice.  Switching to " + firstUnit.SafeName() + "!");
                                         return firstUnit;
+                                    }
                                 }
 
                                 return null;
@@ -93,8 +102,6 @@ namespace Singular.Helpers
                             new Decorator(
                                 ret => ret != null,
                                 new Sequence(
-                                    new Action(ret => Logger.Write(Color.Orange, "Current target is not the best target. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
-
                                     new Action(ret => ((WoWUnit)ret).Target()),
                                     new WaitContinue(
                                         2,
@@ -114,6 +121,7 @@ namespace Singular.Helpers
                                     if (rafLeader != null && rafLeader.IsValid && !rafLeader.IsMe && rafLeader.Combat &&
                                         rafLeader.CurrentTarget != null && rafLeader.CurrentTarget.IsAlive && !Blacklist.Contains(rafLeader.CurrentTarget))
                                     {
+                                        Logger.Write(targetColor, "Current target invalid. Switching to Tanks target " + rafLeader.CurrentTarget.SafeName() + "!");
                                         return rafLeader.CurrentTarget;
                                     }
 
@@ -124,6 +132,7 @@ namespace Singular.Helpers
 
                                         if (unit != null && unit.IsAlive && !unit.IsMe && !Blacklist.Contains(unit))
                                         {
+                                            Logger.Write(targetColor, "Current target invalid. Switching to POI " + unit.SafeName() + "!");
                                             return unit;
                                         }
                                     }
@@ -134,6 +143,7 @@ namespace Singular.Helpers
                                     if (firstUnit != null && firstUnit.IsAlive && !firstUnit.IsMe && firstUnit.Combat &&
                                         !Blacklist.Contains(firstUnit))
                                     {
+                                        Logger.Write(targetColor, "Current target invalid. Switching to Bot First Unit " + firstUnit.SafeName() + "!");
                                         return firstUnit;
                                     }
 
@@ -148,6 +158,7 @@ namespace Singular.Helpers
                                     if (agroMob != null)
                                     {
                                         // Return the closest one to us
+                                        Logger.Write(targetColor, "Current target invalid. Switching to aggroed mob " + agroMob.SafeName() + "!");
                                         return agroMob;
                                     }
 
@@ -158,7 +169,6 @@ namespace Singular.Helpers
                                 new Decorator(
                                     ret => ret != null,
                                     new Sequence(
-                                        new Action(ret => Logger.Write(Color.Orange, "Current target is invalid. Switching to " + ((WoWUnit)ret).SafeName() + "!")),
                                         // pending spells like mage blizard cause targeting to fail.
                                         new DecoratorContinue(ctx => StyxWoW.Me.CurrentPendingCursorSpell != null,
                                             new Action(ctx => Lua.DoString("SpellStopTargeting()"))),

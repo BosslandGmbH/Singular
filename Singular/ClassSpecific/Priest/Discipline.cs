@@ -25,15 +25,15 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                // Heal self before resting. There is no need to eat while we have 100% mana
+                        // Heal self before resting. There is no need to eat while we have 100% mana
                         CreateDiscHealOnlyBehavior(true),
-                // Rest up damnit! Do this first, so we make sure we're fully rested.
+                        // Rest up damnit! Do this first, so we make sure we're fully rested.
                         Rest.CreateDefaultRestBehaviour(),
-                // Can we res people?
+                        // Can we res people?
                         Spell.Resurrect("Resurrection"),
-                // Make sure we're healing OOC too!
+                        // Make sure we're healing OOC too!
                         CreateDiscHealOnlyBehavior(false, false),
-                // now buff our movement if possible
+                        // now buff our movement if possible
                         Common.CreatePriestMovementBuff("Rest")
                         )
                     )
@@ -64,9 +64,38 @@ namespace Singular.ClassSpecific.Priest
                         new Decorator(
                             ret => moveInRange,
                             Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
-                        // Ensure we're in range of the unit to heal, and it's in LOS.
-                        //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
-                        //Spell.Buff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
+                        
+                            // Ensure we're in range of the unit to heal, and it's in LOS.
+                            // //CreateMoveToAndFace(35f, ret => (WoWUnit)ret),
+                            // //Spell.Buff("Renew", ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90) != null, ret => HealTargeting.Instance.TargetList.FirstOrDefault(u => !u.HasAura("Renew") && u.HealthPercent < 90)),
+                        
+                        // Cast prayer of healing whenever we have spirit shell buffed and any parymember has less than 80% HP
+                        Spell.BuffSelf(
+                            "Prayer of Healing",
+                            ret => StyxWoW.Me.HasAura("Spirit Shell") &&
+                                Unit.NearbyGroupMembers.Count(m => m.DistanceSqr <= 30f * 30f && m.HealthPercent <= SingularSettings.Instance.Priest.SpiritShell) != 0
+                        ),
+                        
+                        // Same condition as above more or less.
+                        Spell.Cast(
+                        "Spirit Shell",
+                        ret => StyxWoW.Me.Combat && Unit.NearbyGroupMembers.Count(m => m.DistanceSqr <= 30f * 30f && m.HealthPercent <= SingularSettings.Instance.Priest.SpiritShell) != 0
+                        ),
+                        
+                        // Buff with Archangel once we get 5 stacks of Evangelism!
+                        Spell.BuffSelf(
+                        "Archangel",
+                        ret => StyxWoW.Me.HasAura("Evangelism", 5)
+                        ),
+
+                        // Mana check is for mana management. Don't mess with it
+                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 20), 
+
+                        // Cast Hymn of Hope if we are low on mana.
+                        Spell.BuffSelf(
+                        "Hymn of Hope",
+                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.HymnofHopeMana
+                        ),
                         // use fade to drop aggro.
                         Spell.Cast("Fade", ret => (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
                         Spell.Heal("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
@@ -123,14 +152,14 @@ namespace Singular.ClassSpecific.Priest
                             ret => (WoWUnit)ret,
                             ret => !((WoWUnit)ret).HasMyAura("Prayer of Mending") && ((WoWUnit)ret).HealthPercent < 90),
                         new Decorator(
-                            ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                            ret => StyxWoW.Me.Combat && StyxWoW.Me.ManaPercent > SingularSettings.Instance.Priest.DpsMana,
                             new PrioritySelector(
+                                Safers.EnsureTarget(),
                                 Movement.CreateMoveToLosBehavior(),
                                 Movement.CreateFaceTargetBehavior(),
                                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                                 Spell.Cast("Mindbender"),
                                 Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
-                                //Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Cast("Penance"),
@@ -200,7 +229,7 @@ namespace Singular.ClassSpecific.Priest
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.Cast("Mindbender"),
                     Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
-                //Spell.Cast("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
+                    //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
                     Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                     Spell.Buff("Shadow Word: Pain", true),
                     Spell.Cast("Penance"),

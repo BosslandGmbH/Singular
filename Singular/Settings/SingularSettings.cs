@@ -60,19 +60,21 @@ namespace Singular.Settings
         public void LogSettings()
         {
             Logger.WriteFile("");
+
+            // reference the internal references so we can display only for our class
             LogSettings("Singular", SingularSettings.Instance);
-            LogSettings("DeathKnightSettings", _dkSettings);
-            LogSettings("DruidSettings", _druidSettings);
-            LogSettings("HunterSettings", _hunterSettings);
-            LogSettings("MageSettings", _mageSettings);
-            LogSettings("MonkSettings", _monkSettings);	
-            LogSettings("PaladinSettings", _pallySettings);
-            LogSettings("PriestSettings", _priestSettings);
-            LogSettings("RogueSettings", _rogueSettings);
-            LogSettings("ShamanSettings", _shamanSettings);
-            LogSettings("WarlockSettings", _warlockSettings);
-            LogSettings("WarriorSettings", _warriorSettings);
             LogSettings("HotkeySettings", _hotkeySettings);
+            if (StyxWoW.Me.Class == WoWClass.DeathKnight )  LogSettings("DeathKnightSettings", DeathKnight);
+            if (StyxWoW.Me.Class == WoWClass.Druid )        LogSettings("DruidSettings", Druid);
+            if (StyxWoW.Me.Class == WoWClass.Hunter )       LogSettings("HunterSettings", Hunter);
+            if (StyxWoW.Me.Class == WoWClass.Mage )         LogSettings("MageSettings", Mage);
+            if (StyxWoW.Me.Class == WoWClass.Monk )         LogSettings("MonkSettings", Monk);
+            if (StyxWoW.Me.Class == WoWClass.Paladin )      LogSettings("PaladinSettings", Paladin);
+            if (StyxWoW.Me.Class == WoWClass.Priest )       LogSettings("PriestSettings", Priest);
+            if (StyxWoW.Me.Class == WoWClass.Rogue )        LogSettings("RogueSettings", Rogue);
+            if (StyxWoW.Me.Class == WoWClass.Shaman )       LogSettings("ShamanSettings", Shaman);
+            if (StyxWoW.Me.Class == WoWClass.Warlock )      LogSettings("WarlockSettings", Warlock);
+            if (StyxWoW.Me.Class == WoWClass.Warrior )      LogSettings("WarriorSettings", Warrior);
         }
 
         public void LogSettings(string desc, Styx.Helpers.Settings set)
@@ -132,13 +134,6 @@ namespace Singular.Settings
         [DisplayName("Allow Movement")]
         [Description("Controls movement allowed within the CC. None: prevent all movement; ClassSpecificOnly: only Charge/HeroicThrow/Blink/Disengage/etc; All: all movement allowed; Auto: same as None if LazyRaider used, otherwise same as All")]
         public AllowMovementType AllowMovement { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("General")]
-        [DisplayName("Use Instance Rotation (Needs a restart !)")]
-        [Description("When this is set to true, Singular will always use Instance rotations no matter what the current Context is.")]
-        public bool UseInstanceRotation { get; set; }
 
         [Setting]
         [DefaultValue(false)]
@@ -294,6 +289,24 @@ namespace Singular.Settings
         [DisplayName("Enable Taunting for tanks")]
         public bool EnableTaunting { get; set; }
 
+        #endregion
+
+        #region Category: World Behaviors
+/*
+        [Setting]
+        [DefaultValue(WoWContext.Instances)]
+        [Category("World Behaviors")]
+        [DisplayName("Use Group Behaviors (Needs a restart !)")]
+        [Description("Behaviors when in Group outside of Instances/Battlegrounds")]
+        public WoWContext WorldGroupBehaviors { get; set; }
+
+        [Setting]
+        [DefaultValue(WoWContext.Normal)]
+        [Category("World Behaviors")]
+        [DisplayName("Use Solo Behaviors (Needs a restart !)")]
+        [Description("Behaviors when Solo outside of Instances/Battlegrounds")]
+        public WoWContext WorldSoloBehaviors { get; set; }
+*/
         #endregion
 
         #region Class Late-Loading Wrappers

@@ -4,7 +4,6 @@ using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
-using Singular.Settings;
 
 using Styx;
 
@@ -19,7 +18,6 @@ using Rest = Singular.Helpers.Rest;
 
 namespace Singular.ClassSpecific.Paladin
 {
-
     public class Common
     {
         private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin; } }
@@ -28,7 +26,8 @@ namespace Singular.ClassSpecific.Paladin
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin)]
         public static Composite CreatePaladinPreCombatBuffs()
         {
-            return
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
                     CreatePaladinBlessBehavior(),
                     CreatePaladinSealBehavior(),
@@ -36,10 +35,36 @@ namespace Singular.ClassSpecific.Paladin
                         ret => TalentManager.CurrentSpec != WoWSpec.PaladinHoly,
                         new PrioritySelector(
                             Spell.BuffSelf("Righteous Fury", ret => TalentManager.CurrentSpec == WoWSpec.PaladinProtection && StyxWoW.Me.GroupInfo.IsInParty)
-                            ))
-
-                    );
+                            )
+                        )
+                    )
+                );
         }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, (WoWSpec)int.MaxValue, WoWContext.Normal, 1)]
+        public static Composite CreatePaladinCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.Cast("Repentance", 
+                            onUnit => 
+                            Unit.NearbyUnfriendlyUnits
+                            .Where(u => (u.IsPlayer || u.IsDemon || u.IsHumanoid || u.IsDragon || u.IsGiant || u.IsUndead)
+                                    && Me.CurrentTargetGuid != u.Guid
+                                    && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                    && !u.IsCrowdControlled()
+                                    && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                            .OrderByDescending(u => u.Distance)
+                            .FirstOrDefault())
+                        )
+                    )
+                );
+        }
+
 
 
         /// <summary>
@@ -118,11 +143,11 @@ namespace Singular.ClassSpecific.Paladin
                     // Seal Twisting.  fixed bug in prior implementation that would cause it
                     // .. to flip seal too quickly.  When we have Insight and go above 5%
                     // .. would cause casting another seal, which would take back below 5% and
-                    // .. and recast Insight.  Wait till we build up to 10% if we do this to 
+                    // .. and recast Insight.  Wait till we build up to 30% if we do this to 
                     // .. avoid wasting mana and gcd's
                     case WoWSpec.PaladinRetribution:
                     case WoWSpec.PaladinProtection:
-                        if (Me.ManaPercent < 5 || (Me.ManaPercent < 10 && Me.HasMyAura("Seal of Insight")))
+                        if (Me.ManaPercent < 5 || (Me.ManaPercent < 30 && Me.HasMyAura("Seal of Insight")))
                             bestSeal = Settings.PaladinSeal.Insight;
                         else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
                             bestSeal = Settings.PaladinSeal.Truth;
@@ -141,6 +166,31 @@ namespace Singular.ClassSpecific.Paladin
             return bestSeal;
         }
 
+        public static bool HasTalent(PaladinTalents tal)
+        {
+            return TalentManager.IsSelected((int)tal);
+        }
+    }
 
+    public enum PaladinTalents
+    {
+        SpeedOfLight = 1,
+        LongArmOfTheLaw,
+        PursuitOfJustice,
+        FistOfJustice,
+        Repentance,
+        BurdenOfGuilt,
+        SelflessHealer,
+        EternalFlame,
+        SacredShield,
+        HandOfPurity,
+        UnbreakableSpirit,
+        Clemency,
+        HolyAvenger,
+        SanctifiedWrath,
+        DivinePurpose,
+        HolyPrism,
+        LightsHammer,
+        ExecutionSentence
     }
 }

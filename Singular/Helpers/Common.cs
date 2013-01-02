@@ -65,11 +65,15 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CreateUseWand(SimpleBooleanDelegate extra)
         {
+#if USE_WANDS
             return new PrioritySelector(
                 new Decorator(
                     ret => Item.HasWand && !StyxWoW.Me.IsWanding() && extra(ret),
                     new Action(ret => SpellManager.Cast("Shoot")))
                 );
+#else
+            return new ActionAlwaysFail();
+#endif
         }
 
         /// <summary>Creates an interrupt spell cast composite. This will attempt to use racials before any class/spec abilities. It will attempt to stun if possible!</summary>
@@ -87,9 +91,6 @@ namespace Singular.Helpers
                         Spell.Cast("Rebuke", onUnit),
                         Spell.Cast("Avenger's Shield", onUnit),
                         Spell.Cast("Hammer of Justice", onUnit),
-                        Spell.Cast("Repentance", onUnit,
-                            ret => onUnit(ret).IsPlayer || onUnit(ret).IsDemon || onUnit(ret).IsHumanoid ||
-                                    onUnit(ret).IsDragon || onUnit(ret).IsGiant || onUnit(ret).IsUndead),
 
                         Spell.Cast("Kick", onUnit),
                         Spell.Cast("Gouge", onUnit, ret => !onUnit(ret).IsBoss() && !onUnit(ret).MeIsSafelyBehind), // Can't gouge bosses.

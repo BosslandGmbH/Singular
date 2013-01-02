@@ -12,6 +12,7 @@ using Rest = Singular.Helpers.Rest;
 using Singular.Settings;
 using Styx.Common;
 using System.Diagnostics;
+using Styx.Common.Helpers;
 
 namespace Singular.Helpers
 {
@@ -523,6 +524,40 @@ namespace Singular.Helpers
             public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
         }
 
+        private static bool lastMovingAwayAnswer = false;
+        private static ulong guidLastMovingAwayCheck = 0;
+        private static double distLastMovingAwayCheck = 0f;
+        private static readonly WaitTimer MovingAwayTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
+
+        public static bool CurrentTargetIsMovingAwayFromMe
+        {
+            get
+            {
+                if (guidLastMovingAwayCheck != StyxWoW.Me.CurrentTargetGuid || StyxWoW.Me.CurrentTargetGuid == 0)
+                {
+                    lastMovingAwayAnswer = false;
+                    if (StyxWoW.Me.CurrentTarget == null)
+                        guidLastMovingAwayCheck = 0;
+                    else
+                    {
+                        guidLastMovingAwayCheck = StyxWoW.Me.CurrentTargetGuid;
+                        distLastMovingAwayCheck = StyxWoW.Me.CurrentTarget.Distance;
+                        MovingAwayTimer.Reset();
+                    }
+                }
+                else if ( MovingAwayTimer.IsFinished )
+                {
+                    double currentDistance = StyxWoW.Me.CurrentTarget.Distance;
+                    double changeInDistance = currentDistance - distLastMovingAwayCheck;
+                    lastMovingAwayAnswer = changeInDistance > 0;
+                    distLastMovingAwayCheck = currentDistance;
+                    MovingAwayTimer.Reset();
+                }
+
+                return lastMovingAwayAnswer ;
+            }
+        }
+
     }
 
     // following class should probably be in Unit, but made a separate 
@@ -658,6 +693,7 @@ namespace Singular.Helpers
         }
 
         private static long lastReportedTime = -111;
+
     }
 
 }

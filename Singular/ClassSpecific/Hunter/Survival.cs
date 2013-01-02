@@ -10,6 +10,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals.WoWObjects;
 using System.Drawing;
+using Styx.WoWInternals;
 
 namespace Singular.ClassSpecific.Hunter
 {
@@ -45,7 +46,7 @@ namespace Singular.ClassSpecific.Hunter
                         CreateSurvivalDiagnosticOutputBehavior(),
 
                         Common.CreateMisdirectionBehavior(),
-                        Spell.Buff("Hunter's Mark", ret => Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget) && !TalentManager.HasGlyph("Marked for Death")),
+                        Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(Me.CurrentTarget) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
 
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
@@ -58,7 +59,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         Helpers.Common.CreateAutoAttack(true),
 
-                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+                        Common.CreateHunterNormalCrowdControl(),
 
                         Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
@@ -73,8 +74,6 @@ namespace Singular.ClassSpecific.Hunter
                                 && Me.GotAlivePet
                                 && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
 
-                        Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
-
                         // AoE Rotation
                         new Decorator(
                             ret => Spell.UseAOE && !(Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
@@ -82,7 +81,6 @@ namespace Singular.ClassSpecific.Hunter
                                 Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
                                 Spell.Buff("Serpent Sting"),
                                 Spell.Cast("Explosive Shot"),
-                                Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
                                 Spell.Cast("Black Arrow", ret => Me.CurrentTarget.TimeToDeath() > 12 ),
                                 Common.CreateHunterTrapBehavior( "Explosive Trap", true,  ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
                                 Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
@@ -146,7 +144,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         Helpers.Common.CreateAutoAttack(true),
 
-                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+                        Common.CreateHunterPvpCrowdControl(),                      
 
                         Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
@@ -160,24 +158,6 @@ namespace Singular.ClassSpecific.Hunter
                                 && Me.CurrentTarget.IsAlive
                                 && Me.GotAlivePet
                                 && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
-
-                        Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
-
-                        // AoE Rotation
-                        new Decorator(
-                            ret => Spell.UseAOE && !(Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
-                            new PrioritySelector(
-                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-                                Spell.Buff("Serpent Sting"),
-                                Spell.Cast("Explosive Shot"),
-                                Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
-                                Spell.Cast("Black Arrow", ret => Me.CurrentTarget.TimeToDeath() > 12),
-                                Common.CreateHunterTrapBehavior("Explosive Trap", true, ret => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
-                                Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
-                                Spell.Cast("Cobra Shot"),
-                                Common.CastSteadyShot(on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot"))
-                                )
-                            ),
 
                         // Single Target Rotation
                         Spell.Buff("Serpent Sting"),

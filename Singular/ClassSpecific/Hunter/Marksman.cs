@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Hunter
                         CreateMarksmanDiagnosticOutputBehavior(),
 
                         Common.CreateMisdirectionBehavior(),
-                        Spell.Buff("Hunter's Mark", ret => Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget) && !TalentManager.HasGlyph("Marked for Death")),
+                        Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(Me.CurrentTarget) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
 
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         Helpers.Common.CreateAutoAttack(true),
 
-                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+                        Common.CreateHunterNormalCrowdControl(),
 
                         Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
@@ -72,8 +72,6 @@ namespace Singular.ClassSpecific.Hunter
                                 && Me.CurrentTarget.IsAlive
                                 && Me.GotAlivePet
                                 && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
-
-                        Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
 
                         // AoE Rotation
                         new Decorator(
@@ -139,7 +137,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         Helpers.Common.CreateAutoAttack(true),
 
-                        Common.CreateHunterTrapOnAddBehavior("Explosive Trap"),
+                        Common.CreateHunterPvpCrowdControl(),                      
 
                         Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
@@ -153,20 +151,6 @@ namespace Singular.ClassSpecific.Hunter
                                 && Me.CurrentTarget.IsAlive
                                 && Me.GotAlivePet
                                 && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
-
-                        Common.CreateHunterTrapOnAddBehavior("Freezing Trap"),
-
-                        // AoE Rotation
-                        new Decorator(
-                            ret => Spell.UseAOE && !(Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
-                            new PrioritySelector(
-                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-                                BuffSteadyFocus(),
-                                Spell.Cast("Aimed Shot", ret => Me.HasAura("Master Marksman", 3)),
-                                Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
-                                Common.CastSteadyShot(on => Me.CurrentTarget)
-                                )
-                            ),
 
                         // Single Target Rotation
                         Spell.Buff("Serpent Sting"),

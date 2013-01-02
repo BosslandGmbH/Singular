@@ -20,16 +20,11 @@ namespace Singular.ClassSpecific.DeathKnight
         private const int KillingMachine = 51124;
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static DeathKnightSettings DeathKnightSettings { get { return SingularSettings.Instance.DeathKnight; } }
+        private static DeathKnightSettings Settings { get { return SingularSettings.Instance.DeathKnight; } }
 
         #region Normal Rotations
 
         private static List<WoWUnit> _nearbyUnfriendlyUnits;
-
-        private static DeathKnightSettings Settings
-        {
-            get { return SingularSettings.Instance.DeathKnight; }
-        }
 
         private static bool IsDualWelding
         {
@@ -45,10 +40,8 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
-                Spell.Buff("Chains of Ice",
-                           ret =>
-                           Me.CurrentTarget.Fleeing && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-                Common.CreateDeathGripBehavior(),
+
+                Common.CreateGetOverHereBehavior(),
 
                 // Cooldowns
                 Spell.BuffSelf("Pillar of Frost"),
@@ -143,8 +136,8 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
-                Common.CreateDeathGripBehavior(),
-                Spell.Buff("Chains of Ice", ret => Me.CurrentTarget.DistanceSqr > 10*10),
+
+                Common.CreateGetOverHereBehavior(),
 
                 // Cooldowns
                 Spell.BuffSelf("Pillar of Frost"),

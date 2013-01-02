@@ -187,6 +187,13 @@ namespace Singular.Settings
         #region Discipline
 
         [Setting]
+        [DefaultValue(80)]
+        [Category("Discipline")]
+        [DisplayName("Spirit Shell")]
+        [Description("Spirit Shell will be used at this value along with Prayer of Healing")]
+        public int SpiritShell { get; set; }
+
+        [Setting]
         [DefaultValue(30)]
         [Category("Discipline")]
         [DisplayName("Penance Health")]
@@ -251,7 +258,7 @@ namespace Singular.Settings
 
 
         [Setting]
-        [DefaultValue(80)]
+        [DefaultValue(40)]
         [Category("Discipline")]
         [DisplayName("Power Word: Shield Health")]
         [Description("Power Word: Shield will be used at this value")]

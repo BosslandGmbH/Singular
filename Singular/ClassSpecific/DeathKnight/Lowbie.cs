@@ -7,12 +7,17 @@ using Styx;
 
 using Styx.Pathing;
 using Styx.TreeSharp;
+using Styx.WoWInternals.WoWObjects;
+using Singular.Settings;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
     public class Lowbie
     {
-        [Behavior(BehaviorType.Combat,WoWClass.DeathKnight, (WoWSpec)0)]
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static DeathKnightSettings Settings { get { return SingularSettings.Instance.DeathKnight; } }
+
+        [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, (WoWSpec)0)]
         public static Composite CreateLowbieDeathKnightCombat()
         {
             return new PrioritySelector(
@@ -27,7 +32,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                                 (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
                                                 u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
-                Common.CreateDeathGripBehavior(),
+                Common.CreateGetOverHereBehavior(),
                 Spell.Cast("Death Coil"),
                 Spell.Buff("Icy Touch", true, "Frost Fever"),
                 Spell.Buff("Plague Strike", true, "Blood Plague"),

@@ -8,6 +8,7 @@ using Styx.CommonBot.Routines;
 using Styx.WoWInternals.DBC;
 using System.Drawing;
 using Singular.Helpers;
+using Singular.Settings;
 
 namespace Singular
 {
@@ -50,6 +51,13 @@ namespace Singular
                     return WoWContext.Instances;
                 }
 
+                if (Me.IsInGroup())
+                {
+                    // return SingularSettings.Instance.WorldGroupBehaviors;
+                    return WoWContext.Instances;
+                }
+
+                // return SingularSettings.Instance.WorldSoloBehaviors;
                 return WoWContext.Normal;
             }
         }
@@ -90,7 +98,11 @@ namespace Singular
 
         public static void DescribeContext()
         {
-            Logger.Write(Color.LightGreen, "Your Level {0}{1} {2} {3} Build is", Me.Level, Me.Race.ToString().CamelToSpaced(), SpecializationName(), Me.Class.ToString() );
+            string sRace = Me.Race.ToString().CamelToSpaced();
+            if (Me.Race == WoWRace.Pandaren)
+                sRace = " " + Me.FactionGroup.ToString() + sRace;
+
+            Logger.Write(Color.LightGreen, "Your Level {0}{1} {2} {3} Build is", Me.Level, sRace, SpecializationName(), Me.Class.ToString() );
 
             string sRunningAs = "";
 
@@ -114,7 +126,7 @@ namespace Singular
                 if (!Me.IsInGroup())
                     sRunningAs = "Solo " + sRunningAs;
                 else
-                    sRunningAs = string.Format("{0}m {1}", Me.CurrentMap.MaxPlayers, sRunningAs);
+                    sRunningAs = string.Format("{0}m {1}", (int) Math.Max(Me.CurrentMap.MaxPlayers, Me.GroupInfo.GroupSize), sRunningAs);
             }
 
             Logger.Write(Color.LightGreen, "... running the {0} bot {1}in {2}",

@@ -8,7 +8,9 @@ using Styx;
 using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
 using Rest = Singular.Helpers.Rest;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Paladin
 {
@@ -16,6 +18,9 @@ namespace Singular.ClassSpecific.Paladin
     {
 
         #region Properties & Fields
+
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin; } }
 
         private const int RET_T13_ITEM_SET_ID = 1064;
 
@@ -29,6 +34,8 @@ namespace Singular.ClassSpecific.Paladin
 
         private static bool Has2PieceTier13Bonus { get { return NumTier13Pieces >= 2; } }
 
+        private static int _mobCount;
+
         #endregion
 
         #region Heal
@@ -36,34 +43,63 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinRetributionHeal()
         {
             return new PrioritySelector(
-                //Spell.WaitForCast(),
-                Spell.Heal("Word of Glory", ret => StyxWoW.Me,
-                           ret =>
-                           StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth &&
-                           StyxWoW.Me.CurrentHolyPower == 3),
-                Spell.Heal("Holy Light", ret => StyxWoW.Me,
-                           ret =>
-                           !SpellManager.HasSpell("Flash of Light") &&
-                           StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.RetributionHealHealth),
-                Spell.Heal("Flash of Light", ret => StyxWoW.Me,
-                           ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.RetributionHealHealth));
+                Spell.WaitForCastOrChannel(),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(                       
+                        Spell.Heal("Lay on Hands",
+                            mov => false,
+                            on => Me,
+                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.LayOnHandsHealth,
+                            cancel => false,
+                            true),
+                        Spell.Heal("Word of Glory",
+                            mov => false,
+                            on => Me,
+                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.WordOfGloryHealth && Me.CurrentHolyPower >= 3,
+                            cancel => Me.HealthPercent > PaladinSettings.WordOfGloryHealth,
+                            true),
+                        Spell.Heal("Flash of Light",
+                            mov => false,
+                            on => Me,
+                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.RetributionHealHealth,
+                            cancel => Me.HealthPercent > PaladinSettings.RetributionHealHealth,
+                            true)
+                        )
+                    )
+                );
         }
+
         [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinRetribution)]
         public static Composite CreatePaladinRetributionRest()
         {
             return new PrioritySelector( // use ooc heals if we have mana to
-                new Decorator(ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                    CreatePaladinRetributionHeal()),
-                // Rest up damnit! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour(),
-                // Can we res people?
-                Spell.Resurrect("Redemption"));
+                Spell.WaitForCastOrChannel(false),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.Heal("Flash of Light",
+                            mov => true,
+                            on => Me,
+                            req => Me.GetPredictedHealthPercent(true) <= 85 && !Me.HasAura("Drink") && !Me.HasAura("Food"),
+                            cancel => Me.HealthPercent > 90,
+                            true),
+                        // Since we used predicted health above, add a test before calling default rest since it does not
+                        new Decorator(
+                            ret => Me.GetPredictedHealthPercent(true) < SingularSettings.Instance.MinHealth || Me.ManaPercent < SingularSettings.Instance.MinMana,
+                            Rest.CreateDefaultRestBehaviour()
+                            ),
+                        // Can we res people?
+                        Spell.Resurrect("Redemption")
+                        )
+                    )
+                );
         }
         #endregion
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Heal|BehaviorType.Pull|BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution,WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Normal | WoWContext.Battlegrounds )]
         public static Composite CreatePaladinRetributionNormalPullAndCombat()
         {
             return new PrioritySelector(
@@ -71,108 +107,91 @@ namespace Singular.ClassSpecific.Paladin
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                // Heals
-                Spell.Heal("Word of Glory",
-                    ret => (StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.ActiveAuras.ContainsKey("Divine Purpose")) &&
-                            StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth),
+                Spell.WaitForCastOrChannel(),
 
-                // Defensive
-                Spell.BuffSelf("Hand of Freedom",
-                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                          WoWSpellMechanic.Disoriented,
-                                                          WoWSpellMechanic.Frozen,
-                                                          WoWSpellMechanic.Incapacitated,
-                                                          WoWSpellMechanic.Rooted,
-                                                          WoWSpellMechanic.Slowed,
-                                                          WoWSpellMechanic.Snared)),
+                new Decorator( 
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget,
+                    new PrioritySelector(
+                        // aoe count
+                        ActionAoeCount(),
 
-                    Spell.BuffSelf("Divine Shield", ret => StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance") && (!StyxWoW.Me.HasAura("Horde Flag") || !StyxWoW.Me.HasAura("Alliance Flag"))),
-                    Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
+                        CreateRetDiagnosticOutputBehavior(),
 
-                    //2	Let's keep up Insight instead of Truth for grinding.  Keep up Righteousness if we need to AoE.  
-                    Common.CreatePaladinSealBehavior(),
+                        Helpers.Common.CreateAutoAttack(true),
+                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
 
-                    //7	Blow buffs seperatly.  No reason for stacking while grinding.
-                    Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
+                        // Defensive
+                        Spell.BuffSelf("Hand of Freedom",
+                            ret => Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
+                                                                  WoWSpellMechanic.Disoriented,
+                                                                  WoWSpellMechanic.Frozen,
+                                                                  WoWSpellMechanic.Incapacitated,
+                                                                  WoWSpellMechanic.Rooted,
+                                                                  WoWSpellMechanic.Slowed,
+                                                                  WoWSpellMechanic.Snared)),
 
-                    Spell.Cast("Holy Avenger", ret => SingularSettings.Instance.Paladin.RetGoatK &&Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4),
-                    Spell.BuffSelf("Avenging Wrath", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4 ||
-                        (!StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger") && Spell.GetSpellCooldown("Holy Avenger").TotalSeconds > 10)),
-                    Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
-                    Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
-                    Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                        Spell.BuffSelf("Divine Shield", ret => Me.HealthPercent <= 20 && !Me.HasAura("Forbearance") && (!Me.HasAura("Horde Flag") || !Me.HasAura("Alliance Flag"))),
+                        Spell.BuffSelf("Divine Protection", ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
 
-                    Spell.BuffSelf("Inquisition", ret => SpellManager.HasSpell("Inquisition") && (!StyxWoW.Me.ActiveAuras.ContainsKey("Inquisition") || StyxWoW.Me.ActiveAuras["Inquisition"].TimeLeft.TotalSeconds <= 4) && StyxWoW.Me.CurrentHolyPower > 0),
-                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 5),
-                    Spell.Cast("Hammer of Wrath"),
-                    Spell.Cast("Exorcism"),
-                    Spell.Cast("Crusader Strike"),
-                    Spell.Cast("Judgment"),
-                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.CurrentHolyPower == 4),
+                        Common.CreatePaladinSealBehavior(),
 
-                    // Move to melee is LAST. Period.
-                    Movement.CreateMoveToMeleeBehavior(true)
-                );
-        }
+                        //7	Blow buffs seperatly.  No reason for stacking while grinding.
+                        Spell.Cast("Guardian of Ancient Kings", ret => PaladinSettings.RetGoatK && _mobCount >= 4),
+                        Spell.Cast("Holy Avenger", ret => PaladinSettings.RetGoatK && _mobCount < 4),
+                        Spell.BuffSelf("Avenging Wrath", ret => _mobCount >= 4 || (!Me.HasAura("Holy Avenger") && Spell.GetSpellCooldown("Holy Avenger").TotalSeconds > 10)),
 
-        #endregion
+                        Spell.Cast("Execution Sentence", ret => Me.CurrentTarget.TimeToDeath() > 15),
+                        Spell.Cast("Holy Prism", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 40)),
 
-        #region Battleground Rotation
+                        new Decorator(
+                            ret => _mobCount >= 2 && Spell.UseAOE,
+                            new PrioritySelector(
+                                Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
 
-        [Behavior(BehaviorType.Heal | BehaviorType.Pull | BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Battlegrounds)]
-        public static Composite CreatePaladinRetributionPvPPullAndCombat()
-        {
-            HealerManager.NeedHealTargeting = true;
-            return new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateAutoAttack(true),
-                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                                // EJ: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
+                                Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 4),
+                                Spell.Cast( ret => SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
+                                Spell.Cast("Execution Sentence" ),
+                                Spell.Cast("Hammer of Wrath"),
+                                Spell.Cast("Exorcism"),
+                                Spell.Cast(ret => SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
+                                Spell.Cast("Judgment"),
+                                Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
+                                Spell.BuffSelf("Sacred Shield"),
+                                Movement.CreateMoveToMeleeBehavior(true)
+                                )
+                            ),
 
-                   // Defensive
-                    Spell.BuffSelf("Hand of Freedom",
-                    ret => !StyxWoW.Me.Auras.Values.Any(a => a.Name.Contains("Hand of") && a.CreatorGuid == StyxWoW.Me.Guid) &&
-                           StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                          WoWSpellMechanic.Disoriented,
-                                                          WoWSpellMechanic.Frozen,
-                                                          WoWSpellMechanic.Incapacitated,
-                                                          WoWSpellMechanic.Rooted,
-                                                          WoWSpellMechanic.Slowed,
-                                                          WoWSpellMechanic.Snared)),
+                        // EJ: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
+                        Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 4),
+                        Spell.Cast( "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
+                        Spell.Cast("Execution Sentence" ),
+                        Spell.Cast("Hammer of Wrath"),
+                        Spell.Cast("Exorcism"),
+                        Spell.Cast("Crusader Strike"),
+                        Spell.Cast("Judgment"),
+                        Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
+                        Spell.BuffSelf("Sacred Shield")
+                        )
+                    ),
 
-                    Spell.BuffSelf("Divine Shield", ret => StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance") && (!StyxWoW.Me.HasAura("Horde Flag") || !StyxWoW.Me.HasAura("Alliance Flag"))),
-                    Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
-
-                    //  Buffs
-                    Common.CreatePaladinSealBehavior(),
-
-
-                    Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && StyxWoW.Me.CurrentTarget.Distance < 6 &&
-                        (Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3 || (StyxWoW.Me.CurrentTarget.HasAura("Horde Flag") || StyxWoW.Me.CurrentTarget.HasAura("Alliance Flag")))),
-
-                    Spell.BuffSelf("Holy Avenger", ret => StyxWoW.Me.CurrentTarget.Distance <= 8),
-                    Spell.BuffSelf("Avenging Wrath", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
-                    Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
-                    Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
-                    Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
-
-                    Spell.BuffSelf("Inquisition", ret => SpellManager.HasSpell("Inquisition") && (!StyxWoW.Me.ActiveAuras.ContainsKey("Inquisition") || StyxWoW.Me.ActiveAuras["Inquisition"].TimeLeft.TotalSeconds <= 4) && StyxWoW.Me.CurrentHolyPower > 0),
-                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 5),
-                    Spell.Cast("Hammer of Wrath"),
-                    Spell.Cast("Exorcism"),
-                    Spell.Cast("Crusader Strike"),
-                    Spell.Cast("Judgment"),
-                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.CurrentHolyPower == 4),
-
+                // Move to melee is LAST. Period.
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 
+        private static Action ActionAoeCount()
+        {
+            return new Action(ret =>
+            {
+                _mobCount = Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 3));
+                return RunStatus.Failure;
+            });
+        }
+
         #endregion
+
 
         #region Instance Rotation
 
@@ -180,50 +199,117 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinRetributionInstancePullAndCombat()
         {
             return new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateAutoAttack(true),
-                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
 
-                    // Defensive
-                    Spell.BuffSelf("Hand of Freedom",
-                        ret => !StyxWoW.Me.Auras.Values.Any(a => a.Name.Contains("Hand of") && a.CreatorGuid == StyxWoW.Me.Guid) &&
-                                StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                               WoWSpellMechanic.Disoriented,
-                                                               WoWSpellMechanic.Frozen,
-                                                               WoWSpellMechanic.Incapacitated,
-                                                               WoWSpellMechanic.Rooted,
-                                                               WoWSpellMechanic.Slowed,
-                                                               WoWSpellMechanic.Snared)),
+                Spell.WaitForCastOrChannel(),
 
-                    Spell.BuffSelf("Divine Shield", ret => StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance") && (!StyxWoW.Me.HasAura("Horde Flag") || !StyxWoW.Me.HasAura("Alliance Flag"))),
-                    Spell.BuffSelf("Divine Protection", ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
+                new Decorator( 
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget,
+                    new PrioritySelector(
+                        // aoe count
+                        new Action(ret =>
+                        {
+                            _mobCount = Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 3));
+                            return RunStatus.Failure;
+                        }),
 
-                    //2	seal_of_truth
-                    Common.CreatePaladinSealBehavior(),
+                        CreateRetDiagnosticOutputBehavior(),
 
-                    //7	guardian_of_ancient_kings,if=cooldown.Holy Avenger.remains<10
-                    Spell.Cast("Guardian of Ancient Kings", ret => SingularSettings.Instance.Paladin.RetGoatK && StyxWoW.Me.CurrentTarget.IsBoss() &&
-                        Spell.GetSpellCooldown("Holy Avenger").TotalSeconds < 10),
-                //8	Holy Avenger,if=cooldown.guardian_of_ancient_kings.remains>0&cooldown.guardian_of_ancient_kings.remains<292
-                    Spell.Cast("Holy Avenger", ret => SingularSettings.Instance.Paladin.RetGoatK &&
-                        //((!StyxWoW.Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) < 4) ||
-                        StyxWoW.Me.CurrentTarget.IsBoss() &&
-                        Spell.GetSpellCooldown("Guardian of Ancient Kings").TotalSeconds > 0 &&
-                        Spell.GetSpellCooldown("Guardian of Ancient Kings").TotalSeconds < 292),
-                    Spell.BuffSelf("Avenging Wrath", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
-                    Spell.BuffSelf("Blood Fury", ret => SpellManager.HasSpell("Blood Fury") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
-                    Spell.BuffSelf("Berserking", ret => SpellManager.HasSpell("Berserking") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
-                    Spell.BuffSelf("Lifeblood", ret => SpellManager.HasSpell("Lifeblood") && StyxWoW.Me.ActiveAuras.ContainsKey("Holy Avenger")),
+                        Helpers.Common.CreateAutoAttack(true),
+                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
 
-                    Spell.BuffSelf("Inquisition", ret => SpellManager.HasSpell("Inquisition") && (!StyxWoW.Me.ActiveAuras.ContainsKey("Inquisition") || StyxWoW.Me.ActiveAuras["Inquisition"].TimeLeft.TotalSeconds <= 4) && StyxWoW.Me.CurrentHolyPower > 0),
-                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 5),
-                    Spell.Cast("Hammer of Wrath"),
-                    Spell.Cast("Exorcism"),
-                    Spell.Cast("Crusader Strike"),
-                    Spell.Cast("Judgment"),
-                    Spell.Cast("Templar's Verdict", ret => StyxWoW.Me.CurrentHolyPower == 3 || StyxWoW.Me.CurrentHolyPower == 4),
+                        // Defensive
+                        Spell.BuffSelf("Hand of Freedom",
+                                       ret =>
+                                       !Me.Auras.Values.Any(
+                                           a => a.Name.Contains("Hand of") && a.CreatorGuid == Me.Guid) &&
+                                       Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
+                                                                      WoWSpellMechanic.Disoriented,
+                                                                      WoWSpellMechanic.Frozen,
+                                                                      WoWSpellMechanic.Incapacitated,
+                                                                      WoWSpellMechanic.Rooted,
+                                                                      WoWSpellMechanic.Slowed,
+                                                                      WoWSpellMechanic.Snared)),
+
+                        Spell.BuffSelf("Divine Shield", 
+                            ret => Me.HealthPercent <= 20  && !Me.HasAura("Forbearance")),
+                        Spell.BuffSelf("Divine Protection",
+                            ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
+
+                        Common.CreatePaladinSealBehavior(),
+
+                        new Decorator(
+                            ret => PartyBuff.WeHaveBloodlust,
+                            new Action(abc =>
+                            {
+                                WoWItem item = Item.FindFirstUsableItemBySpell("Golem's Strength", "Potion of Mogu Power");
+                                if (item != null) 
+                                    item.Use();
+                            })),
+
+                        new Decorator(
+                            ret => Me.CurrentTarget.IsWithinMeleeRange,
+                            new PrioritySelector(
+                                Spell.Cast("Guardian of Ancient Kings",
+                                    ret => PaladinSettings.RetGoatK
+                                        && Me.CurrentTarget.IsBoss()
+                                        && Me.ActiveAuras.ContainsKey("Inquisition")),
+                                Spell.BuffSelf("Avenging Wrath", 
+                                    ret => Me.ActiveAuras.ContainsKey("Inquisition")
+                                        && (!SpellManager.HasSpell("Guardian of Ancient Kings") || !PaladinSettings.RetGoatK || Common.HasTalent(PaladinTalents.SanctifiedWrath) || Spell.GetSpellCooldown("Guardian of Ancient Kings").TotalSeconds <= 290)),
+                                Spell.Cast("Holy Avenger", ret => PaladinSettings.RetGoatK && Me.HasAura("Avenging Wrath"))
+                                )
+                            ),
+
+                        // react to Divine Purpose proc
+                        new Decorator(
+                            ret => Me.GetAuraTimeLeft("Divine Purpose", true).TotalSeconds > 0,
+                            new PrioritySelector(
+                                Spell.BuffSelf("Inquisition", ret => Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds <= 2),
+                                Spell.Cast("Templar's Verdict")
+                                )
+                            ),
+
+                        Spell.Cast( "Execution Sentence", ret => Me.CurrentTarget.TimeToDeath() > 12 ),
+                        Spell.Cast( "Holy Prism", on => Group.Tanks.FirstOrDefault( t => t.IsAlive && t.Distance < 40)),
+
+                        //Use Synapse Springs Engineering thingy if inquisition is up
+
+                        new Decorator(
+                            ret => _mobCount >= 2 && Spell.UseAOE,
+                            new PrioritySelector(
+                                Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
+
+                                // EJ Multi Rotation: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
+                                Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 4),
+                                Spell.Cast(ret => SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
+                                Spell.Cast("Execution Sentence"),
+                                Spell.Cast("Hammer of Wrath"),
+                                Spell.Cast("Exorcism"),
+                                Spell.Cast(ret => SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
+                                Spell.Cast("Judgment"),
+                                Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
+                                Spell.BuffSelf("Sacred Shield"),
+                                Movement.CreateMoveToMeleeBehavior(true)
+                                )
+                            ),
+
+                        // Single Target Priority - Laria's mix of EJ/Icy Veins/...
+                        Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower >= 3 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds <= 2),
+                        Spell.Cast("Execution Sentence", ret => Me.HasAura("Inquisition")),
+                        Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower == 5),
+                        Spell.Cast("Hammer of Wrath"),
+                        //Wait if HammerOfWrath CD is between 0 and 0.2 sec
+                        Spell.Cast("Exorcism"),
+                        Spell.Cast("Judgement", ret => Me.CurrentTarget.HealthPercent <= 20 || Me.HasAura("Avenging Wrath")),
+                        Spell.Cast("Crusader Strike"),
+                        Spell.Cast("Judgment"),
+                        Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3)
+                        )
+                    ),
+
 
                     // Move to melee is LAST. Period.
                     Movement.CreateMoveToMeleeBehavior(true)
@@ -232,193 +318,40 @@ namespace Singular.ClassSpecific.Paladin
 
         #endregion
 
-        /*
-        #region Normal Rotation
 
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinRetribution)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Normal)]
-        public static Composite CreatePaladinRetributionNormalPullAndCombat()
+        private static Composite CreateRetDiagnosticOutputBehavior()
         {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+            if (!SingularSettings.Instance.EnableDebugLogging)
+                return new Action( ret => { return RunStatus.Failure; } );
 
-                // Heals
-                Spell.Heal("Holy Light", ret => StyxWoW.Me, ret => !SpellManager.HasSpell("Flash of Light") && StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.RetributionHealHealth),
-                Spell.Heal("Flash of Light", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.RetributionHealHealth),
-                Spell.Heal("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth && StyxWoW.Me.CurrentHolyPower == 3),
+            return new Throttle(1,
+                new Action(ret =>
+                {
+                    string sMsg;
+                    sMsg = string.Format(".... h={0:F1}%, m={1:F1}%, moving={2}, mobs={3}",
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        Me.IsMoving,
+                        _mobCount
+                        );
 
-                // Defensive
-                Spell.BuffSelf("Hand of Freedom",
-                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                          WoWSpellMechanic.Disoriented,
-                                                          WoWSpellMechanic.Frozen,
-                                                          WoWSpellMechanic.Incapacitated,
-                                                          WoWSpellMechanic.Rooted,
-                                                          WoWSpellMechanic.Slowed,
-                                                          WoWSpellMechanic.Snared)),
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
+                    {
+                        sMsg += string.Format(
+                            ", {0}, {1:F1}%, {2:F1} yds, loss={3}",
+                            target.SafeName(),
+                            target.HealthPercent,
+                            target.Distance,
+                            target.InLineOfSpellSight
+                            );
+                    }
 
-                // AoE Rotation
-                new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= SingularSettings.Instance.Paladin.ConsecrationCount,
-                    new PrioritySelector(
-                // Cooldowns
-                        Spell.BuffSelf("Holy Avenger"),
-                        Spell.BuffSelf("Avenging Wrath"),
-                        Spell.BuffSelf("Guardian of Ancient Kings"),
-                        Spell.BuffSelf("Divine Storm"),
-                        Spell.BuffSelf("Consecration"),
-                        Spell.BuffSelf("Holy Wrath")
-                        )),
-
-                // Rotation
-                Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower == 3),
-                Spell.Cast("Hammer of Justice", ret => StyxWoW.Me.HealthPercent <= 40),
-                Spell.Cast("Crusader Strike"),
-                Spell.Cast("Hammer of Wrath"),
-                Spell.Cast("Templar's Verdict",
-                    ret => StyxWoW.Me.CurrentHolyPower == 3 &&
-                           (StyxWoW.Me.HasAura("Inquisition") || !SpellManager.HasSpell("Inquisition"))),
-                Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                Spell.Cast("Judgment"),
-
-                Movement.CreateMoveToMeleeBehavior(true)
+                    Logger.WriteDebug(Color.LightYellow, sMsg);
+                    return RunStatus.Failure;
+                })
                 );
         }
 
-        #endregion
-
-        #region Battleground Rotation
-
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinRetribution)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Battlegrounds)]
-        public static Composite CreatePaladinRetributionPvPPullAndCombat()
-        {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-
-                // Defensive
-                Spell.BuffSelf("Hand of Freedom",
-                    ret => !StyxWoW.Me.Auras.Values.Any(a => a.Name.Contains("Hand of") && a.CreatorGuid == StyxWoW.Me.Guid) &&
-                           StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                          WoWSpellMechanic.Disoriented,
-                                                          WoWSpellMechanic.Frozen,
-                                                          WoWSpellMechanic.Incapacitated,
-                                                          WoWSpellMechanic.Rooted,
-                                                          WoWSpellMechanic.Slowed,
-                                                          WoWSpellMechanic.Snared)),
-                Spell.BuffSelf("Divine Shield", ret => StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance")),
-
-                // Cooldowns
-                Spell.BuffSelf("Holy Avenger"),
-                Spell.BuffSelf("Avenging Wrath"),
-                Spell.BuffSelf("Guardian of Ancient Kings"),
-
-                // AoE Rotation
-                new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
-                    new PrioritySelector(
-                        Spell.BuffSelf("Divine Storm"),
-                        Spell.BuffSelf("Consecration"),
-                        Spell.BuffSelf("Holy Wrath")
-                        )),
-
-                // Rotation
-                Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower == 3),
-                Spell.Cast("Hammer of Justice", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 40),
-                Spell.Cast("Crusader Strike"),
-                Spell.Cast("Hammer of Wrath"),
-                Spell.Cast("Templar's Verdict",
-                    ret => StyxWoW.Me.CurrentHolyPower == 3 &&
-                           (StyxWoW.Me.HasAura("Inquisition") || !SpellManager.HasSpell("Inquisition"))),
-                Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                Spell.Cast("Judgment"),
-                Spell.BuffSelf("Holy Wrath"),
-                Spell.BuffSelf("Consecration"),
-
-                Movement.CreateMoveToMeleeBehavior(true)
-                );
-        }
-
-        #endregion
-
-
-        #region Instance Rotation
-
-        [Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinRetribution)]
-        [Behavior(BehaviorType.Pull)]
-        [Behavior(BehaviorType.Combat)]
-        [Context(WoWContext.Instances)]
-        public static Composite CreatePaladinRetributionInstancePullAndCombat()
-        {
-            return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                Movement.CreateMoveBehindTargetBehavior(),
-
-                // Defensive
-                Spell.BuffSelf("Hand of Freedom",
-                    ret => !StyxWoW.Me.Auras.Values.Any(a => a.Name.Contains("Hand of") && a.CreatorGuid == StyxWoW.Me.Guid) &&
-                           StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                          WoWSpellMechanic.Disoriented,
-                                                          WoWSpellMechanic.Frozen,
-                                                          WoWSpellMechanic.Incapacitated,
-                                                          WoWSpellMechanic.Rooted,
-                                                          WoWSpellMechanic.Slowed,
-                                                          WoWSpellMechanic.Snared)),
-                Spell.BuffSelf("Divine Shield", ret => StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance")),
-
-                // Cooldowns
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsBoss(),
-                    new PrioritySelector(
-                    Spell.BuffSelf("Holy Avenger"),
-                    Spell.BuffSelf("Avenging Wrath"),
-                    Spell.BuffSelf("Guardian of Ancient Kings"))),
-
-                // AoE Rotation
-                new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= SingularSettings.Instance.Paladin.ConsecrationCount,
-                    new PrioritySelector(
-                        Spell.BuffSelf("Divine Storm"),
-                        Spell.BuffSelf("Consecration"),
-                        Spell.BuffSelf("Holy Wrath")
-                        )),
-
-                // Rotation
-                Spell.BuffSelf("Inquisition", ret => StyxWoW.Me.CurrentHolyPower == 3),
-                Spell.Cast("Crusader Strike"),
-                Spell.Cast("Hammer of Wrath"),
-                Spell.Cast("Templar's Verdict",
-                    ret => StyxWoW.Me.CurrentHolyPower == 3 &&
-                           (StyxWoW.Me.HasAura("Inquisition") || !SpellManager.HasSpell("Inquisition"))),
-                Spell.Cast("Exorcism", ret => StyxWoW.Me.ActiveAuras.ContainsKey("The Art of War")),
-                Spell.Cast("Judgment"),
-                Spell.BuffSelf("Holy Wrath"),
-                Spell.BuffSelf("Consecration"),
-
-                Movement.CreateMoveToMeleeBehavior(true)
-                );
-        }
-
-        #endregion
-         */
     }
 }

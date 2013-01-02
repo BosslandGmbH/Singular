@@ -13,6 +13,7 @@ using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using System.Collections.Generic;
+using CommonBehaviors.Actions;
 
 #endregion
 
@@ -54,9 +55,9 @@ namespace Singular.ClassSpecific.Druid
                                 )),
 
                         Spell.BuffSelf("Cat Form"),
-                        Spell.Cast("Wild Charge" ),
                         Spell.BuffSelf("Prowl", ret => !Me.Combat),
-                        Spell.Cast("Pounce", ret => Me.HasAura("Prowl") && Me.CurrentTarget.IsWithinMeleeRange ),
+                        Spell.Cast("Wild Charge"),
+                        Spell.Cast("Pounce", ret => Me.HasAura("Prowl") && Me.CurrentTarget.IsWithinMeleeRange),
                         Spell.Buff("Rake", ret => Me.CurrentTarget.IsWithinMeleeRange ),
                         Spell.Cast("Mangle", ret => Me.CurrentTarget.IsWithinMeleeRange )
                         )
@@ -167,7 +168,7 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.Cast("Savage Roar", ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
 
-                        Spell.Cast("Thrash", ret => _aoeColl.Any(m => !m.HasMyAura("Thash"))),
+                        Spell.Cast("Thrash", ret => _aoeColl.Any(m => !m.HasMyAura("Thrash"))),
 
                         Spell.BuffSelf("Tiger's Fury",
                             ret => Me.EnergyPercent <= 35

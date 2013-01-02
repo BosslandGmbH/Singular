@@ -158,6 +158,9 @@ namespace Singular
             }
             Logger.Write("Current spec is " + TalentManager.CurrentSpec.ToString().CamelToSpaced());
 
+            // write current settings to log file... only written at startup and when Save press in Settings UI
+            SingularSettings.Instance.LogSettings();
+
             // Update the current WoWContext, and fire an event for the change.
             UpdateContext();
 
@@ -193,9 +196,6 @@ namespace Singular
             // .. which will build behaviors again
             Instance.RebuildBehaviors(true);
 
-            // write current settings to log file... only written at startup and when Save press in Settings UI
-            SingularSettings.Instance.LogSettings();
-            
             Logger.Write("Initialization complete!");
         }
 

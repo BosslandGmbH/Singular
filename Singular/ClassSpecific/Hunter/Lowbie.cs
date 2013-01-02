@@ -5,6 +5,7 @@ using Singular.Settings;
 using Styx;
 
 using Styx.TreeSharp;
+using Styx.WoWInternals;
 
 namespace Singular.ClassSpecific.Hunter
 {
@@ -26,8 +27,8 @@ namespace Singular.ClassSpecific.Hunter
                         Helpers.Common.CreateAutoAttack(false),
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                         // Always keep it up on our target!
-                        Spell.Buff("Hunter's Mark"),
-                        // Heal pet when below 70
+                        Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(StyxWoW.Me.CurrentTarget) && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
+                // Heal pet when below 70
                         Spell.Cast("Mend Pet", ret => StyxWoW.Me.Pet.HealthPercent < 70 && !StyxWoW.Me.Pet.HasAura("Mend Pet")),
                         Spell.Cast(
                             "Concussive Shot",

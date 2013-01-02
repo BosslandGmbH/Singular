@@ -183,13 +183,6 @@ namespace Singular.Settings
         public int DivineProtectionHealthRet { get; set; }
 
         [Setting]
-        [DefaultValue(3)]
-        [Category("Retribution")]
-        [DisplayName("Consecration Count")]
-        [Description("Consecration will be used when you have more then that many mobs attacking you")]
-        public int ConsecrationCount { get; set; }
-
-        [Setting]
         [DefaultValue(30)]
         [Category("Retribution")]
         [DisplayName("Heal Health")]

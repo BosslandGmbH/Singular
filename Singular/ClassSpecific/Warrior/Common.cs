@@ -19,6 +19,8 @@ namespace Singular.ClassSpecific.Warrior
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior; } }
 
+        public static bool Tier14TwoPieceBonus { get { return Me.HasAura("Item - Warrior T14 DPS 2P Bonus"); } }
+        public static bool Tier14FourPieceBonus { get { return Me.HasAura("Item - Warrior T14 DPS 4P Bonus"); } }      
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior)]
         public static Composite CreateWarriorNormalPreCombatBuffs()
@@ -71,13 +73,13 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.Cast("Charge",
                             ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed()
-                                && Me.CurrentTarget.Distance >= 10 && Me.CurrentTarget.Distance < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)
+                                && Me.CurrentTarget.SpellDistance() >= 10 && Me.CurrentTarget.SpellDistance() < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)
                                 && WarriorSettings.UseWarriorCloser),
 
                         Spell.CastOnGround("Heroic Leap",
                             ret => Me.CurrentTarget.Location,
                             ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed()
-                                && Me.CurrentTarget.Distance > 9 && !Me.CurrentTarget.HasAura("Charge Stun", 1)
+                                && Me.CurrentTarget.SpellDistance() > 9 && !Me.CurrentTarget.HasAura("Charge Stun", 1)
                                 && WarriorSettings.UseWarriorCloser),
 
                         Spell.Cast("Heroic Throw",

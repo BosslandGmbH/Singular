@@ -37,12 +37,21 @@ namespace Singular.Managers
 
         private static bool IsMovementTemporarilySuspended
         {
-            get { return _MovementTemporarySuspendEndtime > DateTime.Now; }
+            get 
+            { 
+                if ( _MovementTemporarySuspendEndtime > DateTime.Now )
+                    return true;
+
+                // force minvalue to avoid side effects due to local computer time changes (like daylight savings time)
+                _MovementTemporarySuspendEndtime = DateTime.MinValue;   
+                return false;
+            }
             set
             {
-                _MovementTemporarySuspendEndtime = DateTime.Now;
                 if (value)
-                    _MovementTemporarySuspendEndtime += TimeSpan.FromSeconds(SingularSettings.Instance.Hotkeys.SuspendDuration);
+                    _MovementTemporarySuspendEndtime = DateTime.Now + TimeSpan.FromSeconds(SingularSettings.Instance.Hotkeys.SuspendDuration);
+                else
+                    _MovementTemporarySuspendEndtime = DateTime.MinValue;
             }
         }
 
@@ -205,8 +214,8 @@ namespace Singular.Managers
                 last_IsMovementTemporarilySuspended = IsMovementTemporarilySuspended;
 
                 // keep these notifications in Log window only
-                if ( last_IsMovementTemporarilySuspended )
-                    Logger.Write( Color.White, "Bot Movement disabled during user movement...");
+                if (last_IsMovementTemporarilySuspended)
+                    Logger.Write(Color.White, "Bot Movement disabled during user movement...");
                 else
                     Logger.Write(Color.White, "Bot Movement restored!");
 
@@ -233,7 +242,7 @@ namespace Singular.Managers
         private static bool _AoeEnabled;
         private static bool _CombatEnabled;
         private static bool _MovementEnabled;
-        private static DateTime _MovementTemporarySuspendEndtime = DateTime.Now;
+        private static DateTime _MovementTemporarySuspendEndtime = DateTime.MinValue;
 
         // save keys used at last Register
         public static Keys[] _registeredMovementSuspendKeys;
@@ -292,7 +301,7 @@ namespace Singular.Managers
             _AoeEnabled = true;
             _CombatEnabled = true;
             _MovementEnabled = true;
-            _MovementTemporarySuspendEndtime = DateTime.Now;
+            _MovementTemporarySuspendEndtime = DateTime.MinValue;
 
             last_IsAoeEnabled = true;
             last_IsCombatEnabled = true;

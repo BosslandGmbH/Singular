@@ -15,6 +15,7 @@ using Styx.Helpers;
 using Styx.Common;
 using Styx.CommonBot;
 using System.Drawing;
+using System.Text.RegularExpressions;
 
 namespace Singular.Helpers
 {
@@ -348,6 +349,26 @@ namespace Singular.Helpers
             }
 
             Logger.WriteFile("");
+
+            Regex pat = new Regex( "Item \\-" + Me.Class.ToString().CamelToSpaced() + " .*P Bonus");
+            if ( Me.GetAllAuras().Any( a => pat.IsMatch( a.Name )))
+            {
+                foreach( var a in Me.GetAllAuras())
+                {
+                    if ( pat.IsMatch( a.Name ))
+                    {
+                        Logger.WriteFile( "  Tier Bonus Aura:  {0}", a.Name );
+                    }
+                }
+
+                Logger.WriteFile("");
+            }
+
+            if (Me.Inventory.Equipped.Trinket1 != null)
+                Logger.WriteFile("Trinket1: {0} #{1}", Me.Inventory.Equipped.Trinket1.Name, Me.Inventory.Equipped.Trinket1.Entry);
+
+            if (Me.Inventory.Equipped.Trinket2 != null)
+                Logger.WriteFile("Trinket2: {0} #{1}", Me.Inventory.Equipped.Trinket2.Name, Me.Inventory.Equipped.Trinket2.Entry);
         }
 
         public static uint CalcTotalGearScore()
@@ -424,6 +445,16 @@ namespace Singular.Helpers
             return false;
         }
 
+        // public static bool Tier14TwoPieceBonus { get { return NumItemSetPieces(1144) >= 2; } }
+        // public static bool Tier14FourPieceBonus { get { return NumItemSetPieces(1144) >= 4; } }
+
+        private static int NumItemSetPieces( int setId)
+        {
+            // return StyxWoW.Me.CarriedItems.Count(i => i.ItemInfo.ItemSetId == setId);
+            return Me.Inventory.Equipped.Items.Count(i => i != null && i.ItemInfo.ItemSetId == setId);
+        }
+
+
         class SecondaryStats
         {
             public float MeleeHit { get; set; }
@@ -473,17 +504,17 @@ namespace Singular.Helpers
                         return RunStatus.Failure;
                     }),
 
-                    new Decorator( 
-                        ret => ret != null,
+                    new Decorator(
+                        ret => bandage != null,
 
                         new Sequence(
-                            new Action( ret => UseItem((WoWItem)ret) ),
+                            new Action(ret => UseItem(bandage)),
                             new WaitContinue( new TimeSpan(0,0,0,0,750), ret => Me.IsCasting || Me.IsChanneling, new ActionAlwaysSucceed()),
                             new WaitContinue(6, ret => (!Me.IsCasting && !Me.IsChanneling) || Me.HealthPercent > 99, new ActionAlwaysSucceed()),
                             new DecoratorContinue(
                                 ret => Me.IsCasting || Me.IsChanneling,
                                 new Sequence(
-                                    new Action( r => Logger.Write( "/cancel First Aid")),
+                                    new Action( r => Logger.Write( "/cancel First Aid @ {0:F0}%", Me.HealthPercent )),
                                     new Action( r => SpellManager.StopCasting() )
                                     )
                                 )
@@ -501,7 +532,8 @@ namespace Singular.Helpers
         public static WoWItem FindBestBandage()
         {
             return Me.CarriedItems
-                .Where(b => b.ItemInfo.ContainerClass == WoWItemContainerClass.Bandage
+                .Where(b => b.ItemInfo.ItemClass == WoWItemClass.Consumable 
+                    && b.ItemInfo.ContainerClass == WoWItemContainerClass.Bandage
                     && b.ItemInfo.RecipeClass == WoWItemRecipeClass.FirstAid
                     && Me.GetSkill(SkillLine.FirstAid).CurrentValue >= b.ItemInfo.RequiredSkillLevel
                     && CanUseItem(b))

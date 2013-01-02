@@ -105,11 +105,15 @@ namespace Singular.ClassSpecific.Warrior
                             Spell.BuffSelf("Enraged Regeneration",
                                 ret => Me.HealthPercent < 10 || (Me.ActiveAuras.ContainsKey("Enrage") && Me.HealthPercent < WarriorSettings.WarriorEnragedRegenerationHealth)),
 
-                            Spell.Cast("Recklessness", ret => Me.GotTarget && Me.CurrentTarget.IsBoss),
-                            Spell.Cast("Skull Banner", ret => Me.GotTarget && Me.CurrentTarget.IsBoss),
-                            // Spell.Cast("Demoralizing Banner", ret => !Me.CurrentTarget.IsBoss && UseAOE),
-
-                            Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss),
+                            new Decorator(
+                                ret => Me.GotTarget && (Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3)),
+                                new PrioritySelector(
+                                    Spell.Cast("Recklessness"),
+                                    Spell.Cast("Skull Banner"),
+                                    // Spell.Cast("Demoralizing Banner", ret => !Me.CurrentTarget.IsBoss && UseAOE),
+                                    Spell.Cast("Avatar")
+                                    )
+                                ),
 
                             // cast above rage dump so we are sure have rage to do damage
                             Spell.Cast("Bloodbath"),

@@ -29,8 +29,6 @@ namespace Singular.ClassSpecific.Warrior
 
         #region Common
 
-        public delegate int SimpleIntDelegate(object context);
-
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior; } }
 
@@ -84,7 +82,7 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.BuffSelf("Battle Stance"),
 
-                        Spell.Cast("Recklessness", ret => (Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && Me.CurrentTarget.IsWithinMeleeRange ),
+                        Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
                         Spell.Cast("Skull Banner", ret => Me.CurrentTarget.IsBoss),
 
                         Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss),

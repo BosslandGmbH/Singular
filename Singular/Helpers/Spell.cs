@@ -19,6 +19,8 @@ namespace Singular.Helpers
 
     public delegate bool SimpleBooleanDelegate(object context);
     public delegate string SimpleStringDelegate(object context);
+    public delegate int SimpleIntDelegate(object context);
+
 
     internal static class Spell
     {
@@ -605,12 +607,38 @@ namespace Singular.Helpers
         public static Composite Cast(int spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
             return
-                new Decorator(ret => requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && SpellManager.CanCast(spellId, onUnit(ret), true), 
+                new Decorator(ret => requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && SpellManager.CanCast(spellId, onUnit(ret), true),
                     new Action(ret =>
-                        {
-                            Logger.Write(string.Format("Casting {0} on {1}", spellId, onUnit(ret).SafeName()));
-                            SpellManager.Cast(spellId);
-                        }));
+                    {
+                        WoWSpell sp = WoWSpell.FromId(spellId);
+                        string sname = sp != null ? sp.Name : "#" + spellId.ToString();
+                        Logger.Write(string.Format("Casting {0} on {1}", sname, onUnit(ret).SafeName()));
+                        SpellManager.Cast(spellId);
+                    }));
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a spell by ID, with special requirements, on a specific unit.
+        ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "spellId">Identifier for the spell.</param>
+        /// <param name = "onUnit">The on unit.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite Cast(SimpleIntDelegate spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return
+                new Decorator(ret => requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && SpellManager.CanCast(spellId(ret), onUnit(ret), true),
+                    new Action(ret =>
+                    {
+                        WoWSpell sp = WoWSpell.FromId(spellId(ret));
+                        string sname = sp != null ? sp.Name : "#" + spellId(ret).ToString();
+                        Logger.Write(string.Format("Casting {0} on {1}", sname, onUnit(ret).SafeName()));
+                        SpellManager.Cast(spellId(ret));
+                    }));
         }
 
         #endregion
@@ -860,6 +888,23 @@ namespace Singular.Helpers
                 Cast(spellId, onUnit, requirements));
         }
 
+        /// <summary>
+        ///   Creates a behavior to cast a buff by name, with special requirements, on a specific unit. Returns
+        ///   RunStatus.Success if successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/2/2011.
+        /// </remarks>
+        /// <param name = "spellId">The ID of the buff</param>
+        /// <param name = "onUnit">The on unit</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns></returns>
+        public static Composite Buff(SimpleIntDelegate spellId, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return new Decorator(ret => onUnit(ret) != null && onUnit(ret).Auras.Values.All(a => a.SpellId != spellId(ret)),
+                Cast(spellId, onUnit, requirements));
+        }
+
         #endregion
 
         #region BufSelf - by ID
@@ -875,7 +920,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite BuffSelf(int spellId)
         {
-            return Buff(spellId, ret => true);
+            return Buff(spellId, ret => StyxWoW.Me, ret => true);
         }
 
         /// <summary>
@@ -889,6 +934,21 @@ namespace Singular.Helpers
         /// <param name = "requirements">The requirements.</param>
         /// <returns>.</returns>
         public static Composite BuffSelf(int spellId, SimpleBooleanDelegate requirements)
+        {
+            return Buff(spellId, ret => StyxWoW.Me, requirements);
+        }
+
+        /// <summary>
+        ///   Creates a behavior to cast a buff by ID on yourself with special requirements. Returns RunStatus.Success if
+        ///   successful, RunStatus.Failure otherwise.
+        /// </summary>
+        /// <remarks>
+        ///   Created 5/6/2011.
+        /// </remarks>
+        /// <param name = "spellId">The buff ID.</param>
+        /// <param name = "requirements">The requirements.</param>
+        /// <returns>.</returns>
+        public static Composite BuffSelf(SimpleIntDelegate spellId, SimpleBooleanDelegate requirements)
         {
             return Buff(spellId, ret => StyxWoW.Me, requirements);
         }
@@ -968,7 +1028,7 @@ namespace Singular.Helpers
 
         // used by Spell.Heal() - save fact we are queueing this Heal spell if a spell cast/gcd is in progress already.  this could only occur during 
         // .. the period of latency at the end of a cast where Singular allows you to begin the next one
-        private static bool IsSpellBeingQueued = false;
+        private static bool _IsSpellBeingQueued = false;
 
         /// <summary>
         ///   Creates a behavior to cast a heal spell by name, with special requirements, on a specific unit. Heal behaviors will make sure
@@ -1010,14 +1070,14 @@ namespace Singular.Helpers
             return new Sequence(
                     
                 // save context of currently in a GCD or IsCasting before our Cast
-                new Action(ret => IsSpellBeingQueued = (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling)),
+                new Action(ret => _IsSpellBeingQueued = (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling)),
 
                 Cast( n => name(n), checkMovement, onUnit, requirements),
 
                 // continue if not queueing spell, or we reahed end of cast/gcd of spell in progress
                 new WaitContinue( 
                     TimeSpan.FromMilliseconds(500),
-                    ret => !IsSpellBeingQueued || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling),
+                    ret => !_IsSpellBeingQueued || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling),
                     new ActionAlwaysSucceed()
                     ),
 
@@ -1039,7 +1099,7 @@ namespace Singular.Helpers
                     ), 
                     
                 // finally, wait at this point until heal completes
-                new WaitContinue(10, 
+                new WaitContinue(3, 
                     ret => {
                         // Interrupted or finished casting. 
                         if (!StyxWoW.Me.IsCasting && !StyxWoW.Me.IsChanneling)

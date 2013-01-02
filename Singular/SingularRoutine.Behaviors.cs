@@ -7,6 +7,7 @@ using Styx.TreeSharp;
 using Singular.ClassSpecific;
 using System.Drawing;
 using CommonBehaviors.Actions;
+using Styx.Common;
 
 namespace Singular
 {
@@ -31,34 +32,34 @@ namespace Singular
         {
             Logger.PrintStackTrace("RebuildBehaviors called.");
 
+            InitBehaviors();
+
             // DO NOT UPDATE: This will cause a recursive event
             // Update the current context. Handled in SingularRoutine.Context.cs
             //UpdateContext();
 
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
-            if (!EnsureComposite(true, BehaviorType.Combat, out _combatBehavior))
+            if (!EnsureComposite(true, BehaviorType.Combat))
             {
                 return false;
             }
 
-            if (!EnsureComposite(true, BehaviorType.Pull, out _pullBehavior))
+            if (!EnsureComposite(true, BehaviorType.Pull))
             {
                 return false;
             }
 
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
-            if (!EnsureComposite(false, BehaviorType.Rest, out _restBehavior))
-            {
-                if ( !silent)
-                    Logger.WriteDebug("Using default rest behavior.");
-                _restBehavior = Helpers.Rest.CreateDefaultRestBehaviour();
-            }
+            EnsureComposite(false, BehaviorType.Rest);
+            if ( TreeHooks.Instance.Hooks[BehaviorType.Rest.ToString()] == null)
+                TreeHooks.Instance.ReplaceHook( BehaviorType.Rest.ToString(), Helpers.Rest.CreateDefaultRestBehaviour());
+
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
-            EnsureComposite(false, BehaviorType.CombatBuffs, out _combatBuffsBehavior);
-            EnsureComposite(false, BehaviorType.Heal, out _healBehavior);
-            EnsureComposite(false, BehaviorType.PullBuffs, out _pullBuffsBehavior);
-            EnsureComposite(false, BehaviorType.PreCombatBuffs, out _preCombatBuffsBehavior);
+            EnsureComposite(false, BehaviorType.CombatBuffs);
+            EnsureComposite(false, BehaviorType.Heal);
+            EnsureComposite(false, BehaviorType.PullBuffs);
+            EnsureComposite(false, BehaviorType.PreCombatBuffs);
 
 #if SHOW_BEHAVIOR_LOAD_DESCRIPTION
             // display concise single line describing what behaviors we are loading
@@ -83,63 +84,86 @@ namespace Singular
                 Logger.Write(Color.LightGreen, "Loaded{0} behaviors for {1}: {2}", Me.Specialization.ToString().CamelToSpaced(), SingularRoutine.CurrentWoWContext.ToString(), sMsg);
             }
 #endif
-
-            // Since we can be lazy, we're going to fix a bug right here and now.
-            // We should *never* cast buffs while mounted. EVER. So we simply wrap it in a decorator, and be done with it.
-            // 4/11/2012 - Changed to use a LockSelector to increased performance.
-            _preCombatBuffsBehavior =
-                new Decorator(
-                    ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                    new LockSelector(
-                        Item.CreateUseAlchemyBuffsBehavior(),
-                        // Generic.CreateFlasksBehaviour(),
-                        _preCombatBuffsBehavior ?? new PrioritySelector()
-                        ));
-
-            _combatBuffsBehavior = new Decorator(ret => !IsMounted && !Me.IsOnTransport,
-                new LockSelector( 
-                    new Decorator( ret => !HotkeyManager.IsCombatEnabled, new ActionAlwaysSucceed()),
-                    Generic.CreateUseTrinketsBehaviour(),
-                    Generic.CreatePotionAndHealthstoneBehavior(),
-                    Generic.CreateRacialBehaviour(),
-                    _combatBuffsBehavior ?? new PrioritySelector())
-                    );
-
-            // There are some classes that uses spells in rest behavior. Basicly we don't want Rest to be called while flying.
-            _restBehavior =
-                new Decorator(
-                    ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                    new LockSelector(_restBehavior ?? new PrioritySelector())
-                    );
-
-            // Wrap all the behaviors with a LockSelector which basically wraps the child bahaviors with a framelock.
-            // This will generally reduce the time it takes to pulse the behavior thus increasing performance of the cc
-            if (_healBehavior != null)
-            {
-                _healBehavior = new LockSelector(_healBehavior);
-            }
-
-            if (_pullBuffsBehavior != null)
-            {
-                _pullBuffsBehavior = new LockSelector(_pullBuffsBehavior);
-            }
-
-            _combatBehavior = 
-                new LockSelector(
-                    new Decorator(ret => !HotkeyManager.IsCombatEnabled, new ActionAlwaysSucceed()),
-                    _combatBehavior
-                    );
-
-            _pullBehavior = new LockSelector(_pullBehavior);
             return true;
         }
 
-        private bool EnsureComposite(bool error, BehaviorType type, out Composite composite)
+        /// <summary>
+        /// initialize all base behaviors.  replaceable portion which will vary by context is represented by a single
+        /// HookExecutor that gets assigned elsewhere (typically EnsureComposite())
+        /// </summary>
+        private void InitBehaviors()
         {
-            Logger.WriteDebug("Creating " + type + " behavior.");
+            if (_restBehavior != null)
+                return;
+
+            _restBehavior = new Decorator(
+                ret => !Me.IsFlying && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                new LockSelector(new HookExecutor(BehaviorType.Rest.ToString()))
+                );
+
+            _preCombatBuffsBehavior = new Decorator(
+                ret => !IsMounted && !Me.IsOnTransport && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                new LockSelector(
+                    Item.CreateUseAlchemyBuffsBehavior(),
+                    // Generic.CreateFlasksBehaviour(),
+                    new HookExecutor(BehaviorType.PreCombatBuffs.ToString())
+                    )
+                );
+
+            _pullBuffsBehavior = new LockSelector(new HookExecutor(BehaviorType.PullBuffs.ToString()));
+
+            _combatBuffsBehavior = new Decorator(
+                ret => !IsMounted && !Me.IsOnTransport,
+                new LockSelector(
+                    new Decorator(ret => !HotkeyManager.IsCombatEnabled, new ActionAlwaysSucceed()),
+                    Generic.CreateUseTrinketsBehaviour(),
+                    Generic.CreatePotionAndHealthstoneBehavior(),
+                    Generic.CreateRacialBehaviour(),
+                    new HookExecutor( BehaviorType.CombatBuffs.ToString())
+                    )
+                );
+
+            _healBehavior = new LockSelector(new HookExecutor(BehaviorType.Heal.ToString()));
+
+            _pullBehavior = new LockSelector(new HookExecutor(BehaviorType.Pull.ToString()));
+
+            _combatBehavior = new LockSelector(
+                new Decorator(
+                    ret => !HotkeyManager.IsCombatEnabled,
+                    new ActionAlwaysSucceed()
+                    ),
+                new HookExecutor(BehaviorType.Combat.ToString())
+                );
+        }
+
+        /// <summary>
+        /// Ensures we have a composite for the given BehaviorType.  
+        /// </summary>
+        /// <param name="error">true: report error if composite not found, false: allow null composite</param>
+        /// <param name="type">BehaviorType that should be loaded</param>
+        /// <returns>true: composite loaded and saved to hook, false: failure</returns>
+        private bool EnsureComposite(bool error, BehaviorType type)
+        {
             int count = 0;
-            composite = CompositeBuilder.GetComposite(Class, TalentManager.CurrentSpec, type, CurrentWoWContext,
-                out count);
+            Composite composite;
+
+            Logger.WriteDebug("Creating " + type + " behavior.");
+
+            composite = CompositeBuilder.GetComposite(Class, TalentManager.CurrentSpec, type, CurrentWoWContext, out count);
+
+            // handle those composites we need to default if not found
+            if (composite == null)
+            {
+                switch (type)
+                {
+                case BehaviorType.Rest:
+                    composite = Helpers.Rest.CreateDefaultRestBehaviour();
+                    break;
+                }
+            }
+
+            TreeHooks.Instance.ReplaceHook(type.ToString(), composite);
+
             if ((composite == null || count <= 0) && error)
             {
                 StopBot(
@@ -148,6 +172,7 @@ namespace Singular
                         type, StyxWoW.Me.Class, TalentManager.CurrentSpec, CurrentWoWContext));
                 return false;
             }
+
             return composite != null;
         }
 

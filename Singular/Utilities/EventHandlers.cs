@@ -24,8 +24,7 @@ namespace Singular.Utilities
 
         public static void Init()
         {
-            if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds &&
-                !StyxWoW.Me.CurrentMap.IsRaid)
+            if (SingularSettings.Debug || (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid))
                 AttachCombatLogEvent();
 
             SingularRoutine.OnWoWContextChanged += HandleContextChanged;
@@ -35,12 +34,12 @@ namespace Singular.Utilities
         {
             // Since we hooked this in ctor, make sure we are the selected CC
             if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
-                return; 
-            
-            if (!SingularSettings.Debug && (e.CurrentContext == WoWContext.Battlegrounds || StyxWoW.Me.CurrentMap.IsRaid))
-                DetachCombatLogEvent();
-            else
+                return;
+
+            if (SingularSettings.Debug || (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid))
                 AttachCombatLogEvent();
+            else
+                DetachCombatLogEvent();
         }
 
         /// <summary>
@@ -164,8 +163,8 @@ namespace Singular.Utilities
                         WoWUnit unit = e.DestUnit;
                         if (unit != null && !unit.IsPlayer)
                         {
-                            Logger.WriteDebug("{0} is immune to {1} spell school", unit.Name, e.SpellSchool);
-                            SpellImmunityManager.Add(unit.Entry, e.SpellSchool);
+                            Logger.WriteDebug("{0} is immune to Physical spell school", unit.Name);
+                            SpellImmunityManager.Add(unit.Entry, WoWSpellSchool.Physical );
                         }
                     }
                     break;

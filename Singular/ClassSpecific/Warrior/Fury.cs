@@ -70,8 +70,8 @@ namespace Singular.ClassSpecific.Warrior
             return new PrioritySelector(
                 //Heal
                 Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60),
-                // Only ever pop reck if we're going to be executing. It's not quite strong enough anymore to use "on CD". Fights are also too short.
-                Spell.BuffSelf("Recklessness", ret => SpellManager.CanCast("Execute") && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss())),
+                // Only pop reck if we're going to be executing -OR- 4pc T14 bonus -OR- not in an instance. Fights are also too short.
+                Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
                 // Heroic Fury
                 Spell.BuffSelf("Heroic Fury", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted)),
                 // Fear Remover, or to get ourselves enraged again.

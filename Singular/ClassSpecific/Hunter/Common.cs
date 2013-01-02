@@ -128,7 +128,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         CreateMisdirectionBehavior(),
 
-                        Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death"))
+                        Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane))
                         )
                     )
                 );
@@ -179,7 +179,8 @@ namespace Singular.ClassSpecific.Hunter
                         Spell.Buff("Hunter's Mark",
                             ret => Unit.ValidUnit(Target)
                                 && !TalentManager.HasGlyph("Marked for Death")
-                                && (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Target.Guid))),
+                                && (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Target.Guid))
+                                && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
 
                         Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
                         Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPercent),
@@ -256,20 +257,24 @@ namespace Singular.ClassSpecific.Hunter
                     new Sequence(
                         new Action(ret => Logger.WriteDebug("Trap: use trap launcher requested: {0}", useLauncher )),
                         new PrioritySelector(
+                            new Decorator(ret => useLauncher && Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
                             Spell.BuffSelf("Trap Launcher", ret => useLauncher ),
-                            new Decorator( ret => !useLauncher, new Action( ret => Me.CancelAura( "Trap Launcher")))
+                            new Decorator(ret => !useLauncher, new Action( ret => Me.CancelAura( "Trap Launcher")))
                             ),
-                        new Wait(TimeSpan.FromMilliseconds(500), ret => !useLauncher && Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
-                        new Wait(TimeSpan.FromMilliseconds(500), ret => useLauncher || !Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
+                        // new Wait(TimeSpan.FromMilliseconds(500), ret => !useLauncher && Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
+                        new Wait(TimeSpan.FromMilliseconds(500),
+                            ret => (!useLauncher && !Me.HasAura("Trap Launcher"))
+                                || (useLauncher && Me.HasAura("Trap Launcher")),
+                            new ActionAlwaysSucceed()),
                         new Action(ret => Logger.WriteDebug("Trap: launcher aura present = {0}", Me.HasAura("Trap Launcher"))),
-                        new Action(ret => Logger.WriteDebug("Trap: cancast = {0}", SpellManager.CanCast(trapName, (WoWUnit)ret))),
+                        new Action(ret => Logger.WriteDebug("Trap: cancast = {0}", SpellManager.CanCast(trapName, onUnit(ret)))),
                         
-                        new Action(ret => Logger.Write( Color.PowderBlue, "^{0} trap: {1} on {2}", useLauncher ? "Launch" : "Set", trapName, ((WoWUnit)ret).SafeName())),
-                        // Spell.Cast( trapName, ctx => (WoWUnit) ctx),
-                        new Action(ret => SpellManager.Cast(trapName, (WoWUnit)ret)),
+                        new Action(ret => Logger.Write( Color.PowderBlue, "^{0} trap: {1} on {2}", useLauncher ? "Launch" : "Set", trapName, onUnit(ret).SafeName())),
+                        // Spell.Cast( trapName, ctx => onUnit(ctx)),
+                        new Action(ret => SpellManager.Cast(trapName, onUnit(ret))),
 
                         Helpers.Common.CreateWaitForLagDuration(),
-                        new Action(ctx => SpellManager.ClickRemoteLocation(((WoWUnit)ctx).Location)),
+                        new Action(ctx => SpellManager.ClickRemoteLocation(onUnit(ctx).Location)),
                         new Action(ret => Logger.WriteDebug("Trap: Complete!"))
                         )
                     )
@@ -280,7 +285,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 ctx => Unit.NearbyUnfriendlyUnits.OrderBy(u => u.DistanceSqr)
-                    .FirstOrDefault( u => u.Combat && u != Target && (!u.IsMoving || u.IsPlayer) && u.DistanceSqr < 40 * 40),
+                    .FirstOrDefault( u => u.Combat && u != Target && (!u.IsMoving || u.IsPlayer) && u.DistanceSqr < 40 * 40 && !u.IsCrowdControlled()),
                 new Decorator(
                     ret => ret != null && SpellManager.HasSpell(trapName) && Spell.GetSpellCooldown(trapName) == TimeSpan.Zero ,
                     new Sequence(
@@ -572,9 +577,11 @@ namespace Singular.ClassSpecific.Hunter
 
         public static Composite CreateMisdirectionBehavior()
         {
-            return new Decorator( 
-                ret => !Me.HasAura("Misdirection"),
-                Spell.Cast("Misdirection", ctx => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 100) ?? (Me.GotAlivePet ? Pet : null))
+            return new Throttle( 1,
+                new Decorator( 
+                    ret => !Me.HasAura("Misdirection"),
+                    Spell.Cast("Misdirection", ctx => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 100) ?? (Me.GotAlivePet ? Pet : null))
+                    )
                 );
         }
 
@@ -588,10 +595,15 @@ namespace Singular.ClassSpecific.Hunter
                         CreateHunterTrapBehavior("Ice Trap", false, onUnit => (WoWUnit)onUnit),
                         CreateHunterTrapBehavior("Snake Trap", false, onUnit => (WoWUnit)onUnit, ret => SpellManager.HasSpell("Entrapment")),
                         CreateHunterTrapBehavior("Explosive Trap", false, onUnit => (WoWUnit)onUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
-                        CreateHunterTrapBehavior("Freezing Trap", false, onUnit => (WoWUnit)onUnit, ret => TalentManager.HasGlyph("Freezing Trap")),
-                        Spell.CastOnGround("Binding Shot", ret => ((WoWUnit)ret).Location, ret => SafeArea.NearestEnemyMobAttackingMe != null, false),
-                        Spell.Cast("Concussive Shot", ret => Me.IsSafelyFacing(Me.CurrentTarget)),
-                        Spell.Cast("Scatter Shot", ret => Me.IsSafelyFacing( Me.CurrentTarget))
+                        CreateHunterTrapBehavior("Freezing Trap", false, onUnit => (WoWUnit)onUnit, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null),
+                        new Decorator(
+                            ret => Me.IsSafelyFacing((WoWUnit)ret),
+                            new PrioritySelector(
+                                Spell.CastOnGround("Binding Shot", ret => ((WoWUnit)ret).Location, ret => true, false),
+                                Spell.Cast("Concussive Shot", on => (WoWUnit)on),
+                                Spell.Cast("Scatter Shot", on => (WoWUnit)on, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null)
+                                )
+                            )
                         )
                     )
                 );
@@ -672,5 +684,88 @@ namespace Singular.ClassSpecific.Hunter
         }
 
         private static WaitTimer waitToCancelFeignDeath;
+
+        private static WoWUnit ccUnit = null;
+
+        internal static Composite CreateHunterNormalCrowdControl()
+        {
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                return new ActionAlwaysFail();
+
+            return new PrioritySelector(
+                new Action(ret =>
+                {
+                    if (!HunterSettings.CrowdControlFocus)
+                        ccUnit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => NeedsNormalCrowdControl(u));
+                    else if (Me.FocusedUnit != null && Unit.ValidUnit(Me.FocusedUnit) && NeedsNormalCrowdControl(Me.FocusedUnit))
+                        ccUnit = Me.FocusedUnit;
+                    else
+                        ccUnit = null;
+                    return RunStatus.Failure;
+                }),
+                new Decorator(
+                    ret => ccUnit != null,
+                    new Sequence(
+                        new PrioritySelector(
+                            Common.CreateHunterTrapBehavior("Freezing Trap", true, on => ccUnit),
+                            Spell.Cast("Scatter Shot", on => ccUnit),
+                            Spell.CastOnGround("Binding Shot", ret => ccUnit.Location, ret => true, false),
+                            Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
+                            Common.CreateHunterTrapBehavior("Snake Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Entrapment")),
+                            Common.CreateHunterTrapBehavior("Ice Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Ice Trap")),
+                            Spell.Cast("Concussive Shot", on => ccUnit)
+                            ),
+                        new Action(ret => { if (ccUnit != null) Blacklist.Add(ccUnit, TimeSpan.FromSeconds(2)); })
+                        )
+                    )
+                );
+        }
+
+        internal static Composite CreateHunterPvpCrowdControl()
+        {
+            return new PrioritySelector(
+                new Action(ret =>
+                {
+                    if (!HunterSettings.CrowdControlFocus)
+                        ccUnit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => NeedsPvpCrowdControl(u));
+                    else if (Me.FocusedUnit != null && Unit.ValidUnit(Me.FocusedUnit) && NeedsPvpCrowdControl(Me.FocusedUnit))
+                        ccUnit = Me.FocusedUnit;
+                    else
+                        ccUnit = null;
+                    return RunStatus.Failure;
+                }),
+                new Decorator(
+                    ret => ccUnit != null,
+                    new Sequence(
+                        new PrioritySelector(
+                            Common.CreateHunterTrapBehavior("Freezing Trap", true, on => ccUnit),
+                            Spell.Cast("Scatter Shot", on => ccUnit),
+                            Spell.CastOnGround("Binding Shot", ret => ccUnit.Location, ret => true, false),
+                            Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
+                            Common.CreateHunterTrapBehavior("Snake Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Entrapment")),
+                            Common.CreateHunterTrapBehavior("Ice Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Ice Trap")),
+                            Spell.Cast("Concussive Shot", on => ccUnit)
+                            ),
+                        new Action(ret => { if (ccUnit != null) Blacklist.Add(ccUnit, TimeSpan.FromSeconds(2)); })
+                        )
+                    )
+                );
+        }
+
+        //
+        private static bool NeedsNormalCrowdControl(WoWUnit u)
+        {
+            bool good = u.Combat && u.IsTargetingMyPartyMember && u.Distance <= 40 && !u.IsCrowdControlled() && u.Guid != Me.CurrentTargetGuid && !Blacklist.Contains(u.Guid)                   
+                    && !Unit.NearbyGroupMembers.Any( g => g.CurrentTargetGuid == u.Guid);
+            return good;
+        }
+
+        //
+        private static bool NeedsPvpCrowdControl(WoWUnit u)
+        {
+            bool good = u.Distance <= 40 && !u.IsCrowdControlled() && u.Guid != Me.CurrentTargetGuid && !Blacklist.Contains(u.Guid);
+            // && !Unit.NearbyGroupMembers.Any( g => g.CurrentTargetGuid == u.Guid);
+            return good;
+        }
     }
 }

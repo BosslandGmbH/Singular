@@ -28,7 +28,7 @@ namespace Singular.Managers
         }
 
         /// <summary>
-        /// True: movement is currently disabled.  This could be due to a setting,
+        /// True: Singular movement is currently disabled.  This could be due to a setting,
         /// the current Bot, or a Hotkey toggled.  All code needing to check if
         /// movement is allowed should call this or MovementManager.IsMovementEnabled
         /// </summary>
@@ -36,13 +36,26 @@ namespace Singular.Managers
         {
             get
             {
-                if (!HotkeyManager.IsMovementEnabled)
+                if (IsBotMovementDisabled)
                     return true;
 
                 if (SingularSettings.Instance.AllowMovement == AllowMovementType.Auto)
                     return IsManualMovementBotActive;
 
                 return SingularSettings.Instance.AllowMovement == AllowMovementType.None;
+            }
+        }
+
+        /// <summary>
+        /// True: Bot movement should be disabled by Singular.  This is controlled
+        /// only by the state of the Hotkeys toggle for movement since we only want
+        /// to interfere with bot movement when the user tells us to
+        /// </summary>
+        private static bool IsBotMovementDisabled
+        {
+            get
+            {
+                return !HotkeyManager.IsMovementEnabled;
             }
         }
 
@@ -82,7 +95,7 @@ namespace Singular.Managers
         /// </summary>
         public static void Update()
         {
-            if (IsMovementDisabled)
+            if (IsBotMovementDisabled)
                 SuppressMovement();
             else
                 AllowMovement();

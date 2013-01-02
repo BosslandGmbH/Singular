@@ -21,12 +21,7 @@ namespace Singular.ClassSpecific.DeathKnight
         internal const uint Ghoul = 26125;
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static DeathKnightSettings DeathKnightSettings { get { return SingularSettings.Instance.DeathKnight; } }
-
-        private static DeathKnightSettings Settings
-        {
-            get { return SingularSettings.Instance.DeathKnight; }
-        }
+        private static DeathKnightSettings Settings { get { return SingularSettings.Instance.DeathKnight; } }
 
         internal static int ActiveRuneCount
         {
@@ -65,20 +60,9 @@ namespace Singular.ClassSpecific.DeathKnight
             }
         }
 
-        internal static int BloodRuneSlotsActive
-        {
-            get { return StyxWoW.Me.GetRuneCount(0) + StyxWoW.Me.GetRuneCount(1); }
-        }
-
-        internal static int FrostRuneSlotsActive
-        {
-            get { return StyxWoW.Me.GetRuneCount(2) + StyxWoW.Me.GetRuneCount(3); }
-        }
-
-        internal static int UnholyRuneSlotsActive
-        {
-            get { return StyxWoW.Me.GetRuneCount(4) + StyxWoW.Me.GetRuneCount(5); }
-        }
+        internal static int BloodRuneSlotsActive { get { return StyxWoW.Me.GetRuneCount(0) + StyxWoW.Me.GetRuneCount(1); } }
+        internal static int FrostRuneSlotsActive { get { return StyxWoW.Me.GetRuneCount(2) + StyxWoW.Me.GetRuneCount(3); } }
+        internal static int UnholyRuneSlotsActive { get { return StyxWoW.Me.GetRuneCount(4) + StyxWoW.Me.GetRuneCount(5); } }
 
         internal static bool CanCastPlagueLeech
         {
@@ -109,7 +93,7 @@ namespace Singular.ClassSpecific.DeathKnight
             return new PrioritySelector(
                 Movement.CreateMoveToLosBehavior(), 
                 Movement.CreateFaceTargetBehavior(),
-                Common.CreateDeathGripBehavior(),
+                Common.CreateGetOverHereBehavior(),
                 Spell.Cast("Outbreak"),
                 Spell.Cast("Howling Blast"),
                 Spell.Cast("Icy Touch"), 
@@ -171,7 +155,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Throttle( 10,
                         Spell.BuffSelf(
                             "Path of Frost",
-                            ret => DeathKnightSettings.UsePathOfFrost )
+                            ret => SingularSettings.Instance.DeathKnight.UsePathOfFrost )
                             )
                     );
         }
@@ -322,13 +306,28 @@ namespace Singular.ClassSpecific.DeathKnight
 
         #region Death Grip
 
+        public static Composite CreateGetOverHereBehavior()
+        {
+            return new Throttle( 1,
+                new PrioritySelector(
+                    CreateDeathGripBehavior(),
+                    CreateChainsOfIceBehavior()
+                    )
+                );
+        }
+
         public static Composite CreateDeathGripBehavior()
         {
             return new Sequence(
-                Spell.Cast("Death Grip", ret => Me.CurrentTarget.DistanceSqr > 10 * 10 && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe)),
+                Spell.Cast("Death Grip", ret => !Me.CurrentTarget.IsBoss && Me.CurrentTarget.DistanceSqr > 10 * 10 && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe)),
                 new DecoratorContinue( ret => StyxWoW.Me.IsMoving, new Action(ret => Navigator.PlayerMover.MoveStop())),
-                new WaitContinue(1, new ActionAlwaysSucceed())
+                new WaitContinue( 1, until => Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                 );
+        }
+
+        public static Composite CreateChainsOfIceBehavior()
+        {
+            return Spell.Buff("Chains of Ice", ret => Unit.CurrentTargetIsMovingAwayFromMe && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost));
         }
 
         #endregion

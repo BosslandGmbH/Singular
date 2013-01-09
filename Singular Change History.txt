@@ -1,3 +1,91 @@
+--- Release 3.0.0.1547 ---
+
+General
+
+fixed - Behavior Creation: re-creates Behaviors for Bots that do not reinitialize Combat Routines when entering/leaving instances (historically a BotBase responsibility.)  For example, a Frost DK player using RaidBot to for a raid presses Start button before entering the instance.  This causes Solo behaviors to load (and loads Grinding/Questing behaviors which use Death Grip.)  Since the BotBase did not reinitialize the Combat Routine, the Frost DK would cast Death Grip in a raid.  A Frost DK is used as an example -- this applies to all classes.
+
+change- Pull Buffs: some BotBases (Grinding/Questing for example) are not calling the Pull Buff behavior.  Temporary work around for Singular to call this behavior.  Classes that used this behavior and were impacted included Rogues (all) and Monks (Mistweaver).
+
+fixed - Class Specific Settings: now only loads/creates the settings file specific for your class.
+
+fixed - Rest: Undead Cannibalize racial now correctly cast and canceled
+
+fixed - Cast On Ground spells: additional logic added to cancel a pending spell on cursor if click appears to have failed and logging to catching info regarding failure
+
+fixed - Check for units that are crowd controlled now includes Fleeing mobs (Fear)
+
+fixed - Shadowmeld Racial: changed to cast only in groups, when not tank and have agro, or in pvp being attacked by ranged class
+
+
+Druid
+
+added - Balance/Feral/Guardian - support for Dream of Cenarius.  If in group, heals will be cast on nearby player with lowest health %
+
+fixed - All Specs - heal after Nature's Swiftness was sometimes cast too quickly causing Druid to leave form.  Now waits for Nature's Swiftness aura to be applied
+
+fixed - Feral/Guardian - bug during Rest occurring when no drinks available and Druid is in Normal form.  No longer waits in place for regeneration of Mana.  
+
+change- Balance/Feral/Guardian - will now only leave form to cast Healing Touch if Health % is less than Mininum Health % in General settings.  If already in Normal form will continue to heal until topped off
+
+added - Feral - Rest: will cast Savage Roar combo pts remain and it results in a longer buff than currently applied in attempt to get use from points that would otherwise be lost
+
+change- Feral - Rest: will cast Prowl while drinking/eating (same behavior as Rogue)
+
+added - Feral - Rest: will cast Healing Touch if Predatory Swiftness aura still active and health less than 95% or Dream of Cenarius not active (if talented)
+
+fixed - Feral - Wild Charge: only cast if class specific movement spells enabled
+
+added - Feral - Dash: cast if Prowling and more than 15 yds away from target during pull and Wild Charge on cooldown
+
+change- Feral - Cat Form: correctly enters Cat Form more quickly if left during Rest, Quest Objective, etc.
+
+change- Settings - some unnused settings removed
+
+
+Hunter
+
+fixed - All Specs - should no longer cast multiple traps prior to Disengage
+
+fixed - All Specs - should no longer cast multiple traps on same add
+
+
+Monk
+
+fixed - Brewmaster - Power Guard aura corrected to check only for existence and not stacks
+
+fixed - All Specs - movement to chi/life/health spheres controlled correctly controlled by class specific
+
+fixed - All Specs - Roll: was being cast at times when class specific movement was disabled
+
+fixed - Mistweaver - Stance: changed to stay in Wise Serpent if in group.  when solo, will use Fierce Tiger for DPS
+
+fixed - Mistweaver - Stance: forces Wise Serpent for all healing
+
+
+Paladin
+
+fixed - Retribution - AOE (Normal and Instance): was not casting Divine Storm as frequently as required
+
+change- Retribution - Instance Spell Priority: revised to match Elitist Jerks
+
+
+Rogue
+
+fixed - All Specs - issue preventing Gouge/Blind prior to bandaging in combat
+
+
+Shaman
+
+fixed - Elemental/Enhancement - issue preventing self-healing during Combat fixed
+
+fixed - Elemental - Earthquake now has a range check which should eliminate occurrences of a pendig spell remaining on cursor
+
+fixed - Elemental/Enhancement - Off Healing support: was including Unleash Weapon as heal spell.  even though it was not being cast, it was misleading seeing it included in the list of available heal spells
+
+fixed - All Specs - Tremor Totem is now correctly cast when 
+
+
+
 --- Release 3.0.0.1496 ---
 
 General

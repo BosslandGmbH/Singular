@@ -67,25 +67,11 @@ namespace Singular.Settings
         public bool PvPccAdd { get; set; }
 
         [Setting]
-        [DefaultValue(50)]
-        [Category("Feral PvP")]
-        [DisplayName("Lifebloom Heath")]
-        [Description("Lifebloom will be used when your health drops below this value")]
-        public int PvPLifeBloom { get; set; }
-
-        [Setting]
         [DefaultValue(40)]
         [Category("Feral PvP")]
         [DisplayName("Rejuv Health")]
         [Description("Rejuv will be used when your health drops below this value")]
         public int PvPReju { get; set; }
-
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Feral PvP")]
-        [DisplayName("Regrowth Health")]
-        [Description("Regrowth will be used when your health drops below this value")]
-        public int PvPRegrowth { get; set; }
 
         [Setting]
         [DefaultValue(20)]
@@ -131,8 +117,6 @@ namespace Singular.Settings
 
         #endregion
   
-        // End of IloveAnimals
-
         #region Common
 
         [Setting]
@@ -163,13 +147,6 @@ namespace Singular.Settings
         public int NonRestoRejuvenation { get; set; }
 
         [Setting]
-        [DefaultValue(40)]
-        [Category("Common")]
-        [DisplayName("Regrowth Health (Balance and Feral)")]
-        [Description("Regrowth will be used at this value")]
-        public int NonRestoRegrowth { get; set; }
-
-        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Use Combat Rez")]
@@ -183,24 +160,6 @@ namespace Singular.Settings
         [Description("Renewal will be used at this value. ")]
         public int RenewalHealth { get; set; }
 
-
-        // Start of IloveAnimals settings.
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Common")]
-        [DisplayName("Raid Heal NonCombat (Balance and Feral)")]
-        [Description("Heal the raid when not in combat (Balance and Feral)")]
-        public bool RaidHealNonCombat { get; set; }
-
-        [Setting]
-        [DefaultValue(50)]
-        [Category("Common")]
-        [DisplayName("Lifebloom Health (Balance and Feral")]
-        [Description("Lifebloom will be used at this value")]
-        public int NonRestoLifebloom { get; set; }
-
-        // End of IloveAnimals settings
         #endregion
 
         #region Balance
@@ -398,15 +357,6 @@ namespace Singular.Settings
         [DisplayName("Interrupt")]
         [Description("Automatically interrupt spells while in an instance if this value is set to true.")]
         public bool Interrupt { get; set; }
-
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Feral Raid / Instance")]
-        [DisplayName("Buff raid with Motw")]
-        [Description("If set to true, we will buff the raid automatically.")]
-        public bool BuffRaidWithMotw { get; set; }
-
 
         [Setting]
         [DefaultValue(true)]

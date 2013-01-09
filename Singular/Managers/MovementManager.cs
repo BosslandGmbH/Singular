@@ -15,19 +15,6 @@ namespace Singular.Managers
     internal static class MovementManager
     {
         /// <summary>
-        /// True: movement is currently enabled.  This factors in all considerations
-        /// including user settings, hotkey presses, and the current bot.
-        /// All code needing to check if movement is allowed should call this or MovementManager.IsMovementDisabled
-        /// </summary>
-        public static bool IsMovementEnabled
-        {
-            get
-            {
-                return !IsMovementDisabled;
-            }
-        }
-
-        /// <summary>
         /// True: Singular movement is currently disabled.  This could be due to a setting,
         /// the current Bot, or a Hotkey toggled.  All code needing to check if
         /// movement is allowed should call this or MovementManager.IsMovementEnabled
@@ -42,7 +29,7 @@ namespace Singular.Managers
                 if (SingularSettings.Instance.AllowMovement == AllowMovementType.Auto)
                     return IsManualMovementBotActive;
 
-                return SingularSettings.Instance.AllowMovement == AllowMovementType.None;
+                return SingularSettings.Instance.AllowMovement != AllowMovementType.All;
             }
         }
 
@@ -56,6 +43,26 @@ namespace Singular.Managers
             get
             {
                 return !HotkeyManager.IsMovementEnabled;
+            }
+        }
+
+
+        /// <summary>
+        /// True: Singular Class specific movement is currently disabled.  This could be due to a setting,
+        /// the current Bot, or a Hotkey toggled.  This should be used by all class specific spells
+        /// such as Charge, Roll, Shadow Step, Wild Charge
+        /// </summary>
+        public static bool IsClassMovementAllowed
+        {
+            get
+            {
+                if (IsBotMovementDisabled)
+                    return false;
+
+                if (SingularSettings.Instance.AllowMovement == AllowMovementType.Auto)
+                    return !IsManualMovementBotActive;
+
+                return SingularSettings.Instance.AllowMovement >= AllowMovementType.ClassSpecificOnly;
             }
         }
 

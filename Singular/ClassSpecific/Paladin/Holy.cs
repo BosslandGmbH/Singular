@@ -15,18 +15,25 @@ namespace Singular.ClassSpecific.Paladin
 {
     public static class Holy
     {
-        [Behavior(BehaviorType.Rest,WoWClass.Paladin,WoWSpec.PaladinHoly)]
+        private static PaladinSettings Settings { get { return SingularSettings.Instance.Paladin(); } }
+
+        [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyRest()
         {
             return new PrioritySelector(
-                // Heal self before resting. There is no need to eat while we have 100% mana
-                CreatePaladinHealBehavior(true),
-                // Rest up damnit! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour(),
-                // Can we res people?
-                Spell.Resurrect("Redemption"),
-                // Make sure we're healing OOC too!
-                CreatePaladinHealBehavior(false, false));
+                Spell.WaitForCast(false),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(false, false),
+                    new PrioritySelector(
+                        // Heal self before resting. There is no need to eat while we have 100% mana
+                        CreatePaladinHealBehavior(true),
+                        // Rest up damnit! Do this first, so we make sure we're fully rested.
+                        Rest.CreateDefaultRestBehaviour( null, "Redemption"),
+                        // Make sure we're healing OOC too!
+                        CreatePaladinHealBehavior(false, false)
+                        )
+                    )
+                );
         }
         [Behavior(BehaviorType.Heal, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyHealBehavior()
@@ -42,7 +49,7 @@ namespace Singular.ClassSpecific.Paladin
                 new PrioritySelector(
                     Spell.BuffSelf(
                         "Divine Plea",
-                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Paladin.DivinePleaMana)
+                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Paladin().DivinePleaMana)
                     );
         }
         [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinHoly)]
@@ -123,45 +130,45 @@ namespace Singular.ClassSpecific.Paladin
                              Spell.Heal(
                                 "Eternal Flame",
                                 ret => (WoWUnit)ret,
-                               ret => ret is WoWPlayer && SingularSettings.Instance.Paladin.KeepEternalFlameUp && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Eternal Flame"))),
+                               ret => ret is WoWPlayer && SingularSettings.Instance.Paladin().KeepEternalFlameUp && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Eternal Flame"))),
 
                             Spell.Heal(
                                 "Eternal Flame",
                                 ret => (WoWUnit)ret,
-                               ret => StyxWoW.Me.CurrentHolyPower >= 3 && (((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth)),
+                               ret => StyxWoW.Me.CurrentHolyPower >= 3 && (((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().WordOfGloryHealth)),
 
                            Spell.Heal(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,
                                 ret => StyxWoW.Me.Combat && !((WoWUnit)ret).HasAura("Forbearance") &&
-                                       ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealth),
+                                       ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().LayOnHandsHealth),
                             Spell.Heal(
                                 "Light of Dawn",
                                 ret => StyxWoW.Me,
                                 ret => StyxWoW.Me.CurrentHolyPower >= 3 &&
                                        Unit.NearbyFriendlyPlayers.Count(p =>
-                                           p.HealthPercent <= SingularSettings.Instance.Paladin.LightOfDawnHealth && p != StyxWoW.Me &&
-                                           p.DistanceSqr < 30 * 30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin.LightOfDawnCount),
+                                           p.HealthPercent <= SingularSettings.Instance.Paladin().LightOfDawnHealth && p != StyxWoW.Me &&
+                                           p.DistanceSqr < 30 * 30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin().LightOfDawnCount),
                             Spell.Heal(
                                 "Word of Glory",
                                 ret => (WoWUnit)ret,
-                                ret => StyxWoW.Me.CurrentHolyPower >= 3 && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.WordOfGloryHealth),
+                                ret => StyxWoW.Me.CurrentHolyPower >= 3 && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().WordOfGloryHealth),
                             Spell.Heal(
                                 "Holy Shock",
                                 ret => (WoWUnit)ret,
-                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyShockHealth),
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().HolyShockHealth),
                             Spell.Heal(
                                 "Flash of Light",
                                 ret => (WoWUnit)ret,
-                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.FlashOfLightHealth),
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().FlashOfLightHealth),
                             Spell.Heal(
                                 "Divine Light",
                                 ret => (WoWUnit)ret,
-                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.DivineLightHealth),
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().DivineLightHealth),
                             Spell.Heal(
                                 "Holy Light",
                                 ret => (WoWUnit)ret,
-                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin.HolyLightHealth),
+                                ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().HolyLightHealth),
                             new Decorator(
                                 ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                                 new PrioritySelector(

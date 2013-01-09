@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.DeathKnight
     {
         private const int SuddenDoom = 81340;
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static DeathKnightSettings Settings { get { return SingularSettings.Instance.DeathKnight; } }
+        private static DeathKnightSettings DeathKnightSettings { get { return SingularSettings.Instance.DeathKnight(); } }
 
         #region Normal Rotation
 
@@ -40,12 +40,12 @@ namespace Singular.ClassSpecific.DeathKnight
                                     && Common.UseLongCoolDownAbility),
                 Spell.Cast("Summon Gargoyle",
                            ret =>
-                           SingularSettings.Instance.DeathKnight.UseSummonGargoyle && Common.UseLongCoolDownAbility),
+                           DeathKnightSettings.UseSummonGargoyle && Common.UseLongCoolDownAbility),
 
                 new Decorator(
                     ret =>
                      Unit.UnfriendlyUnitsNearTarget(12f).Count() >=
-                    SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    DeathKnightSettings.DeathAndDecayCount,
                     new PrioritySelector(
                             Spell.Cast("Gorefiend's Grasp", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.GorefiendsGrasp)),
                             Spell.Cast("Remorseless Winter", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.RemoreselessWinter)),
@@ -149,13 +149,13 @@ namespace Singular.ClassSpecific.DeathKnight
                                Common.UseLongCoolDownAbility),
                 Spell.Cast("Summon Gargoyle",
                            ret =>
-                           SingularSettings.Instance.DeathKnight.UseSummonGargoyle && Common.UseLongCoolDownAbility),
+                           DeathKnightSettings.UseSummonGargoyle && Common.UseLongCoolDownAbility),
 
 
                 // Start AoE section
                 new Decorator(
                     ret =>
-                    Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= DeathKnightSettings.DeathAndDecayCount,
                     new PrioritySelector(
                             Spell.Cast("Gorefiend's Grasp", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.GorefiendsGrasp)),
                             Spell.Cast("Remorseless Winter", ret => TalentManager.IsSelected((int)Common.DeathKnightTalents.RemoreselessWinter)),
@@ -257,13 +257,13 @@ namespace Singular.ClassSpecific.DeathKnight
                                Common.UseLongCoolDownAbility),
                 Spell.Cast("Summon Gargoyle",
                            ret =>
-                           SingularSettings.Instance.DeathKnight.UseSummonGargoyle && Common.UseLongCoolDownAbility),
+                           DeathKnightSettings.UseSummonGargoyle && Common.UseLongCoolDownAbility),
 
                 // Start AoE section
                 new Decorator(
                     ret =>
-                    Spell.UseAOE && SingularSettings.Instance.DeathKnight.UseAoeInInstance && Unit.UnfriendlyUnitsNearTarget(12f).Count() >=
-                    SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                    Spell.UseAOE && DeathKnightSettings.UseAoeInInstance && Unit.UnfriendlyUnitsNearTarget(12f).Count() >=
+                    DeathKnightSettings.DeathAndDecayCount,
                     new PrioritySelector(
                         // Diseases
                         Spell.BuffSelf("Unholy Blight",
@@ -329,7 +329,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                   StyxWoW.Me.Auras["Shadow Infusion"].StackCount >= 5),
                 Spell.CastOnGround("Death and Decay",
                                    ret => StyxWoW.Me.CurrentTarget.Location,
-                                   ret => Spell.UseAOE && SingularSettings.Instance.DeathKnight.UseAoeInInstance &&
+                                   ret => Spell.UseAOE && DeathKnightSettings.UseAoeInInstance &&
                                           StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount > 0, false),
                 Spell.Cast("Scourge Strike", ret => StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount > 0),
                 Spell.Cast("Festering Strike", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),

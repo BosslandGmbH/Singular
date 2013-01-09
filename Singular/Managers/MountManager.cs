@@ -24,7 +24,7 @@ namespace Singular.Managers
 
             if (e.Destination.Distance(StyxWoW.Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance && (!Battlegrounds.IsInsideBattleground || DateTime.Now > Battlegrounds.BattlefieldStartTime))
             {
-                if (StyxWoW.Me.Class == WoWClass.Shaman && SpellManager.HasSpell("Ghost Wolf") && SingularSettings.Instance.Shaman.UseGhostWolf)
+                if (StyxWoW.Me.Class == WoWClass.Shaman && SpellManager.HasSpell("Ghost Wolf") && SingularSettings.Instance.Shaman().UseGhostWolf)
                 {
                     e.Cancel = true;
                     if (!StyxWoW.Me.HasAura("Ghost Wolf"))

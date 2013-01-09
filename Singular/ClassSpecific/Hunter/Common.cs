@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Hunter
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
         private static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
-        private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter; } }
+        private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter(); } }
 
         #endregion
 
@@ -231,21 +231,6 @@ namespace Singular.ClassSpecific.Hunter
 
         #region Traps
 
-        public static Composite CreateHunterTrapBehavior(string trapName)
-        {
-            return CreateHunterTrapBehavior(trapName, ret => Target);
-        }
-
-        public static Composite CreateHunterTrapBehavior(string trapName, bool useLauncher)
-        {
-            return CreateHunterTrapBehavior(trapName, useLauncher, ret => Target);
-        }
-
-        public static Composite CreateHunterTrapBehavior(string trapName, UnitSelectionDelegate onUnit)
-        {
-            return CreateHunterTrapBehavior(trapName, true, onUnit);
-        }
-
         public static Composite CreateHunterTrapBehavior(string trapName, bool useLauncher, UnitSelectionDelegate onUnit, SimpleBooleanDelegate req = null)
         {
             return new PrioritySelector(
@@ -375,7 +360,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterAvoidanceBehavior(Composite nonfacingAttack, Composite jumpturnAttack)
         {
             return new Decorator(
-                ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed(),
+                ret => MovementManager.IsClassMovementAllowed,
                 new PrioritySelector(
                     new Decorator(
                         ret => HunterSettings.UseDisengage, 
@@ -553,7 +538,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return
                 new Decorator(
-                    ret => !MovementManager.IsMovementDisabled && Target.Distance <= Spell.MeleeRange + 5f &&
+                    ret => MovementManager.IsClassMovementAllowed && Target.Distance <= Spell.MeleeRange + 5f &&
                            Target.IsAlive &&
                            (Target.CurrentTarget == null ||
                             Target.CurrentTarget != Me ||
@@ -592,10 +577,14 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator(
                     ret => ret != null,
                     new PrioritySelector(
-                        CreateHunterTrapBehavior("Ice Trap", false, onUnit => (WoWUnit)onUnit),
-                        CreateHunterTrapBehavior("Snake Trap", false, onUnit => (WoWUnit)onUnit, ret => SpellManager.HasSpell("Entrapment")),
-                        CreateHunterTrapBehavior("Explosive Trap", false, onUnit => (WoWUnit)onUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
-                        CreateHunterTrapBehavior("Freezing Trap", false, onUnit => (WoWUnit)onUnit, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null),
+                        new Throttle( 2,
+                            new PrioritySelector(
+                                CreateHunterTrapBehavior("Ice Trap", false, onUnit => (WoWUnit)onUnit),
+                                CreateHunterTrapBehavior("Snake Trap", false, onUnit => (WoWUnit)onUnit, ret => SpellManager.HasSpell("Entrapment")),
+                                CreateHunterTrapBehavior("Explosive Trap", false, onUnit => (WoWUnit)onUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
+                                CreateHunterTrapBehavior("Freezing Trap", false, onUnit => (WoWUnit)onUnit, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null)
+                                )
+                            ),
                         new Decorator(
                             ret => Me.IsSafelyFacing((WoWUnit)ret),
                             new PrioritySelector(
@@ -741,9 +730,9 @@ namespace Singular.ClassSpecific.Hunter
                             Common.CreateHunterTrapBehavior("Freezing Trap", true, on => ccUnit),
                             Spell.Cast("Scatter Shot", on => ccUnit),
                             Spell.CastOnGround("Binding Shot", ret => ccUnit.Location, ret => true, false),
-                            Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
                             Common.CreateHunterTrapBehavior("Snake Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Entrapment")),
                             Common.CreateHunterTrapBehavior("Ice Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Ice Trap")),
+                            Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
                             Spell.Cast("Concussive Shot", on => ccUnit)
                             ),
                         new Action(ret => { if (ccUnit != null) Blacklist.Add(ccUnit, TimeSpan.FromSeconds(2)); })
@@ -755,8 +744,14 @@ namespace Singular.ClassSpecific.Hunter
         //
         private static bool NeedsNormalCrowdControl(WoWUnit u)
         {
-            bool good = u.Combat && u.IsTargetingMyPartyMember && u.Distance <= 40 && !u.IsCrowdControlled() && u.Guid != Me.CurrentTargetGuid && !Blacklist.Contains(u.Guid)                   
-                    && !Unit.NearbyGroupMembers.Any( g => g.CurrentTargetGuid == u.Guid);
+            bool good = u.Combat 
+                && u.IsTargetingMyPartyMember 
+                && u.Distance <= 40 
+                && !u.IsCrowdControlled()
+                // && !u.HasAnyAura("Explosive Trap", "Ice Trap", "Freezing Trap", "Snake Trap")
+                && u.Guid != Me.CurrentTargetGuid 
+                && !Blacklist.Contains(u.Guid)                   
+                && !Unit.NearbyFriendlyPlayers.Any( g => g.CurrentTargetGuid == u.Guid);
             return good;
         }
 

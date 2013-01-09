@@ -116,7 +116,7 @@ namespace Singular.ClassSpecific.Mage
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                     new ActionIdle()),
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                Spell.BuffSelf("Blink", ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() && (StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted() || Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 2 * 2))), //Dist check for Melee beating me up.
+                Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && (StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted() || Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 2 * 2))), //Dist check for Melee beating me up.
                 Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") && !u.HasAura("Frost Nova") && !u.Stunned)),
                 Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),

@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Warlock
     public class Affliction
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock; } }
+        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
 
         private static int _mobCount;
 
@@ -42,8 +42,19 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
 
-                new Decorator( ret => !Spell.IsGlobalCooldown(),
-                    CreateApplyDotsBehavior( onUnit => Me.CurrentTarget, ret => true)),
+                new Decorator( 
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        new Action(ret =>
+                        {
+                            _mobCount = Common.TargetsInCombat.Count();
+                            return RunStatus.Failure;
+                        }),
+
+                        CreateWarlockDiagnosticOutputBehavior("Pull"),
+                        CreateApplyDotsBehavior(onUnit => Me.CurrentTarget, ret => true)
+                        )
+                    ),
 
                 Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
                 );
@@ -101,7 +112,7 @@ namespace Singular.ClassSpecific.Warlock
                             return RunStatus.Failure;
                             }),
 
-                        CreateWarlockDiagnosticOutputBehavior(),
+                        CreateWarlockDiagnosticOutputBehavior("Combat"),
 
                         CreateAoeBehavior( ),
 
@@ -222,30 +233,50 @@ namespace Singular.ClassSpecific.Warlock
             return unit;
         }
 
-        private static Composite CreateWarlockDiagnosticOutputBehavior()
+        private static Composite CreateWarlockDiagnosticOutputBehavior(string sState = null)
         {
-            return new Throttle( 1, 
-                new Decorator(
-                    ret => SingularSettings.Debug,
-                    new Action(ret =>
+            if (!SingularSettings.Instance.EnableDebugLogging)
+                return new Action(ret => { return RunStatus.Failure; });
+
+            return new ThrottlePasses(1,
+                new Action(ret =>
+                {
+                    string sMsg;
+                    sMsg = string.Format(".... [{0}] h={1:F1}%, m={2:F1}%, moving={3}, pet={4:F0}% @ {5:F0} yds, soulburn={6}",
+                        sState,
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        Me.IsMoving,
+                        Me.GotAlivePet ? Me.Pet.HealthPercent : 0,
+                        Me.GotAlivePet ? Me.Pet.Distance : 0,
+                        (long)Me.GetAuraTimeLeft("Soulburn", true).TotalMilliseconds
+
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
                     {
-                        WoWUnit target = Me.CurrentTarget ?? Me;
-                        Logger.WriteDebug( Color.Wheat, ".... h={0:F1}%/m={1:F1}%, shards={2}, agony={3}, corrupt={4}, ua={5}, haunt={6}, soulburn={7}, enemy={8}%, mobcnt={9}",
-                            Me.HealthPercent,
-                            Me.ManaPercent,
-                            Me.CurrentSoulShards,
+                        sMsg += string.Format(
+                            ", {0}, {1:F1}%, dies {2}, {3:F1} yds, loss={4}, face={5}, agony={6}, corr={7}, ua={8}, haunt={9}, seed={10}, aoe={11}",
+                            target.SafeName(),
+                            target.HealthPercent,
+                            target.TimeToDeath(),
+                            target.Distance,
+                            target.InLineOfSpellSight,
+                            Me.IsSafelyFacing(target),
                             (long)target.GetAuraTimeLeft("Agony", true).TotalMilliseconds,
                             (long)target.GetAuraTimeLeft("Corruption", true).TotalMilliseconds,
                             (long)target.GetAuraTimeLeft("Unstable Affliction", true).TotalMilliseconds,
                             (long)target.GetAuraTimeLeft("Haunt", true).TotalMilliseconds,
-                            (long)target.GetAuraTimeLeft("Soulburn", true).TotalMilliseconds,
-                            (int)target.HealthPercent,
-                            _mobCount 
+                            (long)target.GetAuraTimeLeft("Seed of Corruption", true).TotalMilliseconds,
+                            _mobCount
                             );
-                        return RunStatus.Failure;
-                    })
-                )
-            );
+                    }
+
+                    Logger.WriteDebug(Color.LightYellow, sMsg);
+                    return RunStatus.Failure;
+                })
+                );
         }
     }
 }

@@ -14,6 +14,7 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Styx.CommonBot;
 using Singular.Managers;
+using CommonBehaviors.Actions;
 
 #endregion
 
@@ -22,8 +23,9 @@ namespace Singular.ClassSpecific.Druid
     public class Common
     {
         public static ShapeshiftForm WantedDruidForm { get; set; }
-        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid; } }
+        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid(); } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        public static bool HasTalent(DruidTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         public const WoWSpec DruidAllSpecs = (WoWSpec)int.MaxValue;
 
@@ -35,11 +37,7 @@ namespace Singular.ClassSpecific.Druid
             // Cast motw if player doesn't have it or if in instance/bg, out of combat and 'Buff raid with Motw' is true or if in instance and in combat and both CatRaidRebuff and 'Buff raid with Motw' are true
             return new PrioritySelector(
 
-                PartyBuff.BuffGroup( 
-                    "Mark of the Wild",
-                    ret => DruidSettings.BuffRaidWithMotw && !Me.HasAura("Prowl")
-                        && (!Me.Combat || DruidSettings.CatRaidRebuff)
-                    )
+                PartyBuff.BuffGroup( "Mark of the Wild", ret => !Me.HasAura("Prowl") && !Me.Combat )
 
                 /*   This logic needs work. 
                 new Decorator(
@@ -67,50 +65,88 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, DruidAllSpecs, WoWContext.Normal)]
         public static Composite CreateDruidNormalCombatBuffs()
         {
-            return new PrioritySelector(
-                Spell.WaitForCast(true),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
-                        Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < 50 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
-                        Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+            return new Decorator(
+                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
+                new PrioritySelector(
+                    Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
+                    Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < 50 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+                    Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
 
-                        // will hibernate only if can cast in form, or already left form for some other reason
-                        Spell.Buff("Hibernate", 
-                            ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
-                                u => (u.IsBeast || u.IsDragon)
-                                    && !u.IsMoving 
-                                    && (Me.HasAura("Predatory Swiftness") || Me.Shapeshift == ShapeshiftForm.Normal)
-                                    && (!Me.GotTarget || Me.CurrentTarget.Location.Distance(u.Location) > 10 )
-                                    && Me.CurrentTargetGuid != u.Guid
-                                    && !u.HasMyAura("Hibernate") 
-                                    )
+                    // will hibernate only if can cast in form, or already left form for some other reason
+                    Spell.Buff("Hibernate", 
+                        ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                            u => (u.IsBeast || u.IsDragon)
+                                && (Me.HasAura("Predatory Swiftness") || (!u.IsMoving  && Me.Shapeshift == ShapeshiftForm.Normal))
+                                && (!Me.GotTarget || Me.CurrentTarget.Location.Distance(u.Location) > 10 )
+                                && Me.CurrentTargetGuid != u.Guid
+                                && !u.HasMyAura("Hibernate") 
                                 )
-                        )
+                            )
                     )
                 );
         }
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec)int.MaxValue, WoWContext.Instances)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec)int.MaxValue, WoWContext.Instances | WoWContext.Battlegrounds)]
         public static Composite CreateDruidInstanceCombatBuffs()
         {
-            return new PrioritySelector(
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
 
-                CreateRebirthBehavior( ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead)),
+                    CreateRebirthBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead)),
 
-                Spell.BuffSelf("Celestial Alignment", ret => Me.CurrentTarget != null && Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
+                    Spell.BuffSelf("Celestial Alignment", ret => Me.CurrentTarget != null && Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
 
-                // to do:  time ICoE at start of eclipse
-                Spell.BuffSelf( "Incarnation: Chosen of Elune" ),
+                    // to do:  time ICoE at start of eclipse
+                    Spell.BuffSelf("Incarnation: Chosen of Elune"),
 
-                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => true ),
+                    Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => true),
 
-                Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
-                Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < 50 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
-                Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+                    Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
+                    Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < 50 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+                    Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
 
-                Spell.BuffSelf( "Nature's Vigil" )
+                    Spell.BuffSelf("Nature's Vigil")
+                    )
+                );
+        }
+
+/*
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Instances, 1)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral , WoWContext.Instances, 1)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian , WoWContext.Instances, 1)]
+        public static Composite CreateNonRestoDruidInstanceCombatBuffs()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+
+                    new Decorator(
+                        ret => HasTalent(DruidTalents.DreamOfCenarius) && !Me.HasAura("Dream of Cenarius"),
+                        new PrioritySelector(
+                            Spell.Heal("Healing Touch", ret => Me.ActiveAuras.ContainsKey("Predatory Swiftness")),
+                            CreateNaturesSwiftnessHeal(on => GetBestHealTarget())
+                            )
+                        )
+                    )
+                );
+        }
+*/
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Battlegrounds, 2)]
+        public static Composite CreateFeralDruidBattlegroundCombatBuffs()
+        {
+            return new Decorator(
+                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
+                new PrioritySelector(
+                    Spell.Buff("Cyclone",
+                        ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                            u => Me.HasAura("Predatory Swiftness")
+                                && u.IsCasting 
+                                && Me.GotTarget
+                                && Me.CurrentTargetGuid != u.Guid
+                                )
+                            )
+                    )
                 );
         }
 
@@ -121,7 +157,7 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidGuardian)]
-        public static Composite CreateDruidNonRestoHealNormal()
+        public static Composite CreateDruidNonRestoHeal()
         {
             return new PrioritySelector(
                 Spell.WaitForCast(true),
@@ -132,14 +168,13 @@ namespace Singular.ClassSpecific.Druid
                         new PrioritySelector(
 
                             Spell.Heal("Healing Touch",
-                                       ret => Me.HealthPercent <= 80
-                                           && Me.ActiveAuras.ContainsKey("Predatory Swiftness")),
+                                ret => Me.HealthPercent <= 80
+                                    && Me.ActiveAuras.ContainsKey("Predatory Swiftness")),
 
                             Spell.Heal("Renewal", ret => Me.HealthPercent < DruidSettings.RenewalHealth ),
                             Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 75 || Unit.NearbyUnitsInCombatWithMe.Count() >= 2),
 
-                            new Throttle( Spell.BuffSelf("Nature's Swiftness", ret => Me.HealthPercent < 60)),
-                            Spell.Heal("Healing Touch", ret => Me.HasAura("Nature's Swiftness")),
+                            CreateNaturesSwiftnessHeal( ret => Me.HealthPercent < 60),
 
                             new Decorator(
                                 ret => Me.HealthPercent < 40,
@@ -150,14 +185,45 @@ namespace Singular.ClassSpecific.Druid
 
                                     // heal out of form at this point (try to Barkskin at least)
                                     new Throttle( Spell.BuffSelf( "Barkskin")),
-                                    Spell.Heal("Rejuvenation", ret => !Me.HasAura("Rejuvenation")),
-                                    Spell.Heal("Healing Touch")
+
+                                    new Decorator(
+                                        ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
+                                        new PrioritySelector(
+                                            Spell.Heal("Rejuvenation", ret => !Me.HasAura("Rejuvenation")),
+                                            Spell.Heal("Healing Touch")
+                                            )
+                                        )
                                     )
                                 )
                             )
                         )
                     )
                 );
+        }
+
+        public static Composite CreateNaturesSwiftnessHeal(SimpleBooleanDelegate requirements = null)
+        {
+            return CreateNaturesSwiftnessHeal(on => Me, requirements);
+        }
+
+        public static Composite CreateNaturesSwiftnessHeal(UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements = null)
+        {
+            return new Decorator(
+                ret => onUnit != null && onUnit(ret) != null && requirements != null && requirements(ret),
+                new Sequence(
+                    Spell.BuffSelf("Nature's Swiftness"),
+                    new Wait(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Nature's Swiftness"), new ActionAlwaysSucceed()),
+                    Spell.Heal("Healing Touch", ret => false, onUnit, req => true)
+                    )
+                );
+        }
+
+        public static WoWUnit GetBestHealTarget()
+        {
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal || Me.HealthPercent < 40)
+                return Me;
+
+            return Unit.NearbyFriendlyPlayers.Where(p=>p.IsAlive).OrderBy(k=>k.GetPredictedHealthPercent(false)).FirstOrDefault();
         }
 
         #endregion
@@ -167,29 +233,44 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidBalance)]
         [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidGuardian)]
-        public static Composite CreateBalanceAndDruidFeralRest()
+        public static Composite CreateNonRestoDruidRest()
         {
             return new PrioritySelector(
                 Spell.WaitForCast(false),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(false,false), 
                     new PrioritySelector(
+                        new Decorator(
+                            ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
+                                && (Me.GetPredictedHealthPercent(true) < SingularSettings.Instance.MinHealth || (Me.Shapeshift == ShapeshiftForm.Normal && Me.GetPredictedHealthPercent(true) < 85))
+                                && SpellManager.HasSpell("Healing Touch") && SpellManager.CanCast("Healing Touch", Me, false, false),
+                            new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(),
+                                new Action(r => { Logger.WriteDebug("Druid Rest Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift ); return RunStatus.Failure; }),
+                                Spell.Heal("Healing Touch",
+                                    mov => true,
+                                    on => Me,
+                                    req => true,
+                                    cancel => Me.HealthPercent > 92,
+                                    true)
+                                )
+                            ),
 
-                        Spell.Heal( "Healing Touch", 
-                            ctx => Me, 
-                            ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food")
-                                && Me.GetPredictedHealthPercent(true) <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth ),
-
-                        Rest.CreateDefaultRestBehaviour(),
-
-                        Spell.Resurrect("Revive")
+                        Rest.CreateDefaultRestBehaviour(null, "Revive")
                         )
                     )
                 );
         }
 
         #endregion
-             
+
+        internal static Composite CreateProwlBehavior(SimpleBooleanDelegate req = null)
+        {
+            return new Sequence(
+                Spell.BuffSelf("Prowl", ret => Me.Shapeshift == ShapeshiftForm.Cat && (req == null || req(ret))),
+                new Wait(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Prowl"), new ActionAlwaysSucceed())
+                );
+        }
 
         public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
         {
@@ -303,31 +384,31 @@ namespace Singular.ClassSpecific.Druid
         }
 #endif
 
-        #region Nested type: Talents
-
-        internal enum Talents
-        {
-            FelineSwiftness = 1,
-            DispacerBeast,
-            WildCharge,
-            NaturesSwiftness,
-            Renewal,
-            CenarionWard,
-            FaerieSwarm,
-            MassEntanglement,
-            Typhoon,
-            SoulOfTheForest,
-            Incarnation,
-            ForceOfNature,
-            DisorientingRoar,
-            UrsolsVortex,
-            MightyBash,
-            HeartOfTheWild,
-            DreamOfCenarius,
-            NaturesVigil
-        }
-
-        #endregion
-
    }
+    #region Nested type: Talents
+
+    public enum DruidTalents
+    {
+        FelineSwiftness = 1,
+        DispacerBeast,
+        WildCharge,
+        NaturesSwiftness,
+        Renewal,
+        CenarionWard,
+        FaerieSwarm,
+        MassEntanglement,
+        Typhoon,
+        SoulOfTheForest,
+        Incarnation,
+        ForceOfNature,
+        DisorientingRoar,
+        UrsolsVortex,
+        MightyBash,
+        HeartOfTheWild,
+        DreamOfCenarius,
+        NaturesVigil
+    }
+
+    #endregion
+
 }

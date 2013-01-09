@@ -24,6 +24,8 @@ namespace Singular.ClassSpecific.Shaman
 {
     internal static class Totems
     {
+        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
+
         public static Composite CreateTotemsBehavior()
         {
             return CreateTotemsNormalBehavior();
@@ -65,19 +67,11 @@ namespace Singular.ClassSpecific.Shaman
                         })
                     ),
 
-#if USE_ISFLEEING
+
                 Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
                     ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor))
                         && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
-#elif USE_MECHANIC
-                Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
-                    ret => Unit.GroupMembers.Any(f => f.Distance < Totems.GetTotemRange(WoWTotem.Tremor) && f.HasAuraWithMechanic(WoWSpellMechanic.Fleeing | WoWSpellMechanic.Polymorphed | WoWSpellMechanic.Asleep))
-                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
-#else
-                Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
-                    ret => Unit.GroupMembers.Any(f => f.Distance < Totems.GetTotemRange(WoWTotem.Tremor) && f.HasAuraWithEffect(WoWApplyAuraType.ModFear | WoWApplyAuraType.ModPacify | WoWApplyAuraType.ModPacifySilence))
-                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
-#endif
+
                 new Decorator(
                     ret => !Me.IsMoving || (Me.GotTarget && Me.CurrentTarget.Distance < (Me.MeleeDistance(Me.CurrentTarget) + 3)),
                     new PrioritySelector(
@@ -91,7 +85,7 @@ namespace Singular.ClassSpecific.Shaman
                             ret => ((bool) ret || Group.Tanks.Any( t => t.IsDead && t.Distance < 40)) && !Exist( WoWTotem.StoneBulwark)),
 
                         Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(),
-                            ret => Me.HealthPercent < SingularSettings.Instance.Shaman.StoneBulwarkTotemPercent && !Exist( WoWTotem.EarthElemental)),
+                            ret => Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Exist( WoWTotem.EarthElemental)),
 
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && u.IsPlayer && u.Combat),

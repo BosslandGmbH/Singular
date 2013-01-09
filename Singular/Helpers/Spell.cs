@@ -12,6 +12,7 @@ using Styx.WoWInternals.World;
 using Action = Styx.TreeSharp.Action;
 using Singular.Settings;
 using Singular.Managers;
+using Styx.Helpers;
 
 namespace Singular.Helpers
 {
@@ -1185,21 +1186,63 @@ namespace Singular.Helpers
         {
             return
                 new Decorator(
-                    ret =>
-                    requirements(ret) && onLocation != null && SpellManager.CanCast(spell) &&
-                    (StyxWoW.Me.Location.Distance(onLocation(ret)) <= SpellManager.Spells[spell].MaxRange ||
-                     SpellManager.Spells[spell].MaxRange == 0) && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Location, onLocation(ret)),
+                    ret => requirements(ret)
+                        && onLocation != null
+                        && SpellManager.CanCast(spell)
+                        && (StyxWoW.Me.Location.Distance(onLocation(ret)) <= SpellManager.Spells[spell].MaxRange || SpellManager.Spells[spell].MaxRange == 0)
+                        && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Location, onLocation(ret)),
                     new Sequence(
-                        new Action(ret => Logger.Write("Casting {0} at location {1}", spell, onLocation(ret))),
+                        new Action(ret =>
+                        {
+                            if (!SingularSettings.Debug)
+                                Logger.Write("Casting {0} at location {1} @ {2:F1} yds", spell, onLocation(ret), onLocation(ret).Distance(StyxWoW.Me.Location));
+                            else
+                            {
+                                WoWUnit unit = Unit.NearbyFriendlyPlayers.Where(f => f.IsAlive)
+                                    .Union(Unit.NearbyUnfriendlyUnits)
+                                    .OrderBy(u => u.Distance)
+                                    .FirstOrDefault();
+
+                                Logger.Write("Casting {0} at {1} @ {2:F1} yds (closest unit {3} {4:F1} yds away", spell, onLocation(ret), onLocation(ret).Distance(StyxWoW.Me.Location), unit.SafeName(), unit.Location.Distance(onLocation(ret)));
+                            }
+                        }),
+
                         new Action(ret => SpellManager.Cast(spell)),
 
-                        new DecoratorContinue(ctx => waitForSpell,
-                            new WaitContinue(1,
-                                ret =>
-                                StyxWoW.Me.CurrentPendingCursorSpell != null &&
-                                StyxWoW.Me.CurrentPendingCursorSpell.Name == spell, new ActionAlwaysSucceed())),
+                        new DecoratorContinue(
+                            ctx => waitForSpell,
+                            new WaitContinue(TimeSpan.FromMilliseconds(500),
+                                ret => StyxWoW.Me.CurrentPendingCursorSpell != null, // && StyxWoW.Me.CurrentPendingCursorSpell.Name == spell,
+                                new ActionAlwaysSucceed()
+                                )
+                            ),
 
-                        new Action(ret => SpellManager.ClickRemoteLocation(onLocation(ret)))));
+                        new Action(ret => SpellManager.ClickRemoteLocation(onLocation(ret))),
+
+                        // check for we are done status
+                        new PrioritySelector(
+                            // done if cursor doesn't have spell anymore
+                            new Wait(TimeSpan.FromMilliseconds(500),
+                                ret => StyxWoW.Me.CurrentPendingCursorSpell == null,
+                                new ActionAlwaysSucceed()
+                                ),
+
+                            // otherwise cancel
+                            new Action(ret =>
+                            {
+                                Logger.Write("/cancel {0} - did click {1} fail?  distance={2:F1} yds, loss={3}, face={4}",
+                                    spell,
+                                    onLocation(ret),
+                                    StyxWoW.Me.Location.Distance(onLocation(ret)),
+                                    WoWMathHelper.IsSafelyFacing( StyxWoW.Me.Location, StyxWoW.Me.RenderFacing, onLocation(ret)),
+                                    StyxWoW.Me.IsSafelyFacing(onLocation(ret))
+                                    );
+                                Lua.DoString("SpellStopTargeting()");
+                                return RunStatus.Failure;
+                            })
+                            )
+                        )
+                    );
         }
 
         #endregion
@@ -1221,6 +1264,11 @@ namespace Singular.Helpers
                 new Decorator(ctx => ctx != null && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
                     new Sequence(Cast(spellName, ctx => (WoWPlayer) ctx),
                         new Action(ctx => Blacklist.Add((WoWPlayer) ctx, TimeSpan.FromSeconds(30))))));
+        }
+
+        public static bool IsPlayerRessurectNeeded()
+        {
+            return Unit.ResurrectablePlayers.Any(u => !Blacklist.Contains(u));
         }
 
         #endregion

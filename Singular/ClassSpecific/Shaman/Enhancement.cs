@@ -24,7 +24,8 @@ namespace Singular.ClassSpecific.Shaman
 {
     public class Enhancement
     {
-        private static LocalPlayer Me { get { return StyxWoW.Me; } } 
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
         #region Common
 
@@ -63,17 +64,18 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Rest, WoWClass.Shaman, WoWSpec.ShamanEnhancement)]
         public static Composite CreateShamanEnhancementRest()
         {
-            return
-                new PrioritySelector(
-                    Spell.WaitForCastOrChannel(true),
-                    new Decorator(
-                        ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                        Common.CreateShamanDpsHealBehavior()
-                        ),
-                    Rest.CreateDefaultRestBehaviour(),
-                    Spell.Resurrect("Ancestral Spirit"),
-                    Common.CreateShamanMovementBuff()
-                    );
+            return new PrioritySelector(
+                Spell.WaitForCast(false),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(false, false),
+                    new PrioritySelector(
+
+                        Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit"),
+
+                        Common.CreateShamanMovementBuff()
+                        )
+                    )
+                );
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Normal)]
@@ -187,9 +189,9 @@ namespace Singular.ClassSpecific.Shaman
                         Common.CreateShamanDpsShieldBehavior(),
                         Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret => 
-                            SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.All 
-                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.Elite)
-                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Players && Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet))),
+                            ShamanSettings.FeralSpiritCastOn == CastOn.All 
+                            || (ShamanSettings.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.Elite)
+                            || (ShamanSettings.FeralSpiritCastOn == CastOn.Players && Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet))),
 
                         Spell.Cast("Elemental Blast"),
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
@@ -255,9 +257,9 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret =>
-                            SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.All
-                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.Elite)
-                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Players && Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet))),
+                            ShamanSettings.FeralSpiritCastOn == CastOn.All
+                            || (ShamanSettings.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.Elite)
+                            || (ShamanSettings.FeralSpiritCastOn == CastOn.Players && Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet))),
 
                         Spell.Cast("Elemental Blast"),
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
@@ -310,9 +312,9 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret =>
-                            SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.All
-                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.IsBoss )
-                            || (SingularSettings.Instance.Shaman.FeralSpiritCastOn == CastOn.Players && Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet))),
+                            ShamanSettings.FeralSpiritCastOn == CastOn.All
+                            || (ShamanSettings.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.IsBoss )
+                            || (ShamanSettings.FeralSpiritCastOn == CastOn.Players && Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.Combat && u.IsTargetingMeOrPet))),
 
                         new Decorator(
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),

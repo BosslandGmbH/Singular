@@ -56,7 +56,7 @@ namespace Singular.ClassSpecific.Warrior
                 Helpers.Common.CreateAutoAttack(false),
                 // charge
                 Spell.Cast("Charge",
-                    ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() 
+                    ret => MovementManager.IsClassMovementAllowed 
                         && StyxWoW.Me.CurrentTarget.Distance > 10 
                         && StyxWoW.Me.CurrentTarget.Distance < 25),
                 Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)), Spell.Cast(

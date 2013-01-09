@@ -23,7 +23,7 @@ namespace Singular.ClassSpecific.Hunter
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
-        private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter; } }
+        private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter(); } }
 
         #region Normal Rotation
 

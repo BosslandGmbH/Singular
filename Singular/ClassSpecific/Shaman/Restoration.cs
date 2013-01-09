@@ -27,6 +27,7 @@ namespace Singular.ClassSpecific.Shaman
         private const int ELE_T12_ITEM_SET_ID = 1016;
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
         #region BUFFS
 
@@ -68,15 +69,19 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Spell.WaitForCastOrChannel(true),
-
-                CreateRestoShamanHealingBuffs(),
                 new Decorator(
-                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                    CreateRestoShamanHealingOnlyBehavior(true, false)
-                    ),
-                Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
-                Spell.Resurrect("Ancestral Spirit"),
-                CreateRestoShamanHealingOnlyBehavior(false, true)
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+
+                        CreateRestoShamanHealingBuffs(),
+                        new Decorator(
+                            ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                            CreateRestoShamanHealingOnlyBehavior(true, false)
+                            ),
+                        Singular.Helpers.Rest.CreateDefaultRestBehaviour(null, "Ancestral Spirit"),
+                        CreateRestoShamanHealingOnlyBehavior(false, true)
+                        )
+                    )
                 );
         }
 
@@ -125,14 +130,18 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Spell.WaitForCastOrChannel(true),
-                CreateRestoShamanHealingBuffs(),
                 new Decorator(
-                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                    CreateRestoShamanHealingOnlyBehavior(true, false)
-                    ),
-                Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
-                Spell.Resurrect("Ancestral Spirit"),
-                CreateRestoShamanHealingOnlyBehavior(false, true)
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        CreateRestoShamanHealingBuffs(),
+                        new Decorator(
+                            ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                            CreateRestoShamanHealingOnlyBehavior(true, false)
+                            ),
+                        Singular.Helpers.Rest.CreateDefaultRestBehaviour(null, "Ancestral Spirit"),
+                        CreateRestoShamanHealingOnlyBehavior(false, true)
+                        )
+                    )
                 );
         }
 
@@ -183,14 +192,18 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Spell.WaitForCastOrChannel(true),
-                CreateRestoShamanHealingBuffs(),
+                Spell.WaitForCast(false),
                 new Decorator(
-                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                    CreateRestoShamanHealingOnlyBehavior(true, false)
-                    ),
-                Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
-                Spell.Resurrect("Ancestral Spirit"),
-                CreateRestoShamanHealingOnlyBehavior(false, true)
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                            CreateRestoShamanHealingOnlyBehavior(true, false)
+                            ),
+                        Singular.Helpers.Rest.CreateDefaultRestBehaviour(null, "Ancestral Spirit"),
+                        CreateRestoShamanHealingOnlyBehavior(false, true)
+                        )
+                    )
                 );
         }
 
@@ -232,20 +245,23 @@ namespace Singular.ClassSpecific.Shaman
             HealerManager.NeedHealTargeting = true;
             PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
 
-            behavs.AddBehavior( HealthToPriority( SingularSettings.Instance.Shaman.Heal.AncestralSwiftness), 
-                "Unleash Elements", 
-                "Unleash Elements",
-                Spell.Buff("Unleash Elements",
-                    ret => (WoWUnit)ret,
-                    ret => (Me.IsMoving || ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.AncestralSwiftness)
-                        && Common.IsImbuedForHealing(Me.Inventory.Equipped.MainHand)
-                        ));
+            if (SpellManager.HasSpell("Earthliving Weapon"))
+            {
+                behavs.AddBehavior(HealthToPriority(ShamanSettings.Heal.AncestralSwiftness),
+                    "Unleash Elements",
+                    "Unleash Elements",
+                    Spell.Buff("Unleash Elements",
+                        ret => (WoWUnit)ret,
+                        ret => (Me.IsMoving || ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness)
+                            && Common.IsImbuedForHealing(Me.Inventory.Equipped.MainHand)
+                            ));
+            }
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.AncestralSwiftness),
-                String.Format("Ancestral Swiftness @ {0}%", SingularSettings.Instance.Shaman.Heal.AncestralSwiftness), 
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.AncestralSwiftness),
+                String.Format("Ancestral Swiftness @ {0}%", ShamanSettings.Heal.AncestralSwiftness), 
                 "Ancestral Swiftness",
                 new Decorator(
-                    ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.AncestralSwiftness,
+                    ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness,
                     new Sequence(
                         Spell.BuffSelf("Ancestral Swiftness"),
                         Spell.Heal("Greater Healing Wave", ret => (WoWUnit)ret)
@@ -253,16 +269,16 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.GreaterHealingWave), "Greater Healing Wave", "Greater Healing Wave",
-                Spell.Heal("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.GreaterHealingWave));
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.GreaterHealingWave), "Greater Healing Wave", "Greater Healing Wave",
+                Spell.Heal("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.GreaterHealingWave));
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingWave), "Healing Wave", "Healing Wave", 
-                Spell.Heal("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.HealingWave));
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.HealingWave), "Healing Wave", "Healing Wave", 
+                Spell.Heal("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.HealingWave));
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingSurge), "Healing Surge", "Healing Surge", 
-                Spell.Heal("Healing Surge", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.HealingSurge));
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.HealingSurge), "Healing Surge", "Healing Surge", 
+                Spell.Heal("Healing Surge", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.HealingSurge));
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.ChainHeal), "Chain Heal", "Chain Heal", 
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.ChainHeal), "Chain Heal", "Chain Heal", 
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
@@ -276,7 +292,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingRain), "Healing Rain", "Healing Rain",
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.HealingRain), "Healing Rain", "Healing Rain",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
@@ -289,44 +305,44 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.SpiritLinkTotem), "Spirit Link Totem", "Spirit Link Totem",
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.SpiritLinkTotem), "Spirit Link Totem", "Spirit Link Totem",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
                         "Spirit Link Totem", ret => (WoWPlayer)ret,
                         ret => Unit.NearbyFriendlyPlayers.Count(
-                            p => p.GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.SpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
+                            p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.SpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
                         )
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingTideTotemPercent), "Healing Tide Totem", "Healing Tide Totem",
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.HealingTideTotemPercent), "Healing Tide Totem", "Healing Tide Totem",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
                         "Healing Tide Totem",
-                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.HealingTideTotemPercent && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
+                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingTideTotemPercent && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
                         )
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.HealingStreamTotem), "Healing Stream Totem", "Healing Stream Totem",
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.HealingStreamTotem), "Healing Stream Totem", "Healing Stream Totem",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
                         "Healing Stream Totem",
-                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
+                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
                             && !Totems.Exist( WoWTotemType.Water)
                         )
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( SingularSettings.Instance.Shaman.Heal.Ascendance), "Ascendance", "Ascendance",
+            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.Ascendance), "Ascendance", "Ascendance",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.BuffSelf(
                         "Ascendance",
-                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.Ascendance) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
+                        ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.Ascendance) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
                         )
                     )
                 );
@@ -440,7 +456,7 @@ namespace Singular.ClassSpecific.Shaman
                     && p.IsHorde == p.IsHorde
                     && !p.IsHostile
                     && p.GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth
-                    && ((p.Distance < 40 && p.InLineOfSpellSight) || (!MovementManager.IsMovementDisabled && p.Distance < 80))
+                    && ((p.Distance < 40 && p.InLineOfSpellSight) || (MovementManager.IsClassMovementAllowed && p.Distance < 80))
                 orderby p.GetPredictedHealthPercent()
                 select p)
                 .ToList();
@@ -467,7 +483,7 @@ namespace Singular.ClassSpecific.Shaman
             get
             {
                 // TODO: Decide if we want to do this differently to ensure we take into account the T12 4pc bonus. (Not removing RT when using CH)
-                return Unit.NearbyFriendlyPlayers.Where(u => u.GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.ChainHeal).Select(u => (WoWUnit)u);
+                return Unit.NearbyFriendlyPlayers.Where(u => u.GetPredictedHealthPercent() < ShamanSettings.Heal.ChainHeal).Select(u => (WoWUnit)u);
             }
         }
 

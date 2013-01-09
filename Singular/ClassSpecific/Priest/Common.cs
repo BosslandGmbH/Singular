@@ -50,10 +50,10 @@ namespace Singular.ClassSpecific.Priest
                         //Spell.BuffSelf("Vampiric Embrace"), // VE is now a CD, not a normal buff
                         // Spell.BuffSelf("Power Word: Fortitude", ret => Unit.NearbyFriendlyPlayers.Any(u => !u.IsDead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && CanCastFortitudeOn(u))),
                         PartyBuff.BuffGroup("Power Word: Fortitude"),
-                        //Spell.BuffSelf("Shadow Protection", ret => SingularSettings.Instance.Priest.UseShadowProtection && Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && !Unit.HasAura(u, "Shadow Protection", 0))), // we no longer have Shadow resist
-                        Spell.BuffSelf("Inner Fire", ret => SingularSettings.Instance.Priest.UseInnerFire),
-                        Spell.BuffSelf("Inner Will", ret => !SingularSettings.Instance.Priest.UseInnerFire),
-                        Spell.BuffSelf("Fear Ward", ret => SingularSettings.Instance.Priest.UseFearWard),
+                        //Spell.BuffSelf("Shadow Protection", ret => SingularSettings.Instance.Priest().UseShadowProtection && Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && !Unit.HasAura(u, "Shadow Protection", 0))), // we no longer have Shadow resist
+                        Spell.BuffSelf("Inner Fire", ret => SingularSettings.Instance.Priest().UseInnerFire),
+                        Spell.BuffSelf("Inner Will", ret => !SingularSettings.Instance.Priest().UseInnerFire),
+                        Spell.BuffSelf("Fear Ward", ret => SingularSettings.Instance.Priest().UseFearWard),
 
                         CreatePriestMovementBuff("PreCombat")
                         )
@@ -72,8 +72,8 @@ namespace Singular.ClassSpecific.Priest
         public static Decorator CreatePriestMovementBuff(string mode, bool checkMoving = true)
         {
             return new Decorator(
-                ret => SingularSettings.Instance.Priest.UseSpeedBuff
-                    && !MovementManager.IsMovementDisabled 
+                ret => SingularSettings.Instance.Priest().UseSpeedBuff
+                    && MovementManager.IsClassMovementAllowed 
                     && StyxWoW.Me.IsAlive 
                     && (!checkMoving || StyxWoW.Me.IsMoving)
                     && !StyxWoW.Me.Mounted

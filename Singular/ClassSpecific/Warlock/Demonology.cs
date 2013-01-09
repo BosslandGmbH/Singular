@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.Warlock
     {
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock; } }
+        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
         private static uint CurrentDemonicFury { get { return Me.GetCurrentPower(WoWPowerType.DemonicFury); } }
 
         private static int _mobCount; 

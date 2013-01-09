@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.Warrior
     static class Common
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior; } }
+        private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
 
         public static bool Tier14TwoPieceBonus { get { return Me.HasAura("Item - Warrior T14 DPS 2P Bonus"); } }
         public static bool Tier14FourPieceBonus { get { return Me.HasAura("Item - Warrior T14 DPS 4P Bonus"); } }      
@@ -35,14 +35,14 @@ namespace Singular.ClassSpecific.Warrior
 
         public static string SelectedShout
         {
-            get { return SingularSettings.Instance.Warrior.Shout.ToString().CamelToSpaced(); }
+            get { return SingularSettings.Instance.Warrior().Shout.ToString().CamelToSpaced(); }
         }
 
         public static WarriorStance  SelectedStance
         {
             get
             {
-                var stance = SingularSettings.Instance.Warrior.Stance;
+                var stance = SingularSettings.Instance.Warrior().Stance;
                 if (stance == WarriorStance.Auto)
                 {
                     switch (Me.Specialization)
@@ -72,13 +72,13 @@ namespace Singular.ClassSpecific.Warrior
 
                     new PrioritySelector(
                         Spell.Cast("Charge",
-                            ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed()
+                            ret => MovementManager.IsClassMovementAllowed
                                 && Me.CurrentTarget.SpellDistance() >= 10 && Me.CurrentTarget.SpellDistance() < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)
                                 && WarriorSettings.UseWarriorCloser),
 
                         Spell.CastOnGround("Heroic Leap",
                             ret => Me.CurrentTarget.Location,
-                            ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed()
+                            ret => MovementManager.IsClassMovementAllowed
                                 && Me.CurrentTarget.SpellDistance() > 9 && !Me.CurrentTarget.HasAura("Charge Stun", 1)
                                 && WarriorSettings.UseWarriorCloser),
 

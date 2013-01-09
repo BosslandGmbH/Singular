@@ -20,7 +20,7 @@ namespace Singular.ClassSpecific.Paladin
 {
     public class Common
     {
-        private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin; } }
+        private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin(); } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin)]

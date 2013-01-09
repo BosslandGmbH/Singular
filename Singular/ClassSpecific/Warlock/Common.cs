@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.Warlock
         #region Local Helpers
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock; } }
+        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
 
         private static bool HaveHealthStone { get { return StyxWoW.Me.BagItems.Any(i => i.Entry == 5512); } }
 
@@ -116,7 +116,7 @@ namespace Singular.ClassSpecific.Warlock
         private static bool NeedToSoulstoneMyself()
         {
             bool cast = WarlockSettings.UseSoulstone == Soulstone.Self 
-                || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext != WoWContext.Instances && !MovementManager.IsMovementDisabled );
+                || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext != WoWContext.Instances && MovementManager.IsClassMovementAllowed );
             return cast;
         }
 
@@ -398,7 +398,7 @@ namespace Singular.ClassSpecific.Warlock
         /// <returns>WarlockPet to use</returns>
         public static WarlockPet GetBestPet()
         {
-            WarlockPet bestPet = SingularSettings.Instance.Warlock.Pet;
+            WarlockPet bestPet = SingularSettings.Instance.Warlock().Pet;
             if (bestPet != WarlockPet.None)
             {
                 if (Me.Specialization == WoWSpec.None)

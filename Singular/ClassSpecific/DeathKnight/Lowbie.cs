@@ -15,7 +15,7 @@ namespace Singular.ClassSpecific.DeathKnight
     public class Lowbie
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static DeathKnightSettings Settings { get { return SingularSettings.Instance.DeathKnight; } }
+        private static DeathKnightSettings DeathKnightSettings { get { return SingularSettings.Instance.DeathKnight(); } }
 
         [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, (WoWSpec)0)]
         public static Composite CreateLowbieDeathKnightCombat()

@@ -18,7 +18,7 @@ namespace Singular.ClassSpecific.Monk
     public class Windwalker
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk; } }
+        private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
 
         #region NORMAL
         [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal )]
@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific.Monk
                             ),
 #endif
                         new Decorator(
-                            ret => !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 10,
+                            ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 10,
                             new PrioritySelector(
                                 Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
                                 Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
@@ -63,7 +63,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
                         Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                         Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
-                        Spell.Cast("Roll", ret => !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12)
+                        Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12)
                         )
                     ),
 
@@ -96,7 +96,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
                         Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
                         Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
-                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk.FortifyingBrewPercent),
+                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
                         Spell.BuffSelf("Zen Sphere", ctx => Me.HealthPercent < 90 && Me.CurrentChi >= 4),
                         Spell.Cast("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) >= 2)
                         )
@@ -246,7 +246,7 @@ namespace Singular.ClassSpecific.Monk
                             ),
 
                         new Decorator(
-                            ret => Me.IsSafelyFacing( Me.CurrentTarget, 10f) && Me.CurrentTarget.Distance > 10,
+                            ret => MovementManager.IsClassMovementAllowed && Me.IsSafelyFacing(Me.CurrentTarget, 10f) && Me.CurrentTarget.Distance > 10,
                             new PrioritySelector(
                                 Spell.Cast("Flying Serpent Kick",  ret => TalentManager.HasGlyph("Flying Serpent Kick")),
                                 Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
@@ -277,7 +277,7 @@ namespace Singular.ClassSpecific.Monk
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 15 )
+                        Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 15)
                         )
                     ),
 
@@ -297,7 +297,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
                         Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
                         Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
-                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk.FortifyingBrewPercent),
+                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
                         Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4),
                         Spell.BuffSelf("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Me.CurrentTarget.IsBoss && Me.CurrentTarget.IsWithinMeleeRange)
                         )
@@ -336,7 +336,7 @@ namespace Singular.ClassSpecific.Monk
 
                             Spell.Heal( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
 
-                            Spell.Heal( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)Common.Talents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk.ChiWavePercent)
+                            Spell.Heal( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)Common.Talents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
 #if USE_CHI_BURST                            
                             ,
 
@@ -345,7 +345,7 @@ namespace Singular.ClassSpecific.Monk
                                 ctx => BestChiBurstTarget(), 
                                 ret => SpellManager.HasSpell("Chi Burst") 
                                     && Me.CurrentChi >= 2 
-                                    && Me.HealthPercent < SingularSettings.Instance.Monk.ChiWavePercent)
+                                    && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
 #endif
                             )
                         )

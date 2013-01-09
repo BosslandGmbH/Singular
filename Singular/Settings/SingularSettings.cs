@@ -1,11 +1,14 @@
 ﻿
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using Styx;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 using Singular.Managers;
+using System.Reflection;
+using System;
 
 namespace Singular.Settings
 {
@@ -46,7 +49,11 @@ namespace Singular.Settings
             }
         }
 
-        public static SingularSettings Instance { get { return _instance ?? (_instance = new SingularSettings()); } }
+        public static SingularSettings Instance 
+        { 
+            get { return _instance ?? (_instance = new SingularSettings()); }
+            set { _instance = value; }
+        }
 
         public static bool IsTrinketUsageWanted(TrinketUsage usage)
         {
@@ -63,18 +70,18 @@ namespace Singular.Settings
 
             // reference the internal references so we can display only for our class
             LogSettings("Singular", SingularSettings.Instance);
-            LogSettings("HotkeySettings", _hotkeySettings);
-            if (StyxWoW.Me.Class == WoWClass.DeathKnight )  LogSettings("DeathKnightSettings", DeathKnight);
-            if (StyxWoW.Me.Class == WoWClass.Druid )        LogSettings("DruidSettings", Druid);
-            if (StyxWoW.Me.Class == WoWClass.Hunter )       LogSettings("HunterSettings", Hunter);
-            if (StyxWoW.Me.Class == WoWClass.Mage )         LogSettings("MageSettings", Mage);
-            if (StyxWoW.Me.Class == WoWClass.Monk )         LogSettings("MonkSettings", Monk);
-            if (StyxWoW.Me.Class == WoWClass.Paladin )      LogSettings("PaladinSettings", Paladin);
-            if (StyxWoW.Me.Class == WoWClass.Priest )       LogSettings("PriestSettings", Priest);
-            if (StyxWoW.Me.Class == WoWClass.Rogue )        LogSettings("RogueSettings", Rogue);
-            if (StyxWoW.Me.Class == WoWClass.Shaman )       LogSettings("ShamanSettings", Shaman);
-            if (StyxWoW.Me.Class == WoWClass.Warlock )      LogSettings("WarlockSettings", Warlock);
-            if (StyxWoW.Me.Class == WoWClass.Warrior )      LogSettings("WarriorSettings", Warrior);
+            LogSettings("HotkeySettings", Hotkeys());
+            if (StyxWoW.Me.Class == WoWClass.DeathKnight )  LogSettings("DeathKnightSettings", DeathKnight());
+            if (StyxWoW.Me.Class == WoWClass.Druid )        LogSettings("DruidSettings", Druid());
+            if (StyxWoW.Me.Class == WoWClass.Hunter )       LogSettings("HunterSettings", Hunter());
+            if (StyxWoW.Me.Class == WoWClass.Mage )         LogSettings("MageSettings", Mage());
+            if (StyxWoW.Me.Class == WoWClass.Monk )         LogSettings("MonkSettings", Monk());
+            if (StyxWoW.Me.Class == WoWClass.Paladin )      LogSettings("PaladinSettings", Paladin());
+            if (StyxWoW.Me.Class == WoWClass.Priest )       LogSettings("PriestSettings", Priest());
+            if (StyxWoW.Me.Class == WoWClass.Rogue )        LogSettings("RogueSettings", Rogue());
+            if (StyxWoW.Me.Class == WoWClass.Shaman )       LogSettings("ShamanSettings", Shaman());
+            if (StyxWoW.Me.Class == WoWClass.Warlock )      LogSettings("WarlockSettings", Warlock());
+            if (StyxWoW.Me.Class == WoWClass.Warrior )      LogSettings("WarriorSettings", Warrior());
         }
 
         public void LogSettings(string desc, Styx.Helpers.Settings set)
@@ -106,14 +113,6 @@ namespace Singular.Settings
 
                 return MovementManager.IsManualMovementBotActive;
             }
-        }
-
-        public bool IsCombatRoutineMovementAllowed()
-        {
-            if (AllowMovement != AllowMovementType.Auto)
-                return AllowMovement >= AllowMovementType.ClassSpecificOnly;
-
-            return !MovementManager.IsManualMovementBotActive;
         }
 
         [Browsable(false)]
@@ -339,42 +338,23 @@ namespace Singular.Settings
 
         private HotkeySettings _hotkeySettings;
 
-        [Browsable(false)]
-        public DeathKnightSettings DeathKnight { get { return _dkSettings ?? (_dkSettings = new DeathKnightSettings()); } }
-
-        [Browsable(false)]
-        public DruidSettings Druid { get { return _druidSettings ?? (_druidSettings = new DruidSettings()); } }
-
-        [Browsable(false)]
-        public HunterSettings Hunter { get { return _hunterSettings ?? (_hunterSettings = new HunterSettings()); } }
-
-        [Browsable(false)]
-        public MageSettings Mage { get { return _mageSettings ?? (_mageSettings = new MageSettings()); } }
-		
-		[Browsable(false)]
-        public MonkSettings Monk { get { return _monkSettings ?? (_monkSettings = new MonkSettings()); } }
-		
-        [Browsable(false)]
-        public PaladinSettings Paladin { get { return _pallySettings ?? (_pallySettings = new PaladinSettings()); } }
-
-        [Browsable(false)]
-        public PriestSettings Priest { get { return _priestSettings ?? (_priestSettings = new PriestSettings()); } }
-
-        [Browsable(false)]
-        public RogueSettings Rogue { get { return _rogueSettings ?? (_rogueSettings = new RogueSettings()); } }
-
-        [Browsable(false)]
-        public ShamanSettings Shaman { get { return _shamanSettings ?? (_shamanSettings = new ShamanSettings()); } }
-
-        [Browsable(false)]
-        public WarlockSettings Warlock { get { return _warlockSettings ?? (_warlockSettings = new WarlockSettings()); } }
-
-        [Browsable(false)]
-        public WarriorSettings Warrior { get { return _warriorSettings ?? (_warriorSettings = new WarriorSettings()); } }
-
-        [Browsable(false)]
-        public HotkeySettings Hotkeys { get { return _hotkeySettings ?? (_hotkeySettings = new HotkeySettings()); } }
+        // late-binding interfaces 
+        // -- changed from readonly properties to methods as GetProperties() in SaveToXML() was causing all classes configs to load
+        // -- this was causing Save to write a DeathKnight.xml file for all non-DKs for example
+        internal DeathKnightSettings DeathKnight() { return _dkSettings ?? (_dkSettings = new DeathKnightSettings()); } 
+        internal DruidSettings Druid() { return _druidSettings ?? (_druidSettings = new DruidSettings()); }
+        internal HunterSettings Hunter() { return _hunterSettings ?? (_hunterSettings = new HunterSettings()); }
+        internal MageSettings Mage() { return _mageSettings ?? (_mageSettings = new MageSettings()); }
+        internal MonkSettings Monk() { return _monkSettings ?? (_monkSettings = new MonkSettings()); }
+        internal PaladinSettings Paladin() { return _pallySettings ?? (_pallySettings = new PaladinSettings()); }
+        internal PriestSettings Priest() { return _priestSettings ?? (_priestSettings = new PriestSettings()); }
+        internal RogueSettings Rogue() { return _rogueSettings ?? (_rogueSettings = new RogueSettings()); }
+        internal ShamanSettings Shaman() { return _shamanSettings ?? (_shamanSettings = new ShamanSettings()); }
+        internal WarlockSettings Warlock() { return _warlockSettings ?? (_warlockSettings = new WarlockSettings()); }
+        internal WarriorSettings Warrior() { return _warriorSettings ?? (_warriorSettings = new WarriorSettings()); }
+        internal HotkeySettings Hotkeys() { return _hotkeySettings ?? (_hotkeySettings = new HotkeySettings()); }
 
         #endregion
     }
+
 }

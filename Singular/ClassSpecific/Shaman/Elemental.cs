@@ -23,7 +23,7 @@ namespace Singular.ClassSpecific.Shaman
         #region Common
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman; } }
+        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
         [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal|WoWContext.Instances)]
         public static Composite CreateShamanElementalPreCombatBuffsNormal()
@@ -54,18 +54,18 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Rest, WoWClass.Shaman, WoWSpec.ShamanElemental)]
         public static Composite CreateShamanElementalRest()
         {
-            return
-                new PrioritySelector(
-                    Spell.WaitForCastOrChannel(true),
+            return new PrioritySelector(
+                Spell.WaitForCast(false),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(false, false),
+                    new PrioritySelector(
 
-                    new Decorator(
-                        ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                        Common.CreateShamanDpsHealBehavior()
-                        ),
-                    Rest.CreateDefaultRestBehaviour(),
-                    Spell.Resurrect("Ancestral Spirit"),
-                    Common.CreateShamanMovementBuff()
-                    );
+                        Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit"),
+
+                        Common.CreateShamanMovementBuff()
+                        )
+                    )
+                );
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal | WoWContext.Instances)]
@@ -159,9 +159,11 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
                                 new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
 
-                                Spell.CastOnGround("Earthquake", ret => StyxWoW.Me.CurrentTarget.Location, req => 
-                                    (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) &&
-                                    Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
+                                Spell.CastOnGround("Earthquake", 
+                                    ret => StyxWoW.Me.CurrentTarget.Location, 
+                                    req => StyxWoW.Me.CurrentTarget.Distance < 35
+                                        && (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) 
+                                        && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
 
                                 Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
                                 )

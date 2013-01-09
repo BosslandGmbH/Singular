@@ -29,9 +29,7 @@ namespace Singular.ClassSpecific.Priest
                         // Heal self before resting. There is no need to eat while we have 100% mana
                         CreateHolyHealOnlyBehavior(true, false),
                         // Rest up damnit! Do this first, so we make sure we're fully rested.
-                        Rest.CreateDefaultRestBehaviour(),
-                        // Can we res people?
-                        Spell.Resurrect("Resurrection"),
+                        Rest.CreateDefaultRestBehaviour( null, "Resurrection"),
                         // Make sure we're healing OOC too!
                         CreateHolyHealOnlyBehavior(false, false),
                         // now buff our movement if possible
@@ -64,7 +62,7 @@ namespace Singular.ClassSpecific.Priest
 
                         Spell.BuffSelf("Desperate Prayer", ret => StyxWoW.Me.GetPredictedHealthPercent() <= 50),
                         Spell.BuffSelf("Hymn of Hope", ret => StyxWoW.Me.ManaPercent <= 15 && (!SpellManager.HasSpell("Shadowfiend") || SpellManager.Spells["Shadowfiend"].Cooldown)),
-                        Spell.BuffSelf("Divine Hymn", ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() <= SingularSettings.Instance.Priest.DivineHymnHealth) >= SingularSettings.Instance.Priest.DivineHymnCount),
+                        Spell.BuffSelf("Divine Hymn", ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() <= SingularSettings.Instance.Priest().DivineHymnHealth) >= SingularSettings.Instance.Priest().DivineHymnCount),
 
                         Spell.Cast(
                             "Prayer of Mending",
@@ -77,10 +75,10 @@ namespace Singular.ClassSpecific.Priest
                             ret => healTarget is WoWPlayer && Group.Tanks.Contains(healTarget) && !healTarget.HasMyAura("Renew")),
                         Spell.Heal("Prayer of Healing",
                             ret => healTarget,
-                            ret => StyxWoW.Me.HasAura("Serendipity", 2) && Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() <= SingularSettings.Instance.Priest.PrayerOfHealingSerendipityHealth) >= SingularSettings.Instance.Priest.PrayerOfHealingSerendipityCount),
+                            ret => StyxWoW.Me.HasAura("Serendipity", 2) && Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() <= SingularSettings.Instance.Priest().PrayerOfHealingSerendipityHealth) >= SingularSettings.Instance.Priest().PrayerOfHealingSerendipityCount),
                         Spell.Heal("Circle of Healing",
                             ret => healTarget,
-                            ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() <= SingularSettings.Instance.Priest.CircleOfHealingHealth) >= SingularSettings.Instance.Priest.CircleOfHealingCount),
+                            ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() <= SingularSettings.Instance.Priest().CircleOfHealingHealth) >= SingularSettings.Instance.Priest().CircleOfHealingCount),
                         Spell.CastOnGround(
                             "Holy Word: Sanctuary",
                             ret => Clusters.GetBestUnitForCluster(Unit.NearbyFriendlyPlayers.Select(p => p.ToUnit()), ClusterType.Radius, 10f).Location,
@@ -106,15 +104,15 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Heal(
                             "Flash Heal",
                             ret => healTarget,
-                            ret => healTarget.GetPredictedHealthPercent() < SingularSettings.Instance.Priest.HolyFlashHeal),
+                            ret => healTarget.GetPredictedHealthPercent() < SingularSettings.Instance.Priest().HolyFlashHeal),
                         Spell.Heal(
                             "Greater Heal",
                             ret => healTarget,
-                            ret => healTarget.GetPredictedHealthPercent() < SingularSettings.Instance.Priest.HolyGreaterHeal),
+                            ret => healTarget.GetPredictedHealthPercent() < SingularSettings.Instance.Priest().HolyGreaterHeal),
                         Spell.Heal(
                             "Heal",
                             ret => healTarget,
-                            ret => healTarget.GetPredictedHealthPercent() < SingularSettings.Instance.Priest.HolyHeal),
+                            ret => healTarget.GetPredictedHealthPercent() < SingularSettings.Instance.Priest().HolyHeal),
                         new Decorator(
                             ret => moveInRange,
                             Movement.CreateMoveToTargetBehavior(true, 35f, ret => healTarget))

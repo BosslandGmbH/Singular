@@ -23,7 +23,7 @@ namespace Singular.ClassSpecific.Rogue
     public class Common
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue; } }
+        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
 
         public static bool IsStealthed { get { return Me.HasAnyAura("Stealth", "Shadow Dance", "Vanish"); } }
 
@@ -36,7 +36,8 @@ namespace Singular.ClassSpecific.Rogue
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         CreateStealthBehavior( ret => StyxWoW.Me.HasAura("Food")),
-                        Rest.CreateDefaultRestBehaviour(),
+                        Rest.CreateDefaultRestBehaviour( ),
+                        CreateRoguePreCombatBuffs(),
                         CreateRogueGeneralMovementBuff("Rest")
                         )
                     )
@@ -57,12 +58,17 @@ namespace Singular.ClassSpecific.Rogue
                             && Item.HasBandage(),
                         new Sequence(
                             new PrioritySelector(
-                                Spell.Cast("Gouge"),
-                                Spell.Cast("Blind"),
-                                new Decorator( 
+                                new Decorator(
+                                    ret => Me.IsMoving && !MovementManager.IsMovementDisabled,
+                                    new Action(ret => { Navigator.PlayerMover.MoveStop(); return RunStatus.Failure; })
+                                    ),
+                                new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.IsMoving, new ActionAlwaysFail()),
+                                new Decorator(
                                     ret => !Unit.NearbyUnfriendlyUnits.Any(u => !u.IsCrowdControlled()),
                                     new ActionAlwaysSucceed()
-                                    )
+                                    ),
+                                Spell.Cast("Gouge"),
+                                Spell.Cast("Blind")
                                 ),
                             Helpers.Common.CreateWaitForLagDuration(),
                             new WaitContinue(TimeSpan.FromMilliseconds(250), ret => Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
@@ -74,7 +80,7 @@ namespace Singular.ClassSpecific.Rogue
                     new Decorator(
                         ret => RogueSettings.RecuperateHealth > 0 && Me.RawComboPoints > 0,
                         new PrioritySelector(
-                            // cast regardless of combo points if we are below health level
+                // cast regardless of combo points if we are below health level
                             Spell.BuffSelf("Recuperate", ret => Me.HealthPercent < RogueSettings.RecuperateHealth),
 
                             // cast at higher health level based upon number of attackers
@@ -84,11 +90,11 @@ namespace Singular.ClassSpecific.Rogue
                                     && Me.HealthPercent < (100 * (AoeCount - 1) + RogueSettings.RecuperateHealth) / AoeCount),
 
                             // cast if partially need healing and mob about to die
-                            Spell.BuffSelf("Recuperate", 
-                                ret => Me.GotTarget 
+                            Spell.BuffSelf("Recuperate",
+                                ret => Me.GotTarget
                                     && AoeCount == 1
                                     && Me.CurrentTarget.TimeToDeath() < 2
-                                    && Me.HealthPercent < (100+RogueSettings.RecuperateHealth) / 2 )
+                                    && Me.HealthPercent < (100 + RogueSettings.RecuperateHealth) / 2)
                             )
                         )
                     )
@@ -130,8 +136,9 @@ namespace Singular.ClassSpecific.Rogue
                         CreateStealthBehavior( ret => !IsStealthed ),
                         Spell.BuffSelf("Redirect", ret => StyxWoW.Me.RawComboPoints > 0),
                         Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
-                        Spell.Cast("Shadowstep", ret => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 12),
-                        Spell.BuffSelf("Sprint", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 15 && !(SpellManager.HasSpell("Shadowstep") || SpellManager.CanCast("Shadowstep", true)))
+                        // Throttle Shadowstep because cast can fail with no message
+                        new Throttle( 2, Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 12)),
+                        Spell.BuffSelf("Sprint", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 15 && (!SpellManager.HasSpell("Shadowstep") || !SpellManager.CanCast("Shadowstep", true)))
                         )
                     )
                 );
@@ -172,8 +179,8 @@ namespace Singular.ClassSpecific.Rogue
                                 && Me.CurrentTarget.CanInterruptCurrentSpellCast ),
 
                         // Pursuit
-                        Spell.Cast("Shadowstep", ret => Me.CurrentTarget.Distance > 12 && Unit.CurrentTargetIsMovingAwayFromMe),
-                        Spell.Cast("Burst of Speed", ret => Me.IsMoving && Me.CurrentTarget.Distance > 10 && Unit.CurrentTargetIsMovingAwayFromMe),
+                        Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12 && Unit.CurrentTargetIsMovingAwayFromMe),
+                        Spell.Cast("Burst of Speed", ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > 10 && Unit.CurrentTargetIsMovingAwayFromMe),
 
                         // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
                         new Sequence( 
@@ -274,8 +281,8 @@ namespace Singular.ClassSpecific.Rogue
         public static Decorator CreateRogueGeneralMovementBuff(string mode, bool checkMoving = true)
         {
             return new Decorator(
-                ret => SingularSettings.Instance.Priest.UseSpeedBuff
-                    && !MovementManager.IsMovementDisabled
+                ret => SingularSettings.Instance.Priest().UseSpeedBuff
+                    && MovementManager.IsClassMovementAllowed
                     && StyxWoW.Me.IsAlive
                     && (!checkMoving || StyxWoW.Me.IsMoving)
                     && !StyxWoW.Me.Mounted

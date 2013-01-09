@@ -140,7 +140,7 @@ namespace Singular.ClassSpecific.Mage
                      ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                      new ActionIdle()),
                  Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                 Spell.BuffSelf("Blink", ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() && (StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted())),
+                 Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && (StyxWoW.Me.IsStunned() || StyxWoW.Me.IsRooted())),
                  Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
                  Pet.CreateCastPetActionOnLocation("Freeze", ret => !StyxWoW.Me.Mounted && !StyxWoW.Me.CurrentTarget.HasAura("Frost Nova") && StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.ManaPercent >= 12),
                  Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") && !u.HasAura("Frost Nova") && !u.Stunned)),

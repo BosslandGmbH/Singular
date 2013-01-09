@@ -19,15 +19,17 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateRestoDruidHealRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
-                // Heal self before resting. There is no need to eat while we have 100% mana
-                CreateRestoDruidHealOnlyBehavior(true),
-                // Rest up damnit! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour(),
-                // Can we res people?
-                Spell.Resurrect("Revive"),
-                // Make sure we're healing OOC too!
-                CreateRestoDruidHealOnlyBehavior(false,false));
+                Spell.WaitForCast(false),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(false, false),
+                    new PrioritySelector(
+                        CreateRestoDruidHealOnlyBehavior(true),
+                        Rest.CreateDefaultRestBehaviour(),
+                        Spell.Resurrect("Revive"),
+                        CreateRestoDruidHealOnlyBehavior(false,false)
+                        )              
+                    )
+                );
         }
 
         public static Composite CreateRestoDruidHealOnlyBehavior()
@@ -83,46 +85,46 @@ namespace Singular.ClassSpecific.Druid
                             "Tranquility",
                             ret => StyxWoW.Me.Combat && StyxWoW.Me.GroupInfo.IsInParty && Unit.NearbyFriendlyPlayers.Count(
                                 p =>
-                                p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid.TranquilityHealth && p.Distance <= 30) >=
-                                   SingularSettings.Instance.Druid.TranquilityCount),
+                                p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid().TranquilityHealth && p.Distance <= 30) >=
+                                   SingularSettings.Instance.Druid().TranquilityCount),
                         //Use Innervate on party members if we have Glyph of Innervate
                         Spell.Buff(
                             "Innervate",
                             ret => (WoWUnit)ret,
                             ret =>
                             TalentManager.HasGlyph("Innervate") && StyxWoW.Me.Combat && (WoWUnit)ret != StyxWoW.Me &&
-                            StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana &&
-                            ((WoWUnit)ret).PowerType == WoWPowerType.Mana && ((WoWUnit)ret).ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
+                            StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid().InnervateMana &&
+                            ((WoWUnit)ret).PowerType == WoWPowerType.Mana && ((WoWUnit)ret).ManaPercent <= SingularSettings.Instance.Druid().InnervateMana),
                         Spell.Heal(
                             "Swiftmend",
                             ret => (WoWUnit)ret,
-                            ret => StyxWoW.Me.Combat && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Swiftmend &&
+                            ret => StyxWoW.Me.Combat && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().Swiftmend &&
                                    (((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth"))),
                         Spell.Heal(
                             "Wild Growth",
                             ret => (WoWUnit)ret,
                             ret => StyxWoW.Me.GroupInfo.IsInParty && Unit.NearbyFriendlyPlayers.Count(
-                                p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid.WildGrowthHealth &&
-                                     p.Location.DistanceSqr(((WoWUnit)ret).Location) <= 30*30) >= SingularSettings.Instance.Druid.WildGrowthCount),
+                                p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid().WildGrowthHealth &&
+                                     p.Location.DistanceSqr(((WoWUnit)ret).Location) <= 30*30) >= SingularSettings.Instance.Druid().WildGrowthCount),
                         Spell.Heal(
                             "Regrowth",
                             ret => (WoWUnit)ret,
-                            ret => !((WoWUnit)ret).HasMyAura("Regrowth") && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Regrowth),
+                            ret => !((WoWUnit)ret).HasMyAura("Regrowth") && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().Regrowth),
                         Spell.Heal(
                             "Healing Touch",
                             ret => (WoWUnit)ret,
-                            ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.HealingTouch),
+                            ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().HealingTouch),
                         Spell.Heal(
                             "Nourish",
                             ret => (WoWUnit)ret,
-                            ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Nourish &&
+                            ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().Nourish &&
                                    ((((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth") ||
                                     ((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).HasAura("Wild Growth")))),
                         Spell.Heal(
                             "Rejuvenation",
                             ret => (WoWUnit)ret,
                             ret => !((WoWUnit)ret).HasMyAura("Rejuvenation") &&
-                                   ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid.Rejuvenation),
+                                   ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().Rejuvenation),
                         new Decorator(
                             ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                             new PrioritySelector(
@@ -173,14 +175,14 @@ namespace Singular.ClassSpecific.Druid
                     Spell.BuffSelf(
                         "Tree of Life",
                         ret => StyxWoW.Me.GroupInfo.IsInParty && Unit.NearbyFriendlyPlayers.Count(
-                            p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid.TreeOfLifeHealth) >=
-                               SingularSettings.Instance.Druid.TreeOfLifeCount),
+                            p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid().TreeOfLifeHealth) >=
+                               SingularSettings.Instance.Druid().TreeOfLifeCount),
                     Spell.BuffSelf(
                         "Innervate",
-                        ret => StyxWoW.Me.ManaPercent < 15 || StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
+                        ret => StyxWoW.Me.ManaPercent < 15 || StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid().InnervateMana),
                     Spell.BuffSelf(
                         "Barkskin",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid.Barkskin)
+                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid().Barkskin)
                     );
         }
     }

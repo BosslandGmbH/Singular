@@ -16,7 +16,7 @@ namespace Singular.ClassSpecific.Druid
     {
         private static DruidSettings Settings
         {
-            get { return SingularSettings.Instance.Druid; }
+            get { return SingularSettings.Instance.Druid(); }
         }
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }

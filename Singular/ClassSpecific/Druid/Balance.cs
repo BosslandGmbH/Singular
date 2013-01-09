@@ -40,7 +40,7 @@ namespace Singular.ClassSpecific.Druid
 
         private static DruidSettings DruidSettings
         {
-            get { return SingularSettings.Instance.Druid; }
+            get { return SingularSettings.Instance.Druid(); }
         }
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
@@ -80,7 +80,7 @@ namespace Singular.ClassSpecific.Druid
                         CreateBalanceDiagnosticOutputBehavior(),
 
                         Spell.BuffSelf("Innervate",
-                            ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
+                            ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
 
                         Spell.BuffSelf("Moonkin Form"),
 
@@ -110,7 +110,7 @@ namespace Singular.ClassSpecific.Druid
 
                                 Spell.Cast("Starfall",
                                     ret => StyxWoW.Me,
-                                    ret => SingularSettings.Instance.Druid.UseStarfall),
+                                    ret => DruidSettings.UseStarfall),
 
                                 Spell.Cast("Moonfire",
                                     ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
@@ -215,7 +215,7 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.Cast("Starfall",
                             ret => StyxWoW.Me,
-                            ret => SingularSettings.Instance.Druid.UseStarfall),
+                            ret => DruidSettings.UseStarfall),
                         Spell.Buff("Faerie Fire", 
                             ret => StyxWoW.Me.CurrentTarget.Class == WoWClass.Rogue ||
                                    StyxWoW.Me.CurrentTarget.Class == WoWClass.Druid),
@@ -280,7 +280,7 @@ namespace Singular.ClassSpecific.Druid
                                     select healer).FirstOrDefault()),
 
                         Spell.BuffSelf("Innervate",
-                            ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid.InnervateMana),
+                            ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
 
                         Spell.BuffSelf("Moonkin Form"),
 
@@ -306,7 +306,7 @@ namespace Singular.ClassSpecific.Druid
 
                                 Spell.Cast("Starfall",
                                     ret => StyxWoW.Me,
-                                    ret => SingularSettings.Instance.Druid.UseStarfall),
+                                    ret => DruidSettings.UseStarfall),
 
                                 Spell.Cast("Moonfire",
                                     ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>

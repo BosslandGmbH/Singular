@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Rogue
     class Assassination
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue; } }
+        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
 
         #region Normal Rotation
 

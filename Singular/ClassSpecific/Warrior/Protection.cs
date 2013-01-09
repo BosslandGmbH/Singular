@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.Warrior
         #region Common
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior; } }
+        private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
 
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorProtection, WoWContext.All)]
         public static Composite CreateProtectionNormalPull()
@@ -160,8 +160,8 @@ namespace Singular.ClassSpecific.Warrior
                             CreateTauntBehavior()
                             ),
 
-                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior.UseWarriorSlows),
-                        Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior.UseWarriorSlows),
+                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
+                        Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
 
                         CreateProtectionInterrupt(),
 
@@ -233,7 +233,7 @@ namespace Singular.ClassSpecific.Warrior
                     Spell.Cast("Intervene", 
                         ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(
                             m => Group.Healers.Any( h => m.CurrentTargetGuid == h.Guid && h.Distance < 25)),
-                        ret => !MovementManager.IsMovementDisabled && Group.Healers.Count( h => h.IsAlive && h.Distance < 40) == 1
+                        ret => MovementManager.IsClassMovementAllowed && Group.Healers.Count( h => h.IsAlive && h.Distance < 40) == 1
                         )
                     )
                 );

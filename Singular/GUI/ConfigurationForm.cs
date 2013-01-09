@@ -31,43 +31,42 @@ namespace Singular.GUI
 
             //HealTargeting.Instance.OnTargetListUpdateFinished += new Styx.Logic.TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished);
             pgGeneral.SelectedObject = SingularSettings.Instance;
-            SingularSettings main = SingularSettings.Instance;
 
             Styx.Helpers.Settings toSelect = null;
             switch (StyxWoW.Me.Class)
             {
                 case WoWClass.Warrior:
-                    toSelect = main.Warrior;
+                    toSelect = SingularSettings.Instance.Warrior();
                     break;
                 case WoWClass.Paladin:
-                    toSelect = main.Paladin;
+                    toSelect = SingularSettings.Instance.Paladin();
                     break;
                 case WoWClass.Hunter:
-                    toSelect = main.Hunter;
+                    toSelect = SingularSettings.Instance.Hunter();
                     break;
                 case WoWClass.Rogue:
-                    toSelect = main.Rogue;
+                    toSelect = SingularSettings.Instance.Rogue();
                     break;
                 case WoWClass.Priest:
-                    toSelect = main.Priest;
+                    toSelect = SingularSettings.Instance.Priest();
                     break;
                 case WoWClass.DeathKnight:
-                    toSelect = main.DeathKnight;
+                    toSelect = SingularSettings.Instance.DeathKnight();
                     break;
                 case WoWClass.Shaman:
-                    toSelect = main.Shaman;
-                    pgHealBattleground.SelectedObject = main.Shaman.Battleground;
-                    pgHealInstance.SelectedObject = main.Shaman.Instance;
-                    pgHealNormal.SelectedObject = main.Shaman.Normal;
+                    toSelect = SingularSettings.Instance.Shaman();
+                    pgHealBattleground.SelectedObject = SingularSettings.Instance.Shaman().Battleground;
+                    pgHealInstance.SelectedObject = SingularSettings.Instance.Shaman().Instance;
+                    pgHealNormal.SelectedObject = SingularSettings.Instance.Shaman().Normal;
                     break;
                 case WoWClass.Mage:
-                    toSelect = main.Mage;
+                    toSelect = SingularSettings.Instance.Mage();
                     break;
                 case WoWClass.Warlock:
-                    toSelect = main.Warlock;
+                    toSelect = SingularSettings.Instance.Warlock();
                     break;
                 case WoWClass.Druid:
-                    toSelect = main.Druid;
+                    toSelect = SingularSettings.Instance.Druid();
                     break;
                 default:
                     break;
@@ -77,7 +76,7 @@ namespace Singular.GUI
                 pgClass.SelectedObject = toSelect;
             }
 
-            pgHotkeys.SelectedObject = main.Hotkeys;
+            pgHotkeys.SelectedObject = SingularSettings.Instance.Hotkeys();
 
             InitializeContextDropdown();
 
@@ -127,7 +126,8 @@ namespace Singular.GUI
         { // prevent an exception from closing HB.
             try
             {
-                ((Styx.Helpers.Settings)pgGeneral.SelectedObject).Save();
+                ((SingularSettings)pgGeneral.SelectedObject).Save();
+
                 if (pgClass.SelectedObject != null)
                     ((Styx.Helpers.Settings)pgClass.SelectedObject).Save();
 

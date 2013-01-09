@@ -20,10 +20,15 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinHolyRest()
         {
             return new PrioritySelector(
-                // Rest up damnit! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour(),
-                // Can we res people?
-                Spell.Resurrect("Redemption"));
+                Spell.WaitForCast(false),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(false, false),
+                    new PrioritySelector(
+                        // Rest up damnit! Do this first, so we make sure we're fully rested.
+                        Rest.CreateDefaultRestBehaviour( null, "Redemption")
+                        )
+                    )
+                );
         }
 
 
@@ -113,16 +118,16 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf("Avenging Wrath"),
                     Spell.BuffSelf(
                         "Lay on Hands",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.LayOnHandsHealth && !StyxWoW.Me.HasAura("Forbearance")),
+                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().LayOnHandsHealth && !StyxWoW.Me.HasAura("Forbearance")),
                     Spell.BuffSelf(
                         "Guardian of Ancient Kings",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.GoAKHealth),
+                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().GoAKHealth),
                     Spell.BuffSelf(
                         "Ardent Defender",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.ArdentDefenderHealth),
+                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().ArdentDefenderHealth),
                     Spell.BuffSelf(
                         "Divine Protection",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin.DivineProtectionHealthProt),
+                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().DivineProtectionHealthProt),
 
                     Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 50 && StyxWoW.Me.CurrentHolyPower == 3),
                     Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 25 && StyxWoW.Me.CurrentHolyPower == 2),

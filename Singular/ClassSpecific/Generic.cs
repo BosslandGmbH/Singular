@@ -104,17 +104,46 @@ namespace Singular.ClassSpecific
                         new Decorator(
                             ret => SpellManager.CanCast("Gift of the Naaru") && StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP,
                             Spell.Cast("Gift of the Naaru")),
-                        new Decorator(
-                            ret => SingularSettings.Instance.ShadowmeldThreatDrop && SpellManager.CanCast("Shadowmeld") && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) &&
-                                !Unit.GroupMemberInfos.Any(pm => pm.Guid == StyxWoW.Me.Guid && pm.Role == WoWPartyMember.GroupRole.Tank) &&
-                                ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Any(unit => unit.CurrentTargetGuid == StyxWoW.Me.Guid),
-                            Spell.Cast("Shadowmeld")),
+                        Spell.Cast("Shadowmeld", ret => NeedShadowmeld() ),
                         Spell.BuffSelf("Lifeblood", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAnyAura("Lifeblood", "Berserking")),
                         Spell.BuffSelf("Berserking", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAura("Lifeblood")),
                         Spell.BuffSelf("Blood Fury")
                         )
                     )
                 );
+        }
+
+        private static bool NeedShadowmeld()
+        {
+            if ( !SingularSettings.Instance.ShadowmeldThreatDrop || StyxWoW.Me.Race != WoWRace.NightElf )
+                return false;
+
+            if ( !SpellManager.CanCast("Shadowmeld") )
+                return false;
+
+            if (StyxWoW.Me.IsInGroup())
+            {
+                if (Group.MeIsTank)
+                    return false;
+
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                {
+                    if (!Unit.NearbyUnfriendlyUnits.Any(unit => unit.CurrentTargetGuid == StyxWoW.Me.Guid && (unit.Class == WoWClass.Hunter || unit.Class == WoWClass.Mage || unit.Class == WoWClass.Priest || unit.Class == WoWClass.Warlock)))
+                    {
+                        return true;    // since likely a ranged target
+                    }
+                }
+                else if (!Unit.NearbyUnfriendlyUnits.Any(unit => unit.CurrentTargetGuid == StyxWoW.Me.Guid))
+                {
+                    return false;
+                }
+
+                if (Group.Tanks.Any( t => t.IsAlive && t.Distance < 50))
+                    return true;
+            }
+
+            // need to add logic to wait for pats, or for PVP losing ranged targets may be enough
+            return false;
         }
 
         // [Behavior(BehaviorType.Combat, priority: 997)]

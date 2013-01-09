@@ -23,7 +23,7 @@ namespace Singular.ClassSpecific.Monk
     {
         private const int SOOTHING_MIST = 115175;
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk; } }
+        private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
 
 
         [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkMistweaver)]
@@ -46,18 +46,24 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMistweaverMonkRestBehavior()
         {
             return new PrioritySelector(
-                CreateMistweaverMonkHealing(true),
+                Spell.WaitForCast(false),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(false, false),
+                    new PrioritySelector(
+                        CreateMistweaverMonkHealing(true),
 
-                // cast Mana Tea if solo (farming, grinding, etc.) and low on Mana
-                new Sequence(
-                    Spell.Cast( "Mana Tea", ctx => Me, ret => !Me.IsInGroup() && Me.HasAura( "Mana Tea") && Me.ManaPercent < SingularSettings.Instance.MinMana),
-                    new WaitContinue( TimeSpan.FromMilliseconds(500), ret => !Me.HasAura("Mana Tea"), new ActionAlwaysSucceed()),
-                    Helpers.Common.CreateWaitForLagDuration()
-                    ),
+                        // cast Mana Tea if solo (farming, grinding, etc.) and low on Mana
+                        new Sequence(
+                            Spell.Cast( "Mana Tea", ctx => Me, ret => !Me.IsInGroup() && Me.HasAura( "Mana Tea") && Me.ManaPercent < SingularSettings.Instance.MinMana),
+                            new WaitContinue( TimeSpan.FromMilliseconds(500), ret => !Me.HasAura("Mana Tea"), new ActionAlwaysSucceed()),
+                            Helpers.Common.CreateWaitForLagDuration()
+                            ),
 
-                Rest.CreateDefaultRestBehaviour(),
-                Spell.Resurrect("Resuscitate"),
-                CreateMistweaverMonkHealing(false)
+                        Rest.CreateDefaultRestBehaviour( null, "Resuscitate"),
+
+                        CreateMistweaverMonkHealing(false)
+                        )
+                    )
                 );
         }
 
@@ -79,19 +85,16 @@ namespace Singular.ClassSpecific.Monk
                         ret => !Spell.IsGlobalCooldown(), 
 
                         new PrioritySelector(
-                            Spell.BuffSelf("Stance of the Fierce Tiger"),
-
-                            // Pull
                             Common.GrappleWeapon(),
                             Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
-                            Spell.Cast("Roll", ret => !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12),
+                            Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12),
                             Spell.Cast("Jab")
                             )
-                        ), 
+                        ),
 
-                    Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12),
+                    Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12),
 
                     Movement.CreateMoveToMeleeBehavior(true)
                     )
@@ -99,16 +102,16 @@ namespace Singular.ClassSpecific.Monk
 
         }
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkMistweaver )]
-        public static Composite CreateHolyCombatBuffs()
+        [Behavior(BehaviorType.PullBuffs | BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkMistweaver )]
+        public static Composite CreateMistweaverCombatBuffs()
         {
             return new PrioritySelector(
                 Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.BuffSelf("Stance of the Wise Serpent", ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe)),
-                        Spell.BuffSelf("Stance of the Fierce Tiger", ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe))
+                        Spell.BuffSelf("Stance of the Wise Serpent", ret => Me.IsInGroup()),
+                        Spell.BuffSelf("Stance of the Fierce Tiger", ret => !Me.IsInGroup())
                         )
                     )
                 );
@@ -154,9 +157,9 @@ namespace Singular.ClassSpecific.Monk
 
                             Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
                             )
-                        ), 
+                        ),
 
-                    Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12),
+                    Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12),
 
                     Movement.CreateMoveToMeleeBehavior(true)
                     )
@@ -191,6 +194,8 @@ namespace Singular.ClassSpecific.Monk
                             new PrioritySelector(
 
                                 ShowHealTarget(ret => ((WoWUnit)ret)),
+
+                                Spell.BuffSelf("Stance of the Wise Serpent"),
 
                                 Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
 

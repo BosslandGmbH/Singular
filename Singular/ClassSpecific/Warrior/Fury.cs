@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret => StyxWoW.Me.Level < 50,
                     new PrioritySelector(
                         Spell.Cast("Charge",
-                            ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() 
+                            ret => MovementManager.IsClassMovementAllowed 
                                 && StyxWoW.Me.CurrentTarget.Distance.Between(12, 25)),
                         Spell.Cast("Heroic Throw", ret => !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun")),
                         Spell.Cast("Throw"),
@@ -53,10 +53,10 @@ namespace Singular.ClassSpecific.Warrior
 
                 // Get closer to target
                 Spell.Cast("Charge", 
-                    ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed()
+                    ret => MovementManager.IsClassMovementAllowed
                         && PreventDoubleIntercept && StyxWoW.Me.CurrentTarget.Distance.Between(8f, TalentManager.HasGlyph("Long Charge") ? 30f : 25f)),
                 Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
-                    ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() 
+                    ret => MovementManager.IsClassMovementAllowed 
                         && StyxWoW.Me.CurrentTarget.Distance.Between(10, 40) && PreventDoubleIntercept),
 
                 // Move to Melee
@@ -117,13 +117,13 @@ namespace Singular.ClassSpecific.Warrior
 
                 //Heroic Leap
                 Spell.CastOnGround("Heroic Leap", ret => StyxWoW.Me.CurrentTarget.Location,
-                    ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() 
+                    ret => MovementManager.IsClassMovementAllowed 
                         && StyxWoW.Me.CurrentTarget.Distance > 9 && PreventDoubleIntercept),
 
                 // ranged slow
-                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows),
+                Spell.Buff("Piercing Howl", ret => StyxWoW.Me.CurrentTarget.Distance < 10 && StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior().UseWarriorSlows),
                 // melee slow
-                Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior.UseWarriorSlows),
+                Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior().UseWarriorSlows),
 
                 //Interupts
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),

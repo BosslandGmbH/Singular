@@ -20,7 +20,7 @@ namespace Singular.ClassSpecific.DeathKnight
         private const int KillingMachine = 51124;
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static DeathKnightSettings Settings { get { return SingularSettings.Instance.DeathKnight; } }
+        private static DeathKnightSettings DeathKnightSettings { get { return SingularSettings.Instance.DeathKnight(); } }
 
         #region Normal Rotations
 
@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 new PrioritySelector(
                     ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(12f).ToList(),
                     new Decorator(
-                        ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                        ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.Cast("Gorefiend's Grasp"),
                             Spell.Cast("Remorseless Winter"),
@@ -145,7 +145,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 new PrioritySelector(
                     ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(12f).ToList(),
                     new Decorator(
-                        ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                        ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
                         new PrioritySelector(
                             Spell.Cast("Gorefiend's Grasp"),
                             Spell.Cast("Remorseless Winter"),
@@ -243,7 +243,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 new PrioritySelector(
                     ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(12f).ToList(),
                     new Decorator(
-                        ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= SingularSettings.Instance.DeathKnight.DeathAndDecayCount,
+                        ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
                         new PrioritySelector(
                             // Spell.Cast("Gorefiend's Grasp", ret => Group.Tanks.FirstOrDefault()),
                             CreateFrostAoeBehavior(),

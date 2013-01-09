@@ -114,7 +114,7 @@ namespace Singular.ClassSpecific.Mage
         {
             get
             {
-                return SingularSettings.Instance.Mage.SummonTableIfInParty && SpellManager.HasSpell("Conjure Refreshment Table") &&
+                return SingularSettings.Instance.Mage().SummonTableIfInParty && SpellManager.HasSpell("Conjure Refreshment Table") &&
                        StyxWoW.Me.PartyMembers.Count(p => p.DistanceSqr < 40 * 40) >= 2;
             }
         }
@@ -180,9 +180,9 @@ namespace Singular.ClassSpecific.Mage
                                     u.Distance < Spell.MeleeRange).
                            OrderBy(u => u.DistanceSqr).FirstOrDefault(),
                 new Decorator(
-                    ret => ret != null && !MovementManager.IsMovementDisabled,
+                    ret => ret != null && MovementManager.IsClassMovementAllowed,
                     new PrioritySelector(
-                        Spell.BuffSelf("Blink", ret => SingularSettings.Instance.IsCombatRoutineMovementAllowed() ),
+                        Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed ),
                         new Action(
                             ret =>
                             {

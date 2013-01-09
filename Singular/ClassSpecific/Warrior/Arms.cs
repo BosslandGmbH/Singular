@@ -30,7 +30,7 @@ namespace Singular.ClassSpecific.Warrior
         #region Common
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior; } }
+        private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
 
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.All)]
         public static Composite CreateArmsNormalPull()
@@ -130,8 +130,8 @@ namespace Singular.ClassSpecific.Warrior
                                 )
                             ),
 
-                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior.UseWarriorSlows),
-                        Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior.UseWarriorSlows),
+                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
+                        Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
 
                         CreateArmsAoeCombat(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1))),
 

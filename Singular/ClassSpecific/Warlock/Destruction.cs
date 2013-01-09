@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.Warlock
     public class Destruction
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock; } }
+        private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
 
         private static int _mobCount;
 

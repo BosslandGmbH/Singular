@@ -31,9 +31,9 @@ namespace Singular.ClassSpecific.Rogue
     public static class Poisons
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue; } }
+        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
 
-        private const int RefreshAtMinutesLeft = 20;
+        private const int RefreshAtMinutesLeft = 30;
 
         static Poisons()
         {
@@ -70,7 +70,7 @@ namespace Singular.ClassSpecific.Rogue
                     poison = LethalPoisonType.None;
             }
 
-            if ( poison != LethalPoisonType.None && Me.GetAuraTimeLeft((int)poison, true) < TimeSpan.FromMinutes(RefreshAtMinutesLeft))
+            if ( poison != LethalPoisonType.None && Me.GetAuraTimeLeft((int)poison, true).TotalMinutes < RefreshAtMinutesLeft)
                 return poison;
 
             return LethalPoisonType.None;

@@ -20,20 +20,14 @@ namespace Singular.ClassSpecific.Shaman
     class Lowbie
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman; } }
+        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
         [Behavior(BehaviorType.Rest, WoWClass.Shaman, 0)]
         public static Composite CreateShamanElementalRest()
         {
-            return
-                new PrioritySelector(
-                    new Decorator(
-                        ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                        Common.CreateShamanDpsHealBehavior()
-                        ),
-                    Rest.CreateDefaultRestBehaviour()
-                    );
+            return Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit");
         }
+
         [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbiePreCombatBuffs()
         {

@@ -1,4 +1,7 @@
-﻿using Singular.Dynamics;
+﻿//#define SHOW_BEHAVIOR_LOAD_DESCRIPTION
+#define BOTS_NOT_CALLING_PULLBUFFS
+
+using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
@@ -125,7 +128,16 @@ namespace Singular
 
             _healBehavior = new LockSelector(new HookExecutor(BehaviorType.Heal.ToString()));
 
+#if BOTS_NOT_CALLING_PULLBUFFS
+            _pullBehavior = new LockSelector(
+                new PrioritySelector(
+                    _pullBuffsBehavior,
+                    new HookExecutor(BehaviorType.Pull.ToString())
+                    )
+                );
+#else
             _pullBehavior = new LockSelector(new HookExecutor(BehaviorType.Pull.ToString()));
+#endif
 
             _combatBehavior = new LockSelector(
                 new Decorator(

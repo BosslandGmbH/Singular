@@ -352,6 +352,7 @@ namespace Singular.Helpers
 #else
             return unit.Stunned 
                 || unit.Rooted 
+                || unit.Fleeing 
                 || unit.HasAuraWithEffect(
                         WoWApplyAuraType.ModConfuse, 
                         WoWApplyAuraType.ModCharm, 

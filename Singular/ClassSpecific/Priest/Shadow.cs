@@ -22,31 +22,23 @@ namespace Singular.ClassSpecific.Priest
     public class Shadow
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest; } }
+        private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
 
 
         [Behavior(BehaviorType.Rest, WoWClass.Priest, WoWSpec.PriestShadow)]
         public static Composite CreateShadowPriestRestBehavior()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
-                new Decorator( 
+                Spell.WaitForCast(false),
+                new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
-
                     new PrioritySelector(
-                        Spell.Heal("Flash Heal",
-                            ctx => StyxWoW.Me,
-                            ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food")
-                                && StyxWoW.Me.GetPredictedHealthPercent(true) <= 90),
-
-                        Helpers.Rest.CreateDefaultRestBehaviour(),
-
-                        Spell.Resurrect("Resurrection"),
-
+                        Rest.CreateDefaultRestBehaviour("Flash Heal", "Resurrection"),
                         Common.CreatePriestMovementBuff("Rest")
                         )
                     )
                 );
+
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Normal | WoWContext.Battlegrounds )]
@@ -89,10 +81,10 @@ namespace Singular.ClassSpecific.Priest
                 Spell.WaitForCast(true),
 
                 Spell.BuffSelf("Power Word: Shield", 
-                    ret => SingularSettings.Instance.Priest.UseShieldPrePull && !StyxWoW.Me.HasAura("Weakened Soul") && !SpellManager.HasSpell("Mind Spike")),
+                    ret => SingularSettings.Instance.Priest().UseShieldPrePull && !StyxWoW.Me.HasAura("Weakened Soul") && !SpellManager.HasSpell("Mind Spike")),
                 Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
                 //Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
-                //Spell.Buff("Devouring Plague", true, ret => SingularSettings.Instance.Priest.DevouringPlagueFirst), // We have to have 3 orbs - why would we ever pull with this?
+                //Spell.Buff("Devouring Plague", true, ret => SingularSettings.Instance.Priest().DevouringPlagueFirst), // We have to have 3 orbs - why would we ever pull with this?
                 Spell.Cast("Mind Blast"),
                 Spell.Buff("Vampiric Touch", true, ret => !SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.CurrentTarget.Elite),
                 Spell.Buff("Shadow Word: Pain"),
@@ -126,15 +118,15 @@ namespace Singular.ClassSpecific.Priest
                         // Defensive stuff
                         Spell.BuffSelf("Power Word: Shield", 
                             ret => !StyxWoW.Me.HasAura("Weakened Soul") &&
-                                   (!SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Priest.ShieldHealthPercent)),
-                        Spell.BuffSelf("Dispersion", ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Priest.DispersionMana),
+                                   (!SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Priest().ShieldHealthPercent)),
+                        Spell.BuffSelf("Dispersion", ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Priest().DispersionMana),
                         Spell.BuffSelf("Psychic Scream", 
-                            ret => SingularSettings.Instance.Priest.UsePsychicScream &&
-                                   Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= SingularSettings.Instance.Priest.PsychicScreamAddCount),
+                            ret => SingularSettings.Instance.Priest().UsePsychicScream &&
+                                   Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= SingularSettings.Instance.Priest().PsychicScreamAddCount),
                 
-                        Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Priest.ShadowFlashHealHealth),
+                        Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Priest().ShadowFlashHealHealth),
                         // don't attempt to heal unless below a certain percentage health
-                        new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.DontHealPercent,
+                        new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest().DontHealPercent,
                             new PrioritySelector(
                                 Spell.Heal("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
                                 Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40),
@@ -161,9 +153,9 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Cast("Mindbender", ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 50),
                                 Spell.Cast("Power Infusion"),
                                 Spell.Cast("Mind Blast"),
-                                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
-                                Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.MindFlayMana),
-                                // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand), // we no longer have wands or shoot
+                                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
+                                Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest().MindFlayMana),
+                                // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest().UseWand), // we no longer have wands or shoot
                                 Movement.CreateMoveToTargetBehavior(true, 35f)
                                 )),
 
@@ -224,9 +216,9 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Cast("Mindbender"),
                 Spell.Cast("Power Infusion"),
                 Spell.Cast("Mind Blast"),
-                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
-                Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.MindFlayMana),
-                // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest.UseWand), // we no longer have wands or shoot
+                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
+                Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest().MindFlayMana),
+                // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest().UseWand), // we no longer have wands or shoot
                 Movement.CreateMoveToTargetBehavior(true, 35f)
                 );
         }
@@ -237,10 +229,7 @@ namespace Singular.ClassSpecific.Priest
         [Behavior(BehaviorType.Rest, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Instances)]
         public static Composite CreatePriestShadowRest()
         {
-            return new PrioritySelector(
-                Spell.Resurrect("Resurrection"),
-                Rest.CreateDefaultRestBehaviour()
-                );
+            return Rest.CreateDefaultRestBehaviour(null, "Resurrection");
         }
 
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Instances)]
@@ -292,8 +281,8 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Buff("Vampiric Touch", true),
                                 Spell.Cast("Mindbender"),
                                 Spell.Cast("Power Infusion"),
-                                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
-                                Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest.MindFlayMana),
+                                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
+                                Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest().MindFlayMana),
 
                                 Movement.CreateMoveToTargetBehavior(true, 35f)
                                 )),

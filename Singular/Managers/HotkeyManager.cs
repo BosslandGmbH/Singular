@@ -19,6 +19,8 @@ namespace Singular.Managers
 {
     internal static class HotkeyManager
     {
+        private static HotkeySettings HotkeySettings { get { return SingularSettings.Instance.Hotkeys(); } }
+
         /// <summary>
         /// True: if AOE spells are allowed, False: Single target only
         /// </summary>
@@ -49,7 +51,7 @@ namespace Singular.Managers
             set
             {
                 if (value)
-                    _MovementTemporarySuspendEndtime = DateTime.Now + TimeSpan.FromSeconds(SingularSettings.Instance.Hotkeys.SuspendDuration);
+                    _MovementTemporarySuspendEndtime = DateTime.Now + TimeSpan.FromSeconds(SingularSettings.Instance.Hotkeys().SuspendDuration);
                 else
                     _MovementTemporarySuspendEndtime = DateTime.MinValue;
             }
@@ -83,33 +85,33 @@ namespace Singular.Managers
             Hotkeys.SetWindowHandle(StyxWoW.Memory.Process.MainWindowHandle);
 
             // register hotkey for commands with 1:1 key assignment
-            if (SingularSettings.Instance.Hotkeys.AoeToggle != Keys.None)
+            if (SingularSettings.Instance.Hotkeys().AoeToggle != Keys.None)
             {
-                WriteHotkeyAssignment("AOE Spells", SingularSettings.Instance.Hotkeys.AoeToggle);
-                Hotkeys.RegisterHotkey("Toggle AOE", () => { AoeToggle(); }, SingularSettings.Instance.Hotkeys.AoeToggle);
+                WriteHotkeyAssignment("AOE Spells", SingularSettings.Instance.Hotkeys().AoeToggle);
+                Hotkeys.RegisterHotkey("Toggle AOE", () => { AoeToggle(); }, SingularSettings.Instance.Hotkeys().AoeToggle);
             }
-            if (SingularSettings.Instance.Hotkeys.CombatToggle != Keys.None)
+            if (SingularSettings.Instance.Hotkeys().CombatToggle != Keys.None)
             {
-                WriteHotkeyAssignment("Combat", SingularSettings.Instance.Hotkeys.CombatToggle);
-                Hotkeys.RegisterHotkey("Toggle Combat", () => { CombatToggle(); }, SingularSettings.Instance.Hotkeys.CombatToggle);
-            }
-
-            // note: important to not check MovementManager if movement disabled here, since MovementManager calls us
-            // .. and the potential for side-effects exists.  check SingularSettings directly for this only
-            if (!SingularSettings.Instance.DisableAllMovement && SingularSettings.Instance.Hotkeys.MovementToggle != Keys.None)
-            {
-                WriteHotkeyAssignment("Movement", SingularSettings.Instance.Hotkeys.MovementToggle);
-                Hotkeys.RegisterHotkey("Toggle Movement", () => { MovementToggle(); }, SingularSettings.Instance.Hotkeys.MovementToggle);
+                WriteHotkeyAssignment("Combat", SingularSettings.Instance.Hotkeys().CombatToggle);
+                Hotkeys.RegisterHotkey("Toggle Combat", () => { CombatToggle(); }, SingularSettings.Instance.Hotkeys().CombatToggle);
             }
 
             // note: important to not check MovementManager if movement disabled here, since MovementManager calls us
             // .. and the potential for side-effects exists.  check SingularSettings directly for this only
-            if (SingularSettings.Instance.DisableAllMovement || !SingularSettings.Instance.Hotkeys.SuspendMovement )
+            if (!SingularSettings.Instance.DisableAllMovement && SingularSettings.Instance.Hotkeys().MovementToggle != Keys.None)
+            {
+                WriteHotkeyAssignment("Movement", SingularSettings.Instance.Hotkeys().MovementToggle);
+                Hotkeys.RegisterHotkey("Toggle Movement", () => { MovementToggle(); }, SingularSettings.Instance.Hotkeys().MovementToggle);
+            }
+
+            // note: important to not check MovementManager if movement disabled here, since MovementManager calls us
+            // .. and the potential for side-effects exists.  check SingularSettings directly for this only
+            if (SingularSettings.Instance.DisableAllMovement || !SingularSettings.Instance.Hotkeys().SuspendMovement )
                 _registeredMovementSuspendKeys = null;
             else
             {
                 // save shallow copy of keys so we can remove if user changes keys in settings
-                _registeredMovementSuspendKeys = (Keys[])SingularSettings.Instance.Hotkeys.SuspendMovementKeys.Clone();
+                _registeredMovementSuspendKeys = (Keys[])SingularSettings.Instance.Hotkeys().SuspendMovementKeys.Clone();
 
                 // register hotkeys for commands with 1:M key assignment
                 foreach (var key in _registeredMovementSuspendKeys)
@@ -177,7 +179,7 @@ namespace Singular.Managers
                 if (last_IsAoeEnabled)
                     TellUser("AoE now active!");
                 else 
-                    TellUser("AoE disabled... press {0} to enable", SingularSettings.Instance.Hotkeys.AoeToggle );
+                    TellUser("AoE disabled... press {0} to enable", SingularSettings.Instance.Hotkeys().AoeToggle );
             }
         }
 
@@ -189,7 +191,7 @@ namespace Singular.Managers
                 if (last_IsCombatEnabled)
                     TellUser("Combat now enabled!");
                 else
-                    TellUser("Combat disabled... press {0} to enable", SingularSettings.Instance.Hotkeys.CombatToggle);
+                    TellUser("Combat disabled... press {0} to enable", SingularSettings.Instance.Hotkeys().CombatToggle);
             }
         }
 
@@ -201,7 +203,7 @@ namespace Singular.Managers
                 if (last_IsMovementEnabled)
                     TellUser("Movement now enabled!");
                 else
-                    TellUser("Movement disabled... press {0} to enable", SingularSettings.Instance.Hotkeys.MovementToggle );
+                    TellUser("Movement disabled... press {0} to enable", SingularSettings.Instance.Hotkeys().MovementToggle );
 
                 MovementManager.Update();
             }

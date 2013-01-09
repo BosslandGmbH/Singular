@@ -14,6 +14,7 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using System.Collections.Generic;
 using CommonBehaviors.Actions;
+using Styx.WoWInternals;
 
 #endregion
 
@@ -24,9 +25,54 @@ namespace Singular.ClassSpecific.Druid
         public delegate IEnumerable<WoWUnit> EnumWoWUnitDelegate(object context);
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid; } }
+        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid(); } }
 
         #region Common
+
+        [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All, 1)]
+        public static Composite CreateFeralDruidRest()
+        {
+            return new PrioritySelector(
+                Spell.WaitForCast(false),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(false, false),
+                    new PrioritySelector(
+                        new Throttle(10,
+                            new Decorator(
+                                ret => SpellManager.HasSpell("Savage Roar")
+                                    && Me.RawComboPoints > 0
+                                    && Me.ComboPointsTarget != 0
+                                    && null != ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget)
+                                    && Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds < (Me.RawComboPoints * 6 + 6),
+                                new Sequence(
+                                    new Action(r => Logger.WriteDebug("cast Savage Roar to use {0} points on corpse of {1} since buff has {2} seconds left", Me.RawComboPoints, ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget).SafeName(), Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds)),
+                                    Spell.Cast("Savage Roar", on => ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget))
+                                    )
+                                )
+                            ),
+
+                        Common.CreateProwlBehavior(ret => Me.HasAura("Drink") || Me.HasAura("Food")),
+
+                        new Decorator(
+                            ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
+                                && Me.HasAura("Predatory Swiftness")
+                                && (Me.GetPredictedHealthPercent(true) < 95 || (Common.HasTalent( DruidTalents.DreamOfCenarius) && !Me.HasAuraExpired("Dream of Cenarius"))),
+                            new PrioritySelector(
+                                new Action(r => { Logger.WriteDebug("Druid Rest Swift Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift); return RunStatus.Failure; }),
+                                Spell.Heal("Healing Touch",
+                                    mov => true,
+                                    on => Me,
+                                    req => true,
+                                    cancel => false,
+                                    true)
+                                )
+                            )
+
+                        // remainder of rest behavior in common
+                        )
+                    )
+                );
+        }
 
         [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]
         public static Composite CreateFeralNormalPull()
@@ -56,7 +102,18 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.BuffSelf("Cat Form"),
                         Spell.BuffSelf("Prowl", ret => !Me.Combat),
-                        Spell.Cast("Wild Charge"),
+
+                        // save WC for later if Dash is active. also throttle to deal with possible pathing issues
+                        new Throttle( 7, Spell.Cast("Wild Charge", ret => MovementManager.IsClassMovementAllowed && !Me.HasAura("Dash"))),
+
+                        // only Dash if we dont have WC or WC was cast more than 2 seconds ago
+                        Spell.BuffSelf("Dash", 
+                            ret => MovementManager.IsClassMovementAllowed 
+                                && Me.IsMoving 
+                                && Me.HasAura("Prowl") 
+                                && Me.GotTarget && Me.CurrentTarget.Distance > 15 
+                                && (!SpellManager.HasSpell("Wild Charge") || Spell.GetSpellCooldown("Wild Charge").TotalSeconds < 13 )),
+
                         Spell.Cast("Pounce", ret => Me.HasAura("Prowl") && Me.CurrentTarget.IsWithinMeleeRange),
                         Spell.Buff("Rake", ret => Me.CurrentTarget.IsWithinMeleeRange ),
                         Spell.Cast("Mangle", ret => Me.CurrentTarget.IsWithinMeleeRange )
@@ -73,14 +130,23 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]
         public static Composite CreateFeralNormalPreCombatBuffs()
         {
-            return new PrioritySelector();
+            return new Decorator(
+                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(), 
+                new PrioritySelector(
+                    new Throttle( 10, Spell.BuffSelf("Cat Form", ret => Me.IsMoving ))
+                    )
+                );
         }
 
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]
         public static Composite CreateFeralNormalCombatBuffs()
         {
-            return new PrioritySelector(
-                Spell.BuffSelf("Cat Form"));
+            return new Decorator( 
+                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
+                new PrioritySelector(
+                    Spell.BuffSelf("Cat Form")
+                    )
+                );
         }
 
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]

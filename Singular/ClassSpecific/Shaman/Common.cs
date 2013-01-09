@@ -66,7 +66,7 @@ namespace Singular.ClassSpecific.Shaman
 
         private const int StressMobCount = 3;
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman; } }
+        private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
         #endregion
 
@@ -171,7 +171,7 @@ namespace Singular.ClassSpecific.Shaman
                                 && Me.CurrentTargetGuid != u.Guid
                                 && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
                                 && !u.IsCrowdControlled()
-                                && u.Distance.Between(15, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
                         .OrderByDescending(u => u.Distance)
                         .FirstOrDefault(),
                     Spell.Cast("Bind Elemental", onUnit => (WoWUnit)onUnit)
@@ -179,7 +179,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 new Decorator(
                     ret => ShamanSettings.UseBloodlust
-                        && !MovementManager.IsMovementDisabled,
+                        && MovementManager.IsClassMovementAllowed,
 
                     new PrioritySelector(
                         Spell.BuffSelf(Common.BloodlustName,
@@ -226,7 +226,7 @@ namespace Singular.ClassSpecific.Shaman
 
                 Spell.BuffSelf(Common.BloodlustName,
                     ret => ShamanSettings.UseBloodlust
-                        && !MovementManager.IsMovementDisabled
+                        && MovementManager.IsClassMovementAllowed
                         && IsPvpFightWorthLusting),
 
                 Spell.BuffSelf("Ascendance",
@@ -405,60 +405,65 @@ namespace Singular.ClassSpecific.Shaman
 
                 Spell.WaitForCastOrChannel(true),
 
-                // use predicted health for non-combat healing to reduce drinking downtime and help
-                // .. avoid unnecessary heal casts
                 new Decorator(
-                    ret => !Me.Combat,
-                    Spell.Heal("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) <= 85)
-                    ),
-
-                new Decorator(
-                    ret => Me.Combat,
-
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-
-                        Spell.BuffSelf("Ancestral Guidance", ret => Me.HealthPercent < (Common.StressfulSituation ? 60 : 40)),
-
-                        // save myself if possible
+                        // use predicted health for non-combat healing to reduce drinking downtime and help
+                        // .. avoid unnecessary heal casts
                         new Decorator(
-                            ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
-                                && Me.HealthPercent < 25,
-                            new Sequence( 
-                                Spell.BuffSelf("Ancestral Swiftness", ret => Me.GetPredictedHealthPercent() < SingularSettings.Instance.Shaman.Heal.AncestralSwiftness),
-                                Spell.Heal("Healing Surge", ret => Me)
-                                )
+                            ret => !Me.Combat,
+                            Spell.Heal("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) <= 85)
                             ),
 
-                        // use non-predicted health as we only off-heal when its already an emergency
                         new Decorator(
-                            ret => NeedToOffHealSomeone,
-                            Restoration.CreateRestoShamanHealingOnlyBehavior()
-                            ),
+                            ret => Me.Combat && !Spell.IsGlobalCooldown(),
 
-                        // use non-predicted health as a trigger for totems
-                        new Decorator(
-                            ret => !Common.AnyHealersNearby,
                             new PrioritySelector(
-                                Spell.BuffSelf(
-                                    "Healing Tide Totem",
-                                    ret => !Me.IsMoving
-                                        && Unit.GroupMembers.Any(
-                                            p => p.HealthPercent < SingularSettings.Instance.Shaman.HealingTideTotemPercent
-                                                && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
-                                Spell.BuffSelf(
-                                    "Healing Stream Totem",
-                                    ret => !Me.IsMoving 
-                                        && !Totems.Exist(WoWTotemType.Water)
-                                        && Unit.GroupMembers.Any(
-                                            p => p.HealthPercent < SingularSettings.Instance.Shaman.HealHealingStreamTotem
-                                                && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
 
-                                // use actual health for following, not predicted as its a low health value
-                                // .. and its okay for multiple heals at that point
-                                Spell.Heal(
-                                    "Healing Surge",
-                                    ret => Me,
-                                    ret => Me.HealthPercent <= 30)
+                                Spell.BuffSelf("Ancestral Guidance", ret => Me.HealthPercent < (Common.StressfulSituation ? 60 : 40)),
+
+                                // save myself if possible
+                                new Decorator(
+                                    ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
+                                        && Me.HealthPercent < 25,
+                                    new Sequence( 
+                                        Spell.BuffSelf("Ancestral Swiftness", ret => Me.GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness),
+                                        Spell.Heal("Healing Surge", ret => Me)
+                                        )
+                                    ),
+
+                                // use non-predicted health as we only off-heal when its already an emergency
+                                new Decorator(
+                                    ret => NeedToOffHealSomeone,
+                                    Restoration.CreateRestoShamanHealingOnlyBehavior()
+                                    ),
+
+                                // use non-predicted health as a trigger for totems
+                                new Decorator(
+                                    ret => !Common.AnyHealersNearby,
+                                    new PrioritySelector(
+                                        Spell.BuffSelf(
+                                            "Healing Tide Totem",
+                                            ret => !Me.IsMoving
+                                                && Unit.GroupMembers.Any(
+                                                    p => p.HealthPercent < ShamanSettings.HealingTideTotemPercent
+                                                        && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
+                                        Spell.BuffSelf(
+                                            "Healing Stream Totem",
+                                            ret => !Me.IsMoving 
+                                                && !Totems.Exist(WoWTotemType.Water)
+                                                && Unit.GroupMembers.Any(
+                                                    p => p.HealthPercent < ShamanSettings.HealHealingStreamTotem
+                                                        && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
+
+                                        // use actual health for following, not predicted as its a low health value
+                                        // .. and its okay for multiple heals at that point
+                                        Spell.Heal(
+                                            "Healing Surge",
+                                            ret => Me,
+                                            ret => Me.HealthPercent <= 40)
+                                        )
+                                    )
                                 )
                             )
                         )
@@ -472,7 +477,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new Decorator(
                 ret => ShamanSettings.UseGhostWolf
-                    && !MovementManager.IsMovementDisabled
+                    && MovementManager.IsClassMovementAllowed
                     && SingularRoutine.CurrentWoWContext != WoWContext.Instances 
                     && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
                     && Me.IsAlive

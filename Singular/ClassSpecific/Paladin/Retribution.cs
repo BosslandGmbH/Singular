@@ -20,7 +20,7 @@ namespace Singular.ClassSpecific.Paladin
         #region Properties & Fields
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin; } }
+        private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin(); } }
 
         private const int RET_T13_ITEM_SET_ID = 1064;
 
@@ -73,24 +73,12 @@ namespace Singular.ClassSpecific.Paladin
         [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinRetribution)]
         public static Composite CreatePaladinRetributionRest()
         {
-            return new PrioritySelector( // use ooc heals if we have mana to
+            return new PrioritySelector(
                 Spell.WaitForCastOrChannel(false),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.Heal("Flash of Light",
-                            mov => true,
-                            on => Me,
-                            req => Me.GetPredictedHealthPercent(true) <= 85 && !Me.HasAura("Drink") && !Me.HasAura("Food"),
-                            cancel => Me.HealthPercent > 90,
-                            true),
-                        // Since we used predicted health above, add a test before calling default rest since it does not
-                        new Decorator(
-                            ret => Me.GetPredictedHealthPercent(true) < SingularSettings.Instance.MinHealth || Me.ManaPercent < SingularSettings.Instance.MinMana,
-                            Rest.CreateDefaultRestBehaviour()
-                            ),
-                        // Can we res people?
-                        Spell.Resurrect("Redemption")
+                        Rest.CreateDefaultRestBehaviour( "Flash of Light", "Redemption")
                         )
                     )
                 );
@@ -157,7 +145,7 @@ namespace Singular.ClassSpecific.Paladin
                                 Spell.Cast("Exorcism"),
                                 Spell.Cast(ret => SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
                                 Spell.Cast("Judgment"),
-                                Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
+                                Spell.Cast(ret => SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
                                 Spell.BuffSelf("Sacred Shield"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
@@ -280,33 +268,33 @@ namespace Singular.ClassSpecific.Paladin
                         new Decorator(
                             ret => _mobCount >= 2 && Spell.UseAOE,
                             new PrioritySelector(
-                                Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
+                                Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => true),
 
                                 // EJ Multi Rotation: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
-                                Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 4),
+                                Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 3),
                                 Spell.Cast(ret => SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
                                 Spell.Cast("Execution Sentence"),
                                 Spell.Cast("Hammer of Wrath"),
                                 Spell.Cast("Exorcism"),
+                                Spell.Cast("Hammer of the Righteous"),
                                 Spell.Cast(ret => SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
                                 Spell.Cast("Judgment"),
-                                Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
+                                Spell.Cast(ret => SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
                                 Spell.BuffSelf("Sacred Shield"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
 
-                        // Single Target Priority - Laria's mix of EJ/Icy Veins/...
-                        Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower >= 3 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds <= 2),
-                        Spell.Cast("Execution Sentence", ret => Me.HasAura("Inquisition")),
-                        Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower == 5),
+                        // Single Target Priority - EJ: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
+                        Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds <= 2),
+                        Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 5),
+                        Spell.Cast("Execution Sentence"),
                         Spell.Cast("Hammer of Wrath"),
-                        //Wait if HammerOfWrath CD is between 0 and 0.2 sec
                         Spell.Cast("Exorcism"),
-                        Spell.Cast("Judgement", ret => Me.CurrentTarget.HealthPercent <= 20 || Me.HasAura("Avenging Wrath")),
                         Spell.Cast("Crusader Strike"),
                         Spell.Cast("Judgment"),
-                        Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3)
+                        Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
+                        Spell.BuffSelf("Sacred Shield")
                         )
                     ),
 

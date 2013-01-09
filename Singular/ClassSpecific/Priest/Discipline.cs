@@ -28,9 +28,7 @@ namespace Singular.ClassSpecific.Priest
                         // Heal self before resting. There is no need to eat while we have 100% mana
                         CreateDiscHealOnlyBehavior(true),
                         // Rest up damnit! Do this first, so we make sure we're fully rested.
-                        Rest.CreateDefaultRestBehaviour(),
-                        // Can we res people?
-                        Spell.Resurrect("Resurrection"),
+                        Rest.CreateDefaultRestBehaviour( null, "Resurrection"),
                         // Make sure we're healing OOC too!
                         CreateDiscHealOnlyBehavior(false, false),
                         // now buff our movement if possible
@@ -73,13 +71,13 @@ namespace Singular.ClassSpecific.Priest
                         Spell.BuffSelf(
                             "Prayer of Healing",
                             ret => StyxWoW.Me.HasAura("Spirit Shell") &&
-                                Unit.NearbyGroupMembers.Count(m => m.DistanceSqr <= 30f * 30f && m.HealthPercent <= SingularSettings.Instance.Priest.SpiritShell) != 0
+                                Unit.NearbyGroupMembers.Count(m => m.DistanceSqr <= 30f * 30f && m.HealthPercent <= SingularSettings.Instance.Priest().SpiritShell) != 0
                         ),
                         
                         // Same condition as above more or less.
                         Spell.Cast(
                         "Spirit Shell",
-                        ret => StyxWoW.Me.Combat && Unit.NearbyGroupMembers.Count(m => m.DistanceSqr <= 30f * 30f && m.HealthPercent <= SingularSettings.Instance.Priest.SpiritShell) != 0
+                        ret => StyxWoW.Me.Combat && Unit.NearbyGroupMembers.Count(m => m.DistanceSqr <= 30f * 30f && m.HealthPercent <= SingularSettings.Instance.Priest().SpiritShell) != 0
                         ),
                         
                         // Buff with Archangel once we get 5 stacks of Evangelism!
@@ -89,12 +87,12 @@ namespace Singular.ClassSpecific.Priest
                         ),
 
                         // Mana check is for mana management. Don't mess with it
-                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 20), 
+                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 20), 
 
                         // Cast Hymn of Hope if we are low on mana.
                         Spell.BuffSelf(
                         "Hymn of Hope",
-                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest.HymnofHopeMana
+                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().HymnofHopeMana
                         ),
                         // use fade to drop aggro.
                         Spell.Cast("Fade", ret => (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
@@ -102,11 +100,11 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Buff(
                             "Power Word: Shield",
                             ret => (WoWUnit)ret,
-                            ret => !((WoWUnit)ret).HasAura("Weakened Soul") && ((WoWUnit)ret).Combat && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.PowerWordShield),
+                            ret => !((WoWUnit)ret).HasAura("Weakened Soul") && ((WoWUnit)ret).Combat && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().PowerWordShield),
                         new Decorator(
                             ret =>
-                            Unit.NearbyFriendlyPlayers.Count(p => !p.IsDead && p.HealthPercent < SingularSettings.Instance.Priest.PrayerOfHealing) >
-                            SingularSettings.Instance.Priest.PrayerOfHealingCount &&
+                            Unit.NearbyFriendlyPlayers.Count(p => !p.IsDead && p.HealthPercent < SingularSettings.Instance.Priest().PrayerOfHealing) >
+                            SingularSettings.Instance.Priest().PrayerOfHealingCount &&
                             (SpellManager.CanCast("Prayer of Healing") || SpellManager.CanCast("Divine Hymn")),
                             new Sequence(
                                 Spell.Cast("Power Infusion", ret => ((WoWUnit)ret).HealthPercent < 40 || StyxWoW.Me.ManaPercent <= 20),
@@ -120,39 +118,39 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Heal(
                             "Pain Suppression",
                             ret => (WoWUnit)ret, 
-                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.PainSuppression),
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().PainSuppression),
                         Spell.Heal(
                             "Penance",
                             ret => (WoWUnit)ret, 
-                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Penance),
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().Penance),
                         Spell.Heal("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
                         Spell.Heal(
                             "Flash Heal",
                             ret => (WoWUnit)ret, 
-                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.FlashHeal),
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().FlashHeal),
                         Spell.Heal(
                             "Binding Heal",
                             ret => (WoWUnit)ret,
-                            ret => (WoWUnit)ret != StyxWoW.Me && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.BindingHealThem &&
-                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest.BindingHealMe),
+                            ret => (WoWUnit)ret != StyxWoW.Me && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().BindingHealThem &&
+                                   StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest().BindingHealMe),
                         Spell.Heal(
                             "Greater Heal",
                             ret => (WoWUnit)ret, 
-                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.GreaterHeal),
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().GreaterHeal),
                         Spell.Heal(
                             "Heal",
                             ret => (WoWUnit)ret, 
-                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Heal),
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().Heal),
                         Spell.Heal(
                             "Renew",
                             ret => (WoWUnit)ret, 
-                            ret => !((WoWUnit)ret).HasMyAura("Renew") && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest.Renew),
+                            ret => !((WoWUnit)ret).HasMyAura("Renew") && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().Renew),
                         Spell.Heal(
                             "Prayer of Mending",
                             ret => (WoWUnit)ret,
                             ret => !((WoWUnit)ret).HasMyAura("Prayer of Mending") && ((WoWUnit)ret).HealthPercent < 90),
                         new Decorator(
-                            ret => StyxWoW.Me.Combat && StyxWoW.Me.ManaPercent > SingularSettings.Instance.Priest.DpsMana,
+                            ret => StyxWoW.Me.Combat && StyxWoW.Me.ManaPercent > SingularSettings.Instance.Priest().DpsMana,
                             new PrioritySelector(
                                 Safers.EnsureTarget(),
                                 Movement.CreateMoveToLosBehavior(),

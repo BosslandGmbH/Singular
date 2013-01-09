@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.Monk
 
     public class Common
     {
-        private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk; } }
+        private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, (WoWSpec)int.MaxValue, WoWContext.All, 1)]
@@ -68,40 +68,44 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkRest()
         {
             return new PrioritySelector(
+                Spell.WaitForCast(false),
                 new Decorator(
-                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                    ret => !Spell.IsGlobalCooldown(false, false),
                     new PrioritySelector(
-                        // pickup free heals from Life Spheres
                         new Decorator(
-                            ret => Me.HealthPercent < 95 && AnySpheres(SphereType.Life, MonkSettings.SphereDistanceAtRest ),
-                            CreateMoveToSphereBehavior( SphereType.Life, MonkSettings.SphereDistanceAtRest )
-                            ),
-                        // pickup free chi from Chi Spheres
-                        new Decorator(
-                            ret => Me.CurrentChi < Me.MaxChi && AnySpheres(SphereType.Chi, MonkSettings.SphereDistanceAtRest),
-                            CreateMoveToSphereBehavior(SphereType.Chi, MonkSettings.SphereDistanceAtRest)
-                            ),
+                            ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
+                            new PrioritySelector(
+                                // pickup free heals from Life Spheres
+                                new Decorator(
+                                    ret => Me.HealthPercent < 95 && AnySpheres(SphereType.Life, MonkSettings.SphereDistanceAtRest ),
+                                    CreateMoveToSphereBehavior( SphereType.Life, MonkSettings.SphereDistanceAtRest )
+                                    ),
+                                // pickup free chi from Chi Spheres
+                                new Decorator(
+                                    ret => Me.CurrentChi < Me.MaxChi && AnySpheres(SphereType.Chi, MonkSettings.SphereDistanceAtRest),
+                                    CreateMoveToSphereBehavior(SphereType.Chi, MonkSettings.SphereDistanceAtRest)
+                                    ),
 
-                        // heal ourselves... confirm we have spell and enough energy already or waiting for energy regen will
-                        // .. still be faster than eating
-                        new Decorator(
-                            ret => Me.HealthPercent >= MonkSettings.RestHealingSphereHealth
-                                && SpellManager.HasSpell("Healing Sphere") 
-                                && (Me.CurrentEnergy > 40 || Spell.EnergyRegenInactive() >= 10),
-                            new Sequence(
-                                // in Rest only, wait up to 4 seconds for Energy Regen and Spell Cooldownb 
-                                new Wait(4, ret => Me.Combat || (Me.CurrentEnergy >= 40 && Spell.GetSpellCooldown("Healing Sphere") == TimeSpan.Zero), new ActionAlwaysSucceed()),
-                                Common.CreateHealingSphereBehavior(Math.Max(80, SingularSettings.Instance.MinHealth)),
-                                Helpers.Common.CreateWaitForLagDuration(ret => Me.Combat)
+                                // heal ourselves... confirm we have spell and enough energy already or waiting for energy regen will
+                                // .. still be faster than eating
+                                new Decorator(
+                                    ret => Me.HealthPercent >= MonkSettings.RestHealingSphereHealth
+                                        && SpellManager.HasSpell("Healing Sphere") 
+                                        && (Me.CurrentEnergy > 40 || Spell.EnergyRegenInactive() >= 10),
+                                    new Sequence(
+                                        // in Rest only, wait up to 4 seconds for Energy Regen and Spell Cooldownb 
+                                        new Wait(4, ret => Me.Combat || (Me.CurrentEnergy >= 40 && Spell.GetSpellCooldown("Healing Sphere") == TimeSpan.Zero), new ActionAlwaysSucceed()),
+                                        Common.CreateHealingSphereBehavior(Math.Max(80, SingularSettings.Instance.MinHealth)),
+                                        Helpers.Common.CreateWaitForLagDuration(ret => Me.Combat)
+                                        )
+                                    )
                                 )
-                            )
-                        )
-                    ),
+                            ),
 
-                // Rest up damnit! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour(),
-                // Can we res people?
-                Spell.Resurrect("Resuscitate")
+                        // Rest up damnit! Do this first, so we make sure we're fully rested.
+                        Rest.CreateDefaultRestBehaviour( null, "Resuscitate")
+                        )
+                    )
                 );
         }
         
@@ -269,7 +273,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMoveToSphereBehavior(SphereType typ, float range)
         {
             return new Decorator( 
-                ret => MonkSettings.MoveToSpheres && !MovementManager.IsMovementDisabled,
+                ret => MonkSettings.MoveToSpheres && MovementManager.IsClassMovementAllowed,
 
                 new PrioritySelector(
 

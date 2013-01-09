@@ -13,6 +13,7 @@ using Common = Singular.ClassSpecific.Druid.Common;
 using Singular.Settings;
 using System.Globalization;
 using Styx.Common;
+using System.Drawing;
 
 #endregion
 
@@ -217,8 +218,18 @@ namespace Singular.Utilities
 
             if (unit != null)
             {
-                Logger.Write("Mob {0}is evading, [{1}]. Blacklisting it!", unit.SafeName(), e.Event);
-                Blacklist.Add(unit, TimeSpan.FromMinutes(30));
+                Logger.Write("Mob {0}is evading, [{1}]. Blacklisting it! {2}", unit.SafeName(), e.Event, unit.Guid );
+                Blacklist.Add(unit.Guid, TimeSpan.FromMinutes(30));
+
+                if (!Blacklist.Contains(unit.Guid))
+                {
+                    Logger.Write(Color.Pink, "error: blacklist does not contain entry for {0} just added {1}", unit.SafeName(), unit.Guid);
+                }
+                
+                if (BotPoi.Current.Guid == unit.Guid)
+                {
+                    BotPoi.Clear("Blacklisting evading mob");
+                }
 
                 if (StyxWoW.Me.CurrentTargetGuid == guid)
                 {
@@ -226,8 +237,6 @@ namespace Singular.Utilities
                     StyxWoW.Me.ClearTarget();
                 }
 
-                if (BotPoi.Current.Guid == unit.Guid)
-                    BotPoi.Clear("Blacklisting evading mob");
             }
 
             /// line below was originally in Evade logic, but commenting to avoid Sleeps

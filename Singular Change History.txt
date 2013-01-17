@@ -1,3 +1,90 @@
+--- Release 3.0.0.1603 ---
+
+General
+
+fixed - issue with canceled casts due to move.  this was a biproduct of allowing cast of spell to begin during latency window at end of current spell cast (also referred to as fast casting, allowing for lag, queueing spells, etc.)  this was most noticeable at the start of rest for classes that heal before eating/drinking as well as at times when mounting.
+
+fixed - cast on location/ground spells were at times leaving spell pending on cursor when target was out of range, dead, etc
+
+fixed - was inadvertenly cancelling First Aid cast after 6 seconds.  Now correctly waits 8 secondds for Bandages to apply
+
+fixed - obscure Ranged class movement issue which was causing Healers and Ranged DPS to sometimes stand in place.  This was most noticeable when questing and character would not chase a fleeing mob and in instances where healer would not move towards a tank requiring healing that was just out of range
+
+change- refactored Cast and Heal composites to single Cast composite.  this will effect any derivate works which use the Heal composite
+
+change- replaced use of optional boolean parameter to indicate allowLagTolerance now uses LagTolerance enum
+
+*new* - Temporary Suspend Movement ability now detects if you are typing into chat window or other frame and ignores temporary movement hotkey presses (which are typically letters)
+
+
+Death Knight
+
+fixed - All Specs - issues where combat buffs/self-heals  were applied late or not at all
+
+
+Druid
+
+*new* - Feral - recognizes shapeshift errors that occur while Questing.  Will leave form and suppress going back in form for 60 seconds.  This allows questing profiles which retry to use quest items or perform actions which fail while in shapeshift form to succeed with no special coding.
+
+fixed - All Specs - Innervate of self now shows correct message in log file
+
+change - Feral - will additionally cast Berserk when not in instance and target either expected to live 20 seconds or multiple targets
+
+fixed - Feral - AOE range check changed to account for hitbox size
+
+fixed - All Specs - Rejuvenation should now renew more quickly when falling off
+
+
+Hunter 
+
+fixed - All Specs - Readiness now correctly cast when Rapid Fire buff has expired and is on cooldown
+
+
+Mage
+
+fixed - All Specs - Flamestrike now correctly cast on ground rather than leaving as pending spell on cursor
+
+*new* - All Specs - rework of logic for Normal and Instance contexts; PVP is unchanged and will be revamped for next release
+
+*new* - All Specs - setting and support for Time Warp
+
+fixed - Frost - Water Elemental Freeze spell no longer leaves pending spell on cursor
+
+
+Priest
+
+fixed - Shadow - addition of AoE recognition and spell priorities including use of Mind Sear when appropriate (spammed for 5+ mobs, filler spell when 2+)
+
+change- Shadow - Dispersion now cast for AOE in addition to health % and mana % checks
+
+
+Rogue
+
+*new* - All Specs - user setting and support for Pick Pocket as part of opener sequence
+
+*new* - All Specs - user setting and support for Pick Lock on lockboxes in bags and opening during Rest
+
+change- All Specs - Feint removed for this release; will be added back in upcoming release
+
+fixed - All Specs - Redirect was incorrectly being cast on self
+
+fixed - All Specs - Apply Poisons was sometimes casting same poison a second time
+
+
+Shaman
+
+change- Resto - Earth Shield now cast more quickly when it expires.  More fault tolerant selection of Earth Shield target
+
+fixed - Resto - Instances: now moves within Healing range of Tank if no group members need heals.  will not move towards DPS target and will only cast damage spells (like LIghtning Bolt for Telluric Currents) if target already in range
+
+fixed - Resto - Instances/Battlegrounds: was only casting Riptide if glyphed or to buff Tidal Waves.  Now will roll on lowest health % group member without buff if no higher priority heal needed.  This should help tank and group survival when healing at level 25 or lower.  Prior to learning Earth Shield, will favor Tank regardless of group health %
+
+
+Warlock
+
+fixed - All Specs - Shadowfury now correctly cast on location rather than left on cursor as pending spell
+
+
 --- Release 3.0.0.1547 ---
 
 General

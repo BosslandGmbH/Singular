@@ -56,7 +56,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
@@ -82,7 +82,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterPreCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -101,7 +101,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterPullBuffsBattlegrounds()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -121,7 +121,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterPullBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -218,7 +218,7 @@ namespace Singular.ClassSpecific.Hunter
                                     if ( SpellManager.HasSpell("Bestial Wrath"))
                                         readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds.Between(5, 50);
                                     if (SpellManager.HasSpell("Rapid Fire"))
-                                        readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Rapid Fire").TotalSeconds.Between(30, 280);
+                                        readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Rapid Fire").TotalSeconds.Between(30, 165);
                                     return readyForReadiness;
                                     })
                                 )
@@ -328,7 +328,8 @@ namespace Singular.ClassSpecific.Hunter
                         ret => Pet == null,
                         new Sequence(
                             new Action(ret => Logger.WriteDebug("CallPet: attempting Call Pet {0} - canbuff={1}", HunterSettings.PetNumber, SpellManager.CanCast("Call Pet " + HunterSettings.PetNumber.ToString(), Pet))),
-                            new Action(ret => PetManager.CallPet(HunterSettings.PetNumber.ToString())),
+                            // new Action(ret => PetManager.CallPet(HunterSettings.PetNumber.ToString())),
+                            Spell.Cast(ret => "Call Pet " + HunterSettings.PetNumber.ToString(), on => Me),
                             Helpers.Common.CreateWaitForLagDuration(),
                             new WaitContinue(1, ret => Me.GotAlivePet, new ActionAlwaysSucceed())
 #if DONT_APPEAR_TO_NEED
@@ -528,7 +529,7 @@ namespace Singular.ClassSpecific.Hunter
 
             Logger.WriteDebug(Color.Cyan, "DIS: Attempt safe {0} due to {1} @ {2:F1} yds",
                 useRocketJump ? "Rocket Jump" : "Disengage",
-                mobToGetAwayFrom.Name,
+                mobToGetAwayFrom.SafeName(),
                 mobToGetAwayFrom.Distance);
 
             return true;

@@ -23,11 +23,11 @@ namespace Singular.ClassSpecific.Mage
                  Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                  Common.CreateMagePolymorphOnAddBehavior(),
 
-                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
+                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 12 * 12)),
                  Spell.Cast("Fire Blast", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 10),
 
                  Spell.Cast("Frostfire Bolt"),
-                 Movement.CreateMoveToTargetBehavior(true, 39f)
+                 Movement.CreateMoveToTargetBehavior(true, 38f)
                  );
         }
     }

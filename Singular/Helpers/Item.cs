@@ -510,7 +510,7 @@ namespace Singular.Helpers
                         new Sequence(
                             new Action(ret => UseItem(bandage)),
                             new WaitContinue( new TimeSpan(0,0,0,0,750), ret => Me.IsCasting || Me.IsChanneling, new ActionAlwaysSucceed()),
-                            new WaitContinue(6, ret => (!Me.IsCasting && !Me.IsChanneling) || Me.HealthPercent > 99, new ActionAlwaysSucceed()),
+                            new WaitContinue(8, ret => (!Me.IsCasting && !Me.IsChanneling) || Me.HealthPercent > 99, new ActionAlwaysSucceed()),
                             new DecoratorContinue(
                                 ret => Me.IsCasting || Me.IsChanneling,
                                 new Sequence(

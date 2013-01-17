@@ -119,7 +119,7 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
 
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

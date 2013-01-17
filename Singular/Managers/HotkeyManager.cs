@@ -51,7 +51,7 @@ namespace Singular.Managers
             set
             {
                 if (value)
-                    _MovementTemporarySuspendEndtime = DateTime.Now + TimeSpan.FromSeconds(SingularSettings.Instance.Hotkeys().SuspendDuration);
+                    _MovementTemporarySuspendEndtime = DateTime.Now + TimeSpan.FromSeconds(HotkeySettings.SuspendDuration);
                 else
                     _MovementTemporarySuspendEndtime = DateTime.MinValue;
             }
@@ -85,33 +85,33 @@ namespace Singular.Managers
             Hotkeys.SetWindowHandle(StyxWoW.Memory.Process.MainWindowHandle);
 
             // register hotkey for commands with 1:1 key assignment
-            if (SingularSettings.Instance.Hotkeys().AoeToggle != Keys.None)
+            if (HotkeySettings.AoeToggle != Keys.None)
             {
-                WriteHotkeyAssignment("AOE Spells", SingularSettings.Instance.Hotkeys().AoeToggle);
-                Hotkeys.RegisterHotkey("Toggle AOE", () => { AoeToggle(); }, SingularSettings.Instance.Hotkeys().AoeToggle);
+                WriteHotkeyAssignment("AOE Spells", HotkeySettings.AoeToggle);
+                Hotkeys.RegisterHotkey("Toggle AOE", () => { AoeToggle(); }, HotkeySettings.AoeToggle);
             }
-            if (SingularSettings.Instance.Hotkeys().CombatToggle != Keys.None)
+            if (HotkeySettings.CombatToggle != Keys.None)
             {
-                WriteHotkeyAssignment("Combat", SingularSettings.Instance.Hotkeys().CombatToggle);
-                Hotkeys.RegisterHotkey("Toggle Combat", () => { CombatToggle(); }, SingularSettings.Instance.Hotkeys().CombatToggle);
-            }
-
-            // note: important to not check MovementManager if movement disabled here, since MovementManager calls us
-            // .. and the potential for side-effects exists.  check SingularSettings directly for this only
-            if (!SingularSettings.Instance.DisableAllMovement && SingularSettings.Instance.Hotkeys().MovementToggle != Keys.None)
-            {
-                WriteHotkeyAssignment("Movement", SingularSettings.Instance.Hotkeys().MovementToggle);
-                Hotkeys.RegisterHotkey("Toggle Movement", () => { MovementToggle(); }, SingularSettings.Instance.Hotkeys().MovementToggle);
+                WriteHotkeyAssignment("Combat", HotkeySettings.CombatToggle);
+                Hotkeys.RegisterHotkey("Toggle Combat", () => { CombatToggle(); }, HotkeySettings.CombatToggle);
             }
 
             // note: important to not check MovementManager if movement disabled here, since MovementManager calls us
             // .. and the potential for side-effects exists.  check SingularSettings directly for this only
-            if (SingularSettings.Instance.DisableAllMovement || !SingularSettings.Instance.Hotkeys().SuspendMovement )
+            if (!SingularSettings.Instance.DisableAllMovement && HotkeySettings.MovementToggle != Keys.None)
+            {
+                WriteHotkeyAssignment("Movement", HotkeySettings.MovementToggle);
+                Hotkeys.RegisterHotkey("Toggle Movement", () => { MovementToggle(); }, HotkeySettings.MovementToggle);
+            }
+
+            // note: important to not check MovementManager if movement disabled here, since MovementManager calls us
+            // .. and the potential for side-effects exists.  check SingularSettings directly for this only
+            if (SingularSettings.Instance.DisableAllMovement || !HotkeySettings.SuspendMovement )
                 _registeredMovementSuspendKeys = null;
             else
             {
                 // save shallow copy of keys so we can remove if user changes keys in settings
-                _registeredMovementSuspendKeys = (Keys[])SingularSettings.Instance.Hotkeys().SuspendMovementKeys.Clone();
+                _registeredMovementSuspendKeys = (Keys[])HotkeySettings.SuspendMovementKeys.Clone();
 
                 // register hotkeys for commands with 1:M key assignment
                 foreach (var key in _registeredMovementSuspendKeys)
@@ -179,7 +179,7 @@ namespace Singular.Managers
                 if (last_IsAoeEnabled)
                     TellUser("AoE now active!");
                 else 
-                    TellUser("AoE disabled... press {0} to enable", SingularSettings.Instance.Hotkeys().AoeToggle );
+                    TellUser("AoE disabled... press {0} to enable", HotkeySettings.AoeToggle );
             }
         }
 
@@ -191,7 +191,7 @@ namespace Singular.Managers
                 if (last_IsCombatEnabled)
                     TellUser("Combat now enabled!");
                 else
-                    TellUser("Combat disabled... press {0} to enable", SingularSettings.Instance.Hotkeys().CombatToggle);
+                    TellUser("Combat disabled... press {0} to enable", HotkeySettings.CombatToggle);
             }
         }
 
@@ -203,7 +203,7 @@ namespace Singular.Managers
                 if (last_IsMovementEnabled)
                     TellUser("Movement now enabled!");
                 else
-                    TellUser("Movement disabled... press {0} to enable", SingularSettings.Instance.Hotkeys().MovementToggle );
+                    TellUser("Movement disabled... press {0} to enable", HotkeySettings.MovementToggle );
 
                 MovementManager.Update();
             }
@@ -290,11 +290,23 @@ namespace Singular.Managers
         {
             if (_MovementEnabled)
             {
-                IsMovementTemporarilySuspended = true;
+                if (!IsWowKeyBoardFocusInFrame())
+                    IsMovementTemporarilySuspended = true;
+
 #if !REACT_TO_HOTKEYS_IN_PULSE
                 TemporaryMovementKeyHandler();
 #endif
             }
+        }
+
+        /// <summary>
+        /// returns true if WOW keyboard focus is in a frame/entry field
+        /// </summary>
+        /// <returns></returns>
+        private static bool IsWowKeyBoardFocusInFrame()
+        {
+            List<string> ret = Lua.GetReturnValues("return GetCurrentKeyBoardFocus()");
+            return ret != null;
         }
 
         private static void InitKeyStates()

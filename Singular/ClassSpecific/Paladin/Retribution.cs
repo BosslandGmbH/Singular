@@ -47,24 +47,20 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(                       
-                        Spell.Heal("Lay on Hands",
+                        Spell.Cast("Lay on Hands",
                             mov => false,
                             on => Me,
-                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.LayOnHandsHealth,
-                            cancel => false,
-                            true),
-                        Spell.Heal("Word of Glory",
+                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.LayOnHandsHealth),
+                        Spell.Cast("Word of Glory",
                             mov => false,
                             on => Me,
                             req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.WordOfGloryHealth && Me.CurrentHolyPower >= 3,
-                            cancel => Me.HealthPercent > PaladinSettings.WordOfGloryHealth,
-                            true),
-                        Spell.Heal("Flash of Light",
+                            cancel => Me.HealthPercent > PaladinSettings.WordOfGloryHealth),
+                        Spell.Cast("Flash of Light",
                             mov => false,
                             on => Me,
                             req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.RetributionHealHealth,
-                            cancel => Me.HealthPercent > PaladinSettings.RetributionHealHealth,
-                            true)
+                            cancel => Me.HealthPercent > PaladinSettings.RetributionHealHealth)
                         )
                     )
                 );
@@ -74,7 +70,7 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinRetributionRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(false),
+                Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(

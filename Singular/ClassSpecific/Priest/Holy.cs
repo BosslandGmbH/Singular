@@ -69,14 +69,14 @@ namespace Singular.ClassSpecific.Priest
                             ret => healTarget,
                             ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && !((WoWUnit)ret).HasMyAura("Prayer of Mending", 3) &&
                                    Group.Tanks.Where(t => t != healTarget).All(p => !p.HasMyAura("Prayer of Mending"))),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Renew",
                             ret => healTarget,
                             ret => healTarget is WoWPlayer && Group.Tanks.Contains(healTarget) && !healTarget.HasMyAura("Renew")),
-                        Spell.Heal("Prayer of Healing",
+                        Spell.Cast("Prayer of Healing",
                             ret => healTarget,
                             ret => StyxWoW.Me.HasAura("Serendipity", 2) && Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() <= SingularSettings.Instance.Priest().PrayerOfHealingSerendipityHealth) >= SingularSettings.Instance.Priest().PrayerOfHealingSerendipityCount),
-                        Spell.Heal("Circle of Healing",
+                        Spell.Cast("Circle of Healing",
                             ret => healTarget,
                             ret => Unit.NearbyFriendlyPlayers.Count(p => p.GetPredictedHealthPercent() <= SingularSettings.Instance.Priest().CircleOfHealingHealth) >= SingularSettings.Instance.Priest().CircleOfHealingCount),
                         Spell.CastOnGround(
@@ -85,7 +85,7 @@ namespace Singular.ClassSpecific.Priest
                             ret => Clusters.GetClusterCount(healTarget,
                                                             Unit.NearbyFriendlyPlayers.Select(p => p.ToUnit()),
                                                             ClusterType.Radius, 10f) >= 4 ),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Holy Word: Serenity",
                             ret => healTarget,
                             ret => ret is WoWPlayer && Group.Tanks.Contains(healTarget)),
@@ -97,19 +97,19 @@ namespace Singular.ClassSpecific.Priest
                         Spell.CastOnGround("Lightwell",ret => WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, healTarget.Location, 5f)),
 
                         Spell.Cast("Power Infusion", ret => healTarget.GetPredictedHealthPercent() < 40 || StyxWoW.Me.ManaPercent <= 20),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Flash Heal",
                             ret => healTarget,
                             ret => StyxWoW.Me.HasAura("Surge of Light") && healTarget.GetPredictedHealthPercent() <= 90),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Flash Heal",
                             ret => healTarget,
                             ret => healTarget.GetPredictedHealthPercent() < SingularSettings.Instance.Priest().HolyFlashHeal),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Greater Heal",
                             ret => healTarget,
                             ret => healTarget.GetPredictedHealthPercent() < SingularSettings.Instance.Priest().HolyGreaterHeal),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Heal",
                             ret => healTarget,
                             ret => healTarget.GetPredictedHealthPercent() < SingularSettings.Instance.Priest().HolyHeal),
@@ -137,7 +137,7 @@ namespace Singular.ClassSpecific.Priest
                     new Decorator(
                         ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                         new PrioritySelector(
-                            Spell.Heal("Flash Heal",
+                            Spell.Cast("Flash Heal",
                                 ctx => StyxWoW.Me,
                                 ret => StyxWoW.Me.HealthPercent <= 20 // check actual health for low health situations
                                     || (!StyxWoW.Me.Combat && StyxWoW.Me.GetPredictedHealthPercent(true) <= 85)),
@@ -145,11 +145,11 @@ namespace Singular.ClassSpecific.Priest
                             Spell.BuffSelf("Renew",
                                 ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 75),
 
-                            Spell.Heal("Greater Heal",
+                            Spell.Cast("Greater Heal",
                                 ctx => StyxWoW.Me,
                                 ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50),
 
-                            Spell.Heal("Flash Heal",
+                            Spell.Cast("Flash Heal",
                                 ctx => StyxWoW.Me,
                                 ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50)
                             )

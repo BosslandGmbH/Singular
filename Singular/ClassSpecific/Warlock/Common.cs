@@ -75,7 +75,7 @@ namespace Singular.ClassSpecific.Warlock
                 //new Decorator(
                 //    ctx => Me.CastingSpell != null && Me.CastingSpell.Name.Contains("Summon") && Me.GotAlivePet,
                 //    new Action(ctx => SpellManager.StopCasting())),
-                Spell.WaitForCastOrChannel(false),
+                Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -99,7 +99,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockPreCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -188,7 +188,7 @@ namespace Singular.ClassSpecific.Warlock
                             // find an add within 8 yds (not our current target)
                             ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f),
 
-                            Spell.Buff( "Shadowfury", on => (WoWUnit) on),
+                            Spell.CastOnGround( "Shadowfury", on => ((WoWUnit)on).Location, ret => ret != null, true),
 
                             // treat as a heal, but we cast on what would be our fear target -- allow even when fear use disabled
                             Spell.Buff("Mortal Coil", on => (WoWUnit) on ?? Me.CurrentTarget, ret => Me.HealthPercent < 50 ),
@@ -339,12 +339,11 @@ namespace Singular.ClassSpecific.Warlock
                             new Action(ret => Logger.WriteDebug("Summon Pet:  about to summon{0}", GetBestPet().ToString().CamelToSpaced())),
 
                             // Heal() used intentionally here (has spell completion logic not present in Cast())
-                            Spell.Heal( n => "Summon" + GetBestPet().ToString().CamelToSpaced(), 
+                            Spell.Cast( n => "Summon" + GetBestPet().ToString().CamelToSpaced(), 
                                 chkMov => true,
                                 onUnit => Me, 
                                 req => true,
-                                cncl => false,
-                                false ),
+                                cncl => false),
 
                             // make sure we see pet alive before continuing
                             new Wait( 1, ret => GetCurrentPet() != WarlockPet.None, new ActionAlwaysSucceed() )
@@ -376,12 +375,11 @@ namespace Singular.ClassSpecific.Warlock
             return new Throttle(TimeSpan.FromMilliseconds(500),
                 // Spell.Heal used because it has spell completion logic not in Spell.Cast
                 new Sequence(
-                    Spell.Heal(spellName,
+                    Spell.Cast(spellName,
                     chkMov => true,
                     ctx => onUnit(ctx),
                     req => requirements(req),
-                    cncl => false,
-                    false)
+                    cncl => false)
                     )
                 );
 
@@ -491,7 +489,7 @@ namespace Singular.ClassSpecific.Warlock
             return new Decorator(
                 ret => onUnit(ret) != null && onUnit(ret).IsDead && SpellManager.CanCast( "Soulstone", onUnit(ret), true, true),
                 new PrioritySelector(
-                    Spell.WaitForCastOrChannel(true),
+                    Spell.WaitForCastOrChannel(),
                     Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, range => 40f),
                     new Decorator(
                         ret => !Spell.IsGlobalCooldown(),
@@ -533,7 +531,7 @@ namespace Singular.ClassSpecific.Warlock
                             )
                         ),
 
-                    Spell.Heal(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth )
+                    Spell.Cast(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth )
                     )
                 );
         }

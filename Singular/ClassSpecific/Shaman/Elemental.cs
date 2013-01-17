@@ -6,6 +6,7 @@ using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
+using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 
 using Singular.Dynamics;
@@ -14,6 +15,8 @@ using Singular.Settings;
 using Singular.Managers;
 using Styx.Common;
 using System.Drawing;
+using System;
+using Styx.Helpers;
 
 
 namespace Singular.ClassSpecific.Shaman
@@ -25,11 +28,13 @@ namespace Singular.ClassSpecific.Shaman
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
+        private static int NormalPullDistance { get { return Math.Max( 35, CharacterSettings.Instance.PullDistance); } }
+
         [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal|WoWContext.Instances)]
         public static Composite CreateShamanElementalPreCombatBuffsNormal()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
@@ -42,7 +47,7 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanElementalPreCombatBuffsPvp()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
@@ -55,9 +60,9 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanElementalRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(false, false),
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
                         Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit"),
@@ -91,40 +96,52 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCastOrChannel(true),
-
-                Common.CreateShamanDpsShieldBehavior(),
 
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 40 * 40,
-                    Totems.CreateTotemsNormalBehavior()),
+                    ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
+                    Movement.CreateEnsureMovementStoppedBehavior()
+                    ),
 
-                // grinding or questing, if target meets these cast Flame Shock if possible
-                // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
-                // 2. area has another player competing for mobs (we want to tag the mob quickly)
-                new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.Distance < 12
-                        || ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).Any(p => p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 40 * 40),
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator( 
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.Buff("Flame Shock", true),
-                        Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
-                        Spell.Cast("Earth Shock", ret => !SpellManager.HasSpell("Flame Shock"))
+
+                        Common.CreateShamanDpsShieldBehavior(),
+
+                        new Decorator(
+                            ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 40 * 40,
+                            Totems.CreateTotemsNormalBehavior()),
+
+                        // grinding or questing, if target meets these cast Flame Shock if possible
+                        // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
+                        // 2. area has another player competing for mobs (we want to tag the mob quickly)
+                        new Decorator(
+                            ret => StyxWoW.Me.CurrentTarget.Distance < 12
+                                || ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).Any(p => p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 40 * 40),
+                            new PrioritySelector(
+                                Spell.Buff("Flame Shock", true),
+                                Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
+                                Spell.Cast("Earth Shock", ret => !SpellManager.HasSpell("Flame Shock"))
+                                )
+                            ),
+
+                        // have a big attack loaded up, so don't waste it
+                        Spell.Cast("Earth Shock",
+                            ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
+
+                        // otherwise, start with Lightning Bolt so we can follow with an instant
+                        // to maximize damage at initial aggro
+                        Spell.Cast("Lightning Bolt", ret => !StyxWoW.Me.IsMoving || StyxWoW.Me.HasAura("Spiritwalker's Grace") || TalentManager.HasGlyph("Unleashed Lightning")),
+
+                        // we are moving so throw an instant of some type
+                        Spell.Cast("Flame Shock"),
+                        Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand))
                         )
                     ),
 
-                // have a big attack loaded up, so don't waste it
-                Spell.Cast("Earth Shock",
-                    ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
-
-                // otherwise, start with Lightning Bolt so we can follow with an instant
-                // to maximize damage at initial aggro
-                Spell.Cast("Lightning Bolt", ret => !StyxWoW.Me.IsMoving || StyxWoW.Me.HasAura("Spiritwalker's Grace") || TalentManager.HasGlyph("Unleashed Lightning")),
-
-                // we are moving so throw an instant of some type
-                Spell.Cast("Flame Shock"),
-                Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
-
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToTargetBehavior(true, NormalPullDistance)
                 );
         }
 
@@ -135,7 +152,13 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCastOrChannel(true),
+
+                new Decorator(
+                    ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
+                    Movement.CreateEnsureMovementStoppedBehavior()
+                    ),
+
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
@@ -161,7 +184,7 @@ namespace Singular.ClassSpecific.Shaman
 
                                 Spell.CastOnGround("Earthquake", 
                                     ret => StyxWoW.Me.CurrentTarget.Location, 
-                                    req => StyxWoW.Me.CurrentTarget.Distance < 35
+                                    req => StyxWoW.Me.CurrentTarget.Distance < NormalPullDistance
                                         && (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) 
                                         && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
 
@@ -189,8 +212,8 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                // Movement.CreateMoveToTargetBehavior(true, 35f)
-                Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
+                Movement.CreateMoveToTargetBehavior(true, NormalPullDistance)
+                // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => NormalPullDistance)
                 );
         }
 
@@ -205,7 +228,13 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCastOrChannel(true),
+
+                new Decorator(
+                    ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
+                    Movement.CreateEnsureMovementStoppedBehavior()
+                    ),
+
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
@@ -239,7 +268,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Lightning Bolt")
                         )
                     ),
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToTargetBehavior(true, NormalPullDistance)
                 );
         }
 
@@ -254,7 +283,13 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCastOrChannel(true),
+
+                new Decorator(
+                    ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
+                    Movement.CreateEnsureMovementStoppedBehavior()
+                    ),
+
+                Spell.WaitForCastOrChannel(),
 
                 new PrioritySelector(
                     ret => !Spell.IsGlobalCooldown(),
@@ -292,7 +327,8 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Lightning Bolt")
                         )
                     ),
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+
+                Movement.CreateMoveToTargetBehavior(true, NormalPullDistance)
                 );
         }
 
@@ -327,7 +363,7 @@ namespace Singular.ClassSpecific.Shaman
                             line += ", target=(null)";
                         else
                             line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, face={3} tlos={4}, tloss={5}",
-                                target.Name,
+                                target.SafeName(),
                                 target.Distance,
                                 target.HealthPercent,
                                 Me.IsSafelyFacing(target, 70f),

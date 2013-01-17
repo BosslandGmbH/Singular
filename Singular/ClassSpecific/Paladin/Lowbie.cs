@@ -42,8 +42,8 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Spell.Heal("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 50),
-                    Spell.Heal("Holy Light", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
+                    Spell.Cast("Word of Glory", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 50),
+                    Spell.Cast("Holy Light", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
                     );
         }
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Paladin, 0)]

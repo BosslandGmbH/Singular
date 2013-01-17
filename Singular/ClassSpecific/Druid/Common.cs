@@ -68,7 +68,7 @@ namespace Singular.ClassSpecific.Druid
             return new Decorator(
                 ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
                 new PrioritySelector(
-                    Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
+                    Spell.BuffSelf("Innervate", ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
                     Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < 50 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
                     Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
 
@@ -167,11 +167,11 @@ namespace Singular.ClassSpecific.Druid
                     new Sequence(
                         new PrioritySelector(
 
-                            Spell.Heal("Healing Touch",
+                            Spell.Cast("Healing Touch",
                                 ret => Me.HealthPercent <= 80
                                     && Me.ActiveAuras.ContainsKey("Predatory Swiftness")),
 
-                            Spell.Heal("Renewal", ret => Me.HealthPercent < DruidSettings.RenewalHealth ),
+                            Spell.Cast("Renewal", ret => Me.HealthPercent < DruidSettings.RenewalHealth ),
                             Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 75 || Unit.NearbyUnitsInCombatWithMe.Count() >= 2),
 
                             CreateNaturesSwiftnessHeal( ret => Me.HealthPercent < 60),
@@ -189,8 +189,8 @@ namespace Singular.ClassSpecific.Druid
                                     new Decorator(
                                         ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
                                         new PrioritySelector(
-                                            Spell.Heal("Rejuvenation", ret => !Me.HasAura("Rejuvenation")),
-                                            Spell.Heal("Healing Touch")
+                                            Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation",1)),
+                                            Spell.Cast("Healing Touch", on => Me)
                                             )
                                         )
                                     )
@@ -213,7 +213,7 @@ namespace Singular.ClassSpecific.Druid
                 new Sequence(
                     Spell.BuffSelf("Nature's Swiftness"),
                     new Wait(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Nature's Swiftness"), new ActionAlwaysSucceed()),
-                    Spell.Heal("Healing Touch", ret => false, onUnit, req => true)
+                    Spell.Cast("Healing Touch", ret => false, onUnit, req => true)
                     )
                 );
         }
@@ -236,9 +236,9 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateNonRestoDruidRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(false,false), 
+                    ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
                         new Decorator(
                             ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
@@ -247,12 +247,11 @@ namespace Singular.ClassSpecific.Druid
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior(),
                                 new Action(r => { Logger.WriteDebug("Druid Rest Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift ); return RunStatus.Failure; }),
-                                Spell.Heal("Healing Touch",
+                                Spell.Cast("Healing Touch",
                                     mov => true,
                                     on => Me,
                                     req => true,
-                                    cancel => Me.HealthPercent > 92,
-                                    true)
+                                    cancel => Me.HealthPercent > 92)
                                 )
                             ),
 

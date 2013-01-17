@@ -21,9 +21,9 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinHolyRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(false, false),
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         // Heal self before resting. There is no need to eat while we have 100% mana
                         CreatePaladinHealBehavior(true),
@@ -127,45 +127,45 @@ namespace Singular.ClassSpecific.Paladin
 
 
                                 //Try and keep it up if requested
-                             Spell.Heal(
+                             Spell.Cast(
                                 "Eternal Flame",
                                 ret => (WoWUnit)ret,
                                ret => ret is WoWPlayer && SingularSettings.Instance.Paladin().KeepEternalFlameUp && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Eternal Flame"))),
 
-                            Spell.Heal(
+                            Spell.Cast(
                                 "Eternal Flame",
                                 ret => (WoWUnit)ret,
                                ret => StyxWoW.Me.CurrentHolyPower >= 3 && (((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().WordOfGloryHealth)),
 
-                           Spell.Heal(
+                           Spell.Cast(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,
                                 ret => StyxWoW.Me.Combat && !((WoWUnit)ret).HasAura("Forbearance") &&
                                        ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().LayOnHandsHealth),
-                            Spell.Heal(
+                            Spell.Cast(
                                 "Light of Dawn",
                                 ret => StyxWoW.Me,
                                 ret => StyxWoW.Me.CurrentHolyPower >= 3 &&
                                        Unit.NearbyFriendlyPlayers.Count(p =>
                                            p.HealthPercent <= SingularSettings.Instance.Paladin().LightOfDawnHealth && p != StyxWoW.Me &&
                                            p.DistanceSqr < 30 * 30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin().LightOfDawnCount),
-                            Spell.Heal(
+                            Spell.Cast(
                                 "Word of Glory",
                                 ret => (WoWUnit)ret,
                                 ret => StyxWoW.Me.CurrentHolyPower >= 3 && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().WordOfGloryHealth),
-                            Spell.Heal(
+                            Spell.Cast(
                                 "Holy Shock",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().HolyShockHealth),
-                            Spell.Heal(
+                            Spell.Cast(
                                 "Flash of Light",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().FlashOfLightHealth),
-                            Spell.Heal(
+                            Spell.Cast(
                                 "Divine Light",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().DivineLightHealth),
-                            Spell.Heal(
+                            Spell.Cast(
                                 "Holy Light",
                                 ret => (WoWUnit)ret,
                                 ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().HolyLightHealth),

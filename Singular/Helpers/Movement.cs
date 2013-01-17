@@ -7,6 +7,7 @@ using Styx.Pathing;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using System;
+using System.Linq;
 using Styx.WoWInternals.World;
 using Styx.WoWInternals.WoWObjects;
 using Singular.Utilities;
@@ -308,34 +309,54 @@ namespace Singular.Helpers
                             return RunStatus.Failure;
                             }),
 
+                        // check if we are still out of range and either not moving or have reached the last spot
                         new Decorator(
-                            ret => !inRange && (!StyxWoW.Me.IsMoving || StyxWoW.Me.Location.Distance(lastMoveToRangeSpot) < 0.5f),
+                            ret => !inRange && (!StyxWoW.Me.IsMoving || StyxWoW.Me.Location.Distance(lastMoveToRangeSpot) <= 0.5 ),
                             new Action(ret =>
                             {
                                 WoWPoint[] spots = Navigator.GeneratePath(StyxWoW.Me.Location, toUnit(ret).Location);
                                 if (spots.GetLength(0) <= 0)
                                 {
-                                    Logger.Write("MoveToRangeAndStop:  unable to calculate path to {0} @ {1:F1} yds and LoSS={2}", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance, StyxWoW.Me.CurrentTarget.InLineOfSpellSight);
+                                    Logger.Write("MoveToRangeAndStop: can't move, unable to calculate path to {0} @ {1:F1} yds and LoSS={2}", toUnit(ret).SafeName(), toUnit(ret).Distance, toUnit(ret).InLineOfSpellSight);
                                     return RunStatus.Failure;
                                 }
 
-                                lastMoveToRangeSpot = spots[0];
-                                if (StyxWoW.Me.Location.Distance(lastMoveToRangeSpot) > 20)
-                                    lastMoveToRangeSpot = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, lastMoveToRangeSpot, 10);
+                                int i = 0;
+                                WoWPoint nextSpot;
+                                do
+                                {
+                                    nextSpot = spots[i];
+                                } while (++i < spots.GetLength(0) && StyxWoW.Me.Location.Distance(nextSpot) < Navigator.PathPrecision);
 
+                                if (StyxWoW.Me.Location.Distance(nextSpot) < Navigator.PathPrecision)
+                                {
+                                    Logger.Write("MoveToRangeAndStop: can't move, furthest point in path {0} @ {1:F1} yds less than PathPrecision {2}", nextSpot, StyxWoW.Me.Location.Distance(nextSpot), Navigator.PathPrecision);
+                                    return RunStatus.Failure;
+                                }
+
+                                if (StyxWoW.Me.Location.Distance(nextSpot) > 20)
+                                {
+                                    Logger.WriteDebug("MoveToRangeAndStop: next spot in path {0} @ {1:F1} yds, shortening to 10 yds", nextSpot, StyxWoW.Me.Location.Distance(nextSpot));
+                                    nextSpot = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, nextSpot, 10);
+                                }
+
+                                Logger.WriteDebug("MoveToRangeAndStop: moving to {0} @ {1:F1} yds which is towards {2} @ {3:F1} yds", nextSpot, StyxWoW.Me.Location.Distance(nextSpot), toUnit(ret).SafeName(), toUnit(ret).Distance);
+                                lastMoveToRangeSpot = nextSpot;
                                 Navigator.MoveTo(lastMoveToRangeSpot);                                   
                                 return RunStatus.Success;
                             })
                             ),
 
+                        // we are now in range 
                         new Decorator(
                             ret => inRange && StyxWoW.Me.IsMoving && StyxWoW.Me.Combat,
                             new Action(ret => {
-                                Logger.WriteDebug("MoveToRangeAndStop:  stopping - within {0:F1} yds and LoSS of {1}", range(ret), StyxWoW.Me.CurrentTarget.SafeName());
+                                Logger.WriteDebug("MoveToRangeAndStop:  stopping - within {0:F1} yds and LoSS of {1}", range(ret), toUnit(ret).SafeName());
                                 Navigator.PlayerMover.MoveStop();
                                 })
                             ),
 
+                        // at this point if we are moving, tell tree we are still busy
                         new Decorator(
                             ret => StyxWoW.Me.IsMoving,
                             new ActionAlwaysSucceed()

@@ -58,6 +58,20 @@ namespace Singular.Settings
         [Description("Use TotT")]
         public bool UseTricksOfTheTrade { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Pick Pocket")]
+        [Description("Requires AutoLoot ON; pick pocket mob before opener")]
+        public bool UsePickPocket { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Pick Lock")]
+        [Description("Requires AutoLoot ON; unlock boxes in bags during rest")]
+        public bool UsePickLock { get; set; }
+
 
         [Setting]
         [DefaultValue(true)]

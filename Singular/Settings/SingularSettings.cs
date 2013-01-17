@@ -175,6 +175,13 @@ namespace Singular.Settings
         [Description("Mana % to use a mana pot/trinket at. (used for all energy forms)")]
         public int PotionMana { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("General")]
+        [DisplayName("Use Bandages")]
+        [Description("Use bandages in inventory to heal")]
+        public bool UseBandages { get; set; }
+
         #endregion
 
         #region Category: Misc
@@ -202,28 +209,32 @@ namespace Singular.Settings
         public bool DisablePetUsage { get; set; }
         #endregion
 
-        #region Category: Healing
+        #region Category: Group Healing
 
         [Setting]
         [DefaultValue(95)]
-        [Category("Healing")]
+        [Category("Group Healing")]
         [DisplayName("Ignore Targets Health")]
         [Description("Ignore healing targets when their health is above this value.")]
         public int IgnoreHealTargetsAboveHealth { get; set; }
 
         [Setting]
         [DefaultValue(75)]
-        [Category("Healing")]
+        [Category("Group Healing")]
         [DisplayName("Max Heal Target Range")]
         [Description("Max distance that we will see a heal target (max value: 100)")]
         public int MaxHealTargetRange { get; set; }
 
         [Setting]
-        [DefaultValue(false)]
-        [Category("Healing")]
-        [DisplayName("Use Bandages")]
-        [Description("Use bandages in inventory to heal")]
-        public bool UseBandages { get; set; }
+        [DefaultValue(true)]
+        [Category("Group Healing")]
+        [DisplayName("Stay near Tank")]
+        [Description("Move within Healing Range of Tank if nobody needs healing")]
+        public bool StayNearTank { get; set; }
+
+        #endregion
+
+        #region Category: Healing
 
         #endregion
 

@@ -20,9 +20,9 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinHolyRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(false, false),
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         // Rest up damnit! Do this first, so we make sure we're fully rested.
                         Rest.CreateDefaultRestBehaviour( null, "Redemption")

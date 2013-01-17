@@ -158,7 +158,7 @@ namespace Singular.ClassSpecific.Rogue
                             ret => Common.BestTricksTarget,
                             ret => RogueSettings.UseTricksOfTheTrade),
 
-                        Spell.Cast("Feint", ret => Me.CurrentTarget.ThreatInfo.RawPercent > 80),
+                        // Common.CreateRogueFeintBehavior(),
 
                         new Decorator(
                             ret => Common.AoeCount >= 3 && Spell.UseAOE,

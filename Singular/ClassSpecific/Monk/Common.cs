@@ -68,9 +68,9 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(false, false),
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         new Decorator(
                             ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),

@@ -36,7 +36,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.BuffSelf("Cat Form"),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 //Healing if needed in combat
-                Spell.BuffSelf("Rejuvenation", ret => StyxWoW.Me.HealthPercent <= 60),
+                Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 60 && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
                 Helpers.Common.CreateAutoAttack(true),
                 new Decorator(
                     ret => StyxWoW.Me.HasAura("Cat Form"),

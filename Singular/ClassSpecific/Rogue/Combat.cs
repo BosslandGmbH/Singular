@@ -149,7 +149,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         // Instance Specific Behavior
                         Spell.Cast("Tricks of the Trade", ret => Common.BestTricksTarget, ret => RogueSettings.UseTricksOfTheTrade),
-                        Spell.Cast("Feint", ret => Me.CurrentTarget.ThreatInfo.RawPercent > 80),
+                        // Spell.Cast("Feint", ret => Me.CurrentTarget.ThreatInfo.RawPercent > 80),
 
                         // Resume standard priorities
                         Movement.CreateMoveBehindTargetBehavior(),

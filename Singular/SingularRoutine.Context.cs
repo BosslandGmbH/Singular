@@ -32,6 +32,8 @@ namespace Singular
         public static event EventHandler<WoWContextEventArg> OnWoWContextChanged;
         private static WoWContext _lastContext;
 
+        internal static bool IsQuesting { get; set; }
+
         internal static WoWContext CurrentWoWContext
         {
             get
@@ -72,6 +74,8 @@ namespace Singular
                 BotEvents.Battleground.OnBattlegroundEntered += e => UpdateContext();
                 _contextEventSubscribed = true;
             }
+
+            IsQuesting = IsBotInUse("Quest");
 
             var current = CurrentWoWContext;
 

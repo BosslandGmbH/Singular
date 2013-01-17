@@ -5,6 +5,10 @@ using Styx;
 using Styx.CommonBot;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
+using System;
+using Styx.Helpers;
+using Styx.WoWInternals.World;
+using Styx.WoWInternals;
 
 namespace Singular.Helpers
 {
@@ -118,11 +122,42 @@ namespace Singular.Helpers
         public static Composite CreateCastPetActionOnLocation(string action, LocationRetriever location, SimpleBooleanDelegate extra)
         {
             return new Decorator(
-                ret => extra(ret) && PetManager.CanCastPetAction(action),
+                ret => StyxWoW.Me.GotAlivePet && extra(ret) && PetManager.CanCastPetAction(action),
                 new Sequence(
                     new Action(ret => PetManager.CastPetAction(action)),
-                    new WaitContinue(System.TimeSpan.FromMilliseconds(250), ret => false, new ActionAlwaysSucceed()),
-                    new Action(ret => SpellManager.ClickRemoteLocation(location(ret)))));
+
+                    new WaitContinue(TimeSpan.FromMilliseconds(500),
+                        ret => StyxWoW.Me.CurrentPendingCursorSpell != null, // && StyxWoW.Me.CurrentPendingCursorSpell.Name == spell,
+                        new ActionAlwaysSucceed()
+                        ),
+
+                    new Action(ret => SpellManager.ClickRemoteLocation(location(ret))),
+
+                    // check for we are done via either success (no spell on cursor) or failure (cursor remains targeting)
+                    new PrioritySelector(
+
+                        // wait and if cursor clears, then Success!!!!
+                        new Wait(TimeSpan.FromMilliseconds(500),
+                            ret => StyxWoW.Me.CurrentPendingCursorSpell == null,
+                            new ActionAlwaysSucceed()
+                            ),
+
+                        // otherwise cancel spell and fail ----
+                        new Action(ret =>
+                        {
+                            Logger.Write("pet:/cancel {0} - click {1} failed?  distance={2:F1} yds, loss={3}, face={4}",
+                                action,
+                                location(ret),
+                                StyxWoW.Me.Location.Distance(location(ret)),
+                                GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Pet.Location, location(ret)),
+                                StyxWoW.Me.Pet.IsSafelyFacing(location(ret))
+                                );
+                            Lua.DoString("SpellStopTargeting()");
+                            return RunStatus.Failure;
+                        })
+                        )
+                    )
+                );
         }
     }
 }

@@ -323,7 +323,7 @@ namespace Singular.ClassSpecific.Warrior
                             Me.HealthPercent,
                             Me.CurrentRage,
                             HasUltimatum,
-                            !Me.GotTarget ? "(null)" : Me.CurrentTarget.Name,
+                            !Me.GotTarget ? "(null)" : Me.CurrentTarget.SafeName(),
                             !Me.GotTarget ? 0 : Me.CurrentTarget.HealthPercent,
                             !Me.GotTarget ? 0 : Me.CurrentTarget.Distance,
                             !Me.GotTarget ? false : Me.CurrentTarget.IsWithinMeleeRange ,

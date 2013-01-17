@@ -61,8 +61,6 @@ namespace Singular.Helpers
                 {
                     case WoWClass.Paladin:
                         return true;
-                    case WoWClass.Priest:
-                        return true;
 					case WoWClass.Monk:
 						return true;
                 }
@@ -118,22 +116,19 @@ namespace Singular.Helpers
             {
                 switch (StyxWoW.Me.Class)
                 {
-                        // 1, 14 - Paladin - Sacred Cleansing
-                        // 3, 17 - Druid - Nature's Cure
-                        // 3, 12 - Shaman - Improved Cleanse Spirit
                     case WoWClass.Druid:
-                        return TalentManager.IsSelected(17);
+                        return StyxWoW.Me.Specialization == WoWSpec.DruidRestoration ;
                     case WoWClass.Paladin:
-                        return TalentManager.IsSelected(14);
+                        return StyxWoW.Me.Specialization == WoWSpec.PaladinHoly ;
                     case WoWClass.Shaman:
-                        return TalentManager.IsSelected(12);
+                        return StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration;
 
                         // Priests can dispel magic natively.
                     case WoWClass.Priest:
                         return true;
 
                     case WoWClass.Monk: // Monks need the passive talent "internal medicine" ~lvl 20
-                        return StyxWoW.Me.HasAura("Internal Medicine");
+                        return StyxWoW.Me.Specialization == WoWSpec.MonkMistweaver ;
                 }
                 return false;
             }

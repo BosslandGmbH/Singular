@@ -34,7 +34,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                 Common.CreateShamanImbueOffHandBehavior( Imbue.Flametongue ),
@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                 Common.CreateShamanImbueOffHandBehavior(Imbue.Frostbrand, Imbue.Flametongue),
@@ -65,9 +65,9 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(false, false),
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
                         Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit"),
@@ -83,9 +83,9 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
-                Spell.Heal("Healing Surge", on => Me, 
+                Spell.Cast("Healing Surge", on => Me, 
                     ret => Me.GetPredictedHealthPercent(true) < 80 && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
 
                 Common.CreateShamanDpsHealBehavior()
@@ -103,7 +103,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5),
                     new PrioritySelector(
@@ -130,7 +130,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -172,7 +172,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
@@ -240,7 +240,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !SpellManager.GlobalCooldown, 
                     new PrioritySelector(
@@ -297,7 +297,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
@@ -383,7 +383,7 @@ namespace Singular.ClassSpecific.Shaman
                             line += ", target=(null)";
                         else
                             line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tmelee={3}, tloss={4}", 
-                                target.Name, 
+                                target.SafeName(), 
                                 target.Distance, 
                                 target.HealthPercent,
                                 target.IsWithinMeleeRange, 

@@ -14,32 +14,18 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
+using Singular.Settings;
 
 namespace Singular.ClassSpecific.Mage
 {
     public class Arcane
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static MageSettings MageSettings { get { return SingularSettings.Instance.Mage(); } }
+
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Normal)]
-        public static Composite CreateMageArcaneNormalPull()
-        {
-            return new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Common.CreateStayAwayFromFrozenTargetsBehavior(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-
-                    Spell.WaitForCast(true),
-
-
-                    Spell.Cast("FrostFire Bolt", ret => !SpellManager.HasSpell("Arcane Blast")),
-                    Spell.Cast("Arcane Blast"),
-                    Movement.CreateMoveToTargetBehavior(true, 39f)
-                    
-                    );
-        }
-        [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Normal)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Normal)]
         public static Composite CreateMageArcaneNormalCombat()
         {
             return new PrioritySelector(
@@ -50,38 +36,47 @@ namespace Singular.ClassSpecific.Mage
 
                 Spell.WaitForCast(true),
 
-                // Defensive stuff
-                new Decorator(
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
-                    new ActionIdle()),
-                Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75 && StyxWoW.Me.ManaPercent < 30),
-                Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.HasAura("Frost Nova"))),
-                Common.CreateMagePolymorphOnAddBehavior(),
-                          Spell.BuffSelf("Evocation",
-                    ret => StyxWoW.Me.ManaPercent < 30 || (TalentManager.HasGlyph("Evocation") && StyxWoW.Me.HealthPercent < 50)),
-
-                new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3,
+                new Decorator( 
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.BuffSelf("Mirror Image")
-                        )),
-                Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
-                    Spell.Cast("Incanter's Ward", ret => StyxWoW.Me.CurrentTarget.DistanceSqr <= 6 * 6),
 
+                        Spell.BuffSelf( "Arcane Power"),
 
+                        new Decorator(
+                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 10 * 10 && u.IsCrowdControlled()),
+                            new PrioritySelector(
+                                Spell.BuffSelf("Frost Nova",
+                                    ret => Unit.NearbyUnfriendlyUnits.Any(u =>
+                                                    u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") &&
+                                                    !u.HasAura("Frost Nova") && !u.Stunned))
+                                )),
 
+                        // AoE comes first
+                        new Decorator(
+                            ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            new PrioritySelector(
+                                Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
+                                Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
+                                Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3),
+                                Movement.CreateMoveToTargetBehavior(true, 10f)
+                                )
+                            ),
 
-     
-               
-                Spell.BuffSelf("Arcane Power"),
-                Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.HasAura("Arcane Missiles!")),
-                Spell.Cast("Arcane Barrage", ret => StyxWoW.Me.GetAuraByName("Arcane Charge") != null && StyxWoW.Me.GetAuraByName("Arcane Charge").StackCount >= 4),
-                Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast")),
+                        Common.CreateMagePolymorphOnAddBehavior(),
 
-                Spell.Cast("Arcane Blast"),
+                        Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
+
+                        Spell.Cast("Arcane Missiles", ret => Me.HasAura("Arcane Missiles!")),
+                        Spell.Cast("Arcane Blast", ret => Me.HasAura( "Arcane Power")),
+
+                        Spell.Cast("Scorch", ret => Me.ManaPercent < 90),
+                        Spell.Cast("Arcane Barrage", ret => Me.GetAuraByName("Arcane Charge") != null && Me.GetAuraByName("Arcane Charge").StackCount >= 4),
+                        Spell.Cast("Arcane Blast" ),
+                        Spell.Cast("Frostfire Bolt")
+                        )
+                    ),
+
                 Movement.CreateMoveToTargetBehavior(true, 39f)
-
                 );
         }
 
@@ -101,10 +96,10 @@ namespace Singular.ClassSpecific.Mage
 
                 // Defensive stuff
                 new Decorator(
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
+                    ret => Me.ActiveAuras.ContainsKey("Ice Block"),
                     new ActionIdle()),
-                Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
+                Spell.BuffSelf("Ice Block", ret => Me.HealthPercent < 10 && !Me.ActiveAuras.ContainsKey("Hypothermia")),
+                Spell.BuffSelf("Mana Shield", ret => Me.HealthPercent <= 75),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.HasAura("Frost Nova"))),
                 Common.CreateMagePolymorphOnAddBehavior(),
 
@@ -112,13 +107,13 @@ namespace Singular.ClassSpecific.Mage
 
 
 
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.ManaPercent < 30),
-                Spell.BuffSelf("Evocation", ret => StyxWoW.Me.ManaPercent < 30 && (StyxWoW.Me.HasAura("Mana Shield") || !SpellManager.HasSpell("Mana Shield"))),
+                Spell.BuffSelf("Mana Shield", ret => Me.ManaPercent < 30),
+                Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30 && (Me.HasAura("Mana Shield") || !SpellManager.HasSpell("Mana Shield"))),
                 Spell.BuffSelf("Arcane Power"),
                 Spell.BuffSelf("Mirror Image"),
                 Spell.BuffSelf("Flame Orb"),
-                Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.HasAura("Arcane Missiles!")),
-                Spell.Cast("Arcane Barrage", ret => StyxWoW.Me.GetAuraByName("Arcane Charge") != null && StyxWoW.Me.GetAuraByName("Arcane Charge").StackCount >= 4),
+                Spell.Cast("Arcane Missiles", ret => Me.HasAura("Arcane Missiles!")),
+                Spell.Cast("Arcane Barrage", ret => Me.GetAuraByName("Arcane Charge") != null && Me.GetAuraByName("Arcane Charge").StackCount >= 4),
                 Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast")),
                 Spell.Cast("Arcane Blast"),
                 Movement.CreateMoveToTargetBehavior(true, 39f)
@@ -141,63 +136,34 @@ namespace Singular.ClassSpecific.Mage
 
                 Spell.WaitForCast(true),
 
-                // Defensive stuff
-                new Decorator(
-                    ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
-                    new ActionIdle()),
-                Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
-                Spell.Cast("Focus Magic",
-                    ret => (from member in StyxWoW.Me.GroupInfo.RaidMembers
-                           where member.HasRole(WoWPartyMember.GroupRole.Damage)
-                           let player = member.ToPlayer()
-                           where player != null
-                           select player).FirstOrDefault(),
-
-                    ret => !StyxWoW.Me.GroupInfo.RaidMembers.Select(m => m.ToPlayer()).
-                                        Any(p => p != null && p.HasMyAura("Focus Magic"))),
-                // AoE comes first
-                new Decorator(
-                    ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                new Decorator( 
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.CastOnGround("Flamestrike",
-                            ret => Clusters.GetBestUnitForCluster(StyxWoW.Me.Combat ? Unit.NearbyUnitsInCombatWithMe : Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
-                            ret => !ObjectManager.GetObjectsOfType<WoWDynamicObject>().Any(o =>
-                                        o.CasterGuid == StyxWoW.Me.Guid && o.Spell.Name == "Flamestrike" &&
-                                        o.Location.Distance(
-                                            Clusters.GetBestUnitForCluster(StyxWoW.Me.Combat ? Unit.NearbyUnitsInCombatWithMe : Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location) < o.Radius)),
-                        Spell.Cast("Arcane Explosion",
-                            ret => StyxWoW.Me.HasAura("Arcane Blast", 3) &&
-                                   Clusters.GetClusterCount(StyxWoW.Me,
-                                                            Unit.NearbyUnfriendlyUnits,
-                                                            ClusterType.Radius,
-                                                            10f) >= 3),
-                        Spell.CastOnGround("Blizzard",
-                            ret => Clusters.GetBestUnitForCluster(StyxWoW.Me.Combat ? Unit.NearbyUnitsInCombatWithMe : Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8f).Location,
-                            ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
 
-                        Spell.Cast("Arcane Blast"),
-                        Movement.CreateMoveToTargetBehavior(true, 39f)
-                        )),
+                        Spell.BuffSelf( "Arcane Power"),
 
-                Spell.BuffSelf("Time Warp",
-                    ret => !StyxWoW.Me.GroupInfo.IsInRaid && StyxWoW.Me.CurrentTarget.HealthPercent > 20 && StyxWoW.Me.CurrentTarget.IsBoss() &&
-                           !StyxWoW.Me.HasAura("Temporal Displacement")),
+                        // AoE comes first
+                        new Decorator(
+                            ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            new PrioritySelector(
+                                Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
+                                Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
+                                Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3),
+                                Movement.CreateMoveToTargetBehavior(true, 10f)
+                                )
+                            ),
 
-                // Burn mana phase
-                new Decorator(
-                    ret => SpellManager.HasSpell("Evocation") && SpellManager.Spells["Evocation"].CooldownTimeLeft.TotalSeconds < 30 &&
-                           StyxWoW.Me.ManaPercent > 10,
-                    new PrioritySelector(
-                        Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
+                        Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
 
-                        Spell.BuffSelf("Arcane Power"),
-                        Spell.BuffSelf("Mirror Image"),
-                        Spell.Cast("Arcane Blast"),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)
-                        )),
+                        Spell.Cast("Arcane Missiles", ret => Me.HasAura("Arcane Missiles!")),
+                        Spell.Cast("Arcane Blast", ret => Me.HasAura( "Arcane Power")),
 
-                // Reserve mana phase
+                        Spell.Cast("Scorch", ret => Me.ManaPercent < 90),
+                        Spell.Cast("Arcane Barrage", ret => Me.GetAuraByName("Arcane Charge") != null && Me.GetAuraByName("Arcane Charge").StackCount >= 4),
+                        Spell.Cast("Arcane Blast" ),
+                        Spell.Cast("Frostfire Bolt")
+                        )
+                    ),
 
                 Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.ManaPercent < 30),
                 Spell.BuffSelf("Evocation", ret => StyxWoW.Me.ManaPercent < 30 && (StyxWoW.Me.HasAura("Mana Shield") || !SpellManager.HasSpell("Mana Shield"))),
@@ -205,8 +171,8 @@ namespace Singular.ClassSpecific.Mage
                 Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.HasAura("Arcane Missiles!")),
                 Spell.Cast("Arcane Barrage", ret => StyxWoW.Me.GetAuraByName("Arcane Charge") != null && StyxWoW.Me.GetAuraByName("Arcane Charge").StackCount >= 4),
                 Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast")),
-                Movement.CreateMoveToTargetBehavior(true, 39f),
-                Spell.Cast("Arcane Blast")
+                Spell.Cast("Arcane Blast"),
+                Movement.CreateMoveToTargetBehavior(true, 39f)
                 );
         }
 

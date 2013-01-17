@@ -29,7 +29,7 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateShadowPriestRestBehavior()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -50,18 +50,18 @@ namespace Singular.ClassSpecific.Priest
                     ret => !Spell.IsGlobalCooldown(),
 
                     new PrioritySelector(
-                        Spell.Heal("Flash Heal",
+                        Spell.Cast("Flash Heal",
                             ctx => StyxWoW.Me,
                             ret => StyxWoW.Me.HealthPercent <= 20 ),
 
-                        Spell.Heal("Flash Heal",
+                        Spell.Cast("Flash Heal",
                             ctx => StyxWoW.Me,
                             ret => !Me.Combat && StyxWoW.Me.GetPredictedHealthPercent(true) <= 85),
 
                         Spell.BuffSelf("Renew",
                             ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 75),
 
-                        Spell.Heal("Flash Heal",
+                        Spell.Cast("Flash Heal",
                             ctx => StyxWoW.Me,
                             ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50)
                         )
@@ -119,19 +119,34 @@ namespace Singular.ClassSpecific.Priest
                         Spell.BuffSelf("Power Word: Shield", 
                             ret => !StyxWoW.Me.HasAura("Weakened Soul") &&
                                    (!SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Priest().ShieldHealthPercent)),
-                        Spell.BuffSelf("Dispersion", ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Priest().DispersionMana),
+                        Spell.BuffSelf("Dispersion",
+                            ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Priest().DispersionMana
+                                || StyxWoW.Me.HealthPercent < 40 
+                                || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
                         Spell.BuffSelf("Psychic Scream", 
                             ret => SingularSettings.Instance.Priest().UsePsychicScream &&
                                    Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= SingularSettings.Instance.Priest().PsychicScreamAddCount),
                 
-                        Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Priest().ShadowFlashHealHealth),
+                        Spell.Cast("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Priest().ShadowFlashHealHealth),
                         // don't attempt to heal unless below a certain percentage health
                         new Decorator(ret => StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest().DontHealPercent,
                             new PrioritySelector(
-                                Spell.Heal("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
-                                Spell.Heal("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40),
-                                Spell.Heal("Vampiric Embrace", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
+                                Spell.Cast("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
+                                Spell.Cast("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40),
+                                Spell.Cast("Vampiric Embrace", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 40)
                                 )),
+
+                        // AoE Rotation
+                        new Decorator(
+                            ret => Spell.UseAOE && AoeTargets.Count() > 1,
+                            new PrioritySelector(
+                                ctx => AoeTargets.FirstOrDefault(),
+                                Spell.Cast("Mind Sear", ctx => (WoWUnit) ctx, ret => AoeTargets.Count() >= 5),
+                                Spell.Buff("Shadow Word: Pain", true, ret => AoeTargets.FirstOrDefault(u => !u.HasMyAura("Shadow Word: Pain"))),
+                                Spell.Buff("Vampiric Touch", true, ret => AoeTargets.FirstOrDefault(u => !u.HasMyAura("Vampiric Touch"))),
+                                Spell.Cast("Mind Sear", ctx => (WoWUnit) ctx)
+                                )
+                            ),
 
                         // for NPCs immune to shadow damage.
                         Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
@@ -144,17 +159,19 @@ namespace Singular.ClassSpecific.Priest
                                 || (Me.CurrentTarget.Elite && Me.CurrentTarget.Level > (Me.Level - 10)),
 
                             new PrioritySelector(
-                                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
                                 Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
                                 Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
-                                Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
+                                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
+                                Spell.Cast("Halo"),
+                                Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
                                 Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
+                                Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
                                 Spell.Cast("Mindbender", ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 50),
                                 Spell.Cast("Power Infusion"),
-                                Spell.Cast("Mind Blast"),
                                 Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
                                 Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest().MindFlayMana),
+                                Spell.Cast("Mind Blast"),
                                 // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest().UseWand), // we no longer have wands or shoot
                                 Movement.CreateMoveToTargetBehavior(true, 35f)
                                 )),
@@ -203,7 +220,7 @@ namespace Singular.ClassSpecific.Priest
 
                 // Defensive stuff
                 Spell.BuffSelf("Power Word: Shield", ret => !StyxWoW.Me.HasAura("Weakened Soul")),
-                Spell.BuffSelf("Dispersion", ret => StyxWoW.Me.HealthPercent < 40),
+                Spell.BuffSelf("Dispersion", ret => StyxWoW.Me.HealthPercent < 40 || Unit.NearbyUnfriendlyUnits.Count( t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
                 Spell.BuffSelf("Psychic Scream", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) >= 1),
 
                 // Offensive
@@ -303,7 +320,7 @@ namespace Singular.ClassSpecific.Priest
         {
             get
             {
-                return Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && Unit.GroupMemberInfos.Any(m => m.Guid == u.CurrentTargetGuid) && !u.IsCrowdControlled() && StyxWoW.Me.IsSafelyFacing(u));
+                return Unit.UnfriendlyUnitsNearTarget(10);
             }
         }
 
@@ -344,7 +361,7 @@ namespace Singular.ClassSpecific.Priest
                             line += ", target=(null)";
                         else
                             line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tface={3}, tlos={4}, tloss={5}",
-                                target.Name,
+                                target.SafeName(),
                                 target.Distance,
                                 target.HealthPercent,
                                 Me.IsSafelyFacing(target,70f),

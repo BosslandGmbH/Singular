@@ -46,9 +46,9 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMistweaverMonkRestBehavior()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(false, false),
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         CreateMistweaverMonkHealing(true),
 

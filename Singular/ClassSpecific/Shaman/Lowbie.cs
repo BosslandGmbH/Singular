@@ -31,9 +31,12 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbiePreCombatBuffs()
         {
-            return
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
-                    Spell.BuffSelf("Lightning Shield"));
+                    Spell.BuffSelf("Lightning Shield")
+                    )
+                );
         }
         [Behavior(BehaviorType.Pull, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbiePull()
@@ -51,10 +54,10 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbieHeal()
         {
-            return
-                new PrioritySelector(
-                    Spell.Heal("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 35)
-                    );
+            return new Decorator(
+                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
+                Spell.Cast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 35)
+                );
         }
         [Behavior(BehaviorType.Combat, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbieCombat()
@@ -96,7 +99,7 @@ namespace Singular.ClassSpecific.Shaman
                             line += ", target=(null)";
                         else
                             line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tlos={3}, tloss={4}",
-                                target.Name,
+                                target.SafeName(),
                                 target.Distance,
                                 target.HealthPercent,
                                 target.InLineOfSight,

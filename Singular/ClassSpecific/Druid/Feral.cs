@@ -33,9 +33,9 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralDruidRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(false, false),
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         new Throttle(10,
                             new Decorator(
@@ -59,12 +59,11 @@ namespace Singular.ClassSpecific.Druid
                                 && (Me.GetPredictedHealthPercent(true) < 95 || (Common.HasTalent( DruidTalents.DreamOfCenarius) && !Me.HasAuraExpired("Dream of Cenarius"))),
                             new PrioritySelector(
                                 new Action(r => { Logger.WriteDebug("Druid Rest Swift Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift); return RunStatus.Failure; }),
-                                Spell.Heal("Healing Touch",
+                                Spell.Cast("Healing Touch",
                                     mov => true,
                                     on => Me,
                                     req => true,
-                                    cancel => false,
-                                    true)
+                                    cancel => false)
                                 )
                             )
 
@@ -133,9 +132,40 @@ namespace Singular.ClassSpecific.Druid
             return new Decorator(
                 ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(), 
                 new PrioritySelector(
-                    new Throttle( 10, Spell.BuffSelf("Cat Form", ret => Me.IsMoving ))
+
+                    // cast cat form if not in combat and moving, but only if not recent shapeshift error
+                    new Throttle( 10, Spell.BuffSelf( "Cat Form", ret => Me.IsMoving && !RecentShapeshiftErrorOccurred )),
+
+                    // cancel form if we get a shapeshift error 
+                    new Throttle( 5,
+                        new Decorator(
+                            ret => !Me.IsMoving && Me.Shapeshift != ShapeshiftForm.Normal && SingularRoutine.IsQuesting && RecentShapeshiftErrorOccurred,
+                            new Action(ret =>
+                            {
+                                string formName = Me.Shapeshift.ToString() + " Form";
+                                Logger.Write("/cancel [{0}] due to shapeshift error and prevent out of combat {1:F0} seconds while Questing", formName, (SuppressShapeshiftUntil - DateTime.Now).TotalSeconds );
+                                Me.CancelAura(formName);
+                            })
+                            )
+                        )
                     )
                 );
+        }
+
+        private static DateTime SuppressShapeshiftUntil
+        {
+            get
+            {
+                return Utilities.EventHandlers.LastShapeshiftError.AddSeconds(60);
+            }
+        }
+
+        private static bool RecentShapeshiftErrorOccurred
+        {
+            get
+            {
+                return SuppressShapeshiftUntil > DateTime.Now;
+            }
         }
 
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]
@@ -182,7 +212,13 @@ namespace Singular.ClassSpecific.Druid
                                        && !Me.HasAura("Berserk")
                                        )),
 
-                        new Throttle( Spell.BuffSelf("Berserk", ret => Me.HasAura("Tiger's Fury") && (Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer ))),
+                        new Throttle( 
+                            Spell.BuffSelf("Berserk", 
+                                ret => Me.HasAura("Tiger's Fury") 
+                                    && (Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.CurrentTarget.TimeToDeath() >= 20 ))
+                                )
+                            ),
+
                         new Throttle( Spell.Cast("Nature's Vigil", ret => Me.HasAura("Berserk"))),
                         Spell.Cast("Incarnation", ret => Me.HasAura("Berserk")),
 
@@ -224,7 +260,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
 
                 new Action( ret => {
-                    _aoeColl = Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 8f);
+                    _aoeColl = Unit.NearbyUnfriendlyUnits.Where(u => u.MeleeDistance() < 8f);
                     return RunStatus.Failure;
                     }),
 
@@ -240,6 +276,8 @@ namespace Singular.ClassSpecific.Druid
                             ret => Me.EnergyPercent <= 35
                                 && !Me.ActiveAuras.ContainsKey("Clearcasting")
                                 && !Me.HasAura("Berserk")),
+
+                        Spell.BuffSelf("Berserk", ret => Me.HasAura("Tiger's Fury") && SingularRoutine.CurrentWoWContext != WoWContext.Instances),
 
                         // bite if rip good for awhile or target dying soon
                         Spell.Cast("Ferocious Bite",

@@ -586,7 +586,7 @@ namespace Singular.Helpers
         {
             if (target == null || !target.IsValid || !target.IsAlive)
             {
-                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) is dead!", target.Name, target.Guid, target.Entry);
+                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) is dead!", target.SafeName(), target.Guid, target.Entry);
                 return 0;
             }
 
@@ -625,7 +625,7 @@ namespace Singular.Helpers
                 if (calcTime < 1) calcTime = 1;
                 //calc_time is a int value for time to die (seconds) so there's no need to do SecondsToTime(calc_time)
                 long timeToDie = calcTime;
-                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}, you are dpsing with {4} dps", target.Name, target.Guid, target.Entry, timeToDie, dps);
+                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}, you are dpsing with {4} dps", target.SafeName(), target.Guid, target.Entry, timeToDie, dps);
                 return timeToDie;
             }
             if (hpDiff <= 0)
@@ -636,15 +636,15 @@ namespace Singular.Helpers
                 _firstLifeMax = target.MaxHealth;
                 _firstTime = ConvDate2Timestam(DateTime.Now);
                 //Lets do a little trick and calculate with seconds / u know Timestamp from unix? we'll do so too
-                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) was healed, resetting data.", target.Name, target.Guid, target.Entry);
+                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) was healed, resetting data.", target.SafeName(), target.Guid, target.Entry);
                 return indeterminateValue;
             }
             if (_currentLife == _firstLifeMax)
             {
-                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) is at full health.", target.Name, target.Guid, target.Entry);
+                //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) is at full health.", target.SafeName(), target.Guid, target.Entry);
                 return indeterminateValue;
             }
-            //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) no damage done, nothing to calculate.", target.Name, target.Guid, target.Entry);
+            //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) no damage done, nothing to calculate.", target.SafeName(), target.Guid, target.Entry);
             return indeterminateValue;
         }
 

@@ -36,7 +36,7 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Spell.WaitForCast(true, false),
+                Spell.WaitForCast(true),
 
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(

@@ -14,6 +14,7 @@ using Singular.Settings;
 using System.Globalization;
 using Styx.Common;
 using System.Drawing;
+using System.Collections.Generic;
 
 #endregion
 
@@ -51,13 +52,14 @@ namespace Singular.Utilities
         /// </summary>
         public static DateTime LastLineOfSightError { get; set; }
         public static DateTime LastUnitNotInfrontError { get; set; }
+        public static DateTime LastShapeshiftError { get; set; }
 
         /// <summary>
         /// the value of localized values for testing certain types of spell failures
         /// </summary>
         private static string LocalizedLineOfSightError;
         private static string LocalizedUnitNotInfrontError;
-
+        private static HashSet<string> LocalizedShapeshiftErrors;
 
         private static void AttachCombatLogEvent()
         {
@@ -84,7 +86,25 @@ namespace Singular.Utilities
             // get localized copies of spell failure error messages
             LocalizedLineOfSightError = Lua.GetReturnVal<string>("return SPELL_FAILED_LINE_OF_SIGHT", 0);
             LocalizedUnitNotInfrontError = Lua.GetReturnVal<string>("return SPELL_FAILED_UNIT_NOT_INFRONT", 0);
-                     
+
+            LocalizedShapeshiftErrors = new HashSet<string>();
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_CANT_INTERACT_SHAPESHIFTED", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_MOUNT_SHAPESHIFTED", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_NOT_WHILE_SHAPESHIFTED", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_NO_ITEMS_WHILE_SHAPESHIFTED", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_SHAPESHIFT_FORM_CANNOT_EQUIP", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_TAXIPLAYERSHAPESHIFTED", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_FAILED_CUSTOM_ERROR_125", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_FAILED_CUSTOM_ERROR_99", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_FAILED_NOT_SHAPESHIFT", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_FAILED_NO_ITEMS_WHILE_SHAPESHIFTED", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_NOT_SHAPESHIFTED", 0));
+            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_NOT_SHAPESHIFTED_NOSPACE", 0));
+
+            LastLineOfSightError = DateTime.MinValue;
+            LastUnitNotInfrontError = DateTime.MinValue;
+            LastShapeshiftError = DateTime.MinValue;
+                      
             Logger.WriteDebug("Attached combat log");
             _combatLogAttached = true;
         }
@@ -112,7 +132,8 @@ namespace Singular.Utilities
             switch (e.Event)
             {
                 default:
-                    Logger.WriteDebug("[CombatLog] filter out this event -- " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
+                    if ( SingularSettings.Debug )
+                        Logger.WriteDebug("[CombatLog] filter out this event -- " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
                     break;
 
                 // spell_cast_failed only passes filter in Singular debug mode
@@ -130,6 +151,14 @@ namespace Singular.Utilities
                         LastLineOfSightError = DateTime.Now;
                         Logger.WriteFile("[CombatLog] cast fail due to los reported at {0}", LastLineOfSightError.ToString("HH:mm:ss.fff"));
                     }
+                    else if ( StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuesting)
+                    {
+                        if (LocalizedShapeshiftErrors.Contains(e.Args[14].ToString()))
+                        {
+                            LastShapeshiftError = DateTime.Now;
+                            Logger.WriteFile("[CombatLog] cast fail due to shapeshift error while questing reported at {0}", LastShapeshiftError.ToString("HH:mm:ss.fff"));
+                        }
+                    }   
                     break;
 
 #if SOMEONE_USES_LAST_SPELL_AT_SOME_POINT

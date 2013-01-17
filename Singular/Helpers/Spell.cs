@@ -13,9 +13,16 @@ using Action = Styx.TreeSharp.Action;
 using Singular.Settings;
 using Singular.Managers;
 using Styx.Helpers;
+using System.Drawing;
 
 namespace Singular.Helpers
 {
+    enum LagTolerance
+    {
+        No = 0,
+        Yes
+    };
+
     public delegate WoWUnit UnitSelectionDelegate(object context);
 
     public delegate bool SimpleBooleanDelegate(object context);
@@ -212,9 +219,9 @@ namespace Singular.Helpers
 
         #region Wait
 
-        public static bool IsGlobalCooldown(bool faceDuring = false, bool allowLagTollerance = true)
+        public static bool IsGlobalCooldown(bool faceDuring = false, LagTolerance allow = LagTolerance.Yes )
         {
-            uint latency = allowLagTollerance ? StyxWoW.WoWClient.Latency : 0;
+            uint latency = allow == LagTolerance.Yes ? StyxWoW.WoWClient.Latency : 0;
             TimeSpan gcdTimeLeft = SpellManager.GlobalCooldownLeft;
             return gcdTimeLeft.TotalMilliseconds > latency;
         }
@@ -235,9 +242,9 @@ namespace Singular.Helpers
         ///   Created 13/5/2011.
         /// </remarks>
         /// <param name = "faceDuring">Whether or not to face during casting</param>
-        /// <param name = "allowLagTollerance">Whether or not to allow lag tollerance for spell queueing</param>
+        /// <param name = "allow">Whether or not to allow lag tollerance for spell queueing</param>
         /// <returns></returns>
-        public static Composite WaitForCast(bool faceDuring = false, bool allowLagTollerance = true)
+        public static Composite WaitForCast(bool faceDuring = false, LagTolerance allow = LagTolerance.Yes )
         {
             return new PrioritySelector(
                 new Decorator(
@@ -246,7 +253,7 @@ namespace Singular.Helpers
                     ),
                 new Action(ret =>
                 {
-                    if (IsCasting(allowLagTollerance))
+                    if (IsCasting(allow))
                         return RunStatus.Success;
 
                     return RunStatus.Failure;
@@ -254,7 +261,7 @@ namespace Singular.Helpers
                 );
         }
 
-        public static bool IsCasting(bool allowLagTollerance = true)
+        public static bool IsCasting(LagTolerance allow = LagTolerance.Yes)
         {
             if (!StyxWoW.Me.IsCasting)
                 return false;
@@ -268,7 +275,7 @@ namespace Singular.Helpers
 
             uint latency = StyxWoW.WoWClient.Latency * 2;
             TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
-            if (allowLagTollerance // && castTimeLeft != TimeSpan.Zero 
+            if (allow == LagTolerance.Yes // && castTimeLeft != TimeSpan.Zero 
                 && StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
                 return false;
 
@@ -289,15 +296,15 @@ namespace Singular.Helpers
         ///   Created 13/5/2011.
         /// </remarks>
         /// <param name = "faceDuring">Whether or not to face during casting</param>
-        /// <param name = "allowLagTollerance">Whether or not to allow lag tollerance for spell queueing</param>
+        /// <param name = "allow">Whether or not to allow lag tollerance for spell queueing</param>
         /// <returns></returns>
-        public static Composite WaitForChannel(bool allowLagTollerance = true)
+        public static Composite WaitForChannel(LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
                 Movement.CreateFaceTargetBehavior(),
                 new Action(ret =>
                 {
-                    if (IsChannelling(allowLagTollerance))
+                    if (IsChannelling(allow))
                         return RunStatus.Success;
 
                     return RunStatus.Failure;
@@ -305,29 +312,29 @@ namespace Singular.Helpers
                 );
         }
 
-        public static bool IsChannelling(bool allowLagTollerance = true)
+        public static bool IsChannelling(LagTolerance allow = LagTolerance.Yes)
         {
             if (!StyxWoW.Me.IsChanneling)
                 return false;
 
             uint latency = StyxWoW.WoWClient.Latency * 2;
             TimeSpan timeLeft = StyxWoW.Me.CurrentChannelTimeLeft;
-            if (allowLagTollerance && timeLeft.TotalMilliseconds < latency)
+            if (allow == LagTolerance.Yes && timeLeft.TotalMilliseconds < latency)
                 return false;
 
             return true;
         }
 
-        public static bool IsCastingOrChannelling(bool allowLagTollerance = true)
+        public static bool IsCastingOrChannelling(LagTolerance allow = LagTolerance.Yes)
         {
-            return IsCasting(allowLagTollerance) || IsChannelling();
+            return IsCasting(allow) || IsChannelling();
         }
 
-        public static Composite WaitForCastOrChannel(bool allowLagTollerance = true)
+        public static Composite WaitForCastOrChannel(LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
-                WaitForCast(true, allowLagTollerance),
-                WaitForChannel(allowLagTollerance)
+                WaitForCast(true, allow),
+                WaitForChannel(allow)
                 );
         }
 
@@ -384,7 +391,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(string name)
         {
-            return Cast(name, ret => true);
+            return Cast( sp => name);
         }
 
         /// <summary>
@@ -399,7 +406,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(string name, SimpleBooleanDelegate requirements)
         {
-            return Cast(name, ret => true, ret => StyxWoW.Me.CurrentTarget, requirements);
+            return Cast( sp => name, requirements);
         }
 
         /// <summary>
@@ -414,7 +421,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(string name, UnitSelectionDelegate onUnit)
         {
-            return Cast(name, ret => true, onUnit, ret => true);
+            return Cast( sp => name, onUnit);
         }
 
         /// <summary>
@@ -430,7 +437,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
         {
-            return Cast(name, ret => true, onUnit, requirements);
+            return Cast(sp => name, onUnit, requirements);
         }
 
         /// <summary>
@@ -448,15 +455,7 @@ namespace Singular.Helpers
         public static Composite Cast(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit, 
             SimpleBooleanDelegate requirements)
         {
-            return new Decorator(ret => name != null && requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && SpellManager.CanCast(name, onUnit(ret), true, checkMovement(ret)), 
-                new Throttle(
-                    new Action(ret =>
-                        {
-                            Logger.Write(string.Format("Casting {0} on {1}", name, onUnit(ret).SafeName()));
-                            SpellManager.Cast(name, onUnit(ret));
-                        })
-                    )
-                );
+            return Cast(ret => name, checkMovement, onUnit, requirements);
         }
 
 
@@ -471,7 +470,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(SimpleStringDelegate name)
         {
-            return Cast(name, ret => true, onUnit => StyxWoW.Me.CurrentTarget, req => true);
+            return Cast(name, onUnit => StyxWoW.Me.CurrentTarget);
         }
 
         /// <summary>
@@ -486,7 +485,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(SimpleStringDelegate name, UnitSelectionDelegate onUnit)
         {
-            return Cast(name, ret => true, onUnit, req => true);
+            return Cast(name, onUnit, req => true);
         }
 
         /// <summary>
@@ -501,7 +500,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate requirements)
         {
-            return Cast(name, ret => true, onUnit => StyxWoW.Me.CurrentTarget, requirements);
+            return Cast(name, onUnit => StyxWoW.Me.CurrentTarget, requirements);
         }
 
         /// <summary>
@@ -520,31 +519,6 @@ namespace Singular.Helpers
             return Cast(name, ret => true, onUnit, requirements);
         }
 
-        /// <summary>
-        ///   Creates a behavior to cast a spell by name resolved during tree execution (rather than creation), with special requirements, 
-        ///   on a specific unit, optionally checking if moving and whether cast is allowed during movement. 
-        ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
-        /// </summary>
-        /// <remarks>
-        ///   Created 11/25/2012.
-        /// </remarks>
-        /// <param name = "name">The name.</param>
-        /// <param name="checkMovement">True to check if moving and cast allowed</param>
-        /// <param name = "onUnit">The on unit.</param>
-        /// <param name = "requirements">The requirements.</param>
-        /// <returns>.</returns>
-        public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
-        {
-            return new Decorator(ret => requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && name != null && name(ret) != null && SpellManager.CanCast(name(ret), onUnit(ret), true, checkMovement(ret)),
-                new Throttle(
-                    new Action(ret =>
-                    {
-                        Logger.Write(string.Format("Casting {0} on {1}", name(ret), onUnit(ret).SafeName()));
-                        SpellManager.Cast(name(ret), onUnit(ret));
-                    })
-                    )
-                );
-        }
 
         #endregion
 
@@ -958,76 +932,9 @@ namespace Singular.Helpers
 
         #region Heal - by name
 
-        /// <summary>
-        ///   Creates a behavior to cast a heal spell by name. Heal behaviors will make sure
-        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
-        /// </summary>
-        /// <remarks>
-        ///   Created 5/2/2011.
-        /// </remarks>
-        /// <param name = "name">The name.</param>
-        /// <returns>.</returns>
-        public static Composite Heal(string name)
-        {
-            return Heal(name, ret => true);
-        }
+        private static WoWSpell _spell;
 
-        /// <summary>
-        ///   Creates a behavior to cast a heal spell by name, with special requirements. Heal behaviors will make sure
-        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
-        /// </summary>
-        /// <remarks>
-        ///   Created 5/2/2011.
-        /// </remarks>
-        /// <param name = "name">The name.</param>
-        /// <param name = "requirements">The requirements.</param>
-        /// <returns>.</returns>
-        public static Composite Heal(string name, SimpleBooleanDelegate requirements)
-        {
-            return Heal(name, ret => true, ret => StyxWoW.Me, requirements);
-        }
-
-        /// <summary>
-        ///   Creates a behavior to cast a heal spell by name, on a specific unit. Heal behaviors will make sure
-        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
-        /// </summary>
-        /// <remarks>
-        ///   Created 5/2/2011.
-        /// </remarks>
-        /// <param name = "name">The name.</param>
-        /// <param name = "onUnit">The on unit.</param>
-        /// <returns>.</returns>
-        public static Composite Heal(string name, UnitSelectionDelegate onUnit)
-        {
-            return Heal(name, ret => true, onUnit, ret => true);
-        }
-
-        /// <summary>
-        ///   Creates a behavior to cast a heal spell by name, on a specific unit. Heal behaviors will make sure
-        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
-        /// </summary>
-        /// <remarks>
-        ///   Created 5/2/2011.
-        /// </remarks>
-        /// <param name = "name">The name.</param>
-        /// <param name = "onUnit">The on unit.</param>
-        /// <param name = "requirements">The requirements.</param>
-        /// <returns>.</returns>
-        public static Composite Heal(string name, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
-        {
-            return Heal(name, ret => true, onUnit, requirements);
-        }
-
-
-        public static Composite Heal(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements, bool allowLagTollerance = false)
-        {
-            return Heal(name, checkMovement, onUnit, requirements, 
-                ret => onUnit(ret).HealthPercent > SingularSettings.Instance.IgnoreHealTargetsAboveHealth, 
-                false);
-        }
-
-        // used by Spell.Heal() - save fact we are queueing this Heal spell if a spell cast/gcd is in progress already.  this could only occur during 
+        // used by Spell.Cast() - save fact we are queueing this Heal spell if a spell cast/gcd is in progress already.  this could only occur during 
         // .. the period of latency at the end of a cast where Singular allows you to begin the next one
         private static bool _IsSpellBeingQueued = false;
 
@@ -1043,17 +950,18 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
         /// <param name="cancel">The cancel cast in progress delegate</param>
-        /// <param name="allowLagTollerance">allow next spell to queue before this one completes</param>
+        /// <param name="allow">allow next spell to queue before this one completes</param>
         /// <returns>.</returns>
-        public static Composite Heal(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel, bool allowLagTollerance = false)
+        public static Composite Cast(string name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes)
         {
-            return Heal(n => name, checkMovement, onUnit, requirements, cancel, allowLagTollerance);
+            return Cast(n => name, checkMovement, onUnit, requirements, cancel, allow);
         }
 
         /// <summary>
-        ///   Creates a behavior to cast a heal spell by name, with special requirements, on a specific unit. Heal behaviors will make sure
-        ///   we don't double cast. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        ///   Creates a behavior to cast a spell by name, with special requirements, on a specific unit. Will make sure any spell with
+        ///   a non-zero cast time (everything not instant) will stay here until passing the latency boundary (point where .IsCasting == false while cast is in progress.)
+        ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
         /// </summary>
         /// <remarks>
         ///   Created 5/2/2011.
@@ -1063,73 +971,119 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit.</param>
         /// <param name = "requirements">The requirements.</param>
         /// <param name="cancel">The cancel cast in progress delegate</param>
-        /// <param name="allowLagTollerance">allow next spell to queue before this one completes</param>
+        /// <param name="allow">allow next spell to queue before this one completes</param>
         /// <returns>.</returns>
-        public static Composite Heal(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel, bool allowLagTollerance = false)
+        public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes)
         {
-            return new Sequence(
-                    
-                // save context of currently in a GCD or IsCasting before our Cast
-                new Action(ret => _IsSpellBeingQueued = (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling)),
+            return new Decorator(
+                ret => name != null && checkMovement != null && onUnit != null && requirements != null
+                    && name(ret) != null
+                    && onUnit(ret) != null
+                    && requirements(ret),
+                new Throttle(
+                    new Sequence(
 
-                Cast( n => name(n), checkMovement, onUnit, requirements),
-
-                // continue if not queueing spell, or we reahed end of cast/gcd of spell in progress
-                new WaitContinue( 
-                    TimeSpan.FromMilliseconds(500),
-                    ret => !_IsSpellBeingQueued || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling),
-                    new ActionAlwaysSucceed()
-                    ),
-
-                // now for non-instant spell, wait for .IsCasting to be true
-                new WaitContinue(1, 
-                    ret => {
-                        WoWSpell spell;
-                        if (SpellManager.Spells.TryGetValue(name(ret), out spell))
+                        // save flag indicating if currently in a GCD or IsCasting before queueing our cast
+                        new Action(ret =>
                         {
-                            if (spell.CastTime == 0)
+                            // find spell 
+                            SpellFindResults sfr;
+                            if (!SpellManager.FindSpell(name(ret), out sfr))
+                                return RunStatus.Failure;
+                            _spell = sfr.Override ?? sfr.Original;
+
+                            // check we can cast it on target
+                            if (!SpellManager.CanCast(_spell, onUnit(ret), true, checkMovement(ret), allow == LagTolerance.Yes))
+                                return RunStatus.Failure;
+
+                            // save status of queueing spell (lag tolerance - the prior spell still completing)
+                            _IsSpellBeingQueued = allow == LagTolerance.Yes && (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
+
+                            Logger.Write(string.Format("Casting {0} on {1}", _spell.Name, onUnit(ret).SafeName()));
+                            if ( !SpellManager.Cast( _spell, onUnit(ret)))
+                            {
+                                Logger.WriteDebug( Color.LightPink, "cast of {0} on {1} failed!", _spell.Name, onUnit(ret).SafeName());
+                                return RunStatus.Failure;
+                            }
+
+                            return RunStatus.Success;
+                        }),
+
+                        // when accountForLag = true, wait for in progress spell (if any) to complete
+                        new WaitContinue(
+                            TimeSpan.FromMilliseconds(500),
+                            ret => !_IsSpellBeingQueued || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling),
+                            new ActionAlwaysSucceed()
+                            ),
+
+                        // failsafe: max time we should be waiting with the prior and latter WaitContinue is latency x 2
+                // .. if system is borked, could be 1 second but shouldnt notice.  
+                // .. instant spells should be very quick since only prior wait applies
+
+                        // now for non-instant spell, wait for .IsCasting to be true
+                        new WaitContinue(
+                            TimeSpan.FromMilliseconds(500),
+                            ret =>
+                            {
+                                WoWSpell spell;
+                                if (SpellManager.Spells.TryGetValue(name(ret), out spell))
+                                {
+                                    if (spell.CastTime == 0)
+                                        return true;
+
+                                    return StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling;
+                                }
+
                                 return true;
+                            },
+                            new ActionAlwaysSucceed()
+                            ),
 
-                            return StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling;
-                        }
+                        new PrioritySelector(
 
-                        return true;
-                        }, 
-                    new ActionAlwaysSucceed()
-                    ), 
-                    
-                // finally, wait at this point until heal completes
-                new WaitContinue(3, 
-                    ret => {
-                        // Interrupted or finished casting. 
-                        if (!StyxWoW.Me.IsCasting && !StyxWoW.Me.IsChanneling)
-                        {
-                            return true;
-                        }
+                            // when not monitoring for cancel, don't wait for completion of full cast
+                            new Decorator(
+                                ret => cancel == null,
+                                new ActionAlwaysSucceed()
+                                ),
 
-                        // channel spells fall through to cancel test
-                        
-                        // for casted spells and lag tolerance enabled, check before end of cast if we are done
-                        if (allowLagTollerance && StyxWoW.Me.IsCasting && !StyxWoW.Me.IsChanneling )
-                        {
-                            TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
-                            if (castTimeLeft != TimeSpan.Zero && castTimeLeft.TotalMilliseconds < (StyxWoW.WoWClient.Latency * 2))
-                                return true;
-                        }
+                            // finally, wait at this point until Cast completes
+                // .. always return success here since based on flags we cast something
+                            new WaitContinue(3,
+                                ret =>
+                                {
+                                    // Interrupted or finished casting. 
+                                    if (!StyxWoW.Me.IsCasting && !StyxWoW.Me.IsChanneling)
+                                    {
+                                        return true;
+                                    }
 
-                        // check cancel delegate if we are finished
-                        if ( cancel(ret) )
-                        {
-                            SpellManager.StopCasting();
-                            Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name(ret), onUnit(ret).SafeName(), onUnit(ret).HealthPercent);
-                            return true;
-                        }
+                                    // allow channel spells fall through to cancel test
 
-                        // continue casting/channeling at this point
-                        return false;
-                    }, 
-                    new ActionAlwaysSucceed()
+                                    // for casted spells and lag tolerance enabled, check before end of cast if we are done
+                                    if (allow == LagTolerance.Yes && StyxWoW.Me.IsCasting && !StyxWoW.Me.IsChanneling)
+                                    {
+                                        TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
+                                        if (castTimeLeft != TimeSpan.Zero && castTimeLeft.TotalMilliseconds < (StyxWoW.WoWClient.Latency * 2))
+                                            return true;
+                                    }
+
+                                    // check cancel delegate if we are finished
+                                    if (cancel(ret))
+                                    {
+                                        SpellManager.StopCasting();
+                                        Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name(ret), onUnit(ret).SafeName(), onUnit(ret).HealthPercent);
+                                        return true;
+                                    }
+
+                                    // continue casting/channeling at this point
+                                    return false;
+                                },
+                                new ActionAlwaysSucceed()
+                                )
+                            )
+                        )
                     )
                 );
         }
@@ -1234,7 +1188,7 @@ namespace Singular.Helpers
                                     spell,
                                     onLocation(ret),
                                     StyxWoW.Me.Location.Distance(onLocation(ret)),
-                                    WoWMathHelper.IsSafelyFacing( StyxWoW.Me.Location, StyxWoW.Me.RenderFacing, onLocation(ret)),
+                                    GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Location, onLocation(ret)),
                                     StyxWoW.Me.IsSafelyFacing(onLocation(ret))
                                     );
                                 Lua.DoString("SpellStopTargeting()");

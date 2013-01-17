@@ -99,7 +99,7 @@ namespace Singular.ClassSpecific.Warlock
                         )
                     ),
 
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator( ret => !Spell.IsGlobalCooldown(),

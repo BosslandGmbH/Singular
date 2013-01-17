@@ -334,9 +334,9 @@ namespace Singular.ClassSpecific.Monk
 
                             Common.CreateHealingSphereBehavior(65),
 
-                            Spell.Heal( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
+                            Spell.Cast( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
 
-                            Spell.Heal( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)Common.Talents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
+                            Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)Common.Talents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
 #if USE_CHI_BURST                            
                             ,
 

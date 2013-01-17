@@ -17,6 +17,7 @@ using Singular.Settings;
 using Singular.Helpers;
 using System;
 using Styx.CommonBot.POI;
+using System.Collections.Generic;
 
 namespace Singular.ClassSpecific.Rogue
 {
@@ -37,6 +38,8 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
                         CreateStealthBehavior( ret => StyxWoW.Me.HasAura("Food")),
                         Rest.CreateDefaultRestBehaviour( ),
+
+                        CreateRogueOpenBoxes(),
                         CreateRoguePreCombatBuffs(),
                         CreateRogueGeneralMovementBuff("Rest")
                         )
@@ -106,9 +109,9 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRoguePreCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(false),
+                Spell.WaitForCastOrChannel( ),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown( allowLagTollerance:false) && !IsStealthed,
+                    ret => !Spell.IsGlobalCooldown(  ) && !IsStealthed,
                     new PrioritySelector(
                         // new Action(r => { Logger.WriteDebug("PreCombatBuffs -- stealthed={0}", Stealthed); return RunStatus.Failure; }),
                         CreateApplyPoisons(),
@@ -134,7 +137,7 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
                         // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
                         CreateStealthBehavior( ret => !IsStealthed ),
-                        Spell.BuffSelf("Redirect", ret => StyxWoW.Me.RawComboPoints > 0),
+                        Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0),
                         Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
                         // Throttle Shadowstep because cast can fail with no message
                         new Throttle( 2, Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 12)),
@@ -158,8 +161,9 @@ namespace Singular.ClassSpecific.Rogue
                         CreateActionCalcAoeCount(),
 
                         // Defensive
-                        Spell.BuffSelf("Combat Readiness", ret => AoeCount > 2 && !Me.HasAura("Feint")),
-                        Spell.BuffSelf("Feint", ret => AoeCount > 2 && !Me.HasAura("Combat Readiness") && HaveTalent(RogueTalents.Elusivenss)),
+                        // Spell.BuffSelf("Combat Readiness", ret => AoeCount > 2 && !Me.HasAura("Feint")),
+
+                        // Spell.BuffSelf("Feint", ret => AoeCount > 2 && !Me.HasAura("Combat Readiness") && HaveTalent(RogueTalents.Elusivenss)),
                         Spell.BuffSelf("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),
                         Spell.BuffSelf("Cloak of Shadows", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
                         Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 40 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr > 4*4 && u.IsAlive && u.Combat && u.IsTargetingMeOrPet) >= 1),
@@ -201,21 +205,14 @@ namespace Singular.ClassSpecific.Rogue
 
         public static Composite CreateApplyPoisons()
         {
-            return new PrioritySelector(
-                new Decorator(
-                    r => Poisons.NeedLethalPosion() != LethalPoisonType.None, 
-                    new Sequence(
-                        Spell.BuffSelf(ret => (int) Poisons.NeedLethalPosion(), req => true),
-                        new WaitContinue( 1, ret => Me.IsCasting && Me.CastingSpellId == (int) Poisons.NeedLethalPosion(), new ActionAlwaysSucceed())
-                        )
+            return new Sequence(
+                new PrioritySelector(
+                    Spell.BuffSelf(ret => (int)Poisons.NeedLethalPosion(), req => Poisons.NeedLethalPosion() != LethalPoisonType.None ),
+                    Spell.BuffSelf(ret => (int)Poisons.NeedNonLethalPosion(), req => Poisons.NeedNonLethalPosion() != NonLethalPoisonType.None )
                     ),
-                new Decorator(
-                    r => Poisons.NeedNonLethalPosion() != NonLethalPoisonType.None,
-                    new Sequence(
-                        Spell.BuffSelf(ret => (int)Poisons.NeedNonLethalPosion(), req => true),
-                        new WaitContinue(1, ret => Me.IsCasting && Me.CastingSpellId == (int) Poisons.NeedNonLethalPosion(), new ActionAlwaysSucceed())
-                        )
-                    )
+                new Wait(1, ret => Me.IsCasting, new ActionAlwaysSucceed()),
+                new Wait(4, ret => !Me.IsCasting, new ActionAlwaysSucceed()),
+                Helpers.Common.CreateWaitForLagDuration()
                 );
         }
 
@@ -224,6 +221,7 @@ namespace Singular.ClassSpecific.Rogue
             return new Decorator(
                 ret => Common.IsStealthed,
                 new PrioritySelector(
+                    CreateRoguePickPocket(),
                     Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget)),
                     Spell.Cast("Garrote", ret => !Me.IsMoving && !Me.IsSafelyBehind(Me.CurrentTarget)),
                     Spell.Cast("Cheap Shot", ret => !Me.IsMoving )
@@ -349,10 +347,37 @@ namespace Singular.ClassSpecific.Rogue
 
         internal static Composite CreateStealthBehavior( SimpleBooleanDelegate req = null)
         {
-            return new Sequence(
-                Spell.BuffSelf("Stealth", ret => req == null || req(ret)),
-                new Wait( TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed())
+            return new PrioritySelector(
+                new Sequence(
+                    Spell.BuffSelf("Stealth", ret => req == null || req(ret)),
+                    new Wait( TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed())
+                    )                
                 );
+        }
+
+        private static Helpers.Throttle CreateRoguePickPocket()
+        {
+            return new Throttle(5,
+                new Decorator(
+                    ret => RogueSettings.UsePickPocket
+                        && IsStealthed
+                        && Me.GotTarget
+                        && Me.CurrentTarget.IsAlive
+                        && !Me.CurrentTarget.IsPlayer
+                        && (Me.CurrentTarget.IsWithinMeleeRange || (TalentManager.HasGlyph("Pick Pocket") && Me.CurrentTarget.Distance < (Me.CurrentTarget.MeleeDistance() + 5)))
+                        && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsUndead)
+                        && AutoLootIsEnabled(),
+                    Spell.Cast("Pick Pocket", on => Me.CurrentTarget)
+                    )
+                );
+        }
+
+        public static Composite CreateRogueFeintBehavior()
+        {
+            return Spell.Cast("Feint",
+                                        ret => Me.CurrentTarget.ThreatInfo.RawPercent > 80
+                                            && Me.IsInGroup()
+                                            && Group.Tanks.Any(t => t.IsAlive && t.Distance < 40));
         }
 
         public static bool HasDaggerInMainHand
@@ -384,7 +409,111 @@ namespace Singular.ClassSpecific.Rogue
             return hand != null && hand.ItemInfo.IsWeapon && hand.ItemInfo.WeaponClass == WoWItemWeaponClass.Dagger;
         }
 
+        private static WoWItem box;
+
+        public static Composite CreateRogueOpenBoxes()
+        {
+            return new Decorator(
+                ret => RogueSettings.UsePickLock,
+                new PrioritySelector(
+                    new Decorator( 
+                        ret => SpellManager.HasSpell("Pick Lock") 
+                            && SpellManager.CanCast("Pick Lock", Me, false, true)
+                            && AutoLootIsEnabled(),
+                        new Sequence(
+                            new Action( r => { box = FindLockedBox();  return box == null ? RunStatus.Failure : RunStatus.Success; }),
+                            new Action( r => Logger.Write( "/pick lock on {0} #{1}", box.Name, box.Entry)),
+                            new Action( r => { return SpellManager.Cast( "Pick Lock", Me) ? RunStatus.Success : RunStatus.Failure; }),
+                            new Action( r => Logger.WriteDebug( "picklock: wait for spell on cursor")),
+                            new Wait( 1, ret => Me.CurrentPendingCursorSpell != null, new ActionAlwaysSucceed()),
+                            new Action( r => Logger.WriteDebug( "picklock: use item")),
+                            new Action( r => box.Use() ),
+                            new Action( r => Logger.WriteDebug( "picklock: wait for spell in progress")),
+                            new Wait( 1, ret => Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
+                            new Action( r => Logger.WriteDebug( "picklock: wait for spell to complete")),
+                            new Wait( 6, ret => !Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
+                            Helpers.Common.CreateWaitForLagDuration()
+                            )
+                        ),
+
+                    new Action( r => { box = FindUnlockedBox();  return RunStatus.Failure; }),
+                    new Decorator(
+                        ret => box != null && AutoLootIsEnabled(),
+                        new Sequence(
+                            new Action( r => Logger.WriteDebug( "open box - wait for openable")),
+                            new Wait(2, ret => box.IsOpenable && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), new Action(r => box.UseContainerItem())),
+                            Helpers.Common.CreateWaitForLagDuration()
+                            )
+                        )
+                    )
+                );
+        }
+
+        private static bool AutoLootIsEnabled()
+        {
+            List<string> option = Lua.GetReturnValues("return GetCVar(\"AutoLootDefault\")");
+            return option != null && !string.IsNullOrEmpty(option[0]) && option[0] == "1";
+        }
+
+
+        public static WoWItem FindLockedBox()
+        {
+            return Me.CarriedItems
+                .Where(b => b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
+                    && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    && b.ItemInfo.Level <= Me.Level
+                    && !b.IsOpenable
+                    && b.Usable
+                    && b.Cooldown <= 0
+                    && _boxes.Contains(b.Entry))
+                .FirstOrDefault();
+        }
+
+        public static WoWItem FindUnlockedBox()
+        {
+            return Me.CarriedItems
+                .Where(b => b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
+                    && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    && b.IsOpenable
+                    && b.Usable
+                    && b.Cooldown <= 0
+                    && _boxes.Contains(b.Entry))
+                .FirstOrDefault();
+        }
+
+        private static HashSet<uint> _boxes = new HashSet<uint>()
+        {
+            4632,	// Ornate Bronze Lockbox
+            6354,	// Small Locked Chest
+            16882,	// Battered Junkbox
+            4633,	// Heavy Bronze Lockbox
+            4634,	// Iron Lockbox
+            6355,	// Sturdy Locked Chest
+            16883,	// Worn Junkbox
+            4636,	// Strong Iron Lockbox
+            4637,	// Steel Lockbox
+            16884,	// Sturdy Junkbox
+            4638,	// Reinforced Steel Lockbox
+            13875,	// Ironbound Locked Chest
+            5758,	// Mithril Lockbox
+            5759,	// Thorium Lockbox
+            13918,	// Reinforced Locked Chest
+            5760,	// Eternium Lockbox
+            12033,	// Thaurissan Family Jewels
+            29569,	// Strong Junkbox
+            31952,	// Khorium Lockbox
+            43575,	// Reinforced Junkbox
+            43622,	// Froststeel Lockbox
+            43624,	// Titanium Lockbox
+            45986,	// Tiny Titanium Lockbox
+            63349,	// Flame-Scarred Junkbox
+            68729,	// Elementium Lockbox
+            88567,	// Ghost Iron Lockbox
+            88165,	// Vine-Cracked Junkbox
+        };
+
     }
+
 
     public enum RogueTalents
     {

@@ -93,10 +93,18 @@ namespace Singular.ClassSpecific.DeathKnight
             return new PrioritySelector(
                 Movement.CreateMoveToLosBehavior(), 
                 Movement.CreateFaceTargetBehavior(),
-                Common.CreateGetOverHereBehavior(),
-                Spell.Cast("Outbreak"),
-                Spell.Cast("Howling Blast"),
-                Spell.Cast("Icy Touch"), 
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Common.CreateGetOverHereBehavior(),
+                        Spell.Cast("Outbreak"),
+                        Spell.Cast("Howling Blast"),
+                        Spell.Cast("Icy Touch")
+                        )
+                    ),
+
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
@@ -168,7 +176,8 @@ namespace Singular.ClassSpecific.DeathKnight
         [Behavior(BehaviorType.Heal, WoWClass.DeathKnight, WoWSpec.DeathKnightFrost)]
         public static Composite CreateDeathKnightHeals()
         {
-            return
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
                     Spell.BuffSelf("Death Pact",
                                    ret =>
@@ -226,7 +235,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                      && !StyxWoW.Me.HasAura("Dancing Rune Weapon")
                                      && !StyxWoW.Me.HasAura("Lichborne")
                                      && !StyxWoW.Me.HasAura("Icebound Fortitude"))))
-                    );
+                    )
+                );
         }
 
         #endregion
@@ -237,7 +247,8 @@ namespace Singular.ClassSpecific.DeathKnight
         [Behavior(BehaviorType.CombatBuffs, WoWClass.DeathKnight, WoWSpec.DeathKnightFrost)]
         public static Composite CreateDeathKnightCombatBuffs()
         {
-            return
+            return new Decorator(
+                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
                 new PrioritySelector(
                 // *** Defensive Cooldowns ***
                 // Anti-magic shell - no cost and doesnt trigger GCD 
@@ -299,7 +310,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                    StyxWoW.Me.Auras["Blood Charge"].StackCount >= 5 &&
                                    (BloodRuneSlotsActive == 0 || FrostRuneSlotsActive == 0 || UnholyRuneSlotsActive == 0)),
                     Spell.Cast("Plague Leech", ret => CanCastPlagueLeech)
-                    );
+                    )
+                );
         }
 
         #endregion

@@ -19,70 +19,101 @@ namespace Singular.ClassSpecific.Mage
 {
     public static class Common
     {
-   
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static MageSettings MageSettings { get { return SingularSettings.Instance.Mage(); } }
+
+        private static WoWPoint locLastFrostArmor = WoWPoint.Empty;
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
         public static Composite CreateMagePreCombatBuffs()
         {
             return new PrioritySelector(
-                new Decorator(
-                    ctx => StyxWoW.Me.CastingSpell != null && StyxWoW.Me.CastingSpell.Name == "Summon Water Elemental" && StyxWoW.Me.GotAlivePet,
-                    new Action(ctx => SpellManager.StopCasting())),
                 Spell.WaitForCast(),
-                Spell.BuffSelf("Arcane Brilliance", ret => !StyxWoW.Me.HasAura("Fel Intelligence")),
-                // Additional armors/barriers for BGs. These should be kept up at all times to ensure we're as survivable as possible.
                 new Decorator(
-                    ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) != 0,
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                // FA in BGs all the time. Damage reduction is win, and so is the slow. Serious PVPers will have this glyphed too, for the 2% mana regen.
-                        Spell.BuffSelf("Frost Armor"),
-                // Mage ward up, at all times. Period.
-                        Spell.BuffSelf("Mage Ward"),
+
+                        PartyBuff.BuffGroup("Dalaran Brilliance", "Arcane Brilliance"),
+                        PartyBuff.BuffGroup("Arcane Brilliance", "Dalaran Brilliance"),
+
+                        // Additional armors/barriers for BGs. These should be kept up at all times to ensure we're as survivable as possible.
+                        new Decorator(
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds,
+                            new PrioritySelector(
+
+                                // only FA if in battlegrounds or we have move slightly since last FA (to avoid repeated casts in place when stuck)
+                                Spell.BuffSelf("Frost Armor", ret => {
+                                    if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && Me.Location.Distance(locLastFrostArmor) < 1)
+                                        return false;
+                                    locLastFrostArmor = Me.Location;
+                                    return true;
+                                    } ),
+
+                        Spell.BuffSelf("Mage Armor", ret => !Me.HasAura("Frost Armor")), 
+
+
                 // Don't put up mana shield if we're arcane. Since our mastery works off of how much mana we have!
-                        Spell.BuffSelf("Mana Shield", ret => TalentManager.CurrentSpec != WoWSpec.MageArcane))),
-                // We may not have it, but if we do, it should be up 100% of the time.
-                Spell.BuffSelf("Ice Barrier"),
-                // Outside of BGs, we really only have 2 choices of armor. Molten, or mage. Mage for arcane, molten for frost/fire.
-                new Decorator(
-                    ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) == 0,
-                    new PrioritySelector(
+                                Spell.BuffSelf("Mana Shield", ret => TalentManager.CurrentSpec != WoWSpec.MageArcane)
+                                )
+                            ),
+
+                        // We may not have it, but if we do, it should be up 100% of the time.
+                        Spell.BuffSelf("Ice Barrier"),
+
+                        // Outside of BGs, we really only have 2 choices of armor. Molten, or mage. Mage for arcane, molten for frost/fire.
+                        new Decorator(
+                            ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) == 0,
+                            new PrioritySelector(
                 // Arcane is a mana whore, we want molten if we don't have mage yet. Otherwise, stick with Mage armor.
-                        Spell.BuffSelf("Molten Armor", ret => (TalentManager.CurrentSpec != WoWSpec.MageArcane || !SpellManager.HasSpell("Mage Armor"))),
-                        Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == WoWSpec.MageArcane))),
+                                Spell.BuffSelf("Molten Armor", ret => (TalentManager.CurrentSpec != WoWSpec.MageArcane || !SpellManager.HasSpell("Mage Armor"))),
+                                Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == WoWSpec.MageArcane)
+                                )
+                            ),
 
-
-                new PrioritySelector(ctx => MageTable,
-                    new Decorator(ctx => ctx != null && CarriedMageFoodCount < 80 && StyxWoW.Me.FreeNormalBagSlots > 1,
-                        new Sequence(
-                            new Action(ctx => Logger.Write("Getting Mage food")),
+                        new PrioritySelector(
+                            ctx => MageTable,
+                            new Decorator(
+                                ctx => ctx != null && CarriedMageFoodCount < 80 && StyxWoW.Me.FreeNormalBagSlots > 1,
+                                new Sequence(
+                                    new Action(ctx => Logger.Write("Getting Mage food")),
                 // Move to the Mage table
-                            new DecoratorContinue(ctx => ((WoWGameObject)ctx).DistanceSqr > 5 * 5,
-                                new Action(ctx => Navigator.GetRunStatusFromMoveResult(Navigator.MoveTo(WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, ((WoWGameObject)ctx).Location, 5))))),
+                                    new DecoratorContinue(
+                                        ctx => ((WoWGameObject)ctx).DistanceSqr > 5 * 5,
+                                        new Action(ctx => Navigator.GetRunStatusFromMoveResult(Navigator.MoveTo(WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, ((WoWGameObject)ctx).Location, 5))))
+                                        ),
                 // interact with the mage table
-                            new Action(ctx => ((WoWGameObject)ctx).Interact()),
-                            new WaitContinue(2, ctx => false, new ActionAlwaysSucceed())))),
+                                    new Action(ctx => ((WoWGameObject)ctx).Interact()),
+                                    new WaitContinue(2, ctx => false, new ActionAlwaysSucceed())
+                                    )
+                                )
+                            ),
 
-                new Decorator(ctx => ShouldSummonTable && !Gotfood && SpellManager.CanCast("Conjure Refreshment Table"),
-                    new Sequence(
-                        new DecoratorContinue(ctx => StyxWoW.Me.IsMoving,
+                        new Decorator(
+                            ctx => ShouldSummonTable && !Gotfood && SpellManager.CanCast("Conjure Refreshment Table"),
                             new Sequence(
-                                new Action(ctx => WoWMovement.MoveStop()),
-                                new WaitContinue(2, ctx => !StyxWoW.Me.IsMoving, new ActionAlwaysSucceed()))),
-                        new Action(ctx => SpellManager.Cast("Conjure Refreshment Table")),
-                        new WaitContinue(2, ctx => StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
-                        new WaitContinue(10, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()))),
+                                new DecoratorContinue(
+                                    ctx => StyxWoW.Me.IsMoving,
+                                    new Sequence(
+                                        new Action(ctx => WoWMovement.MoveStop()),
+                                        new WaitContinue(2, ctx => !StyxWoW.Me.IsMoving, new ActionAlwaysSucceed())
+                                        )
+                                    ),
+                                new Action(ctx => SpellManager.Cast("Conjure Refreshment Table")),
+                                new WaitContinue(2, ctx => StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
+                                new WaitContinue(10, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed())
+                                )
+                            ),
 
-                Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !ShouldSummonTable),
-             
-                new Decorator(ret => !HaveManaGem && SpellManager.CanCast("Conjure Mana Gem"), 
-                    new Sequence(
-                        new Action(ret => Logger.Write("Casting Conjure Mana Gem")),
-                        new Action(ret => SpellManager.Cast(759)))),
-                                  
-                new Decorator(
-                    ret =>
-                    TalentManager.CurrentSpec == WoWSpec.MageFrost && !StyxWoW.Me.GotAlivePet && PetManager.PetTimer.IsFinished && SpellManager.CanCast("Summon Water Elemental"),
-                    new Action(ret => SpellManager.Cast("Summon Water Elemental")))
+                        Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !ShouldSummonTable),
+
+                        new Decorator(ret => !HaveManaGem && SpellManager.CanCast("Conjure Mana Gem"),
+                            new Sequence(
+                                new Action(ret => Logger.Write("Casting Conjure Mana Gem")),
+                                new Action(ret => SpellManager.Cast(759))
+                                )
+                            )
+                        )
+                    )
                 );
         }
 
@@ -90,7 +121,38 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateMageCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Ice Barrier")
+                new Decorator(ret => Me.ActiveAuras.ContainsKey("Ice Block"), new ActionIdle()),
+                new Decorator(
+                    ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+
+                        Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
+
+                        Spell.Cast( "Invocation", on => Me, ret => Me.HasAuraExpired("Invocation", 2)),
+                        Spell.CastOnGround("Rune of Power", loc => Me.Location.RayCast( Me.RenderFacing, 1.25f), ret => !Me.IsMoving),
+                        Spell.Cast( "Incanter's Ward", on => Me, ret => Me.HasAuraExpired("Incanter's Ward")),
+
+                        Spell.Cast("Nether Tempest", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired( "Nether Tempest")),
+                        Spell.Cast("Living Bomb", ret => Me.GotTarget && !Me.CurrentTarget.HasAura( "Living Bomb")),
+                        Spell.Cast("Frost Bomb", ret => Me.GotTarget && !Me.CurrentTarget.HasAura( "Frost Bomb")),
+
+                        // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invocation")),
+                        Spell.Cast("Mirror Image"),
+
+                        Spell.BuffSelf("Time Warp",
+                            ret => MageSettings.UseTimeWarp
+                                && MovementManager.IsClassMovementAllowed
+                                && (Battlegrounds.IsInsideBattleground && Shaman.Common.IsPvpFightWorthLusting )
+                                || (!Me.GroupInfo.IsInRaid && Me.GotTarget && Me.CurrentTarget.IsBoss() && !Me.HasAnyAura("Temporal Displacement", Shaman.Common.SatedName ))),
+
+                        Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80)),
+
+                        Spell.BuffSelf("Ice Block", ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances && StyxWoW.Me.HealthPercent < 20 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
+
+                        Frost.CreateSummonWaterElemental()
+
+                        )
+                    )
                 );
         }
 
@@ -236,5 +298,32 @@ namespace Singular.ClassSpecific.Mage
 
             return true;
         }
+
+        public static bool HasTalent( MageTalent tal)
+        {
+            return TalentManager.IsSelected((int)tal);
+        }
+    }
+
+    public enum MageTalent
+    {
+        PresenceOfMind,
+        Scorch,
+        IceFloes,
+        TemporalShield,
+        BlazingSpeed,
+        IceBarrier,
+        RingOfFrost,
+        IceWard,
+        Frostjaw,
+        GreaterInivisibility,
+        Cauterize,
+        ColdSnap,
+        NetherTempest,
+        LivingBomb,
+        FrostBomb,
+        Invocation,
+        RuneOfPower,
+        IncantersWard
     }
 }

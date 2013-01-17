@@ -130,7 +130,7 @@ namespace Singular.ClassSpecific.Shaman
                 if (friends < 3 || enemies < 3)
                     return false;
 
-                int readyfriends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive && !f.HasAura(SatedName));
+                int readyfriends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive && !f.HasAnyAura(SatedName, "Temporal Displacement"));
                 if (readyfriends < 3)
                     return false;
 
@@ -403,7 +403,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Spell.WaitForCastOrChannel(true),
+                Spell.WaitForCastOrChannel(),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -412,7 +412,7 @@ namespace Singular.ClassSpecific.Shaman
                         // .. avoid unnecessary heal casts
                         new Decorator(
                             ret => !Me.Combat,
-                            Spell.Heal("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) <= 85)
+                            Spell.Cast("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) <= 85)
                             ),
 
                         new Decorator(
@@ -428,7 +428,7 @@ namespace Singular.ClassSpecific.Shaman
                                         && Me.HealthPercent < 25,
                                     new Sequence( 
                                         Spell.BuffSelf("Ancestral Swiftness", ret => Me.GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness),
-                                        Spell.Heal("Healing Surge", ret => Me)
+                                        Spell.Cast("Healing Surge", ret => Me)
                                         )
                                     ),
 
@@ -458,7 +458,7 @@ namespace Singular.ClassSpecific.Shaman
 
                                         // use actual health for following, not predicted as its a low health value
                                         // .. and its okay for multiple heals at that point
-                                        Spell.Heal(
+                                        Spell.Cast(
                                             "Healing Surge",
                                             ret => Me,
                                             ret => Me.HealthPercent <= 40)

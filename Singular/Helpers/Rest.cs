@@ -47,7 +47,7 @@ namespace Singular.Helpers
         public static Composite CreateDefaultRestBehaviour(string spellHeal = null, string spellRez = null)
         {
             return new PrioritySelector(
-                Spell.WaitForCast(false),
+                Spell.WaitForCast(),
 
                 new Decorator(
                     ret => !Me.IsDead && !Me.IsGhost && !Spell.IsGlobalCooldown(),
@@ -60,12 +60,11 @@ namespace Singular.Helpers
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior(),
                                 new Action( r => { Logger.WriteDebug( "Rest Heal - {0} @ {1:F1}% and moving:{2}", spellHeal, Me.HealthPercent, Me.IsMoving ); return RunStatus.Failure; } ),
-                                Spell.Heal(spellHeal,
+                                Spell.Cast(spellHeal,
                                     mov => true,
                                     on => Me,
                                     req => !Me.IsMoving,
-                                    cancel => Me.HealthPercent > 90,
-                                    true)
+                                    cancel => Me.HealthPercent > 90)
                                 )
                             ),
 

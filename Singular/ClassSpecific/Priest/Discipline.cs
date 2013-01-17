@@ -96,7 +96,7 @@ namespace Singular.ClassSpecific.Priest
                         ),
                         // use fade to drop aggro.
                         Spell.Cast("Fade", ret => (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
-                        Spell.Heal("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
+                        Spell.Cast("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
                         Spell.Buff(
                             "Power Word: Shield",
                             ret => (WoWUnit)ret,
@@ -113,39 +113,39 @@ namespace Singular.ClassSpecific.Priest
                         // If we can, the sequence fails, since PoH can't be cast (as we're still casting at this point)
                                 new DecoratorContinue(
                                     ret => SpellManager.CanCast("Divine Hymn"),
-                                    Spell.Heal("Divine Hymn")),
-                                Spell.Heal("Prayer of Healing"))),
-                        Spell.Heal(
+                                    Spell.Cast("Divine Hymn")),
+                                Spell.Cast("Prayer of Healing"))),
+                        Spell.Cast(
                             "Pain Suppression",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().PainSuppression),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Penance",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().Penance),
-                        Spell.Heal("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
-                        Spell.Heal(
+                        Spell.Cast("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
+                        Spell.Cast(
                             "Flash Heal",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().FlashHeal),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Binding Heal",
                             ret => (WoWUnit)ret,
                             ret => (WoWUnit)ret != StyxWoW.Me && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().BindingHealThem &&
                                    StyxWoW.Me.HealthPercent < SingularSettings.Instance.Priest().BindingHealMe),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Greater Heal",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().GreaterHeal),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Heal",
                             ret => (WoWUnit)ret, 
                             ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().Heal),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Renew",
                             ret => (WoWUnit)ret, 
                             ret => !((WoWUnit)ret).HasMyAura("Renew") && ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().Renew),
-                        Spell.Heal(
+                        Spell.Cast(
                             "Prayer of Mending",
                             ret => (WoWUnit)ret,
                             ret => !((WoWUnit)ret).HasMyAura("Prayer of Mending") && ((WoWUnit)ret).HealthPercent < 90),
@@ -193,7 +193,7 @@ namespace Singular.ClassSpecific.Priest
                     new Decorator(
                         ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                         new PrioritySelector(
-                            Spell.Heal("Flash Heal",
+                            Spell.Cast("Flash Heal",
                                 ctx => StyxWoW.Me,
                                 ret => StyxWoW.Me.HealthPercent <= 20 // check actual health for low health situations
                                     || (!StyxWoW.Me.Combat && StyxWoW.Me.GetPredictedHealthPercent(true) <= 85)),
@@ -201,11 +201,11 @@ namespace Singular.ClassSpecific.Priest
                             Spell.BuffSelf("Renew",
                                 ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 75),
 
-                            Spell.Heal("Greater Heal",
+                            Spell.Cast("Greater Heal",
                                 ctx => StyxWoW.Me,
                                 ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50),
 
-                            Spell.Heal("Flash Heal",
+                            Spell.Cast("Flash Heal",
                                 ctx => StyxWoW.Me,
                                 ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50)
                             )

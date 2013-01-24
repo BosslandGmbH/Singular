@@ -69,12 +69,21 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockRest()
         {
             return new PrioritySelector(
+                new Decorator(ctx => Me.HasAura("Resurrection Sickness") || Me.IsCasting,
+                    new Sequence(
+                    new Action(ctx => RunStatus.Success))),
+
+                new Decorator(ctx => SpellManager.HasSpell("Soul Link") && !Me.HasAura("Soul Link") && Me.GotAlivePet,
+                    Spell.BuffSelf("Soul Link")),    
+
                 new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
                     new Action(ctx => Lua.DoString("PetDismiss()"))),
+
                 // following will break questing which has some /use item spells that this would cancel
                 //new Decorator(
                 //    ctx => Me.CastingSpell != null && Me.CastingSpell.Name.Contains("Summon") && Me.GotAlivePet,
                 //    new Action(ctx => SpellManager.StopCasting())),
+
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -198,10 +207,19 @@ namespace Singular.ClassSpecific.Warlock
                                 4 <= Unit.NearbyUnfriendlyUnits.Count(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f)),
 
                             // fear add if multiple mobs and our health low
-                            Spell.Buff("Fear", on => (WoWUnit) on, req => WarlockSettings.UseFear && Me.HealthPercent < 50),
+                            Spell.Buff("Fear", 
+                                on => (WoWUnit) on, 
+                                req => WarlockSettings.UseFear 
+                                    && Me.HealthPercent < 50
+                                    && !((WoWUnit) req).IsUndead ),
 
                             // fear current target if my health is dangerously low and his not as much
-                            Spell.Buff("Fear", on => Me.CurrentTarget, ret => WarlockSettings.UseFear && Me.HealthPercent < Me.CurrentTarget.HealthPercent && Me.HealthPercent < 35)
+                            Spell.Buff("Fear", 
+                                on => Me.CurrentTarget, 
+                                ret => WarlockSettings.UseFear 
+                                    && Me.HealthPercent < Me.CurrentTarget.HealthPercent 
+                                    && Me.HealthPercent < 35
+                                    && !Me.CurrentTarget.IsUndead )
                             ),
 
                         Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
@@ -520,18 +538,28 @@ namespace Singular.ClassSpecific.Warlock
                         CreateCastSoulburn(ret => Me.Combat && Me.Specialization == WoWSpec.WarlockAffliction ),
                         new ActionAlwaysSucceed()
                         ),
-                    new Action(ret => Logger.Write("^Health Funnel since Pet @ {0:F1}%", Me.Pet.HealthPercent)),
+                    // new Action(ret => Logger.Write("^Health Funnel since Pet @ {0:F1}%", Me.Pet.HealthPercent)),
+
 
                     // for Affliction make it a quick heal
-                    new DecoratorContinue(
-                        ret => SpellManager.HasSpell("Soulburn: Health Funnel") && Me.CurrentSoulShards > 0,
-                        new PrioritySelector(
-                            CreateCastSoulburn( ret => true ),
-                            new ActionAlwaysSucceed()
-                            )
-                        ),
 
-                    Spell.Cast(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth )
+                    // isn't this a dupe of the code above?
+
+                    //new DecoratorContinue(
+                    //    ret => SpellManager.HasSpell("Soulburn: Health Funnel") && Me.CurrentSoulShards > 0,
+                    //    new PrioritySelector(
+                    //        CreateCastSoulburn( ret => true ),
+                    //        new ActionAlwaysSucceed()
+                    //        )
+                    //    ),
+
+                        new Sequence(
+                            new Action(ctx => WoWMovement.MoveStop()),
+                            Helpers.Common.CreateWaitForLagDuration(),
+                            new Action(ret => Logger.Write("Casting Health Funnel on Pet @ {0:F1}%", Me.Pet.HealthPercent)),
+                    Spell.Cast(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth )),
+                    Helpers.Common.CreateWaitForLagDuration(),
+                    new WaitContinue(TimeSpan.FromMilliseconds(500), ret => !Me.IsCasting && Me.GotAlivePet && Me.Pet.HealthPercent < petMaxHealth && Me.HealthPercent > 50, new ActionAlwaysSucceed())
                     )
                 );
         }

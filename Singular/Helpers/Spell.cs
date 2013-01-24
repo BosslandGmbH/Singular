@@ -134,13 +134,16 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name="spell"></param>
         /// <returns>TimeSpan representing cooldown remaining, TimeSpan.MaxValue if spell unknown</returns>
-        public static TimeSpan GetSpellCooldown(string spell)
+        public static TimeSpan GetSpellCooldown(string spell, int indetermValue = int.MaxValue )
         {
             SpellFindResults sfr;
             if ( SpellManager.FindSpell(spell, out sfr))
                 return (sfr.Override ?? sfr.Original).CooldownTimeLeft;
 
-            return TimeSpan.MaxValue;
+            if (indetermValue == int.MaxValue)
+                return TimeSpan.MaxValue;
+
+            return TimeSpan.FromSeconds( indetermValue);
         }
 
         /// <summary>
@@ -1226,5 +1229,66 @@ namespace Singular.Helpers
         }
 
         #endregion
+    }
+
+    internal class SpellBlacklist
+    {
+        static readonly Dictionary<uint, BlacklistTime> SpellBlacklistDict = new Dictionary<uint, BlacklistTime>();
+        static readonly Dictionary<string, BlacklistTime> SpellStringBlacklistDict = new Dictionary<string, BlacklistTime>();
+
+        private SpellBlacklist()
+        {
+        }
+
+        class BlacklistTime
+        {
+            public BlacklistTime(DateTime time, TimeSpan span)
+            {
+                TimeStamp = time;
+                Duration = span;
+            }
+            public DateTime TimeStamp { get; private set; }
+            public TimeSpan Duration { get; private set; }
+        }
+
+        static public bool Contains(uint spellID)
+        {
+            RemoveIfExpired(spellID);
+            return SpellBlacklistDict.ContainsKey(spellID);
+        }
+
+        static public bool Contains(string spellName)
+        {
+            RemoveIfExpired(spellName);
+            return SpellStringBlacklistDict.ContainsKey(spellName);
+        }
+
+        static public void Add(uint spellID, TimeSpan duration)
+        {
+            SpellBlacklistDict[spellID] = new BlacklistTime(DateTime.Now, duration);
+        }
+
+        static public void Add(string spellName, TimeSpan duration)
+        {
+            SpellStringBlacklistDict[spellName] = new BlacklistTime(DateTime.Now, duration);
+        }
+
+        static void RemoveIfExpired(uint spellID)
+        {
+            if (SpellBlacklistDict.ContainsKey(spellID) &&
+                SpellBlacklistDict[spellID].TimeStamp + SpellBlacklistDict[spellID].Duration <= DateTime.Now)
+            {
+                SpellBlacklistDict.Remove(spellID);
+            }
+        }
+
+        static void RemoveIfExpired(string spellName)
+        {
+            if (SpellStringBlacklistDict.ContainsKey(spellName) &&
+                SpellStringBlacklistDict[spellName].TimeStamp + SpellStringBlacklistDict[spellName].Duration <= DateTime.Now)
+            {
+                SpellStringBlacklistDict.Remove(spellName);
+            }
+        }
     }
 }

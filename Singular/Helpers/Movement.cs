@@ -221,24 +221,30 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveBehindTargetBehavior(SimpleBooleanDelegate requirements)
         {
-            return 
-                new Decorator(
-                    ret => !MovementManager.IsMovementDisabled &&
-                            SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds &&
-                            requirements(ret) && !Spell.IsCastingOrChannelling() &&
-                            !Group.MeIsTank && !StyxWoW.Me.CurrentTarget.MeIsBehind &&
-                            StyxWoW.Me.CurrentTarget.IsAlive &&
-                            (StyxWoW.Me.CurrentTarget.CurrentTarget == null || 
-                             StyxWoW.Me.CurrentTarget.CurrentTarget != StyxWoW.Me || 
-                             StyxWoW.Me.CurrentTarget.Stunned),
-                    new Action(ret => Navigator.MoveTo(CalculatePointBehindTarget())));
+            return new Decorator(
+                    ret =>
+                    {
+                        if (MovementManager.IsMovementDisabled || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
+                            return false;
+                        var currentTarget = StyxWoW.Me.CurrentTarget;
+                        if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive)
+                            return false;
+                        var targetOfTarget = currentTarget.CurrentTarget;
+                        return targetOfTarget != StyxWoW.Me || targetOfTarget.Stunned;
+                    },
+                    new PrioritySelector(
+                        ctx => CalculatePointBehindTarget(),
+                        new Decorator(behindPoint => Navigator.CanNavigateFully(StyxWoW.Me.Location, (WoWPoint)behindPoint, 4),
+                            new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint)))));
         }
 
-        private static WoWPoint CalculatePointBehindTarget()
+        public static WoWPoint CalculatePointBehindTarget()
         {
-            return
-                StyxWoW.Me.CurrentTarget.Location.RayCast(
-                    StyxWoW.Me.CurrentTarget.Rotation + WoWMathHelper.DegreesToRadians(150), Spell.MeleeRange - 2f);
+            float facing = StyxWoW.Me.CurrentTarget.Rotation;
+            facing += WoWMathHelper.DegreesToRadians(180); // was 150 ?
+            facing = WoWMathHelper.NormalizeRadian(facing);
+
+            return StyxWoW.Me.CurrentTarget.Location.RayCast(facing, Spell.MeleeRange - 2f);
         }
 
         #endregion

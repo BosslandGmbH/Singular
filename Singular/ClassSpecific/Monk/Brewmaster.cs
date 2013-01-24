@@ -46,6 +46,7 @@ namespace Singular.ClassSpecific.Monk
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
                 Spell.CastOnGround("Dizzying Haze", ctx => Me.CurrentTarget.Location, ctx => Unit.UnfriendlyUnitsNearTarget(8).Count() > 1, true),

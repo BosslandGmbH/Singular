@@ -40,6 +40,7 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
 

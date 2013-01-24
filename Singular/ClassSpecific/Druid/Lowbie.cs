@@ -18,6 +18,7 @@ namespace Singular.ClassSpecific.Druid
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.Buff("Entangling Roots", ret => !SpellManager.HasSpell("Cat Form")),
                 Spell.Buff("Moonfire", ret => SpellManager.HasSpell("Cat Form")),
                 Spell.Cast("Wrath"),

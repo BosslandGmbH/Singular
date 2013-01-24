@@ -93,7 +93,7 @@ namespace Singular.ClassSpecific.Shaman
 
         private static bool IsValidEarthShieldTarget(WoWUnit unit)
         {
-            if ( unit == null || !unit.IsAlive || !Unit.NearbyGroupMembers.Any( g => g.Guid == unit.Guid ) )
+            if ( unit == null || !unit.IsValid || !unit.IsAlive || !Unit.NearbyGroupMembers.Any( g => g.Guid == unit.Guid ) )
                 return false;
 
             return unit.HasMyAura("Earth Shield") || !unit.HasAnyAura( "Earth Shield", "Water Shield", "Lightning Shield");
@@ -129,6 +129,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return
                 new PrioritySelector(
+                    Helpers.Common.CreateDismount("Pulling"),
                     Spell.WaitForCastOrChannel(),
                     CreateRestoShamanHealingOnlyBehavior(false, true),
                     new Decorator(
@@ -232,7 +233,7 @@ namespace Singular.ClassSpecific.Shaman
                 if (!SingularSettings.Instance.StayNearTank)
                     return null;
 
-                if (RaFHelper.Leader != null && RaFHelper.Leader.IsAlive && RaFHelper.Leader.Distance < 100)
+                if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && RaFHelper.Leader.IsAlive && RaFHelper.Leader.Distance < 100)
                     return RaFHelper.Leader;
 
                 return Group.Tanks.Where(t => t.IsAlive && t.Distance < SingularSettings.Instance.MaxHealTargetRange).OrderBy(t => t.Distance).FirstOrDefault();

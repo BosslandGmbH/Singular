@@ -36,6 +36,7 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCast(true),
 
                 new Decorator(ret => !Spell.IsGlobalCooldown(),

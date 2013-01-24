@@ -133,34 +133,71 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        /// Creates a dismount composite. This down't use thread.Sleep() like the buildin one thus it works nicely with behaviors and framelocks. This will decend until bot lands if flying. 
+        /// Creates a dismount composite that only stops if we are flying.
         /// </summary>
         /// <param name="reason">The reason to dismount</param>
         /// <returns></returns>
         public static Composite CreateDismount(string reason)
         {
-            return new Sequence(
-                    new Action(ret => Logger.WriteDebug(Styx.Resources.StyxResources.Stop_and_dismount___ + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty))),
-                // stop moving 
-                    new DecoratorContinue(ret => StyxWoW.Me.IsMoving,
-                        new Sequence(
-                            new Action(ret => WoWMovement.MoveStop()),
-                            CreateWaitForLagDuration())
-                    ),   // Land if we're flying
+            return new Decorator(
+                ret => StyxWoW.Me.Mounted && !MovementManager.IsMovementDisabled,
+                new Sequence(
                     new DecoratorContinue(ret => StyxWoW.Me.IsFlying,
                         new Sequence(
+                            new DecoratorContinue(ret => StyxWoW.Me.IsMoving,
+                                new Sequence(
+                                    new Action(ret => Logger.WriteDebug("Stopping to descend..." + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty))),
+                                    new Action(ret => WoWMovement.MoveStop()),
+                                    new Wait( 1, ret => !StyxWoW.Me.IsMoving, new ActionAlwaysSucceed())
+                                    )
+                                ),
+                            new Action( ret => Logger.WriteDebug( "Descending to land..." + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty))),
                             new Action(ret => WoWMovement.Move(WoWMovement.MovementDirection.Descend)),
+                            new PrioritySelector(
+                                new Wait( 1, ret => StyxWoW.Me.IsMoving, new ActionAlwaysSucceed()),
+                                new Action( ret => Logger.WriteDebug( "warning -- tried to descend but IsMoving == false ....!"))
+                                ),
                             new WaitContinue(30, ret => !StyxWoW.Me.IsFlying, new ActionAlwaysSucceed()),
+                            new DecoratorContinue( 
+                                ret => StyxWoW.Me.IsFlying, 
+                                new Action( ret => Logger.WriteDebug( "error -- still flying -- descend appears to have failed....!"))
+                                ),
                             new Action(ret => WoWMovement.MoveStop(WoWMovement.MovementDirection.Descend))
-                        )), // and finally dismount. 
-                   new Action(r =>
-                   {
-                       ShapeshiftForm shapeshift = StyxWoW.Me.Shapeshift;
-                       if ((shapeshift != ShapeshiftForm.FlightForm) && (shapeshift != ShapeshiftForm.EpicFlightForm))
-                           Lua.DoString("Dismount()");
-                       else
-                           Lua.DoString("RunMacroText('/cancelform')");
-                   }));
+                            )
+                        ), // and finally dismount. 
+                    new Action(r => {
+                        Logger.WriteDebug( "Dismounting..." + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty));
+                        ShapeshiftForm shapeshift = StyxWoW.Me.Shapeshift;
+                        if (StyxWoW.Me.Class == WoWClass.Druid && (shapeshift == ShapeshiftForm.FlightForm || shapeshift == ShapeshiftForm.EpicFlightForm))
+                            Lua.DoString("RunMacroText('/cancelform')");
+                        else
+                            Lua.DoString("Dismount()");
+                        })
+                    )
+                );
+        }
+
+        /// <summary>
+        /// Creates a stop and dismount composite. Matches the prior behavior of old CreateDismount()
+        /// </summary>
+        /// <param name="reason">The reason to dismount</param>
+        /// <returns></returns>
+        public static Composite CreateStopAndDismount(string reason)
+        {
+            return new Decorator( 
+                ret => !MovementManager.IsMovementDisabled,
+                new PrioritySelector(
+                    new Decorator(
+                        ret => StyxWoW.Me.IsMoving,
+                        new Sequence( 
+                            new Action(ret => Logger.WriteDebug("Stopping..." + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty))),
+                            Movement.CreateEnsureMovementStoppedBehavior()
+                            )
+                        ),
+
+                    CreateDismount( reason)
+                    )
+                );
         }
         /// <summary>
         /// This is meant to replace the 'SleepForLagDuration()' method. Should only be used in a Sequence

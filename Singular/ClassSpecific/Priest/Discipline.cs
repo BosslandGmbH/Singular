@@ -224,6 +224,7 @@ namespace Singular.ClassSpecific.Priest
                     Safers.EnsureTarget(),
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.CreateDismount("Pulling"),
                     Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                     Spell.Cast("Mindbender"),
                     Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),

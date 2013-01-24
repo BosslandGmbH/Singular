@@ -32,6 +32,7 @@ namespace Singular.ClassSpecific.Paladin
                 new PrioritySelector(
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.CreateDismount("Pulling"),
                     Helpers.Common.CreateAutoAttack(true),
                     Spell.Cast("Judgment"),
                     Movement.CreateMoveToTargetBehavior(true, 5f)

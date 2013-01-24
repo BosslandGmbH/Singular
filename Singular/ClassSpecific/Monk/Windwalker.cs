@@ -28,6 +28,7 @@ namespace Singular.ClassSpecific.Monk
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(2f),
+                Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(true),
@@ -270,6 +271,7 @@ namespace Singular.ClassSpecific.Monk
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(true),

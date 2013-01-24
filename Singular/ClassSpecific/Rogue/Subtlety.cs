@@ -25,7 +25,7 @@ namespace Singular.ClassSpecific.Rogue
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Normal | WoWContext.Battlegrounds | WoWContext.Instances )]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Normal | WoWContext.Battlegrounds | WoWContext.Instances)]
         public static Composite CreateRogueSubtletyNormalPull()
         {
             return new PrioritySelector(
@@ -34,6 +34,7 @@ namespace Singular.ClassSpecific.Rogue
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -51,7 +52,7 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Normal | WoWContext.Battlegrounds )]
+        [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateRogueSubtletyNormalCombat()
         {
             return new PrioritySelector(
@@ -68,7 +69,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
                         CreateSubteltyDiagnosticOutputBehavior("Combat"),
 
-                        new Throttle( Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget)),
+                        new Throttle(Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget)),
 
                         Movement.CreateMoveBehindTargetBehavior(),
 
@@ -96,28 +97,28 @@ namespace Singular.ClassSpecific.Rogue
 
 
                         // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
-                        Spell.BuffSelf("Shadow Dance", 
+                        Spell.BuffSelf("Shadow Dance",
                             ret => Me.GotTarget
                                 && !Common.IsStealthed
-                                && !Me.HasAuraExpired( "Slice and Dice", 3)
+                                && !Me.HasAuraExpired("Slice and Dice", 3)
                                 && Me.ComboPoints < 2),
 
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                         Spell.Buff("Rupture", true, ret => Me.ComboPoints >= 5),
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5),
 
-                        Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.IsStealthed ),
+                        Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.IsStealthed),
                         Spell.Buff("Hemorrhage"),
                         Spell.Cast("Backstab", ret => Me.IsSafelyBehind(Me.CurrentTarget)),
 
                         Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount > 1),
-                        // following cast is as a Combo Point builder if we can't cast Backstab
+                // following cast is as a Combo Point builder if we can't cast Backstab
                         Spell.Cast("Hemorrhage", ret => Me.CurrentEnergy >= 35 || !SpellManager.HasSpell("Backstab") || !Me.IsSafelyBehind(Me.CurrentTarget)),
 
-                        new ThrottlePasses( 60,
+                        new ThrottlePasses(60,
                             new Decorator(
                                 ret => !Me.Disarmed && !Common.HasDaggerInMainHand && SpellManager.HasSpell("Backstab"),
-                                new Action( ret => Logger.Write( Color.HotPink, "config error: cannot cast Backstab without Dagger in Mainhand"))
+                                new Action(ret => Logger.Write(Color.HotPink, "config error: cannot cast Backstab without Dagger in Mainhand"))
                                 )
                             )
                         )
@@ -153,33 +154,44 @@ namespace Singular.ClassSpecific.Rogue
                             new PrioritySelector(
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives"),
-                                Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Fan of Knives")),
-                                Movement.CreateMoveToMeleeBehavior(true)
+                                Spell.Cast("Fan of Knives", ctx => Common.AoeCount >= 6)
                                 )
                             ),
 
                         Movement.CreateMoveBehindTargetBehavior(),
+                        Spell.BuffSelf("Shadow Dance", ret => Me.CurrentTarget.MeIsBehind && !Me.HasAura("Stealth")),
+                        Spell.BuffSelf("Shadow Blades", ret => Me.CurrentTarget.IsBoss()),
+                        Spell.BuffSelf("Vanish", ret => Me.CurrentTarget.IsBoss() && Me.CurrentTarget.MeIsBehind),
 
-                        Spell.BuffSelf("Preparation", 
-                            ret => SpellManager.HasSpell("Vanish") && SpellManager.Spells["Vanish"].CooldownTimeLeft.TotalSeconds > 10 &&
-                                   SpellManager.Spells["Shadowstep"].CooldownTimeLeft.TotalSeconds > 10),
-                        Spell.BuffSelf("Shadow Dance", ret => Me.CurrentTarget.MeIsBehind),
+                        Spell.BuffSelf("Preparation",
+                            ret => Spell.GetSpellCooldown("Vanish").TotalSeconds > 10 
+                                && Spell.GetSpellCooldown("Cloak of Shadows").TotalSeconds > 10 
+                                && Spell.GetSpellCooldown("Evasion").TotalSeconds > 10),
 
+                        Spell.BuffSelf("Premeditation", ret => Me.HasAura("Stealth") || Me.HasAura("Shadow Dance")),
 
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
+                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints >= (Me.CurrentTarget.IsBoss() ? 5 : 1) && Me.HasAuraExpired("Slice and Dice", 2)),
                         Spell.Buff("Rupture", true, ret => Me.ComboPoints == 5),
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints == 5),
-                        Spell.Cast("Ambush", ret => Me.CurrentTarget.MeIsBehind && Me.HasAura("Shadow Dance")),
 
+                        Spell.Cast("Ambush", ret => Me.CurrentTarget.MeIsBehind && (Me.HasAura("Shadow Dance") || Me.HasAura("Stealth"))),
                         Spell.Buff("Hemorrhage"),
-                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount > 1),
-                        Spell.Cast("Backstab", ret => Me.CurrentTarget.MeIsBehind && !Me.HasAura("Shadow Dance")),
-                        Spell.Cast("Hemorrhage", ret => !Me.CurrentTarget.MeIsBehind)
-                        )
+                        Spell.Cast("Backstab", ret => Me.CurrentTarget.MeIsBehind && HasDaggersEquipped),
+                        Spell.Cast("Hemorrhage", ret => !Me.CurrentTarget.MeIsBehind || !HasDaggersEquipped))
                     ),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
+        }
+
+        static bool HasDaggersEquipped
+        {
+            get
+            {
+                var mainhand = Me.Inventory.Equipped.MainHand;
+                var offhand = Me.Inventory.Equipped.OffHand;
+                return mainhand != null && mainhand.ItemInfo != null && mainhand.ItemInfo.WeaponClass == WoWItemWeaponClass.Dagger && offhand != null &&
+                       offhand.ItemInfo != null && offhand.ItemInfo.WeaponClass == WoWItemWeaponClass.Dagger;
+            }
         }
 
         #endregion
@@ -204,7 +216,7 @@ namespace Singular.ClassSpecific.Rogue
                         (int)Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds,
                         Me.RawComboPoints,
                         Me.ComboPoints,
-                        Common.AoeCount 
+                        Common.AoeCount
                         );
 
                     WoWUnit target = Me.CurrentTarget;

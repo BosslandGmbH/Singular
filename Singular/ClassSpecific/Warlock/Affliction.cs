@@ -39,10 +39,13 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                // hawker added a mount check here 23 Jan 2013
+                new Decorator(ctx => Me.Mounted,
+                    Helpers.Common.CreateDismount("Pulling")),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
 
-                new Decorator( 
+                new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         new Action(ret =>
@@ -71,7 +74,7 @@ namespace Singular.ClassSpecific.Warlock
                 // cancel an early drain soul if done to proc 1 soulshard
                 new Decorator(
                     ret => Me.GotTarget && Me.ChanneledSpell != null,
-                    new PrioritySelector( 
+                    new PrioritySelector(
                         new Decorator(
                             ret => Me.ChanneledSpell.Name == "Drain Soul"
                                 && Me.CurrentSoulShards > 0
@@ -79,21 +82,23 @@ namespace Singular.ClassSpecific.Warlock
                             new Sequence(
                                 new Action(ret => Logger.WriteDebug("/cancel Drain Soul on {0} now we have {1} shard", Me.CurrentTarget.SafeName(), Me.CurrentSoulShards)),
                                 new Action(ret => SpellManager.StopCasting()),
-                                new WaitContinue( TimeSpan.FromMilliseconds(500), ret => Me.ChanneledSpell == null, new ActionAlwaysSucceed() )
+                                new WaitContinue(TimeSpan.FromMilliseconds(500), ret => Me.ChanneledSpell == null, new ActionAlwaysSucceed())
                                 )
                             ),
+
+                            
 
                         // cancel malefic grasp if target health < 20% and cast drain soul (revisit and add check for minimum # of dots)
                         new Decorator(
                             ret => Me.ChanneledSpell.Name == "Malefic Grasp"
-                                && Me.CurrentSoulShards < Me.MaxSoulShards 
+                                && Me.CurrentSoulShards < Me.MaxSoulShards
                                 && Me.CurrentTarget.HealthPercent <= 20,
                             new Sequence(
-                                new Action(ret => Logger.WriteDebug("/cancel Malefic Grasp on {0} @ {1:F1}%", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HealthPercent )),
+                                new Action(ret => Logger.WriteDebug("/cancel Malefic Grasp on {0} @ {1:F1}%", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HealthPercent)),
                                 new Action(ret => SpellManager.StopCasting()),
-                                // Helpers.Common.CreateWaitForLagDuration( ret => Me.ChanneledSpell == null ),
-                                new WaitContinue( TimeSpan.FromMilliseconds(500), ret => Me.ChanneledSpell == null, new ActionAlwaysSucceed() ),
-                                Spell.Cast( "Drain Soul", ret => Me.CurrentTarget.HasAnyAura("Agony", "Corruption", "Haunt", "Unstable Affliction"))
+                // Helpers.Common.CreateWaitForLagDuration( ret => Me.ChanneledSpell == null ),
+                                new WaitContinue(TimeSpan.FromMilliseconds(500), ret => Me.ChanneledSpell == null, new ActionAlwaysSucceed()),
+                                Spell.Cast("Drain Soul", ret => Me.CurrentTarget.HasAnyAura("Agony", "Corruption", "Haunt", "Unstable Affliction"))
                                 )
                             )
                         )
@@ -102,41 +107,45 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.WaitForCastOrChannel(),
                 Helpers.Common.CreateAutoAttack(true),
 
-                new Decorator( ret => !Spell.IsGlobalCooldown(),
-                
+                new Decorator(ret => !Spell.IsGlobalCooldown(),
+
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                        new Action( ret => {
+                        new Action(ret =>
+                        {
                             _mobCount = Common.TargetsInCombat.Count();
                             return RunStatus.Failure;
-                            }),
+                        }),
 
                         CreateWarlockDiagnosticOutputBehavior("Combat"),
 
-                        CreateAoeBehavior( ),
+                        CreateAoeBehavior(),
 
                         // following Drain Soul only while Solo combat to maximize Soul Shard generation
-                        Spell.Cast("Drain Soul", 
+                        Spell.Cast("Drain Soul",
                             ret => !Me.IsInGroup()
-                                && Me.CurrentTarget.HealthPercent < 5 
+                                && Me.CurrentTarget.HealthPercent < 5
                                 && !Me.CurrentTarget.IsPlayer
-                                && !Me.CurrentTarget.Elite 
+                                && !Me.CurrentTarget.Elite
                                 && Me.CurrentSoulShards < 1),
 
-                        CreateApplyDotsBehavior( 
+                        CreateApplyDotsBehavior(
                             ret => Me.CurrentTarget,
                             ret => Me.CurrentTarget.HealthPercent < 20 || Me.CurrentTarget.HasAnyAura("Agony", "Corruption", "Unstable Affliction")),
 
-                        Spell.Cast( "Drain Life", ret => Me.HealthPercent < 40 && !Group.Healers.Any( h => h.IsAlive && h.Distance < 40)),
-                        Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent >= 20 ),
-                        Spell.Cast("Shadow Bolt", ret => !SpellManager.HasSpell( "Malefic Grasp")),
-                        Spell.Cast( "Drain Soul"),
+                            Common.CreateCastSoulburn(ctx => Me.HealthPercent < 75),
 
-                        Spell.Cast( "Fel Flame", ret => Me.IsMoving ),
+                            // HAwker added Soulburn Jan 22 2013
+                        Spell.Cast("Drain Life", ret => (Me.HealthPercent < 95 && Me.HasAura("Soulburn")) || Me.HealthPercent < 40 && !Group.Healers.Any(h => h.IsAlive && h.Distance < 40)),
+                        Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent >= 20),
+                        Spell.Cast("Shadow Bolt", ret => !SpellManager.HasSpell("Malefic Grasp")),
+                        Spell.Cast("Drain Soul"),
+
+                        Spell.Cast("Fel Flame", ret => Me.IsMoving),
 
                         // only a lowbie should hit this
-                        Spell.Cast( "Drain Life", ret => !SpellManager.HasSpell("Malefic Grasp"))
+                        Spell.Cast("Drain Life", ret => !SpellManager.HasSpell("Malefic Grasp"))
                         )
                     ),
 
@@ -154,16 +163,16 @@ namespace Singular.ClassSpecific.Warlock
                     new Decorator(
                         ret => _mobCount >= 4 && SpellManager.HasSpell("Seed of Corruption"),
                         new PrioritySelector(
-                            ctx => Common.TargetsInCombat.FirstOrDefault( m => !m.HasAura( "Seed of Corruption")),
-                            Spell.BuffSelf( "Soulburn", ret => ret != null),
-                            Spell.Cast( "Seed of Corruption", ret => (WoWUnit) ret)
+                            ctx => Common.TargetsInCombat.FirstOrDefault(m => !m.HasAura("Seed of Corruption")),
+                            Spell.BuffSelf("Soulburn", ret => ret != null),
+                            Spell.Cast("Seed of Corruption", ret => (WoWUnit)ret)
                             )
                         ),
                     new Decorator(
                         ret => _mobCount >= 2,
                         new PrioritySelector(
                             CreateApplyDotsBehavior(ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Agony")), soulBurn => true)
-                            // , CreateApplyDotsBehavior( ctx => TargetsInCombat.FirstOrDefault(m => Common.AuraMissing(m,"Corruption")), soulBurn => true)
+                // , CreateApplyDotsBehavior( ctx => TargetsInCombat.FirstOrDefault(m => Common.AuraMissing(m,"Corruption")), soulBurn => true)
                             , CreateApplyDotsBehavior(ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Unstable Affliction")), soulBurn => true)
                             )
                         )
@@ -171,11 +180,11 @@ namespace Singular.ClassSpecific.Warlock
                 );
         }
 
-        public static Composite CreateApplyDotsBehavior( UnitSelectionDelegate onUnit, SimpleBooleanDelegate soulBurn )
+        public static Composite CreateApplyDotsBehavior(UnitSelectionDelegate onUnit, SimpleBooleanDelegate soulBurn)
         {
             return new PrioritySelector(
 
-                   Spell.BuffSelf("Pandemic", 
+                   Spell.BuffSelf("Pandemic",
                         ret => PartyBuff.WeHaveBloodlust
                             && onUnit(ret).InLineOfSpellSight
                             && Me.CurrentSoulShards > 0),
@@ -189,7 +198,7 @@ namespace Singular.ClassSpecific.Warlock
                             && onUnit(ret).InLineOfSpellSight
                             && Me.CurrentSoulShards > 0),
 
-                    CreateCastSoulSwap( onUnit ),
+                    CreateCastSoulSwap(onUnit),
 
                     Spell.Cast("Agony", ctx => onUnit(ctx), ret => onUnit(ret).HasAuraExpired("Agony")),
                     Spell.Cast("Corruption", ctx => onUnit(ctx), ret => onUnit(ret).HasAuraExpired("Corruption")),
@@ -223,8 +232,8 @@ namespace Singular.ClassSpecific.Warlock
         private WoWUnit GetBestAoeTarget()
         {
             WoWUnit unit = null;
-            
-            if ( SpellManager.HasSpell( "Seed of Corruption"))
+
+            if (SpellManager.HasSpell("Seed of Corruption"))
                 unit = Clusters.GetBestUnitForCluster(Common.TargetsInCombat.Where(m => !m.HasAura("Seed of Corruption")), ClusterType.Radius, 15f);
 
             if (SpellManager.HasSpell("Agony"))

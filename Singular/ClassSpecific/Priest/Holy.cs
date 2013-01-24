@@ -185,6 +185,7 @@ namespace Singular.ClassSpecific.Priest
                         Safers.EnsureTarget(),
                         Movement.CreateMoveToLosBehavior(),
                         Movement.CreateFaceTargetBehavior(),
+                        Helpers.Common.CreateDismount("Pulling"),
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                         Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                         Spell.Buff("Shadow Word: Pain", true),

@@ -83,7 +83,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static bool StressfulSituation
         {
-            get 
+            get
             {
                 return SingularRoutine.CurrentWoWContext == WoWContext.Normal
                     && (Unit.NearbyUnitsInCombatWithMe.Count() >= StressMobCount
@@ -141,7 +141,7 @@ namespace Singular.ClassSpecific.Shaman
 
         #endregion
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Normal | WoWContext.Instances , 1)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Normal | WoWContext.Instances, 1)]
         public static Composite CreateShamanCombatBuffs()
         {
             return new PrioritySelector(
@@ -203,7 +203,7 @@ namespace Singular.ClassSpecific.Shaman
                 );
         }
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Battlegrounds , 1)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Battlegrounds, 1)]
         public static Composite CreateShamanCombatBuffsPVP()
         {
             return new PrioritySelector(
@@ -242,7 +242,7 @@ namespace Singular.ClassSpecific.Shaman
         #region IMBUE SUPPORT
         public static Decorator CreateShamanImbueMainHandBehavior(params Imbue[] imbueList)
         {
-            return new Decorator( ret => CanImbue(Me.Inventory.Equipped.MainHand),
+            return new Decorator(ret => CanImbue(Me.Inventory.Equipped.MainHand),
                 new PrioritySelector(
                     imb => imbueList.FirstOrDefault(i => SpellManager.HasSpell(i.ToSpellName())),
 
@@ -253,12 +253,12 @@ namespace Singular.ClassSpecific.Shaman
                         new Sequence(
                             new Action(ret => Logger.WriteDebug(Color.Pink, "Main hand currently imbued: " + ((Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id).ToString())),
                             new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),
-                            new WaitContinue( 1,
+                            new WaitContinue(1,
                                 ret => Me.Inventory.Equipped.MainHand != null && (Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == Imbue.None,
                                 new ActionAlwaysSucceed()),
                             new DecoratorContinue(ret => ((Imbue)ret) != Imbue.None,
                                 new Sequence(
-                                    new Action(ret => Logger.Write( Color.Pink, "Imbuing main hand weapon with " + ((Imbue)ret).ToString())),
+                                    new Action(ret => Logger.Write(Color.Pink, "Imbuing main hand weapon with " + ((Imbue)ret).ToString())),
                                     new Action(ret => SpellManager.Cast(((Imbue)ret).ToSpellName(), null)),
                                     new Action(ret => SetNextAllowedImbueTime())
                                     )
@@ -271,7 +271,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateShamanImbueOffHandBehavior(params Imbue[] imbueList)
         {
-            return new Decorator( ret => CanImbue(Me.Inventory.Equipped.OffHand),
+            return new Decorator(ret => CanImbue(Me.Inventory.Equipped.OffHand),
                 new PrioritySelector(
                     imb => imbueList.FirstOrDefault(i => SpellManager.HasSpell(i.ToSpellName())),
 
@@ -282,11 +282,11 @@ namespace Singular.ClassSpecific.Shaman
                         new Sequence(
                             new Action(ret => Logger.WriteDebug(Color.Pink, "Off hand currently imbued: " + ((Imbue)Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id).ToString())),
                             new Action(ret => Lua.DoString("CancelItemTempEnchantment(2)")),
-                            new WaitContinue( 1,
+                            new WaitContinue(1,
                                 ret => Me.Inventory.Equipped.OffHand != null && (Imbue)Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == Imbue.None,
                                 new ActionAlwaysSucceed()),
                             new DecoratorContinue(ret => ((Imbue)ret) != Imbue.None,
-                                new Sequence( 
+                                new Sequence(
                                     new Action(ret => Logger.Write(System.Drawing.Color.Pink, "Imbuing Off hand weapon with " + ((Imbue)ret).ToString())),
                                     new Action(ret => SpellManager.Cast(((Imbue)ret).ToSpellName(), null)),
                                     new Action(ret => SetNextAllowedImbueTime())
@@ -305,7 +305,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static bool CanImbue(WoWItem item)
         {
-            if (item != null && item.ItemInfo.IsWeapon )
+            if (item != null && item.ItemInfo.IsWeapon)
             {
                 // during combat, only mess with imbues if they are missing
                 if (Me.Combat && item.TemporaryEnchantment.Id != 0)
@@ -359,7 +359,7 @@ namespace Singular.ClassSpecific.Shaman
         public static Imbue GetImbue(WoWItem item)
         {
             if (item != null)
-                return (Imbue) item.TemporaryEnchantment.Id;
+                return (Imbue)item.TemporaryEnchantment.Id;
 
             return Imbue.None;
         }
@@ -408,8 +408,8 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        // use predicted health for non-combat healing to reduce drinking downtime and help
-                        // .. avoid unnecessary heal casts
+                // use predicted health for non-combat healing to reduce drinking downtime and help
+                // .. avoid unnecessary heal casts
                         new Decorator(
                             ret => !Me.Combat,
                             Spell.Cast("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) <= 85)
@@ -426,7 +426,7 @@ namespace Singular.ClassSpecific.Shaman
                                 new Decorator(
                                     ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
                                         && Me.HealthPercent < 25,
-                                    new Sequence( 
+                                    new Sequence(
                                         Spell.BuffSelf("Ancestral Swiftness", ret => Me.GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness),
                                         Spell.Cast("Healing Surge", ret => Me)
                                         )
@@ -450,14 +450,14 @@ namespace Singular.ClassSpecific.Shaman
                                                         && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
                                         Spell.BuffSelf(
                                             "Healing Stream Totem",
-                                            ret => !Me.IsMoving 
+                                            ret => !Me.IsMoving
                                                 && !Totems.Exist(WoWTotemType.Water)
                                                 && Unit.GroupMembers.Any(
                                                     p => p.HealthPercent < ShamanSettings.HealHealingStreamTotem
                                                         && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
 
                                         // use actual health for following, not predicted as its a low health value
-                                        // .. and its okay for multiple heals at that point
+                // .. and its okay for multiple heals at that point
                                         Spell.Cast(
                                             "Healing Surge",
                                             ret => Me,
@@ -476,21 +476,21 @@ namespace Singular.ClassSpecific.Shaman
         public static Decorator CreateShamanMovementBuff()
         {
             return new Decorator(
-                ret => ShamanSettings.UseGhostWolf
+                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown()
+                    && ShamanSettings.UseGhostWolf
                     && MovementManager.IsClassMovementAllowed
-                    && SingularRoutine.CurrentWoWContext != WoWContext.Instances 
+                    && SingularRoutine.CurrentWoWContext != WoWContext.Instances
                     && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
                     && Me.IsAlive
-                    && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport 
+                    && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport
                     && SpellManager.HasSpell("Ghost Wolf")
-                    && (BotPoi.Current == null || BotPoi.Current.Type == PoiType.None || BotPoi.Current.Location.Distance(Me.Location) > 10)
+                    && BotPoi.Current != null
+                    && BotPoi.Current.Type != PoiType.None && BotPoi.Current.Type != PoiType.Hotspot
+                    && BotPoi.Current.Location.Distance(Me.Location) > 10
+                    && (BotPoi.Current.Location.Distance(Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance || (Me.IsIndoors && !Mount.CanMount()))
                     && !Me.IsAboveTheGround(),
-                new PrioritySelector(
-                    Spell.WaitForCast(),
-                    new Decorator(
-                        ret => Me.IsChanneling || Spell.IsGlobalCooldown(),
-                        new ActionAlwaysSucceed()
-                        ),
+                new Sequence(
+                    new Action(r => Logger.WriteDebug("sham-move-buff: poitype={0} poidist={1:F1}", BotPoi.Current.Type, BotPoi.Current.Location.Distance(Me.Location))),
                     Spell.BuffSelf("Ghost Wolf"),
                     Helpers.Common.CreateWaitForLagDuration()
                     )

@@ -282,7 +282,7 @@ if $(ConfigurationName) == Bobby53 (
 
 if $(ConfigurationName) == HighVoltz (
  if not exist excludes.txt echo _ReSharper.Singular &gt; excludes.txt
-   xcopy.exe "$(ProjectDir)*.cs" "H:\Buddy\Honorbuddy\Routines\Singular\" /v /i /f  /s /y /EXCLUDE:excludes.txt
+   xcopy.exe "$(ProjectDir)*.cs" "C:\Buddy\Honorbuddy\Routines\Singular\" /v /i /f  /s /y /EXCLUDE:excludes.txt
 )
 
 

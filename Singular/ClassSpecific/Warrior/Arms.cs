@@ -39,13 +39,13 @@ namespace Singular.ClassSpecific.Warrior
                 Safers.EnsureTarget(),
                 Movement.CreateFaceTargetBehavior(),
                 Movement.CreateMoveToLosBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(),
 
                 //Dismount
-                new Decorator(ret => StyxWoW.Me.Mounted,
-                              Helpers.Common.CreateDismount("Pulling")),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 //Shoot flying targets
                 new Decorator(

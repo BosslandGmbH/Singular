@@ -93,6 +93,7 @@ namespace Singular.ClassSpecific.DeathKnight
             return new PrioritySelector(
                 Movement.CreateMoveToLosBehavior(), 
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
@@ -120,6 +121,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 new PrioritySelector(
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.CreateDismount("Pulling"),
                     Spell.Cast("Howling Blast"),
                     Spell.Cast("Icy Touch"),
                     Movement.CreateMoveToMeleeBehavior(true)

@@ -98,6 +98,7 @@ namespace Singular.ClassSpecific.Paladin
                 new PrioritySelector(
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.CreateDismount("Pulling"),
                     Helpers.Common.CreateAutoAttack(true),
                     Spell.BuffSelf("Sacred Shield", ret => SpellManager.HasSpell("Sacred Shield")),
                     Spell.Cast("Judgment"),

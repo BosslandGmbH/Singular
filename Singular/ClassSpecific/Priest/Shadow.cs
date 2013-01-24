@@ -78,6 +78,7 @@ namespace Singular.ClassSpecific.Priest
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCast(true),
 
                 Spell.BuffSelf("Power Word: Shield", 
@@ -214,6 +215,7 @@ namespace Singular.ClassSpecific.Priest
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCast(true),
                 Spell.BuffSelf("Shadow Form"),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
@@ -256,6 +258,7 @@ namespace Singular.ClassSpecific.Priest
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCast(true),
 
                 new Decorator(

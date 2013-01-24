@@ -31,6 +31,7 @@ namespace Singular.ClassSpecific.Hunter
                 //Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -118,6 +119,7 @@ namespace Singular.ClassSpecific.Hunter
                 //Common.CreateHunterBackPedal(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 Spell.WaitForCastOrChannel(),
 

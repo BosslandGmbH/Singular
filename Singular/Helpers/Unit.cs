@@ -127,8 +127,8 @@ namespace Singular.Helpers
             if (p.IsPet || p.OwnedByRoot != null)
                 return false;
 
-            // And ignore critters/non-combat pets
-            if (p.IsNonCombatPet || p.IsCritter)
+            // And ignore critters (except for those ferocious ones) /non-combat pets
+            if (p.IsNonCombatPet || p.IsCritter && p.ThreatInfo.ThreatValue == 0 && !p.IsTargetingMyRaidMember)
                 return false;
 
             if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
@@ -290,7 +290,7 @@ namespace Singular.Helpers
         /// <param name="onUnit"> The unit to check the aura for. </param>
         /// <param name="fromMyAura"> Check for only self or all buffs</param>
         /// <returns></returns>
-        public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, string auraName, bool fromMyAura)
+        public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
         {
             WoWAura wantedAura =
                 onUnit.GetAllAuras().Where(a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
@@ -298,12 +298,23 @@ namespace Singular.Helpers
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }
 
-        public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, int auraID, bool fromMyAura)
+        public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, int auraID, bool fromMyAura = true)
         {
             WoWAura wantedAura =onUnit.GetAllAuras()
                 .Where(a => a.SpellId == auraID && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
+        }
+
+        public static uint GetAuraStacks(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
+        {
+            WoWAura wantedAura =
+                onUnit.GetAllAuras().Where(a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+
+            if (wantedAura == null)
+                return 0;
+
+            return wantedAura.StackCount == 0 ? 1 : wantedAura.StackCount;
         }
 
         public static void CancelAura(this WoWUnit unit, string aura)

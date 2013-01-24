@@ -46,6 +46,7 @@ namespace Singular.ClassSpecific.Shaman
                     Safers.EnsureTarget(),
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.CreateDismount("Pulling"),
                     Spell.WaitForCast(true),
                     CreateLowbieDiagnosticOutputBehavior(),
                     Spell.Cast("Lightning Bolt"),

@@ -379,8 +379,9 @@ namespace Singular.ClassSpecific.DeathKnight
                     Safers.EnsureTarget(),
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateAutoAttack(true),
+                    Helpers.Common.CreateDismount("Pulling"),
                     Spell.WaitForCast(),
+
                     Helpers.Common.CreateAutoAttack(true),
 
                     new Decorator(

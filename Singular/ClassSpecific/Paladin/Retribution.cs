@@ -91,6 +91,7 @@ namespace Singular.ClassSpecific.Paladin
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -186,6 +187,7 @@ namespace Singular.ClassSpecific.Paladin
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 Spell.WaitForCastOrChannel(),
 

@@ -21,6 +21,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(false),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCast(true),
 
                 new Decorator( 

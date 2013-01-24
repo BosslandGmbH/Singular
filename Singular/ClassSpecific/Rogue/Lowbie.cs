@@ -29,6 +29,7 @@ namespace Singular.ClassSpecific.Rogue
             return new PrioritySelector(
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.BuffSelf("Stealth"),
                 Helpers.Common.CreateAutoAttack(true),
                 Movement.CreateMoveToMeleeBehavior(true)

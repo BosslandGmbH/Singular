@@ -96,6 +96,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 new Decorator(
                     ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
@@ -228,6 +229,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 new Decorator(
                     ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
@@ -283,6 +285,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 new Decorator(
                     ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,

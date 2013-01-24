@@ -36,6 +36,7 @@ namespace Singular.ClassSpecific.Warrior
                 Safers.EnsureTarget(),
                 Movement.CreateFaceTargetBehavior(),
                 Movement.CreateMoveToLosBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
 
                 new Decorator(ret => Me.Mounted, Helpers.Common.CreateDismount("Pulling")),

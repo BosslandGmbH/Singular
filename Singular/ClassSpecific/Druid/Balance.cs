@@ -69,6 +69,7 @@ namespace Singular.ClassSpecific.Druid
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(true),
@@ -190,6 +191,7 @@ namespace Singular.ClassSpecific.Druid
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 // Ensure we do /petattack if we have treants up.
                 Helpers.Common.CreateAutoAttack(true),
@@ -264,6 +266,7 @@ namespace Singular.ClassSpecific.Druid
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(true),

@@ -28,6 +28,7 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateMoveToLosBehavior(),
                 //face target
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
 

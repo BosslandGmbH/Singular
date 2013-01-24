@@ -18,6 +18,7 @@ namespace Singular.ClassSpecific.Hunter
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 Spell.WaitForCastOrChannel(),
 

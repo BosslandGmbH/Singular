@@ -33,6 +33,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateFaceTargetBehavior(),
                 // LOS check
                 Movement.CreateMoveToLosBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
                 //Dismount

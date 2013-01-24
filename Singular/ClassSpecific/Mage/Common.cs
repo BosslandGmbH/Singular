@@ -14,6 +14,8 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Styx;
 using Styx.Common;
+using System;
+using System.Collections.Generic;
 
 namespace Singular.ClassSpecific.Mage
 {
@@ -61,12 +63,14 @@ namespace Singular.ClassSpecific.Mage
                         Spell.BuffSelf("Ice Barrier"),
 
                         // Outside of BGs, we really only have 2 choices of armor. Molten, or mage. Mage for arcane, molten for frost/fire.
-                        new Decorator(
-                            ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) == 0,
-                            new PrioritySelector(
-                // Arcane is a mana whore, we want molten if we don't have mage yet. Otherwise, stick with Mage armor.
-                                Spell.BuffSelf("Molten Armor", ret => (TalentManager.CurrentSpec != WoWSpec.MageArcane || !SpellManager.HasSpell("Mage Armor"))),
-                                Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == WoWSpec.MageArcane)
+                        new Throttle( 3,
+                            new Decorator(
+                                ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) == 0,
+                                new PrioritySelector(
+                    // Arcane is a mana whore, we want molten if we don't have mage yet. Otherwise, stick with Mage armor.
+                                    Spell.BuffSelf("Molten Armor", ret => (TalentManager.CurrentSpec != WoWSpec.MageArcane || !SpellManager.HasSpell("Mage Armor"))),
+                                    Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == WoWSpec.MageArcane)
+                                    )
                                 )
                             ),
 
@@ -117,6 +121,8 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
+        private static DateTime _cancelIceBlock = DateTime.MinValue ;
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Mage)]
         public static Composite CreateMageCombatBuffs()
         {
@@ -126,15 +132,34 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        CreateMageSpellstealBehavior(),
+
                         Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
-                        Spell.Cast( "Invocation", on => Me, ret => Me.HasAuraExpired("Invocation", 2)),
-                        Spell.CastOnGround("Rune of Power", loc => Me.Location.RayCast( Me.RenderFacing, 1.25f), ret => !Me.IsMoving),
-                        Spell.Cast( "Incanter's Ward", on => Me, ret => Me.HasAuraExpired("Incanter's Ward")),
+                        Spell.Cast("Evocation", on => Me, ret => HasTalent( MageTalent.Invocation) && !Me.ActiveAuras.ContainsKey( "Invocation")),
+                        Spell.BuffSelf("Evocation", 
+                            ret => Me.ManaPercent < 30 
+                                || (Me.HealthPercent < 30 || (Me.HealthPercent < 60 && 2 <= Unit.NearbyUnfriendlyUnits.Count( u => u.IsAlive && u.Combat && u.IsTargetingMeOrPet )))
+                            ),
 
-                        Spell.Cast("Nether Tempest", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired( "Nether Tempest")),
-                        Spell.Cast("Living Bomb", ret => Me.GotTarget && !Me.CurrentTarget.HasAura( "Living Bomb")),
-                        Spell.Cast("Frost Bomb", ret => Me.GotTarget && !Me.CurrentTarget.HasAura( "Frost Bomb")),
+                        new Throttle( TimeSpan.FromMilliseconds(10000),
+                            new Decorator(
+                                ret => !Me.HasAura("Rune of Power") && SpellManager.CanCast("Rune of Power"), // Rune of Power
+                                new Sequence(
+                                    new Action(ret => SpellManager.Cast("Rune of Power")),
+                                    new Action(ret => SpellManager.ClickRemoteLocation(Me.Location))
+                                    )
+                                )
+                            ),
+
+                      //  Spell.CastOnGround("Rune of Power", loc => Me.Location.RayCast(Me.RenderFacing, 1.25f), ret => !Me.IsMoving),
+
+
+                        Spell.Cast("Incanter's Ward", on => Me, ret => Me.HasAuraExpired("Incanter's Ward")),
+
+                        Spell.Cast("Nether Tempest", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Nether Tempest", 3)),
+                        Spell.Cast("Living Bomb", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Living Bomb", 2)),
+                        Spell.Cast("Frost Bomb", ret => Me.GotTarget && !Me.CurrentTarget.HasMyAura("Frost Bomb")),
 
                         // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invocation")),
                         Spell.Cast("Mirror Image"),
@@ -142,12 +167,31 @@ namespace Singular.ClassSpecific.Mage
                         Spell.BuffSelf("Time Warp",
                             ret => MageSettings.UseTimeWarp
                                 && MovementManager.IsClassMovementAllowed
-                                && (Battlegrounds.IsInsideBattleground && Shaman.Common.IsPvpFightWorthLusting )
-                                || (!Me.GroupInfo.IsInRaid && Me.GotTarget && Me.CurrentTarget.IsBoss() && !Me.HasAnyAura("Temporal Displacement", Shaman.Common.SatedName ))),
+                                && (Battlegrounds.IsInsideBattleground && Shaman.Common.IsPvpFightWorthLusting)
+                                || (!Me.GroupInfo.IsInRaid && Me.GotTarget && Me.CurrentTarget.IsBoss() && !Me.HasAnyAura("Temporal Displacement", Shaman.Common.SatedName))),
 
                         Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80)),
 
-                        Spell.BuffSelf("Ice Block", ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances && StyxWoW.Me.HealthPercent < 20 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
+                        Spell.BuffSelf("Ice Block", ret => {
+                            if (!Me.ActiveAuras.ContainsKey("Cauterized"))
+                                return false;
+                            _cancelIceBlock = DateTime.Now.AddSeconds(10);
+                            return true;
+                            }),
+
+                        new Decorator(
+                            ret => Me.HasAura("Ice Block") && _cancelIceBlock > DateTime.Now,
+                            new Action(ret => {
+                                _cancelIceBlock = DateTime.MinValue ;
+                                Me.GetAuraByName("Ice Block").TryCancelAura();                                
+                                })
+                            ),
+
+                        Spell.BuffSelf("Ice Block",
+                            ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances
+                                && !SpellManager.HasSpell("Cauterize")
+                                && StyxWoW.Me.HealthPercent < 20
+                                && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
 
                         Frost.CreateSummonWaterElemental()
 
@@ -263,6 +307,34 @@ namespace Singular.ClassSpecific.Mage
 
                                 return RunStatus.Failure;
                             }))));
+        }
+
+        public static Composite CreateMageSpellstealBehavior()
+        {
+            return Spell.Cast("Spellsteal", mov => false, on => GetSpellstealTarget(), ret => true);                   
+        }
+
+        public static WoWUnit GetSpellstealTarget()
+        {
+            if (MageSettings.SpellStealTarget == WatchTargetForCast.Current)
+            {
+                if ( Me.GotTarget && null != GetSpellstealAura( Me.CurrentTarget))
+                {
+                    return Me.CurrentTarget;
+                }
+            }
+            else if (MageSettings.SpellStealTarget != WatchTargetForCast.None)
+            {
+                WoWUnit target = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && null != GetSpellstealAura(u));
+                return target;
+            }
+
+            return null;
+        }
+
+        public static WoWAura GetSpellstealAura(WoWUnit target)
+        {
+            return target.GetAllAuras().FirstOrDefault(a => a.TimeLeft.TotalSeconds > 5 && MageSettings.SpellStealList.Contains((uint)a.SpellId) && !Me.HasAura(a.SpellId));
         }
 
         public static Composite CreateMagePolymorphOnAddBehavior()

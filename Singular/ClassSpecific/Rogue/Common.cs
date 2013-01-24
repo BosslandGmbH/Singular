@@ -252,7 +252,7 @@ namespace Singular.ClassSpecific.Rogue
 
                 if (StyxWoW.Me.IsInInstance)
                 {
-                    if (RaFHelper.Leader != null && !RaFHelper.Leader.IsMe)
+                    if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && !RaFHelper.Leader.IsMe)
                     {
                         // Leader first, always. Otherwise, pick a rogue/DK/War pref. Fall back to others just in case.
                         return RaFHelper.Leader;

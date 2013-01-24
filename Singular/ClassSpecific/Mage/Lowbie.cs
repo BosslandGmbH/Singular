@@ -19,14 +19,23 @@ namespace Singular.ClassSpecific.Mage
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
                  Movement.CreateMoveToLosBehavior(),
                  Movement.CreateFaceTargetBehavior(),
+                 Helpers.Common.CreateDismount("Pulling"),
                  Spell.WaitForCast(true),
-                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
-                 Common.CreateMagePolymorphOnAddBehavior(),
 
-                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 12 * 12)),
-                 Spell.Cast("Fire Blast", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 10),
+                Spell.WaitForCast(true),
 
-                 Spell.Cast("Frostfire Bolt"),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                         Common.CreateMagePolymorphOnAddBehavior(),
+
+                         Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 12 * 12)),
+                         Spell.Cast("Fire Blast", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 10),
+                         Spell.Cast("Frostfire Bolt")
+                         )
+                     ),
+
                  Movement.CreateMoveToTargetBehavior(true, 38f)
                  );
         }

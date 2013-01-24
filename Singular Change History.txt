@@ -1,3 +1,52 @@
+--- Release 3.0.0.1640 ---
+
+General
+
+change- revision to Dismount behavior output additional state information when debug mode is on
+
+fixed - exception occurring to some melee classes when moving behind current target for attack
+
+change- valid targets check now factors in threat 
+
+
+Mage
+
+fixed - All Specs - issues with spell priority and aura recognition for Normal and Instance contexts
+
+*new* - All Specs - interrupt support (Counterspell)
+
+*new* - All Specs - support for Spellsteal with settings to control
+
+
+Rogue 
+
+fixed - All Specs - exception sometimes occurring when selecting Tricks of the Trade target
+
+change- Subtlelty - changes to Instance rotation increasing Fan of Knives count, Preparation requirements
+
+fixed - All Specs - movement behind fixed target while stealthed that sometimes left Rogue out of range and standing still
+
+
+Shaman
+
+change- All Specs - Ghost Wolf is no longer cast if the Bot has not set a POI indicating where it is going.  This will greatly reduce the number of casts occurring while Questing
+
+fixed - Resto - reference to current tank to stay in range of sometimes threw error
+
+
+Warlock
+
+change- Affliction - now casts Soulburn prior to Drain Life if health < 75%
+
+change- All Specs - added support for Soul Link during rest
+
+change- All Specs - now does not cast Fear if targeting Undead
+
+change- All Specs - some refinement to Health FUnnel
+
+
+
+
 --- Release 3.0.0.1603 ---
 
 General

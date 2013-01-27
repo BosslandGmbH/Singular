@@ -19,6 +19,8 @@ using System.Collections.Generic;
 using Styx.Common;
 using Singular.Settings;
 
+using HotkeyManager = Singular.Managers.HotkeyManager;
+
 namespace Singular
 {
     public partial class SingularRoutine : CombatRoutine

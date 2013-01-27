@@ -12,6 +12,8 @@ using System.Drawing;
 using CommonBehaviors.Actions;
 using Styx.Common;
 
+using HotkeyManager = Singular.Managers.HotkeyManager;
+
 namespace Singular
 {
     partial class SingularRoutine

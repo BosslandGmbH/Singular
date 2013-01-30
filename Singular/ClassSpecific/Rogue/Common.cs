@@ -51,7 +51,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueHeal()
         {
             return new Decorator(
-                ret => !Spell.IsCastingOrChannelling() & !Spell.IsGlobalCooldown() && !IsStealthed && !Group.Healers.Any(h => h.IsAlive && h.Distance < 60),
+                ret => !Spell.IsCastingOrChannelling() & !Spell.IsGlobalCooldown() && !IsStealthed && !Group.AnyHealerNearby,
                 new PrioritySelector(
                     Movement.CreateFaceTargetBehavior(),
                     new Decorator(
@@ -377,7 +377,7 @@ namespace Singular.ClassSpecific.Rogue
             return Spell.Cast("Feint",
                                         ret => Me.CurrentTarget.ThreatInfo.RawPercent > 80
                                             && Me.IsInGroup()
-                                            && Group.Tanks.Any(t => t.IsAlive && t.Distance < 40));
+                                            && Group.AnyTankNearby);
         }
 
         public static bool HasDaggerInMainHand

@@ -37,8 +37,7 @@ namespace Singular.ClassSpecific.Druid
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
                 //Dismount
-                new Decorator(ret => Me.Mounted,
-                              Helpers.Common.CreateDismount("Pulling")),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 Spell.WaitForCast(true),
 

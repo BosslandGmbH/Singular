@@ -26,12 +26,12 @@ namespace Singular.ClassSpecific.Warrior
                 Helpers.Common.CreateAutoAttack(false),
                 Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
                 // Heal
-                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HasAura("Victorious")),
+                Common.CreateVictoryRushBehavior(),
+
                 // AOE
                 new Decorator(
                     ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 2,
                     new PrioritySelector(
-                        Spell.Cast("Victory Rush"),
                         Spell.Cast("Thunder Clap"),
                         Spell.Cast("Heroic Strike"))),
                 // DPS

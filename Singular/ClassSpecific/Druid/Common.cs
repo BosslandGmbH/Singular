@@ -154,7 +154,6 @@ namespace Singular.ClassSpecific.Druid
 
         #region Heal
 
-        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidFeral)]
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidGuardian)]
         public static Composite CreateDruidNonRestoHeal()

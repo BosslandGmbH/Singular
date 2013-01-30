@@ -149,11 +149,34 @@ namespace Singular.Helpers
 
                                     // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
                                     var agroMob =
-                                        ObjectManager.GetObjectsOfType<WoWUnit>(false, false).
-                                            Where(p => !Blacklist.Contains(p) && p.IsHostile && !p.IsOnTransport && !p.IsDead &&
-                                                        !p.Mounted && p.DistanceSqr <= 70 * 70 && p.Combat).
-                                            OrderBy(u => u.DistanceSqr).
-                                            FirstOrDefault();
+                                        ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
+                                            .Where(p => !Blacklist.Contains(p) && p.IsHostile && !p.IsOnTransport && !p.IsDead
+                                                    && !p.Mounted && p.DistanceSqr <= 70 * 70 && p.IsPlayer && p.Combat && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))
+                                            .OrderBy(u => u.DistanceSqr)
+                                            .FirstOrDefault();
+
+                                    if (agroMob != null)
+                                    {
+                                        if (!agroMob.IsPet || agroMob.SummonedByUnit == null)
+                                        {
+                                            Logger.Write(targetColor, "Current target invalid. Switching to player attacking us " + agroMob.SafeName() + "!");
+                                        }
+                                        else
+                                        {
+                                            Logger.Write(targetColor, "Current target invalid. Enemy player pet {0} attacking us, switching to player {1}!", agroMob.SafeName(), agroMob.SummonedByUnit.SafeName());
+                                            agroMob = agroMob.SummonedByUnit;
+                                        }
+
+                                        return agroMob;
+                                    }
+
+                                    // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
+                                    agroMob =
+                                        ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
+                                            .Where(p => !Blacklist.Contains(p) && p.IsHostile && !p.IsOnTransport && !p.IsDead
+                                                    && !p.Mounted && p.DistanceSqr <= 70 * 70 && (p.Aggro || p.PetAggro))
+                                            .OrderBy(u => u.DistanceSqr)
+                                            .FirstOrDefault();
 
                                     if (agroMob != null)
                                     {

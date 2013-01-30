@@ -40,8 +40,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 // hawker added a mount check here 23 Jan 2013
-                new Decorator(ctx => Me.Mounted,
-                    Helpers.Common.CreateDismount("Pulling")),
+                Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
 
@@ -137,7 +136,7 @@ namespace Singular.ClassSpecific.Warlock
                             Common.CreateCastSoulburn(ctx => Me.HealthPercent < 75),
 
                             // HAwker added Soulburn Jan 22 2013
-                        Spell.Cast("Drain Life", ret => (Me.HealthPercent < 95 && Me.HasAura("Soulburn")) || Me.HealthPercent < 40 && !Group.Healers.Any(h => h.IsAlive && h.Distance < 40)),
+                        Spell.Cast("Drain Life", ret => (Me.HealthPercent < 95 && Me.HasAura("Soulburn")) || Me.HealthPercent < 40 && !Group.AnyHealerNearby),
                         Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent >= 20),
                         Spell.Cast("Shadow Bolt", ret => !SpellManager.HasSpell("Malefic Grasp")),
                         Spell.Cast("Drain Soul"),

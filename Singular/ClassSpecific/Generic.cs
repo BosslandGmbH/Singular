@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific
                     return false;
                 }
 
-                if (Group.Tanks.Any( t => t.IsAlive && t.Distance < 50))
+                if (Group.AnyTankNearby)
                     return true;
             }
 

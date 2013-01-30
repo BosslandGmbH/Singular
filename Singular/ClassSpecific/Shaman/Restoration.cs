@@ -31,34 +31,54 @@ namespace Singular.ClassSpecific.Shaman
 
         #region BUFFS
 
-        [Behavior(BehaviorType.CombatBuffs | BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration)]
+        [Behavior(BehaviorType.CombatBuffs | BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Normal )]
         public static Composite CreateRestoShamanHealingBuffs()
         {
-            return new PrioritySelector(
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
 
-                ctx => Unit.GroupMembers.Any(m=>m.IsAlive && !m.IsMe && m.Distance < 50),
+                    Spell.BuffSelf("Water Shield", ret => Me.ManaPercent < 15),
+                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent > 30 && Me.HealthPercent < 65 ),
+                    Spell.BuffSelf("Lightning Shield", ret => Me.ManaPercent > 30 && Me.HealthPercent >= 85 ),
 
-                Spell.WaitForCastOrChannel(),
+                    Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
+                    )
+                );
+        }
 
-                // limit to one cast every 10 seconds to avoid needlessly spamming 
-                // .. heal vs dmg back and forth due to group member moving in/out of range
+        [Behavior(BehaviorType.CombatBuffs | BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Battlegrounds)]
+        public static Composite CreateRestoHealingBuffsBattlegrounds()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent > 25),
+                    Spell.BuffSelf("Water Shield", ret => Me.ManaPercent < 15),
 
-                new Throttle( 10,
-                    new PrioritySelector(
-                        Spell.BuffSelf("Water Shield", ret => (bool)ret),
-                        Spell.BuffSelf("Lightning Shield", ret => !(bool)ret)
-                        )
-                    ),
+                    Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
+                    )
+                );
+        }
 
-                new Throttle( 10,
-                    new PrioritySelector(
-                        new Decorator( ret => (bool) ret, Common.CreateShamanImbueMainHandBehavior( Imbue.Earthliving, Imbue.Flametongue) ),
-                        new Decorator( ret =>!(bool) ret, Common.CreateShamanImbueMainHandBehavior( Imbue.Flametongue) )
-                        )
-                    ),
+        private static ulong guidLastEarthShield = 0;
 
-                Spell.Buff("Earth Shield", on => GetEarthShieldTarget())
+        [Behavior(BehaviorType.CombatBuffs | BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Instances )]
+        public static Composite CreateRestoHealingBuffsInstance()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
 
+                    new Throttle( 2,
+                        new PrioritySelector(
+                            Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()),
+                            Spell.BuffSelf("Water Shield", ret => !Me.HasAura("Earth Shield"))
+                            )
+                        ),
+
+                    Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
+                    )
                 );
         }
 
@@ -66,34 +86,44 @@ namespace Singular.ClassSpecific.Shaman
         /// selects best Earth Shield target
         /// </summary>
         /// <returns></returns>
-        private static WoWUnit GetEarthShieldTarget()
+        private static WoWUnit GetBestEarthShieldTargetInstance()
         {
             WoWUnit target = null;
 
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+            if (IsValidEarthShieldTarget(RaFHelper.Leader))
+                target = RaFHelper.Leader;
+            else
             {
-                if ( IsValidEarthShieldTarget( RaFHelper.Leader))
-                    target = RaFHelper.Leader;
-                else 
+                target = Group.Tanks.FirstOrDefault(t => IsValidEarthShieldTarget(t));
+                if (Me.Combat && target == null && !Unit.NearbyGroupMembers.Any(m => m.HasMyAura("Earth Shield")))
                 {
-                    target = Group.Tanks.FirstOrDefault(t => IsValidEarthShieldTarget(t));
-                    if ( target == null && !Unit.NearbyGroupMembers.Any( m => m.HasMyAura("Earth Shield")))
-                    {
-                        target = Unit.NearbyGroupMembers.Where( u => IsValidEarthShieldTarget(u.ToUnit())).OrderByDescending( u => Unit.NearbyUnfriendlyUnits.Count( e => e.CurrentTargetGuid == u.Guid)).FirstOrDefault();
-                    }
+                    target = Unit.NearbyGroupMembers.Where(u => IsValidEarthShieldTarget(u.ToUnit())).OrderByDescending(u => Unit.NearbyUnfriendlyUnits.Count(e => e.CurrentTargetGuid == u.Guid)).FirstOrDefault();
                 }
             }
-            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds )
-            {
-                target = Me;
-            }
 
+            guidLastEarthShield = target != null ? target.Guid : 0;
+            return target;
+        }
+
+        /// <summary>
+        /// selects best Earth Shield target
+        /// </summary>
+        /// <returns></returns>
+        private static WoWUnit GetBestEarthShieldTargetBattlegrounds()
+        {
+            WoWUnit target = Unit.NearbyGroupMembers
+                .Where(u => IsValidEarthShieldTarget(u.ToUnit()))
+                .OrderByDescending(u => Unit.NearbyUnfriendlyUnits.Count(e => e.CurrentTargetGuid == u.Guid))
+                .ThenBy(u => u.HealthPercent)
+                .FirstOrDefault();
+
+            guidLastEarthShield = target != null ? target.Guid : 0;
             return target;
         }
 
         private static bool IsValidEarthShieldTarget(WoWUnit unit)
         {
-            if ( unit == null || !unit.IsValid || !unit.IsAlive || !Unit.NearbyGroupMembers.Any( g => g.Guid == unit.Guid ) )
+            if ( unit == null || !unit.IsValid || !unit.IsAlive || !Unit.GroupMembers.Any( g => g.Guid == unit.Guid ) || unit.Distance > 99 )
                 return false;
 
             return unit.HasMyAura("Earth Shield") || !unit.HasAnyAura( "Earth Shield", "Water Shield", "Lightning Shield");

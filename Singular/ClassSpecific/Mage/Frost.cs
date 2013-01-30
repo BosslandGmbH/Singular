@@ -14,6 +14,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
+using System;
 
 namespace Singular.ClassSpecific.Mage
 {
@@ -114,7 +115,7 @@ namespace Singular.ClassSpecific.Mage
 
                         // nether tempest in CombatBuffs
                         Spell.Cast("Frozen Orb", ret => Spell.UseAOE ),
-                        Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.HasAura("Frostbolt", 3) || Me.CurrentTarget.HasAuraExpired("Frostbolt", 3)),
+                        Spell.Cast("Frostbolt", ret => (!Me.CurrentTarget.HasAura("Frostbolt", 3) || Me.CurrentTarget.HasAuraExpired("Frostbolt", 3)) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                         new Throttle( 1,
                             new Decorator( 
                                 ret => !Me.HasAura("Fingers of Frost", 2),
@@ -122,8 +123,16 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
                         Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Brain Freeze")),
-                        Spell.Cast("Ice Lance", ret => Me.IsMoving || Me.ActiveAuras.ContainsKey("Fingers of Frost")),
-                        Spell.Cast("Frostbolt")
+                        Spell.Cast("Ice Lance", ret => (Me.IsMoving || Me.ActiveAuras.ContainsKey("Fingers of Frost")) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                        Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+
+                        new Decorator(
+                            ret => Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost),
+                            new PrioritySelector(
+                                Spell.Cast("Fire Blast"),
+                                Spell.Cast("Frostfire Bolt")
+                                )
+                            )
                         )
                     ),
 
@@ -258,7 +267,7 @@ namespace Singular.ClassSpecific.Mage
 
         #endregion
 
-        public static Composite CreateSummonWaterElemental()
+        public static Composite CreateSummonWaterElementalOld()
         {
             return new PrioritySelector(
                 new Decorator(
@@ -278,6 +287,70 @@ namespace Singular.ClassSpecific.Mage
                     )
                 );
         }
+
+        public static Composite CreateSummonWaterElemental()
+        {
+            return new Decorator(
+                ret => (!Me.GotAlivePet || Me.Pet.Distance > 40)
+                    && PetManager.PetTimer.IsFinished
+                    && SpellManager.CanCast("Summon Water Elemental"),
+
+                new Sequence(
+                    // wait for possible auto-spawn if supposed to have a pet and none present
+                    new DecoratorContinue(
+                        ret => !Me.GotAlivePet && !SingularSettings.Instance.DisablePetUsage,
+                        new Sequence(
+                            new Action(ret => Logger.WriteDebug("Summon Water Elemental:  waiting briefly for live pet to appear")),
+                            new WaitContinue(
+                                TimeSpan.FromMilliseconds(1000),
+                                ret => Me.GotAlivePet,
+                                new Sequence(
+                                    new Action(ret => Logger.WriteDebug("Summon Water Elemental:  live pet detected")),
+                                    new Action(r => { return RunStatus.Failure; })
+                                    )
+                                )
+                            )
+                        ),
+
+                    // dismiss pet if not supposed to have one
+                    new DecoratorContinue(
+                        ret => Me.GotAlivePet && SingularSettings.Instance.DisablePetUsage,
+                        new Sequence(
+                            new Action(ret => Logger.WriteDebug("Summon Water Elemental:  dismissing pet")),
+                            new Action(ctx => Lua.DoString("PetDismiss()")),
+                            new WaitContinue(
+                                TimeSpan.FromMilliseconds(1000),
+                                ret => !Me.GotAlivePet,
+                                new Action(ret => {
+                                    Logger.WriteDebug("Summon Water Elemental:  dismiss complete");
+                                    return RunStatus.Success;
+                                    })
+                                )
+                            )
+                        ),
+
+                    // summon pet if we still need to
+                    new DecoratorContinue(
+                        ret => !Me.GotAlivePet && !SingularSettings.Instance.DisablePetUsage,
+                        new Sequence(
+                            new Action(ret => Logger.WriteDebug("Summon Water Elemental:  about to summon pet")),
+
+                            // Heal() used intentionally here (has spell completion logic not present in Cast())
+                            Spell.Cast(n => "Summon Water Elemental",
+                                chkMov => true,
+                                onUnit => Me,
+                                req => true,
+                                cncl => false),
+
+                            // make sure we see pet alive before continuing
+                            new Wait(1, ret => Me.GotAlivePet, new ActionAlwaysSucceed()),
+                            new Action(ret => Logger.WriteDebug("Summon Water Elemental:  now have alive pet"))
+                            )
+                        )
+                    )
+                );
+        }
+
 
         
         /// <summary>

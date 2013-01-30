@@ -57,7 +57,7 @@ namespace Singular
         {
             if (obj.IsMe)
             {
-                return "Myself";
+                return "Me";
             }
 
             string name;
@@ -70,7 +70,7 @@ namespace Singular
             }
             else if (obj is WoWUnit && obj.ToUnit().IsPet)
             {
-                name = "Pet";
+                name =  obj.ToUnit().OwnedByRoot.SafeName()  + ":Pet";
             }
             else
             {

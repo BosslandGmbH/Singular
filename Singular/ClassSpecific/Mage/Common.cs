@@ -136,7 +136,7 @@ namespace Singular.ClassSpecific.Mage
 
                         Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
-                        Spell.Cast("Evocation", on => Me, ret => HasTalent( MageTalent.Invocation) && !Me.ActiveAuras.ContainsKey( "Invocation")),
+                        Spell.Cast("Evocation", on => Me, ret => HasTalent( MageTalent.Invocation) && !Me.ActiveAuras.ContainsKey( "Invoker's Energy")),
                         Spell.BuffSelf("Evocation", 
                             ret => Me.ManaPercent < 30 
                                 || (Me.HealthPercent < 30 || (Me.HealthPercent < 60 && 2 <= Unit.NearbyUnfriendlyUnits.Count( u => u.IsAlive && u.Combat && u.IsTargetingMeOrPet )))
@@ -161,7 +161,7 @@ namespace Singular.ClassSpecific.Mage
                         Spell.Cast("Living Bomb", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Living Bomb", 2)),
                         Spell.Cast("Frost Bomb", ret => Me.GotTarget && !Me.CurrentTarget.HasMyAura("Frost Bomb")),
 
-                        // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invocation")),
+                        // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invoker's Energy")),
                         Spell.Cast("Mirror Image"),
 
                         Spell.BuffSelf("Time Warp",

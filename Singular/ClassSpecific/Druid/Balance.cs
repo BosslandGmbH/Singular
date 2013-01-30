@@ -15,6 +15,7 @@ using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Styx.Common;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Druid
 {
@@ -53,6 +54,54 @@ namespace Singular.ClassSpecific.Druid
         static WoWUnit BestAoeTarget
         {
             get { return Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled()), ClusterType.Radius, 8f); }
+        }
+
+        #endregion
+
+        #region Heal
+
+
+        private static bool _ImaMoonBeast = false;
+
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
+        public static Composite CreateDruidBalanceHeal()
+        {
+            _ImaMoonBeast = TalentManager.HasGlyph( "Moonbeast");
+
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+
+                    Spell.Cast( "Rejuvenation", mov => false, on => Me, ret => Me.Combat && _ImaMoonBeast && Me.HasAuraExpired("Rejuvenation")), 
+
+                    Spell.Cast("Renewal", ret => Me.HealthPercent < DruidSettings.RenewalHealth),
+                    Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 75 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)) > 1),
+
+                    Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < 60),
+
+                    new Decorator(
+                        ret => Me.HealthPercent < 40,
+                        new PrioritySelector(
+
+                            new Decorator(
+                                ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)),
+                                new PrioritySelector(
+                                    Spell.Cast("Disorienting Roar"),
+                                    Spell.Cast("Might of Ursoc")
+                                    )
+                                ),
+
+                            // heal out of form at this point (try to Barkskin at least to prevent spell pushback)
+                            new Throttle(Spell.BuffSelf("Barkskin")),
+
+                            new PrioritySelector(
+                                Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation")),
+                                Spell.Cast("Healing Touch", on => Me)
+                                )
+                            )
+                        )
+                    )
+                );
         }
 
         #endregion
@@ -132,7 +181,7 @@ namespace Singular.ClassSpecific.Druid
                             ),
 
                         new Sequence(
-                            Spell.Cast("Moonfire", ret => !Me.CurrentTarget.HasAura("Moonfire")),
+                            Spell.Cast("Moonfire", ret => !Me.CurrentTarget.HasMyAura("Moonfire")),
                             new Action(ret => Logger.WriteDebug("Adding DoT:  Moonfire"))
                             ),
 
@@ -151,31 +200,6 @@ namespace Singular.ClassSpecific.Druid
                     ),
 
                 Movement.CreateMoveToTargetBehavior(true, 35f)
-                );
-        }
-
-        private static Composite CreateBalanceDiagnosticOutputBehavior()
-        {
-            return new Decorator(
-                ret => SingularSettings.Debug,
-                new Action(ret =>
-                {
-                    WoWUnit target = Me.CurrentTarget ?? Me;
-                    WoWAura eclips = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Eclipse (Solar)" || a.Name == "Eclipse (Lunar)");
-                    string eclipsString = eclips == null ? "None" : (eclips.Name == "Eclipse (Solar)" ? "Solar" : "Lunar" );
-
-                    Logger.WriteFile( LogLevel.Diagnostic, ".... h={0:F1}%/m={1:F1}%, eclps={2}, towards={3}, eclips#={4}, sunleft={5}, moonleft={6}, mushroomcnt={7}",
-                        Me.HealthPercent,
-                        Me.ManaPercent,
-                        eclipsString,
-                        GetEclipseDirection().ToString(),
-                        Me.CurrentEclipse,
-                        (long)target.GetAuraTimeLeft("Sunfire", true).TotalMilliseconds,
-                        (long)target.GetAuraTimeLeft("Moonfire", true).TotalMilliseconds,
-                        MushroomCount 
-                        );
-                    return RunStatus.Failure;
-                })
                 );
         }
 
@@ -215,36 +239,40 @@ namespace Singular.ClassSpecific.Druid
                         // Spread MF/IS
                         Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location),
 
-                        Spell.Cast("Starfall",
-                            ret => StyxWoW.Me,
-                            ret => DruidSettings.UseStarfall),
                         Spell.Buff("Faerie Fire", 
                             ret => StyxWoW.Me.CurrentTarget.Class == WoWClass.Rogue ||
                                    StyxWoW.Me.CurrentTarget.Class == WoWClass.Druid),
 
                         Spell.Cast("Typhoon",
                             ret => Me.CurrentTarget.IsWithinMeleeRange 
+                                && Me.CurrentTarget.Class != WoWClass.Priest
+                                && (Me.CurrentTarget.Class != WoWClass.Warlock || Me.CurrentTarget.CastingSpellId == 1949 /*Hellfire*/ || Me.CurrentTarget.HasAura("Immolation Aura"))
+                                && Me.CurrentTarget.Class != WoWClass.Hunter 
                                 && Me.IsSafelyFacing( Me.CurrentTarget, 90f)),
 
                         Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
-                        // Starsurge on every proc. Plain and simple.
-                        Spell.Cast("Starsurge"),
-                        // Refresh MF/SF
-                        Spell.Cast("Moonfire",
-                            ret => (StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Moonfire", true).TotalSeconds < 3 &&
-                                    StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Sunfire", true).TotalSeconds < 3) ||
-                                    (!StyxWoW.Me.HasAura("Nature's Grace") && TalentManager.IsSelected( 1)) ||
-                                    StyxWoW.Me.IsMoving),
-                        // Make sure we keep IS up. Clip the last tick. (~3s)
-                        Spell.Cast("Insect Swarm", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Insect Swarm", true).TotalSeconds < 3),
-                        // And then just spam Wrath/Starfire
+                        // make sure we always have DoTs 
+                        new Sequence(
+                            Spell.Cast("Sunfire", ret => Me.CurrentTarget.HasAuraExpired("Sunfire", 2)),
+                            new Action(ret => Logger.WriteDebug("Adding DoT:  Sunfire"))
+                            ),
 
-                        Spell.Cast("Starfire",
-                            ret => !Me.HasAura("Eclipse (Solar)")),
+                        new Sequence(
+                            Spell.Cast("Moonfire", ret => Me.CurrentTarget.HasAuraExpired("Moonfire", 2)),
+                            new Action(ret => Logger.WriteDebug("Adding DoT:  Moonfire"))
+                            ),
+
+                        CreateDoTRefreshOnEclipse(),
+
+                        Spell.Cast("Starsurge"),
+                        Spell.Cast("Starfall", ret => DruidSettings.UseStarfall),
 
                         Spell.Cast("Wrath",
-                            ret => !Me.HasAura("Eclipse (Lunar)"))
+                            ret => GetEclipseDirection() == EclipseType.Lunar),
+
+                        Spell.Cast("Starfire",
+                            ret => GetEclipseDirection() == EclipseType.Solar)
                         )
                     ),
 
@@ -330,7 +358,7 @@ namespace Singular.ClassSpecific.Druid
                             ),
 
                         new Sequence(
-                            Spell.Cast("Moonfire", ret => !Me.CurrentTarget.HasAura("Moonfire")),
+                            Spell.Cast("Moonfire", ret => !Me.CurrentTarget.HasMyAura("Moonfire")),
                             new Action(ret => Logger.WriteDebug("Adding DoT:  Moonfire"))
                             ),
 
@@ -393,7 +421,7 @@ namespace Singular.ClassSpecific.Druid
                 }),
 
                 new Sequence(
-                    Spell.Buff("Moonfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Lunar),
+                    Spell.Cast("Moonfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Lunar),
                     new Action(ret =>
                     {
                         newEclipseDotNeeded = false;
@@ -402,7 +430,7 @@ namespace Singular.ClassSpecific.Druid
                     ),
 
                 new Sequence(
-                    Spell.Buff("Sunfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Solar),
+                    Spell.Cast("Sunfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Solar),
                     new Action(ret =>
                     {
                         newEclipseDotNeeded = false;
@@ -432,6 +460,50 @@ namespace Singular.ClassSpecific.Druid
         private static EclipseType lastEclipse;
 
         #endregion
-    
+
+
+        #region Diagnostics
+
+        private static Composite CreateBalanceDiagnosticOutputBehavior()
+        {
+            return new Decorator(
+                ret => SingularSettings.Debug,
+                new Throttle(1,
+                    new Action(ret =>
+                    {
+                        string log;
+                        WoWAura eclips = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Eclipse (Solar)" || a.Name == "Eclipse (Lunar)");
+                        string eclipsString = eclips == null ? "None" : (eclips.Name == "Eclipse (Solar)" ? "Solar" : "Lunar");
+
+                        log = string.Format(".... h={0:F1}%/m={1:F1}%, eclps={2}, towards={3}, eclps#={4}, mushcnt={5}",
+                            Me.HealthPercent,
+                            Me.ManaPercent,
+                            eclipsString,
+                            GetEclipseDirection().ToString(),
+                            Me.CurrentEclipse,
+                            MushroomCount
+                            );
+
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target != null)
+                        {
+                            log += string.Format(", th={0:F1}%/tm={1:F1}%, dist={2:F1}, face={3}, loss={4}, sfire={5}, mfire={6}",
+                                target.HealthPercent,
+                                target.ManaPercent,
+                                target.Distance,
+                                Me.IsSafelyFacing(target),
+                                target.InLineOfSpellSight,
+                                (long)target.GetAuraTimeLeft("Sunfire", true).TotalMilliseconds,
+                                (long)target.GetAuraTimeLeft("Moonfire", true).TotalMilliseconds
+                                );
+                        }
+
+                        Logger.WriteDebug(Color.AntiqueWhite, log);
+                    })
+                    )
+                );
+        }
+
+        #endregion
     }
 }

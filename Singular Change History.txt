@@ -1,3 +1,67 @@
+--- Release 3.0.0.1653 ---
+
+General
+
+change- names added to log window for spells cast on Pet will have the Pet Owners name as well to differentiate
+
+fixed - target check for no target or dead target while in combat now correctly switches to agro mob.  previously switched to any nearby target in combat
+
+
+Druid
+
+fixed - Balance - revamped PVP spell priority; fixes issues with refreshing DoTs; refined Typhoon to not cast due to a Ranged class in melee range
+
+change- Balance - PVP spell healing behavior now buffs Rejuvenation early in Combat for improved survivability
+
+fixed - Balance - Instance rotation issue where Singular saw another players Moonfire DoT on target so didn't refresh
+
+fixed - Balance - Instance rotation where DoTs need to be overwritten at beginning of an eclipse was only casting if not present
+
+
+Mage
+
+fixed - All Specs - Evocation cast was checking for Invocation aura rather than Invoker's Energy
+
+fixed - Fire - Normal Context now correctly casts Frost spells on Fire immune mobs
+
+fixed - Frost - Normal Context now correctly casts Fire spells on Frost immune mobs
+
+
+Priest
+
+change- Shadow - Normal context correctly casts Vampiric Touch on mobs with more than 10 seconds to live (rather than just elites and bosses.)
+
+
+Shaman
+
+change - Resto - Normal context (solo) now applies Water Shield if < 15% mana, Earth Shield if Mana % > 30 and Health % < 65, and Lightning Shield if Mana > 30 and Health > 85
+
+change - Resto - Battleground context no longer causes Water Shield / Earth Shield / Water Shield / ... spam
+
+change - Resto - Battleground context now applies Earth Shield to self if mana > 25%, or Water Shield if Mana % < 15
+
+change - Resto - Instance context now only apply Earth Shield to a non-Tank if in combat even when Tank goes out of range
+
+
+Warlock 
+
+fixed - All Specs - Health Funnel now correctly cancels cast if pet health gets topped off early
+
+fixed - Demonology - Hand of Gul'dan is now correctly cast. 
+
+change- Demonology - Class Config settings added to allow specify the Fury % to enter Demon form and the Fury % to leave Demon form
+
+
+Warrior
+
+change- All Specs - will cast Victory Rush / Impending Victory only when there will be no overheal, the Victorius aura will expire, or the current target has less than 7 seconds to death (which should refresh the aura)
+
+*new* - All Specs - setting to use Victory Rush / Impending Victory on cooldown (for those that don't care about overhealing and just want it cast)
+
+
+
+
+
 --- Release 3.0.0.1640 ---
 
 General

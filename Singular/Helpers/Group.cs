@@ -48,6 +48,28 @@ namespace Singular.Helpers
             }
         }
 
+        /// <summary>
+        /// True: if a group member with Tank role (not spec) is alive and within 40 yds
+        /// </summary>
+        public static bool AnyTankNearby
+        {
+            get
+            {
+                return Tanks.Any(h => h.IsAlive && h.Distance < 40);
+            }
+        }
+
+        /// <summary>
+        /// True: if a group member with Healer role (not spec) is alive and within 40 yds
+        /// </summary>
+        public static bool AnyHealerNearby
+        {
+            get
+            {
+                return Healers.Any(h => h.IsAlive && h.Distance < 40);
+            }
+        }
+
         /// <summary>Gets a player by class priority. The order of which classes are passed in, is the priority to find them.</summary>
         /// <remarks>Created 9/9/2011.</remarks>
         /// <param name="range"></param>

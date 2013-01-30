@@ -232,13 +232,13 @@ namespace Singular.ClassSpecific.Warlock
                         // lower threat if tanks nearby to pickup
                         Spell.BuffSelf("Soulshatter",
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances 
-                                && Group.Tanks.Any(t => t.IsAlive && t.Distance < 50)
+                                && Group.AnyTankNearby
                                 && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
 
                         // lower threat if voidwalker nearby to pickup
                         Spell.BuffSelf("Soulshatter",
                             ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds 
-                                && !Group.Tanks.Any(t => t.IsAlive && t.Distance < 50)
+                                && !Group.AnyTankNearby 
                                 && GetCurrentPet() == WarlockPet.Voidwalker 
                                 && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
 
@@ -538,26 +538,11 @@ namespace Singular.ClassSpecific.Warlock
                         CreateCastSoulburn(ret => Me.Combat && Me.Specialization == WoWSpec.WarlockAffliction ),
                         new ActionAlwaysSucceed()
                         ),
-                    // new Action(ret => Logger.Write("^Health Funnel since Pet @ {0:F1}%", Me.Pet.HealthPercent)),
 
-
-                    // for Affliction make it a quick heal
-
-                    // isn't this a dupe of the code above?
-
-                    //new DecoratorContinue(
-                    //    ret => SpellManager.HasSpell("Soulburn: Health Funnel") && Me.CurrentSoulShards > 0,
-                    //    new PrioritySelector(
-                    //        CreateCastSoulburn( ret => true ),
-                    //        new ActionAlwaysSucceed()
-                    //        )
-                    //    ),
-
-                        new Sequence(
-                            new Action(ctx => WoWMovement.MoveStop()),
-                            Helpers.Common.CreateWaitForLagDuration(),
-                            new Action(ret => Logger.Write("Casting Health Funnel on Pet @ {0:F1}%", Me.Pet.HealthPercent)),
-                    Spell.Cast(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, req => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth )),
+                    new Action(ctx => WoWMovement.MoveStop()),
+                    Helpers.Common.CreateWaitForLagDuration(),
+                    new Action(ret => Logger.Write("Casting Health Funnel on Pet @ {0:F1}%", Me.Pet.HealthPercent)),
+                    Spell.Cast(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth ),
                     Helpers.Common.CreateWaitForLagDuration(),
                     new WaitContinue(TimeSpan.FromMilliseconds(500), ret => !Me.IsCasting && Me.GotAlivePet && Me.Pet.HealthPercent < petMaxHealth && Me.HealthPercent > 50, new ActionAlwaysSucceed())
                     )

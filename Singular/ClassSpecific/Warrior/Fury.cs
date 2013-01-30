@@ -98,7 +98,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(ret => StyxWoW.Me.Level < 30,
                     new PrioritySelector(
                         Movement.CreateMoveBehindTargetBehavior(),
-                        Spell.Cast("Victory Rush"),
+                        Common.CreateVictoryRushBehavior(),
                         Spell.Cast("Execute"),
                         Spell.Cast("Bloodthirst"),
                         Spell.Cast("Wild Strike"),
@@ -131,7 +131,7 @@ namespace Singular.ClassSpecific.Warrior
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 // Heal up in melee
-                Spell.Cast("Victory Rush", ret => StyxWoW.Me.HealthPercent < 90 && StyxWoW.Me.HasAura("Victorious")),
+                Common.CreateVictoryRushBehavior(),
 
                 // engineering gloves
                 Item.UseEquippedItem((uint)WoWInventorySlot.Hands),

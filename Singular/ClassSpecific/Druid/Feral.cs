@@ -82,8 +82,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateMoveToLosBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
-                new Decorator(ret => Me.Mounted,
-                              Helpers.Common.CreateDismount("Pulling")),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 Spell.WaitForCast(),
 

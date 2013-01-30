@@ -63,8 +63,14 @@ namespace Singular.ClassSpecific.Warlock
                                 })
                             ),
 
-
                         Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+
+                        // even though AOE spell, keep on CD for single target unless AoE turned off
+                        new Decorator(
+                            ret => Spell.UseAOE && Common.GetCurrentPet() == WarlockPet.Felguard,
+                            Pet.CreateCastPetAction("Felstorm")
+                            ),
+
 
             #region Felguard Use
 
@@ -122,7 +128,7 @@ namespace Singular.ClassSpecific.Warlock
                             ret => !Me.HasAura( "Metamorphosis"),
                             new PrioritySelector(
                                 Spell.Cast("Corruption", req => Me.CurrentTarget.HasAuraExpired("Corruption", 3)),
-                                Spell.Cast("Hand of Gul'dan", req => Me.CurrentTarget.HasAuraExpired("Shadowflame", 1)),
+                                CreateHandOfGuldanBehavior(),
                                 Spell.Cast("Soul Fire", ret => Me.HasAura("Molten Core")),
                                 Spell.Cast("Shadow Bolt")
                                 )
@@ -133,6 +139,20 @@ namespace Singular.ClassSpecific.Warlock
                     ),
 
                 Movement.CreateMoveToRangeAndStopBehavior( toUnit => Me.CurrentTarget, range => 35f)
+                );
+        }
+
+        private static Composite CreateHandOfGuldanBehavior()
+        {
+            return new Throttle(
+                TimeSpan.FromMilliseconds(500),
+                new Decorator( 
+                    ret => Me.CurrentTarget.HasAuraExpired("Hand of Gul'dan", "Shadowflame", 1),
+                    new PrioritySelector(
+                        Spell.CastOnGround("Hand of Gul'dan", loc => Me.CurrentTarget.Location, ret => TalentManager.HasGlyph("Hand of Gul'dan")),
+                        Spell.Cast("Hand of Gul'dan", req => !TalentManager.HasGlyph("Hand of Gul'dan"))
+                        )
+                    )
                 );
         }
 
@@ -147,9 +167,9 @@ namespace Singular.ClassSpecific.Warlock
                 if (CurrentDemonicFury >= 72 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom"))
                     shouldCast = true;
                 // check if we have Corruption and we need to dump fury
-                else if (CurrentDemonicFury >= 900 && !Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
+                else if (CurrentDemonicFury >= WarlockSettings.FurySwitchToDemon && !Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
                     shouldCast = true;
-
+                
                 // if we need to cast, check that we can
                 if (shouldCast)
                     shouldCast = SpellManager.CanCast("Metamorphosis", Me, false);
@@ -174,7 +194,7 @@ namespace Singular.ClassSpecific.Warlock
                 else if ( CurrentDemonicFury >= 60 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom"))
                     shouldCancel = false;
                 // finally... now check if we should cancel 
-                else if ( CurrentDemonicFury < 800 && Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
+                else if ( CurrentDemonicFury < WarlockSettings.FurySwitchToCaster && Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
                     shouldCancel = true;
                 // do not need to check CanCast() on the cancel ...
             }
@@ -205,20 +225,31 @@ namespace Singular.ClassSpecific.Warlock
             return new Decorator(
                 ret => Spell.UseAOE,
                 new PrioritySelector(
-
+/*
                     new Decorator(
                         ret => Common.GetCurrentPet() == WarlockPet.Felguard && Unit.NearbyUnfriendlyUnits.Count(u => u.Location.DistanceSqr(Me.Pet.Location) < 8 * 8) > 1,
                         Pet.CreateCastPetAction("Felstorm")
                         ),
-
+*/
                     new Decorator(
-                        ret => _mobCount >= 4 && Me.HasAura("Metamorphosis"),
-                        Spell.Cast( "Hellfire",  ret => SpellManager.HasSpell("Hellfire") && !Me.HasAura("Immolation Aura"))
+                        ret => Me.HasAura("Metamorphosis"),
+                        new PrioritySelector(
+                            Spell.Cast("Hellfire", ret => _mobCount >= 4 && SpellManager.HasSpell("Hellfire") && !Me.HasAura("Immolation Aura")),
+                            new Decorator(
+                                ret => _mobCount >= 2 && Common.TargetsInCombat.Count(t => !t.HasAuraExpired("Metamorphosis: Doom", "Doom", 1)) < Math.Min( _mobCount, 3),
+                                CastHack( "Metamorphosis: Doom", "Doom", on => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Metamorphosis: Doom", "Doom", 1)), req => true)
+                                )
+                            )
                         ),
 
                     new Decorator(
-                        ret => _mobCount >= 2 && Common.TargetsInCombat.Count(t => !t.HasAuraExpired("Corruption")) < Math.Min( _mobCount, 3),
-                        Spell.Cast("Corruption", ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Corruption")))
+                        ret => !Me.HasAura("Metamorphosis"),
+                        new PrioritySelector(
+                            new Decorator(
+                                ret => _mobCount >= 2 && Common.TargetsInCombat.Count(t => !t.HasAuraExpired("Corruption")) < Math.Min( _mobCount, 3),
+                                Spell.Cast("Corruption", ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Corruption")))
+                                )
+                            )
                         )
                     )
                 );
@@ -248,23 +279,25 @@ namespace Singular.ClassSpecific.Warlock
 
                         string msg;
                         
-                        msg = string.Format(".... h={0:F1}%/m={1:F1}%, fury={2}, metamor={3}, mcore={4}, darksoul={5}",
+                        msg = string.Format(".... h={0:F1}%/m={1:F1}%, fury={2}, metamor={3}, mcore={4}, darksoul={5}, aoecnt={6}",
                              Me.HealthPercent,
                              Me.ManaPercent,
                              CurrentDemonicFury,
                              Me.HasAura("Metamorphosis"),
                              lstks,
-                             Me.HasAura("Dark Soul: Knowledge")
+                             Me.HasAura("Dark Soul: Knowledge"),
+                             _mobCount 
                              );
 
                         if (target != null)
                         {
-                            msg += string.Format(", corrupt={0}, doom={1}, enemy={2}%, edist={3:F1}, mobcnt={4}",
-                                (long)target.GetAuraTimeLeft("Corruption", true).TotalMilliseconds,
-                                (long)target.GetAuraTimeLeft("Doom", true).TotalMilliseconds,
+                            msg += string.Format(", enemy={0}% @ {1:F1} yds, corrupt={2}, doom={3}, shdwflm={4}",
                                 (int)target.HealthPercent,
                                 target.Distance,
-                                0);
+                                (long)target.GetAuraTimeLeft("Corruption", true).TotalMilliseconds,
+                                (long)target.GetAuraTimeLeft("Doom", true).TotalMilliseconds,
+                                (long)target.GetAuraTimeLeft("Shadowflame", true).TotalMilliseconds
+                                );
                         }
 
                         Logger.WriteDebug(Color.Wheat, msg);

@@ -39,7 +39,7 @@ namespace Singular.ClassSpecific.Warrior
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
 
-                new Decorator(ret => Me.Mounted, Helpers.Common.CreateDismount("Pulling")),
+                Helpers.Common.CreateDismount("Pulling"),
 
                 //Shoot flying targets
                 new Decorator(
@@ -148,8 +148,7 @@ namespace Singular.ClassSpecific.Warrior
 
                         CreateDiagnosticOutputBehavior(),
 
-                        Spell.Cast("Impending Victory"),
-                        Spell.Cast("Victory Rush", ret => Me.HasAura("Victorious")),
+                        Common.CreateVictoryRushBehavior(),
 
                         Spell.Cast("Execute", 
                             ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances 

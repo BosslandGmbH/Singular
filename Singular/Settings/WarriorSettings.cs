@@ -94,6 +94,13 @@ namespace Singular.Settings
         #endregion
 
         [Setting]
+        [DefaultValue(WarriorStance.Auto)]
+        [Category("DPS")]
+        [DisplayName("Warrior DPS Stance")]
+        [Description("The stance to use while DPSing. Battle stance if there is little incoming damage, Berserker otherwise. Protection will always use Defensive stance.")]
+        public WarriorStance Stance { get; set; }
+
+        [Setting]
         [DefaultValue(WarriorShout.BattleShout)]
         [Category("General")]
         [DisplayName("Warrior Shout")]
@@ -101,10 +108,10 @@ namespace Singular.Settings
         public WarriorShout Shout { get; set; }
 
         [Setting]
-        [DefaultValue(WarriorStance.Auto)]
-        [Category("DPS")]
-        [DisplayName("Warrior DPS Stance")]
-        [Description("The stance to use while DPSing. Battle stance if there is little incoming damage, Berserker otherwise. Protection will always use Defensive stance.")]
-        public WarriorStance Stance { get; set; }
+        [DefaultValue(false)]
+        [Category("General")]
+        [DisplayName("Victory Rush on Cooldown")]
+        [Description("True: use Victory Rush/Impending Victory on cooldown regardless of current health %")]
+        public bool VictoryRushOnCooldown { get; set; }
     }
 }

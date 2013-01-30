@@ -74,7 +74,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static string BloodlustName { get { return Me.IsHorde ? "Bloodlust" : "Heroism"; } }
         public static string SatedName { get { return Me.IsHorde ? "Sated" : "Exhaustion"; } }
-        public static bool AnyHealersNearby { get { return Group.Healers.Any(h => h.IsAlive && h.Distance < 40); } }
+        public static bool AnyHealersNearby { get { return Group.AnyHealerNearby; } }
 
         public static bool HasTalent(ShamanTalents tal)
         {

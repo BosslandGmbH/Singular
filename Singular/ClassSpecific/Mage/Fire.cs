@@ -57,6 +57,9 @@ namespace Singular.ClassSpecific.Mage
 
                         CreateFireDiagnosticOutputBehavior(),
 
+                        // move to highest in priority to ensure this is cast
+                        Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
+
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
@@ -97,12 +100,19 @@ namespace Singular.ClassSpecific.Mage
 
                         // Single Target
                         // living bomb in Common
-                        Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
-                        Spell.Cast("Pyroblast", ret => Me.ActiveAuras.ContainsKey("Pyroblast!")),
-                        Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
-                        Spell.Cast("Fireball"),
+                        new Decorator(
+                            ret =>  !Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire),
+                            new PrioritySelector(
+                                Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
+                                Spell.Cast("Pyroblast", ret => Me.ActiveAuras.ContainsKey("Pyroblast!")),
+                                Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
+                                Spell.Cast("Fireball")
+                                )
+                            ),
 
-                        Spell.Cast("Frostfire Bolt")
+                        // 
+                        Spell.Cast("Ice Lance", ret => (Me.IsMoving || Me.CurrentTarget.HasAura("Frost Nova")) && Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
+                        Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Fireball") || Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire))
                         )
                     ),
 

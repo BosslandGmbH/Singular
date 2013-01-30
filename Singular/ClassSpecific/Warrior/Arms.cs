@@ -100,6 +100,7 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
+
         [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.All)]
         public static Composite CreateArmsNormalCombat()
         {
@@ -120,15 +121,7 @@ namespace Singular.ClassSpecific.Warrior
 
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                        new Throttle( 
-                            new Decorator(
-                                ret => Me.HealthPercent < 35 || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && StyxWoW.Me.HealthPercent < 90),
-                                new PrioritySelector(
-                                    Spell.Cast("Impending Victory"),
-                                    Spell.Cast("Victory Rush", ret => Me.HasAura("Victorious"))
-                                    )
-                                )
-                            ),
+                        Common.CreateVictoryRushBehavior(),
 
                         Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
                         Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),

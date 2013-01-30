@@ -14,6 +14,7 @@ using Singular.Settings;
 using Singular.Managers;
 using Styx.Helpers;
 using System.Drawing;
+using Styx.Patchables;
 
 namespace Singular.Helpers
 {
@@ -1004,9 +1005,9 @@ namespace Singular.Helpers
                             _IsSpellBeingQueued = allow == LagTolerance.Yes && (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
                             Logger.Write(string.Format("Casting {0} on {1}", _spell.Name, onUnit(ret).SafeName()));
-                            if ( !SpellManager.Cast( _spell, onUnit(ret)))
+                            if (!SpellManager.Cast(_spell, onUnit(ret)))
                             {
-                                Logger.WriteDebug( Color.LightPink, "cast of {0} on {1} failed!", _spell.Name, onUnit(ret).SafeName());
+                                Logger.WriteDebug(Color.LightPink, "cast of {0} on {1} failed!", _spell.Name, onUnit(ret).SafeName());
                                 return RunStatus.Failure;
                             }
 
@@ -1020,56 +1021,55 @@ namespace Singular.Helpers
                             new ActionAlwaysSucceed()
                             ),
 
+                        // new Action(r => Logger.WriteDebug("Spell.Cast(\"{0}\"): waited for queued spell {1}", name(r), _IsSpellBeingQueued )),
+
                         // failsafe: max time we should be waiting with the prior and latter WaitContinue is latency x 2
                 // .. if system is borked, could be 1 second but shouldnt notice.  
                 // .. instant spells should be very quick since only prior wait applies
 
                         // now for non-instant spell, wait for .IsCasting to be true
                         new WaitContinue(
-                            TimeSpan.FromMilliseconds(500),
+                            TimeSpan.FromMilliseconds(300),
                             ret =>
                             {
-                                WoWSpell spell;
-                                if (SpellManager.Spells.TryGetValue(name(ret), out spell))
+                                SpellFindResults sfr;
+                                if (SpellManager.FindSpell(name(ret), out sfr))
                                 {
-                                    if (spell.CastTime == 0)
+                                    WoWSpell spell = sfr.Override ?? sfr.Original;
+                                    if (spell.CastTime == 0 && !IsFunnel(spell))
+                                    {
                                         return true;
-
-                                    return StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling;
+                                    }
                                 }
 
-                                return true;
+                                return StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling;
                             },
                             new ActionAlwaysSucceed()
                             ),
+
+                        /// new Action(r => Logger.WriteDebug("Spell.Cast(\"{0}\"): assume we are casting (actual={1}, gcd={2})", name(r), StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling, SpellManager.GlobalCooldown )),
 
                         new PrioritySelector(
 
                             // when not monitoring for cancel, don't wait for completion of full cast
                             new Decorator(
                                 ret => cancel == null,
-                                new ActionAlwaysSucceed()
+                                new Action(r => {
+                                    // Logger.WriteDebug("Spell.Cast(\"{0}\"): no cancel delegate", name(r));
+                                    return RunStatus.Success;
+                                    })
                                 ),
 
                             // finally, wait at this point until Cast completes
-                // .. always return success here since based on flags we cast something
-                            new WaitContinue(3,
+                            // .. always return success here since based on flags we cast something
+                            new Wait(10,
                                 ret =>
                                 {
                                     // Interrupted or finished casting. 
-                                    if (!StyxWoW.Me.IsCasting && !StyxWoW.Me.IsChanneling)
+                                    if (!Spell.IsCastingOrChannelling(allow))
                                     {
+                                        // Logger.WriteDebug("Spell.Cast(\"{0}\"): cast has ended", name(ret));
                                         return true;
-                                    }
-
-                                    // allow channel spells fall through to cancel test
-
-                                    // for casted spells and lag tolerance enabled, check before end of cast if we are done
-                                    if (allow == LagTolerance.Yes && StyxWoW.Me.IsCasting && !StyxWoW.Me.IsChanneling)
-                                    {
-                                        TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
-                                        if (castTimeLeft != TimeSpan.Zero && castTimeLeft.TotalMilliseconds < (StyxWoW.WoWClient.Latency * 2))
-                                            return true;
                                     }
 
                                     // check cancel delegate if we are finished
@@ -1079,12 +1079,16 @@ namespace Singular.Helpers
                                         Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name(ret), onUnit(ret).SafeName(), onUnit(ret).HealthPercent);
                                         return true;
                                     }
-
                                     // continue casting/channeling at this point
                                     return false;
                                 },
                                 new ActionAlwaysSucceed()
-                                )
+                                ),
+
+                            new Action(r => {
+                                Logger.WriteDebug("Spell.Cast(\"{0}\"): timed out waiting", name(r));
+                                return RunStatus.Success;
+                                })
                             )
                         )
                     )
@@ -1229,7 +1233,58 @@ namespace Singular.Helpers
         }
 
         #endregion
+
+        public static bool IsFunnel(string name)
+        {
+            SpellFindResults sfr;
+            SpellManager.FindSpell(name, out sfr);
+            WoWSpell spell = sfr.Override ?? sfr.Original;
+            if (spell == null)
+                return false;
+            return IsFunnel(spell);
+        }
+
+        public static bool IsFunnel(WoWSpell spell)
+        {
+#if IS_FUNNEL_IS_FIXED
+            return spell.IsFunnel;
+#elif LUA_CALL_ACTUALLY_WORKED
+            bool channeled = Lua.GetReturnVal<bool>( "return GetSpellInfo("+ spell.Id.ToString() + ")", 4 );
+            return channeled;
+#else   // HV has the answers... ty m8
+            bool IsChanneled = false;
+            var row = StyxWoW.Db[Styx.Patchables.ClientDb.Spell].GetRow((uint)spell.Id);
+            if (row.IsValid)
+            { 
+                var spellMiscIdx = row.GetField<uint>(24);
+                row = StyxWoW.Db[Styx.Patchables.ClientDb.SpellMisc].GetRow(spellMiscIdx); 
+                var flags = row.GetField<uint>(4); 
+                IsChanneled = (flags & 68) != 0; 
+            }
+
+            return IsChanneled;
+#endif
+        }
+
+        public static int GetCharges(string name)
+        {
+            SpellFindResults sfr;
+            SpellManager.FindSpell(name, out sfr);
+            WoWSpell spell = sfr.Override ?? sfr.Original;
+            if (spell == null)
+                return 0;
+            return GetCharges(spell);
+        }
+
+        public static int GetCharges(WoWSpell spell)
+        {
+            int charges = Lua.GetReturnVal<int>("return GetSpellCharges(" + spell.Id.ToString() + ")", 0);
+            return charges;
+        }
+
     }
+
+#if SPELL_BLACKLIST_WERE_NEEDED
 
     internal class SpellBlacklist
     {
@@ -1291,4 +1346,7 @@ namespace Singular.Helpers
             }
         }
     }
+
+#endif 
+
 }

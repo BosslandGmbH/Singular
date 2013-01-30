@@ -156,7 +156,7 @@ namespace Singular.ClassSpecific.Priest
                         // for targets we will fight longer than 10 seconds (it's a guess)
                         new Decorator(
                             ret => StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2)
-                                || Me.CurrentTarget.TimeToDeath() > 15
+                                || Me.CurrentTarget.TimeToDeath() > 10
                                 || (Me.CurrentTarget.Elite && Me.CurrentTarget.Level > (Me.Level - 10)),
 
                             new PrioritySelector(
@@ -166,7 +166,7 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 Spell.Cast("Halo"),
                                 Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
-                                Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
+                                Spell.Buff("Vampiric Touch"),
                                 Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 40),
                                 Spell.Cast("Mindbender", ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 50),
                                 Spell.Cast("Power Infusion"),
@@ -332,7 +332,7 @@ namespace Singular.ClassSpecific.Priest
         {
             get 
             { 
-                return Group.Tanks.Any( t => t.IsAlive && t.Distance < 40 ) 
+                return Group.AnyTankNearby
                     ? Group.Tanks.Where( t => t.IsAlive && t.Distance < 40).OrderByDescending(t => AoeTargets.Count(a => t.Location.Distance(a.Location) < 10f)).FirstOrDefault()
                     : Clusters.GetBestUnitForCluster( AoeTargets, ClusterType.Radius, 10f); 
             }

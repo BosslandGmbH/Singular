@@ -89,7 +89,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         Spell.Cast("Conflagrate"),
                         Common.BuffWithCastTime("Immolate", on => Me.CurrentTarget, ret => Me.CurrentTarget.HasAuraExpired("Immolate")),
-                        Spell.Cast("Drain Life", ret => Me.HealthPercent < 40 && !Group.Healers.Any(h => h.IsAlive && h.Distance < 40)),
+                        Spell.Cast("Drain Life", ret => Me.HealthPercent < 40 && !Group.AnyHealerNearby),
                         Spell.Cast("Incinerate"),
 
                         Spell.Cast("Fel Flame", ret => Me.IsMoving),

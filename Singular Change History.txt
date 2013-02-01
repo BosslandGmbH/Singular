@@ -1,3 +1,36 @@
+--- Release 3.0.0.1692 ---
+
+General
+
+change- revision to some log output in Debug mode.  Be sure to set Debug Logging to true in Class Config if you are experiencing an issue you would like researched
+
+
+Mage
+
+fixed - Frost - correctly resummons Water Elemental duing combat if it dies
+
+change- Frost - will not try to build a 3 stack of Frostbolt on mobs expected to die quickly (less than 20 secs) when Solo
+
+
+Warlock
+
+change- All Specs - will resummon Pet before eating or drinking in case a mob is agroed
+
+fixed - All Specs - keeps Soul Link buff up if talented
+
+fixed - Affliction - if pet dies during combat and soulshards available will do instant pet resummon via Soulburn.  
+
+change- All Specs - resummon during combat is highest priority if it will be instant (due to Demonic Rebirth or Soulburn), otherwise defensive abilities used first
+
+fixed - All Specs - casts Twilight Ward to help mitigate damage inflicted by Soul Link or Dark Regeneration.  also cast if in PVP and being attacked by either a Warlock or Priest
+
+change- All Specs - Dark Bargain health % increased from 30 to 50
+
+fixed - Demonology - SoulFire cast added while in Demon form
+
+
+
+
 --- Release 3.0.0.1670 ---
 
 General

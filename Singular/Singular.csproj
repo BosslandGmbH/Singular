@@ -253,6 +253,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="CONTRIBUTORS.txt" />
+    <Content Include="Singular.xml" />
     <None Include="SingularRoutine.Version.tmpl" />
   </ItemGroup>
   <ItemGroup>
@@ -276,8 +277,11 @@ if $(ConfigurationName) == Raphus (
 
 if $(ConfigurationName) == Bobby53 (
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HB\Routines\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HB\Routines\Singular\" /i /f /v /y
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HBB\Routines\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HBB\Routines\Singular\" /i /f /v /y
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HBC\Routines\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HBC\Routines\Singular\" /i /f /v /y
 )
 
 if $(ConfigurationName) == HighVoltz (
@@ -291,6 +295,7 @@ ECHO Copied</PostBuildEvent>
   <PropertyGroup>
     <PreBuildEvent>if $(ConfigurationName) == Bobby53 (
 SubWCRev.exe $(ProjectDir) $(ProjectDir)SingularRoutine.Version.tmpl $(ProjectDir)SingularRoutine.Version.cs
+$(SolutionDir)..\filegen\bin\debug\filegen $(ProjectDir)
 )</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

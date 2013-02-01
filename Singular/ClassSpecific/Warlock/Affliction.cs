@@ -133,7 +133,7 @@ namespace Singular.ClassSpecific.Warlock
                             ret => Me.CurrentTarget,
                             ret => Me.CurrentTarget.HealthPercent < 20 || Me.CurrentTarget.HasAnyAura("Agony", "Corruption", "Unstable Affliction")),
 
-                            Common.CreateCastSoulburn(ctx => Me.HealthPercent < 75),
+                        Common.CreateCastSoulburn(ctx => Me.HealthPercent < 75),
 
                             // HAwker added Soulburn Jan 22 2013
                         Spell.Cast("Drain Life", ret => (Me.HealthPercent < 95 && Me.HasAura("Soulburn")) || Me.HealthPercent < 40 && !Group.AnyHealerNearby),

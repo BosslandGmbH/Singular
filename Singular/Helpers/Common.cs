@@ -10,6 +10,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals;
 using CommonBehaviors.Actions;
+using Singular.Settings;
 
 namespace Singular.Helpers
 {
@@ -218,6 +219,21 @@ namespace Singular.Helpers
         {
             return new WaitContinue(TimeSpan.FromMilliseconds((StyxWoW.WoWClient.Latency * 2) + 150), orUntil, new ActionAlwaysSucceed());
         }
+
+        #region Wait for Rez Sickness
+
+        public static Composite CreateWaitForRessSickness()
+        {
+            return new Decorator(
+                ret => SingularSettings.Instance.WaitForResSickness && StyxWoW.Me.HasAura("Resurrection Sickness"),
+                new PrioritySelector(
+                    new Throttle(TimeSpan.FromMinutes(1), new Action(r => Logger.Write("Waiting out Resurrection Sickness (expires in {0:F0} seconds", StyxWoW.Me.GetAuraTimeLeft("Resurrection Sickness", false).TotalSeconds))),
+                    new Action(ret => { })
+                    )
+                );
+        }
+
+        #endregion
 
         private static readonly WaitTimer InterruptTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
 

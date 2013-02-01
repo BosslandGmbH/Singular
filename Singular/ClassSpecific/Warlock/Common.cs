@@ -69,34 +69,22 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockRest()
         {
             return new PrioritySelector(
-                new Decorator(ctx => Me.HasAura("Resurrection Sickness") || Me.IsCasting,
-                    new Sequence(
-                    new Action(ctx => RunStatus.Success))),
 
-                new Decorator(ctx => SpellManager.HasSpell("Soul Link") && !Me.HasAura("Soul Link") && Me.GotAlivePet,
-                    Spell.BuffSelf("Soul Link")),    
+                //-- move following to top of root
+                //new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
+                //    new Action(ctx => Lua.DoString("PetDismiss()"))),
 
-                new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
-                    new Action(ctx => Lua.DoString("PetDismiss()"))),
+                // new ThrottlePasses( 5, new Action( r => { Logger.Write( "in Rest()"); return RunStatus.Failure; } )),
+                new Sequence(
+                    Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 80 && Me.HealthPercent > 60 && !Me.HasAnyAura("Drink", "Food")),
+                    Helpers.Common.CreateWaitForLagDuration()
+                    ),
 
-                // following will break questing which has some /use item spells that this would cancel
-                //new Decorator(
-                //    ctx => Me.CastingSpell != null && Me.CastingSpell.Name.Contains("Summon") && Me.GotAlivePet,
-                //    new Action(ctx => SpellManager.StopCasting())),
+                Common.CreateWarlockSummonPet(),
 
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        new Sequence(
-                            Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 80 && Me.HealthPercent > 60 && !Me.HasAnyAura("Drink", "Food")),
-                            Helpers.Common.CreateWaitForLagDuration()
-                            ),
-                        Rest.CreateDefaultRestBehaviour(),
+                Rest.CreateDefaultRestBehaviour(),
 
-                        Common.CreatWarlockHealthFunnelBehavior( 85 )
-                        )
-                    )
+                Common.CreatWarlockHealthFunnelBehavior( 85 )
                 );
         }
 
@@ -112,9 +100,11 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        new Throttle( 4, Spell.Cast("Create Healthstone", ret => !HaveHealthStone)),
-                        Spell.BuffSelf("Soulstone", ret => NeedToSoulstoneMyself()),
+                        //new ThrottlePasses(5, new Action(r => { Logger.Write("in PreCombatBuff()"); return RunStatus.Failure; })),
                         CreateWarlockSummonPet(),
+                        Spell.BuffSelf("Soul Link", ret => !Me.HasAura("Soul Link") && Me.GotAlivePet),
+                        new Throttle(4, Spell.Cast("Create Healthstone", ret => !HaveHealthStone)),
+                        Spell.BuffSelf("Soulstone", ret => NeedToSoulstoneMyself()),
                         PartyBuff.BuffGroup("Dark Intent"),
                         Spell.BuffSelf( "Grimoire of Sacrifice", ret => GetCurrentPet() != WarlockPet.None )
                         )
@@ -139,162 +129,183 @@ namespace Singular.ClassSpecific.Warlock
             return new PrioritySelector(
                 Safers.EnsureTarget(),
 
-                // important not to use WaitForChannel() here so channelled casts 
-                // .. can be checked in Combat behavior
-                new Decorator( ret => !Me.IsCasting && !Me.IsChanneling && !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-
-                        // need combat healing?  check here since mix of buffs and abilities
-                        // heal / shield self as needed
-                        Spell.BuffSelf("Dark Regeneration", ret => Me.HealthPercent < 40),
-                        new Decorator(
-                            ret => StyxWoW.Me.HealthPercent < 40 || Me.HasAura("Dark Regeneration"),
-                            new PrioritySelector(
-                                ctx => Item.FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
-                                new Decorator(
-                                    ret => ret != null,
-                                    new Sequence(
-                                        new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                        new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                        Helpers.Common.CreateWaitForLagDuration())
-                                    )
-                                )
-                            ),
-
-                        new Decorator(
-                            ret => Me.HasAura("Demonic Rebirth") && !Me.GotAlivePet,
+                // summon pet dead pet if its an instant cast
+                new Decorator(
+                    ret => GetCurrentPet() == WarlockPet.None && GetBestPet() != WarlockPet.None,
+                    new Sequence(
+                        new PrioritySelector(
+                            new Decorator(
+                                ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.HasAura("Demonic Rebirth"),
+                                new Action(r => Logger.Write(Color.White, "^Demonic Rebirth active!"))
+                                ),
+                            CreateCastSoulburn(ret => {
+                                if ( Me.Specialization == WoWSpec.WarlockAffliction)
+                                {
+                                    if ( Me.CurrentSoulShards > 0 && SpellManager.CanCast("Soulburn", Me, false, false ))
+                                    {
+                                        Logger.WriteDebug("Soulburn should follow to make instant pet summon");
+                                        return true;
+                                    }
+                                    Logger.WriteDebug("soulburn not available, shards={0}", Me.CurrentSoulShards );
+                                }
+                                return false;
+                                }),
                             new Sequence(
-                                new Action( r => Logger.Write( Color.White, "^Demonic Rebirth active!")),
-                                CreateWarlockSummonPet()
+                                new Action( r => Logger.WriteDebug("instant summon not available, use defensive abilities first")),
+                                new ActionAlwaysFail()   // abort sequence if its not an instant pet summon
                                 )
                             ),
+                        CreateWarlockSummonPet()
+                        )
+                    ),
 
-                        new Decorator( 
-                            ret => Me.IsInGroup() && WarlockSettings.UseSoulstone != Soulstone.None && WarlockSettings.UseSoulstone != Soulstone.Self,
-                            CreateWarlockRessurectBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead))
-                            ),
+                // 
+                Spell.BuffSelf("Twilight Ward", ret => NeedTwilightWard ),
 
-
-                        // remove our banish if they are our CurrentTarget 
-                        Spell.Cast("Banish", ret => Me.CurrentTarget.HasMyAura( "Banish")),
-                            
-                        // banish someone if they are not current target, attacking us, and 12 yds or more away
-                        new PrioritySelector(
-                            ctx => Unit.NearbyUnfriendlyUnits
-                                .Where(
-                                    u => (u.CreatureType == WoWCreatureType.Demon || u.CreatureType == WoWCreatureType.Elemental )
-                                        && Me.CurrentTargetGuid != u.Guid
-                                        && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                                        && !u.IsCrowdControlled()
-                                        && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
-                                .OrderByDescending(u => u.Distance)
-                                .FirstOrDefault(),
-                            Spell.Cast("Banish", onUnit => (WoWUnit)onUnit)
-                            ),
-
-
-                        new PrioritySelector(
-                            // find an add within 8 yds (not our current target)
-                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f),
-
-                            Spell.CastOnGround( "Shadowfury", on => ((WoWUnit)on).Location, ret => ret != null, true),
-
-                            // treat as a heal, but we cast on what would be our fear target -- allow even when fear use disabled
-                            Spell.Buff("Mortal Coil", on => (WoWUnit) on ?? Me.CurrentTarget, ret => Me.HealthPercent < 50 ),
-
-                            // fear current target if my health is dangerously low and his not as much
-                            Spell.Buff("Howl of Terror", on => Me.CurrentTarget, ret => WarlockSettings.UseFear &&
-                                4 <= Unit.NearbyUnfriendlyUnits.Count(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f)),
-
-                            // fear add if multiple mobs and our health low
-                            Spell.Buff("Fear", 
-                                on => (WoWUnit) on, 
-                                req => WarlockSettings.UseFear 
-                                    && Me.HealthPercent < 50
-                                    && !((WoWUnit) req).IsUndead ),
-
-                            // fear current target if my health is dangerously low and his not as much
-                            Spell.Buff("Fear", 
-                                on => Me.CurrentTarget, 
-                                ret => WarlockSettings.UseFear 
-                                    && Me.HealthPercent < Me.CurrentTarget.HealthPercent 
-                                    && Me.HealthPercent < 35
-                                    && !Me.CurrentTarget.IsUndead )
-                            ),
-
-                        Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
-                        Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
-                        Spell.BuffSelf("Dark Soul: Knowledge", ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800 && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
-
-                        Spell.Cast("Summon Doomguard", ret => Me.CurrentTarget.IsBoss && PartyBuff.WeHaveBloodlust),
-                        Spell.BuffSelf("Grimoire of Service", ret => Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3),
-
-                        // lower threat if tanks nearby to pickup
-                        Spell.BuffSelf("Soulshatter",
-                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances 
-                                && Group.AnyTankNearby
-                                && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
-
-                        // lower threat if voidwalker nearby to pickup
-                        Spell.BuffSelf("Soulshatter",
-                            ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds 
-                                && !Group.AnyTankNearby 
-                                && GetCurrentPet() == WarlockPet.Voidwalker 
-                                && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
-
-                        Spell.BuffSelf("Dark Bargain", ret => Me.HealthPercent < 30),
-                        Spell.BuffSelf("Sacrificial Pact", ret => Me.HealthPercent < 60 && GetCurrentPet() != WarlockPet.None && Me.Pet.HealthPercent > 50),
-
-                        // emergency heal needed? soulburn then fail to use drain life immediately
-                        new Sequence(
-                            CreateCastSoulburn( ret => Me.HealthPercent < 20),
-                            Spell.Cast("Drain Life")
-                            ),
-
-                        Spell.Cast("Drain Life", ret => Me.HealthPercent < 50 || Me.HasAura("Dark Regeneration")),
-
+                // need combat healing?  check here since mix of buffs and abilities
+                // heal / shield self as needed
+                Spell.BuffSelf("Dark Regeneration", ret => Me.HealthPercent < 40),
+                new Decorator(
+                    ret => StyxWoW.Me.HealthPercent < 40 || Me.HasAura("Dark Regeneration"),
+                    new PrioritySelector(
+                        ctx => Item.FindFirstUsableItemBySpell("Healthstone", "Healing Potion", "Life Spirit"),
                         new Decorator(
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3
-                                || Me.CurrentTarget.IsBoss 
-                                || (Me.GotTarget && Me.CurrentTarget.IsPlayer && Unit.ValidUnit(Me.CurrentTarget)),
-                            new PrioritySelector(
-                                Spell.BuffSelf("Dark Soul: Misery"),
-                                Spell.BuffSelf("Grimoire of Service"),
-                                Spell.BuffSelf("Unending Resolve")
-                                )
-                            ),
-
-                        Common.CreatWarlockHealthFunnelBehavior( 40, 99),
-
-                        Spell.BuffSelf("Life Tap",
-                            ret => Me.ManaPercent < SingularSettings.Instance.PotionMana
-                                && Me.HealthPercent > SingularSettings.Instance.PotionHealth),
-
-                        PartyBuff.BuffGroup("Dark Intent"),
-
-                        new Throttle( 2,
-                            new PrioritySelector(
-                                Spell.Buff( "Curse of the Elements", true,
-                                    ret => !Me.CurrentTarget.HasMyAura("Curse of Enfeeblement")
-                                        && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDamageTaken)),
-
-                                Spell.Buff("Curse of Enfeeblement", true,
-                                    ret => !Me.CurrentTarget.HasMyAura("Curse of the Elements")
-                                        && !Me.CurrentTarget.HasDemoralizing())
-                                )
-                            ),
-
-                        // mana restoration - match against survival cooldowns
-                        new Decorator( 
-                            ret => Me.ManaPercent < 60,
-                            new PrioritySelector(
-                                Spell.BuffSelf("Life Tap", ret => Me.HealthPercent > 50 && Me.HasAnyAura("Glyph of Healthstone")),
-                                Spell.BuffSelf("Life Tap", ret => Me.HealthPercent > 50 && Me.HasAnyAura("Unending Resolve")),
-                                Spell.BuffSelf("Life Tap", ret => Me.HasAnyAura("Sacrificial Pact")),
-                                Spell.BuffSelf("Life Tap", ret => Me.HasAnyAura("Dark Bargain")),
-                                Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 30 && Me.HealthPercent > 60)
-                                )
+                            ret => ret != null,
+                            new Sequence(
+                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                Helpers.Common.CreateWaitForLagDuration())
                             )
+                        )
+                    ),
+
+
+                new Decorator( 
+                    ret => Me.IsInGroup() && WarlockSettings.UseSoulstone != Soulstone.None && WarlockSettings.UseSoulstone != Soulstone.Self,
+                    CreateWarlockRessurectBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead))
+                    ),
+
+
+                // remove our banish if they are our CurrentTarget 
+                Spell.Cast("Banish", ret => Me.CurrentTarget.HasMyAura( "Banish")),
+                            
+                // banish someone if they are not current target, attacking us, and 12 yds or more away
+                new PrioritySelector(
+                    ctx => Unit.NearbyUnfriendlyUnits
+                        .Where(
+                            u => (u.CreatureType == WoWCreatureType.Demon || u.CreatureType == WoWCreatureType.Elemental )
+                                && Me.CurrentTargetGuid != u.Guid
+                                && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                && !u.IsCrowdControlled()
+                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                        .OrderByDescending(u => u.Distance)
+                        .FirstOrDefault(),
+                    Spell.Cast("Banish", onUnit => (WoWUnit)onUnit)
+                    ),
+
+
+                new PrioritySelector(
+                    // find an add within 8 yds (not our current target)
+                    ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f),
+
+                    Spell.CastOnGround( "Shadowfury", on => ((WoWUnit)on).Location, ret => ret != null, true),
+
+                    // treat as a heal, but we cast on what would be our fear target -- allow even when fear use disabled
+                    Spell.Buff("Mortal Coil", on => (WoWUnit) on ?? Me.CurrentTarget, ret => Me.HealthPercent < 50 ),
+
+                    // fear current target if my health is dangerously low and his not as much
+                    Spell.Buff("Howl of Terror", on => Me.CurrentTarget, ret => WarlockSettings.UseFear &&
+                        4 <= Unit.NearbyUnfriendlyUnits.Count(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f)),
+
+                    // fear add if multiple mobs and our health low
+                    Spell.Buff("Fear", 
+                        on => (WoWUnit) on, 
+                        req => WarlockSettings.UseFear 
+                            && Me.HealthPercent < 50
+                            && !((WoWUnit) req).IsUndead ),
+
+                    // fear current target if my health is dangerously low and his not as much
+                    Spell.Buff("Fear", 
+                        on => Me.CurrentTarget, 
+                        ret => WarlockSettings.UseFear 
+                            && Me.HealthPercent < Me.CurrentTarget.HealthPercent 
+                            && Me.HealthPercent < 35
+                            && !Me.CurrentTarget.IsUndead )
+                    ),
+
+                CreateWarlockSummonPet( ),
+
+                Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
+                Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
+                Spell.BuffSelf("Dark Soul: Knowledge", ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800 && (Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
+
+                Spell.Cast("Summon Doomguard", ret => Me.CurrentTarget.IsBoss && PartyBuff.WeHaveBloodlust),
+                Spell.BuffSelf("Grimoire of Service", ret => Me.CurrentTarget.IsBoss || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3),
+
+                // lower threat if tanks nearby to pickup
+                Spell.BuffSelf("Soulshatter",
+                    ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances 
+                        && Group.AnyTankNearby
+                        && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
+
+                // lower threat if voidwalker nearby to pickup
+                Spell.BuffSelf("Soulshatter",
+                    ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds 
+                        && !Group.AnyTankNearby 
+                        && GetCurrentPet() == WarlockPet.Voidwalker 
+                        && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
+
+                Spell.BuffSelf("Dark Bargain", ret => Me.HealthPercent < 50),
+                Spell.BuffSelf("Sacrificial Pact", ret => Me.HealthPercent < 60 && GetCurrentPet() != WarlockPet.None && Me.Pet.HealthPercent > 50),
+
+                // emergency heal needed? soulburn then fail to use drain life immediately
+                new Sequence(
+                    CreateCastSoulburn( ret => Me.HealthPercent < 20),
+                    Spell.Cast("Drain Life")
+                    ),
+
+                Spell.Cast("Drain Life", ret => Me.HealthPercent < 50 || Me.HasAura("Dark Regeneration")),
+
+                new Decorator(
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3
+                        || Me.CurrentTarget.IsBoss 
+                        || (Me.GotTarget && Me.CurrentTarget.IsPlayer && Unit.ValidUnit(Me.CurrentTarget)),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Dark Soul: Misery"),
+                        Spell.BuffSelf("Grimoire of Service"),
+                        Spell.BuffSelf("Unending Resolve")
+                        )
+                    ),
+
+                Common.CreatWarlockHealthFunnelBehavior( 40, 99),
+
+                Spell.BuffSelf("Life Tap",
+                    ret => Me.ManaPercent < SingularSettings.Instance.PotionMana
+                        && Me.HealthPercent > SingularSettings.Instance.PotionHealth),
+
+                PartyBuff.BuffGroup("Dark Intent"),
+
+                new Throttle( 2,
+                    new PrioritySelector(
+                        Spell.Buff( "Curse of the Elements", true,
+                            ret => !Me.CurrentTarget.HasMyAura("Curse of Enfeeblement")
+                                && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDamageTaken)),
+
+                        Spell.Buff("Curse of Enfeeblement", true,
+                            ret => !Me.CurrentTarget.HasMyAura("Curse of the Elements")
+                                && !Me.CurrentTarget.HasDemoralizing())
+                        )
+                    ),
+
+                // mana restoration - match against survival cooldowns
+                new Decorator( 
+                    ret => Me.ManaPercent < 60,
+                    new PrioritySelector(
+                        Spell.BuffSelf("Life Tap", ret => Me.HealthPercent > 50 && Me.HasAnyAura("Glyph of Healthstone")),
+                        Spell.BuffSelf("Life Tap", ret => Me.HealthPercent > 50 && Me.HasAnyAura("Unending Resolve")),
+                        Spell.BuffSelf("Life Tap", ret => Me.HasAnyAura("Sacrificial Pact")),
+                        Spell.BuffSelf("Life Tap", ret => Me.HasAnyAura("Dark Bargain")),
+                        Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 30 && Me.HealthPercent > 60)
                         )
                     )
                 );
@@ -524,6 +535,37 @@ namespace Singular.ClassSpecific.Warlock
             return cast;
         }
 
+        /// <summary>
+        /// True: if appears Twilight Ward should be buffed.  checks possible classes of players attacking in pvp as 
+        /// well as to mitigate some damage experienced due to defensive cooldowns that cause Shadow dmg (Soul Link, Dark Bargain)
+        /// </summary>
+        private static bool NeedTwilightWard
+        {
+            get
+            {
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                {
+                    if (Unit.NearbyUnfriendlyUnits.Any(u => u.IsPlayer && u.CurrentTargetGuid == Me.Guid && (u.Class == WoWClass.Priest || u.Class == WoWClass.Warlock)))
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    if (Me.GotAlivePet && Me.HasAura("Soul Link"))
+                    {
+                        return true;
+                    }
+                }
+
+                if ( Me.HasAura("Dark Bargain"))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+        }
 
         public static Composite CreatWarlockHealthFunnelBehavior(int petMinHealth, int petMaxHealth = 99)
         {
@@ -535,16 +577,28 @@ namespace Singular.ClassSpecific.Warlock
                     && !HasTalent(WarlockTalent.SoulLink),
                 new Sequence(
                     new PrioritySelector(
-                        CreateCastSoulburn(ret => Me.Combat && Me.Specialization == WoWSpec.WarlockAffliction ),
-                        new ActionAlwaysSucceed()
+                        CreateCastSoulburn(ret => {
+                            if (Me.Specialization == WoWSpec.WarlockAffliction)
+                            {
+                                if (Me.CurrentSoulShards > 0 && SpellManager.CanCast("Soulburn", Me, false, false))
+                                {
+                                    Logger.WriteDebug("Soulburn should follow to make instant health funnel");
+                                    return true;
+                                }
+                                Logger.WriteDebug("soulburn not available, shards={0}", Me.CurrentSoulShards);
+                            }
+                            return false;
+                            }),
+                        new Sequence(
+                            new Action(ctx => WoWMovement.MoveStop()),
+                            new Wait( 1, until => !Me.IsMoving, new ActionAlwaysSucceed() )
+                            )
                         ),
-
-                    new Action(ctx => WoWMovement.MoveStop()),
-                    Helpers.Common.CreateWaitForLagDuration(),
+                    new Decorator( ret => SpellManager.CanCast( "Health Funnel", Me.Pet), new ActionAlwaysSucceed()),
                     new Action(ret => Logger.Write("Casting Health Funnel on Pet @ {0:F1}%", Me.Pet.HealthPercent)),
                     Spell.Cast(ret => "Health Funnel", ret => false, on => Me.Pet, req => true, cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth ),
-                    Helpers.Common.CreateWaitForLagDuration(),
-                    new WaitContinue(TimeSpan.FromMilliseconds(500), ret => !Me.IsCasting && Me.GotAlivePet && Me.Pet.HealthPercent < petMaxHealth && Me.HealthPercent > 50, new ActionAlwaysSucceed())
+                    Helpers.Common.CreateWaitForLagDuration()
+                    // new WaitContinue(TimeSpan.FromMilliseconds(500), ret => !Me.IsCasting && Me.GotAlivePet && Me.Pet.HealthPercent < petMaxHealth && Me.HealthPercent > 50, new ActionAlwaysSucceed())
                     )
                 );
         }

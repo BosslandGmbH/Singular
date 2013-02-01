@@ -11,8 +11,10 @@ using Singular.ClassSpecific;
 using System.Drawing;
 using CommonBehaviors.Actions;
 using Styx.Common;
+using System;
 
 using HotkeyManager = Singular.Managers.HotkeyManager;
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular
 {
@@ -98,17 +100,28 @@ namespace Singular
         /// </summary>
         private void InitBehaviors()
         {
+            // we only do this one time
             if (_restBehavior != null)
                 return;
 
+            // note regarding behavior intros....
+            // WAIT: Rest and PreCombatBuffs should wait on gcd/cast in progress (return RunStatus.Success)
+            // SKIP: PullBuffs, CombatBuffs, and Heal should fall through if gcd/cast in progress (wrap in decorator)
+            // HANDLE: Pull and Combat should wait or skip as needed in class specific manner required
+
             _restBehavior = new Decorator(
                 ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                new LockSelector(new HookExecutor(BehaviorType.Rest.ToString()))
+                new LockSelector(
+                    new Action( r  => { _guidLastTarget = 0; return RunStatus.Failure; } ),
+                    Spell.WaitForGcdOrCastOrChannel(),
+                    new HookExecutor(BehaviorType.Rest.ToString())
+                    )
                 );
 
             _preCombatBuffsBehavior = new Decorator(
                 ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                 new LockSelector(
+                    Spell.WaitForGcdOrCastOrChannel(),
                     Item.CreateUseAlchemyBuffsBehavior(),
                     // Generic.CreateFlasksBehaviour(),
                     new HookExecutor(BehaviorType.PreCombatBuffs.ToString())
@@ -119,33 +132,43 @@ namespace Singular
 
             _combatBuffsBehavior = new Decorator(
                 ret => AllowBehaviorUsage(),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                    new LockSelector(
+                        new Decorator(ret => !HotkeyManager.IsCombatEnabled, new ActionAlwaysSucceed()),
+                        Generic.CreateUseTrinketsBehaviour(),
+                        Generic.CreatePotionAndHealthstoneBehavior(),
+                        Generic.CreateRacialBehaviour(),
+                        new HookExecutor( BehaviorType.CombatBuffs.ToString())
+                        )
+                    )
+                );
+
+            _healBehavior = new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new LockSelector(
-                    new Decorator(ret => !HotkeyManager.IsCombatEnabled, new ActionAlwaysSucceed()),
-                    Generic.CreateUseTrinketsBehaviour(),
-                    Generic.CreatePotionAndHealthstoneBehavior(),
-                    Generic.CreateRacialBehaviour(),
-                    new HookExecutor( BehaviorType.CombatBuffs.ToString())
+                    new HookExecutor(BehaviorType.Heal.ToString())
                     )
                 );
 
-            _healBehavior = new LockSelector(new HookExecutor(BehaviorType.Heal.ToString()));
-
-#if BOTS_NOT_CALLING_PULLBUFFS
             _pullBehavior = new LockSelector(
-                new PrioritySelector(
-                    _pullBuffsBehavior,
-                    new HookExecutor(BehaviorType.Pull.ToString())
-                    )
-                );
-#else
-            _pullBehavior = new LockSelector(new HookExecutor(BehaviorType.Pull.ToString()));
+                new Decorator(
+                    ret => !HotkeyManager.IsCombatEnabled,
+                    new ActionAlwaysSucceed()
+                    ),
+#if BOTS_NOT_CALLING_PULLBUFFS
+                _pullBuffsBehavior,
 #endif
+                CreateLogTargetChanges("<<< PULL >>>"),
+                new HookExecutor(BehaviorType.Pull.ToString())
+                );
 
             _combatBehavior = new LockSelector(
                 new Decorator(
                     ret => !HotkeyManager.IsCombatEnabled,
                     new ActionAlwaysSucceed()
                     ),
+                CreateLogTargetChanges("<<< ADD >>>"),
                 new HookExecutor(BehaviorType.Combat.ToString())
                 );
         }
@@ -193,6 +216,41 @@ namespace Singular
             }
 
             return composite != null;
+        }
+
+        private static Composite CreateLogTargetChanges(string sType)
+        {
+            return new Action(r =>
+                {
+                    if ((Me.CurrentTargetGuid != _guidLastTarget && SingularSettings.Debug))
+                    {
+                        if (Me.CurrentTarget == null)
+                        {
+                            if (_guidLastTarget != 0)
+                            {
+                                Logger.WriteDebug(sType + " CurrentTarget now: (null)");
+                            }
+                        }
+                        else
+                        {
+                            Logger.WriteDebug( sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, faction={7}",
+                                Me.CurrentTarget.SafeName(),
+                                Me.CurrentTarget.HealthPercent,
+                                Me.CurrentTarget.MaxHealth,
+                                Me.CurrentTarget.Distance,
+                                Me.CurrentTarget.CombatReach,
+                                Me.CurrentTarget.IsPlayer,
+                                Me.CurrentTarget.IsHostile,
+                                Me.CurrentTarget.Faction
+                                );
+                        }
+
+                        _guidLastTarget = Me.CurrentTargetGuid;
+                    }
+
+                    return RunStatus.Failure;
+                });
+
         }
 
         #region Nested type: LockSelector

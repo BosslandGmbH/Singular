@@ -223,7 +223,20 @@ namespace Singular.Helpers
 
         #region Wait
 
-        public static bool IsGlobalCooldown(bool faceDuring = false, LagTolerance allow = LagTolerance.Yes )
+        public static Composite WaitForGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
+        {
+            return new PrioritySelector(
+                new Action(ret =>
+                {
+                    if (IsGlobalCooldown(allow))
+                        return RunStatus.Success;
+
+                    return RunStatus.Failure;
+                })
+                );
+        }
+
+        public static bool IsGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
         {
             uint latency = allow == LagTolerance.Yes ? StyxWoW.WoWClient.Latency : 0;
             TimeSpan gcdTimeLeft = SpellManager.GlobalCooldownLeft;
@@ -337,6 +350,15 @@ namespace Singular.Helpers
         public static Composite WaitForCastOrChannel(LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
+                WaitForCast(true, allow),
+                WaitForChannel(allow)
+                );
+        }
+
+        public static Composite WaitForGcdOrCastOrChannel(LagTolerance allow = LagTolerance.Yes)
+        {
+            return new PrioritySelector(
+                WaitForGlobalCooldown(allow),
                 WaitForCast(true, allow),
                 WaitForChannel(allow)
                 );

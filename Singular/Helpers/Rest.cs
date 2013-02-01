@@ -68,14 +68,8 @@ namespace Singular.Helpers
                                 )
                             ),
 
-                // Make sure we wait out res sickness. Don't care about classes that can deal with it. :O
-                        new Decorator(
-                            ret => SingularSettings.Instance.WaitForResSickness && Me.HasAura("Resurrection Sickness"),
-                            new PrioritySelector(
-                                new Throttle( TimeSpan.FromMinutes(1), new Action( r => Logger.Write( "Waiting out Resurrection Sickness (expires in {0:F0} seconds", Me.GetAuraTimeLeft("Resurrection Sickness", false).TotalSeconds ))),
-                                new Action(ret => { })
-                                )
-                            ),
+                // Make sure we wait out res sickness. 
+                        Helpers.Common.CreateWaitForRessSickness(),
                        
                 // Cannibalize support goes before drinking/eating. changed to a Sequence with wait because Rest behaviors that had a 
                 // .. WaitForCast() before call to DefaultRest would prevent cancelling when health/mana reached

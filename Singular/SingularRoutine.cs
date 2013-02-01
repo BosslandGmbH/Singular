@@ -97,32 +97,6 @@ namespace Singular
             // Double cast shit
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow.Subtract(t).TotalMilliseconds >= 2500);
 
-            // Target Debug Output
-            if (SingularSettings.Debug)
-            {
-                if ((Me.CurrentTargetGuid != _guidLastTarget))
-                {
-                    if (_guidLastTarget == 0 && Me.CurrentTarget == null)
-                    {
-                        _guidLastTarget = Me.CurrentTargetGuid;
-                        Logger.WriteDebug("CurrentTarget set to:  (null)");
-                    }
-                    else if (_guidLastTarget != 0 && Me.CurrentTarget != null)
-                    {
-                        _guidLastTarget = Me.CurrentTargetGuid;
-                        Logger.WriteDebug("CurrentTarget set to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}",
-                            Me.CurrentTarget.SafeName(),
-                            Me.CurrentTarget.HealthPercent,
-                            Me.CurrentTarget.MaxHealth,
-                            Me.CurrentTarget.Distance,
-                            Me.CurrentTarget.CombatReach,
-                            Me.CurrentTarget.IsPlayer,
-                            Me.CurrentTarget.IsHostile
-                            );
-                    }
-                }
-            }
-
             //Only pulse for classes with pets
             switch (StyxWoW.Me.Class)
             {

@@ -15,6 +15,7 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using System;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Mage
 {
@@ -75,6 +76,10 @@ namespace Singular.ClassSpecific.Mage
                      ret => !Spell.IsGlobalCooldown(),
                      new PrioritySelector(
 
+                         CreateFrostDiagnosticOutputBehavior(), 
+
+                        CreateSummonWaterElemental(),
+
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
@@ -115,7 +120,14 @@ namespace Singular.ClassSpecific.Mage
 
                         // nether tempest in CombatBuffs
                         Spell.Cast("Frozen Orb", ret => Spell.UseAOE ),
-                        Spell.Cast("Frostbolt", ret => (!Me.CurrentTarget.HasAura("Frostbolt", 3) || Me.CurrentTarget.HasAuraExpired("Frostbolt", 3)) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+
+                        // on mobs that will live a long time, build up the debuff... otherwise react to procs more quickly
+                        // this is the main element that departs from normal instance rotation
+                        Spell.Cast("Frostbolt", 
+                            ret => Me.CurrentTarget.TimeToDeath(20) >= 20
+                                && (!Me.CurrentTarget.HasAura("Frostbolt", 3) || Me.CurrentTarget.HasAuraExpired("Frostbolt", 3)) 
+                                && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+
                         new Throttle( 1,
                             new Decorator( 
                                 ret => !Me.HasAura("Fingers of Frost", 2),
@@ -158,6 +170,9 @@ namespace Singular.ClassSpecific.Mage
                  new Decorator(
                      ret => !Spell.IsGlobalCooldown(),
                      new PrioritySelector(
+
+                         CreateFrostDiagnosticOutputBehavior(),
+
                          CreateSummonWaterElemental(),
 
                         Helpers.Common.CreateAutoAttack(true),
@@ -220,6 +235,8 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                         CreateFrostDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
@@ -378,5 +395,59 @@ namespace Singular.ClassSpecific.Mage
         }
 
         static private WoWPoint _locFreeze;
+
+        #region Diagnostics
+
+        private static Composite CreateFrostDiagnosticOutputBehavior()
+        {
+            return new Decorator(
+                ret => SingularSettings.Debug,
+                new Throttle(1,
+                    new Action(ret =>
+                    {
+                        string log;
+
+                        log = string.Format(".... h={0:F1}%/m={1:F1}%, pet={2:F1}%, fof={3}, brnfrz={4}",
+                            Me.HealthPercent,
+                            Me.ManaPercent,
+                            Me.GotAlivePet ? Me.Pet.HealthPercent : 0,
+                            Me.GetAuraStacks("Fingers of Frost"),
+                            (long)Me.GetAuraTimeLeft("Brain Freeze", true).TotalMilliseconds
+                            );
+
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target != null)
+                        {
+                            log += string.Format(", ttd={0}, th={1:F1}%, dist={2:F1}, face={3}, loss={4}, fboltstks={5}",
+                                target.TimeToDeath(),
+                                target.HealthPercent,
+                                target.Distance,
+                                Me.IsSafelyFacing(target),
+                                target.InLineOfSpellSight,
+                                target.GetAuraStacks("Frostbolt", true)
+                                );
+
+                            if (Common.HasTalent(MageTalent.NetherTempest))
+                                log += string.Format(", nethtmp={0}", (long)target.GetAuraTimeLeft("Nether Tempest", true).TotalMilliseconds);
+                            else if (Common.HasTalent(MageTalent.LivingBomb ))
+                                log += string.Format( ", livbomb={0}", (long)target.GetAuraTimeLeft("Living Bomb", true).TotalMilliseconds);
+                            else if (Common.HasTalent(MageTalent.FrostBomb))
+                                log += string.Format( ", frstbmb={0}", (long)target.GetAuraTimeLeft("Frost Bomb", true).TotalMilliseconds);
+
+                            if (target.HasMyAura("Freeze"))
+                                log += string.Format(", freeze={0}", (long)target.GetAuraTimeLeft("Freeze", true).TotalMilliseconds);
+                            else if (target.HasMyAura("Frost Nova"))
+                                log += string.Format(", frostnova={0}", (long)target.GetAuraTimeLeft("Frost Nova", true).TotalMilliseconds);
+                            else if (target.HasMyAura("Ring of Frost"))
+                                log += string.Format(", ringfrost={0}", (long)target.GetAuraTimeLeft("Ring of Frost", true).TotalMilliseconds);
+                        }
+
+                        Logger.WriteDebug(Color.AntiqueWhite, log);
+                    })
+                    )
+                );
+        }
+
+        #endregion
     }
 }

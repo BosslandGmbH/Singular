@@ -120,6 +120,7 @@ namespace Singular.ClassSpecific.Warlock
                                     CastHack( "Metamorphosis: Doom", "Doom", on => Me.CurrentTarget, req => Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom", 10)),
                                     new WaitContinue(TimeSpan.FromMilliseconds(250), canRun => Me.CurrentTarget.HasAura("Doom"), new ActionAlwaysSucceed())
                                     ),
+                                Spell.Cast("Soul Fire", ret => Me.HasAura("Molten Core")),
                                 CastHack("Metamorphosis: Touch of Chaos", "Touch of Chaos", on => Me.CurrentTarget, req => true)
                                 )
                             ),
@@ -185,10 +186,11 @@ namespace Singular.ClassSpecific.Warlock
 
             if (hasAura && Me.GotTarget)
             {
+                // switch back if not enough fury to cast anything (abc - always be casting)
                 if (CurrentDemonicFury < 40)
                     shouldCancel = true;
-                // check if we should stay in demon form because of buff (only if we have enough fury for a cast)
-                if (Me.HasAura("Dark Soul: Knowledge"))
+                // check if we should stay in demon form because of buff
+                else if (Me.HasAura("Dark Soul: Knowledge"))
                     shouldCancel = false;
                 // check if we should stay in demon form because of Doom falling off
                 else if ( CurrentDemonicFury >= 60 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom"))
@@ -196,7 +198,7 @@ namespace Singular.ClassSpecific.Warlock
                 // finally... now check if we should cancel 
                 else if ( CurrentDemonicFury < WarlockSettings.FurySwitchToCaster && Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
                     shouldCancel = true;
-                // do not need to check CanCast() on the cancel ...
+                // do not need to check CanCast() on the cancel since we cancel the aura...
             }
 
             return shouldCancel;

@@ -44,9 +44,6 @@ namespace Singular.ClassSpecific.Warrior
 
                 Spell.WaitForCast(),
 
-                //Dismount
-                Helpers.Common.CreateDismount("Pulling"),
-
                 //Shoot flying targets
                 new Decorator(
                     ret => StyxWoW.Me.CurrentTarget.IsFlying,

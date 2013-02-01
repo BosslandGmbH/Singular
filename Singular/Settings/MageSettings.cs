@@ -27,6 +27,7 @@ namespace Singular.Settings
                 { 
                     // list (possibly outdated at:) http://www.wowwiki.com/List_of_magic_effects
                     1022,   //  Paladin - Hand of Protection
+                    1044,   //  Paladin - Hand of Freedom
                     974,    //  Shaman - Earth Shield
                     2825,   //  Shaman - Bloodlust
                     32182,  //  Shaman - Heroism

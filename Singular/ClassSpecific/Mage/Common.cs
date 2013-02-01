@@ -311,7 +311,16 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateMageSpellstealBehavior()
         {
-            return Spell.Cast("Spellsteal", mov => false, on => GetSpellstealTarget(), ret => true);                   
+            return Spell.Cast("Spellsteal", 
+                mov => false, 
+                on => {
+                    WoWUnit unit = GetSpellstealTarget();
+                    if (unit != null)
+                        Logger.WriteDebug("Spellsteal:  found {0} with a triggering aura, cancast={1}", unit.SafeName(), SpellManager.CanCast("Spellsteal", unit));
+                    return unit;
+                    }, 
+                ret => MageSettings.SpellStealTarget != WatchTargetForCast.None 
+                );                   
         }
 
         public static WoWUnit GetSpellstealTarget()
@@ -379,6 +388,7 @@ namespace Singular.ClassSpecific.Mage
 
     public enum MageTalent
     {
+        None = 0,
         PresenceOfMind,
         Scorch,
         IceFloes,

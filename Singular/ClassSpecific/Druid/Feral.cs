@@ -215,7 +215,7 @@ namespace Singular.ClassSpecific.Druid
                         new Throttle( 
                             Spell.BuffSelf("Berserk", 
                                 ret => Me.HasAura("Tiger's Fury") 
-                                    && (Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.CurrentTarget.TimeToDeath() >= 20 ))
+                                    && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.CurrentTarget.TimeToDeath() >= 20 ))
                                 )
                             ),
 

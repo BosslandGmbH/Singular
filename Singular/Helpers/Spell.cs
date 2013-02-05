@@ -238,9 +238,13 @@ namespace Singular.Helpers
 
         public static bool IsGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
         {
+#if NO_LATENCY_ISSUES_WITH_GLOBAL_COOLDOWN
             uint latency = allow == LagTolerance.Yes ? StyxWoW.WoWClient.Latency : 0;
             TimeSpan gcdTimeLeft = SpellManager.GlobalCooldownLeft;
             return gcdTimeLeft.TotalMilliseconds > latency;
+#else
+            return SpellManager.GlobalCooldown;
+#endif
         }
 
         public static TimeSpan GetSpellCastTime(string s)

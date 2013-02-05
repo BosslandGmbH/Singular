@@ -333,7 +333,12 @@ namespace Singular.ClassSpecific.DeathKnight
         public static Composite CreateDeathGripBehavior()
         {
             return new Sequence(
-                Spell.Cast("Death Grip", ret => !Me.CurrentTarget.IsBoss && Me.CurrentTarget.DistanceSqr > 10 * 10 && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe)),
+                Spell.Cast("Death Grip", 
+                    ret => !MovementManager.IsMovementDisabled 
+                        && !Me.CurrentTarget.IsBoss() 
+                        && Me.CurrentTarget.DistanceSqr > 10 * 10 
+                        && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe)
+                    ),
                 new DecoratorContinue( ret => StyxWoW.Me.IsMoving, new Action(ret => Navigator.PlayerMover.MoveStop())),
                 new WaitContinue( 1, until => Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                 );

@@ -367,7 +367,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     // abilities that don't require Runes first
                     Spell.Cast("Unholy Blight", 
                         ret => SpellManager.CanCast( "Unholy Blight")
-                            && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss) && u.Distance < (u.MeleeDistance()+5) && u.MyAuraMissing("Blood Plague"))),
+                            && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss()) && u.Distance < (u.MeleeDistance()+5) && u.MyAuraMissing("Blood Plague"))),
                     Spell.Cast("Outbreak",
                         ret => Me.CurrentTarget.MyAuraMissing("Frost Fever") || Me.CurrentTarget.MyAuraMissing("Blood Plague")),
                     // now Rune based abilities

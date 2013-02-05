@@ -72,7 +72,7 @@ namespace Singular.ClassSpecific.Warrior
                 //Heal
                 Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60),
                 // Only pop reck if we're going to be executing -OR- 4pc T14 bonus -OR- not in an instance. Fights are also too short.
-                Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
+                Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
                 // Heroic Fury
                 Spell.BuffSelf("Heroic Fury", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted)),
                 // Fear Remover, or to get ourselves enraged again.
@@ -205,7 +205,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Impending Victory", ret => !WithinExecuteRange),
 
                 // Very last in the prio, just pop BS to waste a GCD and get some rage. Nothing else to do here.
-                Spell.Cast("Battle Shout", ret => StyxWoW.Me.CurrentRage < 70)
+                Spell.Cast(Common.SelectedShout, ret => StyxWoW.Me.CurrentRage < 70)
                 );
         }
 

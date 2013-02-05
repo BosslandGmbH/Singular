@@ -32,12 +32,14 @@ namespace Singular.Lists
             get { return _bosses; }
         }
 
-        public static HashSet<uint> TrainingDummies{get { return _dummies; }}
+        public static HashSet<uint> TrainingDummies { get { return _dummies; } }
 
         public static HashSet<uint> CanShredBoss { get { return _shred; } }
 
+        public static HashSet<uint> AvoidRearBosses { get { return _avoidRear; } }
 
-        private static HashSet<uint>  _dummies = new HashSet<uint>
+
+        private static HashSet<uint> _dummies = new HashSet<uint>
             {
                 31146, // Raider's
                 46647, // 81-85
@@ -57,6 +59,17 @@ namespace Singular.Lists
                 56168, // Wing Tentacle - Madness of DW
                 57962, // Deathwing ----- Madness of DW (his head)
                 56471, // Mutated Corruption 
+            };
+
+        private static readonly HashSet<uint> _avoidRear = new HashSet<uint>
+            {
+                18105, // Ghaz'an in Underbog.
+                26723, // Keristrasza in Nexus
+                31134, // Cyanigosa in Voilet Hold
+                54432, // Murozond in End Time
+                28860, // Sartharion in The Obsidian Sanctum
+                28859, // Malygos in The Eye of Eternity
+                10184, // Onyxia in Onyxia's Lair
             };
 
         // this list should only contain bosses that are not found in 5 mans and raids.

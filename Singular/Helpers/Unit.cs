@@ -222,6 +222,20 @@ namespace Singular.Helpers
 
 
         /// <summary>
+        ///  Checks for my auras on a specified unit. Returns true if the unit has any aura in the auraNames list applied by player.
+        /// </summary>
+        /// <param name="unit"> The unit to check auras for. </param>
+        /// <param name="auraNames"> Aura names to be checked. </param>
+        /// <returns></returns>
+        public static bool HasAnyOfMyAuras(this WoWUnit unit, params string[] auraNames)
+        {
+            var auras = unit.GetAllAuras();
+            var hashes = new HashSet<string>(auraNames);
+            return auras.Any(a => a.CreatorGuid == StyxWoW.Me.Guid && hashes.Contains(a.Name));
+        }
+
+
+        /// <summary>
         /// aura considered expired if spell of same name as aura is known and aura not present or has less than specified time remaining
         /// </summary>
         /// <param name="u">unit</param>

@@ -107,11 +107,11 @@ namespace Singular.ClassSpecific.Warrior
                                 ret => Me.HealthPercent < 10 || (Me.ActiveAuras.ContainsKey("Enrage") && Me.HealthPercent < WarriorSettings.WarriorEnragedRegenerationHealth)),
 
                             new Decorator(
-                                ret => Me.GotTarget && (Me.CurrentTarget.IsBoss || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3)),
+                                ret => Me.GotTarget && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3)),
                                 new PrioritySelector(
                                     Spell.Cast("Recklessness"),
                                     Spell.Cast("Skull Banner"),
-                                    // Spell.Cast("Demoralizing Banner", ret => !Me.CurrentTarget.IsBoss && UseAOE),
+                                    // Spell.Cast("Demoralizing Banner", ret => !Me.CurrentTarget.IsBoss() && UseAOE),
                                     Spell.Cast("Avatar")
                                     )
                                 ),

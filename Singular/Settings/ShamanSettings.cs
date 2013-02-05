@@ -80,16 +80,6 @@ namespace Singular.Settings
 
         #endregion
 
-        #region Category: Elemental
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Elemental")]
-        [DisplayName("Enable AOE Support")]
-        public bool IncludeAoeRotation { get; set; }
-
-        #endregion
-
         #region Category: Restoration
 
         [Setting]

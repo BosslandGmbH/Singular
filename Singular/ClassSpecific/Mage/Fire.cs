@@ -25,8 +25,9 @@ namespace Singular.ClassSpecific.Mage
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFire, WoWContext.Normal)]
-        public static Composite CreateMageFireNormalCombat()
+
+        [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageFire, WoWContext.Normal)]
+        public static Composite CreateMageFireNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -34,6 +35,31 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+
+                Spell.WaitForCast(true),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
+                        Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
+                        Spell.Cast("Pyroblast")
+                       )
+                    ),
+
+                Movement.CreateMoveToTargetBehavior(true, 35f)
+                );
+        }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFire, WoWContext.Normal)]
+        public static Composite CreateMageFireNormalCombat()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Common.CreateStayAwayFromFrozenTargetsBehavior(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Combat"),
 
 /*
                 new Throttle(8,
@@ -58,7 +84,14 @@ namespace Singular.ClassSpecific.Mage
                         CreateFireDiagnosticOutputBehavior(),
 
                         // move to highest in priority to ensure this is cast
-                        Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
+                        new Decorator( 
+                            ret => !Me.CurrentTarget.IsImmune( WoWSpellSchool.Fire),
+                            new PrioritySelector(
+                                Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
+                                Spell.Cast("Pyroblast", 
+                                    ret => Me.HasAura("Pyroblast!") || (Me.CurrentTarget.HealthPercent > 50 && (Me.HasAura("Ice Barrier") || Me.CurrentTarget.HasAura("Frost Nova"))))
+                                )
+                            ),
 
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),

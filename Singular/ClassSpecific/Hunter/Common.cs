@@ -209,7 +209,7 @@ namespace Singular.ClassSpecific.Hunter
                         // for long cooldowns, spend only when worthwhile                      
                         new Decorator(
                             ret => Pet != null && Target != null && Target.IsAlive
-                                && (Target.IsBoss || Target.IsPlayer || ScaryNPC || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet)),
+                                && (Target.IsBoss() || Target.IsPlayer || ScaryNPC || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet)),
                             new PrioritySelector(
                                 Spell.Buff("Rapid Fire", ret => !Me.HasAura("The Beast Within")),
                                 Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within")),

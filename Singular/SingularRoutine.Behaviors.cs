@@ -15,6 +15,8 @@ using System;
 
 using HotkeyManager = Singular.Managers.HotkeyManager;
 using Action = Styx.TreeSharp.Action;
+using Styx.CommonBot;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular
 {
@@ -151,25 +153,31 @@ namespace Singular
                     )
                 );
 
-            _pullBehavior = new LockSelector(
-                new Decorator(
-                    ret => !HotkeyManager.IsCombatEnabled,
-                    new ActionAlwaysSucceed()
-                    ),
-#if BOTS_NOT_CALLING_PULLBUFFS
-                _pullBuffsBehavior,
-#endif
-                CreateLogTargetChanges("<<< PULL >>>"),
-                new HookExecutor(BehaviorType.Pull.ToString())
+            _pullBehavior = new Decorator(
+                ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid),
+                new LockSelector(
+                    new Decorator(
+                        ret => !HotkeyManager.IsCombatEnabled,
+                        new ActionAlwaysSucceed()
+                        ),
+    #if BOTS_NOT_CALLING_PULLBUFFS
+                    _pullBuffsBehavior,
+    #endif
+                    CreateLogTargetChanges("<<< PULL >>>"),
+                    new HookExecutor(BehaviorType.Pull.ToString())
+                )
                 );
 
-            _combatBehavior = new LockSelector(
-                new Decorator(
-                    ret => !HotkeyManager.IsCombatEnabled,
-                    new ActionAlwaysSucceed()
-                    ),
-                CreateLogTargetChanges("<<< ADD >>>"),
-                new HookExecutor(BehaviorType.Combat.ToString())
+            _combatBehavior = new Decorator(
+                ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid),
+                new LockSelector(
+                    new Decorator(
+                        ret => !HotkeyManager.IsCombatEnabled,
+                        new ActionAlwaysSucceed()
+                        ),
+                    CreateLogTargetChanges("<<< ADD >>>"),
+                    new HookExecutor(BehaviorType.Combat.ToString())
+                    )
                 );
         }
 
@@ -222,7 +230,7 @@ namespace Singular
         {
             return new Action(r =>
                 {
-                    if ((Me.CurrentTargetGuid != _guidLastTarget && SingularSettings.Debug))
+                    if ((SingularSettings.Debug && (Me.CurrentTargetGuid != _guidLastTarget || _timerLastTarget.IsFinished )))
                     {
                         if (Me.CurrentTarget == null)
                         {
@@ -233,19 +241,23 @@ namespace Singular
                         }
                         else
                         {
-                            Logger.WriteDebug( sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, faction={7}",
-                                Me.CurrentTarget.SafeName(),
-                                Me.CurrentTarget.HealthPercent,
-                                Me.CurrentTarget.MaxHealth,
-                                Me.CurrentTarget.Distance,
-                                Me.CurrentTarget.CombatReach,
-                                Me.CurrentTarget.IsPlayer,
-                                Me.CurrentTarget.IsHostile,
-                                Me.CurrentTarget.Faction
+                            WoWUnit target = Me.CurrentTarget;
+                            Logger.WriteDebug( sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, faction={7}, loss={8}, facing={9}",
+                                target.SafeName(),
+                                target.HealthPercent,
+                                target.MaxHealth,
+                                target.Distance,
+                                target.CombatReach,
+                                target.IsPlayer.ToYN(),
+                                target.IsHostile.ToYN(),
+                                target.Faction,
+                                target.InLineOfSpellSight.ToYN(),
+                                Me.IsSafelyFacing(target).ToYN()
                                 );
                         }
 
                         _guidLastTarget = Me.CurrentTargetGuid;
+                        _timerLastTarget.Reset();
                     }
 
                     return RunStatus.Failure;

@@ -20,6 +20,7 @@ using Styx.Common;
 using Singular.Settings;
 
 using HotkeyManager = Singular.Managers.HotkeyManager;
+using Styx.Common.Helpers;
 
 namespace Singular
 {
@@ -70,20 +71,17 @@ namespace Singular
             }
         }
 
+        private ConfigurationForm _configForm;
         public override void OnButtonPress()
         {
-            DialogResult dr = new ConfigurationForm().ShowDialog();
-            if (dr == DialogResult.OK || dr == DialogResult.Yes)
-            {
-                Logger.WriteDebug(Color.LightGreen, "Settings saved, rebuilding behaviors...");
-                HotkeyManager.Update();
-                MovementManager.Update();
-                RebuildBehaviors();
-                SingularSettings.Instance.LogSettings();
-            }
+            if(_configForm == null || _configForm.IsDisposed || _configForm.Disposing)
+                _configForm = new ConfigurationForm();
+
+            _configForm.Show();
         }
 
         private static ulong _guidLastTarget = 0;
+        private static WaitTimer _timerLastTarget = new WaitTimer(TimeSpan.FromSeconds(5));
 
         public override void Pulse()
         {

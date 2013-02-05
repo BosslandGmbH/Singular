@@ -63,7 +63,7 @@ namespace Singular.Helpers
         ///   to running once within a given time span.  Returns Failure if attempted to run after
         ///   limit reached in timeframe, otherwise returns result of child
         /// </summary>
-        /// <param name = "timeFrame">time span for occurrences</param>
+        /// <param name = "timeFrame">wait TimeSpan after child success before another attempt</param>
         /// <param name = "child">composite children to tick (run)</param>
         public ThrottlePasses(TimeSpan timeFrame, Composite child)
             : this(1, timeFrame, RunStatus.Failure, child)
@@ -232,7 +232,7 @@ namespace Singular.Helpers
         ///   returns RunStatus.Success within a given time span.  Returns Failure if limit reached, 
         ///   otherwise returns result of child
         /// </summary>
-        /// <param name = "timeFrame">time span for occurrences in seconds</param>
+        /// <param name = "timeFrame">wait in seconds after child success before another attempt</param>
         /// <param name = "child">composite children to tick (run)</param>
         public Throttle(int timeSeconds, Composite child)
             : this(1, TimeSpan.FromSeconds(timeSeconds), RunStatus.Failure, child)

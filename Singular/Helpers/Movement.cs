@@ -1,4 +1,5 @@
 ﻿
+using Singular.Lists;
 using Singular.Settings;
 
 using Styx;
@@ -44,7 +45,7 @@ namespace Singular.Helpers
                 );
         }
 
-       /// <summary>
+        /// <summary>
         /// true if Target in line of spell sight AND a spell hasn't just failed due
         /// to a line of sight error.  This test is required for the unit we are moving
         /// towards because WoWUnit.InLineOfSpellSight will return true while the
@@ -58,8 +59,8 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static bool InLineOfSpellSight(WoWUnit unit)
         {
-            return unit.InLineOfSpellSight 
-                && ( unit.IsWithinMeleeRange || (DateTime.Now - EventHandlers.LastLineOfSightError).TotalMilliseconds > 1000);
+            return unit.InLineOfSpellSight
+                && (unit.IsWithinMeleeRange || (DateTime.Now - EventHandlers.LastLineOfSightError).TotalMilliseconds > 1000);
         }
 
         /// <summary>
@@ -85,16 +86,16 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateFaceTargetBehavior(float viewDegrees = 70f)
         {
-            return CreateFaceTargetBehavior(ret => StyxWoW.Me.CurrentTarget, viewDegrees );
+            return CreateFaceTargetBehavior(ret => StyxWoW.Me.CurrentTarget, viewDegrees);
         }
 
         public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 70f)
         {
             return new Decorator(
                 ret =>
-                !MovementManager.IsMovementDisabled && toUnit != null && toUnit(ret) != null && 
-                !StyxWoW.Me.IsMoving && !toUnit(ret).IsMe && 
-                !StyxWoW.Me.IsSafelyFacing(toUnit(ret), viewDegrees ),
+                !MovementManager.IsMovementDisabled && toUnit != null && toUnit(ret) != null &&
+                !StyxWoW.Me.IsMoving && !toUnit(ret).IsMe &&
+                !StyxWoW.Me.IsSafelyFacing(toUnit(ret), viewDegrees),
                 new Action(ret =>
                                {
                                    toUnit(ret).Face();
@@ -128,7 +129,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveToTargetBehavior(bool stopInRange, float range, UnitSelectionDelegate onUnit)
         {
-            return 
+            return
                 new Decorator(
                     ret => onUnit != null && onUnit(ret) != null && onUnit(ret) != StyxWoW.Me && !Spell.IsCastingOrChannelling(),
                     CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, ret => range));
@@ -191,7 +192,7 @@ namespace Singular.Helpers
 
         public static Composite CreateMoveToMeleeBehavior(LocationRetriever location, bool stopInRange)
         {
-            return 
+            return
                 new Decorator(
                     ret => !Spell.IsCastingOrChannelling(),
                     CreateMoveToLocationBehavior(location, stopInRange, ret => StyxWoW.Me.CurrentTarget.IsPlayer ? 2f : Spell.MeleeRange));
@@ -227,7 +228,7 @@ namespace Singular.Helpers
                         if (MovementManager.IsMovementDisabled || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
                             return false;
                         var currentTarget = StyxWoW.Me.CurrentTarget;
-                        if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive)
+                        if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry) )
                             return false;
                         var targetOfTarget = currentTarget.CurrentTarget;
                         return targetOfTarget != StyxWoW.Me || targetOfTarget.Stunned;
@@ -268,16 +269,16 @@ namespace Singular.Helpers
             // Specifying a range of, 2 or so, will ensure we're constantly running to the target. Specifying 0 will cause us to spin in circles around the target
             // or chase it down like mad. (PVP oriented behavior)
             return
-                new Decorator( 
-                    // Don't run if the movement is disabled.
+                new Decorator(
+                // Don't run if the movement is disabled.
                     ret => !MovementManager.IsMovementDisabled,
                     new PrioritySelector(
                         new Decorator(
-                            // Give it a little more than 1/2 a yard buffer to get it right. CTM is never 'exact' on where we land. So don't expect it to be.
+                // Give it a little more than 1/2 a yard buffer to get it right. CTM is never 'exact' on where we land. So don't expect it to be.
                             ret => stopInRange && StyxWoW.Me.Location.Distance(location(ret)) < range(ret),
                             new PrioritySelector(
                                 CreateEnsureMovementStoppedBehavior(),
-                                // In short; if we're not moving, just 'succeed' here, so we break the tree.
+                // In short; if we're not moving, just 'succeed' here, so we break the tree.
                                 new Action(ret => RunStatus.Success)
                                 )
                             ),
@@ -309,15 +310,16 @@ namespace Singular.Helpers
                     ret => !MovementManager.IsMovementDisabled && toUnit != null && toUnit(ret) != null,
 
                     new PrioritySelector(
-                        // save check for whether we are in range to avoid duplicate calls
-                        new Action( ret => {
-                            inRange = toUnit(ret).Distance < range(ret)  && InLineOfSpellSight(toUnit(ret));
+                // save check for whether we are in range to avoid duplicate calls
+                        new Action(ret =>
+                        {
+                            inRange = toUnit(ret).Distance < range(ret) && InLineOfSpellSight(toUnit(ret));
                             return RunStatus.Failure;
-                            }),
+                        }),
 
                         // check if we are still out of range and either not moving or have reached the last spot
                         new Decorator(
-                            ret => !inRange && (!StyxWoW.Me.IsMoving || StyxWoW.Me.Location.Distance(lastMoveToRangeSpot) <= 0.5 ),
+                            ret => !inRange && (!StyxWoW.Me.IsMoving || StyxWoW.Me.Location.Distance(lastMoveToRangeSpot) <= 0.5),
                             new Action(ret =>
                             {
                                 WoWPoint[] spots = Navigator.GeneratePath(StyxWoW.Me.Location, toUnit(ret).Location);
@@ -348,7 +350,7 @@ namespace Singular.Helpers
 
                                 Logger.WriteDebug("MoveToRangeAndStop: moving to {0} @ {1:F1} yds which is towards {2} @ {3:F1} yds", nextSpot, StyxWoW.Me.Location.Distance(nextSpot), toUnit(ret).SafeName(), toUnit(ret).Distance);
                                 lastMoveToRangeSpot = nextSpot;
-                                Navigator.MoveTo(lastMoveToRangeSpot);                                   
+                                Navigator.MoveTo(lastMoveToRangeSpot);
                                 return RunStatus.Success;
                             })
                             ),
@@ -356,10 +358,11 @@ namespace Singular.Helpers
                         // we are now in range 
                         new Decorator(
                             ret => inRange && StyxWoW.Me.IsMoving && StyxWoW.Me.Combat,
-                            new Action(ret => {
+                            new Action(ret =>
+                            {
                                 Logger.WriteDebug("MoveToRangeAndStop:  stopping - within {0:F1} yds and LoSS of {1}", range(ret), toUnit(ret).SafeName());
                                 Navigator.PlayerMover.MoveStop();
-                                })
+                            })
                             ),
 
                         // at this point if we are moving, tell tree we are still busy
@@ -374,14 +377,14 @@ namespace Singular.Helpers
         public static Composite CreateWorgenDarkFlightBehavior()
         {
             return new Decorator(
-                ret => SingularSettings.Instance.UseRacials 
-                    && !MovementManager.IsMovementDisabled 
-                    && StyxWoW.Me.IsAlive 
+                ret => SingularSettings.Instance.UseRacials
+                    && !MovementManager.IsMovementDisabled
+                    && StyxWoW.Me.IsAlive
                     && StyxWoW.Me.IsMoving
                     && !StyxWoW.Me.Mounted
                     && !StyxWoW.Me.IsOnTransport
                     && !StyxWoW.Me.OnTaxi
-                    && StyxWoW.Me.Race == WoWRace.Worgen 
+                    && StyxWoW.Me.Race == WoWRace.Worgen
                     && !StyxWoW.Me.HasAnyAura("Darkflight")
                     && (BotPoi.Current == null || BotPoi.Current.Type == PoiType.None || BotPoi.Current.Location.Distance(StyxWoW.Me.Location) > 10)
                     && !StyxWoW.Me.IsAboveTheGround(),

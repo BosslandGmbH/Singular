@@ -79,11 +79,11 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.BuffSelf("Battle Stance"),
 
-                        Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
-                        Spell.Cast("Skull Banner", ret => Me.CurrentTarget.IsBoss),
+                        Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
+                        Spell.Cast("Skull Banner", ret => Me.CurrentTarget.IsBoss()),
 
-                        Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss),
-                        Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss),
+                        Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss()),
+                        Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss()),
                         // Spell.Cast("Storm Bolt"),  // in normal rotation
 
                         Spell.Cast("Deadly Calm", ret => StyxWoW.Me.HasAura("Taste for Blood")),
@@ -133,7 +133,7 @@ namespace Singular.ClassSpecific.Warrior
                                 Spell.Cast("Mortal Strike"),
                                 Spell.Cast("Overpower"),
                                 Spell.Cast("Storm Bolt"),
-                                Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
+                                Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
                                 Spell.Cast("Slam"),
                                 Spell.Cast("Battle Shout"))
                             ),
@@ -156,7 +156,7 @@ namespace Singular.ClassSpecific.Warrior
                                 //HeroicLeap(),
 
                                 Spell.Cast("Storm Bolt"),
-                                Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
+                                Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
                                 Spell.Cast("Overpower"),
 
                                 // Rage dump!

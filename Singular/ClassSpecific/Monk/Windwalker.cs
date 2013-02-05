@@ -12,6 +12,7 @@ using Rest = Singular.Helpers.Rest;
 
 using Singular.Settings;
 using Styx.WoWInternals;
+using Styx.Common.Helpers;
 
 namespace Singular.ClassSpecific.Monk
 {
@@ -19,6 +20,9 @@ namespace Singular.ClassSpecific.Monk
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
+
+        // delay casting instant ranged abilities if we just cast Roll/FSK
+        private readonly static WaitTimer RollTimer = new WaitTimer(TimeSpan.FromMilliseconds(1500));
 
         #region NORMAL
         [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal )]
@@ -54,17 +58,33 @@ namespace Singular.ClassSpecific.Monk
 #endif
                         new Decorator(
                             ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 10,
-                            new PrioritySelector(
-                                Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
-                                Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
+                            new Sequence(
+                                new PrioritySelector(
+                                    Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
+                                    Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
+                                    ),
+                                new Action( r => RollTimer.Reset() )
                                 )
                             ),
 
                         Common.GrappleWeapon(),
-                        Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
-                        Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
+
+                        // only cast these in Pull if we didn't just roll/fsk.  allow us to reach
+                        // .. targets we cannot fully navigate to, but don't want to cast 
+                        // .. while while closing to melee range with roll/fsk
+                        new Decorator(
+                            ret => RollTimer.IsFinished,
+                            new PrioritySelector(
+                                Spell.Cast("Provoke", ret => !Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance.Between( 10, 40)),
+                                Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40)
+                                )
+                            ),
+
                         Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
-                        Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12)
+                        Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi || Me.HasAura("Combo Breaker: Blackout Kick")),
+                        Spell.Cast("Tiger Palm", ret => (Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")) || Me.HasAura("Combo Breaker: Tiger Palm")),
+                        Spell.Cast( "Expel Harm", ret => Me.CurrentChi < (Me.MaxChi-2) && Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10 ),
+                        Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
                         )
                     ),
 
@@ -301,7 +321,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
                         Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
                         Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4),
-                        Spell.BuffSelf("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Me.CurrentTarget.IsBoss && Me.CurrentTarget.IsWithinMeleeRange)
+                        Spell.BuffSelf("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Me.CurrentTarget.IsBoss() && Me.CurrentTarget.IsWithinMeleeRange)
                         )
                     )
                 );

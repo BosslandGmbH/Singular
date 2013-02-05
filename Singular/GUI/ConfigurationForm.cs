@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -22,6 +23,19 @@ namespace Singular.GUI
         public ConfigurationForm()
         {
             InitializeComponent();
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            if (DialogResult == DialogResult.OK || DialogResult == DialogResult.Yes)
+            {
+                Logger.WriteDebug(Color.LightGreen, "Settings saved, rebuilding behaviors...");
+                HotkeyManager.Update();
+                MovementManager.Update();
+                SingularRoutine.Instance.RebuildBehaviors();
+                SingularSettings.Instance.LogSettings();
+            }
+            base.OnClosing(e);
         }
 
         private void ConfigurationForm_Load(object sender, EventArgs e)

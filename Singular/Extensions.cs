@@ -170,5 +170,9 @@ namespace Singular
         }
 
 
+        public static string ToYN(this bool b)
+        {
+            return b ? "Y" : "N";
+        }
     }
 }

@@ -65,8 +65,12 @@ namespace Singular.ClassSpecific.Monk
                     Spell.BuffSelf(
                         "Avert Harm",
                         ctx =>
-                        MonkSettings.UseAvertHarm && Me.GroupInfo.IsInParty &&
-                        Me.RaidMembers.Where(r => !r.IsMe).Average(u => u.HealthPercent) <= MonkSettings.AvertHarmGroupHealthPercent),
+                        {
+                            if (!MonkSettings.UseAvertHarm || !Me.GroupInfo.IsInParty)
+                                return false;
+                            var nearbyGroupMembers = Me.RaidMembers.Where(r => !r.IsMe && r.Distance <= 10).ToList();
+                            return nearbyGroupMembers.Any() && nearbyGroupMembers.Average(u => u.HealthPercent) <= MonkSettings.AvertHarmGroupHealthPercent;
+                        }),
                     Spell.BuffSelf("Zen Meditation", ctx => Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.IsCasting),
 
                     Spell.BuffSelf("Fortifying Brew", ctx => Me.HealthPercent <= MonkSettings.FortifyingBrewPercent),
@@ -105,13 +109,13 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
                 Spell.Cast("Keg Smash", ctx => Me.CurrentChi < 4 && Unit.NearbyUnitsInCombatWithMe.Any(u => u.DistanceSqr <= 8 * 8)),
                 Spell.CastOnGround("Dizzying Haze", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault().Location, ctx => TankManager.Instance.NeedToTaunt.Any(), true),
-                Spell.Cast( "Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
+                Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
                 Spell.Cast("Jab"),
                 TryCastClashBehavior(),
                 //Only roll to get to the mob quicker. 
                 Spell.Cast("Roll",
-                    ret => MovementManager.IsClassMovementAllowed 
+                    ret => MovementManager.IsClassMovementAllowed
                         && Me.CurrentTarget.Distance.Between(10, 40)),
                 Movement.CreateMoveToMeleeBehavior(true));
         }
@@ -126,13 +130,13 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
-                Spell.Cast( "Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
+                Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
                 Spell.Cast("Jab"),
                 TryCastClashBehavior(),
                 //Only roll to get to the mob quicker. 
                 Spell.Cast("Roll",
-                    ret => MovementManager.IsClassMovementAllowed 
+                    ret => MovementManager.IsClassMovementAllowed
                         && Me.CurrentTarget.Distance.Between(10, 40)),
                 Movement.CreateMoveToMeleeBehavior(true));
         }
@@ -155,23 +159,23 @@ namespace Singular.ClassSpecific.Monk
                 // make sure I have aggro.
                 Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
                 // apply the Weakened Blows debuff. Keg Smash also generates allot of threat 
-                Spell.Cast("Keg Smash", ctx => Me.MaxChi - Me.CurrentChi >= 2 && 
+                Spell.Cast("Keg Smash", ctx => Me.MaxChi - Me.CurrentChi >= 2 &&
                     Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8).Any(u => !u.HasAura("Weakened Blows"))),
                 Spell.CastOnGround("Dizzying Haze", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault().Location, ctx => TankManager.Instance.NeedToTaunt.Any(), true),
 
                 // AOE
                 new Decorator(ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3,
                     new PrioritySelector(
-                        // cast breath of fire to apply the dot.
-                        Spell.Cast("Breath of Fire",ctx => Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8).Count(u =>u.HasAura("Dizzying Haze") && !u.HasAura("Breath of Fire")) >= 3),
+                // cast breath of fire to apply the dot.
+                        Spell.Cast("Breath of Fire", ctx => Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8).Count(u => u.HasAura("Dizzying Haze") && !u.HasAura("Breath of Fire")) >= 3),
                         Spell.Cast("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 4),
-                        // aoe stuns
+                // aoe stuns
                         Spell.Cast("Charging Ox Wave", ctx => TalentManager.IsSelected((int)Common.Talents.ChargingOxWave) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 30) >= 3),
                         Spell.Cast("Leg Sweep", ctx => TalentManager.IsSelected((int)Common.Talents.LegSweep))
                         )),
 
                 // ***** Spend Chi *****
-                Spell.Cast("Rushing Jade Wind", ctx => TalentManager.IsSelected((int)Common.Talents.RushingJadeWind) &&(!Me.HasAura("Shuffle") || Me.Auras["Shuffle"].TimeLeft <= TimeSpan.FromSeconds(1))),
+                Spell.Cast("Rushing Jade Wind", ctx => TalentManager.IsSelected((int)Common.Talents.RushingJadeWind) && (!Me.HasAura("Shuffle") || Me.Auras["Shuffle"].TimeLeft <= TimeSpan.FromSeconds(1))),
                 Spell.Cast("Blackout Kick", ctx => !Me.HasAura("Shuffle") || Me.Auras["Shuffle"].TimeLeft <= TimeSpan.FromSeconds(1)),
                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 2 && SpellManager.HasSpell("Guard") && !Me.HasAura("Power Guard")),
                 //Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 2 && SpellManager.HasSpell("Blackout Kick") && (!Me.HasAura("Tiger Power") || Me.Auras["Tiger Power"].StackCount < 3)),
@@ -197,7 +201,7 @@ namespace Singular.ClassSpecific.Monk
                 TryCastClashBehavior(),
                 //Only roll to get to the mob quicker. 
                 Spell.Cast("Roll",
-                    ret => MovementManager.IsClassMovementAllowed 
+                    ret => MovementManager.IsClassMovementAllowed
                         && Me.CurrentTarget.Distance.Between(10, 40)),
                 Movement.CreateMoveToMeleeBehavior(true));
         }

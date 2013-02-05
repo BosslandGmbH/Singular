@@ -190,7 +190,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.BuffSelf(Common.BloodlustName,
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances
                                 && !Me.GroupInfo.IsInRaid
-                                && Me.CurrentTarget.IsBoss)
+                                && Me.CurrentTarget.IsBoss())
                         )
                     ),
 

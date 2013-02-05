@@ -15,6 +15,7 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using System.Drawing;
 using CommonBehaviors.Actions;
+using Styx.Common.Helpers;
 
 namespace Singular.ClassSpecific.Warlock
 {
@@ -25,7 +26,8 @@ namespace Singular.ClassSpecific.Warlock
         private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
         private static uint CurrentDemonicFury { get { return Me.GetCurrentPower(WoWPowerType.DemonicFury); } }
 
-        private static int _mobCount; 
+        private static int _mobCount;
+        public static readonly WaitTimer demonFormRestTimer = new WaitTimer(TimeSpan.FromSeconds(3));
 
         #region Normal Rotation
 
@@ -68,7 +70,10 @@ namespace Singular.ClassSpecific.Warlock
                         // even though AOE spell, keep on CD for single target unless AoE turned off
                         new Decorator(
                             ret => Spell.UseAOE && Common.GetCurrentPet() == WarlockPet.Felguard,
-                            Pet.CreateCastPetAction("Felstorm")
+                            new Sequence(
+                                Pet.CreateCastPetAction("Felstorm"),
+                                new ActionAlwaysFail()  // no GCD on Felstorm, allow to fall through
+                                )
                             ),
 
 
@@ -89,7 +94,14 @@ namespace Singular.ClassSpecific.Warlock
                             new Sequence(
                                 new Action( ret => Logger.Write( Color.White, "^Applying Metamorphosis Buff")),
                                 new Action( ret => SpellManager.Cast("Metamorphosis", Me)),
-                                new WaitContinue( TimeSpan.FromMilliseconds(450), canRun => Me.HasAura("Metamorphosis"), new ActionAlwaysSucceed())
+                                new WaitContinue( 
+                                    TimeSpan.FromMilliseconds(450), 
+                                    canRun => Me.HasAura("Metamorphosis"), 
+                                    new Action( r => {
+                                        demonFormRestTimer.Reset();
+                                        return RunStatus.Success;
+                                        })
+                                    )
                                 )
                             ),
 
@@ -281,14 +293,16 @@ namespace Singular.ClassSpecific.Warlock
 
                         string msg;
                         
-                        msg = string.Format(".... h={0:F1}%/m={1:F1}%, fury={2}, metamor={3}, mcore={4}, darksoul={5}, aoecnt={6}",
+                        msg = string.Format(".... h={0:F1}%/m={1:F1}%, fury={2}, metamor={3}, mcore={4}, darksoul={5}, aoecnt={6}, isgcd={7}, gcd={8}",
                              Me.HealthPercent,
                              Me.ManaPercent,
                              CurrentDemonicFury,
                              Me.HasAura("Metamorphosis"),
                              lstks,
                              Me.HasAura("Dark Soul: Knowledge"),
-                             _mobCount 
+                             _mobCount, 
+                             Spell.IsGlobalCooldown(),
+                             SpellManager.GlobalCooldown 
                              );
 
                         if (target != null)

@@ -85,8 +85,6 @@ namespace Singular.ClassSpecific.Warlock
                                 )
                             ),
 
-                            
-
                         // cancel malefic grasp if target health < 20% and cast drain soul (revisit and add check for minimum # of dots)
                         new Decorator(
                             ret => Me.ChanneledSpell.Name == "Malefic Grasp"
@@ -131,12 +129,10 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateApplyDotsBehavior(
                             ret => Me.CurrentTarget,
-                            ret => Me.CurrentTarget.HealthPercent < 20 || Me.CurrentTarget.HasAnyAura("Agony", "Corruption", "Unstable Affliction")),
+//                            ret => Me.CurrentTarget.HealthPercent < 20 || Me.CurrentTarget.HasAnyAura("Agony", "Corruption", "Unstable Affliction")),
+                            ret => (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.HealthPercent > 20)
+                                && !Me.CurrentTarget.HasAnyOfMyAuras("Agony", "Corruption", "Unstable Affliction")),
 
-                        Common.CreateCastSoulburn(ctx => Me.HealthPercent < 75),
-
-                            // HAwker added Soulburn Jan 22 2013
-                        Spell.Cast("Drain Life", ret => (Me.HealthPercent < 95 && Me.HasAura("Soulburn")) || Me.HealthPercent < 40 && !Group.AnyHealerNearby),
                         Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent >= 20),
                         Spell.Cast("Shadow Bolt", ret => !SpellManager.HasSpell("Malefic Grasp")),
                         Spell.Cast("Drain Soul"),
@@ -183,21 +179,26 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new PrioritySelector(
 
-                   Spell.BuffSelf("Pandemic",
-                        ret => PartyBuff.WeHaveBloodlust
-                            && onUnit(ret).InLineOfSpellSight
-                            && Me.CurrentSoulShards > 0),
+                    // target below 20% we have a higher prior on Haunt (but skip if soulburn already up...)
+                   Common.BuffWithCastTime("Haunt", 
+                        ctx => onUnit(ctx), 
+                        req => Me.CurrentSoulShards > 0 
+                            && Me.CurrentTarget.HealthPercent < 20
+                            && onUnit(req).HasAuraExpired("Haunt") 
+                            && !Me.HasAura("Soulburn")),
 
-                   Common.CreateCastSoulburn(
-                        ret => soulBurn(ret)
-                            && onUnit != null && onUnit(ret) != null
-                            && onUnit(ret).CurrentHealth > 1
-                            && SpellManager.HasSpell("Soul Swap")
-                            && (Me.HasAura("Pandemic") || onUnit(ret).HasAuraExpired("Agony") || onUnit(ret).HasAuraExpired("Corruption") || onUnit(ret).HasAuraExpired("Unstable Affliction"))
-                            && onUnit(ret).InLineOfSpellSight
-                            && Me.CurrentSoulShards > 0),
+                    new Sequence(
+                       Common.CreateCastSoulburn(
+                            ret => soulBurn(ret)
+                                && onUnit != null && onUnit(ret) != null
+                                && onUnit(ret).CurrentHealth > 1
+                                && SpellManager.HasSpell("Soul Swap")
+                                && (onUnit(ret).HasAuraExpired("Agony") || onUnit(ret).HasAuraExpired("Corruption") || onUnit(ret).HasAuraExpired("Unstable Affliction"))
+                                && onUnit(ret).InLineOfSpellSight
+                                && Me.CurrentSoulShards > 0),
 
-                    CreateCastSoulSwap(onUnit),
+                        CreateCastSoulSwap(onUnit)
+                        ),
 
                     Spell.Cast("Agony", ctx => onUnit(ctx), ret => onUnit(ret).HasAuraExpired("Agony")),
                     Spell.Cast("Corruption", ctx => onUnit(ctx), ret => onUnit(ret).HasAuraExpired("Corruption")),

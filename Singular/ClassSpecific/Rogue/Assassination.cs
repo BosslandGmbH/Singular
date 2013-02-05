@@ -81,7 +81,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
 
-                        Spell.Buff("Vendetta", ret => Me.CurrentTarget.IsPlayer || Me.CurrentTarget.Elite || Me.CurrentTarget.IsBoss || Common.AoeCount > 1),
+                        Spell.Buff("Vendetta", ret => Me.CurrentTarget.IsPlayer || Me.CurrentTarget.Elite || Me.CurrentTarget.IsBoss() || Common.AoeCount > 1),
 
                         Spell.Cast("Garrote", ret => Common.IsStealthed && Me.CurrentTarget.MeIsBehind),
 

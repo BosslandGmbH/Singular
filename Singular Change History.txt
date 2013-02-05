@@ -1,3 +1,67 @@
+--- Release 3.0.0.1725 ---
+
+General
+
+change- User Interface - configuration form may be left open allowing use of HonorBuddy Stop / Start
+without having to close
+
+change- Melee DPS - will now avoid moving to rear of certain bosses with tail sweeps (Ghaz'an, Keristrasza, Cyanigosa, Murozond, etc.)
+
+
+Death Knight
+
+change- All Specs - Death Grip is not cast in Normal or Battleground contexts if movement is disabled.  This includes temporary movement disable as well as complete movement disable (via toggle or use of LazyRaider, etc.)
+
+
+Mage
+
+change- Fire - now casts combustion or Inferno Blast if procs are up, otherwise Pyroblast when pulling
+
+fixed - Fire - Normal context cast of Inferno Blast did not check for Fire immune mobs
+
+
+Monk
+
+change - Brewmaster - fixed exception occurring in checking for need to cast Avert Harm when no group members were within range
+
+change - Windwalker - will wait slightly after casting Roll or FSK before casting Provoke or Crackling Jade Lightning during Pull.  Previously was detecting being outside of melee range and not in combat too quickly
+
+change - Windwalker - added melee abilities to Pull checking for any leftover procs from prior fight
+
+
+Warlock
+
+fixed - Affliction - no longer casts Agony prior to Soulburn/Soulswap.  
+
+fixed - Affliction - only casts Soulburn/Soulswap if target has none of the associates DoTs active
+
+change- Affliction - Haunt now highest priority DoT if target health < 20%
+
+fixed - Affliction - pending Soulburn when entering Rest is now canceled to avoid accidental Shard usage
+
+fixed - Demonology - Metamorpohsis when entering Rest is now canceled to save Demonic Fury
+
+fixed - All Specs - test for Soul Link aura now delayed after Dismounting to ensure it is restored if already active
+
+fixed - All Specs - Banish crowd control now applied and removed correctly.  was spammed previously in some instances causing it to be applied/removed/applied/...
+
+fixed - Affliction - now correctly casts Soulburn/Drain Life is health < 25% or no healer nearby and < 70%
+
+fixed - Affliction - now check for Glyph of Health Funnel which prevents use of Soulburn: Health Funnel
+
+fixed - Demonology - Felstorm cast for single target so long as AOE spells not disabled
+
+
+Warrior
+
+fixed - Fury - now correctly casts selected (configured) Shout as lowest priority to generate rage where needed.  previously cast only Battle Shout overwriting user selection
+
+
+
+
+
+
+
 --- Release 3.0.0.1692 ---
 
 General

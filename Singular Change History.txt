@@ -1,3 +1,157 @@
+--- Release 3.0.0.1818 ---
+
+General
+
+change- Temporary Movement Suspend key support temporarily disabled.  Current version of HonorBuddy does not support intercepting Hotkeys that are not in combination with Alt or Shift or Control.  This will be fixed in an upcoming release of HonorBuddy, but until then users attempting to use this feature will receive a message.
+
+change- Hotkeys for toggling AOE, COmbat, and Movement require setting up a key combination that includes Alt or Shift or Control.  users with a hotkey configured that does not have a modifier will cause a message.  This restriction will be removed when addressed in an upcoming HonorBuddy release.
+
+*new* - added Loss of Control behavior. gets control presently when stunned or feared.  prevents failed spell cast spam and enables class specific abilities which can be cast in these circumstances. default also will cast Will of the Forsaken for fear and Every Man for Himself when stunned or feared.  both casts can be disabled by disabling the use of Racial abilities in settings
+
+fixed - Mixed Bot exception occurring when starting HonorBuddy and no Secondary Bot has been configured.
+
+fixed - GlobalCooldown API in HonorBuddy not working which impacts spell priorities in Singular. implemented local until fix in Release version of HB
+
+fixed - during Combat, if a Pet or other object summoned by a Player is targeted, it will switch targets to the Player.  Should work for Pets, Ghouls, and Totems
+
+fixed - exception occurring infrequently when checking shapeshift form for classes that don't support this
+
+*new* - debug statements for troubleshooting Global Cooldown and Casting issues. option is false by default
+
+*new* - select enemies to monitor for Interupting casts. can specify None, CurrentTarget, or All.  will use all abilities in order of max range.  includes spells gained via Symbiosis
+
+change- Ranged DPS should be more predictable in how close they get to enemy when approaching
+
+fixed - Interrupt support fixed
+
+*new* - Interrupt setting and support added to selection monitors current target (only option previously) or all targets in range, or none.  allows use of Symbiosis granted interrupts/silences
+
+change- Pet classes will no longer spam Pet [Attack] messages.
+
+fixed - when targeting a Pet or Minion created by a player, will switch to targeting the player
+
+
+
+
+Death Knight
+
+*new* - All Specs - support for Glyph of Dark Succor added in Normal and PVP contexts. Will cast free Death Strike if healing needed, curren mob will die in less than 7 seconds, or buff expires in less than 3 seconds
+
+*new* - All Specs - support for Raise Ally. setting added to disable allowing manual control
+
+fixed - Frost - spells cast for Frost DK's less than Level 58.  If Obliterate not learned, then will cast other abilities on cooldown.  Previously was only casting to apply buffs so most damage was being attempted via white swings
+
+*new* - Frost - will cast Wild Mushroom: Plague on all targets, but prevented if AOE is disabled
+
+fixed - Unholy - spells cast for Unholy DK's less than Level 58.  If Scourge Strike not learned, then will cast other abilities on cooldown.  Previously was only casting to apply buffs so most damage was being attempted via white swings
+
+*new* - Unholy - will cast Wild Mushroom: Plague on all targets, but prevented if AOE is disabled
+
+change - Unholy - solo (normal) context rotation revised
+
+fixed - Blood - will now cast Plague Strike on cooldown at lowest priority prior to learning Death Strike at Level 56 to improve kill speed.  Previously was not casting an ability consuming Unholy Runes
+
+*new* - Blood - will cast Might of Ursoc using Vampiric Blood setting
+
+change- All Specs - temporarily commented out Gorefirend's Graps (except in Battlegrounds.) will enable in next release with setting controlling
+
+
+Druid
+
+change- All DPS Specs - if Druid is in Normal form and health < 95% will apply Rejuv.
+
+*new* - All Specs - will cast Barkskin on loss of control
+
+fixed - All Specs - Barkskin tests for health % will use value in settings
+
+change - All Specs - additional checks for enemies nearby are made prior to casting DPS cooldowns to avoid wasting
+
+fixed - Feral/Guardian - will not leave form to heal in combat unless have not learned Predatory Swiftness yet or Bear is not in Tank role.  only spells allowing healing in form used
+
+*new* - All Specs - will cast Symbiosis when entering instance or in battleground once it has started.  targets are selected based upon the spell it gives the Druid presently.  will show which spell was gained
+
+*new* - Feral - when prowling during Pull, will move behind target.  will open with Ravage if behind taraget
+
+*new* - Feral - added diagnostic output enabled when Debug Logging is true.  provides insight into combat scenario important when supporting Feral users
+
+
+Mage
+
+*new* - All Specs - added loss of control behavior to cast Temporarl Shield when stunned
+
+
+Monk
+
+*new* - All Specs - added loss of control behavior to cast Dematerialize when stunned or feared
+
+*new* - Windwalker - added support for Bear Hug
+
+
+Paladin 
+
+fixed - Retribution - debug status info was being added to log too quickly. slowed to once per second
+
+*new* - All Specs - loss of control behavior to cast Hand of Freedom when stunned or feared
+
+fixed - Holy - Judgement no longer cast while in Healing role
+
+*new* - Holy - support for Rebirth (symbiosis).  setting to disable use added in Class Specific settings
+
+*new* - Protection - support for Barkskin (symbiosis).  Cast using Divine Protection Health % and only if DP is on cooldown
+
+*new* - Retribution - support for Wrath (symbiosis).  cast as lowest priority and only when not within melee range
+
+
+Priest 
+
+*new* - Holy - loss of control behavior added to cast Guardian Spirit when stunned and Glyph of Desperation active
+
+*new* - Disc - loss of control behavior added to cast Pain SUppression when stunned and Glyph of Desperation active
+
+*new* - Shadow - will cast Dispersion if swimming and mana below Minimum Mana % setting
+
+change- Shadow - will re-enter Shadow form more quickly after leaving due to heals, etc.
+
+change- Shadow - added additional buffs/debuffs to diagnostic output to support users
+
+
+Rogue
+
+*new* - All Specs - added Growl (symbiosis) support in Normal and Battleground contexts if health < 65%.  Not used in instances/raids
+
+
+Shaman
+
+fixed - Restoration - spamming of alternating Water Shield / Lightning SHield
+
+*new* - All Specs - added loss of control behavior casting tremor if feared.  if stunned, Elementals will cast Thunderstorm and Enhancement cast Shamanistic Rage
+
+
+Warlock
+
+fixed - All Specs - Mortal Coil now checks prior to cast if target is Undead
+
+change- All Specs - will no longer cast Curse of Elements or Curse of Enfeeblement on mobs 6 levels or more lower than you.  This is geared towards low level farming, gathering, etc 
+
+fixed - Affliction - cast of Soulburn: Health Funnel now suppresses use of Soulburn if Glyph of Health Funnel is equipped
+
+fixed - Demonology - will correctly cast Wrathstorm when Grimoire of Supremecy selected
+
+*new* - All Specs - added support for Rejuvenation (symbiosis) 
+
+fixed - All Specs - will correctly interrupt using Felhound
+
+fixed - Demonology - will cast Soul Fire in Demon form until learning Touch of Chaos at level 25
+
+
+Warrior
+
+*new* - All Specs - added loss of control behavior to cast Berserker Rage when feared
+
+*new* - Protection - Savage Defense (symbiosis) will be cast using Shield Block Health % in settings and only when shield block is on cooldown
+
+
+
 --- Release 3.0.0.1725 ---
 
 General

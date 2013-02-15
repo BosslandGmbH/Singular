@@ -14,7 +14,6 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Singular.Settings;
-using Singular.Helpers;
 using System;
 using Styx.CommonBot.POI;
 using System.Collections.Generic;
@@ -162,6 +161,9 @@ namespace Singular.ClassSpecific.Rogue
 
                         // Defensive
                         // Spell.BuffSelf("Combat Readiness", ret => AoeCount > 2 && !Me.HasAura("Feint")),
+
+                        // Symbiosis
+                        new Throttle( 179, Spell.BuffSelf( "Growl", ret => Me.HealthPercent < 65 && SingularRoutine.CurrentWoWContext != WoWContext.Instances )),
 
                         // Spell.BuffSelf("Feint", ret => AoeCount > 2 && !Me.HasAura("Combat Readiness") && HaveTalent(RogueTalents.Elusivenss)),
                         Spell.BuffSelf("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),

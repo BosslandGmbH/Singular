@@ -61,6 +61,18 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
+        [Behavior(BehaviorType.LossOfControl, WoWClass.Priest)]
+        public static Composite CreatePriestLossOfControlBehavior()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+                    Spell.Cast("Guardian Spirit", on => StyxWoW.Me, ret => StyxWoW.Me.Stunned && StyxWoW.Me.HealthPercent < 20 && TalentManager.HasGlyph("Desperation")),
+                    Spell.Cast("Pain Suppression", on => StyxWoW.Me, ret => StyxWoW.Me.Stunned && TalentManager.HasGlyph("Desperation"))
+                    )
+                );
+        }
+
         private static bool CanCastFortitudeOn(WoWUnit unit)
         {
             //return !unit.HasAura("Blood Pact") &&
@@ -86,25 +98,27 @@ namespace Singular.ClassSpecific.Priest
 
                 new PrioritySelector(
                     Spell.WaitForCast(),
-                    new Decorator(
-                        ret => !Spell.IsGlobalCooldown(),
-                        new PrioritySelector(
+                    new Throttle( 3, 
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
 
-                            Spell.BuffSelf( "Power Word: Shield", 
-                                ret => TalentManager.IsSelected((int) PriestTalent.BodyAndSoul)
-                                    && !StyxWoW.Me.HasAnyAura("Body and Soul", "Weakened Soul")),
+                                Spell.BuffSelf( "Power Word: Shield", 
+                                    ret => TalentManager.IsSelected((int) PriestTalent.BodyAndSoul)
+                                        && !StyxWoW.Me.HasAnyAura("Body and Soul", "Weakened Soul")),
 
-                            new Decorator(
-                                ret => SpellManager.HasSpell("Angelic Feather")
-                                    && !StyxWoW.Me.HasAura("Angelic Feather"),
-                                new Sequence(
-                                    // new Action( ret => Logger.Write( "Speed Buff for {0}", mode ) ),
-                                    Spell.CastOnGround("Angelic Feather",
-                                        ctx => StyxWoW.Me.Location,
-                                        ret => true,
-                                        false),
-                                    Helpers.Common.CreateWaitForLagDuration( orUntil => StyxWoW.Me.CurrentPendingCursorSpell != null ),
-                                    new Action(ret => Lua.DoString("SpellStopTargeting()"))
+                                new Decorator(
+                                    ret => SpellManager.HasSpell("Angelic Feather")
+                                        && !StyxWoW.Me.HasAura("Angelic Feather"),
+                                    new Sequence(
+                                        // new Action( ret => Logger.Write( "Speed Buff for {0}", mode ) ),
+                                        Spell.CastOnGround("Angelic Feather",
+                                            ctx => StyxWoW.Me.Location,
+                                            ret => true,
+                                            false),
+                                        Helpers.Common.CreateWaitForLagDuration( orUntil => StyxWoW.Me.CurrentPendingCursorSpell != null ),
+                                        new Action(ret => Lua.DoString("SpellStopTargeting()"))
+                                        )
                                     )
                                 )
                             )

@@ -410,7 +410,7 @@ namespace Singular.Helpers
             if (MovementManager.IsMovementDisabled)
                 return false;
 
-            if (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting)
+            if (Spell.GcdActive || StyxWoW.Me.IsCasting)
                 return false;
 
             if (IsJumpTurnInProgress())
@@ -580,7 +580,7 @@ namespace Singular.Helpers
             return SingularSettings.Instance.UseRacials
                 && state == JumpTurnState.RunAway
                 && Me.Race == WoWRace.Goblin
-                && !SpellManager.GlobalCooldown
+                && !Spell.GlobalCooldown
                 && !Me.IsCasting
                 && Me.Location.Distance(bpwjDest) >= 15
                 && !Me.IsFalling
@@ -668,7 +668,7 @@ namespace Singular.Helpers
             if (!SingularSettings.Instance.Hunter.UseJumpTurn)
                 return RunStatus.Failure;
 
-            if (SpellManager.GlobalCooldown || Me.IsCasting)
+            if (Spell.GlobalCooldown || Me.IsCasting)
                 return RunStatus.Failure;
 
             if (Me.IsSwimming)

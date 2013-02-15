@@ -21,6 +21,21 @@ namespace Singular.Settings
         
     }
 
+    enum InterruptType
+    {
+        None = 0,
+        Target,
+        All
+    }
+
+    enum DispelStyle
+    {
+        None = 0,
+        LowPriority,
+        HighPriority
+    }
+
+
     internal class SingularSettings : Styx.Helpers.Settings
     {
         private static SingularSettings _instance;
@@ -142,6 +157,13 @@ namespace Singular.Settings
         public bool DisableAllTargeting { get; set; }
 
         [Setting]
+        [DefaultValue(InterruptType.All)]
+        [Category("General")]
+        [DisplayName("Interrupt Target")]
+        [Description("Select which targets should we interrupt.")]
+        public InterruptType InterruptTarget { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("General")]
         [DisplayName("Wait For Res Sickness")]
@@ -196,6 +218,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(false)]
         [Category("Misc")]
+        [DisplayName("Debug Logging GCD")]
+        [Description("Enables logging of GCD/Casting in Singular. Debug Logging = true required")]
+        public bool EnableDebugLoggingGCD { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Misc")]
         [DisplayName("Disable Non Combat Behaviors")]
         [Description("Enabling that will disable non combat behaviors. (Rest, PreCombat buffs)")]
         public bool DisableNonCombatBehaviors { get; set; }
@@ -231,6 +260,13 @@ namespace Singular.Settings
         [DisplayName("Stay near Tank")]
         [Description("Move within Healing Range of Tank if nobody needs healing")]
         public bool StayNearTank { get; set; }
+
+        [Setting]
+        [DefaultValue(DispelStyle.None)]
+        [Category("Group Healing")]
+        [DisplayName("Dispel Debufs")]
+        [Description("Dispel harmful debuffs")]
+        public DispelStyle DispelDebuffs { get; set; }
 
         #endregion
 

@@ -1,4 +1,6 @@
-﻿
+﻿#define NO_LATENCY_ISSUES_WITH_GLOBAL_COOLDOWN
+//#define HONORBUDDY_GCD_IS_WORKING
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +35,8 @@ namespace Singular.Helpers
 
     internal static class Spell
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
         public static WoWDynamicObject GetGroundEffectBySpellId(int spellId)
         {
             return ObjectManager.GetObjectsOfType<WoWDynamicObject>().FirstOrDefault(o => o.SpellId == spellId);
@@ -63,7 +67,7 @@ namespace Singular.Helpers
         {
             get
             {
-                return HotkeyManager.IsAoeEnabled;
+                return HotkeyDirector.IsAoeEnabled;
             }
         }
 
@@ -129,12 +133,20 @@ namespace Singular.Helpers
         }
 
 
+        public static TimeSpan GetSpellCastTime(string s)
+        {
+            SpellFindResults sfr;
+            if (SpellManager.FindSpell(s, out sfr))
+                return TimeSpan.FromMilliseconds((sfr.Override ?? sfr.Original).CastTime);
+            return TimeSpan.Zero;
+        }
 
         /// <summary>
-        /// gets the current Cooldown remaining for the spell
+        /// gets the current Cooldown remaining for the spell. indetermValue returned if spell not known
         /// </summary>
-        /// <param name="spell"></param>
-        /// <returns>TimeSpan representing cooldown remaining, TimeSpan.MaxValue if spell unknown</returns>
+        /// <param name="spell">spell to retrieve cooldown for</param>
+        /// <param name="indetermValue">value returned if spell not defined</param>
+        /// <returns>TimeSpan representing cooldown remaining, indetermValue if spell unknown</returns>
         public static TimeSpan GetSpellCooldown(string spell, int indetermValue = int.MaxValue )
         {
             SpellFindResults sfr;
@@ -221,6 +233,153 @@ namespace Singular.Helpers
 
         #endregion
 
+        #region Fix HonorBuddys GCD Handling
+
+#if HONORBUDDY_GCD_IS_WORKING
+#else
+
+        private static WoWSpell _gcdCheck = null;
+
+        public static string FixGlobalCooldownCheckSpell 
+        {
+            get
+            {
+                return _gcdCheck == null ? null : _gcdCheck.Name;
+            }
+            set
+            {
+                SpellFindResults sfr;
+                if (!SpellManager.FindSpell(value,out sfr))
+                {
+                    _gcdCheck = null;
+                    Logger.Write("GCD check fix spell {0} not known", value);
+                }
+                else
+                {
+                    _gcdCheck = sfr.Original;
+                    Logger.Write("GCD check fix spell set to: {0}", value);
+                }
+            }
+        }
+
+#endif
+
+        public static bool GcdActive
+        {
+            get
+            {
+#if HONORBUDDY_GCD_IS_WORKING
+                return SpellManager.GlobalCooldown;
+#else
+                if (_gcdCheck == null)
+                    return SpellManager.GlobalCooldown;
+
+                return _gcdCheck.Cooldown;
+#endif
+            }
+        }
+
+        public static TimeSpan GcdTimeLeft
+        {
+            get
+            {
+#if HONORBUDDY_GCD_IS_WORKING
+                return SpellManager.GlobalCooldownLeft;
+#else
+                if (_gcdCheck == null)
+                    return SpellManager.GlobalCooldownLeft;
+                return _gcdCheck.CooldownTimeLeft;
+#endif
+            }
+        }
+
+        public static void GcdInitialize()
+        {
+#if HONORBUDDY_GCD_IS_WORKING
+            Logger.WriteDebug("GcdInitialize: using HonorBuddy GCD");
+#else
+            Logger.WriteDebug("FixGlobalCooldownInitialize: using Singular GCD");
+            switch (StyxWoW.Me.Class)
+            {
+                case WoWClass.DeathKnight:
+                    FixGlobalCooldownCheckSpell = "Frost Presence";
+                    break;
+                case WoWClass.Druid:
+                    FixGlobalCooldownCheckSpell = "Cat Form";
+                    break;
+                case WoWClass.Hunter:
+                    FixGlobalCooldownCheckSpell = "Hunter's Mark";
+                    break;
+                case WoWClass.Mage:
+                    FixGlobalCooldownCheckSpell = "Polymorph";
+                    break;
+                case WoWClass.Monk:
+                    FixGlobalCooldownCheckSpell = "Stance of the Fierce Tiger";
+                    break;
+                case WoWClass.Paladin:
+                    FixGlobalCooldownCheckSpell = "Righteous Fury";
+                    break;
+                case WoWClass.Priest:
+                    FixGlobalCooldownCheckSpell = "Inner Fire";
+                    break;
+                case WoWClass.Rogue:
+                    FixGlobalCooldownCheckSpell = "Sap";
+                    break;
+                case WoWClass.Shaman:
+                    FixGlobalCooldownCheckSpell = "Lightning Shield";
+                    break;
+                case WoWClass.Warlock:
+                    FixGlobalCooldownCheckSpell = "Health Funnel";
+                    break;
+                case WoWClass.Warrior:
+                    FixGlobalCooldownCheckSpell = "Sunder Armor";
+                    break;
+            }
+
+            if (FixGlobalCooldownCheckSpell != null)
+                return;
+
+            switch (StyxWoW.Me.Class)
+            {
+                case WoWClass.DeathKnight:
+                    // FixGlobalCooldownCheckSpell = "";
+                    break;
+                case WoWClass.Druid:
+                    FixGlobalCooldownCheckSpell = "Wrath";
+                    break;
+                case WoWClass.Hunter:
+                    FixGlobalCooldownCheckSpell = "Arcane Shot";
+                    break;
+                case WoWClass.Mage:
+                    FixGlobalCooldownCheckSpell = "Frostfire Bolt";
+                    break;
+                case WoWClass.Monk:
+                    //FixGlobalCooldownCheckSpell = "";
+                    break;
+                case WoWClass.Paladin:
+                    FixGlobalCooldownCheckSpell = "Seal of Command";
+                    break;
+                case WoWClass.Priest:
+                    FixGlobalCooldownCheckSpell = "Smite";
+                    break;
+                case WoWClass.Rogue:
+                    FixGlobalCooldownCheckSpell = "Sinister Strike";
+                    break;
+                case WoWClass.Shaman:
+                    FixGlobalCooldownCheckSpell = "Lightning Bolt";
+                    break;
+                case WoWClass.Warlock:
+                    FixGlobalCooldownCheckSpell = "Shadow Bolt";
+                    break;
+                case WoWClass.Warrior:
+                    FixGlobalCooldownCheckSpell = "Heroic Strike";
+                    break;
+            }
+#endif
+        }
+
+#endregion
+
         #region Wait
 
         public static Composite WaitForGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
@@ -239,20 +398,12 @@ namespace Singular.Helpers
         public static bool IsGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
         {
 #if NO_LATENCY_ISSUES_WITH_GLOBAL_COOLDOWN
-            uint latency = allow == LagTolerance.Yes ? StyxWoW.WoWClient.Latency : 0;
-            TimeSpan gcdTimeLeft = SpellManager.GlobalCooldownLeft;
+            uint latency = allow == LagTolerance.Yes ? StyxWoW.WoWClient.Latency * 2 : 0;
+            TimeSpan gcdTimeLeft = Spell.GcdTimeLeft;
             return gcdTimeLeft.TotalMilliseconds > latency;
 #else
-            return SpellManager.GlobalCooldown;
+            return Spell.FixGlobalCooldown;
 #endif
-        }
-
-        public static TimeSpan GetSpellCastTime(string s)
-        {
-            SpellFindResults sfr;
-            if (SpellManager.FindSpell(s, out sfr))
-                return TimeSpan.FromMilliseconds((sfr.Override ?? sfr.Original).CastTime);
-            return TimeSpan.Zero;
         }
 
         /// <summary>
@@ -1028,7 +1179,7 @@ namespace Singular.Helpers
                                 return RunStatus.Failure;
 
                             // save status of queueing spell (lag tolerance - the prior spell still completing)
-                            _IsSpellBeingQueued = allow == LagTolerance.Yes && (SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
+                            _IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
                             Logger.Write(string.Format("Casting {0} on {1}", _spell.Name, onUnit(ret).SafeName()));
                             if (!SpellManager.Cast(_spell, onUnit(ret)))
@@ -1037,13 +1188,14 @@ namespace Singular.Helpers
                                 return RunStatus.Failure;
                             }
 
+                            SingularRoutine.UpdateDiagnosticCastingState();
                             return RunStatus.Success;
                         }),
 
                         // when accountForLag = true, wait for in progress spell (if any) to complete
                         new WaitContinue(
                             TimeSpan.FromMilliseconds(500),
-                            ret => !_IsSpellBeingQueued || !(SpellManager.GlobalCooldown || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling),
+                            ret => SingularRoutine.UpdateDiagnosticCastingState(false) || !_IsSpellBeingQueued || !(Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling),
                             new ActionAlwaysSucceed()
                             ),
 
@@ -1058,6 +1210,8 @@ namespace Singular.Helpers
                             TimeSpan.FromMilliseconds(300),
                             ret =>
                             {
+                                SingularRoutine.UpdateDiagnosticCastingState();
+
                                 SpellFindResults sfr;
                                 if (SpellManager.FindSpell(name(ret), out sfr))
                                 {
@@ -1073,7 +1227,7 @@ namespace Singular.Helpers
                             new ActionAlwaysSucceed()
                             ),
 
-                        /// new Action(r => Logger.WriteDebug("Spell.Cast(\"{0}\"): assume we are casting (actual={1}, gcd={2})", name(r), StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling, SpellManager.GlobalCooldown )),
+                        /// new Action(r => Logger.WriteDebug("Spell.Cast(\"{0}\"): assume we are casting (actual={1}, gcd={2})", name(r), StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling, Spell.GlobalCooldown )),
 
                         new PrioritySelector(
 
@@ -1091,6 +1245,8 @@ namespace Singular.Helpers
                             new Wait(10,
                                 ret =>
                                 {
+                                    SingularRoutine.UpdateDiagnosticCastingState();
+
                                     // Interrupted or finished casting. 
                                     if (!Spell.IsCastingOrChannelling(allow))
                                     {
@@ -1234,6 +1390,90 @@ namespace Singular.Helpers
 
         #endregion
 
+        #region Cast Hack - allows casting spells that CanCast returns False 
+
+        /// <summary>
+        /// CastHack following done because CanCast() wants spell as "Metamorphosis: Doom" while Cast() and aura name are "Doom"
+        /// </summary>
+        /// <param name="castName"></param>
+        /// <param name="onUnit"></param>
+        /// <param name="requirements"></param>
+        /// <returns></returns>
+        public static bool CanCastHack(string castName, WoWUnit unit)
+        {
+            SpellFindResults sfr;
+            if (!SpellManager.FindSpell(castName, out sfr))
+                return false;
+
+            WoWSpell spell = sfr.Override ?? sfr.Original;
+
+            // check range
+            if (unit != null && !spell.IsSelfOnlySpell)
+            {
+                if (spell.IsMeleeSpell && !unit.IsWithinMeleeRange)
+                    return false;
+                if (spell.HasRange && (unit.Distance > (spell.MaxRange + unit.CombatReach + 1) || unit.Distance < (spell.MinRange + unit.CombatReach + 1.66666675f)))
+                    return false;
+                if (!unit.InLineOfSpellSight)
+                    return false;
+            }
+            
+            if ((spell.CastTime != 0u || IsFunnel(spell)) && Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace"))
+                return false;
+
+            if (Me.ChanneledCastingSpellId == 0)
+            {
+                uint num = StyxWoW.WoWClient.Latency * 2u;
+                if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
+                    return false;
+
+                if (spell.CooldownTimeLeft.TotalMilliseconds > num)
+                    return false;
+            }
+
+            if (Me.CurrentPower < spell.PowerCost)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// CastHack following done because CanCast() wants spell as "Metamorphosis: Doom" while Cast() and aura name are "Doom"
+        /// </summary>
+        /// <param name="castName"></param>
+        /// <param name="onUnit"></param>
+        /// <param name="requirements"></param>
+        /// <returns></returns>
+        public static Composite CastHack(string castName)
+        {
+            return CastHack(castName, castName, on => Me.CurrentTarget, ret => true);
+        }
+
+        public static Composite CastHack(string castName, SimpleBooleanDelegate requirements)
+        {
+            return CastHack(castName, castName, on => Me.CurrentTarget, requirements);
+        }
+
+        public static Composite CastHack(string castName, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return CastHack(castName, castName, onUnit, requirements);
+        }
+
+        public static Composite CastHack(string canCastName, string castName, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return new Decorator(ret => castName != null && requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && CanCastHack(canCastName, onUnit(ret)),
+                new Throttle(
+                    new Action(ret =>
+                    {
+                        Logger.Write(string.Format("Casting {0} on {1}", castName, onUnit(ret).SafeName()));
+                        SpellManager.Cast(castName, onUnit(ret));
+                    })
+                    )
+                );
+        }
+
+        #endregion
+
         #region Resurrect
 
         /// <summary>
@@ -1247,15 +1487,15 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Resurrect(string spellName)
         {
-            return new PrioritySelector(ctx => Unit.ResurrectablePlayers.FirstOrDefault(u => !Blacklist.Contains(u)),
+            return new PrioritySelector(ctx => Unit.ResurrectablePlayers.FirstOrDefault(u => !Blacklist.Contains(u, BlacklistFlags.Combat)),
                 new Decorator(ctx => ctx != null && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
                     new Sequence(Cast(spellName, ctx => (WoWPlayer) ctx),
-                        new Action(ctx => Blacklist.Add((WoWPlayer) ctx, TimeSpan.FromSeconds(30))))));
+                        new Action(ctx => Blacklist.Add((WoWPlayer)ctx, BlacklistFlags.Combat, TimeSpan.FromSeconds(30))))));
         }
 
         public static bool IsPlayerRessurectNeeded()
         {
-            return Unit.ResurrectablePlayers.Any(u => !Blacklist.Contains(u));
+            return Unit.ResurrectablePlayers.Any(u => !Blacklist.Contains(u, BlacklistFlags.Combat));
         }
 
         #endregion

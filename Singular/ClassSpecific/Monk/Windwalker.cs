@@ -152,9 +152,12 @@ namespace Singular.ClassSpecific.Monk
 
                         CreateWindwalkerDiagnosticBehavior(),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
+
+                        // Symbiosis
+                        Spell.Cast("Bear Hug"),
 
                         // AoE behavior
                         Spell.Cast("Paralysis", 
@@ -225,7 +228,7 @@ namespace Singular.ClassSpecific.Monk
 
                         CreateWindwalkerDiagnosticBehavior(),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.Cast( "Leg Sweep", ret => Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange && !u.IsCrowdControlled() )),
 

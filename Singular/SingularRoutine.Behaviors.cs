@@ -13,7 +13,6 @@ using CommonBehaviors.Actions;
 using Styx.Common;
 using System;
 
-using HotkeyManager = Singular.Managers.HotkeyManager;
 using Action = Styx.TreeSharp.Action;
 using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
@@ -29,6 +28,7 @@ namespace Singular
         private Composite _pullBehavior;
         private Composite _pullBuffsBehavior;
         private Composite _restBehavior;
+        private Composite _lostControlBehavior;
         public override Composite CombatBehavior { get { return _combatBehavior; } }
         public override Composite CombatBuffBehavior { get { return _combatBuffsBehavior; } }
         public override Composite HealBehavior { get { return _healBehavior; } }
@@ -69,6 +69,8 @@ namespace Singular
             EnsureComposite(false, BehaviorType.Heal);
             EnsureComposite(false, BehaviorType.PullBuffs);
             EnsureComposite(false, BehaviorType.PreCombatBuffs);
+
+            EnsureComposite(false, BehaviorType.LossOfControl);
 
 #if SHOW_BEHAVIOR_LOAD_DESCRIPTION
             // display concise single line describing what behaviors we are loading
@@ -111,6 +113,24 @@ namespace Singular
             // SKIP: PullBuffs, CombatBuffs, and Heal should fall through if gcd/cast in progress (wrap in decorator)
             // HANDLE: Pull and Combat should wait or skip as needed in class specific manner required
 
+            // loss of control behavior must be defined prior to any embedded references by other behaviors
+            _lostControlBehavior = new Decorator(
+                ret => Me.Fleeing || Me.Stunned,
+                new PrioritySelector(
+                    new Throttle(1, new Decorator(ret => Me.Fleeing, new Action(r => Logger.Write(Color.White, "FLEEING! (loss of control)")))),
+                    new Throttle(1, new Decorator(ret => Me.Stunned, new Action(r => Logger.Write(Color.White, "STUNNED! (loss of control)")))),
+                    new HookExecutor(BehaviorType.LossOfControl.ToString()),
+                    new Decorator( 
+                        ret => SingularSettings.Instance.UseRacials,
+                        new PrioritySelector(
+                            Spell.Cast( "Will of the Forsaken", on => Me, ret => Me.Race == WoWRace.Undead && Me.Fleeing ),
+                            Spell.Cast( "Every Man for Himself", on => Me, ret => Me.Race == WoWRace.Human && (Me.Stunned || Me.Fleeing ))
+                            )
+                        ),
+                    new ActionAlwaysSucceed()
+                    )
+                );
+
             _restBehavior = new Decorator(
                 ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                 new LockSelector(
@@ -130,34 +150,37 @@ namespace Singular
                     )
                 );
 
-            _pullBuffsBehavior = new LockSelector(new HookExecutor(BehaviorType.PullBuffs.ToString()));
-
-            _combatBuffsBehavior = new Decorator(
-                ret => AllowBehaviorUsage(),
+            _pullBuffsBehavior = new LockSelector(
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                    new LockSelector(
-                        new Decorator(ret => !HotkeyManager.IsCombatEnabled, new ActionAlwaysSucceed()),
-                        Generic.CreateUseTrinketsBehaviour(),
-                        Generic.CreatePotionAndHealthstoneBehavior(),
-                        Generic.CreateRacialBehaviour(),
-                        new HookExecutor( BehaviorType.CombatBuffs.ToString())
-                        )
+                    new HookExecutor(BehaviorType.PullBuffs.ToString())
                     )
                 );
 
-            _healBehavior = new Decorator(
-                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+            _combatBuffsBehavior = new Decorator(
+                ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new LockSelector(
+                    new Decorator(ret => !HotkeyDirector.IsCombatEnabled, new ActionAlwaysSucceed()),
+                    Generic.CreateUseTrinketsBehaviour(),
+                    Generic.CreatePotionAndHealthstoneBehavior(),
+                    Generic.CreateRacialBehaviour(),
+                    new HookExecutor( BehaviorType.CombatBuffs.ToString())
+                    )
+                );
+
+            _healBehavior = new LockSelector(
+                _lostControlBehavior,
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                     new HookExecutor(BehaviorType.Heal.ToString())
                     )
                 );
 
             _pullBehavior = new Decorator(
-                ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid),
+                ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat ),
                 new LockSelector(
                     new Decorator(
-                        ret => !HotkeyManager.IsCombatEnabled,
+                        ret => !HotkeyDirector.IsCombatEnabled,
                         new ActionAlwaysSucceed()
                         ),
     #if BOTS_NOT_CALLING_PULLBUFFS
@@ -165,14 +188,14 @@ namespace Singular
     #endif
                     CreateLogTargetChanges("<<< PULL >>>"),
                     new HookExecutor(BehaviorType.Pull.ToString())
-                )
+                    )
                 );
 
             _combatBehavior = new Decorator(
-                ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid),
+                ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat),
                 new LockSelector(
                     new Decorator(
-                        ret => !HotkeyManager.IsCombatEnabled,
+                        ret => !HotkeyDirector.IsCombatEnabled,
                         new ActionAlwaysSucceed()
                         ),
                     CreateLogTargetChanges("<<< ADD >>>"),

@@ -116,7 +116,7 @@ namespace Singular.ClassSpecific.Warrior
                         
                         CreateDiagnosticOutputBehavior(),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateVictoryRushBehavior(),
 

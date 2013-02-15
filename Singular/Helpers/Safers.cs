@@ -31,6 +31,9 @@ namespace Singular.Helpers
                 new Decorator(
                     ret => !SingularSettings.Instance.DisableAllTargeting,
                     new PrioritySelector(
+
+#region Tank Targeting
+
                         new Decorator(
                             // DisableTankTargeting is a user-setting. NeedTankTargeting is an internal one. Make sure both are turned on.
                             ret => !SingularSettings.Instance.DisableTankTargetSwitching && Group.MeIsTank &&
@@ -52,11 +55,16 @@ namespace Singular.Helpers
                                 )
                             ),
 
+#endregion
+
+#region Switch from Current Target if a more important one exists!
+
                         new PrioritySelector(
+
+#region Identify a New Target if we should attack something else!
+
                             ctx => 
                             {
-                                // We are making sure we have the proper target in all cases here.
-
                                 // No target switching for tanks. They check for their own stuff above.
                                 if (Group.MeIsTank && !SingularSettings.Instance.DisableTankTargetSwitching)
                                     return null;
@@ -65,8 +73,33 @@ namespace Singular.Helpers
                                 if (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.IsDead)
                                     return null;
 
+                                // check if current target is owned by a player
+                                if (StyxWoW.Me.CurrentTarget.OwnedByRoot != null )
+                                {
+                                    if (StyxWoW.Me.CurrentTarget.OwnedByRoot.IsPlayer)
+                                    {
+                                        Logger.Write(targetColor, "Current target owned by a player.  Switching to " + StyxWoW.Me.CurrentTarget.OwnedByRoot.SafeName() + "!");
+                                        return StyxWoW.Me.CurrentTarget.OwnedByRoot;
+                                    }
+                                }
+
+                                // check if current target is summoned by a player
+                                if (StyxWoW.Me.CurrentTarget.SummonedByUnit != null)
+                                {
+                                    WoWUnit newTarget = StyxWoW.Me.CurrentTarget;
+                                    do {
+                                        newTarget = newTarget.SummonedByUnit;
+                                    } while (newTarget.SummonedByUnit != null);
+
+                                    if (newTarget.IsPlayer )
+                                    {
+                                        Logger.Write(targetColor, "Current target summoned by a player.  Switching to " + newTarget.SafeName() + "!");
+                                        return newTarget;
+                                    }
+                                }
+
                                 // If the current target is in combat or has aggro towards us, it should be a valid target.
-                                if (StyxWoW.Me.CurrentTarget.Combat || StyxWoW.Me.CurrentTarget.Aggro)
+                                if (!Blacklist.Contains( StyxWoW.Me.CurrentTargetGuid, BlacklistFlags.Combat) && ( StyxWoW.Me.CurrentTarget.Combat || StyxWoW.Me.CurrentTarget.Aggro))
                                     return null;
 
                                 // Check botpoi first and make sure our target is set to POI's object.
@@ -99,6 +132,11 @@ namespace Singular.Helpers
 
                                 return null;
                             },
+
+#endregion
+
+#region Change targets if something better found
+
                             new Decorator(
                                 ret => ret != null,
                                 new Sequence(
@@ -110,7 +148,15 @@ namespace Singular.Helpers
                                         new ActionAlwaysSucceed())
                                     )
                                 )
+
+#endregion
+
                             ),
+
+#endregion
+
+#region Target Invalid (none or dead) - Find a New one if possible
+
                         new Decorator(
                             ret => StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.IsDead,
                             new PrioritySelector(
@@ -119,7 +165,7 @@ namespace Singular.Helpers
                                     // If we have a RaF leader, then use its target.
                                     var rafLeader = RaFHelper.Leader;
                                     if (rafLeader != null && rafLeader.IsValid && !rafLeader.IsMe && rafLeader.Combat &&
-                                        rafLeader.CurrentTarget != null && rafLeader.CurrentTarget.IsAlive && !Blacklist.Contains(rafLeader.CurrentTarget))
+                                        rafLeader.CurrentTarget != null && rafLeader.CurrentTarget.IsAlive && !Blacklist.Contains(rafLeader.CurrentTarget, BlacklistFlags.Combat))
                                     {
                                         Logger.Write(targetColor, "Current target invalid. Switching to Tanks target " + rafLeader.CurrentTarget.SafeName() + "!");
                                         return rafLeader.CurrentTarget;
@@ -130,7 +176,7 @@ namespace Singular.Helpers
                                     {
                                         var unit = BotPoi.Current.AsObject as WoWUnit;
 
-                                        if (unit != null && unit.IsAlive && !unit.IsMe && !Blacklist.Contains(unit))
+                                        if (unit != null && unit.IsAlive && !unit.IsMe && !Blacklist.Contains(unit, BlacklistFlags.Combat))
                                         {
                                             Logger.Write(targetColor, "Current target invalid. Switching to POI " + unit.SafeName() + "!");
                                             return unit;
@@ -141,7 +187,7 @@ namespace Singular.Helpers
                                     // Make sure we only check target combat, if we're NOT in a BG. (Inside BGs, all targets are valid!!)
                                     var firstUnit = Targeting.Instance.FirstUnit;
                                     if (firstUnit != null && firstUnit.IsAlive && !firstUnit.IsMe && firstUnit.Combat &&
-                                        !Blacklist.Contains(firstUnit))
+                                        !Blacklist.Contains(firstUnit, BlacklistFlags.Combat))
                                     {
                                         Logger.Write(targetColor, "Current target invalid. Switching to Bot First Unit " + firstUnit.SafeName() + "!");
                                         return firstUnit;
@@ -150,7 +196,7 @@ namespace Singular.Helpers
                                     // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
                                     var agroMob =
                                         ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
-                                            .Where(p => !Blacklist.Contains(p) && p.IsHostile && !p.IsOnTransport && !p.IsDead
+                                            .Where(p => !Blacklist.Contains(p, BlacklistFlags.Combat) && p.IsHostile && !p.IsOnTransport && !p.IsDead
                                                     && !p.Mounted && p.DistanceSqr <= 70 * 70 && p.IsPlayer && p.Combat && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))
                                             .OrderBy(u => u.DistanceSqr)
                                             .FirstOrDefault();
@@ -173,7 +219,7 @@ namespace Singular.Helpers
                                     // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
                                     agroMob =
                                         ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
-                                            .Where(p => !Blacklist.Contains(p) && p.IsHostile && !p.IsOnTransport && !p.IsDead
+                                            .Where(p => !Blacklist.Contains(p, BlacklistFlags.Combat) && p.IsHostile && !p.IsOnTransport && !p.IsDead
                                                     && !p.Mounted && p.DistanceSqr <= 70 * 70 && (p.Aggro || p.PetAggro))
                                             .OrderBy(u => u.DistanceSqr)
                                             .FirstOrDefault();
@@ -206,6 +252,9 @@ namespace Singular.Helpers
                                 new ActionAlwaysSucceed()
                                 )
                             )
+
+#endregion
+
                         )
                     );
         }

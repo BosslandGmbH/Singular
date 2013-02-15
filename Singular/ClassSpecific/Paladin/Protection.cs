@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.Paladin
     public class Protection
     {
         [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinProtection)]
-        public static Composite CreatePaladinHolyRest()
+        public static Composite CreateProtectionRest()
         {
             return new PrioritySelector(
                 Spell.WaitForCast(),
@@ -33,7 +33,7 @@ namespace Singular.ClassSpecific.Paladin
 
 
         [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinProtection)]
-        public static Composite CreatePaladinProtectionCombat()
+        public static Composite CreateProtectionCombat()
         {
             return new PrioritySelector(
                 ctx => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
@@ -41,7 +41,7 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => (WoWUnit)ret),
+                Helpers.Common.CreateInterruptBehavior(),
 
                 // Seal twisting. If our mana gets stupid low, just throw on insight to get some mana back quickly, then put our main seal back on.
                 // This is Seal of Truth once we get it, Righteousness when we dont.
@@ -129,6 +129,12 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.BuffSelf(
                         "Divine Protection",
                         ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().DivineProtectionHealthProt),
+                    // Symbiosis
+                    Spell.BuffSelf(
+                        "Barkskin",
+                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().DivineProtectionHealthProt 
+                            && !StyxWoW.Me.HasAura("Divine Protection")
+                            && Spell.GetSpellCooldown("Divine Protection", 6).TotalSeconds > 0),
 
                     Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 50 && StyxWoW.Me.CurrentHolyPower == 3),
                     Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 25 && StyxWoW.Me.CurrentHolyPower == 2),

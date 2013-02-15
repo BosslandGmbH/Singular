@@ -48,6 +48,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(true),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
                 Spell.WaitForCast(true),
 
                 new Decorator(
@@ -56,7 +57,7 @@ namespace Singular.ClassSpecific.Mage
                         CreateSummonWaterElemental(),
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                         Spell.Cast("Frostfire Bolt"),
-                        Movement.CreateMoveToTargetBehavior(true, 35f)
+                        Movement.CreateMoveToTargetBehavior(true, 38f)
                         )
                     )
                 );
@@ -81,7 +82,7 @@ namespace Singular.ClassSpecific.Mage
                         CreateSummonWaterElemental(),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         new Decorator(
                             ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 15 && !u.IsCrowdControlled()),
@@ -98,6 +99,7 @@ namespace Singular.ClassSpecific.Mage
 
                         new Decorator(ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10).Count() > 1,
                             new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 new Throttle(1,
                                     new Decorator(
                                         ret => !Me.HasAura("Fingers of Frost", 2),
@@ -115,6 +117,8 @@ namespace Singular.ClassSpecific.Mage
                                     )
                                 )
                             ),
+
+                        Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                         Common.CreateMagePolymorphOnAddBehavior(),
 
@@ -148,7 +152,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 
@@ -165,6 +169,7 @@ namespace Singular.ClassSpecific.Mage
                  Movement.CreateMoveToLosBehavior(),
                  Movement.CreateFaceTargetBehavior(),
                  Helpers.Common.CreateDismount("Pulling"),
+                 Movement.CreateEnsureMovementStoppedBehavior(35f),
                  Spell.WaitForCast(true),
 
                  new Decorator(
@@ -176,7 +181,7 @@ namespace Singular.ClassSpecific.Mage
                          CreateSummonWaterElemental(),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                          // Defensive stuff
                          Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && (Me.IsStunned() || Me.IsRooted())),
@@ -215,7 +220,7 @@ namespace Singular.ClassSpecific.Mage
                          )
                     ),
 
-                 Movement.CreateMoveToTargetBehavior(true, 39f)
+                 Movement.CreateMoveToTargetBehavior(true, 38f)
                  );
         }
 
@@ -239,7 +244,7 @@ namespace Singular.ClassSpecific.Mage
                          CreateFrostDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.Cast("Icy Veins"),
 
@@ -251,6 +256,7 @@ namespace Singular.ClassSpecific.Mage
                                         CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(8), ClusterType.Radius, 8))
                                         )
                                     ),
+                                Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
                                 Spell.Cast("Frozen Orb"),
                                 Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
@@ -262,6 +268,8 @@ namespace Singular.ClassSpecific.Mage
                                     )
                                 )
                             ),
+
+                        Movement.CreateEnsureMovementStoppedBehavior(25f),
 
                         // nether tempest in CombatBuffs
                         Spell.Cast("Frozen Orb", ret => Spell.UseAOE ),

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 using Singular.Managers;
 using Styx;
@@ -11,11 +12,16 @@ using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals;
 using CommonBehaviors.Actions;
 using Singular.Settings;
+using Singular.ClassSpecific;
+using Styx.WoWInternals.WoWObjects;
+using Singular.ClassSpecific.Warlock;
 
 namespace Singular.Helpers
 {
     internal static class Common
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
         /// <summary>
         ///  Creates a behavior to start auto attacking to current target.
         /// </summary>
@@ -29,21 +35,27 @@ namespace Singular.Helpers
             const int spellIdAutoShot = 75;
 
             return new PrioritySelector(
-                new Decorator(
-                    ret => !StyxWoW.Me.IsAutoAttacking && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
-                    new Action(ret =>
-                        {
-                            Lua.DoString("StartAttack()");
-                            return RunStatus.Failure;
-                        })),
-                new Decorator(
-                    ret => includePet && StyxWoW.Me.GotAlivePet && (StyxWoW.Me.Pet.CurrentTarget == null || StyxWoW.Me.Pet.CurrentTarget != StyxWoW.Me.CurrentTarget),
-                    new Action(
-                        delegate
-                        {
-                            PetManager.CastPetAction("Attack");
-                            return RunStatus.Failure;
-                        }))
+                new Throttle( TimeSpan.FromMilliseconds(500),
+                    new Decorator(
+                        ret => !StyxWoW.Me.IsAutoAttacking && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
+                        new Action(ret =>
+                            {
+                                Lua.DoString("StartAttack()");
+                                return RunStatus.Failure;
+                            })
+                        )
+                    ),
+                new Throttle(TimeSpan.FromMilliseconds(500),
+                    new Decorator(
+                        ret => includePet && StyxWoW.Me.GotAlivePet && (StyxWoW.Me.Pet.CurrentTarget == null || StyxWoW.Me.Pet.CurrentTarget != StyxWoW.Me.CurrentTarget),
+                        new Action(
+                            delegate
+                            {
+                                PetManager.CastPetAction("Attack");
+                                return RunStatus.Failure;
+                            })
+                        )
+                    )
                 );
         }
 
@@ -77,61 +89,177 @@ namespace Singular.Helpers
 #endif
         }
 
-        /// <summary>Creates an interrupt spell cast composite. This will attempt to use racials before any class/spec abilities. It will attempt to stun if possible!</summary>
-        /// <remarks>Created 9/7/2011.</remarks>
-        /// <param name="onUnit">The on unit.</param>
-        /// <returns>.</returns>
-        public static Composite CreateInterruptSpellCast(UnitSelectionDelegate onUnit)
+        private static WoWUnit _unitInterrupt = null;
+
+        /// <summary>Creates an interrupt spell cast composite. This attempts to use spells in order of range (shortest to longest).  
+        /// behavior consists only of spells that apply to current toon based upon class, spec, and race
+        /// </summary>
+        public static Composite CreateInterruptBehavior()
         {
-            return
+            if ( SingularSettings.Instance.InterruptTarget == InterruptType.None )
+                return new ActionAlwaysFail();
+
+            Composite actionSelectTarget;
+            if (SingularSettings.Instance.InterruptTarget == InterruptType.Target)
+                actionSelectTarget = new Action( 
+                    ret => {
+                        WoWUnit u = Me.CurrentTarget;
+                        _unitInterrupt = IsInterruptTarget(u) ? u : null;
+                        if (_unitInterrupt != null && SingularSettings.Debug)
+                            Logger.WriteDebug("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds );
+                    }
+                    );
+            else // if ( SingularSettings.Instance.InterruptTarget == InterruptType.All )
+            {
+                actionSelectTarget = new Action( 
+                    ret => { 
+                        _unitInterrupt = Unit.NearbyUnfriendlyUnits.Where(u => IsInterruptTarget(u)).OrderBy( u => u.Distance ).FirstOrDefault();
+                        if (_unitInterrupt != null && SingularSettings.Debug)
+                            Logger.WriteDebug("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds);
+                        }
+                    );
+            }
+
+            PrioritySelector prioSpell = new PrioritySelector();
+
+            #region Pet Spells First!
+
+            if (Me.Class == WoWClass.Warlock)
+            {
+                // this will be either a Optical Blast or Spell Lock
+                prioSpell.AddChild( 
+                    Spell.Cast( 
+                        "Command Demon", 
+                        on => _unitInterrupt, 
+                        ret => _unitInterrupt != null 
+                            && _unitInterrupt.Distance < 40 
+                            && Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == WarlockPet.Felhunter 
+                        )
+                    );
+            }
+
+            #endregion
+
+            #region Melee Range
+
+            if ( Me.Class == WoWClass.Paladin )
+                prioSpell.AddChild( Spell.Cast("Rebuke", ctx => _unitInterrupt));
+
+            if ( Me.Class == WoWClass.Rogue)
+            {
+                Spell.Cast("Kick", ctx => _unitInterrupt);
+                Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && !_unitInterrupt.MeIsSafelyBehind);
+            }
+
+            if ( Me.Class == WoWClass.Warrior)
+                Spell.Cast("Pummel", ctx => _unitInterrupt);
+
+            if ( Me.Class == WoWClass.Monk )
+                Spell.Cast("Spear Hand Strike", ctx => _unitInterrupt);
+
+            if ( Me.Class == WoWClass.Druid)
+            {
+                // Spell.Cast("Skull Bash (Cat)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat);
+                // Spell.Cast("Skull Bash (Bear)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear);
+                Spell.Cast("Skull Bash", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear || StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat);
+                Spell.Cast("Mighty Bash", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && _unitInterrupt.IsWithinMeleeRange);
+            }
+
+            if ( Me.Class == WoWClass.DeathKnight)
+                Spell.Cast("Mind Freeze", ctx => _unitInterrupt);
+
+            if ( Me.Race == WoWRace.Pandaren )
+                Spell.Cast("Quaking Palm", ctx => _unitInterrupt);
+
+            #endregion
+            #region 8 Yard Range
+
+            if ( Me.Race == WoWRace.BloodElf )
+                Spell.Cast("Arcane Torrent", ctx => _unitInterrupt);
+
+            if ( Me.Race == WoWRace.Tauren)
+                Spell.Cast("War Stomp", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && _unitInterrupt.Distance < 8);
+
+            #endregion
+            #region 10 Yards
+
+            if (Me.Class == WoWClass.Paladin)
+                Spell.Cast("Hammer of Justice", ctx => _unitInterrupt);
+
+            if (Me.Specialization == WoWSpec.DruidBalance )
+                Spell.Cast("Hammer of Justice", ctx => _unitInterrupt);
+
+            if (Me.Class == WoWClass.Warrior) 
+                Spell.Cast("Disrupting Shout", ctx => _unitInterrupt);
+
+            #endregion
+            #region 25 yards
+
+            if ( Me.Class == WoWClass.Shaman)
+                Spell.Cast("Wind Shear", ctx => _unitInterrupt);
+
+            #endregion
+            #region 30 yards
+
+            if (Me.Specialization == WoWSpec.PaladinProtection)
+                Spell.Cast("Avenger's Shield", ctx => _unitInterrupt);
+
+            if (Me.Class == WoWClass.Shaman)
+                // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
+                Spell.Cast("Heroic Throw", ctx => _unitInterrupt, ret => TalentManager.HasGlyph("Gag Order") && !_unitInterrupt.IsBoss());
+
+            if ( Me.Class == WoWClass.Priest ) 
+                Spell.Cast("Silence", ctx => _unitInterrupt);
+
+            if ( Me.Class == WoWClass.DeathKnight)
+                Spell.Cast("Strangulate", ctx => _unitInterrupt);
+
+            #endregion
+            #region 40 yards
+
+            if ( Me.Class == WoWClass.Mage)
+                Spell.Cast("Counterspell", ctx => _unitInterrupt);
+
+            if ( Me.Class == WoWClass.Hunter)
+                Spell.Cast("Silencing Shot", ctx => _unitInterrupt);
+
+            if ( Me.Class == WoWClass.Druid)
+                Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin);
+
+            if (Me.Specialization == WoWSpec.ShamanElemental || Me.Specialization == WoWSpec.ShamanEnhancement )
+                Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => true);
+
+            #endregion
+
+            return new Sequence(
+                actionSelectTarget,               
                 new Decorator(
-                // If the target is casting, and can actually be interrupted, AND we've waited out the double-interrupt timer, then find something to interrupt with.
-                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret).IsCasting && onUnit(ret).CanInterruptCurrentSpellCast
-                /* && PreventDoubleInterrupt*/,
-                    new PrioritySelector(
-                        Spell.Cast("Rebuke", onUnit),
-                        Spell.Cast("Avenger's Shield", onUnit),
-                        Spell.Cast("Hammer of Justice", onUnit),
-
-                        Spell.Cast("Kick", onUnit),
-                        Spell.Cast("Gouge", onUnit, ret => !onUnit(ret).IsBoss() && !onUnit(ret).MeIsSafelyBehind), // Can't gouge bosses.
-
-                        Spell.Cast("Counterspell", onUnit),
-
-                        Spell.Cast("Wind Shear", onUnit),
-
-                        Spell.Cast("Pummel", onUnit),
-
-                        Spell.Cast("Spear Hand Strike", onUnit), 
-
-                        // AOE interrupt
-                        Spell.Cast("Disrupting Shout", onUnit),
-                        // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
-                        Spell.Cast("Heroic Throw", onUnit, ret => TalentManager.IsSelected(7) && !onUnit(ret).IsBoss()),
-
-                        Spell.Cast("Silence", onUnit),
-
-                        Spell.Cast("Silencing Shot", onUnit),
-
-                        // Can't stun most bosses. So use it on trash, etc.
-                        Spell.Cast("Bash", onUnit, ret => !onUnit(ret).IsBoss()),
-                        Spell.Cast("Skull Bash (Cat)", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat),
-                        Spell.Cast("Skull Bash (Bear)", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear),
-                        Spell.Cast("Mighty Bash", onUnit, ret => !onUnit(ret).IsBoss() && onUnit(ret).IsWithinMeleeRange ),
-                        Spell.Cast("Solar Beam", onUnit, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin),
-
-                        Spell.Cast("Strangulate", onUnit),
-                        Spell.Cast("Mind Freeze", onUnit),
-
-
-                        // Racials last.
-                        Spell.Cast("Arcane Torrent", onUnit),
-                // Don't waste stomp on bosses. They can't be stunned 99% of the time!
-                        Spell.Cast("War Stomp", onUnit, ret => !onUnit(ret).IsBoss() && onUnit(ret).Distance < 8),
-                        Spell.Cast("Quaking Palm", onUnit)
-
-                        ));
+                    ret => _unitInterrupt != null,
+                    prioSpell 
+                    )
+                );
         }
+
+        private static bool IsInterruptTarget(WoWUnit u)
+        {
+            if (u == null || !u.IsCasting)
+                return false;
+
+            if (!SingularSettings.Debug)
+                return u.CanInterruptCurrentSpellCast && u.InLineOfSight;
+
+            if (!u.CanInterruptCurrentSpellCast)
+                ;   // Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but CanInterruptCurrentSpellCast == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
+            else if (!u.InLineOfSpellSight)
+                ;   // Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but LoSS == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
+            else if (u.CurrentCastTimeLeft.TotalMilliseconds < 250)
+                ;
+            else
+                return true;
+
+            return false;
+        }
+
 
         /// <summary>
         /// Creates a dismount composite that only stops if we are flying.
@@ -240,8 +368,7 @@ namespace Singular.Helpers
         private static bool PreventDoubleInterrupt
         {
             get
-            {
-                
+            {               
                 var tmp = InterruptTimer.IsFinished;
                 if (tmp)
                     InterruptTimer.Reset();

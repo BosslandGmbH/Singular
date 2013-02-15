@@ -33,6 +33,17 @@ namespace Singular.ClassSpecific.Warrior
                     );
         }
 
+        [Behavior(BehaviorType.LossOfControl, WoWClass.Warrior)]
+        public static Composite CreateWarriorLossOfControlBehavior()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+                    Spell.Cast("Berserker Rage", on => Me, ret => Me.Fleeing)
+                    )
+                );
+        }
+        
 
         public static string SelectedShout
         {

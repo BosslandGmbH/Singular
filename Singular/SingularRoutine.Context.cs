@@ -171,8 +171,8 @@ namespace Singular
                     NewMixedMode.MixedModeEx mmb = (NewMixedMode.MixedModeEx)TreeRoot.Current;
                     if (mmb != null)
                     {
-                        if (mmb.SecondaryBot.RequirementsMet)
-                            return mmb.SecondaryBot != null ? "Mixed:" + mmb.SecondaryBot.Name : "Mixed:[secondary null]";
+                        if (mmb.SecondaryBot != null && mmb.SecondaryBot.RequirementsMet)
+                            return "Mixed:" + mmb.SecondaryBot.Name;
                         return mmb.PrimaryBot != null ? "Mixed:" + mmb.PrimaryBot.Name : "Mixed:[primary null]";
                     }
                 }

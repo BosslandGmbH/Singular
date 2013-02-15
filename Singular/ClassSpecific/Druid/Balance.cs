@@ -9,13 +9,13 @@ using Styx;
 using Styx.CommonBot;
 using Styx.Helpers;
 using Styx.TreeSharp;
-using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Styx.Common;
 using System.Drawing;
+using System.Collections.Generic;
 
 namespace Singular.ClassSpecific.Druid
 {
@@ -32,8 +32,6 @@ namespace Singular.ClassSpecific.Druid
         
         private static EclipseType eclipseLastCheck = EclipseType.None;
         public static bool newEclipseDotNeeded;
-
-        private static string _oldDps = "Wrath";
 
         private static int StarfallRange { get { return TalentManager.HasGlyph("Focus") ? 20 : 40; } }
 
@@ -72,10 +70,10 @@ namespace Singular.ClassSpecific.Druid
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
 
-                    Spell.Cast( "Rejuvenation", mov => false, on => Me, ret => Me.Combat && _ImaMoonBeast && Me.HasAuraExpired("Rejuvenation")), 
+                    Spell.Cast( "Rejuvenation", mov => false, on => Me, ret => _ImaMoonBeast && Me.HasAuraExpired("Rejuvenation", 1)), 
 
                     Spell.Cast("Renewal", ret => Me.HealthPercent < DruidSettings.RenewalHealth),
-                    Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 75 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)) > 1),
+                    Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 85 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)) > 1),
 
                     Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < 60),
 
@@ -120,6 +118,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
+                Movement.CreateEnsureMovementStoppedBehavior( 35f),
 
                 Spell.WaitForCast(true),
 
@@ -131,8 +130,6 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.BuffSelf("Innervate",
                             ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
-
-                        Spell.BuffSelf("Moonkin Form"),
 
                         // yes, only 8yds because we are knocking back only if close to melee range
                         Spell.Cast( "Typhoon", 
@@ -172,7 +169,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         // make sure we always have DoTs 
                         new Sequence(
@@ -216,6 +213,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(30f),  // cause forced stop a little closer in PVP
 
                 // Ensure we do /petattack if we have treants up.
                 Helpers.Common.CreateAutoAttack(true),
@@ -228,17 +226,11 @@ namespace Singular.ClassSpecific.Druid
 
                         CreateBalanceDiagnosticOutputBehavior(),
 
-                        //Inervate
-
                         Spell.BuffSelf("Moonkin Form"),
-                        Spell.BuffSelf("Barkskin", 
-                            ret => StyxWoW.Me.IsCrowdControlled() || StyxWoW.Me.HealthPercent < 40),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         // Spread MF/IS
-                        Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location),
-
                         Spell.Buff("Faerie Fire", 
                             ret => StyxWoW.Me.CurrentTarget.Class == WoWClass.Rogue ||
                                    StyxWoW.Me.CurrentTarget.Class == WoWClass.Druid),
@@ -296,6 +288,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 Spell.WaitForCast(true),
 
@@ -349,7 +342,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         // make sure we always have DoTs 
                         new Sequence(
@@ -457,8 +450,6 @@ namespace Singular.ClassSpecific.Druid
 #endif
         }
 
-        private static EclipseType lastEclipse;
-
         #endregion
 
 
@@ -505,5 +496,46 @@ namespace Singular.ClassSpecific.Druid
         }
 
         #endregion
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
+        public static Composite CreateBalancePreCombatBuffBattlegrounds()
+        {
+            return Common.CreateDruidCastSymbiosis(on => GetBalanceBestSymbiosisTarget());
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
+        public static Composite CreateBalancePreCombatBuff(UnitSelectionDelegate onUnit)
+        {
+            return new PrioritySelector(
+                // Symbiosis
+                Spell.Cast("Mirror Image", ret => Me.GotTarget),
+                Spell.Cast("Hammer of Justice", ret => Me.GotTarget && !Me.CurrentTarget.IsBoss() && (Me.CurrentTarget.IsCasting || Me.CurrentTarget.IsPlayer)),
+                
+                Spell.BuffSelf("Unending Resolve", ret => Me.HealthPercent < DruidSettings.Barkskin),
+                Spell.BuffSelf("Anti-Magic Shell", ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == Me.Guid)),
+                // add mass dispel ...
+                Spell.BuffSelf("Cloak of Shadows", ret => Me.ActiveAuras.Any(a => a.Value.IsHarmful && a.Value.IsActive && a.Value.Spell.DispelType != WoWDispelType.None))
+                );
+        }
+
+        private static WoWUnit GetBalanceBestSymbiosisTarget()
+        {
+            WoWUnit target = null;
+            if (target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Mage);
+            if (target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warlock);
+            if (target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight);
+            if (target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Paladin);
+            if (target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Rogue);
+            if (target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Priest);
+
+            return target;
+        }
     }
+
 }

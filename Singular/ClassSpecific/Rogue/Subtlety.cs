@@ -69,7 +69,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
                         CreateSubteltyDiagnosticOutputBehavior("Combat"),
 
-                        new Throttle(Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget)),
+                        new Throttle(Helpers.Common.CreateInterruptBehavior()),
 
                         Movement.CreateMoveBehindTargetBehavior(),
 
@@ -147,7 +147,7 @@ namespace Singular.ClassSpecific.Rogue
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
                         CreateSubteltyDiagnosticOutputBehavior("Combat"),
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         new Decorator(
                             ret => Common.AoeCount >= 3 && Spell.UseAOE,
@@ -198,7 +198,7 @@ namespace Singular.ClassSpecific.Rogue
 
         private static Composite CreateSubteltyDiagnosticOutputBehavior(string sState = "")
         {
-            if (!SingularSettings.Instance.EnableDebugLogging)
+            if (!SingularSettings.Debug)
                 return new Action(ret => { return RunStatus.Failure; });
 
             return new ThrottlePasses(1,

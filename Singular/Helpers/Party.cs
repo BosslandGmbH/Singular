@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using CommonBehaviors.Actions;
 using Styx;
-using Styx;
 using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals;

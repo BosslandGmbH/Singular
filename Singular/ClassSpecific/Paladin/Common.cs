@@ -41,6 +41,17 @@ namespace Singular.ClassSpecific.Paladin
                 );
         }
 
+        [Behavior(BehaviorType.LossOfControl, WoWClass.Paladin)]
+        public static Composite CreatePaladinLossOfControlBehavior()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+                    Spell.BuffSelf("Hand of Freedom")
+                    )
+                );
+        }
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, (WoWSpec)int.MaxValue, WoWContext.Normal, 1)]
         public static Composite CreatePaladinCombatBuffs()
         {
@@ -102,7 +113,7 @@ namespace Singular.ClassSpecific.Paladin
                         ret => _seal != PaladinSeal.None
                             && !Me.HasMyAura(SealSpell(_seal))
                             && SpellManager.CanCast(SealSpell(_seal), Me),
-                        new Action(ret => SpellManager.Cast(SealSpell(_seal), Me))
+                        Spell.Cast( s => SealSpell(_seal), on => Me, ret => !Me.HasAura(SealSpell(_seal)))
                         )
                     )
                 );

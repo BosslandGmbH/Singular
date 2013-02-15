@@ -39,6 +39,8 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
+
                 Spell.WaitForCast(true),
 
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
@@ -65,13 +67,16 @@ namespace Singular.ClassSpecific.Warlock
                                 })
                             ),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         // even though AOE spell, keep on CD for single target unless AoE turned off
                         new Decorator(
                             ret => Spell.UseAOE && Common.GetCurrentPet() == WarlockPet.Felguard,
                             new Sequence(
-                                Pet.CreateCastPetAction("Felstorm"),
+                                new PrioritySelector(
+                                    Pet.CreateCastPetAction("Felstorm", ret => !Common.HasTalent( WarlockTalent.GrimoireOfSupremacy )),
+                                    Pet.CreateCastPetAction("Wrathtorm", ret => Common.HasTalent( WarlockTalent.GrimoireOfSupremacy ))
+                                    ),
                                 new ActionAlwaysFail()  // no GCD on Felstorm, allow to fall through
                                 )
                             ),
@@ -129,11 +134,12 @@ namespace Singular.ClassSpecific.Warlock
                             ret => Me.HasAura( "Metamorphosis"),
                             new PrioritySelector(
                                 new Sequence(
-                                    CastHack( "Metamorphosis: Doom", "Doom", on => Me.CurrentTarget, req => Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom", 10)),
+                                    Spell.CastHack( "Metamorphosis: Doom", "Doom", on => Me.CurrentTarget, req => Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom", 10)),
                                     new WaitContinue(TimeSpan.FromMilliseconds(250), canRun => Me.CurrentTarget.HasAura("Doom"), new ActionAlwaysSucceed())
                                     ),
                                 Spell.Cast("Soul Fire", ret => Me.HasAura("Molten Core")),
-                                CastHack("Metamorphosis: Touch of Chaos", "Touch of Chaos", on => Me.CurrentTarget, req => true)
+                                Spell.CastHack("Metamorphosis: Touch of Chaos", "Touch of Chaos", on => Me.CurrentTarget, req => true),
+                                Spell.Cast("Soul Fire", ret => !SpellManager.HasSpell("Metamorphosis: Touch of Chaos"))
                                 )
                             ),
 
@@ -216,20 +222,6 @@ namespace Singular.ClassSpecific.Warlock
             return shouldCancel;
         }
 
-        // following done because CanCast() wants spell as "Metamorphosis: Doom" while Cast() and aura name are "Doom"
-        public static Composite CastHack(string canCastName, string castName, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
-        {
-            return new Decorator(ret => castName != null && requirements != null && onUnit != null && onUnit(ret) != null && requirements(ret) && SpellManager.CanCast(canCastName, onUnit(ret), true, false),
-                new Throttle(
-                    new Action(ret =>
-                    {
-                        Logger.Write(string.Format("Casting {0} on {1}", castName, onUnit(ret).SafeName()));
-                        SpellManager.Cast(castName, onUnit(ret));
-                    })
-                    )
-                );
-        }
-
         #endregion
 
         #region AOE
@@ -251,7 +243,7 @@ namespace Singular.ClassSpecific.Warlock
                             Spell.Cast("Hellfire", ret => _mobCount >= 4 && SpellManager.HasSpell("Hellfire") && !Me.HasAura("Immolation Aura")),
                             new Decorator(
                                 ret => _mobCount >= 2 && Common.TargetsInCombat.Count(t => !t.HasAuraExpired("Metamorphosis: Doom", "Doom", 1)) < Math.Min( _mobCount, 3),
-                                CastHack( "Metamorphosis: Doom", "Doom", on => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Metamorphosis: Doom", "Doom", 1)), req => true)
+                                Spell.CastHack( "Metamorphosis: Doom", "Doom", on => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Metamorphosis: Doom", "Doom", 1)), req => true)
                                 )
                             )
                         ),
@@ -302,7 +294,7 @@ namespace Singular.ClassSpecific.Warlock
                              Me.HasAura("Dark Soul: Knowledge"),
                              _mobCount, 
                              Spell.IsGlobalCooldown(),
-                             SpellManager.GlobalCooldown 
+                             Spell.GcdActive 
                              );
 
                         if (target != null)

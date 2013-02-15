@@ -17,7 +17,7 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
                 Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5 || StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints >= 2),
                 Spell.Cast("Sinister Strike"),
                 Movement.CreateMoveToMeleeBehavior(true)

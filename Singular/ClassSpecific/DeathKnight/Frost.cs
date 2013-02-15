@@ -39,9 +39,14 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
 
                 Common.CreateGetOverHereBehavior(),
+
+                Common.CreateDarkSuccorBehavior(),
+
+                // Symbiosis
+                Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
 
                 // Cooldowns
                 Spell.BuffSelf("Pillar of Frost"),
@@ -52,7 +57,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Decorator(
                         ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
                         new PrioritySelector(
-                            Spell.Cast("Gorefiend's Grasp"),
+                            // Spell.Cast("Gorefiend's Grasp"),
                             Spell.Cast("Remorseless Winter"),
                             CreateFrostAoeBehavior(),
                             Movement.CreateMoveToMeleeBehavior(true)
@@ -66,7 +71,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Execute
                         Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
                         // Diseases
-                        CreateFrostApplyDiseases(),
+                        Common.CreateApplyDiseases(),
 
                         // Killing Machine
                         Spell.Cast("Frost Strike",
@@ -100,7 +105,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                   Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
 
                                   // Diseases
-                                  CreateFrostApplyDiseases(),
+                                  Common.CreateApplyDiseases(),
 
                                   // Killing Machine
                                   Spell.Cast("Obliterate", ret => Me.HasAura(KillingMachine)),
@@ -117,8 +122,24 @@ namespace Singular.ClassSpecific.DeathKnight
                                              Me.HasAura("Freezing Fog")),
                                   Spell.Cast("Obliterate"),
                                   Spell.Cast("Frost Strike"),
+                                  Spell.Cast("Howling Blast"),
                                   Spell.Cast("Horn of Winter")
                                   )),
+
+                // *** 3 Lowbie Cast what we have Priority
+                new Decorator(
+                    ret => !SpellManager.HasSpell("Obliterate"),
+                    new PrioritySelector(
+                        Spell.Buff("Howling Blast", true, "Frost Fever"),
+                        Spell.Buff("Plague Strike", true, "Blood Plague"),
+                        Spell.Cast("Death Strike", ret => Me.HealthPercent < 90),
+                        Spell.Cast("Frost Strike"),
+                        Spell.Cast("Death Coil", ret => !Me.CurrentTarget.IsWithinMeleeRange ),
+                        Spell.Cast("Howling Blast"),
+                        Spell.Cast("Plague Strike")
+                        )
+                    ),
+
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
@@ -135,9 +156,14 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
+
+                Common.CreateDarkSuccorBehavior(),
 
                 Common.CreateGetOverHereBehavior(),
+
+                // Symbiosis
+                Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
 
                 // Cooldowns
                 Spell.BuffSelf("Pillar of Frost"),
@@ -162,7 +188,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                   Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
 
                                   // Diseases
-                                  CreateFrostApplyDiseases(),
+                                  Common.CreateApplyDiseases(),
 
                                   // Killing Machine
                                   Spell.Cast("Frost Strike",
@@ -197,7 +223,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                   Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
 
                                   // Diseases
-                                  CreateFrostApplyDiseases(),
+                                  Common.CreateApplyDiseases(),
 
                                   // Killing Machine
                                   Spell.Cast("Obliterate", ret => Me.HasAura(KillingMachine)),
@@ -234,89 +260,103 @@ namespace Singular.ClassSpecific.DeathKnight
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
-                // Cooldowns
-                Spell.BuffSelf("Pillar of Frost"),
 
-                // Start AoE section
-                new PrioritySelector(
-                    ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(12f).ToList(),
-                    new Decorator(
-                        ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+
+                        Helpers.Common.CreateAutoAttack(true),
+                        Helpers.Common.CreateInterruptBehavior(),
+
+                        // Symbiosis
+                        Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
+
+                        // Cooldowns
+                        Spell.BuffSelf("Pillar of Frost"),
+
+                        // Start AoE section
                         new PrioritySelector(
-                            // Spell.Cast("Gorefiend's Grasp", ret => Group.Tanks.FirstOrDefault()),
-                            CreateFrostAoeBehavior(),
-                            Movement.CreateMoveToMeleeBehavior(true)
-                            )
+                            ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(12f).ToList(),
+                            new Decorator(
+                                ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
+                                new PrioritySelector(
+                                    // Spell.Cast("Gorefiend's Grasp", ret => Group.Tanks.FirstOrDefault()),
+                                    CreateFrostAoeBehavior(),
+                                    Movement.CreateMoveToMeleeBehavior(true)
+                                    )
+                                )
+                            ),
+
+                        // *** Dual Weld Single Target Priority
+                        new Decorator(ctx => IsDualWelding,
+                                      new PrioritySelector(
+                                          // Execute
+                                          Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
+
+                                          // Diseases
+                                          Common.CreateApplyDiseases(),
+
+                                          // Killing Machine
+                                          Spell.Cast("Frost Strike",
+                                                     ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
+                                                         && Me.HasAura(KillingMachine)),
+                                          // Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location, ret => Me.UnholyRuneCount >= 2, false),
+                                          Spell.Cast("Obliterate",
+                                                     ret => Me.HasAura(KillingMachine) 
+                                                         && Common.UnholyRuneSlotsActive == 2
+                                                         && !Me.CurrentTarget.MyAuraMissing("Frost Fever") 
+                                                         && !Me.CurrentTarget.MyAuraMissing("Blood Plague")),
+                                          // RP Capped
+                                          Spell.Cast("Frost Strike",
+                                                     ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
+                                                         && Me.RunicPowerPercent > 80),
+                                          // Rime Proc
+                                          Spell.Cast("Howling Blast",
+                                                     ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
+                                                         && Me.HasAura("Freezing Fog")),
+                                          Spell.Cast("Obliterate",
+                                                     ret => Common.UnholyRuneSlotsActive == 2
+                                                         && !Me.CurrentTarget.MyAuraMissing("Frost Fever")
+                                                         && !Me.CurrentTarget.MyAuraMissing("Blood Plague")),
+
+                                          // both Unholy Runes are off cooldown
+                                          Spell.Cast("Frost Strike"),
+                                          Spell.Cast("Howling Blast"),
+                                          Spell.Cast("Horn of Winter")
+                                          )),
+
+                        // *** 2 Hand Single Target Priority
+                        new Decorator(ctx => !IsDualWelding,
+                                      new PrioritySelector(
+                                          // Execute
+                                          Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
+
+                                          // Diseases
+                                          Common.CreateApplyDiseases(),
+
+                                          // Killing Machine
+                                          Spell.Cast("Obliterate",
+                                            ret => Me.HasAura(KillingMachine)),
+
+                                          // RP Capped
+                                          Spell.Cast("Frost Strike",
+                                            ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
+                                                && Me.RunicPowerPercent > 80),
+
+                                          // Rime Proc
+                                          Spell.Cast("Howling Blast",
+                                            ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
+                                                && Me.HasAura("Freezing Fog")),
+
+                                          Spell.Cast("Obliterate"),
+                                          Spell.Cast("Frost Strike"),
+                                          Spell.Cast("Horn of Winter")
+                                          ))
                         )
                     ),
 
-                // *** Dual Weld Single Target Priority
-                new Decorator(ctx => IsDualWelding,
-                              new PrioritySelector(
-                                  // Execute
-                                  Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
-
-                                  // Diseases
-                                  CreateFrostApplyDiseases(),
-
-                                  // Killing Machine
-                                  Spell.Cast("Frost Strike",
-                                             ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
-                                                 && Me.HasAura(KillingMachine)),
-                                  // Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location, ret => Me.UnholyRuneCount >= 2, false),
-                                  Spell.Cast("Obliterate",
-                                             ret => Me.HasAura(KillingMachine) 
-                                                 && Common.UnholyRuneSlotsActive == 2
-                                                 && !Me.CurrentTarget.MyAuraMissing("Frost Fever") 
-                                                 && !Me.CurrentTarget.MyAuraMissing("Blood Plague")),
-                                  // RP Capped
-                                  Spell.Cast("Frost Strike",
-                                             ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
-                                                 && Me.RunicPowerPercent > 80),
-                                  // Rime Proc
-                                  Spell.Cast("Howling Blast",
-                                             ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
-                                                 && Me.HasAura("Freezing Fog")),
-                                  Spell.Cast("Obliterate",
-                                             ret => Common.UnholyRuneSlotsActive == 2
-                                                 && !Me.CurrentTarget.MyAuraMissing("Frost Fever")
-                                                 && !Me.CurrentTarget.MyAuraMissing("Blood Plague")),
-
-                                  // both Unholy Runes are off cooldown
-                                  Spell.Cast("Frost Strike"),
-                                  Spell.Cast("Howling Blast"),
-                                  Spell.Cast("Horn of Winter")
-                                  )),
-
-                // *** 2 Hand Single Target Priority
-                new Decorator(ctx => !IsDualWelding,
-                              new PrioritySelector(
-                                  // Execute
-                                  Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
-
-                                  // Diseases
-                                  CreateFrostApplyDiseases(),
-
-                                  // Killing Machine
-                                  Spell.Cast("Obliterate",
-                                    ret => Me.HasAura(KillingMachine)),
-
-                                  // RP Capped
-                                  Spell.Cast("Frost Strike",
-                                    ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
-                                        && Me.RunicPowerPercent > 80),
-
-                                  // Rime Proc
-                                  Spell.Cast("Howling Blast",
-                                    ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
-                                        && Me.HasAura("Freezing Fog")),
-
-                                  Spell.Cast("Obliterate"),
-                                  Spell.Cast("Frost Strike"),
-                                  Spell.Cast("Horn of Winter")
-                                  )),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
@@ -340,7 +380,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Plague Strike", ret => Me.CurrentTarget.MyAuraMissing("Blood Plague")),
 
                 Spell.Cast("Blood Boil",
-                    ret => TalentManager.IsSelected((int) Common.DeathKnightTalents.RollingBlood)
+                    ret => TalentManager.IsSelected((int) DeathKnightTalents.RollingBlood)
                         && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.MyAuraMissing("Blood Plague"))
                         && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.MyAuraMissing("Blood Plague"))),
 
@@ -356,27 +396,6 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location, ret => true, false),
                 Spell.Cast("Frost Strike"),
                 Spell.Cast("Horn of Winter")
-                );
-        }
-
-        private static Composite CreateFrostApplyDiseases()
-        {
-            // throttle to avoid/reduce following an Outbreak with a Plague Strike for example
-            return new Throttle(
-                new PrioritySelector(
-                    // abilities that don't require Runes first
-                    Spell.Cast("Unholy Blight", 
-                        ret => SpellManager.CanCast( "Unholy Blight")
-                            && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss()) && u.Distance < (u.MeleeDistance()+5) && u.MyAuraMissing("Blood Plague"))),
-                    Spell.Cast("Outbreak",
-                        ret => Me.CurrentTarget.MyAuraMissing("Frost Fever") || Me.CurrentTarget.MyAuraMissing("Blood Plague")),
-                    // now Rune based abilities
-                    Spell.Cast("Howling Blast",
-                        ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)
-                            && Me.CurrentTarget.MyAuraMissing("Frost Fever")),
-                    Spell.Buff("Plague Strike", true, "Blood Plague")
-                    // icy touch skipped intentionally 
-                    )
                 );
         }
 

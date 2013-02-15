@@ -20,6 +20,11 @@ namespace Singular
             return distance >= min && distance <= max;
         }
 
+        public static bool Between(this int value, int min, int max)
+        {
+            return value >= min && value <= max;
+        }
+
         /// <summary>
         ///   A string extension method that turns a Camel-case string into a spaced string. (Example: SomeCamelString -> Some Camel String)
         /// </summary>

@@ -182,7 +182,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         CreateEnhanceDiagnosticOutputBehavior(),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                         Common.CreateShamanImbueOffHandBehavior(Imbue.Flametongue),
@@ -244,13 +244,13 @@ namespace Singular.ClassSpecific.Shaman
                 Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
-                    ret => !SpellManager.GlobalCooldown, 
+                    ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
 
                         CreateEnhanceDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                         Common.CreateShamanImbueOffHandBehavior(Imbue.Frostbrand, Imbue.Flametongue),
@@ -309,7 +309,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         CreateEnhanceDiagnosticOutputBehavior(),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateShamanDpsShieldBehavior(),
 

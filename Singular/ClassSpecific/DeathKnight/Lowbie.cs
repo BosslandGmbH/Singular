@@ -25,7 +25,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
                 // Anti-magic shell - no cost and doesnt trigger GCD 
                     Spell.BuffSelf("Anti-Magic Shell",
                                     ret => Unit.NearbyUnfriendlyUnits.Any(u =>

@@ -10,11 +10,15 @@ using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Rest = Singular.Helpers.Rest;
+using Styx.WoWInternals;
 
 namespace Singular.ClassSpecific.Druid
 {
     public class Resto
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static DruidSettings Settings { get { return SingularSettings.Instance.Druid(); } }
+
         [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidHealRest()
         {
@@ -85,52 +89,52 @@ namespace Singular.ClassSpecific.Druid
                             "Tranquility",
                             ret => StyxWoW.Me.Combat && StyxWoW.Me.GroupInfo.IsInParty && Unit.NearbyFriendlyPlayers.Count(
                                 p =>
-                                p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid().TranquilityHealth && p.Distance <= 30) >=
-                                   SingularSettings.Instance.Druid().TranquilityCount),
+                                p.IsAlive && p.HealthPercent <= Settings.TranquilityHealth && p.Distance <= 30) >=
+                                   Settings.TranquilityCount),
                         //Use Innervate on party members if we have Glyph of Innervate
                         Spell.Buff(
                             "Innervate",
                             ret => (WoWUnit)ret,
                             ret =>
                             TalentManager.HasGlyph("Innervate") && StyxWoW.Me.Combat && (WoWUnit)ret != StyxWoW.Me &&
-                            StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid().InnervateMana &&
-                            ((WoWUnit)ret).PowerType == WoWPowerType.Mana && ((WoWUnit)ret).ManaPercent <= SingularSettings.Instance.Druid().InnervateMana),
+                            StyxWoW.Me.ManaPercent <= Settings.InnervateMana &&
+                            ((WoWUnit)ret).PowerType == WoWPowerType.Mana && ((WoWUnit)ret).ManaPercent <= Settings.InnervateMana),
                         Spell.Cast(
                             "Swiftmend",
                             ret => (WoWUnit)ret,
-                            ret => StyxWoW.Me.Combat && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().Swiftmend &&
+                            ret => StyxWoW.Me.Combat && ((WoWUnit)ret).HealthPercent <= Settings.Swiftmend &&
                                    (((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth"))),
                         Spell.Cast(
                             "Wild Growth",
                             ret => (WoWUnit)ret,
                             ret => StyxWoW.Me.GroupInfo.IsInParty && Unit.NearbyFriendlyPlayers.Count(
-                                p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid().WildGrowthHealth &&
-                                     p.Location.DistanceSqr(((WoWUnit)ret).Location) <= 30*30) >= SingularSettings.Instance.Druid().WildGrowthCount),
+                                p => p.IsAlive && p.HealthPercent <= Settings.WildGrowthHealth &&
+                                     p.Location.DistanceSqr(((WoWUnit)ret).Location) <= 30*30) >= Settings.WildGrowthCount),
                         Spell.Cast(
                             "Regrowth",
                             ret => (WoWUnit)ret,
-                            ret => !((WoWUnit)ret).HasMyAura("Regrowth") && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().Regrowth),
+                            ret => !((WoWUnit)ret).HasMyAura("Regrowth") && ((WoWUnit)ret).HealthPercent <= Settings.Regrowth),
                         Spell.Cast(
                             "Healing Touch",
                             ret => (WoWUnit)ret,
-                            ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().HealingTouch),
+                            ret => ((WoWUnit)ret).HealthPercent <= Settings.HealingTouch),
                         Spell.Cast(
                             "Nourish",
                             ret => (WoWUnit)ret,
-                            ret => ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().Nourish &&
+                            ret => ((WoWUnit)ret).HealthPercent <= Settings.Nourish &&
                                    ((((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth") ||
                                     ((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).HasAura("Wild Growth")))),
                         Spell.Cast(
                             "Rejuvenation",
                             ret => (WoWUnit)ret,
                             ret => !((WoWUnit)ret).HasMyAura("Rejuvenation") &&
-                                   ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Druid().Rejuvenation),
+                                   ((WoWUnit)ret).HealthPercent <= Settings.Rejuvenation),
                         new Decorator(
                             ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                             new PrioritySelector(
                                 Movement.CreateMoveToLosBehavior(),
                                 Movement.CreateFaceTargetBehavior(),
-                                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                                Helpers.Common.CreateInterruptBehavior(),
                                 Spell.Buff("Moonfire"),
                                 Spell.Cast("Starfire", ret => StyxWoW.Me.HasAura("Fury of Stormrage")),
                                 Spell.Cast("Wrath"),
@@ -160,7 +164,7 @@ namespace Singular.ClassSpecific.Druid
                             Movement.CreateMoveToLosBehavior(),
                             Movement.CreateFaceTargetBehavior(),
                             Helpers.Common.CreateDismount("Pulling"),
-                            Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                            Helpers.Common.CreateInterruptBehavior(),
                             Spell.Buff("Moonfire"),
                             Spell.Cast("Starfire", ret => StyxWoW.Me.HasAura("Fury of Stormrage")),
                             Spell.Cast("Wrath"),
@@ -171,20 +175,48 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidCombatBuffs()
         {
-            return
-                new PrioritySelector(
-                    Spell.BuffSelf(
-                        "Tree of Life",
-                        ret => StyxWoW.Me.GroupInfo.IsInParty && Unit.NearbyFriendlyPlayers.Count(
-                            p => p.IsAlive && p.HealthPercent <= SingularSettings.Instance.Druid().TreeOfLifeHealth) >=
-                               SingularSettings.Instance.Druid().TreeOfLifeCount),
-                    Spell.BuffSelf(
-                        "Innervate",
-                        ret => StyxWoW.Me.ManaPercent < 15 || StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Druid().InnervateMana),
-                    Spell.BuffSelf(
-                        "Barkskin",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Druid().Barkskin)
-                    );
+            return new PrioritySelector(
+                Spell.BuffSelf("Tree of Life",
+                    ret => StyxWoW.Me.GroupInfo.IsInParty 
+                        && Unit.NearbyFriendlyPlayers.Count( p => p.IsAlive && p.HealthPercent <= Settings.TreeOfLifeHealth) >= Settings.TreeOfLifeCount),
+
+                Spell.BuffSelf("Innervate", ret => StyxWoW.Me.ManaPercent < 15 || StyxWoW.Me.ManaPercent <= Settings.InnervateMana),
+                Spell.BuffSelf("Barkskin", ret => StyxWoW.Me.HealthPercent <= Settings.Barkskin),
+
+                // Symbiosis
+                Spell.BuffSelf("Icebound Fortitude", ret => Me.HealthPercent < Settings.Barkskin),
+                Spell.BuffSelf("Deterrence", ret => Me.HealthPercent < Settings.Barkskin),
+                Spell.BuffSelf("Evasion", ret => Me.HealthPercent < Settings.Barkskin),
+                Spell.BuffSelf("Fortifying Brew", ret => Me.HealthPercent < Settings.Barkskin),
+                Spell.BuffSelf("Intimidating Roar",  ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1)
+
+                );
+        }
+
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidRestoration, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
+        public static Composite CreateRestoPreCombatBuffForSymbiosis(UnitSelectionDelegate onUnit)
+        {
+            return Common.CreateDruidCastSymbiosis(on => GetRestoBestSymbiosisTarget());
+        }
+
+        private static WoWUnit GetRestoBestSymbiosisTarget()
+        {
+            WoWUnit target = null;
+
+            if ( SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds )
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior);
+
+            if ( target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight);
+            if ( target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Hunter);
+            if ( target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Rogue);
+            if ( target == null)
+                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Monk);
+
+            return target;
         }
     }
 }

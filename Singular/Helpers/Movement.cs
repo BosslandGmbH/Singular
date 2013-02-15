@@ -64,17 +64,42 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///   Creates the ensure movement stopped behavior. Will return RunStatus.Success if it has stopped any movement, RunStatus.Failure otherwise.
+        ///   Creates the ensure movement stopped behavior. if no range specified, will stop immediately.  if range given, will stop if within range yds of current target
         /// </summary>
         /// <remarks>
         ///   Created 5/1/2011.
         /// </remarks>
         /// <returns>.</returns>
-        public static Composite CreateEnsureMovementStoppedBehavior()
+        public static Composite CreateEnsureMovementStoppedBehavior(float range = float.MaxValue)
+        {
+            if (range == float.MaxValue)
+            {
+                return new Decorator(
+                    ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.IsMoving,
+                    new Action(ret => Navigator.PlayerMover.MoveStop())
+                    );
+            }
+
+            return new Decorator(
+                ret => !MovementManager.IsMovementDisabled
+                    && StyxWoW.Me.IsMoving
+                    && (!StyxWoW.Me.GotTarget || StyxWoW.Me.CurrentTarget.Distance < range),
+                new Action(ret => Navigator.PlayerMover.MoveStop())
+                );
+        }
+
+        /// <summary>
+        /// Creates ensure movement stopped if within melee range behavior.
+        /// </summary>
+        /// <returns></returns>
+        public static Composite CreateEnsureMovementStoppedWithinMelee()
         {
             return new Decorator(
-                ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.IsMoving,
-                new Action(ret => Navigator.PlayerMover.MoveStop()));
+                ret => !MovementManager.IsMovementDisabled
+                    && StyxWoW.Me.IsMoving
+                    && (!StyxWoW.Me.GotTarget || StyxWoW.Me.CurrentTarget.IsWithinMeleeRange ),
+                new Action(ret => Navigator.PlayerMover.MoveStop())
+                );
         }
 
         /// <summary>

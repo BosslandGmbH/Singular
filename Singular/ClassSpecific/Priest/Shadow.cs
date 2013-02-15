@@ -29,14 +29,9 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateShadowPriestRestBehavior()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        Rest.CreateDefaultRestBehaviour("Flash Heal", "Resurrection"),
-                        Common.CreatePriestMovementBuff("Rest")
-                        )
-                    )
+                Spell.BuffSelf("Dispersion", ret => Me.ManaPercent < SingularSettings.Instance.MinMana && Me.IsSwimming ),
+                Rest.CreateDefaultRestBehaviour("Flash Heal", "Resurrection"),
+                Common.CreatePriestMovementBuff("Rest")
                 );
 
         }
@@ -79,17 +74,23 @@ namespace Singular.ClassSpecific.Priest
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
                 Spell.WaitForCast(true),
-
-                Spell.BuffSelf("Power Word: Shield", 
-                    ret => SingularSettings.Instance.Priest().UseShieldPrePull && !StyxWoW.Me.HasAura("Weakened Soul") && !SpellManager.HasSpell("Mind Spike")),
-                Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
-                //Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
-                //Spell.Buff("Devouring Plague", true, ret => SingularSettings.Instance.Priest().DevouringPlagueFirst), // We have to have 3 orbs - why would we ever pull with this?
-                Spell.Cast("Mind Blast"),
-                Spell.Buff("Vampiric Touch", true, ret => !SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.CurrentTarget.Elite),
-                Spell.Buff("Shadow Word: Pain"),
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Shadow Form"),
+                        Spell.BuffSelf("Power Word: Shield", 
+                            ret => SingularSettings.Instance.Priest().UseShieldPrePull && !StyxWoW.Me.HasAura("Weakened Soul") && !SpellManager.HasSpell("Mind Spike")),
+                        Spell.Cast("Holy Fire", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                        //Spell.Cast("Smite", ctx => StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                        //Spell.Buff("Devouring Plague", true, ret => SingularSettings.Instance.Priest().DevouringPlagueFirst), // We have to have 3 orbs - why would we ever pull with this?
+                        Spell.Cast("Mind Blast"),
+                        Spell.Buff("Vampiric Touch", true, ret => !SpellManager.HasSpell("Mind Spike") || StyxWoW.Me.CurrentTarget.Elite),
+                        Spell.Buff("Shadow Word: Pain")
+                        )
+                    ),
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 
@@ -100,6 +101,7 @@ namespace Singular.ClassSpecific.Priest
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
                 Spell.WaitForCast(true),
 
                 new Decorator(
@@ -108,7 +110,7 @@ namespace Singular.ClassSpecific.Priest
 
                         CreateShadowDiagnosticOutputBehavior(),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
                         Spell.BuffSelf("Shadow Form"),
 
                         // updated time to death tracking values before we need them
@@ -123,6 +125,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.BuffSelf("Dispersion",
                             ret => StyxWoW.Me.ManaPercent < SingularSettings.Instance.Priest().DispersionMana
                                 || StyxWoW.Me.HealthPercent < 40 
+                                || (StyxWoW.Me.ManaPercent < SingularSettings.Instance.MinMana && Me.IsSwimming)
                                 || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
                         Spell.BuffSelf("Psychic Scream", 
                             ret => SingularSettings.Instance.Priest().UsePsychicScream &&
@@ -195,12 +198,12 @@ namespace Singular.ClassSpecific.Priest
 
                             Spell.Cast("Mind Spike", ret => !Me.CurrentTarget.HasMyAura("Devouring Plague") && !Me.CurrentTarget.HasMyAura("Shadow Word: Pain") && !Me.CurrentTarget.HasMyAura("Vampiric Touch")),
                                 
-                            Spell.Cast("Mind Flay"),
-
-                            Movement.CreateMoveToTargetBehavior(true, 35f)
+                            Spell.Cast("Mind Flay")
                             )
                         )
-                    )
+                    ),
+
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 
@@ -216,40 +219,51 @@ namespace Singular.ClassSpecific.Priest
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
                 Spell.WaitForCast(true),
-                Spell.BuffSelf("Shadow Form"),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
 
-                // Defensive stuff
-                Spell.BuffSelf("Power Word: Shield", ret => !StyxWoW.Me.HasAura("Weakened Soul")),
-                Spell.BuffSelf("Dispersion", ret => StyxWoW.Me.HealthPercent < 40 || Unit.NearbyUnfriendlyUnits.Count( t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
-                Spell.BuffSelf("Psychic Scream", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) >= 1),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Shadow Form"),
+                        Helpers.Common.CreateInterruptBehavior(),
 
-                // Offensive
-                Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
-                // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
-                Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
-                Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
-                Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 30),
-                Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 30),
-                Spell.Cast("Mindbender"),
-                Spell.Cast("Power Infusion"),
-                Spell.Cast("Mind Blast"),
-                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
-                Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest().MindFlayMana),
-                // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest().UseWand), // we no longer have wands or shoot
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                        // Defensive stuff
+                        Spell.BuffSelf("Power Word: Shield", ret => !StyxWoW.Me.HasAura("Weakened Soul")),
+                        Spell.BuffSelf("Dispersion", ret => StyxWoW.Me.HealthPercent < 40 || Unit.NearbyUnfriendlyUnits.Count( t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
+                        Spell.BuffSelf("Psychic Scream", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) >= 1),
+
+                        // Offensive
+                        Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
+                        // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
+                        Spell.Cast("Mind Blast", ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
+                        Spell.Buff("Devouring Plague", true, ret => StyxWoW.Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3),
+                        Spell.Buff("Shadow Word: Pain", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 30),
+                        Spell.Buff("Vampiric Touch", true, ret => StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 30),
+                        Spell.Cast("Mindbender"),
+                        Spell.Cast("Power Infusion"),
+                        Spell.Cast("Mind Blast"),
+                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
+                        Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest().MindFlayMana)
+                        // Helpers.Common.CreateUseWand(ret => SingularSettings.Instance.Priest().UseWand), // we no longer have wands or shoot
+                        )
+                    ),
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 
         #endregion
 
-        #region Instance Rotation
-        [Behavior(BehaviorType.Rest, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Instances)]
+        #region PreCombatBuffs
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Priest, WoWSpec.PriestShadow)]
         public static Composite CreatePriestShadowRest()
         {
-            return Rest.CreateDefaultRestBehaviour(null, "Resurrection");
+            return Spell.BuffSelf("Shadow Form");
         }
+
+        #endregion 
+
+        #region Instance Rotation
 
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Instances)]
         public static Composite CreatePriestShadowInstancePullAndCombat()
@@ -259,12 +273,13 @@ namespace Singular.ClassSpecific.Priest
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
                 Spell.WaitForCast(true),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
                         Spell.BuffSelf("Shadow Form"),
 
                         // use fade to drop aggro.
@@ -304,7 +319,7 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 60), // Mana check is for mana management. Don't mess with it
                                 Spell.Cast("Mind Flay", ret => StyxWoW.Me.ManaPercent >= SingularSettings.Instance.Priest().MindFlayMana),
 
-                                Movement.CreateMoveToTargetBehavior(true, 35f)
+                                Movement.CreateMoveToTargetBehavior(true, 38f)
                                 )),
 
                         // Single target trash rotation
@@ -315,7 +330,7 @@ namespace Singular.ClassSpecific.Priest
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 
@@ -352,24 +367,28 @@ namespace Singular.ClassSpecific.Priest
                     {
                         uint orbs = Me.GetCurrentPower(WoWPowerType.ShadowOrbs);
 
-                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, moving={2}, orbs={3}",
+                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, moving={2}, orbs={3}, surgdark={4}, divinsight={5}",
                             Me.HealthPercent,
                             Me.ManaPercent,
                             Me.IsMoving,
-                            orbs
+                            orbs,
+                            (long)Me.GetAuraTimeLeft("Surge of Darkness", true).TotalMilliseconds,
+                            (long)Me.GetAuraTimeLeft("Divine Insight", true).TotalMilliseconds
                             );
 
                         WoWUnit target = Me.CurrentTarget;
                         if (target == null)
                             line += ", target=(null)";
                         else
-                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tface={3}, tlos={4}, tloss={5}",
+                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tface={3}, tloss={4}, sw:p={5}, vamptch={6}, devplague={7}",
                                 target.SafeName(),
                                 target.Distance,
                                 target.HealthPercent,
                                 Me.IsSafelyFacing(target,70f),
-                                target.InLineOfSight,
-                                target.InLineOfSpellSight
+                                target.InLineOfSpellSight,
+                                (long)target.GetAuraTimeLeft("Shadow Word: Pain", true).TotalMilliseconds,
+                                (long)target.GetAuraTimeLeft("Vampiric Touch", true).TotalMilliseconds,
+                                (long)target.GetAuraTimeLeft("Devouring Plague", true).TotalMilliseconds
                                 );
 
                         Logger.WriteDebug(Color.Wheat, line);

@@ -38,6 +38,7 @@ namespace Singular.Settings
         [Description("Use PW:Shield on set HP. This will only be used for Mind Spike rotation")]
         public double ShieldHealthPercent { get; set; }
 
+/*
         [Setting]
         [DefaultValue(15)]
         [Category("Shadow")]
@@ -65,6 +66,7 @@ namespace Singular.Settings
         [DisplayName("Archangel on 5")]
         [Description("Always archangel on 5 dark evangelism, ignoring mana %")]
         public bool AlwaysArchangel5 { get; set; }
+*/
 
         [Setting]
         [DefaultValue(20)]
@@ -79,7 +81,7 @@ namespace Singular.Settings
         [DisplayName("Healing Spells Health")]
         [Description("Won't attempt to use healing spells unless below this health percent")]
         public int DontHealPercent { get; set; }
-
+/*
         [Setting]
         [DefaultValue(true)]
         [Category("Shadow")]
@@ -100,7 +102,7 @@ namespace Singular.Settings
         [DisplayName("Psychic Horror Interrupt")]
         [Description("Attempt to psychic horror target as interrupt (on top of silence)")]
         public bool UsePsychicHorrorInterrupt { get; set; }
-
+*/
         #endregion
 
         #region Common
@@ -111,14 +113,14 @@ namespace Singular.Settings
         [DisplayName("Shield Pre-Pull")]
         [Description("Use PW:Shield pre-pull. This setting is not used in Mind Spike rotation")]
         public bool UseShieldPrePull { get; set; }
-
+/*
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Use Shadow Protection")]
         [Description("Use Shadow Protection buff")]
         public bool UseShadowProtection { get; set; }
-
+*/
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
@@ -147,12 +149,14 @@ namespace Singular.Settings
         [Description("Use Inner Fire, otherwise uses Inner Will")]
         public bool UseInnerFire { get; set; }
 
+/*
         [Setting]
         [DefaultValue(75)]
         [Category("Common")]
         [DisplayName("Archangel Mana")]
         [Description("Archangel will be used at this value")]
         public int ArchangelMana { get; set; }
+*/
 
         [Setting]
         [DefaultValue(50)]

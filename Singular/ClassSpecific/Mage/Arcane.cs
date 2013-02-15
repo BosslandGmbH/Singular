@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Mage
                         CreateArcaneDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.BuffSelf("Arcane Power"),
 
@@ -62,6 +62,7 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
                                 Spell.Cast("Arcane Barrage", ret => Me.HasAura("Arcane Charge", Math.Min(6, Unit.UnfriendlyUnitsNearTarget(10f).Count()))),
@@ -70,6 +71,7 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
 
+                        Movement.CreateEnsureMovementStoppedBehavior(35f),
                         Common.CreateMagePolymorphOnAddBehavior(),
 
                         Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
@@ -103,6 +105,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
        
                 Spell.WaitForCast(true),
 
@@ -156,7 +159,7 @@ namespace Singular.ClassSpecific.Mage
                         CreateArcaneDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.BuffSelf("Arcane Power"),
 
@@ -164,6 +167,7 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
                                 Spell.Cast("Arcane Barrage", ret => Me.HasAura( "Arcane Charge", Math.Min( 6, Unit.UnfriendlyUnitsNearTarget(10f).Count()))),
@@ -172,6 +176,7 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
 
+                        Movement.CreateEnsureMovementStoppedBehavior(35f),
                         Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
 
                         // Living Bomb in CombatBuffs()

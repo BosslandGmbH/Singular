@@ -73,8 +73,6 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60),
                 // Only pop reck if we're going to be executing -OR- 4pc T14 bonus -OR- not in an instance. Fights are also too short.
                 Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
-                // Heroic Fury
-                Spell.BuffSelf("Heroic Fury", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Rooted)),
                 // Fear Remover, or to get ourselves enraged again.
                 Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified))
                 );
@@ -127,7 +125,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Buff("Hamstring", ret => StyxWoW.Me.CurrentTarget.IsPlayer && !StyxWoW.Me.CurrentTarget.HasAnyAura(_slows) && SingularSettings.Instance.Warrior().UseWarriorSlows),
 
                 //Interupts
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
 
                 Movement.CreateMoveBehindTargetBehavior(),
                 // Heal up in melee

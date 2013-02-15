@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using Styx.Common;
 using Singular.Settings;
 
-using HotkeyManager = Singular.Managers.HotkeyManager;
 using Styx.Common.Helpers;
 
 namespace Singular
@@ -61,12 +60,16 @@ namespace Singular
         {
             get
             {
-                switch (StyxWoW.Me.Shapeshift)
+                if (StyxWoW.Me.Class == WoWClass.Druid)
                 {
-                    case ShapeshiftForm.FlightForm:
-                    case ShapeshiftForm.EpicFlightForm:
-                        return true;
+                    switch (StyxWoW.Me.Shapeshift)
+                    {
+                        case ShapeshiftForm.FlightForm:
+                        case ShapeshiftForm.EpicFlightForm:
+                            return true;
+                    }
                 }
+
                 return StyxWoW.Me.Mounted;
             }
         }
@@ -88,6 +91,9 @@ namespace Singular
             // No pulsing if we're loading or out of the game.
             if (!StyxWoW.IsInGame || !StyxWoW.IsInWorld)
                 return;
+
+            // check and output casting state information
+            UpdateDiagnosticCastingState();
 
             // Update the current context, check if we need to rebuild any behaviors.
             UpdateContext();
@@ -114,7 +120,7 @@ namespace Singular
                 (Me.GroupInfo.IsInParty || Me.GroupInfo.IsInRaid))
                 TankManager.Instance.Pulse();
 
-            HotkeyManager.Pulse();
+            HotkeyDirector.Pulse();
         }
 
         public override void Initialize()
@@ -143,11 +149,13 @@ namespace Singular
                 {
                     Logger.Write(Color.White, "Context changed, re-creating behaviors");
                     RebuildBehaviors();
+                    Spell.GcdInitialize();
                 };
             RoutineManager.Reloaded += (s, e) =>
                 {
                     Logger.Write(Color.White, "Routines were reloaded, re-creating behaviors");
                     RebuildBehaviors();
+                    Spell.GcdInitialize();
                 };
 
             // create silently since will creating again right after this
@@ -158,11 +166,14 @@ namespace Singular
             Logger.WriteDebug(Color.White, "Verified behaviors can be created!");
 
             // When we actually need to use it, we will.
+            Spell.GcdInitialize();
+
             EventHandlers.Init();
             MountManager.Init();
-            HotkeyManager.Init();
+            HotkeyDirector.Init();
             MovementManager.Init();
             SoulstoneManager.Init();
+            Dispelling.Init();
 
             //Logger.Write("Combat log event handler started.");
 
@@ -271,6 +282,33 @@ namespace Singular
         {
             string hbpath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
             return hbpath;
+        }
+
+        private static bool _lastIsGCD = false;
+        private static bool _lastIsCasting = false;
+        private static bool _lastIsChanneling = false;
+
+        public static bool UpdateDiagnosticCastingState( bool retVal = false)
+        {
+            if (SingularSettings.Debug && SingularSettings.Instance.EnableDebugLoggingGCD)
+            {
+                if (_lastIsGCD != Spell.IsGlobalCooldown())
+                {
+                    _lastIsGCD = Spell.IsGlobalCooldown();
+                    Logger.WriteDebug("CastingState:  GCD={0} GCDTimeLeft={1}", _lastIsGCD, (int)Spell.GcdTimeLeft.TotalMilliseconds);
+                }
+                if (_lastIsCasting != Spell.IsCasting())
+                {
+                    _lastIsCasting = Spell.IsCasting();
+                    Logger.WriteDebug("CastingState:  Casting={0} CastTimeLeft={1}", _lastIsCasting, (int)Me.CurrentCastTimeLeft.TotalMilliseconds);
+                }
+                if (_lastIsChanneling != Spell.IsChannelling())
+                {
+                    _lastIsChanneling = Spell.IsChannelling();
+                    Logger.WriteDebug("ChannelingState:  Channeling={0} ChannelTimeLeft={1}", _lastIsChanneling, (int)Me.CurrentChannelTimeLeft.TotalMilliseconds);
+                }
+            }
+            return retVal;
         }
     }
 }

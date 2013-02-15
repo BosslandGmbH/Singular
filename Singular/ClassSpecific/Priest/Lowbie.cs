@@ -19,7 +19,7 @@ namespace Singular.ClassSpecific.Priest
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
 
                 Spell.BuffSelf("Power Word: Shield", ret => !StyxWoW.Me.HasAura("Weakened Soul")),
                 Spell.Cast("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 40),

@@ -26,7 +26,7 @@ namespace Singular.Managers
     {
         private static readonly WaitTimer _tankReset = WaitTimer.ThirtySeconds;
 
-        private static ulong _tankGuid;
+        // private static ulong _tankGuid;
 
         static HealerManager()
         {

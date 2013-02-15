@@ -142,6 +142,7 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Blood")]
         [DisplayName("Lichborne Exclusive")]
+        [Description("Use Lichborne only if these not active: Bone Shield, Vampiric Blood, Dancing Rune Weapon, Icebound Fortitude")]
         public bool LichborneExclusive { get; set; }
 
         [Setting]

@@ -19,6 +19,7 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(30f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -26,7 +27,7 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateAutoAttack(false),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
                         // Always keep it up on our target!
                         Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(StyxWoW.Me.CurrentTarget) && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
                 // Heal pet when below 70

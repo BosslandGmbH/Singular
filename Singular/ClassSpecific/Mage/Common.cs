@@ -121,7 +121,18 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
-        private static DateTime _cancelIceBlock = DateTime.MinValue ;
+        [Behavior(BehaviorType.LossOfControl, WoWClass.Mage)]
+        public static Composite CreateMageLossOfControlBehavior()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+                    Spell.BuffSelf("Temporal Shield", ret => Me.Stunned )
+                    )
+                );
+        }
+
+        private static DateTime _cancelIceBlock = DateTime.MinValue;
 
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Mage)]
         public static Composite CreateMageCombatBuffs()

@@ -42,7 +42,7 @@ namespace Singular.Managers
         {
             get
             {
-                return !HotkeyManager.IsMovementEnabled;
+                return !HotkeyDirector.IsMovementEnabled;
             }
         }
 
@@ -75,7 +75,7 @@ namespace Singular.Managers
         /// </remarks>
         public static bool IsManualMovementBotActive { get; private set; }
 
-        static INavigationProvider _prevNavigation = null;
+        // static INavigationProvider _prevNavigation = null;
         static IPlayerMover _prevPlayerMover = null;
         static IStuckHandler _prevStuckHandler = null;
 

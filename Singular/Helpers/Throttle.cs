@@ -51,7 +51,7 @@ namespace Singular.Helpers
             : base(child)
         {
             TimeFrame = timeFrame;
-            limit = limit;
+            Limit = limit;
 
             _end = DateTime.MinValue;
             _count = 0;

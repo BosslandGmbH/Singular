@@ -1,10 +1,18 @@
 ﻿
 using System;
+using System.Linq;
 using Singular.Managers;
 using Styx;
 
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using Styx.CommonBot;
+using Styx.TreeSharp;
+using Singular.Settings;
+
+using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
+using CommonBehaviors.Actions;
 
 namespace Singular.Helpers
 {
@@ -23,6 +31,16 @@ namespace Singular.Helpers
 
     internal static class Dispelling
     {
+        private static DispelCapabilities _cachedCapabilities = DispelCapabilities.None;
+
+        public static void Init()
+        {
+            SingularRoutine.OnWoWContextChanged += (orig, ne) =>
+            {
+                _cachedCapabilities = Capabilities;
+            };
+        }
+
         /// <summary>Gets the dispel capabilities of the current player.</summary>
         /// <value>The capabilities.</value>
         public static DispelCapabilities Capabilities
@@ -62,7 +80,9 @@ namespace Singular.Helpers
                     case WoWClass.Paladin:
                         return true;
 					case WoWClass.Monk:
-						return true;
+                        return true;
+                    case WoWClass.Priest:
+                        return true;
                 }
                 return false;
             }
@@ -77,7 +97,7 @@ namespace Singular.Helpers
                 switch (StyxWoW.Me.Class)
                 {
                     case WoWClass.Druid:
-                        return true;
+						return true;
                     case WoWClass.Paladin:
                         return true;
                     case WoWClass.Monk:
@@ -97,10 +117,8 @@ namespace Singular.Helpers
                 {
                     case WoWClass.Druid:
                         return true;
-
                     case WoWClass.Shaman:
                         return true;
-
                     case WoWClass.Mage:
                         return true;
                 }
@@ -117,18 +135,15 @@ namespace Singular.Helpers
                 switch (StyxWoW.Me.Class)
                 {
                     case WoWClass.Druid:
-                        return StyxWoW.Me.Specialization == WoWSpec.DruidRestoration ;
+                        return StyxWoW.Me.Specialization == WoWSpec.DruidRestoration;
                     case WoWClass.Paladin:
-                        return StyxWoW.Me.Specialization == WoWSpec.PaladinHoly ;
+                        return StyxWoW.Me.Specialization == WoWSpec.PaladinHoly;
                     case WoWClass.Shaman:
-                        return StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration;
-
-                        // Priests can dispel magic natively.
+                        return true;
                     case WoWClass.Priest:
                         return true;
-
-                    case WoWClass.Monk: // Monks need the passive talent "internal medicine" ~lvl 20
-                        return StyxWoW.Me.Specialization == WoWSpec.MonkMistweaver ;
+                    case WoWClass.Monk: 
+                        return StyxWoW.Me.Specialization == WoWSpec.MonkMistweaver;
                 }
                 return false;
             }
@@ -168,7 +183,55 @@ namespace Singular.Helpers
         /// <returns>true if it succeeds, false if it fails.</returns>
         public static bool CanDispel(WoWUnit unit)
         {
-            return (Capabilities & GetDispellableTypesOnUnit(unit)) != 0;
+            return CanDispel(unit, _cachedCapabilities);
+        }
+
+        public static bool CanDispel(WoWUnit unit, DispelCapabilities chk)
+        {
+            return (chk & GetDispellableTypesOnUnit(unit)) != 0;
+        }
+
+
+        private static WoWUnit _unitDispel;
+
+        public static Composite CreateDispelBehavior()
+        {
+            if (SingularSettings.Instance.DispelDebuffs == DispelStyle.None)
+                return new ActionAlwaysFail();
+
+            PrioritySelector prio = new PrioritySelector();
+            switch ( StyxWoW.Me.Class)
+            {
+                case WoWClass.Paladin:
+                    prio.AddChild( Spell.Cast( "Cleanse", on => _unitDispel));
+                    break;
+				case WoWClass.Monk:
+                    prio.AddChild( Spell.Cast( "Detox", on => _unitDispel));
+                    break;
+                case WoWClass.Priest:
+                    prio.AddChild( Spell.Cast( "Purify", on => _unitDispel));
+                    break;
+                case WoWClass.Druid:
+                    if ( StyxWoW.Me.Specialization == WoWSpec.DruidRestoration )
+                        prio.AddChild( Spell.Cast( "Nature's Cure", on => _unitDispel));
+                    else 
+                        prio.AddChild( Spell.Cast( "Remove Corruption", on => _unitDispel));
+                    break;
+                case WoWClass.Shaman:
+                    if ( StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration )
+                        prio.AddChild(Spell.Cast("Purify Spirit", on => _unitDispel));
+                    else
+                        prio.AddChild(Spell.Cast("Cleanse Spirit", on => _unitDispel));
+                    break;
+                case WoWClass.Mage:
+                    prio.AddChild(Spell.Cast("Remove Curse", on => _unitDispel));
+                    break;
+            }
+
+            return new Sequence(
+                new Action(r => _unitDispel = Unit.NearbyGroupMembers.FirstOrDefault(u => CanDispel(u))),
+                prio
+                );
         }
     }
 }

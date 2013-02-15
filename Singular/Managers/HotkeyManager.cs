@@ -14,10 +14,11 @@ using Styx.Common;
 using Styx.TreeSharp;
 using System.Windows.Forms;
 using Styx.Pathing;
+using System.Runtime.InteropServices;
 
 namespace Singular.Managers
 {
-    internal static class HotkeyManager
+    internal static class HotkeyDirector
     {
         private static HotkeySettings HotkeySettings { get { return SingularSettings.Instance.Hotkeys(); } }
 
@@ -41,13 +42,27 @@ namespace Singular.Managers
         {
             get 
             { 
+                // check if not suspended
+                if (_MovementTemporarySuspendEndtime == DateTime.MinValue )
+                    return false;
+
+                // check if still suspended
                 if ( _MovementTemporarySuspendEndtime > DateTime.Now )
                     return true;
 
-                // force minvalue to avoid side effects due to local computer time changes (like daylight savings time)
-                _MovementTemporarySuspendEndtime = DateTime.MinValue;   
+                // suspend has timed out, so refresh suspend timer if key is still down
+                // -- currently only check last key pressed rather than every suspend key configured
+                // if ( HotkeySettings.SuspendMovementKeys.Any( k => IsKeyDown( k )))
+                if ( IsKeyDown( _lastMovementTemporarySuspendKey ))
+                {
+                    _MovementTemporarySuspendEndtime = DateTime.Now + TimeSpan.FromSeconds(HotkeySettings.SuspendDuration);
+                    return true;
+                }
+
+                _MovementTemporarySuspendEndtime = DateTime.MinValue;
                 return false;
             }
+
             set
             {
                 if (value)
@@ -68,9 +83,9 @@ namespace Singular.Managers
             SingularRoutine.OnBotEvent += (src,arg) =>
             {
                 if (arg.Event == SingularBotEvent.BotStart)
-                    HotkeyManager.Start(true);
+                    HotkeyDirector.Start(true);
                 else if (arg.Event == SingularBotEvent.BotStop)
-                    HotkeyManager.Stop();
+                    HotkeyDirector.Stop();
             };
         }
 
@@ -82,30 +97,23 @@ namespace Singular.Managers
             _HotkeysRegistered = true;
 
             // Hook the  hotkeys for the appropriate WOW Window...
-            Hotkeys.SetWindowHandle(StyxWoW.Memory.Process.MainWindowHandle);
+            HotkeysManager.Initialize( StyxWoW.Memory.Process.MainWindowHandle);
 
             // register hotkey for commands with 1:1 key assignment
             if (HotkeySettings.AoeToggle != Keys.None)
-            {
-                WriteHotkeyAssignment("AOE Spells", HotkeySettings.AoeToggle);
-                Hotkeys.RegisterHotkey("Toggle AOE", () => { AoeToggle(); }, HotkeySettings.AoeToggle);
-            }
+                RegisterHotkeyAssignment("AOE", HotkeySettings.AoeToggle, (hk) => { AoeToggle(); });
+
             if (HotkeySettings.CombatToggle != Keys.None)
-            {
-                WriteHotkeyAssignment("Combat", HotkeySettings.CombatToggle);
-                Hotkeys.RegisterHotkey("Toggle Combat", () => { CombatToggle(); }, HotkeySettings.CombatToggle);
-            }
+                RegisterHotkeyAssignment("Combat", HotkeySettings.CombatToggle, (hk) => { CombatToggle(); });
 
             // note: important to not check MovementManager if movement disabled here, since MovementManager calls us
             // .. and the potential for side-effects exists.  check SingularSettings directly for this only
             if (!SingularSettings.Instance.DisableAllMovement && HotkeySettings.MovementToggle != Keys.None)
-            {
-                WriteHotkeyAssignment("Movement", HotkeySettings.MovementToggle);
-                Hotkeys.RegisterHotkey("Toggle Movement", () => { MovementToggle(); }, HotkeySettings.MovementToggle);
-            }
+                RegisterHotkeyAssignment("Movement", HotkeySettings.MovementToggle, (hk) => { MovementToggle(); });
 
             // note: important to not check MovementManager if movement disabled here, since MovementManager calls us
             // .. and the potential for side-effects exists.  check SingularSettings directly for this only
+#if HONORBUDDY_SUPPORTS_HOTKEYS_WITHOUT_REQUIRING_A_MODIFIER
             if (SingularSettings.Instance.DisableAllMovement || !HotkeySettings.SuspendMovement )
                 _registeredMovementSuspendKeys = null;
             else
@@ -116,14 +124,61 @@ namespace Singular.Managers
                 // register hotkeys for commands with 1:M key assignment
                 foreach (var key in _registeredMovementSuspendKeys)
                 {
-                    Hotkeys.RegisterHotkey("Movement Suspend(" + key.ToString() + ")", () => { MovementTemporary_Suspend(); }, key);
+                    HotkeysManager.Register("Movement Suspend(" + key.ToString() + ")", key, 0, (hk) => { MovementTemporary_Suspend(hk); });
                 }
+            }
+#else
+            if ( HotkeySettings.SuspendMovement )
+            {
+                Logger.Write(".");
+                Logger.Write(Color.HotPink, "warning: HonorBuddy does not currently support Hotkeys defined without a "
+                                        + "modifier like Shift, Alt, or Control.  This prevents you from "
+                                        + "setting up Singular to temporarily suspend movement as you have in the past.  "
+                                        + "This feature will remain disabled until that has been resolved.  "
+                                        + "Your settings have been retained so your setup will be available "
+                                        + "to you when the feature is restored for use.");
+            }
+#endif
+        }
+
+        private static void RegisterHotkeyAssignment(string name, Keys key, Action<Hotkey> callback)
+        {
+            Keys keyCode = key & Keys.KeyCode;
+            ModifierKeys mods = 0;
+
+            if ((key & Keys.Shift) != 0)
+                mods |= ModifierKeys.Shift;
+            if ((key & Keys.Alt) != 0)
+                mods |= ModifierKeys.Alt;
+            if ((key & Keys.Control) != 0)
+                mods |= ModifierKeys.Control;
+
+            if (mods != 0)
+            {
+                Logger.Write(Color.White, "Hotkey: To disable {0}, press: [{1}]", name, key.ToFormattedString());
+                HotkeysManager.Register(name, keyCode, mods, callback);
+            }
+            else
+            {
+                Logger.Write("-");
+                Logger.Write(Color.HotPink, "warning: {0} cannot be a hotkey for disabling {1}!  HonorBuddy now requires you to add a Shift, Alt, or Control modifier key to work.  For example, change your config to use Shift+{0}",
+                    key.ToFormattedString(),
+                    name);
             }
         }
 
-        private static void WriteHotkeyAssignment(string keyCommand, Keys key)
+        private static string ToFormattedString(this Keys key)
         {
-            Logger.Write(Color.White, "Hotkey: To disable {0}, press: [{1}]", keyCommand, key);
+            string txt = "";
+
+            if ((key & Keys.Shift) != 0)
+                txt += "Shift+";
+            if ((key & Keys.Alt) != 0)
+                txt += "Alt+";
+            if ((key & Keys.Control) != 0)
+                txt += "Ctrl+";
+            txt += (key & Keys.KeyCode).ToString();
+            return txt;
         }
 
         internal static void Stop()
@@ -133,17 +188,17 @@ namespace Singular.Managers
 
             _HotkeysRegistered = false;
 
-            // remove hotkeys for commands with 1:1 key assignment
-            Hotkeys.RemoveHotkey("Toggle AOE");
-            Hotkeys.RemoveHotkey("Toggle Combat");
-            Hotkeys.RemoveHotkey("Toggle Movement");
+            // remove hotkeys for commands with 1:1 key assignment          
+            HotkeysManager.Unregister("AOE");
+            HotkeysManager.Unregister("Combat");
+            HotkeysManager.Unregister("Movement");
 
             // remove hotkeys for commands with 1:M key assignment
             if (_registeredMovementSuspendKeys != null)
             {
                 foreach (var key in _registeredMovementSuspendKeys)
                 {
-                    Hotkeys.RemoveHotkey("Movement Suspend(" + key.ToString() + ")");
+                    HotkeysManager.Unregister("Movement Suspend(" + key.ToString() + ")");
                 }
             }
         }
@@ -179,7 +234,7 @@ namespace Singular.Managers
                 if (last_IsAoeEnabled)
                     TellUser("AoE now active!");
                 else 
-                    TellUser("AoE disabled... press {0} to enable", HotkeySettings.AoeToggle );
+                    TellUser("AoE disabled... press {0} to enable", HotkeySettings.AoeToggle.ToFormattedString() );
             }
         }
 
@@ -191,7 +246,7 @@ namespace Singular.Managers
                 if (last_IsCombatEnabled)
                     TellUser("Combat now enabled!");
                 else
-                    TellUser("Combat disabled... press {0} to enable", HotkeySettings.CombatToggle);
+                    TellUser("Combat disabled... press {0} to enable", HotkeySettings.CombatToggle.ToFormattedString());
             }
         }
 
@@ -203,7 +258,7 @@ namespace Singular.Managers
                 if (last_IsMovementEnabled)
                     TellUser("Movement now enabled!");
                 else
-                    TellUser("Movement disabled... press {0} to enable", HotkeySettings.MovementToggle );
+                    TellUser("Movement disabled... press {0} to enable", HotkeySettings.MovementToggle.ToFormattedString() );
 
                 MovementManager.Update();
             }
@@ -245,6 +300,7 @@ namespace Singular.Managers
         private static bool _CombatEnabled;
         private static bool _MovementEnabled;
         private static DateTime _MovementTemporarySuspendEndtime = DateTime.MinValue;
+        private static Keys _lastMovementTemporarySuspendKey;
 
         // save keys used at last Register
         public static Keys[] _registeredMovementSuspendKeys;
@@ -286,8 +342,9 @@ namespace Singular.Managers
             return (_MovementEnabled); 
         }
 
-        private static void MovementTemporary_Suspend()
+        private static void MovementTemporary_Suspend( Styx.Common.Hotkey hk)
         {
+            _lastMovementTemporarySuspendKey = hk.Key;
             if (_MovementEnabled)
             {
                 if (!IsWowKeyBoardFocusInFrame())
@@ -326,6 +383,14 @@ namespace Singular.Managers
         private static Dictionary<string, Keys> mapWowKeyToWindows = new Dictionary<string, Keys>
         {
         };
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        public static extern short GetAsyncKeyState(int vkey);
+
+        static bool IsKeyDown(Keys key)
+        {
+            return (GetAsyncKeyState((int) key) & 0x8000) != 0;
+        }
     }
 
 }

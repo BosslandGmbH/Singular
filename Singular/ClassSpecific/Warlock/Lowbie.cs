@@ -22,12 +22,15 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(false),
                 Helpers.Common.CreateDismount("Pulling"),
+
+                Movement.CreateEnsureMovementStoppedBehavior( 35f ),
+
                 Spell.WaitForCast(true),
 
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
                         
                         // Spell.PreventDoubleCast("Immolate"),
                         Spell.Cast("Life Tap", ret => StyxWoW.Me.ManaPercent < 50 && StyxWoW.Me.HealthPercent > 70),

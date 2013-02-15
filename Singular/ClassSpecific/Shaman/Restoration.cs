@@ -32,7 +32,7 @@ namespace Singular.ClassSpecific.Shaman
         #region BUFFS
 
         [Behavior(BehaviorType.CombatBuffs | BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Normal )]
-        public static Composite CreateRestoShamanHealingBuffs()
+        public static Composite CreateRestoShamanHealingBuffsNormal()
         {
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
@@ -142,7 +142,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        CreateRestoShamanHealingBuffs(),
+                        CreateRestoShamanHealingBuffsNormal(),
                         new Decorator(
                             ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
                             CreateRestoShamanHealingOnlyBehavior(true, false)
@@ -164,7 +164,48 @@ namespace Singular.ClassSpecific.Shaman
                     CreateRestoShamanHealingOnlyBehavior(false, true),
                     new Decorator(
                         ret => !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid),
-                        Elemental.CreateShamanElementalNormalPull()
+
+                        new PrioritySelector(
+                            Safers.EnsureTarget(),
+                            Movement.CreateMoveToLosBehavior(),
+                            Movement.CreateFaceTargetBehavior(),
+                            Helpers.Common.CreateDismount("Pulling"),
+
+                            new Decorator(
+                                ret => Me.GotTarget && Me.CurrentTarget.Distance < 35,
+                                Movement.CreateEnsureMovementStoppedBehavior()
+                                ),
+
+                            Spell.WaitForCastOrChannel(),
+
+                            new Decorator(
+                                ret => !Spell.IsGlobalCooldown(),
+                                new PrioritySelector(
+
+                                    new Decorator(
+                                        ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 40 * 40,
+                                        Totems.CreateTotemsNormalBehavior()),
+
+                            // grinding or questing, if target meets these cast Flame Shock if possible
+                            // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
+                            // 2. area has another player competing for mobs (we want to tag the mob quickly)
+                                    new Decorator(
+                                        ret => StyxWoW.Me.CurrentTarget.Distance < 12
+                                            || ObjectManager.GetObjectsOfType<WoWPlayer>(false, false).Any(p => p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 40 * 40),
+                                        new PrioritySelector(
+                                            Spell.Buff("Flame Shock", true),
+                                            Spell.Cast("Earth Shock", ret => !SpellManager.HasSpell("Flame Shock"))
+                                            )
+                                        ),
+
+                                    Spell.Cast("Lightning Bolt", mov => false, on => Me.CurrentTarget, ret => !StyxWoW.Me.IsMoving || StyxWoW.Me.HasAura("Spiritwalker's Grace") || TalentManager.HasGlyph("Unleashed Lightning")),
+                                    Spell.Cast("Flame Shock"),
+                                    Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand))
+                                    )
+                                ),
+
+                            Movement.CreateMoveToTargetBehavior(true, 35)
+                            )
                         )
                     );
         }
@@ -187,7 +228,44 @@ namespace Singular.ClassSpecific.Shaman
                     CreateRestoShamanHealingOnlyBehavior(),
                     new Decorator(
                         ret => !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid),
-                        Elemental.CreateShamanElementalNormalCombat())
+                        new PrioritySelector(
+                            Safers.EnsureTarget(),
+                            Movement.CreateMoveToLosBehavior(),
+                            Movement.CreateFaceTargetBehavior(),
+
+                            new Decorator(
+                                ret => Me.GotTarget && Me.CurrentTarget.Distance < 35,
+                                Movement.CreateEnsureMovementStoppedBehavior()
+                                ),
+
+                            Spell.WaitForCastOrChannel(),
+
+                            new Decorator(
+                                ret => !Spell.IsGlobalCooldown(),
+                                new PrioritySelector(
+
+                                    Helpers.Common.CreateInterruptBehavior(),
+
+                                    Totems.CreateTotemsNormalBehavior(),
+
+                                    Spell.Cast("Elemental Blast"),
+                                    Spell.Buff("Flame Shock", true),
+
+                                    Spell.Cast("Lava Burst"),
+                                    Spell.Cast("Earth Shock",
+                                        ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
+                                               StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
+
+                                    Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
+                                    Spell.Cast("Lightning Bolt")
+                                    )
+                                ),
+
+                            Movement.CreateMoveToTargetBehavior(true, 35)
+                            // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => NormalPullDistance)
+                            )
+                        
+                        )
                     );
         }
 
@@ -203,7 +281,7 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        CreateRestoShamanHealingBuffs(),
+                        CreateRestoHealingBuffsInstance(),
                         new Decorator(
                             ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
                             CreateRestoShamanHealingOnlyBehavior(true, false)
@@ -244,9 +322,9 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.WaitForCast(),
 
                         new Decorator(
-                            ret => !SpellManager.GlobalCooldown,
+                            ret => !Spell.GcdActive,
                             new PrioritySelector(
-                                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                                Helpers.Common.CreateInterruptBehavior(),
                                 Spell.Cast("Lightning Bolt")
                                 )
                             )
@@ -356,8 +434,11 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.GreaterHealingWave), "Greater Healing Wave", "Greater Healing Wave",
-                Spell.Cast("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.GreaterHealingWave));
+            behavs.AddBehavior( 9999, "Earth Shield", "Earth Shield", 
+                Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()));
+
+            int dispelPriority = (SingularSettings.Instance.DispelDebuffs == DispelStyle.HighPriority) ? 9999 : -9999;
+            behavs.AddBehavior( dispelPriority, "Purify Spirit", null, Dispelling.CreateDispelBehavior());
 
             behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.HealingWave), "Healing Wave", "Healing Wave", 
                 Spell.Cast("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.HealingWave));
@@ -472,7 +553,7 @@ namespace Singular.ClassSpecific.Shaman
                             ),
 */
                         new Decorator(
-                            ret => !SpellManager.GlobalCooldown,
+                            ret => !Spell.GcdActive,
 
                             new PrioritySelector(
     /*
@@ -517,7 +598,7 @@ namespace Singular.ClassSpecific.Shaman
                                 new PrioritySelector(
                                     Movement.CreateMoveToLosBehavior(),
                                     Movement.CreateFaceTargetBehavior(),
-                                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                                    Helpers.Common.CreateInterruptBehavior(),
 
                                     Spell.Cast("Earth Shock"),
                                     Spell.Cast("Lightning Bolt"),

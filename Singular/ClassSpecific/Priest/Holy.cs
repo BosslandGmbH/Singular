@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Priest
                         Movement.CreateMoveToLosBehavior(),
                         Movement.CreateFaceTargetBehavior(),
                         Helpers.Common.CreateDismount("Pulling"),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
                         Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                         Spell.Buff("Shadow Word: Pain", true),
                         Spell.Buff("Holy Word: Chastise", ret => StyxWoW.Me.HasAura( "Chakra: Chastise")),

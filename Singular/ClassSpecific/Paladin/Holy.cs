@@ -10,11 +10,13 @@ using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using Rest = Singular.Helpers.Rest;
+using System;
 
 namespace Singular.ClassSpecific.Paladin
 {
     public static class Holy
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PaladinSettings Settings { get { return SingularSettings.Instance.Paladin(); } }
 
         [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinHoly)]
@@ -38,9 +40,10 @@ namespace Singular.ClassSpecific.Paladin
         [Behavior(BehaviorType.Heal, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyHealBehavior()
         {
-            return
-                new PrioritySelector(
-                    CreatePaladinHealBehavior());
+            return new PrioritySelector(
+                CreateRebirthBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead)),
+                CreatePaladinHealBehavior()
+                );
         }
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyCombatBuffsBehavior()
@@ -55,13 +58,14 @@ namespace Singular.ClassSpecific.Paladin
         [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyCombatBehavior()
         {
-            return
-                new PrioritySelector(
+            return new PrioritySelector(
+/*
                     Spell.Buff("Judgment",
                                ret => SpellManager.HasSpell("Judgment") && StyxWoW.Me.GotTarget &&
                                        StyxWoW.Me.CurrentTarget.Distance <= SpellManager.Spells["Judgment"].MaxRange - 2 &&
                                        StyxWoW.Me.CurrentTarget.InLineOfSpellSight &&
                                        StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget)),
+ */
                     new Decorator(
                         ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                         new PrioritySelector(
@@ -69,7 +73,7 @@ namespace Singular.ClassSpecific.Paladin
                             Movement.CreateMoveToLosBehavior(),
                             Movement.CreateFaceTargetBehavior(),
                             Helpers.Common.CreateAutoAttack(true),
-                            Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                            Helpers.Common.CreateInterruptBehavior(),
                             Spell.Buff("Judgment"),
                             Spell.Cast("Hammer of Wrath"),
                             Spell.Cast("Holy Shock"),
@@ -176,7 +180,7 @@ namespace Singular.ClassSpecific.Paladin
                                     Movement.CreateMoveToLosBehavior(),
                                     Movement.CreateFaceTargetBehavior(),
                                     Helpers.Common.CreateAutoAttack(true),
-                                    Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                                    Helpers.Common.CreateInterruptBehavior(),
                                     Spell.Buff("Judgment"),
                                     Spell.Cast("Hammer of Wrath"),
                                     Spell.Cast("Holy Shock"),
@@ -189,6 +193,36 @@ namespace Singular.ClassSpecific.Paladin
                 // Get in range
                                 Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
                             )));
+        }
+
+        public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
+        {
+            if (!Settings.UseRebirth)
+                return new PrioritySelector();
+
+            if (onUnit == null)
+            {
+                Logger.WriteDebug("CreateRebirthBehavior: error - onUnit == null");
+                return new PrioritySelector();
+            }
+
+            return new Decorator(
+                ret => Me.HasAura("Symbiosis"),
+                new PrioritySelector(
+                    ctx => onUnit(ctx),
+                    new Decorator(
+                        ret => ((WoWUnit)ret) != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
+                        new PrioritySelector(
+                            Spell.WaitForCast(true),
+                            Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, range => 40f),
+                            new Decorator(
+                                ret => !Spell.IsGlobalCooldown(),
+                                Spell.Cast("Rebirth", ret => (WoWUnit)ret)
+                                )
+                            )
+                        )
+                    )
+                );
         }
     }
 }

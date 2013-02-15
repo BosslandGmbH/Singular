@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Paladin
                         CreateRetDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         // Defensive
                         Spell.BuffSelf("Hand of Freedom",
@@ -204,7 +204,7 @@ namespace Singular.ClassSpecific.Paladin
                         CreateRetDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         // Defensive
                         Spell.BuffSelf("Hand of Freedom",
@@ -292,7 +292,10 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Crusader Strike"),
                         Spell.Cast("Judgment"),
                         Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
-                        Spell.BuffSelf("Sacred Shield")
+                        Spell.BuffSelf("Sacred Shield"),
+
+                        // Symbiosis
+                        Spell.Cast("Wrath", ret => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.Distance < 40)
                         )
                     ),
 
@@ -307,35 +310,38 @@ namespace Singular.ClassSpecific.Paladin
 
         private static Composite CreateRetDiagnosticOutputBehavior()
         {
-            if (!SingularSettings.Instance.EnableDebugLogging)
+            if (!SingularSettings.Debug)
                 return new Action( ret => { return RunStatus.Failure; } );
 
-            return new Throttle(1,
-                new Action(ret =>
-                {
-                    string sMsg;
-                    sMsg = string.Format(".... h={0:F1}%, m={1:F1}%, moving={2}, mobs={3}",
-                        Me.HealthPercent,
-                        Me.ManaPercent,
-                        Me.IsMoving,
-                        _mobCount
-                        );
-
-                    WoWUnit target = Me.CurrentTarget;
-                    if (target != null)
+            return new Sequence(
+                new Action( r => SingularRoutine.UpdateDiagnosticCastingState() ),
+                new ThrottlePasses(1, 1, 
+                    new Action(ret =>
                     {
-                        sMsg += string.Format(
-                            ", {0}, {1:F1}%, {2:F1} yds, loss={3}",
-                            target.SafeName(),
-                            target.HealthPercent,
-                            target.Distance,
-                            target.InLineOfSpellSight
+                        string sMsg;
+                        sMsg = string.Format(".... h={0:F1}%, m={1:F1}%, moving={2}, mobs={3}",
+                            Me.HealthPercent,
+                            Me.ManaPercent,
+                            Me.IsMoving,
+                            _mobCount
                             );
-                    }
 
-                    Logger.WriteDebug(Color.LightYellow, sMsg);
-                    return RunStatus.Failure;
-                })
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target != null)
+                        {
+                            sMsg += string.Format(
+                                ", {0}, {1:F1}%, {2:F1} yds, loss={3}",
+                                target.SafeName(),
+                                target.HealthPercent,
+                                target.Distance,
+                                target.InLineOfSpellSight
+                                );
+                        }
+
+                        Logger.WriteDebug(Color.LightYellow, sMsg);
+                        return RunStatus.Failure;
+                    })
+                    )
                 );
         }
 

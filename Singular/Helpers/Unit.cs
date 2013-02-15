@@ -47,7 +47,7 @@ namespace Singular.Helpers
                         {StyxWoW.Me.Guid}).Distinct().ToArray();
 
                 return (
-                    from p in ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
+                    from p in ObjectManager.GetObjectsOfType<WoWPlayer>(false, true)
                     where p.IsFriendly && guids.Any(g => g == p.Guid)
                     select p).ToList();
             }
@@ -79,7 +79,7 @@ namespace Singular.Helpers
         {
             get
             {
-                return ObjectManager.GetObjectsOfType<WoWPlayer>(true, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList();
+                return ObjectManager.GetObjectsOfType<WoWPlayer>(false, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList();
             }
         }
 
@@ -89,12 +89,31 @@ namespace Singular.Helpers
         /// <value>The nearby unfriendly units.</value>
         public static IEnumerable<WoWUnit> NearbyUnfriendlyUnits
         {
-            get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => ValidUnit(p) && p.DistanceSqr <= 40 * 40).ToList(); }
+            get
+            {
+                Type typeWoWUnit = typeof(WoWUnit);
+                Type typeWoWPlayer = typeof(WoWPlayer);
+                List<WoWObject> objectList = ObjectManager.ObjectList;
+                List<WoWUnit> list = new List<WoWUnit>();
+                for (int i = 0; i < objectList.Count; i++)
+                {
+                    Type type = objectList[i].GetType();
+                    if (type == typeWoWUnit || type == typeWoWPlayer)
+                    {
+                        WoWUnit t = objectList[i] as WoWUnit;
+                        if (t != null && ValidUnit(t) && t.Distance < 40)
+                        {
+                            list.Add(t);
+                        }
+                    }
+                }
+                return list;
+            }
         }
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMe
         {
-            get { return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(p => ValidUnit(p) && p.DistanceSqr <= 40 * 40 && p.Combat && (p.TaggedByMe || p.IsTargetingMeOrPet)).ToList(); }
+            get { return NearbyUnfriendlyUnits.Where(p => ValidUnit(p) && p.DistanceSqr <= 40 * 40 && p.Combat && (p.TaggedByMe || p.IsTargetingMeOrPet)); }
         }
 
 
@@ -146,7 +165,7 @@ namespace Singular.Helpers
         {
             var dist = distance * distance;
             var curTarLocation = StyxWoW.Me.CurrentTarget.Location;
-            return ObjectManager.GetObjectsOfType<WoWUnit>(false, false).Where(
+            return NearbyUnfriendlyUnits.Where(
                         p => ValidUnit(p) && p.Location.DistanceSqr(curTarLocation) <= dist).ToList();
         }
 
@@ -345,9 +364,9 @@ namespace Singular.Helpers
         {
             get
             {
-                return ObjectManager.GetObjectsOfType<WoWPlayer>().Where(
+                return ObjectManager.GetObjectsOfType<WoWPlayer>(false,false).Where(
                     p => !p.IsMe && p.IsDead && p.IsFriendly && p.IsInMyPartyOrRaid &&
-                         p.DistanceSqr < 40 * 40 && !Blacklist.Contains(p.Guid)).ToList();
+                         p.DistanceSqr < 40 * 40 && !Blacklist.Contains(p.Guid, BlacklistFlags.Combat)).ToList();
             }
         }
 
@@ -405,7 +424,7 @@ namespace Singular.Helpers
 
         public static bool IsBoss(this WoWUnit unit)
         {
-            return Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry);
+            return unit != null && (Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry));
         }
 
         public static bool IsTrainingDummy(this WoWUnit unit)

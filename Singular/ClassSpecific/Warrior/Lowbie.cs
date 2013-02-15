@@ -24,7 +24,7 @@ namespace Singular.ClassSpecific.Warrior
                 Movement.CreateFaceTargetBehavior(),
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
                 // Heal
                 Common.CreateVictoryRushBehavior(),
 

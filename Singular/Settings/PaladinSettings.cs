@@ -194,7 +194,15 @@ namespace Singular.Settings
         [Category("Retribution")]
         [DisplayName("Auto GotAK and Holy Avenger")]
         [Description("Automatically use Guardian of the Ancient Kings and Holy Avenger.  When false both will be disabled.")]
-        public bool RetGoatK { get; set; } 
+        public bool RetGoatK { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Holy")]
+        [DisplayName("Use Rebirth")]
+        [Description("True: if Symbiosis active, use Rebirth on Tanks / Healers")]
+        public bool UseRebirth { get; set; }
+
         #endregion
     }
 }

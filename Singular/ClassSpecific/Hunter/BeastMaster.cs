@@ -38,6 +38,7 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
                     
                 Spell.WaitForCastOrChannel(),
             
@@ -54,12 +55,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
-
-                        new Decorator(
-                            ret => Me.GotTarget && Me.CurrentTarget.Distance < 35f,
-                            Movement.CreateEnsureMovementStoppedBehavior()
-                            ),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
 
@@ -120,6 +116,7 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -131,13 +128,8 @@ namespace Singular.ClassSpecific.Hunter
 
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
-                        // Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
-                        Common.CreateInterruptNearbyBehavior(),
-
-                        new Decorator(
-                            ret => Me.GotTarget && Me.CurrentTarget.Distance < 35f,
-                            Movement.CreateEnsureMovementStoppedBehavior()
-                            ),
+                        // Helpers.Common.CreateInterruptBehavior(),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
 

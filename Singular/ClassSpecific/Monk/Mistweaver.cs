@@ -136,7 +136,7 @@ namespace Singular.ClassSpecific.Monk
                         ret => !Spell.IsGlobalCooldown(), 
 
                         new PrioritySelector(
-                            Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                            Helpers.Common.CreateInterruptBehavior(),
 
                             Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Monk
 
                 new Decorator(ret => Me.IsCasting && (Me.ChanneledSpell == null || Me.ChanneledSpell.Id != SOOTHING_MIST), new Action(ret => { return RunStatus.Success; })),
 
-                new Decorator(ret => !SpellManager.GlobalCooldown,
+                new Decorator(ret => !Spell.GcdActive,
 
                     new PrioritySelector(
 
@@ -198,7 +198,7 @@ namespace Singular.ClassSpecific.Monk
 
                                 Spell.BuffSelf("Stance of the Wise Serpent"),
 
-                                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                                Helpers.Common.CreateInterruptBehavior(),
 
                                 Common.CastLikeMonk("Fortifying Brew", ret => Me, ret => Me.HealthPercent < 40),
 

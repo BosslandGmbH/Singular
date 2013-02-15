@@ -248,9 +248,9 @@ namespace Singular.Utilities
             if (unit != null)
             {
                 Logger.Write("Mob {0}is evading, [{1}]. Blacklisting it! {2}", unit.SafeName(), e.Event, unit.Guid );
-                Blacklist.Add(unit.Guid, TimeSpan.FromMinutes(30));
+                Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(30));
 
-                if (!Blacklist.Contains(unit.Guid))
+                if (!Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
                 {
                     Logger.Write(Color.Pink, "error: blacklist does not contain entry for {0} just added {1}", unit.SafeName(), unit.Guid);
                 }

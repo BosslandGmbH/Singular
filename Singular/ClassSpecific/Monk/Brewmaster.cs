@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
                 Spell.CastOnGround("Dizzying Haze", ctx => Me.CurrentTarget.Location, ctx => Unit.UnfriendlyUnitsNearTarget(8).Count() > 1, true),
                 TryCastClashBehavior(),
                 //Only roll to get to the mob quicker. 
@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
                 // make sure I have aggro.
                 Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
                 Spell.Cast("Keg Smash", ctx => Me.CurrentChi < 4 && Unit.NearbyUnitsInCombatWithMe.Any(u => u.DistanceSqr <= 8 * 8)),
@@ -129,7 +129,7 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
                 Spell.Cast("Jab"),
@@ -154,7 +154,7 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
 
                 // make sure I have aggro.
                 Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),

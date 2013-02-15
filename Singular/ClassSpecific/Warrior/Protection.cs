@@ -16,7 +16,6 @@ using Styx.WoWInternals;
 using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals.WoWObjects;
 
-using Singular.Helpers;
 using Styx.Common;
 
 namespace Singular.ClassSpecific.Warrior
@@ -105,6 +104,10 @@ namespace Singular.ClassSpecific.Warrior
                             Spell.BuffSelf("Last Stand", ret => Me.HealthPercent < WarriorSettings.WarriorLastStandHealth),
                             Spell.BuffSelf("Enraged Regeneration",
                                 ret => Me.HealthPercent < 10 || (Me.ActiveAuras.ContainsKey("Enrage") && Me.HealthPercent < WarriorSettings.WarriorEnragedRegenerationHealth)),
+
+                            // Symbiosis
+                            Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBlockHealth
+                                    && !StyxWoW.Me.HasAura("Shield Block") && Spell.GetSpellCooldown("Shield Block").TotalSeconds > 0),
 
                             new Decorator(
                                 ret => Me.GotTarget && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3)),

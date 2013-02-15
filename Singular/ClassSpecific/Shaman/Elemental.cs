@@ -28,7 +28,7 @@ namespace Singular.ClassSpecific.Shaman
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
-        private static int NormalPullDistance { get { return Math.Max( 35, CharacterSettings.Instance.PullDistance); } }
+        // private static int NormalPullDistance { get { return Math.Max( 35, CharacterSettings.Instance.PullDistance); } }
 
         [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal|WoWContext.Instances)]
         public static Composite CreateShamanElementalPreCombatBuffsNormal()
@@ -97,11 +97,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-
-                new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
-                    Movement.CreateEnsureMovementStoppedBehavior()
-                    ),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -142,7 +138,7 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, NormalPullDistance)
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 
@@ -153,11 +149,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-
-                new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
-                    Movement.CreateEnsureMovementStoppedBehavior()
-                    ),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -166,7 +158,7 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
                         CreateElementalDiagnosticOutputBehavior(),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         new Decorator( 
                             ret => Common.GetImbue( StyxWoW.Me.Inventory.Equipped.MainHand) == Imbue.None,
@@ -185,7 +177,7 @@ namespace Singular.ClassSpecific.Shaman
 
                                 Spell.CastOnGround("Earthquake", 
                                     ret => StyxWoW.Me.CurrentTarget.Location, 
-                                    req => StyxWoW.Me.CurrentTarget.Distance < NormalPullDistance
+                                    req => StyxWoW.Me.CurrentTarget.Distance < 34
                                         && (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) 
                                         && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
 
@@ -213,7 +205,7 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, NormalPullDistance)
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => NormalPullDistance)
                 );
         }
@@ -230,11 +222,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-
-                new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
-                    Movement.CreateEnsureMovementStoppedBehavior()
-                    ),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -242,7 +230,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         new Decorator(
                             ret => Common.GetImbue(StyxWoW.Me.Inventory.Equipped.MainHand) == Imbue.None,
@@ -270,7 +258,8 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Lightning Bolt")
                         )
                     ),
-                Movement.CreateMoveToTargetBehavior(true, NormalPullDistance)
+
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 
@@ -287,17 +276,14 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
 
-                new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.Distance < NormalPullDistance,
-                    Movement.CreateEnsureMovementStoppedBehavior()
-                    ),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 Spell.WaitForCastOrChannel(),
 
                 new PrioritySelector(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
@@ -331,7 +317,7 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, NormalPullDistance)
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 

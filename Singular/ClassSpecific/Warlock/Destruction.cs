@@ -41,6 +41,8 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
+
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
 
@@ -62,6 +64,7 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
@@ -72,7 +75,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         Spell.BuffSelf("Flames of Xoroth", ret => !Me.GotAlivePet && !Me.HasAura("Grimoire of Sacrifice") && CurrentBurningEmbers >= 10),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         new Action(ret =>
                         {

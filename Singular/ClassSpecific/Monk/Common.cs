@@ -49,6 +49,17 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
+        [Behavior(BehaviorType.LossOfControl, WoWClass.Monk, (WoWSpec) int.MaxValue, WoWContext.Normal | WoWContext.Battlegrounds )]
+        public static Composite CreateMonkLossOfControlBehavior()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+                    Spell.BuffSelf("Dematerialize")
+                    )
+                );
+        }
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, (WoWSpec)int.MaxValue, WoWContext.All, 2)]
         public static Composite CreateMonkCombatBuffs()
         {
@@ -221,20 +232,20 @@ namespace Singular.ClassSpecific.Monk
                             // cast the spell
                             new Action(ret =>
                             {
-                                wasMonkSpellQueued = (SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null);
+                                wasMonkSpellQueued = (Spell.GcdActive || Me.IsCasting || Me.ChanneledSpell != null);
                                 Logger.Write(Color.Aquamarine, string.Format("*{0} on {1} at {2:F1} yds at {3:F1}%", name, onUnit(ret).SafeName(), onUnit(ret).Distance, onUnit(ret).HealthPercent));
                                 SpellManager.Cast(name, onUnit(ret));
                             }),
                             // if spell was in progress before cast (we queued this one) then wait in progress one to finish
                             new WaitContinue( 
                                 new TimeSpan(0, 0, 0, 0, (int) StyxWoW.WoWClient.Latency << 1),
-                                ret => !wasMonkSpellQueued || !(SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null),
+                                ret => !wasMonkSpellQueued || !(Spell.GcdActive || Me.IsCasting || Me.ChanneledSpell != null),
                                 new ActionAlwaysSucceed()
                                 ),
                             // wait for this cast to appear on the GCD or Spell Casting indicators
                             new WaitContinue(
                                 new TimeSpan(0, 0, 0, 0, (int) StyxWoW.WoWClient.Latency << 1),
-                                ret => SpellManager.GlobalCooldown || Me.IsCasting || Me.ChanneledSpell != null,
+                                ret => Spell.GcdActive || Me.IsCasting || Me.ChanneledSpell != null,
                                 new ActionAlwaysSucceed()
                                 )
                             )
@@ -249,7 +260,7 @@ namespace Singular.ClassSpecific.Monk
         {
             range *= range;
             return ObjectManager.ObjectList
-                .Where(o => o.Type == WoWObjectType.AiGroup && o.Entry == (uint)typ && o.DistanceSqr < range && !Blacklist.Contains(o.Guid) )
+                .Where(o => o.Type == WoWObjectType.AiGroup && o.Entry == (uint)typ && o.DistanceSqr < range && !Blacklist.Contains(o.Guid, BlacklistFlags.Combat))
                 .OrderBy( o => o.DistanceSqr )
                 .FirstOrDefault();
         }
@@ -307,7 +318,7 @@ namespace Singular.ClassSpecific.Monk
                         ret => DateTime.Now > timeAbortSphere, 
                         new Action( ret => {
                             Logger.WriteDebug("MoveToSphere: blacklisting timed out {0} sphere {1} at {2}", typ, guidSphere, locSphere);
-                            Blacklist.Add( guidSphere, TimeSpan.FromMinutes(5));
+                            Blacklist.Add(guidSphere, BlacklistFlags.Combat, TimeSpan.FromMinutes(5));
                             })
                         ),
 
@@ -335,7 +346,7 @@ namespace Singular.ClassSpecific.Monk
                             },
                         new Action( ret => {
                             Logger.WriteDebug("MoveToSphere: blacklisting unconsumed {0} sphere {1} at {2}", typ, guidSphere, locSphere);
-                            Blacklist.Add( guidSphere, TimeSpan.FromMinutes(5));
+                            Blacklist.Add(guidSphere, BlacklistFlags.Combat, TimeSpan.FromMinutes(5));
                             })
                         )
                     )

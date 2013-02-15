@@ -141,6 +141,19 @@ namespace Singular.ClassSpecific.Shaman
 
         #endregion
 
+        [Behavior(BehaviorType.LossOfControl, WoWClass.Shaman)]
+        public static Composite CreateShamanLossOfControlBehavior()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+                    Spell.Cast(WoWTotem.Tremor.ToSpellId(), on => Me, ret => Me.Fleeing),
+                    Spell.Cast("Thunderstorm", on => Me, ret => Me.Stunned),
+                    Spell.BuffSelf("Shamanistic Rage")
+                    )
+                );
+        }
+        
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Normal | WoWContext.Instances, 1)]
         public static Composite CreateShamanCombatBuffs()
         {

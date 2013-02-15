@@ -20,14 +20,13 @@ namespace Singular.ClassSpecific.Mage
                  Movement.CreateMoveToLosBehavior(),
                  Movement.CreateFaceTargetBehavior(),
                  Helpers.Common.CreateDismount("Pulling"),
+                 Movement.CreateEnsureMovementStoppedBehavior(35f),
                  Spell.WaitForCast(true),
-
-                Spell.WaitForCast(true),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                         Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                         Helpers.Common.CreateInterruptBehavior(),
                          Common.CreateMagePolymorphOnAddBehavior(),
 
                          Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 12 * 12)),

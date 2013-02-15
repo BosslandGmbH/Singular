@@ -66,6 +66,7 @@ namespace Singular.Lists
                 18105, // Ghaz'an in Underbog.
                 26723, // Keristrasza in Nexus
                 31134, // Cyanigosa in Voilet Hold
+                43614, // Lockmaw in Lost City of the Tol'vir
                 54432, // Murozond in End Time
                 28860, // Sartharion in The Obsidian Sanctum
                 28859, // Malygos in The Eye of Eternity

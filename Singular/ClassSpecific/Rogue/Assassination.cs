@@ -79,7 +79,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
                         CreateAssaDiagnosticOutputBehavior("Combat"),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.Buff("Vendetta", ret => Me.CurrentTarget.IsPlayer || Me.CurrentTarget.Elite || Me.CurrentTarget.IsBoss() || Common.AoeCount > 1),
 
@@ -151,7 +151,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
                         CreateAssaDiagnosticOutputBehavior("Combat"),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         // Agro management
                         Spell.Cast(
@@ -202,7 +202,7 @@ namespace Singular.ClassSpecific.Rogue
 
         private static Composite CreateAssaDiagnosticOutputBehavior(string sState = "")
         {
-            if (!SingularSettings.Instance.EnableDebugLogging)
+            if (!SingularSettings.Debug)
                 return new Action(ret => { return RunStatus.Failure; });
 
             return new ThrottlePasses(1,

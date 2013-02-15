@@ -35,6 +35,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 Spell.WaitForCast(true),
 
@@ -47,7 +48,7 @@ namespace Singular.ClassSpecific.Mage
                        )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 
@@ -94,7 +95,7 @@ namespace Singular.ClassSpecific.Mage
                             ),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         new Decorator(
                             ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 10 * 10 && u.IsCrowdControlled()),
@@ -109,6 +110,7 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.Cast("Dragon's Breath", ret => Me.CurrentTarget.DistanceSqr <= 12 * 12),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
@@ -119,6 +121,8 @@ namespace Singular.ClassSpecific.Mage
                                     )
                                 )
                             ),
+
+                        Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                         Spell.Cast("Dragon's Breath",
                             ret => Me.IsSafelyFacing(Me.CurrentTarget, 90) &&
@@ -149,7 +153,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
 
         }
@@ -166,6 +170,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.WaitForCast(true),
 
@@ -219,19 +224,19 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-/*
-                new Throttle( 8,
-                    new Decorator(
-                        ret => Me.CastingSpell != null && Me.CastingSpell.Name == "Fireball" 
-                            && Me.HasAura("Heating Up") 
-                            && SpellManager.HasSpell("Inferno Blast"),
-                        new Action(r => {
-                            Logger.Write("/cancel Fireball for Heating Up proc");
-                            SpellManager.StopCasting();
-                            })
-                        )
-                    ),
-*/
+                /*
+                                new Throttle( 8,
+                                    new Decorator(
+                                        ret => Me.CastingSpell != null && Me.CastingSpell.Name == "Fireball" 
+                                            && Me.HasAura("Heating Up") 
+                                            && SpellManager.HasSpell("Inferno Blast"),
+                                        new Action(r => {
+                                            Logger.Write("/cancel Fireball for Heating Up proc");
+                                            SpellManager.StopCasting();
+                                            })
+                                        )
+                                    ),
+                */
                 Spell.WaitForCast(true),
 
                 new Decorator(
@@ -241,12 +246,13 @@ namespace Singular.ClassSpecific.Mage
                         CreateFireDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         // AoE comes first
                         new Decorator(
                             ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.Cast("Dragon's Breath", ret => Me.CurrentTarget.DistanceSqr <= 12 * 12),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
@@ -257,6 +263,8 @@ namespace Singular.ClassSpecific.Mage
                                     )
                                 )
                             ),
+
+                        Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                         // Single Target
                         // living bomb in Common
@@ -269,7 +277,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToTargetBehavior(true, 38f)
                 );
         }
 

@@ -145,7 +145,9 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockCombatBuffs()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
+
+                // Symbiosis
+                Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation", 1) && Me.HealthPercent < 95),
 
                 // summon pet dead pet if its an instant cast
                 new Decorator(
@@ -230,7 +232,8 @@ namespace Singular.ClassSpecific.Warlock
                     Spell.CastOnGround( "Shadowfury", on => ((WoWUnit)on).Location, ret => ret != null, true),
 
                     // treat as a heal, but we cast on what would be our fear target -- allow even when fear use disabled
-                    Spell.Buff("Mortal Coil", on => (WoWUnit) on ?? Me.CurrentTarget, ret => Me.HealthPercent < 50 ),
+                    Spell.Buff("Mortal Coil", on => (WoWUnit)on, ret => !((WoWUnit) ret).IsUndead && Me.HealthPercent < 50),
+                    Spell.Buff("Mortal Coil", on => Me.CurrentTarget, ret => !Me.CurrentTarget.IsUndead && Me.HealthPercent < 50),
 
                     // fear current target if my health is dangerously low and his not as much
                     Spell.Buff("Howl of Terror", on => Me.CurrentTarget, ret => WarlockSettings.UseFear &&
@@ -254,9 +257,14 @@ namespace Singular.ClassSpecific.Warlock
 
                 CreateWarlockSummonPet( ),
 
-                Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction && (Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
-                Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && (Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
-                Spell.BuffSelf("Dark Soul: Knowledge", ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800 && (Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3)),
+                new Decorator(
+                    ret => (Me.GotTarget && Me.CurrentTarget.IsBoss()) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3,
+                    new PrioritySelector(
+                        Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction),
+                        Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction),
+                        Spell.BuffSelf("Dark Soul: Knowledge", ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800)
+                        )
+                    ),
 
                 Spell.Cast("Summon Doomguard", ret => Me.CurrentTarget.IsBoss() && PartyBuff.WeHaveBloodlust),
                 Spell.BuffSelf("Grimoire of Service", ret => Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3),
@@ -307,15 +315,18 @@ namespace Singular.ClassSpecific.Warlock
 
                 PartyBuff.BuffGroup("Dark Intent"),
 
-                new Throttle( 2,
-                    new PrioritySelector(
-                        Spell.Buff( "Curse of the Elements", true,
-                            ret => !Me.CurrentTarget.HasMyAura("Curse of Enfeeblement")
-                                && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDamageTaken)),
+                new Decorator(
+                    ret => Me.GotTarget && Me.CurrentTarget.Level > Me.Level - (Me.CurrentTarget.Elite ? 10 : 6),
+                    new Throttle( 2,
+                        new PrioritySelector(
+                            Spell.Buff( "Curse of the Elements", true,
+                                ret => !Me.CurrentTarget.HasMyAura("Curse of Enfeeblement")
+                                    && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDamageTaken)),
 
-                        Spell.Buff("Curse of Enfeeblement", true,
-                            ret => !Me.CurrentTarget.HasMyAura("Curse of the Elements")
-                                && !Me.CurrentTarget.HasDemoralizing())
+                            Spell.Buff("Curse of Enfeeblement", true,
+                                ret => !Me.CurrentTarget.HasMyAura("Curse of the Elements")
+                                    && !Me.CurrentTarget.HasDemoralizing())
+                            )
                         )
                     ),
 
@@ -624,7 +635,10 @@ namespace Singular.ClassSpecific.Warlock
                         ),
                     new Decorator( ret => SpellManager.CanCast( "Health Funnel", Me.Pet), new ActionAlwaysSucceed()),
                     new Action(ret => Logger.WriteDebug("Casting Health Funnel on Pet @ {0:F1}%", Me.Pet.HealthPercent)),
-                    Spell.Cast(ret => "Health Funnel", mov => false, on => Me.Pet, req => true, cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth),
+                    new PrioritySelector(
+                        Spell.Cast(ret => "Health Funnel", mov => false, on => Me.Pet, req => Me.HasAura( "Soulburn") || TalentManager.HasGlyph("Health Funnel")),
+                        Spell.Cast(ret => "Health Funnel", mov => false, on => Me.Pet, req => true, cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth)
+                        ),
                     Helpers.Common.CreateWaitForLagDuration()
                     // new WaitContinue(TimeSpan.FromMilliseconds(500), ret => !Me.IsCasting && Me.GotAlivePet && Me.Pet.HealthPercent < petMaxHealth && Me.HealthPercent > 50, new ActionAlwaysSucceed())
                     )

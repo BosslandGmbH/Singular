@@ -83,15 +83,16 @@ namespace Singular.ClassSpecific.Druid
                 // Symbiosis
                 Spell.BuffSelf("Bone Shield"),
                 Spell.BuffSelf("Elusive Brew", ret=>StyxWoW.Me.HealthPercent <= 60),
-                
+                Spell.BuffSelf("Spell Reflection", ret=> Unit.NearbyUnfriendlyUnits.Any( u => u.IsCasting && u.CurrentTargetGuid == Me.Guid && u.CurrentCastTimeLeft.TotalSeconds < 3)),
+
                 Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
                 Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
                 Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent < Settings.TankSavageDefense),
                 Spell.BuffSelf("Might of Ursoc", ret => Me.HealthPercent < Settings.TankMightOfUrsoc),
                 Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent < Settings.TankSurvivalInstinctsHealth),
                 Spell.BuffSelf("Barkskin", ret => Me.HealthPercent < Settings.TankFeralBarkskin),
-                Spell.Cast("Renewal", ret => Me.HealthPercent < Settings.RenewalHealth)
-                
+                Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < Settings.RenewalHealth)
+
                 );
         }
 
@@ -110,10 +111,11 @@ namespace Singular.ClassSpecific.Druid
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(true),
-
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
                         
                         Spell.Cast("Mangle"),
                         Spell.Cast("Thrash"),
@@ -131,11 +133,26 @@ namespace Singular.ClassSpecific.Druid
 
                         // Symbiosis
                         Spell.Cast("Consecration")
-                        ),
-                    
+                        )
+                    ),                   
 
                 Movement.CreateMoveToMeleeBehavior(true)
             );
         }
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
+        public static Composite CreateGuardianPreCombatBuffForSymbiosis(UnitSelectionDelegate onUnit)
+        {
+            return Common.CreateDruidCastSymbiosis(on => GetGuardianBestSymbiosisTarget());
+        }
+
+        private static WoWPlayer GetGuardianBestSymbiosisTarget()
+        {
+            return Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight)
+                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Paladin)
+                    ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior)
+                        ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Monk)));
+        }
+
     }
 }

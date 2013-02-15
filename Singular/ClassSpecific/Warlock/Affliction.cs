@@ -39,10 +39,11 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                // hawker added a mount check here 23 Jan 2013
                 Helpers.Common.CreateDismount("Pulling"),
+
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
+
                 Spell.WaitForCast(true),
-                Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -54,6 +55,7 @@ namespace Singular.ClassSpecific.Warlock
                         }),
 
                         CreateWarlockDiagnosticOutputBehavior("Pull"),
+                        Helpers.Common.CreateAutoAttack(true),
                         CreateApplyDotsBehavior(onUnit => Me.CurrentTarget, ret => true)
                         )
                     ),
@@ -69,6 +71,8 @@ namespace Singular.ClassSpecific.Warlock
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
+
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 // cancel an early drain soul if done to proc 1 soulshard
                 new Decorator(
@@ -107,7 +111,7 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
 
                     new PrioritySelector(
-                        Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         new Action(ret =>
                         {
@@ -244,7 +248,7 @@ namespace Singular.ClassSpecific.Warlock
 
         private static Composite CreateWarlockDiagnosticOutputBehavior(string sState = null)
         {
-            if (!SingularSettings.Instance.EnableDebugLogging)
+            if (!SingularSettings.Debug)
                 return new Action(ret => { return RunStatus.Failure; });
 
             return new ThrottlePasses(1,

@@ -599,34 +599,6 @@ namespace Singular.ClassSpecific.Hunter
                 );
         }
 
-        public static Composite CreateInterruptNearbyBehavior()
-        {
-            return new PrioritySelector(
-                ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.IsCasting && u.CanInterruptCurrentSpellCast && Me.IsSafelyFacing(u)),
-
-                //new ThrottlePasses( 1,
-                //    new Action( r=> 
-                //    { 
-                //        Logger.WriteDebug("Interrupt Cast: {0} @ {1:F1} yds casting {3}#{4}", ((WoWUnit)r).SafeName(), ((WoWUnit)r).SpellDistance(), ((WoWUnit)r).CastingSpell.Name, ((WoWUnit)r).CastingSpellId);
-                //        return RunStatus.Failure ;
-                //    })),
-
-                Spell.Cast("Silencing Shot", on => (WoWUnit) on ),
-                Spell.Cast("Scatter Shot", on => (WoWUnit)on),
-                Spell.Cast("Concussive Shot", on => (WoWUnit)on),
-
-                Spell.Cast("Quaking Palm", on => (WoWUnit)on),
-                new Decorator(
-                    ret => ret != null && ((WoWUnit)ret).SpellDistance() < 8,
-                    new PrioritySelector(
-                        Spell.Cast("Arcane Torrent", on => (WoWUnit) on),
-                        // Don't waste stomp on bosses. They can't be stunned 99% of the time!
-                        Spell.Cast("War Stomp", on => (WoWUnit)on, ret => !((WoWUnit)ret).IsBoss())
-                        )
-                    )
-                );
-        }
-
         private static Composite CreateFeignDeath(WaitGetTimeSpanTimeoutDelegate timeOut, SimpleBooleanDelegate cancel)
         {
             return new Decorator(
@@ -705,7 +677,7 @@ namespace Singular.ClassSpecific.Hunter
                             Common.CreateHunterTrapBehavior("Ice Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Ice Trap")),
                             Spell.Cast("Concussive Shot", on => ccUnit)
                             ),
-                        new Action(ret => { if (ccUnit != null) Blacklist.Add(ccUnit, TimeSpan.FromSeconds(2)); })
+                        new Action(ret => { if (ccUnit != null) Blacklist.Add(ccUnit, BlacklistFlags.Combat, TimeSpan.FromSeconds(2)); })
                         )
                     )
                 );
@@ -736,7 +708,7 @@ namespace Singular.ClassSpecific.Hunter
                             Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
                             Spell.Cast("Concussive Shot", on => ccUnit)
                             ),
-                        new Action(ret => { if (ccUnit != null) Blacklist.Add(ccUnit, TimeSpan.FromSeconds(2)); })
+                        new Action(ret => { if (ccUnit != null) Blacklist.Add(ccUnit, BlacklistFlags.Combat, TimeSpan.FromSeconds(2)); })
                         )
                     )
                 );
@@ -750,8 +722,8 @@ namespace Singular.ClassSpecific.Hunter
                 && u.Distance <= 40 
                 && !u.IsCrowdControlled()
                 // && !u.HasAnyAura("Explosive Trap", "Ice Trap", "Freezing Trap", "Snake Trap")
-                && u.Guid != Me.CurrentTargetGuid 
-                && !Blacklist.Contains(u.Guid)                   
+                && u.Guid != Me.CurrentTargetGuid
+                && !Blacklist.Contains(u.Guid, BlacklistFlags.Combat)                   
                 && !Unit.NearbyFriendlyPlayers.Any( g => g.CurrentTargetGuid == u.Guid);
             return good;
         }
@@ -759,7 +731,7 @@ namespace Singular.ClassSpecific.Hunter
         //
         private static bool NeedsPvpCrowdControl(WoWUnit u)
         {
-            bool good = u.Distance <= 40 && !u.IsCrowdControlled() && u.Guid != Me.CurrentTargetGuid && !Blacklist.Contains(u.Guid);
+            bool good = u.Distance <= 40 && !u.IsCrowdControlled() && u.Guid != Me.CurrentTargetGuid && !Blacklist.Contains(u.Guid, BlacklistFlags.Combat);
             // && !Unit.NearbyGroupMembers.Any( g => g.CurrentTargetGuid == u.Guid);
             return good;
         }

@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateFaceTargetBehavior(),
                 // Make sure we're in cat form first, period.
                 Spell.BuffSelf("Cat Form"),
-                Helpers.Common.CreateInterruptSpellCast(ret => StyxWoW.Me.CurrentTarget),
+                Helpers.Common.CreateInterruptBehavior(),
                 //Healing if needed in combat
                 Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 60 && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
                 Helpers.Common.CreateAutoAttack(true),

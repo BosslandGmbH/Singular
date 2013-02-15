@@ -79,7 +79,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         CreateCombatDiagnosticOutputBehavior("Combat"),
 
-                        new Throttle( Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget)),
+                        new Throttle( Helpers.Common.CreateInterruptBehavior()),
 
                         Movement.CreateMoveBehindTargetBehavior(),
 
@@ -146,7 +146,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         CreateCombatDiagnosticOutputBehavior("Combat"),
 
-                        Helpers.Common.CreateInterruptSpellCast(ret => Me.CurrentTarget),
+                        Helpers.Common.CreateInterruptBehavior(),
 
                         // Instance Specific Behavior
                         Spell.Cast("Tricks of the Trade", ret => Common.BestTricksTarget, ret => RogueSettings.UseTricksOfTheTrade),
@@ -211,7 +211,7 @@ namespace Singular.ClassSpecific.Rogue
 
         private static Composite CreateCombatDiagnosticOutputBehavior(string sState = "")
         {
-            if (!SingularSettings.Instance.EnableDebugLogging)
+            if (!SingularSettings.Debug)
                 return new Action(ret => { return RunStatus.Failure; });
 
             return new ThrottlePasses(1,

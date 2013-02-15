@@ -30,7 +30,7 @@ namespace Singular.GUI
             if (DialogResult == DialogResult.OK || DialogResult == DialogResult.Yes)
             {
                 Logger.WriteDebug(Color.LightGreen, "Settings saved, rebuilding behaviors...");
-                HotkeyManager.Update();
+                HotkeyDirector.Update();
                 MovementManager.Update();
                 SingularRoutine.Instance.RebuildBehaviors();
                 SingularSettings.Instance.LogSettings();
@@ -136,6 +136,8 @@ namespace Singular.GUI
             lblHealTargets.Text = sb.ToString();
         }
 
+#pragma warning disable 168 // for ex below
+
         private void btnSaveAndClose_Click(object sender, EventArgs e)
         { // prevent an exception from closing HB.
             try
@@ -163,6 +165,8 @@ namespace Singular.GUI
             }
         }
 
+#pragma warning disable 168
+
         private void timer1_Tick(object sender, EventArgs e)
         {
             var sb = new StringBuilder();
@@ -173,7 +177,7 @@ namespace Singular.GUI
             lblHealTargets.Text = sb.ToString();
         }
 
-        private int lastTried = 0;
+        // private int lastTried = 0;
 
         private void button1_Click(object sender, EventArgs e)
         {

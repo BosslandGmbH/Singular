@@ -24,6 +24,7 @@ namespace Singular.Settings
         // Pvp By IloveAnimals
 
         #region pvp
+        /*
         [Setting]
         [DefaultValue(3)]
         [Category("Feral PvP")]
@@ -105,6 +106,7 @@ namespace Singular.Settings
         [Category("Feral PvP")]
         [DisplayName("Use CC on fleeing target")]
         public bool PvPRoot { get; set; }
+        */
 
         /* Logic for this needs work
         [Setting]
@@ -127,25 +129,33 @@ namespace Singular.Settings
         public int InnervateMana { get; set; }
 
         [Setting]
-        [DefaultValue(false)]
+        [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Disable Healing for Balance and Feral")]
-        public bool NoHealBalanceAndFeral { get; set; }
+        [DisplayName("Enable Symbiosis")]
+        [Description("True: will cast Symbiosis upon group member enabling special abilities")]
+        public bool UseSymbiosis { get; set; }
 
-        [Setting]
-        [DefaultValue(20)]
-        [Category("Common")]
-        [DisplayName("Healing Touch Health (Balance and Feral)")]
-        [Description("Healing Touch will be used at this value.")]
-        public int NonRestoHealingTouch { get; set; }
+/*
+                        [Setting]
+                        [DefaultValue(false)]
+                        [Category("Common")]
+                        [DisplayName("Disable Healing for Balance and Feral")]
+                        public bool NoHealBalanceAndFeral { get; set; }
 
-        [Setting]
-        [DefaultValue(40)]
-        [Category("Common")]
-        [DisplayName("Rejuvenation Health (Balance and Feral)")]
-        [Description("Rejuvenation will be used at this value")]
-        public int NonRestoRejuvenation { get; set; }
+                        [Setting]
+                        [DefaultValue(20)]
+                        [Category("Common")]
+                        [DisplayName("Healing Touch Health (Balance and Feral)")]
+                        [Description("Healing Touch will be used at this value.")]
+                        public int NonRestoHealingTouch { get; set; }
 
+                        [Setting]
+                        [DefaultValue(40)]
+                        [Category("Common")]
+                        [DisplayName("Rejuvenation Health (Balance and Feral)")]
+                        [Description("Rejuvenation will be used at this value")]
+                        public int NonRestoRejuvenation { get; set; }
+                */
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
@@ -301,7 +311,7 @@ namespace Singular.Settings
         #endregion
 
         #region Feral
-
+/*
         [Setting]
         [DefaultValue(50)]
         [Category("Feral")]
@@ -465,7 +475,7 @@ namespace Singular.Settings
         [DisplayName("Bear - Auto defensive cooldowns")]
         [Description("If set to true, it will cast defensive cooldowns automatically.")]
         public bool BearRaidCooldown { get; set; }
-
+*/
         // End of IloveDruids
 
         #endregion

@@ -440,10 +440,13 @@ namespace Singular.ClassSpecific.Shaman
             int dispelPriority = (SingularSettings.Instance.DispelDebuffs == DispelStyle.HighPriority) ? 9999 : -9999;
             behavs.AddBehavior( dispelPriority, "Purify Spirit", null, Dispelling.CreateDispelBehavior());
 
-            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.HealingWave), "Healing Wave", "Healing Wave", 
+            behavs.AddBehavior(HealthToPriority(ShamanSettings.Heal.GreaterHealingWave), "Greater Healing Wave", "Greater Healing Wave",
+                Spell.Cast("Greater Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.GreaterHealingWave));
+
+            behavs.AddBehavior(HealthToPriority(ShamanSettings.Heal.HealingWave), "Healing Wave", "Healing Wave",
                 Spell.Cast("Healing Wave", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.HealingWave));
 
-            behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.HealingSurge), "Healing Surge", "Healing Surge", 
+            behavs.AddBehavior(HealthToPriority(ShamanSettings.Heal.HealingSurge), "Healing Surge", "Healing Surge", 
                 Spell.Cast("Healing Surge", ret => (WoWUnit)ret, ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.HealingSurge));
 
             behavs.AddBehavior(HealthToPriority( ShamanSettings.Heal.ChainHeal), "Chain Heal", "Chain Heal", 
@@ -569,7 +572,7 @@ namespace Singular.ClassSpecific.Shaman
                                 ret => (WoWUnit)ret,
                                 ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Earth Shield"))),
 */
-                            // roll Riptide if needed to keep Tidal Waves up
+                            // cast Riptide if we need Tidal Waves -- skip if Ancestral Swiftness is 
                             Spell.Cast("Riptide",
                                 ret => GetBestRiptideTarget((WoWPlayer)ret),
                                 ret => SpellManager.HasSpell("Tidal Waves")
@@ -657,7 +660,7 @@ namespace Singular.ClassSpecific.Shaman
 
         private static WoWPlayer GetBestRiptideTarget(WoWPlayer originalTarget)
         {
-            if (originalTarget != null && !originalTarget.HasMyAura("Riptide") && originalTarget.InLineOfSpellSight)
+            if (originalTarget != null && originalTarget.IsValid && originalTarget.IsAlive && !originalTarget.HasMyAura("Riptide") && originalTarget.InLineOfSpellSight)
                 return originalTarget;
 
             // cant RT target, so lets check tanks
@@ -665,14 +668,14 @@ namespace Singular.ClassSpecific.Shaman
 
             if (!SpellManager.HasSpell("Earth Shield"))
             {
-                ripTarget = Group.Tanks.Where(u => u.DistanceSqr < 40 * 40 && !u.HasMyAura("Riptide") && u.InLineOfSpellSight).OrderBy(u => u.GetPredictedHealthPercent()).FirstOrDefault();
+                ripTarget = Group.Tanks.Where(u => u.IsAlive && u.DistanceSqr < 40 * 40 && !u.HasMyAura("Riptide") && u.InLineOfSpellSight).OrderBy(u => u.GetPredictedHealthPercent()).FirstOrDefault();
                 if (ripTarget != null && (ripTarget.Combat || ripTarget.GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth))
                     return ripTarget;
             }
 
             // cant RT target, so lets find someone else to throw it on. Lowest health first preferably for now.
-            ripTarget = Unit.GroupMembers.Where(u => u.DistanceSqr < 40 * 40 && !u.HasMyAura("Riptide") && u.InLineOfSpellSight).OrderBy(u => u.GetPredictedHealthPercent()).FirstOrDefault();
-            if (ripTarget != null && ripTarget.GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
+            ripTarget = Unit.GroupMembers.Where(u => u.IsAlive && u.DistanceSqr < 40 * 40 && !u.HasMyAura("Riptide") && u.InLineOfSpellSight).OrderBy(u => u.GetPredictedHealthPercent()).FirstOrDefault();
+            if (ripTarget != null && ripTarget.IsAlive && ripTarget.GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
                 return ripTarget;
 
             return null;

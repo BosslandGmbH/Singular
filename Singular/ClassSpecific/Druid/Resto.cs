@@ -184,12 +184,13 @@ namespace Singular.ClassSpecific.Druid
                 Spell.BuffSelf("Barkskin", ret => StyxWoW.Me.HealthPercent <= Settings.Barkskin),
 
                 // Symbiosis
-                Spell.BuffSelf("Icebound Fortitude", ret => Me.HealthPercent < Settings.Barkskin),
-                Spell.BuffSelf("Deterrence", ret => Me.HealthPercent < Settings.Barkskin),
-                Spell.BuffSelf("Evasion", ret => Me.HealthPercent < Settings.Barkskin),
-                Spell.BuffSelf("Fortifying Brew", ret => Me.HealthPercent < Settings.Barkskin),
-                Spell.BuffSelf("Intimidating Roar",  ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1)
+                Common.SymbBuff(Symbiosis.IceboundFortitude, on => Me, ret => Me.HealthPercent < Settings.Barkskin),
+                Common.SymbBuff(Symbiosis.Deterrence, on => Me, ret => Me.HealthPercent < Settings.Barkskin),
+                Common.SymbBuff(Symbiosis.Evasion, on => Me, ret => Me.HealthPercent < Settings.Barkskin),
+                Common.SymbBuff(Symbiosis.FortifyingBrew, on => Me, ret => Me.HealthPercent < Settings.Barkskin),
+                Common.SymbBuff(Symbiosis.IntimidatingRoar, on => Me.CurrentTarget, ret => Me.CurrentTarget.SpellDistance() < 10 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1),
 
+                Common.SymbBuff(Symbiosis.SpiritwalkersGrace, on => Me, ret => Me.IsMoving && Me.Combat)
                 );
         }
 

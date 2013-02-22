@@ -71,6 +71,24 @@ namespace Singular.Helpers
             }
         }
 
+        public static IEnumerable<WoWUnit> NearbyGroupPets
+        {
+            get
+            {
+                return GroupMembers.Where(p => p.GotAlivePet && p.Pet.DistanceSqr <= 40 * 40).ToList();
+            }
+        }
+
+        public static IEnumerable<WoWUnit> NearbyGroupMembersAndPets
+        {
+            get
+            {
+                return NearbyGroupMembers
+                    .Union( NearbyGroupPets )
+                    .ToList();
+            }
+        }
+
         /// <summary>
         ///   Gets the nearby friendly players within 40 yards.
         /// </summary>
@@ -527,7 +545,7 @@ namespace Singular.Helpers
 
         public static bool IsInGroup(this LocalPlayer me)
         {
-            return StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid;
+            return me.GroupInfo.IsInParty || me.GroupInfo.IsInRaid;
         }
 
         public static uint GetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)

@@ -47,6 +47,27 @@ namespace Singular.Settings
         public WarlockPet Pet { get; set; }
 
         [Setting]
+        [DefaultValue(40)]
+        [Category("Pet")]
+        [DisplayName("Health Funnel at %")]
+        [Description("Pet Health % to begin Health Funnel in combat")]
+        public int HealthFunnelCast { get; set; }
+
+        [Setting]
+        [DefaultValue(95)]
+        [Category("Pet")]
+        [DisplayName("Health Funnel cancel at %")]
+        [Description("Pet Health % to cancel Health Funnel in combat")]
+        public int HealthFunnelCancel { get; set; }
+
+        [Setting]
+        [DefaultValue(75)]
+        [Category("Pet")]
+        [DisplayName("Health Funnel resting below %")]
+        [Description("Pet Health % to cast Health Funnel while resting")]
+        public int HealthFunnelRest { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Use Fear")]

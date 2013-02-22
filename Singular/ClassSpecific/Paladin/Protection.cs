@@ -16,6 +16,28 @@ namespace Singular.ClassSpecific.Paladin
 {
     public class Protection
     {
+
+        #region Properties & Fields
+
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin(); } }
+
+        private const int RET_T13_ITEM_SET_ID = 1064;
+
+        private static int NumTier13Pieces
+        {
+            get
+            {
+                return StyxWoW.Me.CarriedItems.Count(i => i.ItemInfo.ItemSetId == RET_T13_ITEM_SET_ID);
+            }
+        }
+
+        private static bool Has2PieceTier13Bonus { get { return NumTier13Pieces >= 2; } }
+
+        private static int _mobCount;
+
+        #endregion
+
         [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinProtection)]
         public static Composite CreateProtectionRest()
         {
@@ -63,6 +85,8 @@ namespace Singular.ClassSpecific.Paladin
                 Spell.Cast("Reckoning",
                     ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
                     ret => SingularSettings.Instance.EnableTaunting && StyxWoW.Me.IsInInstance),
+
+                Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),
 
                 //Multi target
                 new Decorator(

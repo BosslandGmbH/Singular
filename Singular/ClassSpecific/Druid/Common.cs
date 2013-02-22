@@ -15,6 +15,7 @@ using Rest = Singular.Helpers.Rest;
 using Styx.CommonBot;
 using Singular.Managers;
 using CommonBehaviors.Actions;
+using System.Drawing;
 
 #endregion
 
@@ -310,13 +311,15 @@ namespace Singular.ClassSpecific.Druid
         }
 
         private static WoWUnit _targetSymb;
+        // private static HashSet<string> _preSymb = null;
+        public static WoWClass SymbiosisWithClass = WoWClass.None;
 
         public static Composite CreateDruidCastSymbiosis(UnitSelectionDelegate onUnit)
         {
             return new Decorator(
                 ret => DruidSettings.UseSymbiosis
                     && !Me.IsMoving
-                    && (SingularRoutine.CurrentWoWContext == WoWContext.Instances || (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && ( Battlegrounds.BattlefieldStartTime - DateTime.Now).TotalSeconds < 5))
+                    && (SingularRoutine.CurrentWoWContext == WoWContext.Instances || (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && PVP.PrepTimeLeft < secsBeforeBattle))
                     && SpellManager.HasSpell("Symbiosis")
                     && !Me.HasAura("Symbiosis"),
                 new Sequence(
@@ -324,32 +327,26 @@ namespace Singular.ClassSpecific.Druid
                     new Decorator(
                         ret => _targetSymb != null,
                         new Sequence(
-                            new Action(r =>
-                            {
-                                if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                                {
-                                    Logger.WriteDebug("Seconds remain to start={0} secs", (Battlegrounds.BattlefieldStartTime - DateTime.Now).TotalSeconds);
-                                }
-                            }),
+                            // new Action( r => _preSymb = new HashSet<string>( SpellManager.Spells.Select( kvp => kvp.Value.Name).ToArray()) ),
                             new Action(r => _targetSymb.Target()),
                             new Wait(1, until => Me.CurrentTargetGuid == _targetSymb.Guid, new ActionAlwaysSucceed()),
-                            Spell.Buff("Symbiosis", false, on => _targetSymb, ret => _targetSymb.Distance < 30),
+                            Spell.Cast("Symbiosis", mov => false, on => _targetSymb, ret => _targetSymb.Distance < 30, cancel => false, LagTolerance.Yes ),
                             new Action(r => Blacklist.Add(_targetSymb.Guid, BlacklistFlags.Combat, TimeSpan.FromSeconds(30))),
                             new Action(r => Me.ClearTarget()),
-                            // new Wait(1, until => Me.CurrentTargetGuid != _targetSymb.Guid, new ActionAlwaysSucceed()),
-                            new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura("Symbiosis"), new ActionAlwaysSucceed()),
+                            new Wait( TimeSpan.FromMilliseconds(500), until => Me.HasAura("Symbiosis"), new ActionAlwaysSucceed()),
+                            new Action( r => Logger.Write( "^Symbiosis: linked with {0}", _targetSymb.SafeName()))
+/*
                             new Action(r => {
-                                SpellFindResults sfr;
-                                if (!SpellManager.FindSpell("Symbiosis", out sfr))
+                                var newSpell = SpellManager.Spells.Where( kvp => !_preSymb.Contains( kvp.Key )).FirstOrDefault();
+                                if ( newSpell.Equals(default(KeyValuePair<string,WoWSpell>)))
                                     Logger.WriteDebug("Symbiosis: unable to find a spell gained ?");
-                                else if (sfr.Override == null)
-                                    Logger.Write("error: HonorBuddy has not overridden Symbiosis with spell we gained");
                                 else
                                 {
-                                    Logger.Write("Symbiosis: we gained {0} #{1}", sfr.Override.Name, sfr.Override.Id);
-                                    Logger.WriteDebug("Symbiosis: CanCast {0} is {1}", sfr.Override.Name, SpellManager.CanCast(sfr.Override.Name, true));
+                                    Logger.Write("Symbiosis: we gained {0} #{1}", newSpell.Value.Name, newSpell.Value.Id);
+                                    Logger.WriteDebug("Symbiosis: CanCast {0} is {1}", newSpell.Value.Name, SpellManager.CanCast(newSpell.Value.Name, true));
                                 }
                                 })
+*/
                             )
                         )
                     )
@@ -385,6 +382,116 @@ namespace Singular.ClassSpecific.Druid
             return true;
         }
 
+        private static int _secsBeforeBattle = 0;
+
+        public static int secsBeforeBattle
+        {
+            get
+            {
+                if (_secsBeforeBattle == 0)
+                    _secsBeforeBattle = new Random().Next(8, 14);
+
+                return _secsBeforeBattle;
+            }
+
+            set
+            {
+                _secsBeforeBattle = value;
+            }
+        }
+
+        public static Composite SymbCast( Symbiosis id, UnitSelectionDelegate on, SimpleBooleanDelegate req)
+        {
+            return new Decorator(
+                ret => on(ret) != null
+                    && SpellManager.HasSpell((int)id)
+                    && req(ret),
+                new Action(ret => 
+                    {
+                        WoWSpell spell = WoWSpell.FromId((int)id);
+                        if (spell == null)
+                            return RunStatus.Failure;
+
+                        if (!SymbCanCast(spell, on(ret)))
+                            return RunStatus.Failure;
+
+                        // check we can cast it on target
+                        // if (!SpellManager.CanCast(spell, on(ret), false, false, true))
+                        //     return RunStatus.Failure;
+
+                        Logger.Write(string.Format("Casting Symbiosis: {0} on {1}", spell.Name, on(ret).SafeName()));
+                        if (!SpellManager.Cast(spell, on(ret)))
+                        {
+                            Logger.WriteDebug(Color.LightPink, "cast of Symbiosis: {0} on {1} failed!", spell.Name, on(ret).SafeName());
+                            return RunStatus.Failure;
+                        }
+
+                        SingularRoutine.UpdateDiagnosticCastingState();
+                        return RunStatus.Success;                     
+                    })
+                );
+        }
+
+        /// <summary>
+        /// replacement for SpellManager.CanCast() since that does a lookup on SpellManager.Spells and 
+        /// ability gained from Druid does not presently appear in that list after buff established (note: class receiving
+        /// Symbiosis from Druid does get updated.)
+        /// </summary>
+        /// <param name="spell"></param>
+        /// <param name="unit"></param>
+        /// <returns></returns>
+
+        public static bool SymbCanCast(Symbiosis id, WoWUnit unit)
+        {
+            WoWSpell spell = WoWSpell.FromId((int)id);
+            if (spell == null)
+                return false;
+
+            return SymbCanCast(spell, unit);
+        }
+
+        private static bool SymbCanCast(WoWSpell spell, WoWUnit unit)
+        {
+            if (spell.Cooldown)
+                return false;
+
+            // check range
+            if (unit != null && !spell.IsSelfOnlySpell)
+            {
+                if (spell.IsMeleeSpell && !unit.IsWithinMeleeRange)
+                    return false;
+                if (spell.HasRange && (unit.Distance > (spell.MaxRange + unit.CombatReach + 1) || unit.Distance < (spell.MinRange + unit.CombatReach + 1.66666675f)))
+                    return false;
+                if (!unit.InLineOfSpellSight)
+                    return false;
+            }
+
+            if ((spell.CastTime != 0u || Spell.IsFunnel(spell)) && Me.IsMoving && !StyxWoW.Me.HasAnyAura("Spiritwalker's Grace"))
+                return false;
+
+            if (Me.ChanneledCastingSpellId == 0)
+            {
+                uint num = StyxWoW.WoWClient.Latency * 2u;
+                if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
+                    return false;
+
+                if (spell.CooldownTimeLeft.TotalMilliseconds > num)
+                    return false;
+            }
+
+            if (Me.CurrentPower < spell.PowerCost)
+                return false;
+
+            return true;
+        }
+
+        public static Composite SymbBuff( Symbiosis id, UnitSelectionDelegate on, SimpleBooleanDelegate req)
+        {
+            return new Decorator(
+                ret => on(ret) != null && !Me.HasAura((int) id), 
+                SymbCast(id, on, req)
+                );
+        }
 
 #if NOT_IN_USE
         public static Composite CreateEscapeFromCc()
@@ -497,5 +604,24 @@ namespace Singular.ClassSpecific.Druid
     }
 
     #endregion
+
+#region Symbiosis Druid Spells Gained
+
+    public enum Symbiosis
+    {
+        /*               BALANCE                      GUARDIAN                     FERAL                       RESTORATION                  */
+        /* DK      */    AntiMagicShell  = 110570,    BoneShield      = 122285,    DeathCoil      = 122282,    IceboundFortitude     = 110575,
+        /* Hunter  */    Misdirection    = 110588,    IceTrap         = 110600,    PlayDead       = 110597,    Deterrence            = 110617,
+        /* Mage    */    MirrorImage     = 110621,    FrostArmor      = 110694,    FrostNova      = 110693,    IceBlock              = 110696,
+        /* Monk    */    GrappleWeapon   = 000000,    ElusiveBrew     = 126543,    Clash          = 126449,    FortifyingBrew        = 126456,
+        /* Paladin */    HammerOfJustice = 110698,    Consecration    = 110701,    DivineShield   = 110700,    Cleanse               = 122288,
+        /* Priest  */    MassDispel      = 110707,    FearWard        = 110717,    Dispersion     = 110715,    LeapOfFaith           = 110718,
+        /* Rogue   */    CloakOfShadows  = 110788,    Feint           = 122289,    Redirect       = 110730,    Evasion               = 110791,
+        /* Shaman  */    Purge           = 110802,    LightningShield = 110803,    FeralSpirit    = 110807,    SpiritwalkersGrace    = 110806,
+        /* Warlock */    UnendingResolve = 122291,    LifeTap         = 122290,    SoulSwap       = 110810,    DemonicCircleTeleport = 112970,
+        /* Warrior */    Intervene       = 122292,    SpellReflection = 113002,    ShatteringBlow = 112997,    IntimidatingRoar      = 113004,
+    }
+
+#endregion
 
 }

@@ -48,6 +48,20 @@ namespace Singular.Helpers
             }
         }
 
+
+        public static List<WoWPlayer> Dps
+        {
+            get
+            {
+                if (!StyxWoW.Me.GroupInfo.IsInParty)
+                    return new List<WoWPlayer>(); ;
+
+                return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => !p.HasRole(WoWPartyMember.GroupRole.Tank) && !p.HasRole(WoWPartyMember.GroupRole.Healer))
+                    .Select(p => p.ToPlayer()).Where(p => p != null).ToList();
+
+            }
+        }
+
         /// <summary>
         /// True: if a group member with Tank role (not spec) is alive and within 40 yds
         /// </summary>

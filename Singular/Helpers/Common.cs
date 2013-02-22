@@ -147,87 +147,92 @@ namespace Singular.Helpers
 
             if ( Me.Class == WoWClass.Rogue)
             {
-                Spell.Cast("Kick", ctx => _unitInterrupt);
-                Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && !_unitInterrupt.MeIsSafelyBehind);
+                prioSpell.AddChild( Spell.Cast("Kick", ctx => _unitInterrupt));
+                prioSpell.AddChild( Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && !_unitInterrupt.MeIsSafelyBehind));
             }
 
             if ( Me.Class == WoWClass.Warrior)
-                Spell.Cast("Pummel", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Pummel", ctx => _unitInterrupt));
 
             if ( Me.Class == WoWClass.Monk )
-                Spell.Cast("Spear Hand Strike", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Spear Hand Strike", ctx => _unitInterrupt));
 
             if ( Me.Class == WoWClass.Druid)
             {
-                // Spell.Cast("Skull Bash (Cat)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat);
-                // Spell.Cast("Skull Bash (Bear)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear);
-                Spell.Cast("Skull Bash", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear || StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat);
-                Spell.Cast("Mighty Bash", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && _unitInterrupt.IsWithinMeleeRange);
+                // Spell.Cast("Skull Bash (Cat)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat));
+                // Spell.Cast("Skull Bash (Bear)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear));
+                prioSpell.AddChild( Spell.Cast("Skull Bash", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear || StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat));
+                prioSpell.AddChild( Spell.Cast("Mighty Bash", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && _unitInterrupt.IsWithinMeleeRange));
             }
 
             if ( Me.Class == WoWClass.DeathKnight)
-                Spell.Cast("Mind Freeze", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Mind Freeze", ctx => _unitInterrupt));
 
             if ( Me.Race == WoWRace.Pandaren )
-                Spell.Cast("Quaking Palm", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Quaking Palm", ctx => _unitInterrupt));
 
             #endregion
+
             #region 8 Yard Range
 
             if ( Me.Race == WoWRace.BloodElf )
-                Spell.Cast("Arcane Torrent", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Arcane Torrent", ctx => _unitInterrupt));
 
             if ( Me.Race == WoWRace.Tauren)
-                Spell.Cast("War Stomp", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && _unitInterrupt.Distance < 8);
+                prioSpell.AddChild( Spell.Cast("War Stomp", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && _unitInterrupt.Distance < 8));
 
             #endregion
+
             #region 10 Yards
 
             if (Me.Class == WoWClass.Paladin)
-                Spell.Cast("Hammer of Justice", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Hammer of Justice", ctx => _unitInterrupt));
 
             if (Me.Specialization == WoWSpec.DruidBalance )
-                Spell.Cast("Hammer of Justice", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Hammer of Justice", ctx => _unitInterrupt));
 
             if (Me.Class == WoWClass.Warrior) 
-                Spell.Cast("Disrupting Shout", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Disrupting Shout", ctx => _unitInterrupt));
 
             #endregion
+
             #region 25 yards
 
             if ( Me.Class == WoWClass.Shaman)
-                Spell.Cast("Wind Shear", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Wind Shear", ctx => _unitInterrupt));
 
             #endregion
+
             #region 30 yards
 
             if (Me.Specialization == WoWSpec.PaladinProtection)
-                Spell.Cast("Avenger's Shield", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Avenger's Shield", ctx => _unitInterrupt));
 
             if (Me.Class == WoWClass.Shaman)
                 // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
-                Spell.Cast("Heroic Throw", ctx => _unitInterrupt, ret => TalentManager.HasGlyph("Gag Order") && !_unitInterrupt.IsBoss());
+                prioSpell.AddChild( Spell.Cast("Heroic Throw", ctx => _unitInterrupt, ret => TalentManager.HasGlyph("Gag Order") && !_unitInterrupt.IsBoss()));
 
             if ( Me.Class == WoWClass.Priest ) 
-                Spell.Cast("Silence", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Silence", ctx => _unitInterrupt));
 
             if ( Me.Class == WoWClass.DeathKnight)
-                Spell.Cast("Strangulate", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Strangulate", ctx => _unitInterrupt));
 
             #endregion
+
             #region 40 yards
 
             if ( Me.Class == WoWClass.Mage)
-                Spell.Cast("Counterspell", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Counterspell", ctx => _unitInterrupt));
 
             if ( Me.Class == WoWClass.Hunter)
-                Spell.Cast("Silencing Shot", ctx => _unitInterrupt);
+                prioSpell.AddChild( Spell.Cast("Silencing Shot", ctx => _unitInterrupt));
 
             if ( Me.Class == WoWClass.Druid)
-                Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin);
+                prioSpell.AddChild( Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin));
 
             if (Me.Specialization == WoWSpec.ShamanElemental || Me.Specialization == WoWSpec.ShamanEnhancement )
-                Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => true);
+                prioSpell.AddChild( Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => true));
 
             #endregion
 
@@ -235,7 +240,8 @@ namespace Singular.Helpers
                 actionSelectTarget,               
                 new Decorator(
                     ret => _unitInterrupt != null,
-                    prioSpell 
+                    // majority of these are off GCD, so throttle all to avoid most fail messages
+                    new Throttle( TimeSpan.FromMilliseconds(500), prioSpell )
                     )
                 );
         }

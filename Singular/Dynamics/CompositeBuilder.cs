@@ -10,6 +10,8 @@ using Styx;
 
 
 using Styx.TreeSharp;
+using System.Drawing;
+using Singular.ClassSpecific;
 
 namespace Singular.Dynamics
 {
@@ -19,6 +21,14 @@ namespace Singular.Dynamics
 
         public static Composite GetComposite(WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context, out int behaviourCount)
         {
+            if (context == WoWContext.None)
+            {
+                // None is an invalid context, but rather than stopping bot wait it out with donothing logic
+                Logger.Write(Color.White, "No Active Context -{0}{1} for{2} set to DoNothingBehavior temporarily", wowClass.ToString().CamelToSpaced(), behavior.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced());
+                behaviourCount = 1;
+                return NoContextAvailable.CreateDoNothingBehavior();
+            }
+
             behaviourCount = 0;
             if (_methods.Count <= 0)
             {

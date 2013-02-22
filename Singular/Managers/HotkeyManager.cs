@@ -135,8 +135,8 @@ namespace Singular.Managers
                                         + "modifier like Shift, Alt, or Control.  This prevents you from "
                                         + "setting up Singular to temporarily suspend movement as you have in the past.  "
                                         + "This feature will remain disabled until that has been resolved.  "
-                                        + "Your settings have been retained so your setup will be available "
-                                        + "to you when the feature is restored for use.");
+                                        + "Your settings have been retained so your setup is available "
+                                        + "when the feature is restored for use.");
             }
 #endif
         }

@@ -81,9 +81,9 @@ namespace Singular.ClassSpecific.Druid
                 Spell.BuffSelf("Enrage", ret=>StyxWoW.Me.RagePercent <= 40),
 
                 // Symbiosis
-                Spell.BuffSelf("Bone Shield"),
-                Spell.BuffSelf("Elusive Brew", ret=>StyxWoW.Me.HealthPercent <= 60),
-                Spell.BuffSelf("Spell Reflection", ret=> Unit.NearbyUnfriendlyUnits.Any( u => u.IsCasting && u.CurrentTargetGuid == Me.Guid && u.CurrentCastTimeLeft.TotalSeconds < 3)),
+                Common.SymbCast(Symbiosis.BoneShield, on => Me, ret => !Me.HasAura("Bone Shield")),
+                Common.SymbCast(Symbiosis.ElusiveBrew, on => Me, ret => StyxWoW.Me.HealthPercent <= 60 && !Me.HasAura("Elusive Brew")),
+                Common.SymbCast(Symbiosis.SpellReflection, on => Me, ret => !Me.HasAura("Bone Shield") && Unit.NearbyUnfriendlyUnits.Any(u => u.IsCasting && u.CurrentTargetGuid == Me.Guid && u.CurrentCastTimeLeft.TotalSeconds < 3)),
 
                 Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
                 Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
@@ -132,7 +132,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Maul", ret=> Me.CurrentRage >= 90 && StyxWoW.Me.HasAura("Tooth and Claw")),
 
                         // Symbiosis
-                        Spell.Cast("Consecration")
+                        Common.SymbCast(Symbiosis.Consecration, on => Me, req => Me.CurrentTarget.SpellDistance() < 8)
                         )
                     ),                   
 

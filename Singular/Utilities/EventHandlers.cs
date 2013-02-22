@@ -15,6 +15,7 @@ using System.Globalization;
 using Styx.Common;
 using System.Drawing;
 using System.Collections.Generic;
+using Styx.Common.Helpers;
 
 #endregion
 
@@ -29,7 +30,8 @@ namespace Singular.Utilities
             if (SingularSettings.Debug || (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid))
                 AttachCombatLogEvent();
 
-            SingularRoutine.OnWoWContextChanged += HandleContextChanged;
+            PVP.AttachStartTimer();
+            SingularRoutine.OnWoWContextChanged += HandleContextChanged;           
         }
 
         internal static void HandleContextChanged(object sender, WoWContextEventArg e)
@@ -138,13 +140,10 @@ namespace Singular.Utilities
 
                 // spell_cast_failed only passes filter in Singular debug mode
                 case "SPELL_CAST_FAILED":
-                    Logger.WriteDebug(
-                        "[CombatLog] {0} {1}#{2} failure: '{3}'",
-                        e.Event,
-                        e.Spell.Name,
-                        e.SpellId,
-                        e.Args[14]
-                        );
+                    if ( !SingularSettings.Debug)
+                        Logger.WriteFile("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14] );
+                    else
+                        Logger.WriteDebug("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14]);
 
                     if ( e.Args[14].ToString() == LocalizedLineOfSightError )
                     {
@@ -271,5 +270,7 @@ namespace Singular.Utilities
             /// line below was originally in Evade logic, but commenting to avoid Sleeps
             // StyxWoW.SleepForLagDuration();
         }
+
+
     }
 }

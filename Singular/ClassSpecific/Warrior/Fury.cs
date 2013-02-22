@@ -32,6 +32,8 @@ namespace Singular.ClassSpecific.Warrior
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
 
+                Spell.BuffSelf(Common.SelectedShout),
+
                 //Shoot flying targets
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsFlying,
                     new PrioritySelector(
@@ -69,6 +71,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateFuryNormalCombatBuffs()
         {
             return new PrioritySelector(
+                Spell.Cast(Common.SelectedShout),
                 //Heal
                 Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60),
                 // Only pop reck if we're going to be executing -OR- 4pc T14 bonus -OR- not in an instance. Fights are also too short.

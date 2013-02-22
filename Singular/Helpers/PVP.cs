@@ -13,10 +13,28 @@ namespace Singular.Helpers
         /// buff, however those auras were removed in MoP
         /// </summary>
         /// <returns>true if in Battleground/Arena prior to start, false otherwise</returns>
-        public static bool IsBattlegroundPrep()
+        public static bool IsPrepPhase
         {
-            return Battlegrounds.IsInsideBattleground && DateTime.Now < Battlegrounds.BattlefieldStartTime;
+            get
+            {
+                return Battlegrounds.IsInsideBattleground && PrepTimeLeft > 0;
+            }
         }
+
+        public static int PrepTimeLeft
+        {
+            get
+            {
+                return Math.Max(0, (int)(BattlegroundStart - DateTime.Now).TotalSeconds);
+            }
+        }
+
+        public static DateTime BattlegroundStart
+        {
+            get;
+            private set;
+        }
+
 
         //public static bool IsCrowdControlled(this WoWUnit unit)
         //{
@@ -48,5 +66,52 @@ namespace Singular.Helpers
                 (a.Spell.Mechanic == WoWSpellMechanic.Interrupted || 
                 a.Spell.Mechanic == WoWSpellMechanic.Silenced));
         }
+
+
+#region Battleground Start Timer
+
+        private static bool _startTimerAttached;
+
+        public static void AttachStartTimer()
+        {
+            if (_startTimerAttached)
+                return;
+
+            Lua.Events.AttachEvent("START_TIMER", HandleStartTimer);
+            SingularRoutine.OnWoWContextChanged += HandleContextChanged;           
+            _startTimerAttached = true;
+        }
+
+        public static void DetachStartTimer()
+        {
+            if (!_startTimerAttached)
+                return;
+
+            _startTimerAttached = false;
+            Lua.Events.DetachEvent("START_TIMER", HandleStartTimer);
+        }
+
+        private static void HandleStartTimer(object sender, LuaEventArgs args)
+        {
+            int secondsUntil = Int32.Parse(args.Args[1].ToString());
+            DateTime prevStart = BattlegroundStart;
+            BattlegroundStart = DateTime.Now + TimeSpan.FromSeconds(secondsUntil);
+
+            if (!(BattlegroundStart - prevStart).TotalSeconds.Between( -1, 1))
+            {
+                Logger.WriteDebug("Start_Timer: Battleground starts in {0} seconds", secondsUntil);
+            }
+        }
+
+        internal static void HandleContextChanged(object sender, WoWContextEventArg e)
+        {
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds)
+                BattlegroundStart = DateTime.Now;
+            else
+                BattlegroundStart = DateTime.Now + TimeSpan.FromSeconds(120);   // just add enough for now... accurate time set by event handler
+        }
+
+#endregion
+
     }
 }

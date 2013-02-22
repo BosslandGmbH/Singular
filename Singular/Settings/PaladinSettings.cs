@@ -89,7 +89,14 @@ namespace Singular.Settings
         [Category("Common")]
         [DisplayName("Word of Glory / Eternal Flame Health")]
         [Description("Word of Glory / Eternal Flame will be used at this value")]
-        public int WordOfGloryHealth { get; set; } 
+        public int WordOfGloryHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Hammer of Justice immediately in Normal Context")]
+        [Description("Stun mobs while Solo immediately to reduce damage taken")]
+        public bool StunMobsWhileSolo { get; set; }
         #endregion
 
         #region Holy

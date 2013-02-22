@@ -159,6 +159,15 @@ namespace Singular.Helpers
             return TimeSpan.FromSeconds( indetermValue);
         }
 
+        public static bool IsSpellOnCooldown(string spell)
+        {
+            SpellFindResults sfr;
+            if ( SpellManager.FindSpell(spell, out sfr))
+                return (sfr.Override ?? sfr.Original).Cooldown;
+
+            return true;
+        }
+
         /// <summary>
         ///  Returns maximum spell range based on hitbox of unit. 
         /// </summary>
@@ -329,7 +338,7 @@ namespace Singular.Helpers
                     FixGlobalCooldownCheckSpell = "Lightning Shield";
                     break;
                 case WoWClass.Warlock:
-                    FixGlobalCooldownCheckSpell = "Health Funnel";
+                    FixGlobalCooldownCheckSpell = "Corruption";
                     break;
                 case WoWClass.Warrior:
                     FixGlobalCooldownCheckSpell = "Sunder Armor";
@@ -398,7 +407,7 @@ namespace Singular.Helpers
         public static bool IsGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
         {
 #if NO_LATENCY_ISSUES_WITH_GLOBAL_COOLDOWN
-            uint latency = allow == LagTolerance.Yes ? StyxWoW.WoWClient.Latency * 2 : 0;
+            uint latency = allow == LagTolerance.Yes ? StyxWoW.WoWClient.Latency : 0;
             TimeSpan gcdTimeLeft = Spell.GcdTimeLeft;
             return gcdTimeLeft.TotalMilliseconds > latency;
 #else
@@ -801,6 +810,21 @@ namespace Singular.Helpers
 
         #region Buff - by name
 
+        public static string DoubleCastKey(ulong guid, string spellName)
+        {
+            return guid.ToString("X") + "-" + spellName;
+        }
+
+        public static string DoubleCastKey(WoWUnit unit, string spell)
+        {
+            return DoubleCastKey(unit.Guid, spell);
+        }
+
+        public static bool Contains(this Dictionary<string, DateTime> dict, WoWUnit unit, string spellName)
+        {
+            return dict.ContainsKey(DoubleCastKey(unit, spellName));
+        }
+
         public static readonly Dictionary<string, DateTime> DoubleCastPreventionDict =
             new Dictionary<string, DateTime>();
 
@@ -911,8 +935,7 @@ namespace Singular.Helpers
         /// <param name = "onUnit">The on unit</param>
         /// <param name = "requirements">The requirements.</param>
         /// <returns></returns>
-        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements, params string[] buffNames)
+        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] buffNames)
         {
             //if (name == _lastBuffCast && _castTimer.IsRunning && _castTimer.ElapsedMilliseconds < 250)
             //{
@@ -926,24 +949,47 @@ namespace Singular.Helpers
             //    return new Action(ret => RunStatus.Success);
             //}
 
-            return
-                new Decorator(
-                    ret => onUnit != null && onUnit(ret) != null 
-                    && name != null && !DoubleCastPreventionDict.ContainsKey(name) 
-                    && buffNames.All(b => myBuff ? !onUnit(ret).HasMyAura(b) : !onUnit(ret).HasAura(b)),
-                    new Sequence( // new Action(ctx => _lastBuffCast = name),
-                        Cast(name, onUnit, requirements),
-                        new DecoratorContinue(ret => Spell.GetSpellCastTime(name) > TimeSpan.Zero,
-                            new Sequence(new WaitContinue(1, ret => StyxWoW.Me.IsCasting,
-                                new Action(ret => UpdateDoubleCastDict(name)))))));
+            return Buff(name, myBuff, onUnit, requirements, 0, buffNames);
         }
 
-        private static void UpdateDoubleCastDict(string spellName)
+        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, int expirSecs = 0, params string[] buffNames)
         {
-            if (DoubleCastPreventionDict.ContainsKey(spellName))
-                DoubleCastPreventionDict[spellName] = DateTime.UtcNow;
+            //if (name == _lastBuffCast && _castTimer.IsRunning && _castTimer.ElapsedMilliseconds < 250)
+            //{
+            //    return new Action(ret => RunStatus.Success);
+            //}
 
-            DoubleCastPreventionDict.Add(spellName, DateTime.UtcNow);
+            //if (name == _lastBuffCast && StyxWoW.Me.IsCasting)
+            //{
+            //    _castTimer.Reset();
+            //    _castTimer.Start();
+            //    return new Action(ret => RunStatus.Success);
+            //}
+
+            return new Decorator(
+                ret => onUnit != null && onUnit(ret) != null
+                    && name != null && !DoubleCastPreventionDict.Contains(onUnit(ret), name)
+                    && (!buffNames.Any() && onUnit(ret).HasAuraExpired(name, expirSecs) || buffNames.All(b => myBuff ? onUnit(ret).HasAuraExpired(b, expirSecs) : !onUnit(ret).HasAura(b))),
+                    new Sequence( 
+                        // new Action(ctx => _lastBuffCast = name),
+                        Cast(name, chkMov => true, onUnit, requirements, cancel => false /* causes cast to complete */ ),
+                        new Action(ret => UpdateDoubleCastDict(name, onUnit(ret)))
+                        )
+                    );
+        }
+
+
+        public static void UpdateDoubleCastDict(string spellName, WoWUnit unit)
+        {
+            if (unit == null)
+                return;
+
+            DateTime expir = DateTime.UtcNow + TimeSpan.FromSeconds(3);
+            string key = DoubleCastKey(unit.Guid, spellName);
+            if (DoubleCastPreventionDict.ContainsKey(key))
+                DoubleCastPreventionDict[key] = expir;
+
+            DoubleCastPreventionDict.Add(key, expir);
         }
 
         #endregion
@@ -1142,7 +1188,7 @@ namespace Singular.Helpers
         /// <summary>
         ///   Creates a behavior to cast a spell by name, with special requirements, on a specific unit. Will make sure any spell with
         ///   a non-zero cast time (everything not instant) will stay here until passing the latency boundary (point where .IsCasting == false while cast is in progress.)
-        ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
+        ///   Returns RunStatus.Success if successful, RunStatus.Failure otherwise.  Note: will return as soon as spell cast is in progress, unless cancel delegate provided
         /// </summary>
         /// <remarks>
         ///   Created 5/2/2011.
@@ -1174,14 +1220,17 @@ namespace Singular.Helpers
                                 return RunStatus.Failure;
                             _spell = sfr.Override ?? sfr.Original;
 
-                            // check we can cast it on target
-                            if (!SpellManager.CanCast(_spell, onUnit(ret), true, checkMovement(ret), allow == LagTolerance.Yes))
+                            if (checkMovement(ret) && Me.IsMoving && !AllowMovingWhileCasting(_spell))
+                                return RunStatus.Failure;
+
+                            // check we can cast it on target without checking for movement
+                            if (!SpellManager.CanCast(_spell, onUnit(ret), true, false, allow == LagTolerance.Yes))
                                 return RunStatus.Failure;
 
                             // save status of queueing spell (lag tolerance - the prior spell still completing)
                             _IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
-                            Logger.Write(string.Format("Casting {0} on {1}", _spell.Name, onUnit(ret).SafeName()));
+                            Logger.Write("Casting {0} on {1}", _spell.Name, onUnit(ret).SafeName());                              
                             if (!SpellManager.Cast(_spell, onUnit(ret)))
                             {
                                 Logger.WriteDebug(Color.LightPink, "cast of {0} on {1} failed!", _spell.Name, onUnit(ret).SafeName());
@@ -1277,6 +1326,24 @@ namespace Singular.Helpers
                 );
         }
 
+        public static bool AllowMovingWhileCasting(WoWSpell _spell)
+        {
+            // quick return for instant spells
+            if (_spell.CastTime == 0 && !IsFunnel(_spell))
+                return true;
+
+            // assume we cant do that, but then check for class specific buffs which allow movement while casting
+            bool allowMove = false;
+            if (Me.Class == WoWClass.Shaman)
+                allowMove = Me.HasAura("Spiritwalker's Grace") || (_spell.Id != 403 && !TalentManager.HasGlyph("Unleashed Lightning"));
+            else if (Me.Class == WoWClass.Warlock)
+                allowMove = ClassSpecific.Warlock.Common.HasTalent(ClassSpecific.Warlock.WarlockTalent.KiljadensCunning);
+            else if (Me.Specialization == WoWSpec.DruidRestoration)
+                allowMove = Me.HasAura("Spiritwalker's Grace");  // Symbiosis
+
+            return allowMove;
+        }
+
         #endregion
 
         #region CastOnGround - placeable spell casting
@@ -1305,27 +1372,10 @@ namespace Singular.Helpers
         /// <param name = "spell">The spell.</param>
         /// <param name = "onLocation">The on location.</param>
         /// <param name = "requirements">The requirements.</param>
-        /// <returns>.</returns>
-        public static Composite CastOnGround(string spell, LocationRetriever onLocation,
-            SimpleBooleanDelegate requirements)
-        {
-            return CastOnGround(spell, onLocation, requirements, true);
-        }
-
-
-        /// <summary>
-        ///   Creates a behavior to cast a spell by name, on the ground at the specified location. Returns RunStatus.Success if successful, RunStatus.Failure otherwise.
-        /// </summary>
-        /// <remarks>
-        ///   Created 5/2/2011.
-        /// </remarks>
-        /// <param name = "spell">The spell.</param>
-        /// <param name = "onLocation">The on location.</param>
-        /// <param name = "requirements">The requirements.</param>
         /// <param name="waitForSpell">Waits for spell to become active on cursor if true. </param>
         /// <returns>.</returns>
         public static Composite CastOnGround(string spell, LocationRetriever onLocation,
-            SimpleBooleanDelegate requirements, bool waitForSpell)
+            SimpleBooleanDelegate requirements, bool waitForSpell = true)
         {
             return
                 new Decorator(
@@ -1335,28 +1385,21 @@ namespace Singular.Helpers
                         && (StyxWoW.Me.Location.Distance(onLocation(ret)) <= SpellManager.Spells[spell].MaxRange || SpellManager.Spells[spell].MaxRange == 0)
                         && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Location, onLocation(ret)),
                     new Sequence(
-                        new Action(ret =>
-                        {
-                            if (!SingularSettings.Debug)
-                                Logger.Write("Casting {0} at location {1} @ {2:F1} yds", spell, onLocation(ret), onLocation(ret).Distance(StyxWoW.Me.Location));
-                            else
-                            {
-                                WoWUnit unit = Unit.NearbyFriendlyPlayers.Where(f => f.IsAlive)
-                                    .Union(Unit.NearbyUnfriendlyUnits)
-                                    .OrderBy(u => u.Distance)
-                                    .FirstOrDefault();
-
-                                Logger.Write("Casting {0} at {1} @ {2:F1} yds (closest unit {3} {4:F1} yds away", spell, onLocation(ret), onLocation(ret).Distance(StyxWoW.Me.Location), unit.SafeName(), unit.Location.Distance(onLocation(ret)));
-                            }
-                        }),
+                        new Action(ret => Logger.Write("Casting {0} at location {1} @ {2:F1} yds", spell, onLocation(ret), onLocation(ret).Distance(StyxWoW.Me.Location))),
 
                         new Action(ret => SpellManager.Cast(spell)),
 
                         new DecoratorContinue(
                             ctx => waitForSpell,
-                            new WaitContinue(TimeSpan.FromMilliseconds(500),
-                                ret => StyxWoW.Me.CurrentPendingCursorSpell != null, // && StyxWoW.Me.CurrentPendingCursorSpell.Name == spell,
-                                new ActionAlwaysSucceed()
+                            new PrioritySelector(
+                                new WaitContinue(1,
+                                    ret => StyxWoW.Me.HasPendingSpell(spell), // && StyxWoW.Me.CurrentPendingCursorSpell.Name == spell,
+                                    new ActionAlwaysSucceed()
+                                    ),
+                                new Action( r => {
+                                    Logger.WriteDebug("error: spell {0} not seen as pending on cursor after 1 second", spell);
+                                    return RunStatus.Failure;
+                                    })
                                 )
                             ),
 
@@ -1365,21 +1408,30 @@ namespace Singular.Helpers
                         // check for we are done status
                         new PrioritySelector(
                             // done if cursor doesn't have spell anymore
-                            new Wait(TimeSpan.FromMilliseconds(500),
-                                ret => StyxWoW.Me.CurrentPendingCursorSpell == null,
+                            new Decorator( 
+                                ret => !waitForSpell,
+                                new Action(r => Lua.DoString("SpellStopTargeting()"))   //just in case
+                                ),
+
+                            new Wait(TimeSpan.FromMilliseconds(750),
+                                ret => !StyxWoW.Me.HasPendingSpell(spell) || Me.IsCasting || Me.IsChanneling,
                                 new ActionAlwaysSucceed()
                                 ),
 
                             // otherwise cancel
                             new Action(ret =>
                             {
-                                Logger.Write("/cancel {0} - did click {1} fail?  distance={2:F1} yds, loss={3}, face={4}",
+                                Logger.WriteDebug("/cancel {0} - click {1} failed -OR- Pending Cursor Spell API is still broken [{5}={6}] -- distance={2:F1} yds, loss={3}, face={4}",
                                     spell,
                                     onLocation(ret),
                                     StyxWoW.Me.Location.Distance(onLocation(ret)),
                                     GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Location, onLocation(ret)),
-                                    StyxWoW.Me.IsSafelyFacing(onLocation(ret))
+                                    StyxWoW.Me.IsSafelyFacing(onLocation(ret)),
+                                    Me.HasPendingSpell(spell),
+                                    PendingSpell()
                                     );
+
+                                // Pending Spell Cursor API is broken... seems like we can't really check at this point, so assume it failed and worked... uggghhh
                                 Lua.DoString("SpellStopTargeting()");
                                 return RunStatus.Failure;
                             })
@@ -1417,8 +1469,8 @@ namespace Singular.Helpers
                 if (!unit.InLineOfSpellSight)
                     return false;
             }
-            
-            if ((spell.CastTime != 0u || IsFunnel(spell)) && Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace"))
+
+            if ((spell.CastTime != 0u || IsFunnel(spell)) && Me.IsMoving && !StyxWoW.Me.HasAnyAura("Spiritwalker's Grace", "Kil'jaeden's Cunning"))
                 return false;
 
             if (Me.ChanneledCastingSpellId == 0)
@@ -1468,6 +1520,24 @@ namespace Singular.Helpers
                         Logger.Write(string.Format("Casting {0} on {1}", castName, onUnit(ret).SafeName()));
                         SpellManager.Cast(castName, onUnit(ret));
                     })
+                    )
+                );
+        }
+
+        public static Composite BuffHack(string castName, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements)
+        {
+            return new Decorator(
+                ret => onUnit != null 
+                    && onUnit(ret) != null
+                    && castName != null
+                    && !DoubleCastPreventionDict.Contains( onUnit(ret), castName)
+                    && !onUnit(ret).HasAura(castName),
+                new Sequence(
+                    CastHack(castName, onUnit, requirements),
+                    new DecoratorContinue(
+                        ret => Spell.GetSpellCastTime(castName) > TimeSpan.Zero,
+                        new WaitContinue(1, ret => StyxWoW.Me.IsCasting, new Action(ret => UpdateDoubleCastDict(castName, onUnit(ret))))
+                        )
                     )
                 );
         }
@@ -1530,6 +1600,18 @@ namespace Singular.Helpers
 
             return IsChanneled;
 #endif
+        }
+
+        public static int PendingSpell()
+        {
+            var pendingSpellPtr = StyxWoW.Memory.Read<IntPtr>((IntPtr)0xC124C4, true); 
+            if (pendingSpellPtr != IntPtr.Zero) 
+            { 
+                var pendingSpellId = StyxWoW.Memory.Read<int>(pendingSpellPtr + 32);
+                return pendingSpellId;
+            }
+
+            return 0;
         }
 
         public static int GetCharges(string name)

@@ -9,6 +9,8 @@ using Styx.WoWInternals.DBC;
 using System.Drawing;
 using Singular.Helpers;
 using Singular.Settings;
+using Styx.WoWInternals.WoWObjects;
+using Styx.WoWInternals;
 
 namespace Singular
 {
@@ -48,18 +50,19 @@ namespace Singular
                     return WoWContext.Battlegrounds;
                 }
 
-                if (map.IsDungeon)
-                {
-                    return WoWContext.Instances;
-                }
-
                 if (Me.IsInGroup())
                 {
-                    // return SingularSettings.Instance.WorldGroupBehaviors;
-                    return WoWContext.Instances;
+                    if (Me.IsInInstance)
+                    {
+                        return WoWContext.Instances;
+                    }
+
+                    if (Group.Tanks.Any())
+                    {
+                        return WoWContext.Instances;
+                    }
                 }
 
-                // return SingularSettings.Instance.WorldSoloBehaviors;
                 return WoWContext.Normal;
             }
         }
@@ -75,17 +78,16 @@ namespace Singular
                 _contextEventSubscribed = true;
             }
 
-            IsQuesting = IsBotInUse("Quest");
-
             var current = CurrentWoWContext;
 
             // Can't update the context when it doesn't exist.
             if (current == WoWContext.None)
                 return;
 
-
             if(current != _lastContext && OnWoWContextChanged!=null)
             {
+                IsQuesting = IsBotInUse("Quest");
+
                 DescribeContext();
                 try
                 {
@@ -133,13 +135,44 @@ namespace Singular
                     sRunningAs = string.Format("{0}m {1}", (int) Math.Max(Me.CurrentMap.MaxPlayers, Me.GroupInfo.GroupSize), sRunningAs);
             }
 
-            Logger.Write(Color.LightGreen, "... running the {0} bot {1}in {2}",
+            Logger.Write(Color.LightGreen, "... running the {0} bot {1}in {2} using {3} BEHAVIORS",
                  GetBotName(),
                  sRunningAs,
-                 Me.RealZoneText
+                 Me.RealZoneText,
+                 CurrentWoWContext == WoWContext.Normal ? "SOLO" : CurrentWoWContext.ToString().ToUpper()
                 );
 
+            if (CurrentWoWContext != WoWContext.Battlegrounds && Me.IsInGroup())
+            {
+                Logger.Write(Color.LightGreen, "... with a group role of {0}", (Me.Role & (WoWPartyMember.GroupRole.Tank | WoWPartyMember.GroupRole.Healer | WoWPartyMember.GroupRole.Damage)).ToString().ToUpper());
+            }
+
             Item.WriteCharacterGearAndSetupInfo();
+
+#if LOG_GROUP_COMPOSITION
+            if (CurrentWoWContext == WoWContext.Instances)
+            {
+                int idx = 1;
+                Logger.WriteFile(" ");
+                Logger.WriteFile("Group Comprised of {0} members as follows:", Me.GroupInfo.NumRaidMembers);
+                foreach (var pm in Me.GroupInfo.RaidMembers )
+                {
+                    string role = (pm.Role & ~WoWPartyMember.GroupRole.None).ToString().ToUpper() + "      ";
+                    role = role.Substring( 0, 6);                   
+                    
+                    Logger.WriteFile( "{0} {1} {2} {3} {4} {5}",
+                        idx++, 
+                        role,
+                        pm.IsOnline ? "online " : "offline",
+                        pm.Level,
+                        pm.HealthMax,
+                        pm.Specialization
+                        );
+                }
+
+                Logger.WriteFile(" ");
+            }
+#endif
 
             if (Styx.CommonBot.Targeting.PullDistance < 25)
                 Logger.Write(Color.White, "your Pull Distance is {0:F0} yds which is low for any class!!!", Styx.CommonBot.Targeting.PullDistance);

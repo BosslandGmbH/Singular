@@ -59,29 +59,33 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinHolyCombatBehavior()
         {
             return new PrioritySelector(
-/*
-                    Spell.Buff("Judgment",
-                               ret => SpellManager.HasSpell("Judgment") && StyxWoW.Me.GotTarget &&
-                                       StyxWoW.Me.CurrentTarget.Distance <= SpellManager.Spells["Judgment"].MaxRange - 2 &&
-                                       StyxWoW.Me.CurrentTarget.InLineOfSpellSight &&
-                                       StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget)),
- */
-                    new Decorator(
-                        ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
-                        new PrioritySelector(
-                            Safers.EnsureTarget(),
-                            Movement.CreateMoveToLosBehavior(),
-                            Movement.CreateFaceTargetBehavior(),
-                            Helpers.Common.CreateAutoAttack(true),
-                            Helpers.Common.CreateInterruptBehavior(),
-                            Spell.Buff("Judgment"),
-                            Spell.Cast("Hammer of Wrath"),
-                            Spell.Cast("Holy Shock"),
-                            Spell.Cast("Crusader Strike"),
-                            Spell.Cast("Denounce"),
-                            Movement.CreateMoveToTargetBehavior(true, 5f)
-                            ))
-                    );
+                new Decorator(
+                    ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                    new PrioritySelector(
+                        Safers.EnsureTarget(),
+                        Movement.CreateMoveToLosBehavior(),
+                        Movement.CreateFaceTargetBehavior(),
+                        Helpers.Common.CreateDismount("Combat"),
+                        Spell.WaitForCastOrChannel(),
+
+                        new Decorator( 
+                            ret => !Spell.IsGlobalCooldown() && Me.GotTarget,
+                            new PrioritySelector(
+                                Helpers.Common.CreateAutoAttack(true),
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Spell.Cast("Hammer of Justice", ret => Settings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),
+                                Spell.Buff("Judgment"),
+                                Spell.Cast("Hammer of Wrath"),
+                                Spell.Cast("Holy Shock"),
+                                Spell.Cast("Crusader Strike"),
+                                Spell.Cast("Denounce")
+                                )
+                            ),
+
+                        Movement.CreateMoveToTargetBehavior(true, 5f)
+                        )
+                    )
+                );
         }
         [Behavior(BehaviorType.Pull, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyPullBehavior()

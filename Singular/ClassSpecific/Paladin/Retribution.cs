@@ -91,7 +91,7 @@ namespace Singular.ClassSpecific.Paladin
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
+                Helpers.Common.CreateDismount("Combat"),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -120,6 +120,8 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.BuffSelf("Divine Protection", ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
 
                         Common.CreatePaladinSealBehavior(),
+
+                        Spell.Cast( "Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
 
                         //7	Blow buffs seperatly.  No reason for stacking while grinding.
                         Spell.Cast("Guardian of Ancient Kings", ret => PaladinSettings.RetGoatK && _mobCount >= 4),

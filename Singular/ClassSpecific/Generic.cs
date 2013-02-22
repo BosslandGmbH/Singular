@@ -97,14 +97,11 @@ namespace Singular.ClassSpecific
                             Spell.Cast("Stoneform")),
                         new Decorator(
                             ret => SpellManager.CanCast("Escape Artist") && Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared),
-                            Spell.Cast("Escape Artist")),
-                        new Decorator(
-                            ret => SpellManager.CanCast("Every Man for Himself") && Unit.IsCrowdControlled(StyxWoW.Me),
-                            Spell.Cast("Every Man for Himself")),
+                            Spell.BuffSelf("Escape Artist")),
                         new Decorator(
                             ret => SpellManager.CanCast("Gift of the Naaru") && StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP,
                             Spell.Cast("Gift of the Naaru")),
-                        Spell.Cast("Shadowmeld", ret => NeedShadowmeld() ),
+                        Spell.BuffSelf("Shadowmeld", ret => NeedShadowmeld()),
                         Spell.BuffSelf("Lifeblood", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAnyAura("Lifeblood", "Berserking")),
                         Spell.BuffSelf("Berserking", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAura("Lifeblood")),
                         Spell.BuffSelf("Blood Fury")
@@ -150,6 +147,17 @@ namespace Singular.ClassSpecific
         public static Composite CreatePotionAndHealthstoneBehavior()
         {
             return Item.CreateUsePotionAndHealthstone(SingularSettings.Instance.PotionHealth, SingularSettings.Instance.PotionMana);
+        }
+    }
+
+
+    public static class NoContextAvailable
+    {
+        public static Composite CreateDoNothingBehavior()
+        {
+            return new Throttle( 15,
+                new Action( r => Logger.Write( "No Context Available - do nothing while we wait"))
+                );
         }
     }
 }

@@ -205,7 +205,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     Spell.Cast("Death Siphon",
                         ret => Common.HasTalent( DeathKnightTalents.DeathSiphon) 
-                            && Me.GotTarget && Me.InLineOfSpellSight && Me.IsSafelyFacing(Me.CurrentTarget)
+                            && Me.GotTarget && Me.CurrentTarget.InLineOfSpellSight && Me.IsSafelyFacing(Me.CurrentTarget)
                             && StyxWoW.Me.HealthPercent < Settings.DeathSiphonPercent),
 
                     Spell.BuffSelf("Conversion",
@@ -214,7 +214,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             && StyxWoW.Me.RunicPowerPercent >= Settings.MinimumConversionRunicPowerPrecent),
 
                     Spell.Cast("Death Strike",
-                        ret => Me.GotTarget && Me.InLineOfSpellSight && Me.IsSafelyFacing(Me.CurrentTarget)
+                        ret => Me.GotTarget && Me.CurrentTarget.InLineOfSpellSight && Me.IsSafelyFacing(Me.CurrentTarget)
                             && StyxWoW.Me.HealthPercent < Settings.DeathStrikeEmergencyPercent),
 
                     // use it to heal with deathcoils.

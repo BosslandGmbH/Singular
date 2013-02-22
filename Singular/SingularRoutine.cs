@@ -99,7 +99,7 @@ namespace Singular
             UpdateContext();
 
             // Double cast shit
-            Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow.Subtract(t).TotalMilliseconds >= 2500);
+            Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow > t);
 
             //Only pulse for classes with pets
             switch (StyxWoW.Me.Class)

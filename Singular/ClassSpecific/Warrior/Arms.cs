@@ -44,19 +44,25 @@ namespace Singular.ClassSpecific.Warrior
 
                 Spell.WaitForCast(),
 
-                //Shoot flying targets
                 new Decorator(
-                    ret => StyxWoW.Me.CurrentTarget.IsFlying,
+                    ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.Cast("Heroic Throw"),
-                        Spell.Cast("Throw"),
-                        Movement.CreateMoveToTargetBehavior(true, 27f)
-                        )),
 
-                //Buff up
-                Spell.Cast(Common.SelectedShout),
+                        //Buff up
+                        Spell.Cast(Common.SelectedShout),
 
-                Common.CreateChargeBehavior(),
+                        //Shoot flying targets
+                        new Decorator(
+                            ret => StyxWoW.Me.CurrentTarget.IsFlying,
+                            new PrioritySelector(
+                                Spell.Cast("Heroic Throw"),
+                                Spell.Cast("Throw"),
+                                Movement.CreateMoveToTargetBehavior(true, 27f)
+                                )),
+
+                        Common.CreateChargeBehavior()
+                        )
+                    ),
 
                 // Move to Melee
                 Movement.CreateMoveToMeleeBehavior(true)

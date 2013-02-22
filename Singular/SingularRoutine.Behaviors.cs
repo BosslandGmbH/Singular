@@ -43,34 +43,37 @@ namespace Singular
 
             InitBehaviors();
 
+            // save single consistent copy for building behaves since CurrentWoWContext is dynamically evaluated
+            WoWContext context = CurrentWoWContext;
+
             // DO NOT UPDATE: This will cause a recursive event
             // Update the current context. Handled in SingularRoutine.Context.cs
             //UpdateContext();
 
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
-            if (!EnsureComposite(true, BehaviorType.Combat))
+            if (!EnsureComposite(true, context, BehaviorType.Combat))
             {
                 return false;
             }
 
-            if (!EnsureComposite(true, BehaviorType.Pull))
+            if (!EnsureComposite(true, context, BehaviorType.Pull))
             {
                 return false;
             }
 
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
-            EnsureComposite(false, BehaviorType.Rest);
+            EnsureComposite(false, context, BehaviorType.Rest);
             if ( TreeHooks.Instance.Hooks[BehaviorType.Rest.ToString()] == null)
                 TreeHooks.Instance.ReplaceHook( BehaviorType.Rest.ToString(), Helpers.Rest.CreateDefaultRestBehaviour());
 
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
-            EnsureComposite(false, BehaviorType.CombatBuffs);
-            EnsureComposite(false, BehaviorType.Heal);
-            EnsureComposite(false, BehaviorType.PullBuffs);
-            EnsureComposite(false, BehaviorType.PreCombatBuffs);
+            EnsureComposite(false, context, BehaviorType.CombatBuffs);
+            EnsureComposite(false, context, BehaviorType.Heal);
+            EnsureComposite(false, context, BehaviorType.PullBuffs);
+            EnsureComposite(false, context, BehaviorType.PreCombatBuffs);
 
-            EnsureComposite(false, BehaviorType.LossOfControl);
+            EnsureComposite(false, context, BehaviorType.LossOfControl);
 
 #if SHOW_BEHAVIOR_LOAD_DESCRIPTION
             // display concise single line describing what behaviors we are loading
@@ -92,7 +95,7 @@ namespace Singular
                 if (_restBehavior != null)
                     sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " Rest";
 
-                Logger.Write(Color.LightGreen, "Loaded{0} behaviors for {1}: {2}", Me.Specialization.ToString().CamelToSpaced(), SingularRoutine.CurrentWoWContext.ToString(), sMsg);
+                Logger.Write(Color.LightGreen, "Loaded{0} behaviors for {1}: {2}", Me.Specialization.ToString().CamelToSpaced(), context.ToString(), sMsg);
             }
 #endif
             return true;
@@ -119,6 +122,7 @@ namespace Singular
                 new PrioritySelector(
                     new Throttle(1, new Decorator(ret => Me.Fleeing, new Action(r => Logger.Write(Color.White, "FLEEING! (loss of control)")))),
                     new Throttle(1, new Decorator(ret => Me.Stunned, new Action(r => Logger.Write(Color.White, "STUNNED! (loss of control)")))),
+                    new Throttle(1, new Decorator(ret => Me.Silenced, new Action(r => Logger.Write(Color.White, "SILENCED! (loss of control)")))),
                     new HookExecutor(BehaviorType.LossOfControl.ToString()),
                     new Decorator( 
                         ret => SingularSettings.Instance.UseRacials,
@@ -134,7 +138,7 @@ namespace Singular
             _restBehavior = new Decorator(
                 ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                 new LockSelector(
-                    new Action( r  => { _guidLastTarget = 0; return RunStatus.Failure; } ),
+                    new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
                     Spell.WaitForGcdOrCastOrChannel(),
                     new HookExecutor(BehaviorType.Rest.ToString())
                     )
@@ -215,34 +219,27 @@ namespace Singular
         /// <param name="error">true: report error if composite not found, false: allow null composite</param>
         /// <param name="type">BehaviorType that should be loaded</param>
         /// <returns>true: composite loaded and saved to hook, false: failure</returns>
-        private bool EnsureComposite(bool error, BehaviorType type)
+        private bool EnsureComposite(bool error, WoWContext context, BehaviorType type)
         {
             int count = 0;
             Composite composite;
 
             Logger.WriteDebug("Creating " + type + " behavior.");
 
-            composite = CompositeBuilder.GetComposite(Class, TalentManager.CurrentSpec, type, CurrentWoWContext, out count);
+            composite = CompositeBuilder.GetComposite(Class, TalentManager.CurrentSpec, type, context, out count);
 
             // handle those composites we need to default if not found
             if (composite == null)
             {
-                switch (type)
-                {
-                case BehaviorType.Rest:
+                if ( type == BehaviorType.Rest)
                     composite = Helpers.Rest.CreateDefaultRestBehaviour();
-                    break;
-                }
             }
 
             TreeHooks.Instance.ReplaceHook(type.ToString(), composite);
 
             if ((composite == null || count <= 0) && error)
             {
-                StopBot(
-                    string.Format(
-                        "Singular currently does not support {0} for this class/spec combination, in this context! [{1}, {2}, {3}]",
-                        type, StyxWoW.Me.Class, TalentManager.CurrentSpec, CurrentWoWContext));
+                StopBot( string.Format( "Singular does not support {0} for this {1} {2} in {3} context!", type, StyxWoW.Me.Class, TalentManager.CurrentSpec, context));
                 return false;
             }
 

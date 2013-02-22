@@ -16,6 +16,7 @@ using Rest = Singular.Helpers.Rest;
 using Styx.Common;
 using System.Drawing;
 using System.Collections.Generic;
+using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Druid
 {
@@ -76,6 +77,8 @@ namespace Singular.ClassSpecific.Druid
                     Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 85 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)) > 1),
 
                     Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < 60),
+
+                    Spell.Buff("Cyclone", ctx => Me.HealthPercent < 60 ? null : Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsPlayer && u.CurrentTargetGuid == Me.Guid && (u.IsCasting || u.IsWithinMeleeRange))),
 
                     new Decorator(
                         ret => Me.HealthPercent < 40,
@@ -228,12 +231,17 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.BuffSelf("Moonkin Form"),
 
-                        Helpers.Common.CreateInterruptBehavior(),
+                        new PrioritySelector(
+                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.IsCasting && u.Distance <30 && u.CurrentTargetGuid == Me.Guid ),
+                            new Sequence(
+                                // following sequence takes advantage of Cast() monitoring spells with a cancel delegate for their entire cast
+                                Spell.Cast( "Ursol's Vortex", mov => true, on => (WoWUnit) on, ret => Spell.GetSpellCooldown( "Solar Beam").TotalSeconds == 0, cancel => false),
+                                Spell.Cast( "Entangling Roots", mov => true, on => (WoWUnit) on, ret => true, cancel => false  ),
+                                Spell.Cast( "Solar Beam", on => (WoWUnit) on)
+                                )
+                            ),
 
-                        // Spread MF/IS
-                        Spell.Buff("Faerie Fire", 
-                            ret => StyxWoW.Me.CurrentTarget.Class == WoWClass.Rogue ||
-                                   StyxWoW.Me.CurrentTarget.Class == WoWClass.Druid),
+                        // Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.Cast("Typhoon",
                             ret => Me.CurrentTarget.IsWithinMeleeRange 
@@ -242,29 +250,49 @@ namespace Singular.ClassSpecific.Druid
                                 && Me.CurrentTarget.Class != WoWClass.Hunter 
                                 && Me.IsSafelyFacing( Me.CurrentTarget, 90f)),
 
+                        Spell.Cast("Typhoon",
+                            ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8f) >= 1),
+
                         Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
-                        // make sure we always have DoTs 
-                        new Sequence(
-                            Spell.Cast("Sunfire", ret => Me.CurrentTarget.HasAuraExpired("Sunfire", 2)),
-                            new Action(ret => Logger.WriteDebug("Adding DoT:  Sunfire"))
+                        // use every Shooting Stars proc
+                        Spell.Cast( "Starsurge", ret => Me.ActiveAuras.ContainsKey( "Shooting Stars")),
+
+                        // Spread MF/IS on Rouges / Feral Druids first
+                        Spell.Buff("Faerie Fire",
+                            true,
+                            on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || p.HasAura("Cat Form")) && !p.HasAura("Faerie Fire") && p.Distance < 35 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight),
+                            req => true,
+                            0
                             ),
 
-                        new Sequence(
-                            Spell.Cast("Moonfire", ret => Me.CurrentTarget.HasAuraExpired("Moonfire", 2)),
-                            new Action(ret => Logger.WriteDebug("Adding DoT:  Moonfire"))
+                        // More DoTs!!  Dot EVERYTHING (including pets) to boost Shooting Stars proc chance
+                        new PrioritySelector(
+                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => !u.HasAllMyAuras( "Moonfire", "Sunfire") && Me.IsSafelyFacing(u) && u.InLineOfSpellSight ),
+                            Spell.Buff( "Moonfire", on => (WoWUnit) on),
+                            Spell.Buff( "Sunfire", on => (WoWUnit) on)
                             ),
 
-                        CreateDoTRefreshOnEclipse(),
+                        Spell.Cast( "Starfall"),
 
-                        Spell.Cast("Starsurge"),
-                        Spell.Cast("Starfall", ret => DruidSettings.UseStarfall),
+                        new Decorator( 
+                            ret => !Unit.NearbyUnfriendlyUnits.Any( u => u.CurrentTargetGuid == Me.Guid),
+                            new PrioritySelector(
+                                Spell.Cast("Wrath", ret => GetEclipseDirection() == EclipseType.Lunar ),
+                                Spell.Cast("Starfire", ret => GetEclipseDirection() == EclipseType.Solar )
+                                )
+                            ),
 
-                        Spell.Cast("Wrath",
-                            ret => GetEclipseDirection() == EclipseType.Lunar),
+                        // Now on any group target missing Weakened Armor
+                        Spell.Buff("Fairie Fire",
+                        on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < 35 && !u.HasAura("Weakened Armor")
+                                                                    && Unit.GroupMembers.Any(m => m.CurrentTargetGuid == u.Guid)
+                                                                    && Me.IsSafelyFacing(u) && u.InLineOfSpellSight)),
 
-                        Spell.Cast("Starfire",
-                            ret => GetEclipseDirection() == EclipseType.Solar)
+                        // Now any enemy missing Weakened Armor
+                        Spell.Buff("Fairie Fire", 
+                            on => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.Distance < 35 && !u.HasAura( "Weakened Armor") && Me.IsSafelyFacing(u) && u.InLineOfSpellSight ))
+
                         )
                     ),
 
@@ -466,9 +494,10 @@ namespace Singular.ClassSpecific.Druid
                         WoWAura eclips = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Eclipse (Solar)" || a.Name == "Eclipse (Lunar)");
                         string eclipsString = eclips == null ? "None" : (eclips.Name == "Eclipse (Solar)" ? "Solar" : "Lunar");
 
-                        log = string.Format(".... h={0:F1}%/m={1:F1}%, eclps={2}, towards={3}, eclps#={4}, mushcnt={5}",
+                        log = string.Format(".... h={0:F1}%/m={1:F1}%, form:{2}, eclps={3}, towards={4}, eclps#={5}, mushcnt={6}",
                             Me.HealthPercent,
                             Me.ManaPercent,
+                            Me.Shapeshift.ToString(),
                             eclipsString,
                             GetEclipseDirection().ToString(),
                             Me.CurrentEclipse,
@@ -503,18 +532,46 @@ namespace Singular.ClassSpecific.Druid
             return Common.CreateDruidCastSymbiosis(on => GetBalanceBestSymbiosisTarget());
         }
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
-        public static Composite CreateBalancePreCombatBuff(UnitSelectionDelegate onUnit)
+
+        [Behavior(BehaviorType.PullBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.All, 2)]
+        public static Composite CreateBalancePullBuff()
         {
             return new PrioritySelector(
+                Spell.BuffSelf("Moonkin Form")
+                );
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Normal, 2)]
+        public static Composite CreateBalanceCombatBuffNormal()
+        {
+            return new PrioritySelector(
+                Spell.BuffSelf("Moonkin Form")
+                );
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
+        public static Composite CreateBalanceCombatBuffBattlegrounds()
+        {
+            return new PrioritySelector(
+                Spell.BuffSelf("Moonkin Form"),
+
                 // Symbiosis
-                Spell.Cast("Mirror Image", ret => Me.GotTarget),
-                Spell.Cast("Hammer of Justice", ret => Me.GotTarget && !Me.CurrentTarget.IsBoss() && (Me.CurrentTarget.IsCasting || Me.CurrentTarget.IsPlayer)),
-                
-                Spell.BuffSelf("Unending Resolve", ret => Me.HealthPercent < DruidSettings.Barkskin),
-                Spell.BuffSelf("Anti-Magic Shell", ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == Me.Guid)),
+/*
+                Common.SymbCast("Mirror Image", on => Me.CurrentTarget, ret => Me.GotTarget && Me.Shapeshift == ShapeshiftForm.Moonkin),
+                Common.SymbCast("Hammer of Justice", on => Me.CurrentTarget, ret => Me.GotTarget && !Me.CurrentTarget.IsBoss() && (Me.CurrentTarget.IsCasting || Me.CurrentTarget.IsPlayer)),
+
+                Common.SymbBuff("Unending Resolve", on => Me, ret => Me.HealthPercent < DruidSettings.Barkskin),
+                Common.SymbBuff("Anti-Magic Shell", on => Me, ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == Me.Guid)),
                 // add mass dispel ...
-                Spell.BuffSelf("Cloak of Shadows", ret => Me.ActiveAuras.Any(a => a.Value.IsHarmful && a.Value.IsActive && a.Value.Spell.DispelType != WoWDispelType.None))
+                Common.SymbBuff("Cloak of Shadows", on => Me, ret => Me.ActiveAuras.Any(a => a.Value.IsHarmful && a.Value.IsActive && a.Value.Spell.DispelType != WoWDispelType.None))
+*/
+                Common.SymbCast( Symbiosis.MirrorImage, on => Me.CurrentTarget, ret => Me.GotTarget && Me.Shapeshift == ShapeshiftForm.Moonkin),
+                Common.SymbCast( Symbiosis.HammerOfJustice, on => Me.CurrentTarget, ret => Me.GotTarget && !Me.CurrentTarget.IsBoss() && (Me.CurrentTarget.IsCasting || Me.CurrentTarget.IsPlayer)),
+
+                Common.SymbBuff( Symbiosis.UnendingResolve, on => Me, ret => Me.HealthPercent < DruidSettings.Barkskin),
+                Common.SymbBuff( Symbiosis.AntiMagicShell, on => Me, ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == Me.Guid)),
+                // add mass dispel ...
+                Common.SymbBuff( Symbiosis.CloakOfShadows, on => Me, ret => Me.ActiveAuras.Any(a => a.Value.IsHarmful && a.Value.IsActive && a.Value.Spell.DispelType != WoWDispelType.None))
                 );
         }
 
@@ -531,8 +588,8 @@ namespace Singular.ClassSpecific.Druid
                 target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Paladin);
             if (target == null)
                 target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Rogue);
-            if (target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Priest);
+            // if (target == null)
+            //    target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Priest);
 
             return target;
         }

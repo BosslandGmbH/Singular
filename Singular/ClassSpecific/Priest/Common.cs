@@ -37,6 +37,10 @@ namespace Singular.ClassSpecific.Priest
 
     public class Common
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
+        public static bool HasTalent( PriestTalent tal ) { return TalentManager.IsSelected((int)tal); }
+
         [Behavior(BehaviorType.PreCombatBuffs,WoWClass.Priest)]
         public static Composite CreatePriestPreCombatBuffs()
         {
@@ -46,14 +50,13 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.BuffSelf("Shadowform"),
-                        //Spell.BuffSelf("Vampiric Embrace"), // VE is now a CD, not a normal buff
-                        // Spell.BuffSelf("Power Word: Fortitude", ret => Unit.NearbyFriendlyPlayers.Any(u => !u.IsDead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && CanCastFortitudeOn(u))),
                         PartyBuff.BuffGroup("Power Word: Fortitude"),
                         //Spell.BuffSelf("Shadow Protection", ret => SingularSettings.Instance.Priest().UseShadowProtection && Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && !Unit.HasAura(u, "Shadow Protection", 0))), // we no longer have Shadow resist
                         Spell.BuffSelf("Inner Fire", ret => SingularSettings.Instance.Priest().UseInnerFire),
                         Spell.BuffSelf("Inner Will", ret => !SingularSettings.Instance.Priest().UseInnerFire),
                         Spell.BuffSelf("Fear Ward", ret => SingularSettings.Instance.Priest().UseFearWard),
+
+                        Spell.BuffSelf("Shadowform"),
 
                         CreatePriestMovementBuff("PreCombat")
                         )
@@ -67,8 +70,9 @@ namespace Singular.ClassSpecific.Priest
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
-                    Spell.Cast("Guardian Spirit", on => StyxWoW.Me, ret => StyxWoW.Me.Stunned && StyxWoW.Me.HealthPercent < 20 && TalentManager.HasGlyph("Desperation")),
-                    Spell.Cast("Pain Suppression", on => StyxWoW.Me, ret => StyxWoW.Me.Stunned && TalentManager.HasGlyph("Desperation"))
+                    Spell.Cast("Guardian Spirit", on => Me, ret => Me.Stunned && Me.HealthPercent < 20 && TalentManager.HasGlyph("Desperation")),
+                    Spell.Cast("Pain Suppression", on => Me, ret => Me.Stunned && TalentManager.HasGlyph("Desperation")),
+                    Spell.Cast("Dispersion", on => Me, ret => Me.HealthPercent < 60)
                     )
                 );
         }

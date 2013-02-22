@@ -35,7 +35,7 @@ namespace Singular.Settings
         [DefaultValue(60)]
         [Category("Shadow")]
         [DisplayName("Shield Health Percent")]
-        [Description("Use PW:Shield on set HP. This will only be used for Mind Spike rotation")]
+        [Description("Use PW:Shield below this %")]
         public double ShieldHealthPercent { get; set; }
 
 /*
@@ -45,21 +45,21 @@ namespace Singular.Settings
         [DisplayName("Mind Blast Timer")]
         [Description("Casts mind blast anyway after this many seconds if we haven't got 3 shadow orbs")]
         public int MindBlastTimer { get; set; }
-
+*/
         [Setting]
         [DefaultValue(2)]
         [Category("Shadow")]
-        [DisplayName("Mind Blast Orbs")]
-        [Description("Casts mind blast once we get (at least) this many shadow orbs")]
-        public int MindBlastOrbs { get; set; }
-
+        [DisplayName("Orbs When Solo")]
+        [Description("Cast Devouring Plague at orb count in Normal (Solo) context")]
+        public int NormalContextOrbs { get; set; }
+/*
         [Setting]
         [DefaultValue(false)]
         [Category("Shadow")]
         [DisplayName("Devouring Plague First")]
         [Description("Casts devouring plague before anything else, useful for farming low hp mobs")]
         public bool DevouringPlagueFirst { get; set; }
-
+/*
         [Setting]
         [DefaultValue(false)]
         [Category("Shadow")]
@@ -166,11 +166,26 @@ namespace Singular.Settings
         public int ShadowfiendMana { get; set; }
 
         [Setting]
+        [DefaultValue(50)]
+        [Category("Common")]
+        [DisplayName("Mindbender Mana")]
+        [Description("Mindbender will be used at this value")]
+        public int MindbenderMana { get; set; }
+
+        [Setting]
         [DefaultValue(40)]
         [Category("Common")]
         [DisplayName("Hymn of Hope Mana")]
         [Description("Hymn of Hope will be used at this value")]
         public int HymnofHopeMana { get; set; }
+
+        [Setting]
+        [DefaultValue(30)]
+        [Category("Common")]
+        [DisplayName("Desperate Prayer Health %")]
+        [Description("Desperate Prayer used at this Health %")]
+        public int DesperatePrayerHealth { get; set; }
+                       
 
         //[Setting]
         //[DefaultValue(false)]

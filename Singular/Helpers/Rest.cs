@@ -47,10 +47,9 @@ namespace Singular.Helpers
         public static Composite CreateDefaultRestBehaviour(string spellHeal = null, string spellRez = null)
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
 
                 new Decorator(
-                    ret => !Me.IsDead && !Me.IsGhost && !Spell.IsGlobalCooldown(),
+                    ret => !Me.IsDead && !Me.IsGhost,
                     new PrioritySelector(
 
                 // Self-heal if possible

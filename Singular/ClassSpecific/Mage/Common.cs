@@ -25,6 +25,7 @@ namespace Singular.ClassSpecific.Mage
         private static MageSettings MageSettings { get { return SingularSettings.Instance.Mage(); } }
 
         private static WoWPoint locLastFrostArmor = WoWPoint.Empty;
+        private static WoWPoint locLastIceBarrier = WoWPoint.Empty;
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
         public static Composite CreateMagePreCombatBuffs()
@@ -51,16 +52,13 @@ namespace Singular.ClassSpecific.Mage
                                     return true;
                                     } ),
 
-                        Spell.BuffSelf("Mage Armor", ret => !Me.HasAura("Frost Armor")), 
+                                Spell.BuffSelf("Mage Armor", ret => !Me.HasAura("Frost Armor")), 
 
 
-                // Don't put up mana shield if we're arcane. Since our mastery works off of how much mana we have!
+                                // Don't put up mana shield if we're arcane. Since our mastery works off of how much mana we have!
                                 Spell.BuffSelf("Mana Shield", ret => TalentManager.CurrentSpec != WoWSpec.MageArcane)
                                 )
                             ),
-
-                        // We may not have it, but if we do, it should be up 100% of the time.
-                        Spell.BuffSelf("Ice Barrier"),
 
                         // Outside of BGs, we really only have 2 choices of armor. Molten, or mage. Mage for arcane, molten for frost/fire.
                         new Throttle( 3,
@@ -134,6 +132,14 @@ namespace Singular.ClassSpecific.Mage
 
         private static DateTime _cancelIceBlock = DateTime.MinValue;
 
+        [Behavior(BehaviorType.PullBuffs, WoWClass.Mage)]
+        public static Composite CreateMagePullBuffs()
+        {
+            return new PrioritySelector(
+                Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2))
+                );
+        }
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Mage)]
         public static Composite CreateMageCombatBuffs()
         {
@@ -147,24 +153,17 @@ namespace Singular.ClassSpecific.Mage
 
                         Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
-                        Spell.Cast("Evocation", on => Me, ret => HasTalent( MageTalent.Invocation) && !Me.ActiveAuras.ContainsKey( "Invoker's Energy")),
-                        Spell.BuffSelf("Evocation", 
+                        Spell.Buff(
+                            "Evocation", true, on => Me, 
                             ret => Me.ManaPercent < 30 
-                                || (Me.HealthPercent < 30 || (Me.HealthPercent < 60 && 2 <= Unit.NearbyUnfriendlyUnits.Count( u => u.IsAlive && u.Combat && u.IsTargetingMeOrPet )))
+                                || Me.HealthPercent < 30  
+                                || (Me.HealthPercent < 60 && 2 <= Unit.NearbyUnfriendlyUnits.Count( u => u.Combat && u.IsTargetingMeOrPet )),
+                            "Invoker's Energy"
                             ),
 
-                        new Throttle( TimeSpan.FromMilliseconds(10000),
-                            new Decorator(
-                                ret => !Me.HasAura("Rune of Power") && SpellManager.CanCast("Rune of Power"), // Rune of Power
-                                new Sequence(
-                                    new Action(ret => SpellManager.Cast("Rune of Power")),
-                                    new Action(ret => SpellManager.ClickRemoteLocation(Me.Location))
-                                    )
-                                )
-                            ),
+                        new Throttle( TimeSpan.FromMilliseconds(10000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => true, false) ),
 
                       //  Spell.CastOnGround("Rune of Power", loc => Me.Location.RayCast(Me.RenderFacing, 1.25f), ret => !Me.IsMoving),
-
 
                         Spell.Cast("Incanter's Ward", on => Me, ret => Me.HasAuraExpired("Incanter's Ward")),
 

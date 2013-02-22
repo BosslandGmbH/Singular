@@ -39,7 +39,8 @@ namespace Singular.ClassSpecific.Warrior
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
-                    Spell.Cast("Berserker Rage", on => Me, ret => Me.Fleeing)
+                    Spell.Buff("Berserker Rage", ret => Me.Fleeing),
+                    Spell.Buff("Enraged Regeneration", ret => Me.Stunned && StyxWoW.Me.HealthPercent < 60)
                     )
                 );
         }

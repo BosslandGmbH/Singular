@@ -234,15 +234,10 @@ namespace Singular.ClassSpecific.Druid
                         new Decorator(
                             ret => Me.HasAura( "Symbiosis") && !Me.HasAura("Prowl"),
                             new PrioritySelector(
-                                Spell.BuffSelf("Feral Spirit", 
-                                    ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances 
-                                        || Me.CurrentTarget.IsBoss()
-                                        || Me.CurrentTarget.IsPlayer
-                                        || Unit.NearbyUnfriendlyUnits.Count( u => u.IsTargetingMeOrPet ) >= 2),
-
-                                Spell.Cast("Shattering Blow", ret => Me.CurrentTarget.IsPlayer && Me.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield")),
-
-                                Spell.Cast("Death Coil", ret => !Me.CurrentTarget.IsWithinMeleeRange )
+                                Common.SymbCast(Symbiosis.BoneShield, on => Me, ret => true),
+                                Common.SymbBuff(Symbiosis.FeralSpirit, on => Me, ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances || Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count( u => u.IsTargetingMeOrPet ) >= 2),
+                                Common.SymbCast(Symbiosis.ShatteringBlow, on => Me.CurrentTarget, ret => Me.CurrentTarget.IsPlayer && Me.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield")),
+                                Common.SymbCast(Symbiosis.DeathCoil, on => Me.CurrentTarget, ret => !Me.CurrentTarget.IsWithinMeleeRange)
                                 )
                             ),
 #endregion

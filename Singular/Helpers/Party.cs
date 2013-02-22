@@ -172,12 +172,12 @@ namespace Singular.Helpers
         /// <summary>
         /// time next PartyBuff attempt allowed
         /// </summary>
-        public static DateTime timeAllowBuff = DateTime.Now;
+        public static DateTime timeAllowBuff = DateTime.MinValue;
 
         /// <summary>
         /// minimum TimeSpan to wait between PartyBuff casts
         /// </summary>
-        public static TimeSpan spanBuffFrequency = new TimeSpan(0,0,30);
+        public static TimeSpan spanBuffFrequency = new TimeSpan(0,0,20);
 
         private static int _secsBeforeBattle = 0;
 
@@ -192,7 +192,7 @@ namespace Singular.Helpers
             get 
             {
                 if ( _secsBeforeBattle == 0 )
-                    _secsBeforeBattle = new Random().Next(5, 12);
+                    _secsBeforeBattle = new Random().Next(6, 12);
 
                 return _secsBeforeBattle;
             }
@@ -229,7 +229,7 @@ namespace Singular.Helpers
             if (!Battlegrounds.IsInsideBattleground)
                 return true;
 
-            return DateTime.Now > (Battlegrounds.BattlefieldStartTime - new TimeSpan(0, 0, secsBeforeBattle));
+            return PVP.PrepTimeLeft < secsBeforeBattle;
         }
 
         /// <summary>
@@ -252,6 +252,7 @@ namespace Singular.Helpers
                         && (myMutexBuffs == null || myMutexBuffs.Count() == 0 || !onUnit(ret).GetAllAuras().Any(a => a.CreatorGuid == StyxWoW.Me.Guid && myMutexBuffs.Contains(a.Name))),
                     new Sequence(
                         Spell.Buff( name, onUnit, requirements),
+                        new Wait( 1, until => StyxWoW.Me.HasPartyBuff(name), new ActionAlwaysSucceed()),
                         new Action(ret =>
                             {                                   
                             System.Diagnostics.Debug.Assert( PartyBuffType.None != GetPartyBuffForSpell(name));
@@ -295,7 +296,7 @@ namespace Singular.Helpers
             return
                 new Decorator(ret => IsItTimeToBuff() 
                                     && SpellManager.HasSpell(name)
-                                    && (!StyxWoW.Me.Mounted || (Battlegrounds.IsInsideBattleground && DateTime.Now < Battlegrounds.BattlefieldStartTime)),
+                                    && (!StyxWoW.Me.Mounted || !PVP.IsPrepPhase),
                     new PrioritySelector(
                         ctx => Unit.GroupMembers.FirstOrDefault(m => m.IsAlive && m.DistanceSqr < 30 * 30 && (PartyBuffType.None != (m.GetMissingPartyBuffs() & GetPartyBuffForSpell(name)))),
                         BuffUnit(name, ctx => (WoWUnit)ctx, requirements, myMutexBuffs)

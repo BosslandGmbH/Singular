@@ -1,3 +1,112 @@
+--- Release 3.0.0.1887 ---
+
+General
+
+change- party/raid outside of Instances will now use Solo behaviors unless a Tank has been defined.  This must either be a character with the Tank Role set
+
+fixed - unable to load behaviors problems.  occurs when context (Solo, Battlegrounds, Instance) cannot be determined (memory read error, severe lag in load screen, etc.) and Bot allows CC to have control.  Will now load a do nothing behavior and wait for a stable state. also cached current state while loading behaviors to ensure a complete and consistent set are loaded.
+
+change- message at startup and change of context will indicate type of behaviors loaded
+
+fixed - interrupt support for all classes
+
+fixed - Party Buffs - should be cast only towards end of Battleground preparation phase
+
+fixed - Double Cast prevention logic to include cast target as part of the key so it did not prevent quickly speading DoTs to multiple targets (Priests, Warlocks)
+
+change- improved support for recognizing buffs that allow casting while moving
+
+fixed - pending spell recognition (spell on cursor after failed attempt to cast on target/ground)
+
+fixed - CastOnGround exception for casts made with no enemies in range
+
+
+Death Knight
+
+fixed - Blood - now correctly checks current target for facing and line of sight prior to Death Siphon and Death Strike.  Previously was check wrong unit resulting in missed opportunities for these abilities in certain cases
+
+
+Druid
+
+fixed - All - support for Druids using spells gained by Symbiosis
+
+*new* - Balance - support for Cyclone against players if our health is dropping and they are casting or in melee range
+
+*new* - Balance - in Battlegrounds, will now cast Ursol's Vortext / Entangling roots prior to Solar Beam
+
+change- Balance - in Battlegrounds, will cast Faerie Fire on all rogues / feral druids in range.  at lowest priority, will cast on any raid member target missing the weakened armor debuff, then any enemy target missing it
+
+change- Balance - Battleground priority changed to apply spread pressure.  will DoT everything, Starsurge on Shooting Star procs, and cast Wrath/Starfire as appropriate only if not being targeted (to reduce spell lock)
+
+
+Mage
+
+change- All - Ice Barrier now only cast prior to Pull or in Combat
+
+fixed - All - errant cast of Evocation on cooldown no longer occurs when you have Invocation talent
+
+
+Paladin
+
+*new* - All - setting to enable cast of Hammer of Justice immediately while solo.  more useful when Fist of Justice talent taken to reduce cooldown and reduce incoming damage
+
+
+Priest
+
+fixed - Shadow - now correctly re-enters Shadowform in all cases during combat after heal or other ability removes it
+
+change- Shadow - Dispersion now cast when stunned
+
+fixed - Shadow - Self-heal improved and recognizes Glyph of Dark Binding. will buff Prayer of Mending and Renew if equipped and health < 90%  
+
+fixed - Shadow - Self-heal now Desperate Prayer and Power Word: Shield.  
+
+change- Shadow - Flash Heal now cast using Health % from Shadow settings
+
+change- Shadow - Normal (solo) Combat rotation revamped to make use of cooldowns, casting Devouring Plague based upon orbs configured in settings (defaults to 2) and improved AOE
+
+change- Shadow - Battleground Combat changed to apply spread pressue until 3 orbs are built, then focuses burst on current target.  Rotation attempts to reduce number of non-instant casts until spread damage is applied
+
+change- All - does not cast Halo if find any enemy NPCs within 32 yards not already in combat with Priest/group
+
+change- All - use of Angelic Feather should be faster and no longer display message that it may have failed
+
+
+Shaman
+
+fixed - Resto - Greater Healing Wave now correctly cast
+
+fixed - Resto - Riptide bug when target dies.  Now correctly clears caches heal target info when target dies
+
+
+Warlock
+
+change - Affliction - Battleground priority change to apply spread pressure (yep, more dots...).  Recognizes Glyph of Siphon Life and prioritizes casts of Corruption.
+
+change - All - added settings for user control of Health Funnel
+
+fixed - Affliction - instant Pet Summon in Combat
+
+fixed - All - Dark Soul now cast in Battlegrounds
+
+fixed - All - support for Grimoire of Service
+
+*new* - All - support for Kil'jaeden's Cunning.  will cast if moving in combat and allow casts to occur if moving and buffed
+
+
+Warrior
+
+*new* - All - added cast of Enraged Regeneration when stunned and health below 60%
+
+fixed - Fury - cast of selected shout prior to Pull
+
+
+
+
+
+
+
+
 --- Release 3.0.0.1818 ---
 
 General

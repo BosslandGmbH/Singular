@@ -1,3 +1,58 @@
+--- Release 3.0.0.1903 ---
+
+General
+
+fixed - issue impacting classes which use DoTs for damage.  was causing them to refresh immediately so character would spend time primarily dotting same enemy over and over.  did not affect all classes but did detect on Affliction Warlocks and likely to have impacted Shadow Priests as well
+
+change- will prevent HonorBuddy from mounting during Battleground Prep phase until last 5 seconds.  
+
+
+
+Death Knight
+
+fixed - Blood - Raise Ally ability did not check user setting for this spec
+
+fixed - Blood - Death Strike cast on cooldown now for active mitigation.  no longer needs the 5 second rule
+
+fixed - Blood - was not checking if AOE disabled before casting Blood Boil
+
+change- Blood - added Horn of Winter cast at lowest priority for RP generation
+
+change- Blood - changed Taunt logic to cast ranged damage abilities if Dark Command and Death Grip are on cooldown
+
+change- Blood - revised checks for use of Blood Boil in spreading and refreshing diseases.
+
+fixed - All - recognizes Glyph of Pestilence to increase range
+
+
+Druid
+
+*new* - Balance - will Cyclone enemy if in need of a heal.  will spam heals until reaching 90% or cyclone breaks
+
+*new* - Balance - Normal context (solo) Pull specific behavior added.  Will now cast an instant spell if there is another player within 40yds of target since you will be competing for mobs. Otherwise, will cast a bigger hitting spell to maximize damage without instant agro.  
+
+*new* - Balance - Normal context (solo) added cast of Faerie Swarm (talent) if target is moving and more than 20yds away
+
+fixed - Balance - DoT clipping in Normal context in AoE situations
+
+fixed - Balance - Battleground support for Solar Beam - fixed issue with Ursol's Vortex / Entangling Roots not being cast to root in beam
+
+*new* - Balance - Battleground and Instance - will now cast Astral Communion to enter an eclipse state when no enemies nearby or near end of battleground prep state
+
+*new* - All - will cast Entangling Roots on adds that are out of range and do not have DoTs if in Normal form, Moonkin form, or have Predatory Swiftness
+
+*new* - All - log shows what spell is gained via Symbiosis
+
+
+Paladin 
+
+change- Prot - minor revisions to priorities 
+
+change- Prot - will cast range damage abilities on taunt target if Reckoning on cooldown
+
+
+
+
 --- Release 3.0.0.1887 ---
 
 General

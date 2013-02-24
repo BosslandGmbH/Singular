@@ -861,7 +861,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public WoWPoint FindLocation()
         {
-            return FindLocation(Me.Location);
+            return FindLocation(Me.GetTraceLinePos());
         }
 
         public WoWPoint FindLocation(WoWPoint ptOrigin)
@@ -877,7 +877,7 @@ namespace Singular.Helpers
             WoWPoint ptFurthest = WoWPoint.Empty;
             bool reallyCheckRangeToLineOfSightMob = CheckRangeToLineOfSightMob && Me.GotTarget;
             WoWPoint ptAdjOrigin = ptOrigin;
-            ptAdjOrigin.Z += 1f;
+            // ptAdjOrigin.Z += 1f;   // comment out origin adjustment since using GetTraceLinePos()
 
             WoWPoint ptDestination = new WoWPoint();
             List<WoWPoint> mobLocations = new List<WoWPoint>();
@@ -958,9 +958,9 @@ namespace Singular.Helpers
 
                     if (CheckSpellLineOfSightToMob && LineOfSightMob != null)
                     {
-                        if (!Styx.WoWInternals.World.GameWorld.IsInLineOfSpellSight(ptDestination, LineOfSightMob.Location))
+                        if (!Styx.WoWInternals.World.GameWorld.IsInLineOfSpellSight(ptDestination, LineOfSightMob.GetTraceLinePos()))
                         {
-                            if (!Styx.WoWInternals.World.GameWorld.IsInLineOfSight(ptDestination, LineOfSightMob.Location))
+                            if (!Styx.WoWInternals.World.GameWorld.IsInLineOfSight(ptDestination, LineOfSightMob.GetTraceLinePos()))
                             {
                                 // Logger.WriteDebug( Color.Cyan, "Mob-free location failed line of sight check for degrees={0:F1} dist={1:F1}", degreesFrom, distFromOrigin);
                                 countFailToMobLoS++;

@@ -61,6 +61,8 @@ namespace Singular.ClassSpecific.Druid
 
 
         private static bool _ImaMoonBeast = false;
+        private static WoWUnit _CycloneTarget;
+        private static DateTime _CycloneExpires = DateTime.MinValue;
 
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
         public static Composite CreateDruidBalanceHeal()
@@ -78,11 +80,23 @@ namespace Singular.ClassSpecific.Druid
 
                     Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < 60),
 
-                    Spell.Buff("Cyclone", ctx => Me.HealthPercent < 60 ? null : Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsPlayer && u.CurrentTargetGuid == Me.Guid && (u.IsCasting || u.IsWithinMeleeRange))),
-
                     new Decorator(
-                        ret => Me.HealthPercent < 40,
+                        ret => Me.HealthPercent < 40 || (DateTime.Now < _CycloneExpires && _CycloneTarget != null && _CycloneTarget.IsValid && _CycloneTarget.HasAura( "Cyclone")),
                         new PrioritySelector(
+
+                            new Sequence(
+                                new Action( 
+                                    r => _CycloneTarget = Unit.NearbyUnfriendlyUnits
+                                            .Where(u => u.CurrentTargetGuid == Me.Guid && u.Combat)
+                                            .OrderByDescending( k => k.IsPlayer)
+                                            .ThenBy( k => k.Guid == Me.CurrentTargetGuid )
+                                            .ThenBy( k => k.Distance2DSqr)
+                                            .FirstOrDefault() 
+                                    ),
+
+                                Spell.Buff("Cyclone", ctx => _CycloneTarget ),
+                                new Action( r => _CycloneExpires = DateTime.Now + TimeSpan.FromMilliseconds(5500))
+                                ),
 
                             new Decorator(
                                 ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)),
@@ -97,7 +111,7 @@ namespace Singular.ClassSpecific.Druid
 
                             new PrioritySelector(
                                 Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation")),
-                                Spell.Cast("Healing Touch", on => Me)
+                                Spell.Cast("Healing Touch", mov => true, on => Me, req => Me.GetPredictedHealthPercent(true) < 90, req => Me.HealthPercent > 95)
                                 )
                             )
                         )
@@ -110,6 +124,48 @@ namespace Singular.ClassSpecific.Druid
         #region Normal Rotation
 
         [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Normal)]
+        public static Composite CreateBalancePullNormal()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(35f),
+
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+
+                        // grinding or questing, if target meets these criteria cast an instant to tag quickly
+                        // 1. mob is less than 12 yds, so no benefit from delay in Wrath/Starsurge missile arrival
+                        // 2. area has another player possibly competing for mobs (we want to tag the mob quickly)
+                        new Decorator(
+                            ret => Me.CurrentTarget.Distance < 12
+                                || ObjectManager.GetObjectsOfType<WoWPlayer>(false, false).Any(p => p.Location.DistanceSqr(Me.CurrentTarget.Location) <= 40 * 40),
+                            new PrioritySelector(
+                                Spell.Cast("Sunfire", ret => GetEclipseDirection() == EclipseType.Solar),
+                                Spell.Cast("Moonfire")
+                                )
+                            ),
+
+                        // otherwise, start with a bigger hitter with cast time so we can follow 
+                        // with an instant to maximize damage at initial aggro
+                        Spell.Cast("Starsurge"),
+                        Spell.Cast("Wrath", ret => GetEclipseDirection() == EclipseType.Solar),
+
+                        // we are moving so throw an instant of some type
+                        Spell.Cast("Sunfire", ret => GetEclipseDirection() == EclipseType.Solar),
+                        Spell.Cast("Moonfire")
+                        )
+                    ),
+
+                Movement.CreateMoveToTargetBehavior(true, 38f)
+                );
+        }
+
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Normal)]
         public static Composite CreateDruidBalanceNormalCombat()
         {
@@ -130,6 +186,9 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
 
                         CreateBalanceDiagnosticOutputBehavior(),
+
+                        // Spell.Buff("Entangling Roots", ret => Me.CurrentTarget.Distance > 12),
+                        Spell.Buff("Faerie Swarm", ret => Me.CurrentTarget.IsMoving &&  Me.CurrentTarget.Distance > 20),
 
                         Spell.BuffSelf("Innervate",
                             ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
@@ -164,11 +223,11 @@ namespace Singular.ClassSpecific.Druid
 
                                 Spell.Cast("Moonfire",
                                     ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
-                                                u.Combat && !u.IsCrowdControlled() && !u.HasMyAura("Moonfire"))),
+                                                u.Combat && !u.IsCrowdControlled() && u.HasAuraExpired("Moonfire", 2))),
 
                                 Spell.Cast("Sunfire",
                                     ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
-                                                u.Combat && !u.IsCrowdControlled() && !u.HasMyAura("Sunfire")))
+                                                u.Combat && !u.IsCrowdControlled() && !u.HasAuraExpired("Sunfire", 2)))
                                 )
                             ),
 
@@ -176,12 +235,12 @@ namespace Singular.ClassSpecific.Druid
 
                         // make sure we always have DoTs 
                         new Sequence(
-                            Spell.Cast("Sunfire", ret => !Me.CurrentTarget.HasMyAura("Sunfire")),
+                            Spell.Buff("Sunfire", true, on => Me.CurrentTarget, req => true, 2),
                             new Action(ret => Logger.WriteDebug("Adding DoT:  Sunfire"))
                             ),
 
                         new Sequence(
-                            Spell.Cast("Moonfire", ret => !Me.CurrentTarget.HasMyAura("Moonfire")),
+                            Spell.Buff("Moonfire", true, on => Me.CurrentTarget, req => true, 2),
                             new Action(ret => Logger.WriteDebug("Adding DoT:  Moonfire"))
                             ),
 
@@ -235,9 +294,16 @@ namespace Singular.ClassSpecific.Druid
                             ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.IsCasting && u.Distance <30 && u.CurrentTargetGuid == Me.Guid ),
                             new Sequence(
                                 // following sequence takes advantage of Cast() monitoring spells with a cancel delegate for their entire cast
-                                Spell.Cast( "Ursol's Vortex", mov => true, on => (WoWUnit) on, ret => Spell.GetSpellCooldown( "Solar Beam").TotalSeconds == 0, cancel => false),
-                                Spell.Cast( "Entangling Roots", mov => true, on => (WoWUnit) on, ret => true, cancel => false  ),
-                                Spell.Cast( "Solar Beam", on => (WoWUnit) on)
+                                Spell.Cast( "Solar Beam", on => (WoWUnit) on),
+                                new PrioritySelector(
+                                    Spell.WaitForGcdOrCastOrChannel(),
+                                    new ActionAlwaysSucceed()
+                                    ),
+                                new PrioritySelector(
+                                    Spell.Cast("Ursol's Vortex", mov => true, on => (WoWUnit)on, ret => Spell.GetSpellCooldown("Solar Beam").TotalSeconds == 0, cancel => false),
+                                    Spell.Cast("Entangling Roots", on => (WoWUnit)on),
+                                    new ActionAlwaysSucceed()
+                                    )
                                 )
                             ),
 
@@ -261,7 +327,7 @@ namespace Singular.ClassSpecific.Druid
                         // Spread MF/IS on Rouges / Feral Druids first
                         Spell.Buff("Faerie Fire",
                             true,
-                            on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || p.HasAura("Cat Form")) && !p.HasAura("Faerie Fire") && p.Distance < 35 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight),
+                            on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || p.HasAura("Cat Form")) && !p.HasAnyAura("Faerie Fire", "Faerie Swarm") && p.Distance < 35 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight),
                             req => true,
                             0
                             ),
@@ -275,14 +341,22 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.Cast( "Starfall"),
 
-                        new Decorator( 
-                            ret => !Unit.NearbyUnfriendlyUnits.Any( u => u.CurrentTargetGuid == Me.Guid),
+                        new Decorator(
+                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid),
                             new PrioritySelector(
-                                Spell.Cast("Wrath", ret => GetEclipseDirection() == EclipseType.Lunar ),
-                                Spell.Cast("Starfire", ret => GetEclipseDirection() == EclipseType.Solar )
+                                Spell.Cast("Wrath", ret => GetEclipseDirection() == EclipseType.Lunar),
+                                Spell.Cast("Starfire", ret => GetEclipseDirection() == EclipseType.Solar)
                                 )
                             ),
-
+#if SPAM_INSTANT_TO_AVOID_SPELLLOCK
+                        new Decorator(
+                            ret => Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid),
+                            new PrioritySelector(
+                                Spell.Buff("Moonfire", req => !Me.HasAura("Eclipse (Solar)")),
+                                Spell.Buff("Sunfire")
+                                )
+                            ),
+#endif
                         // Now on any group target missing Weakened Armor
                         Spell.Buff("Fairie Fire",
                         on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < 35 && !u.HasAura("Weakened Armor")
@@ -435,7 +509,7 @@ namespace Singular.ClassSpecific.Druid
                     if (eclipseLastCheck != eclipseCurrent)
                     {
                         eclipseLastCheck = eclipseCurrent;
-                        newEclipseDotNeeded = true;
+                        newEclipseDotNeeded = eclipseLastCheck != EclipseType.None;
                     }
 
                     return RunStatus.Failure;
@@ -529,7 +603,15 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
         public static Composite CreateBalancePreCombatBuffBattlegrounds()
         {
-            return Common.CreateDruidCastSymbiosis(on => GetBalanceBestSymbiosisTarget());
+            return new PrioritySelector(
+                Common.CreateDruidCastSymbiosis(on => GetBalanceBestSymbiosisTarget()),
+                new Decorator(
+                    ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || !Unit.NearbyUnfriendlyUnits.Any(),
+                    new PrioritySelector(
+                        Spell.BuffSelf( "Astral Communion", ret => PVP.PrepTimeLeft < 20 && !Me.HasAnyAura("Eclipse (Lunar)","Eclipse (Solar)"))
+                        )
+                    )
+                );
         }
 
 

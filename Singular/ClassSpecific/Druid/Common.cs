@@ -84,15 +84,26 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
 
                 // will hibernate only if can cast in form, or already left form for some other reason
-                Spell.Buff("Hibernate", 
+                Spell.Buff("Hibernate",
                     ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
                         u => (u.IsBeast || u.IsDragon)
-                            && (Me.HasAura("Predatory Swiftness") || (!u.IsMoving  && Me.Shapeshift == ShapeshiftForm.Normal))
-                            && (!Me.GotTarget || Me.CurrentTarget.Location.Distance(u.Location) > 10 )
+                            && (Me.HasAura("Predatory Swiftness") || (!u.IsMoving && Me.Shapeshift == ShapeshiftForm.Normal))
+                            && (!Me.GotTarget || Me.CurrentTarget.Location.Distance(u.Location) > 10)
                             && Me.CurrentTargetGuid != u.Guid
-                            && !u.HasMyAura("Hibernate") 
+                            && !u.HasAnyAura("Hibernate", "Cyclone", "Entangling Roots")
                             )
                         ),
+
+                // will root only if can cast in form, or already left form for some other reason
+                Spell.Buff("Entangling Roots",
+                    ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                            u => (Me.HasAura("Predatory Swiftness") || Me.Shapeshift == ShapeshiftForm.Normal || Me.Shapeshift == ShapeshiftForm.Moonkin)
+                                && Me.CurrentTargetGuid != u.Guid
+                                && u.SpellDistance() > 15
+                                && !u.HasAnyAura("Hibernate", "Cyclone", "Entangling Roots", "Sunfire", "Moonfire")
+                            ),
+                    req => !Me.HasAura("Starfall")
+                    ),
 
                 // combat buffs - make sure we have target and in range and other checks
                 // ... to avoid wastine cooldowns
@@ -334,7 +345,7 @@ namespace Singular.ClassSpecific.Druid
                             new Action(r => Blacklist.Add(_targetSymb.Guid, BlacklistFlags.Combat, TimeSpan.FromSeconds(30))),
                             new Action(r => Me.ClearTarget()),
                             new Wait( TimeSpan.FromMilliseconds(500), until => Me.HasAura("Symbiosis"), new ActionAlwaysSucceed()),
-                            new Action( r => Logger.Write( "^Symbiosis: linked with {0}", _targetSymb.SafeName()))
+                            new Action( r => Logger.Write( "^Symbiosis: linked with {0}, gained spell {1}", _targetSymb.SafeName(), GetDruidSymbiosisOverrideName(_targetSymb )))
 /*
                             new Action(r => {
                                 var newSpell = SpellManager.Spells.Where( kvp => !_preSymb.Contains( kvp.Key )).FirstOrDefault();
@@ -471,11 +482,10 @@ namespace Singular.ClassSpecific.Druid
 
             if (Me.ChanneledCastingSpellId == 0)
             {
-                uint num = StyxWoW.WoWClient.Latency * 2u;
-                if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
+                if (Spell.IsCasting())
                     return false;
 
-                if (spell.CooldownTimeLeft.TotalMilliseconds > num)
+                if (spell.Cooldown)
                     return false;
             }
 
@@ -492,6 +502,58 @@ namespace Singular.ClassSpecific.Druid
                 SymbCast(id, on, req)
                 );
         }
+
+        /// <summary>
+        /// definately a hackaround, but until SpellManager dictionary gets updated for Druid when Symbiosis cast we are stuck with it
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        private static string GetDruidSymbiosisOverrideName(WoWUnit target)
+        {
+            if (!Me.HasAura("Symbiosis"))
+                return "-no link-";
+
+            int row = EnumValueRow[target.Class];
+            int col = EnumValueColumn[Me.Specialization];
+            int offset = (row * 4) + col;
+            return SymbSpellNames[offset];
+        }
+
+        private static Dictionary<WoWSpec, int> EnumValueColumn = new Dictionary<WoWSpec, int>()
+        {
+            { WoWSpec.DruidBalance, 0 },
+            { WoWSpec.DruidGuardian, 1 },
+            { WoWSpec.DruidFeral, 2 },
+            { WoWSpec.DruidRestoration, 3 },
+        };
+
+        private static Dictionary<WoWClass, int> EnumValueRow = new Dictionary<WoWClass, int>()
+        {
+            { WoWClass.DeathKnight, 0 },
+            { WoWClass.Hunter , 1 },
+            { WoWClass.Mage , 2 },
+            { WoWClass.Paladin , 3 },
+            { WoWClass.Priest , 4 },
+            { WoWClass.Rogue , 5 },
+            { WoWClass.Shaman , 6 },
+            { WoWClass.Warlock , 7 },
+            { WoWClass.Warrior , 8 },
+        };
+
+        private static string[] SymbSpellNames = new string[]
+    {
+        /*               BALANCE                GUARDIAN               FERAL                 RESTORATION                  */
+        /* DK      */    "Anti-Magic Shell"  ,  "Bone Shield"     ,    "Death Coil"      ,   "Icebound Fortitude"     ,
+        /* Hunter  */    "Misdirection"    ,    "Ice Trap"        ,    "Play Dead"       ,   "Deterrence"            ,
+        /* Mage    */    "Mirror Image"     ,   "Frost Armor"     ,    "Frost Nova"      ,   "Ice Block"              ,
+        /* Monk    */    "Grapple Weapon"   ,   "Elusive Brew"    ,    "Clash"          ,    "Fortifying Brew"        ,
+        /* Paladin */    "Hammer Of Justice" ,  "Consecration"    ,    "Divine Shield"   ,   "Cleanse"               ,
+        /* Priest  */    "Mass Dispel"      ,   "Fear Ward"       ,    "Dispersion"     ,    "Leap Of Faith"           ,
+        /* Rogue   */    "Cloak Of Shadows"  ,  "Feint"           ,    "Redirect"       ,    "Evasion"               ,
+        /* Shaman  */    "Purge"           ,    "Lightning Shield",    "Feral Spirit"    ,   "Spiritwalker's Grace"    ,
+        /* Warlock */    "Unending Resolve" ,   "Life Tap"        ,    "Soul Swap"       ,   "Demonic Circle Teleport" ,
+        /* Warrior */    "Intervene"       ,    "Spell Reflection",    "Shattering Blow" ,   "Intimidating Roar"      ,
+    };
 
 #if NOT_IN_USE
         public static Composite CreateEscapeFromCc()

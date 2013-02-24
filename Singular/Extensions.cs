@@ -129,52 +129,10 @@ namespace Singular
         }
 
         /// <summary>
-        /// checks if my aura is missing or has less than 3 seconds left. useful
-        /// to test for DoTs and HoTs you need to renew and already verified the
-        /// spell that applys the aura is known
+        /// converts bool to Y or N string
         /// </summary>
-        /// <param name="u">unit</param>
-        /// <param name="aura">true if less than 3 secs left, otherwise false</param>
+        /// <param name="b">bool to convert</param>
         /// <returns></returns>
-        public static bool MyAuraMissing(this WoWUnit u, string aura)
-        {
-            return u.MyAuraMissing(aura, 3);
-        }
-
-        public static bool MyAuraMissing(this WoWUnit u, string aura, int seconds)
-        {
-            return u.GetAuraTimeLeft(aura, true).TotalSeconds < seconds;
-        }
-
-        /// <summary>
-        /// checks if we know the spell that applies the aura and if the aura is missing.  
-        /// useful for cases testing to renew a DoT or HoT where the spell and the aura
-        /// have the same name.  allows single check without having to separately check
-        /// if you have learned the spell yet
-        /// </summary>
-        /// <param name="u">unit</param>
-        /// <param name="s">true if known and less than 3 secs left, otherwise false</param>
-        /// <returns></returns>
-        public static bool MyKnownSpellAuraMissing(this WoWUnit u, string spell)
-        {
-            return u.MyKnownSpellAuraMissing(spell, spell);
-        }
-
-        /// <summary>
-        /// checks if we know the spell that applies the aura and if the aura is missing.  
-        /// useful for cases testing to renew a DoT or HoT where the spell and the aura
-        /// have different names.  allows single check without having to separately check
-        /// if you have learned the spell yet
-        /// </summary>
-        /// <param name="u">unit</param>
-        /// <param name="s">true if known and less than 3 secs left, otherwise false</param>
-        /// <returns></returns>
-        public static bool MyKnownSpellAuraMissing(this WoWUnit u, string spell, string aura)
-        {
-            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, true).TotalSeconds < 3;
-        }
-
-
         public static string ToYN(this bool b)
         {
             return b ? "Y" : "N";

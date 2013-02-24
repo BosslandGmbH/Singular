@@ -175,7 +175,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         new PrioritySelector(
                             Spell.Cast("Gorefiend's Grasp"),
                             Spell.Cast("Remorseless Winter"),
-                            Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.MyAuraMissing("Necrotic Strike", 1)),
+                            Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.HasAuraExpired("Necrotic Strike", 1)),
                             CreateFrostAoeBehavior(),
                             Movement.CreateMoveToMeleeBehavior(true)
                             )
@@ -198,7 +198,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                   Spell.Cast("Obliterate",
                                              ret =>
                                              Me.HasAura(KillingMachine) && Common.UnholyRuneSlotsActive == 2),
-                                  Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.MyAuraMissing("Necrotic Strike", 1)),
+                                  Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.HasAuraExpired("Necrotic Strike", 1)),
 
                                   // RP Capped
                                   Spell.Cast("Frost Strike",
@@ -227,7 +227,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                                   // Killing Machine
                                   Spell.Cast("Obliterate", ret => Me.HasAura(KillingMachine)),
-                                  Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.MyAuraMissing("Necrotic Strike", 1)),
+                                  Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.HasAuraExpired("Necrotic Strike", 1)),
 
                                   // RP Capped
                                   Spell.Cast("Frost Strike",
@@ -306,8 +306,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                           Spell.Cast("Obliterate",
                                                      ret => Me.HasAura(KillingMachine) 
                                                          && Common.UnholyRuneSlotsActive == 2
-                                                         && !Me.CurrentTarget.MyAuraMissing("Frost Fever") 
-                                                         && !Me.CurrentTarget.MyAuraMissing("Blood Plague")),
+                                                         && !Me.CurrentTarget.HasAuraExpired("Frost Fever") 
+                                                         && !Me.CurrentTarget.HasAuraExpired("Blood Plague")),
                                           // RP Capped
                                           Spell.Cast("Frost Strike",
                                                      ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) 
@@ -318,8 +318,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                                          && Me.HasAura("Freezing Fog")),
                                           Spell.Cast("Obliterate",
                                                      ret => Common.UnholyRuneSlotsActive == 2
-                                                         && !Me.CurrentTarget.MyAuraMissing("Frost Fever")
-                                                         && !Me.CurrentTarget.MyAuraMissing("Blood Plague")),
+                                                         && !Me.CurrentTarget.HasAuraExpired("Frost Fever")
+                                                         && !Me.CurrentTarget.HasAuraExpired("Blood Plague")),
 
                                           // both Unholy Runes are off cooldown
                                           Spell.Cast("Frost Strike"),
@@ -374,19 +374,19 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Soul Reaper", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 35 && u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
 
                 // aoe aware disease apply - only checking current target because of ability to spread
-                Spell.Cast("Unholy Blight", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 10 && u.MyAuraMissing("Blood Plague"))),
-                Spell.Cast("Howling Blast", ret => Me.CurrentTarget.MyAuraMissing("Frost Fever")),
-                Spell.Cast("Outbreak", ret => Me.CurrentTarget.MyAuraMissing("Blood Plague")),   // only care about blood plague for this one
-                Spell.Cast("Plague Strike", ret => Me.CurrentTarget.MyAuraMissing("Blood Plague")),
+                Spell.Cast("Unholy Blight", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 10 && u.HasAuraExpired("Blood Plague"))),
+                Spell.Cast("Howling Blast", ret => Me.CurrentTarget.HasAuraExpired("Frost Fever")),
+                Spell.Cast("Outbreak", ret => Me.CurrentTarget.HasAuraExpired("Blood Plague")),   // only care about blood plague for this one
+                Spell.Cast("Plague Strike", ret => Me.CurrentTarget.HasAuraExpired("Blood Plague")),
 
                 Spell.Cast("Blood Boil",
                     ret => TalentManager.IsSelected((int) DeathKnightTalents.RollingBlood)
-                        && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.MyAuraMissing("Blood Plague"))
-                        && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.MyAuraMissing("Blood Plague"))),
+                        && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))
+                        && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.HasAuraExpired("Blood Plague"))),
 
                 Spell.Cast("Pestilence",
-                    ret => !Me.CurrentTarget.MyAuraMissing("Blood Plague")
-                        && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.MyAuraMissing("Blood Plague"))),
+                    ret => !Me.CurrentTarget.HasAuraExpired("Blood Plague")
+                        && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))),
 
                 Spell.Cast("Howling Blast", ret => Me.FrostRuneCount >= 2 || Me.DeathRuneCount >= 2),
                 Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location, ret => Me.UnholyRuneCount >= 2, false),

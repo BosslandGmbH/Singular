@@ -10,7 +10,10 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 using Styx.TreeSharp;
+using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
+using System.Drawing;
+using System;
 
 namespace Singular.ClassSpecific.Paladin
 {
@@ -22,19 +25,7 @@ namespace Singular.ClassSpecific.Paladin
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin(); } }
 
-        private const int RET_T13_ITEM_SET_ID = 1064;
-
-        private static int NumTier13Pieces
-        {
-            get
-            {
-                return StyxWoW.Me.CarriedItems.Count(i => i.ItemInfo.ItemSetId == RET_T13_ITEM_SET_ID);
-            }
-        }
-
-        private static bool Has2PieceTier13Bonus { get { return NumTier13Pieces >= 2; } }
-
-        private static int _mobCount;
+        private static int _aoeCount;
 
         #endregion
 
@@ -42,140 +33,213 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreateProtectionRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        // Rest up damnit! Do this first, so we make sure we're fully rested.
-                        Rest.CreateDefaultRestBehaviour( null, "Redemption")
-                        )
-                    )
+                // Rest up damnit! Do this first, so we make sure we're fully rested.
+                Rest.CreateDefaultRestBehaviour( "Flash of Light", "Redemption")
                 );
         }
 
 
-        [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinProtection)]
-        public static Composite CreateProtectionCombat()
-        {
-            return new PrioritySelector(
-                ctx => TankManager.Instance.FirstUnit ?? StyxWoW.Me.CurrentTarget,
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
-                Helpers.Common.CreateInterruptBehavior(),
-
-                // Seal twisting. If our mana gets stupid low, just throw on insight to get some mana back quickly, then put our main seal back on.
-                // This is Seal of Truth once we get it, Righteousness when we dont.
-                Common.CreatePaladinSealBehavior(),
-
-                // Defensive
-                Spell.BuffSelf("Hand of Freedom",
-                    ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
-                                                          WoWSpellMechanic.Disoriented,
-                                                          WoWSpellMechanic.Frozen,
-                                                          WoWSpellMechanic.Incapacitated,
-                                                          WoWSpellMechanic.Rooted,
-                                                          WoWSpellMechanic.Slowed,
-                                                          WoWSpellMechanic.Snared)),
-
-                Spell.BuffSelf("Divine Shield",
-                    ret => StyxWoW.Me.CurrentMap.IsBattleground && StyxWoW.Me.HealthPercent <= 20 && !StyxWoW.Me.HasAura("Forbearance")),
-
-                Spell.Cast("Reckoning",
-                    ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
-                    ret => SingularSettings.Instance.EnableTaunting && StyxWoW.Me.IsInInstance),
-
-                Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),
-
-                //Multi target
-                new Decorator(
-                    ret => Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 4,
-                    new PrioritySelector(
-                        Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower >= 3),
-                        Spell.Cast("Judgment", ret => SpellManager.HasSpell("Sanctified Wrath") && StyxWoW.Me.HasAura("Avenging Wrath")),
-                        Spell.Cast("Hammer of the Righteous"),
-                        Spell.Cast("Judgment"),
-                        Spell.Cast("Avenger's Shield", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Grand Crusader")),
-                        Spell.Cast("Consecration", ret => !StyxWoW.Me.IsMoving ),
-                        Spell.Cast("Avenger's Shield"),
-                        Spell.Cast("Holy Wrath"),
-                        Movement.CreateMoveToMeleeBehavior(true)
-                        )),
-                //Single target
-                Spell.Cast("Shield of the Righteous", ret => StyxWoW.Me.CurrentHolyPower >= 3),
-                Spell.Cast("Hammer of the Righteous", ret => !StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
-                Spell.Cast("Judgment", ret => SpellManager.HasSpell("Sanctified Wrath") && StyxWoW.Me.HasAura("Avenging Wrath")),
-                Spell.Cast("Crusader Strike"),
-                Spell.Cast("Judgment"),
-                Spell.Cast("Avenger's Shield", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Grand Crusader")),
-                Spell.Cast("Consecration", ret => !StyxWoW.Me.IsMoving),
-                Spell.Cast("Holy Wrath"),
-                Spell.BuffSelf("Sacred Shield", ret => SpellManager.HasSpell("Sacred Shield")),
-                Movement.CreateMoveToMeleeBehavior(true));
-        }
-
         [Behavior(BehaviorType.Pull, WoWClass.Paladin, WoWSpec.PaladinProtection)]
         public static Composite CreatePaladinProtectionPull()
         {
-            return
-                new PrioritySelector(
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateDismount("Pulling"),
-                    Helpers.Common.CreateAutoAttack(true),
-                    Spell.BuffSelf("Sacred Shield", ret => SpellManager.HasSpell("Sacred Shield")),
-                    Spell.Cast("Judgment"),
-                    Spell.Cast("Avenger's Shield"),
-                    Movement.CreateMoveToTargetBehavior(true, 5f)
-                    );
+            return new PrioritySelector(
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Helpers.Common.CreateAutoAttack(true),
+                        Spell.BuffSelf("Sacred Shield"),
+                        Spell.Cast("Judgment"),
+                        Spell.Cast("Avenger's Shield", ret => Spell.UseAOE ),
+                        Spell.Cast("Reckoning", ret => !Me.CurrentTarget.IsPlayer)
+                        )
+                    ),
+
+                Movement.CreateMoveToMeleeBehavior(true)
+                );
         }
 
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, WoWSpec.PaladinProtection)]
         public static Composite CreatePaladinProtectionCombatBuffs()
         {
-            return
-                new PrioritySelector(
-                    Spell.Cast(
-                        "Reckoning",
-                        ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
-                        ret => SingularSettings.Instance.EnableTaunting && TankManager.Instance.NeedToTaunt.Count != 0),
-                    Spell.BuffSelf("Avenging Wrath"),
-                    Spell.BuffSelf(
-                        "Lay on Hands",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().LayOnHandsHealth && !StyxWoW.Me.HasAura("Forbearance")),
-                    Spell.BuffSelf(
-                        "Guardian of Ancient Kings",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().GoAKHealth),
-                    Spell.BuffSelf(
-                        "Ardent Defender",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().ArdentDefenderHealth),
-                    Spell.BuffSelf(
-                        "Divine Protection",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().DivineProtectionHealthProt),
-                    // Symbiosis
-                    Spell.BuffSelf(
-                        "Barkskin",
-                        ret => StyxWoW.Me.HealthPercent <= SingularSettings.Instance.Paladin().DivineProtectionHealthProt 
-                            && !StyxWoW.Me.HasAura("Divine Protection")
-                            && Spell.GetSpellCooldown("Divine Protection", 6).TotalSeconds > 0),
+            return new PrioritySelector(
+                // Seal twisting. If our mana gets stupid low, just throw on insight to get some mana back quickly, then put our main seal back on.
+                // This is Seal of Truth once we get it, Righteousness when we dont.
+                Common.CreatePaladinSealBehavior(),
 
-                    Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 50 && StyxWoW.Me.CurrentHolyPower == 3),
-                    Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 25 && StyxWoW.Me.CurrentHolyPower == 2),
-                    Spell.BuffSelf("Word of Glory", ret => StyxWoW.Me.HealthPercent < 15 && StyxWoW.Me.CurrentHolyPower == 1)
-                    );
+                // Defensive
+                Spell.BuffSelf("Sacred Shield"),
+
+                Spell.BuffSelf("Hand of Freedom",
+                    ret => Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
+                                                            WoWSpellMechanic.Disoriented,
+                                                            WoWSpellMechanic.Frozen,
+                                                            WoWSpellMechanic.Incapacitated,
+                                                            WoWSpellMechanic.Rooted,
+                                                            WoWSpellMechanic.Slowed,
+                                                            WoWSpellMechanic.Snared)),
+
+                Spell.BuffSelf("Divine Shield",
+                    ret => Me.CurrentMap.IsBattleground && Me.HealthPercent <= 20 && !Me.HasAura("Forbearance")),
+
+                Spell.BuffSelf( "Lay on Hands",
+                    ret => Me.HealthPercent <= PaladinSettings.LayOnHandsHealth && !Me.HasAura("Forbearance")),
+
+                Spell.BuffSelf("Avenging Wrath", 
+                    ret => Me.CurrentTarget.IsWithinMeleeRange && (Me.CurrentTarget.TimeToDeath() > 25 || _aoeCount > 1)),
+
+                Spell.BuffSelf(
+                    "Guardian of Ancient Kings",
+                    ret => Me.HealthPercent <= PaladinSettings.GoAKHealth),
+
+                Spell.BuffSelf(
+                    "Ardent Defender",
+                    ret => Me.HealthPercent <= PaladinSettings.ArdentDefenderHealth),
+
+                Spell.BuffSelf(
+                    "Divine Protection",
+                    ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
+
+            // Symbiosis
+                Spell.BuffSelf(
+                    "Barkskin",
+                    ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt
+                        && !Me.HasAura("Divine Protection")
+                        && Spell.GetSpellCooldown("Divine Protection", 6).TotalSeconds > 0),
+
+                Spell.BuffSelf("Word of Glory",
+                    ret => Me.HealthPercent < 50 && (Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose"))
+                        || Me.HealthPercent < 25 && Me.CurrentHolyPower == 2
+                        || Me.HealthPercent < 15 && Me.CurrentHolyPower == 1)
+                );
         }
 
-        /*[Class(WoWClass.Paladin)]
-        [Spec(WoWSpec.PaladinProtection)]
-        [Behavior(BehaviorType.PullBuffs)]
-        [Context(WoWContext.All)]
-        public static Composite CreatePaladinProtectionPullBuffs()
+        [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinProtection)]
+        public static Composite CreateProtectionCombat()
         {
-            return
-                new PrioritySelector(
-                    Spell.BuffSelf("Divine Plea")
-                    );
-        }*/
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+
+                        new Action( r => {
+                            // Paladin AOE count should be those near paladin (consecrate, holy wrath) and those near target (avenger's shield)
+                            _aoeCount = TankManager.Instance.TargetList.Count(u => u.SpellDistance() < 10 || u.Location.Distance(Me.CurrentTarget.Location) < 10);
+                            return RunStatus.Failure;
+                            }),
+
+                        CreateProtDiagnosticOutputBehavior(),
+
+                        Helpers.Common.CreateAutoAttack(true),
+                        Helpers.Common.CreateInterruptBehavior(),
+
+                        // Taunts - if reckoning on cooldown, throw some damage at them
+                        new Decorator(
+                            ret => SingularSettings.Instance.EnableTaunting
+                                && TankManager.Instance.NeedToTaunt.Any()
+                                && TankManager.Instance.NeedToTaunt.FirstOrDefault().InLineOfSpellSight,
+                            new Throttle(TimeSpan.FromMilliseconds(1500),
+                                new PrioritySelector(
+                                    Spell.Cast("Reckoning", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault()),
+                                    Spell.Cast("Avenger's Shield", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(), req => Spell.UseAOE ),
+                                    Spell.Cast("Judgment", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault())
+                                    )
+                                )
+                            ),
+
+                        // Soloing move - open with stun to reduce incoming damage (best to take Fist of Justice talent if doing this
+                        Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),
+
+                        //Multi target
+                        new Decorator(
+                            ret => _aoeCount >= 4 && Spell.UseAOE,
+                            new PrioritySelector(
+                                Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose")),
+                                Spell.Cast("Judgment", ret => Common.HasTalent(PaladinTalents.SanctifiedWrath) && Me.HasAura("Avenging Wrath")),
+                                Spell.Cast("Hammer of the Righteous", ret => Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 8 && !u.HasAura("Weakened Blows"))),
+                                Spell.Cast("Judgment"),
+                                Spell.Cast("Avenger's Shield"),
+                                Spell.Cast("Consecration", ret => !Me.IsMoving),
+                        /// level 90 talents
+                                Spell.Cast("Holy Prism", on => Me),           // target enemy for Single target
+                                Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => Me.CurrentTarget != null, false),       // no mana cost
+                                Spell.Cast("Execution Sentence", 
+                                    on => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.HealthPercent < 20 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight )),               // no mana cost
+                        /// end of talents
+                                Spell.Cast("Holy Wrath"),
+                                Movement.CreateMoveToMeleeBehavior(true)
+                                )
+                            ),
+
+                        //Single target
+                        Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose")),
+                        Spell.Cast("Hammer of the Righteous", ret => Spell.UseAOE && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
+                        Spell.Cast("Judgment", ret => SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath")),
+                        Spell.Cast("Crusader Strike"),
+                        Spell.Cast("Judgment"),
+                        Spell.Cast("Avenger's Shield", ret => Spell.UseAOE),
+                        Spell.Cast("Consecration", ret => Spell.UseAOE && !Me.IsMoving),
+                        Spell.Cast("Hammer of Wrath", ret => Me.CurrentTarget.HealthPercent < 20),
+                        /// level 90 talent if avail
+                        Spell.Cast("Holy Prism", ret => Spell.UseAOE),           // target enemy for Single target
+                        Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => Spell.UseAOE && Me.GotTarget, false ),       // no mana cost
+                        Spell.Cast("Execution Sentence", ret => Me.CurrentTarget.HealthPercent < 20),               // no mana cost
+                        /// back to normal
+                        Spell.Cast("Holy Wrath")
+                        )
+                    ),
+
+                Movement.CreateMoveToMeleeBehavior(true));
+        }
+
+        private static Composite CreateProtDiagnosticOutputBehavior()
+        {
+            if (!SingularSettings.Debug)
+                return new Action(ret => { return RunStatus.Failure; });
+
+            return new Sequence(
+                new Action(r => SingularRoutine.UpdateDiagnosticCastingState()),
+                new ThrottlePasses(1, 1,
+                    new Action(ret =>
+                    {
+                        string sMsg;
+                        sMsg = string.Format(".... h={0:F1}%, m={1:F1}%, moving={2}, hpower={3}, grandcru={4}, divpurp={5}, sacshld={6}, mobs={7}",
+                            Me.HealthPercent,
+                            Me.ManaPercent,
+                            Me.IsMoving,
+                            Me.CurrentHolyPower,
+                            (long)Me.GetAuraTimeLeft("Grand Crusader").TotalMilliseconds,
+                            (long)Me.GetAuraTimeLeft("Divine Purpose").TotalMilliseconds,
+                            (long)Me.GetAuraTimeLeft("Sacred Shield").TotalMilliseconds, 
+
+                            _aoeCount
+                            );
+
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target != null)
+                        {
+                            sMsg += string.Format(
+                                ", {0}, {1:F1}%, {2:F1} yds, threat={3}% loss={4}",
+                                target.SafeName(),
+                                target.HealthPercent,
+                                target.Distance,
+                                (int) target.ThreatInfo.RawPercent,
+                                target.InLineOfSpellSight
+                                );
+                        }
+
+                        Logger.WriteDebug(Color.LightYellow, sMsg);
+                        return RunStatus.Failure;
+                    })
+                    )
+                );
+        }
     }
 }

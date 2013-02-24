@@ -17,6 +17,12 @@ namespace Singular.Managers
 
         private static void Mount_OnMountUp(object sender, MountUpEventArgs e)
         {
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && PVP.PrepTimeLeft > 5)
+            {
+                e.Cancel = true;
+                return;
+            }
+
             if (e.Destination == WoWPoint.Zero)
                 return;
 

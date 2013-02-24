@@ -969,9 +969,9 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => onUnit != null && onUnit(ret) != null
                     && name != null && !DoubleCastPreventionDict.Contains(onUnit(ret), name)
-                    && (!buffNames.Any() && onUnit(ret).HasAuraExpired(name, expirSecs) || buffNames.All(b => myBuff ? onUnit(ret).HasAuraExpired(b, expirSecs) : !onUnit(ret).HasAura(b))),
-                    new Sequence( 
-                        // new Action(ctx => _lastBuffCast = name),
+                    && ((!buffNames.Any() && onUnit(ret).HasAuraExpired(name, expirSecs)) || (buffNames.Any() && buffNames.All(b => myBuff ? onUnit(ret).HasAuraExpired(b, expirSecs) : !onUnit(ret).HasAura(b)))),
+                    new Sequence(
+                // new Action(ctx => _lastBuffCast = name),
                         Cast(name, chkMov => true, onUnit, requirements, cancel => false /* causes cast to complete */ ),
                         new Action(ret => UpdateDoubleCastDict(name, onUnit(ret)))
                         )
@@ -993,7 +993,7 @@ namespace Singular.Helpers
         }
 
         #endregion
-
+      
         #region BuffSelf - by name
 
         /// <summary>
@@ -1382,8 +1382,8 @@ namespace Singular.Helpers
                     ret => requirements(ret)
                         && onLocation != null
                         && SpellManager.CanCast(spell)
-                        && (StyxWoW.Me.Location.Distance(onLocation(ret)) <= SpellManager.Spells[spell].MaxRange || SpellManager.Spells[spell].MaxRange == 0)
-                        && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Location, onLocation(ret)),
+                        && LocationInRange( spell, onLocation(ret))
+                        && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), onLocation(ret)),
                     new Sequence(
                         new Action(ret => Logger.Write("Casting {0} at location {1} @ {2:F1} yds", spell, onLocation(ret), onLocation(ret).Distance(StyxWoW.Me.Location))),
 
@@ -1425,7 +1425,7 @@ namespace Singular.Helpers
                                     spell,
                                     onLocation(ret),
                                     StyxWoW.Me.Location.Distance(onLocation(ret)),
-                                    GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Location, onLocation(ret)),
+                                    GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), onLocation(ret)),
                                     StyxWoW.Me.IsSafelyFacing(onLocation(ret)),
                                     Me.HasPendingSpell(spell),
                                     PendingSpell()
@@ -1438,6 +1438,21 @@ namespace Singular.Helpers
                             )
                         )
                     );
+        }
+
+        private static bool LocationInRange(string spellName, WoWPoint loc)
+        {
+            SpellFindResults sfr;
+            if (SpellManager.FindSpell(spellName, out sfr))
+            {
+                WoWSpell spell = sfr.Override ?? sfr.Original;
+                if (spell.HasRange)
+                {
+                    return Me.Location.Distance(loc) < spell.MaxRange;
+                }
+            }
+
+            return false;
         }
 
         #endregion

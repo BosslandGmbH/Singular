@@ -149,7 +149,7 @@ namespace Singular.Helpers
                                 action,
                                 location(ret),
                                 StyxWoW.Me.Location.Distance(location(ret)),
-                                GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Pet.Location, location(ret)),
+                                GameWorld.IsInLineOfSpellSight(StyxWoW.Me.Pet.GetTraceLinePos(), location(ret)),
                                 StyxWoW.Me.Pet.IsSafelyFacing(location(ret))
                                 );
                             Lua.DoString("SpellStopTargeting()");

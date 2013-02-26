@@ -530,45 +530,6 @@ namespace Singular.Helpers
 
         #endregion
 
-        #region PreventDoubleCast
-
-        /// <summary>
-        /// Creates a composite to avoid double casting spells on current target. Mostly usable for spells like Immolate, Devouring Plague etc.
-        /// </summary>
-        /// <remarks>
-        /// Created 19/12/2011 raphus
-        /// </remarks>
-        /// <param name="spellNames"> Spell names to check </param>
-        /// <returns></returns>
-        public static Composite PreventDoubleCast(params string[] spellNames)
-        {
-            return PreventDoubleCast(ret => StyxWoW.Me.CurrentTarget, spellNames);
-        }
-
-        /// <summary>
-        /// Creates a composite to avoid double casting spells on specified unit. Mostly usable for spells like Immolate, Devouring Plague etc.
-        /// </summary>
-        /// <remarks>
-        /// Created 19/12/2011 raphus
-        /// </remarks>
-        /// <param name="unit"> Unit to check </param>
-        /// <param name="spellNames"> Spell names to check </param>
-        /// <returns></returns>
-        public static Composite PreventDoubleCast(UnitSelectionDelegate unit, params string[] spellNames)
-        {
-            return
-                new PrioritySelector(
-                    new Decorator(
-                        ret =>
-                        StyxWoW.Me.IsCasting && spellNames.Contains(StyxWoW.Me.CastingSpell.Name) && unit != null &&
-                        unit(ret) != null &&
-                        unit(ret).Auras.Any(
-                            a => a.Value.SpellId == StyxWoW.Me.CastingSpellId && a.Value.CreatorGuid == StyxWoW.Me.Guid),
-                        new Action(ret => SpellManager.StopCasting())));
-        }
-
-        #endregion
-
         #region Cast - by name
 
         /// <summary>
@@ -808,7 +769,7 @@ namespace Singular.Helpers
 
         #endregion
 
-        #region Buff - by name
+        #region Buff DoubleCast prevention mechanics
 
         public static string DoubleCastKey(ulong guid, string spellName)
         {
@@ -825,8 +786,22 @@ namespace Singular.Helpers
             return dict.ContainsKey(DoubleCastKey(unit, spellName));
         }
 
+        public static bool ContainsAny(this Dictionary<string, DateTime> dict, WoWUnit unit, params string[] spellNames)
+        {
+            return spellNames.Any(s => dict.ContainsKey(DoubleCastKey(unit, s)));
+        }
+
+        public static bool ContainsAll(this Dictionary<string, DateTime> dict, WoWUnit unit, params string[] spellNames)
+        {
+            return spellNames.All(s => dict.ContainsKey(DoubleCastKey(unit, s)));
+        }
+
         public static readonly Dictionary<string, DateTime> DoubleCastPreventionDict =
             new Dictionary<string, DateTime>();
+
+        #endregion
+
+        #region Buff - by name
 
         public static Composite Buff(string name, params string[] buffNames)
         {

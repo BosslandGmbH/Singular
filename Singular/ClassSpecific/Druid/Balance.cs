@@ -17,6 +17,7 @@ using Styx.Common;
 using System.Drawing;
 using System.Collections.Generic;
 using CommonBehaviors.Actions;
+using Styx.Pathing;
 
 namespace Singular.ClassSpecific.Druid
 {
@@ -44,6 +45,7 @@ namespace Singular.ClassSpecific.Druid
         }
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static WoWUnit Target { get { return Me.CurrentTarget; } }
 
         static int MushroomCount
         {
@@ -61,8 +63,7 @@ namespace Singular.ClassSpecific.Druid
 
 
         private static bool _ImaMoonBeast = false;
-        private static WoWUnit _CycloneTarget;
-        private static DateTime _CycloneExpires = DateTime.MinValue;
+        private static WoWUnit _CrowdControlTarget;
 
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
         public static Composite CreateDruidBalanceHeal()
@@ -73,41 +74,69 @@ namespace Singular.ClassSpecific.Druid
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
 
-                    Spell.Cast( "Rejuvenation", mov => false, on => Me, ret => _ImaMoonBeast && Me.HasAuraExpired("Rejuvenation", 1)), 
+            #region Avoidance 
 
+                    Spell.Cast("Typhoon",
+                        ret => Me.CurrentTarget.SpellDistance() < 8 
+                            && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.HealthPercent < 50))
+                            && Me.CurrentTarget.Class != WoWClass.Priest
+                            && (Me.CurrentTarget.Class != WoWClass.Warlock || Me.CurrentTarget.CastingSpellId == 1949 /*Hellfire*/ || Me.CurrentTarget.HasAura("Immolation Aura"))
+                            && Me.CurrentTarget.Class != WoWClass.Hunter
+                            && Me.IsSafelyFacing(Me.CurrentTarget, 90f)),
+
+                    new Decorator(
+                        ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.SpellDistance() < 8)
+                            && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.HealthPercent < 50)),
+                        CreateDruidAvoidanceBehavior(CreateSlowMeleeBehavior(), null, null)
+                        ),
+
+            #endregion 
+
+                    Spell.Cast("Rejuvenation", mov => false, on => Me, ret => _ImaMoonBeast && Me.HasAuraExpired("Rejuvenation", 1)),
+
+                    Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < 60),
                     Spell.Cast("Renewal", ret => Me.HealthPercent < DruidSettings.RenewalHealth),
                     Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 85 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)) > 1),
 
-                    Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < 60),
-
                     new Decorator(
-                        ret => Me.HealthPercent < 40 || (DateTime.Now < _CycloneExpires && _CycloneTarget != null && _CycloneTarget.IsValid && _CycloneTarget.HasAura( "Cyclone")),
+                        ret => Me.HealthPercent < 40 || (_CrowdControlTarget != null && _CrowdControlTarget.IsValid && (_CrowdControlTarget.IsCrowdControlled() || Spell.DoubleCastPreventionDict.ContainsAny( _CrowdControlTarget, "Disorienting Roar", "Mighty Bash", "Cyclone", "Hibernate"))),
                         new PrioritySelector(
 
-                            new Sequence(
-                                new Action( 
-                                    r => _CycloneTarget = Unit.NearbyUnfriendlyUnits
-                                            .Where(u => u.CurrentTargetGuid == Me.Guid && u.Combat)
-                                            .OrderByDescending( k => k.IsPlayer)
-                                            .ThenBy( k => k.Guid == Me.CurrentTargetGuid )
-                                            .ThenBy( k => k.Distance2DSqr)
-                                            .FirstOrDefault() 
-                                    ),
-
-                                Spell.Buff("Cyclone", ctx => _CycloneTarget ),
-                                new Action( r => _CycloneExpires = DateTime.Now + TimeSpan.FromMilliseconds(5500))
-                                ),
+                            Spell.Buff("Disorienting Roar", req => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.IsCrowdControlled()),
+                            Spell.Buff("Mighty Bash", req => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.IsCrowdControlled()),
 
                             new Decorator(
-                                ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)),
+                                ret => 1 == Unit.NearbyUnitsInCombatWithMe.Count(),
                                 new PrioritySelector(
-                                    Spell.Cast("Disorienting Roar"),
-                                    Spell.Cast("Might of Ursoc")
+                                    new Action(r =>
+                                    {
+                                        if (_CrowdControlTarget == null || !_CrowdControlTarget.IsValid || _CrowdControlTarget.Distance > 40)
+                                        {
+                                            _CrowdControlTarget = Unit.NearbyUnfriendlyUnits
+                                                .Where(u => u.CurrentTargetGuid == Me.Guid && u.Combat && !u.IsCrowdControlled())
+                                                .OrderByDescending(k => k.IsPlayer)
+                                                .ThenBy(k => k.Guid == Me.CurrentTargetGuid)
+                                                .ThenBy(k => k.Distance2DSqr)
+                                                .FirstOrDefault();
+                                        }
+                                        return RunStatus.Failure;
+                                    }),
+
+                                    Spell.Buff("Hibernate", true, ctx => _CrowdControlTarget, req => _CrowdControlTarget.IsBeast || _CrowdControlTarget.IsDragon, "Hibernate", "Cyclone"),
+                                    Spell.Buff("Cyclone", true, ctx => _CrowdControlTarget, req => true, "Hibernate", "Cyclone")
                                     )
                                 ),
 
                             // heal out of form at this point (try to Barkskin at least to prevent spell pushback)
                             new Throttle(Spell.BuffSelf("Barkskin")),
+
+                            new Decorator(
+                                req => !Group.AnyHealerNearby && (Me.CurrentTarget.TimeToDeath() > 15 || Unit.NearbyUnitsInCombatWithMe.Count() > 1),
+                                new PrioritySelector(
+                                    Spell.BuffSelf("Nature's Vigil"),
+                                    Spell.BuffSelf("Heart of the Wild")
+                                    )
+                                ),
 
                             new PrioritySelector(
                                 Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation")),
@@ -169,10 +198,13 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Normal)]
         public static Composite CreateDruidBalanceNormalCombat()
         {
+            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), null, null);
+
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(
 
                 Safers.EnsureTarget(),
+
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
@@ -186,6 +218,11 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
 
                         CreateBalanceDiagnosticOutputBehavior(),
+
+                        new Decorator( 
+                            ret => Me.HealthPercent < 40 && Unit.NearbyUnitsInCombatWithMe.Any( u => u.IsWithinMeleeRange),
+                            CreateDruidAvoidanceBehavior( CreateSlowMeleeBehavior(), null, null)
+                            ),
 
                         // Spell.Buff("Entangling Roots", ret => Me.CurrentTarget.Distance > 12),
                         Spell.Buff("Faerie Swarm", ret => Me.CurrentTarget.IsMoving &&  Me.CurrentTarget.Distance > 20),
@@ -203,23 +240,21 @@ namespace Singular.ClassSpecific.Druid
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
 
-                                Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount == 3),
+                                Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount >= 3),
 
                                 // If Detonate is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
                                 new Sequence(
                                     Spell.CastOnGround("Wild Mushroom",
                                         ret => BestAoeTarget.Location,
-                                        ret => BestAoeTarget != null && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds <= 5),
+                                        ret => BestAoeTarget != null && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds <= 4),
                                     new Action(ctx => Lua.DoString("SpellStopTargeting()"))
                                     ),
 
                                 Spell.CastOnGround("Force of Nature",
                                     ret => StyxWoW.Me.CurrentTarget.Location,
-                                    ret => true ),
+                                    ret => true),
 
-                                Spell.Cast("Starfall",
-                                    ret => StyxWoW.Me,
-                                    ret => DruidSettings.UseStarfall),
+                                Spell.Cast("Starfall"),
 
                                 Spell.Cast("Moonfire",
                                     ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
@@ -232,6 +267,9 @@ namespace Singular.ClassSpecific.Druid
                             ),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        // detonate any left over mushrooms that may exist now we are below AoE count
+                        Spell.Cast("Wild Mushroom: Detonate", ret => Spell.UseAOE && MushroomCount > 0),
 
                         // make sure we always have DoTs 
                         new Sequence(
@@ -247,7 +285,7 @@ namespace Singular.ClassSpecific.Druid
                         CreateDoTRefreshOnEclipse(),
 
                         Spell.Cast("Starsurge"),
-                        Spell.Cast("Starfall", ret => DruidSettings.UseStarfall),
+                        Spell.Cast("Starfall", ret => Me.CurrentTarget.IsPlayer || (Me.CurrentTarget.Elite && (Me.CurrentTarget.Level + 10) >= Me.Level)),
 
                         Spell.Cast("Wrath",
                             ret => GetEclipseDirection() == EclipseType.Lunar ),
@@ -269,7 +307,10 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds)]
         public static Composite CreateDruidBalancePvPCombat()
         {
+            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), null, null);
+
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
+
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
@@ -300,7 +341,7 @@ namespace Singular.ClassSpecific.Druid
                                     new ActionAlwaysSucceed()
                                     ),
                                 new PrioritySelector(
-                                    Spell.Cast("Ursol's Vortex", mov => true, on => (WoWUnit)on, ret => Spell.GetSpellCooldown("Solar Beam").TotalSeconds == 0, cancel => false),
+                                    Spell.CastOnGround("Ursol's Vortex", loc => ((WoWUnit)loc).Location, req => Me.GotTarget, false),
                                     Spell.Cast("Entangling Roots", on => (WoWUnit)on),
                                     new ActionAlwaysSucceed()
                                     )
@@ -309,17 +350,10 @@ namespace Singular.ClassSpecific.Druid
 
                         // Helpers.Common.CreateInterruptBehavior(),
 
-                        Spell.Cast("Typhoon",
-                            ret => Me.CurrentTarget.IsWithinMeleeRange 
-                                && Me.CurrentTarget.Class != WoWClass.Priest
-                                && (Me.CurrentTarget.Class != WoWClass.Warlock || Me.CurrentTarget.CastingSpellId == 1949 /*Hellfire*/ || Me.CurrentTarget.HasAura("Immolation Aura"))
-                                && Me.CurrentTarget.Class != WoWClass.Hunter 
-                                && Me.IsSafelyFacing( Me.CurrentTarget, 90f)),
+                        Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
                         Spell.Cast("Typhoon",
                             ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8f) >= 1),
-
-                        Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
                         // use every Shooting Stars proc
                         Spell.Cast( "Starsurge", ret => Me.ActiveAuras.ContainsKey( "Shooting Stars")),
@@ -675,6 +709,238 @@ namespace Singular.ClassSpecific.Druid
 
             return target;
         }
+
+        #region Avoidance and Disengage
+
+        /// <summary>
+        /// creates a Druid specific avoidance behavior based upon settings.  will check for safe landing
+        /// zones before using WildCharge or rocket jump.  will additionally do a running away or jump turn
+        /// attack while moving away from attacking mob if behaviors provided
+        /// </summary>
+        /// <param name="nonfacingAttack">behavior while running away (back to target - instants only)</param>
+        /// <param name="jumpturnAttack">behavior while facing target during jump turn (instants only)</param>
+        /// <returns></returns>
+        public static Composite CreateDruidAvoidanceBehavior(Composite slowAttack, Composite nonfacingAttack, Composite jumpturnAttack)
+        {
+            return new PrioritySelector(
+                CreateDruidDisengageBehavior( slowAttack, nonfacingAttack, jumpturnAttack ),
+                CreateDruidKiteBehavior( slowAttack, nonfacingAttack , jumpturnAttack )
+                );
+        }
+
+        public static Composite CreateDruidDisengageBehavior(Composite slowAttack, Composite nonfacingAttack, Composite jumpturnAttack)
+        {
+            return new Decorator(
+                ret => MovementManager.IsClassMovementAllowed && DruidSettings.UseWildCharge,
+                new PrioritySelector(
+                    Disengage.CreateDisengageBehavior("Wild Charge", Disengage.Direction.Backwards, 20, CreateSlowMeleeBehavior()),
+                    Disengage.CreateDisengageBehavior("Displacer Beast", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
+                    )
+                );
+        }
+
+        public static Composite CreateDruidKiteBehavior(Composite slowAttack, Composite nonfacingAttack, Composite jumpturnAttack)
+        {
+            return new Decorator(
+                ret => MovementManager.IsClassMovementAllowed && NextWildChargeAllowed < DateTime.Now && DruidSettings.AllowKiting,
+                Kite.BeginKitingBehavior()
+                );
+        }
+
+        private static bool useDisplacerBeast;
+        private static WoWUnit mobToGetAwayFrom;
+        private static WoWPoint origSpot;
+        private static WoWPoint safeSpot;
+        private static float needFacing;
+        public static DateTime NextWildChargeAllowed = DateTime.MinValue;
+
+        public static Composite CreateWildChargeBehavior( Composite slowAttack )
+        {
+            return
+                new Decorator(
+                    ret => IsWildChargeNeeded(),
+                    new Sequence(
+                        new PrioritySelector(
+                            new Decorator(
+                                ret => slowAttack != null,
+                                new Sequence(
+                                    new Action( r => Logger.WriteDebug( "attempting to slow")),
+                                    slowAttack,
+                                    new WaitContinue(1, rdy => !Me.IsCasting && !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed())
+                                    )
+                                ),
+                            new ActionAlwaysSucceed()
+                            ),
+
+                        new Action( r => Logger.WriteDebug( "face {0} safespot as needed", useDisplacerBeast ? "towards" : "away from")),
+                        new Action(ret =>
+                        {
+                            origSpot = new WoWPoint(Me.Location.X, Me.Location.Y, Me.Location.Z);
+                            if (useDisplacerBeast)
+                                needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, safeSpot);
+                            else
+                                needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(safeSpot, Me.Location);
+
+                            needFacing = WoWMathHelper.NormalizeRadian(needFacing);
+                            float rotation = WoWMathHelper.NormalizeRadian(Math.Abs(needFacing - Me.RenderFacing));
+                            Logger.WriteDebug(Color.Cyan, "DIS: turning {0:F0} degrees {1} safe landing spot",
+                                WoWMathHelper.RadiansToDegrees(rotation), useDisplacerBeast ? "towards" : "away from");
+                            Me.SetFacing(needFacing);
+                        }),
+
+                        new Action( r => Logger.WriteDebug( "wait for facing to complete")),
+                        new PrioritySelector(
+                            new Wait(new TimeSpan(0, 0, 1), ret => Me.IsDirectlyFacing(needFacing), new ActionAlwaysSucceed()),
+                            new Action(ret =>
+                            {
+                                Logger.WriteDebug(Color.Cyan, "DIS: timed out waiting to face safe spot - need:{0:F4} have:{1:F4}", needFacing, Me.RenderFacing);
+                                return RunStatus.Failure;
+                            })
+                            ),
+
+                        // stop facing
+                        new Action(ret =>
+                        {
+                            Logger.WriteDebug(Color.Cyan, "DIS: cancel facing now we point the right way");
+                            WoWMovement.StopFace();
+                        }),
+
+                        new Action( r => Logger.WriteDebug( "set time of WildCharge just prior")),
+                        new Sequence(
+                            new PrioritySelector(
+                                    new Decorator(ret => !useDisplacerBeast, Spell.BuffSelf("Wild Charge")),
+                                    new Decorator(ret => useDisplacerBeast, Spell.BuffSelf("Displacer Beast")),
+                                    new Action(ret =>
+                                    {
+                                        Logger.WriteDebug(Color.Cyan, "DIS: {0} cast appears to have failed", useDisplacerBeast ? "Displacer Beast" : "Wild Charge");
+                                        return RunStatus.Failure;
+                                    })
+                                    ),
+                            new WaitContinue(1, req => !Me.IsAlive || !Me.IsFalling, new ActionAlwaysSucceed()),
+                            new Action(ret =>
+                            {
+                                NextWildChargeAllowed = DateTime.Now.Add(new TimeSpan(0, 0, 0, 0, 750));
+                                Logger.WriteDebug(Color.Cyan, "DIS: finished {0} cast", useDisplacerBeast ? "Displacer Beast" : "Wild Charge");
+                                Logger.WriteDebug(Color.Cyan, "DIS: jumped {0:F1} yds away from orig={1} to curr={2}", Me.Location.Distance(safeSpot), origSpot, Me.Location);
+                                if (Kite.IsKitingActive())
+                                    Kite.EndKiting(String.Format("BP: Interrupted by {0}", useDisplacerBeast ? "Displacer Beast" : "Wild Charge"));
+                                return RunStatus.Success;
+                            })
+                            )
+
+                    )
+                );
+        }
+
+        public static bool IsWildChargeNeeded()
+        {
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                return false;
+
+            if (!Me.IsAlive || Me.IsFalling || Me.IsCasting || Me.IsSwimming )
+                return false;
+
+            if (Me.Stunned || Me.Rooted || Me.IsStunned() || Me.IsRooted())
+                return false;
+
+            if (NextWildChargeAllowed > DateTime.Now)
+                return false;
+
+            useDisplacerBeast = false;
+            if (!SpellManager.CanCast("Wild Charge", Me, false, false))
+            {
+                if (!SpellManager.CanCast("Displacer Beast", Me, false, false))
+                    return false;
+
+                useDisplacerBeast = true;
+            }
+
+            mobToGetAwayFrom = SafeArea.NearestEnemyMobAttackingMe;
+            if (mobToGetAwayFrom == null)
+                return false;
+
+
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+            {
+                List<WoWUnit> attackers = SafeArea.AllEnemyMobsAttackingMe.ToList();
+                if ((attackers.Sum(a => a.MaxHealth) / 4) < Me.MaxHealth && Me.HealthPercent > 40)
+                    return false;
+            }
+            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+            {
+                switch (mobToGetAwayFrom.Class)
+                {
+                    default:
+                        return false;
+
+                    case WoWClass.DeathKnight:
+                    case WoWClass.Druid:
+                    case WoWClass.Monk:
+                    case WoWClass.Paladin:
+                    case WoWClass.Rogue:
+                    case WoWClass.Shaman:
+                        break;
+                }
+            }
+
+            if (mobToGetAwayFrom.Distance > mobToGetAwayFrom.MeleeDistance() + 3f)
+                return false;
+
+            SafeArea sa = new SafeArea();
+            sa.MinScanDistance = 20;    // average distance on flat ground
+            sa.MaxScanDistance = sa.MinScanDistance;
+            sa.RaysToCheck = 36;
+            sa.LineOfSightMob = Target;
+            sa.MobToRunFrom = mobToGetAwayFrom;
+            sa.CheckLineOfSightToSafeLocation = true;
+            sa.CheckSpellLineOfSightToMob = false;
+
+            safeSpot = sa.FindLocation();
+            if (safeSpot == WoWPoint.Empty)
+            {
+                Logger.WriteDebug(Color.Cyan, "DIS: no safe landing spots found for {0}", useDisplacerBeast ? "Displacer Beast" : "Wild Charge");
+                return false;
+            }
+
+            Logger.WriteDebug(Color.Cyan, "DIS: Attempt safe {0} due to {1} @ {2:F1} yds",
+                useDisplacerBeast ? "Displacer Beast" : "Wild Charge",
+                mobToGetAwayFrom.SafeName(),
+                mobToGetAwayFrom.Distance);
+
+            return true;
+        }
+
+        private static Composite CreateSlowMeleeBehavior()
+        {
+            return new PrioritySelector(
+                ctx => SafeArea.NearestEnemyMobAttackingMe,
+                new Decorator(
+                    ret => ret != null,
+                    new PrioritySelector(
+                        new Throttle( 2,
+                            new PrioritySelector(
+                                Spell.CastOnGround("Ursol's Vortex", loc => ((WoWUnit)loc).Location, req => Me.GotTarget, false),
+                                Spell.Buff("Disorienting Roar", onUnit => (WoWUnit)onUnit, req => true),
+                                Spell.Buff("Mass Entanglement", onUnit => (WoWUnit)onUnit, req => true),
+                                Spell.Buff("Mighty Bash", onUnit => (WoWUnit)onUnit, req => true),
+                                Spell.Buff("Faerie Swarm", onUnit => (WoWUnit)onUnit, req => true),
+                                new Sequence(
+                                    Spell.CastOnGround("Wild Mushroom",
+                                        loc => ((WoWUnit)loc).Location,
+                                        req => req != null && !Spell.IsSpellOnCooldown("Wild Mushroom: Detonate")
+                                        ),
+                                    new Wait( 1, until => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling() && MushroomCount > 0, new ActionAlwaysSucceed()),
+                                    Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount > 0)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+        #endregion
+
     }
 
 }

@@ -360,17 +360,21 @@ namespace Singular.ClassSpecific.Hunter
         /// <returns></returns>
         public static Composite CreateHunterAvoidanceBehavior(Composite nonfacingAttack, Composite jumpturnAttack)
         {
+            Kite.CreateKitingBehavior(null, nonfacingAttack, jumpturnAttack);
+
             return new Decorator(
                 ret => MovementManager.IsClassMovementAllowed,
                 new PrioritySelector(
                     new Decorator(
                         ret => HunterSettings.UseDisengage, 
-                        Common.CreateDisengageBehavior()
-                        ),
-                    new Decorator(ret => Common.NextDisengageAllowed <= DateTime.Now && HunterSettings.AllowKiting,
                         new PrioritySelector(
-                            Kite.CreateKitingBehavior(nonfacingAttack, jumpturnAttack)
+                            Disengage.CreateDisengageBehavior("Disengage", Disengage.Direction.Backwards, 20, CreateSlowMeleeBehavior()),
+                            Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
                             )
+                        ),
+                    new Decorator(
+                        ret => Common.NextDisengageAllowed <= DateTime.Now && HunterSettings.AllowKiting,
+                        Kite.BeginKitingBehavior()
                         )
                     )
                 );

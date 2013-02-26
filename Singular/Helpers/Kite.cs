@@ -16,6 +16,7 @@ using CommonBehaviors.Actions;
 using System.Drawing;
 using Styx.WoWInternals;
 using Styx.Helpers;
+using Styx.Common;
 
 
 namespace Singular.Helpers
@@ -32,6 +33,7 @@ namespace Singular.Helpers
         public enum State
         {
             None,
+            Slow,
             Moving,
             NonFaceAttack,
             AttackWithoutJumpTurn,
@@ -42,6 +44,8 @@ namespace Singular.Helpers
         public static State bstate = State.None;
         public static WoWPoint safeSpot = WoWPoint.Empty;
         public static DateTime timeOut = DateTime.Now;
+
+        private static Composite _SlowAttackBehavior;
 
         const int DISTANCE_WE_NEED_TO_START_BACK_PEDAL = 7;
         const int DISTANCE_CLOSE_ENOUGH_TO_DESTINATION = 2;
@@ -54,10 +58,17 @@ namespace Singular.Helpers
         /// <param name="runawayAttack">behavior to use while running away (should not require facing target.) should be null if not needed</param>
         /// <param name="jumpturnAttack">behavior to use in middle of jump turn (while facing target.)  should be null if not needed</param>
         /// <returns></returns>
-        public static Composite CreateKitingBehavior(Composite runawayAttack, Composite jumpturnAttack)
+        public static void CreateKitingBehavior(Composite slowAttack, Composite runawayAttack, Composite jumpturnAttack)
         {
-            return
+            _SlowAttackBehavior = slowAttack;
+
+            Composite kitingBehavior =
                 new PrioritySelector(
+                    new Decorator(
+                        ret => bstate == State.None,
+                        new Action(r => System.Diagnostics.Debug.Assert(false, "Kiting Failure:  should never run with state == State.None"))
+                        ),
+
                     new Decorator(
                         ret => bstate != State.None,
 
@@ -73,14 +84,35 @@ namespace Singular.Helpers
                             new Decorator(ret => Me.Location.Distance(safeSpot) < DISTANCE_CLOSE_ENOUGH_TO_DESTINATION, new Action(ret => EndKiting("BP: reached safe spot!!!!"))),
                             new Decorator(ret => Me.Location.Distance(safeSpot) > DISTANCE_TOO_FAR_FROM_DESTINATION, new Action(ret => EndKiting("BP: too far from safe spot, cancelling"))),
 
+                            new Decorator(ret => bstate == State.Slow,
+                                new PrioritySelector(
+                                    new Sequence(
+                                        new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: entering SlowAttack behavior")),
+                                        slowAttack ?? new Action(r => { return RunStatus.Failure; }),
+                                        new Action(r => { return RunStatus.Failure; })
+                                        ),
+                                    new Action(ret =>
+                                    {
+                                        Logger.WriteDebug(Color.Cyan, "BP: transition from SlowAttack to Moving");
+                                        bstate = State.Moving;
+                                    })
+                                    )
+                                ),
+
                             new Decorator(ret => bstate == State.Moving,
                                 new Sequence(
                                     new Action(d => Navigator.MoveTo(safeSpot)),
                 // following 3 lines make sure we are facing and have started moving in the correct direction.  it will force
                 //  .. a minimum wait of 250 ms after movement has started in the correct direction
-                                    new WaitContinue(new TimeSpan(0, 0, 0, 0, 250), r => Me.IsDirectlyFacing(safeSpot), new ActionAlwaysSucceed()),
-                                    new WaitContinue(new TimeSpan(0, 0, 0, 0, 500), r => Me.IsMoving, new ActionAlwaysSucceed()),  // wait till we are moving (should be very quick)
-                                    new WaitContinue(new TimeSpan(0, 0, 0, 0, 250), r => !Me.IsMoving, new Action( r => { return RunStatus.Failure; } )),    // wait for 250ms, failing if we stop moving
+                                    new WaitContinue(TimeSpan.FromMilliseconds(250), r => Me.IsDirectlyFacing(safeSpot), new ActionAlwaysSucceed()),
+                                    new WaitContinue(TimeSpan.FromMilliseconds(500), r => Me.IsMoving, new ActionAlwaysSucceed()),  // wait till we are moving (should be very quick)
+                                    new DecoratorContinue(
+                                        r => !Me.IsMoving,
+                                        new Action(ret => { 
+                                            EndKiting("BP: we stopped moving, so end kiting");
+                                            return RunStatus.Failure;
+                                            })
+                                        ),
 
                                     new Action(ret =>
                                     {
@@ -121,6 +153,7 @@ namespace Singular.Helpers
                                         return RunStatus.Success;
                                     })
                                     )
+
                 /*
                                                 new Action( ret => {
                                                     Navigator.MoveTo( safeSpot );
@@ -148,8 +181,8 @@ namespace Singular.Helpers
                                 new PrioritySelector(
                                     new Sequence(
                                         new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: entering NonFaceAttack behavior")),
-                                        runawayAttack ?? new Action( r => { return RunStatus.Failure; } ),
-                                        new Action( r => { return RunStatus.Failure; } )
+                                        runawayAttack ?? new Action(r => { return RunStatus.Failure; }),
+                                        new Action(r => { return RunStatus.Failure; })
                                         ),
                                     new Action(ret =>
                                     {
@@ -163,10 +196,10 @@ namespace Singular.Helpers
                                 new PrioritySelector(
                                     new Sequence(
                                         new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: entering AttackNoJumpTurn behavior")),
-                                        jumpturnAttack ?? new Action( r => { return RunStatus.Failure; } ),
-                                        new Action( r => { return RunStatus.Failure; } )
+                                        jumpturnAttack ?? new Action(r => { return RunStatus.Failure; }),
+                                        new Action(r => { return RunStatus.Failure; })
                                         ),
-                                    new Action(ret => 
+                                    new Action(ret =>
                                     {
                                         Logger.WriteDebug(Color.Cyan, "BP: transition from AttackNoJumpTurn to Moving");
                                         bstate = State.Moving;
@@ -178,7 +211,7 @@ namespace Singular.Helpers
                                 new PrioritySelector(
                                     JumpTurn.CreateBehavior(jumpturnAttack),
                                     new Decorator(ret => !JumpTurn.IsJumpTurnInProgress(),
-                                        new Action(ret => 
+                                        new Action(ret =>
                                         {
                                             bstate = State.Moving;
                                             Logger.WriteDebug(Color.Cyan, "BP: transition from JumpTurn to Moving");
@@ -189,19 +222,13 @@ namespace Singular.Helpers
 
                             new Action(ret => Logger.WriteDebug(Color.Cyan, "BP: fell through with state {0}", bstate.ToString()))
                             )
-                        ),
-
-                    new Decorator(
-                        ret => IsKitingNeeded(),
-                        new Action(ret =>
-                        {
-                            bstate = State.Moving;
-                            Logger.WriteDebug(Color.Cyan, "Back Peddle");
-                        }))
+                        )
                     );
+
+            TreeHooks.Instance.ReplaceHook("KitingBehavior", kitingBehavior );
         }
 
-        private static bool IsKitingNeeded()
+        public static bool IsKitingPossible()
         {
             // note:  PullDistance MUST be longer than our out of melee distance (DISTANCE_WE_NEED_TO_START_BACK_PEDDLING)
             // otherwise it will run back and forth
@@ -264,11 +291,19 @@ namespace Singular.Helpers
             return bstate != State.None;
         }
 
-        public static bool BeginKiting(string s)
+        public static Composite BeginKitingBehavior()
         {
-            bstate = State.Moving;
+            return new Decorator(
+                ret => IsKitingPossible(),
+                new ActionAlwaysSucceed()
+                );
+        }
+
+        private static bool BeginKiting(string s)
+        {
+            bstate =  _SlowAttackBehavior != null ? State.Slow : State.Moving;
             Logger.WriteDebug(Color.Gold, s);
-            timeOut = DateTime.Now.Add(new TimeSpan(0, 0, 6));
+            timeOut = DateTime.Now.Add(TimeSpan.FromSeconds(6));
             return true;
         }
 
@@ -279,6 +314,9 @@ namespace Singular.Helpers
             Logger.WriteDebug(Color.Gold, s);
             WoWMovement.StopFace();
             WoWMovement.MoveStop(WoWMovement.MovementDirection.All);
+
+            // TreeHooks.Instance.ReplaceHook("KitingBehavior", kiteBehavior);
+
             return RunStatus.Success;
         }
     }
@@ -1073,6 +1111,177 @@ namespace Singular.Helpers
             return WoWMathHelper.IsFacing(u.Location, u.RenderFacing, pt, SafeArea.ONE_DEGREE_AS_RADIAN);
         }
     }
+
+#region Disengage Class
+
+    public class Disengage
+    {
+        public enum Direction
+        {
+            Backwards,
+            Frontwards
+        }
+
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
+
+        private static WoWUnit mobToGetAwayFrom;
+        private static WoWPoint origSpot;
+        private static WoWPoint safeSpot;
+        private static float needFacing;
+        public static DateTime NextDisengageAllowed = DateTime.MinValue;
+
+        public static Composite CreateDisengageBehavior(string spell, Direction dir, int distance, Composite slowAttack)
+        {
+            return new Decorator(
+                ret => CanWeDisengage(spell, dir, distance),
+                new Sequence(
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => slowAttack != null,
+                            new Sequence(
+                                new Action(r => Logger.WriteDebug("attempting to slow enemies")),
+                                slowAttack,
+                                new WaitContinue(1, rdy => !Me.IsCasting && !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed())
+                                )
+                            ),
+                        new ActionAlwaysSucceed()
+                        ),
+
+                    new Action(r => Logger.WriteDebug("face {0} safespot as needed", dir == Direction.Frontwards ? "towards" : "away from")),
+                    new Action(ret =>
+                    {
+                        origSpot = new WoWPoint(Me.Location.X, Me.Location.Y, Me.Location.Z);
+                        if (dir == Direction.Frontwards)
+                            needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, safeSpot);
+                        else
+                            needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(safeSpot, Me.Location);
+
+                        needFacing = WoWMathHelper.NormalizeRadian(needFacing);
+                        float rotation = WoWMathHelper.NormalizeRadian(Math.Abs(needFacing - Me.RenderFacing));
+                        Logger.WriteDebug(Color.Cyan, "DIS: turning {0:F0} degrees {1} safe landing spot",
+                            WoWMathHelper.RadiansToDegrees(rotation), dir == Direction.Frontwards ? "towards" : "away from");
+                        Me.SetFacing(needFacing);
+                    }),
+
+                    new Action(r => Logger.WriteDebug("wait for facing to complete")),
+                    new PrioritySelector(
+                        new Wait(new TimeSpan(0, 0, 1), ret => Me.IsDirectlyFacing(needFacing), new ActionAlwaysSucceed()),
+                        new Action(ret =>
+                        {
+                            Logger.WriteDebug(Color.Cyan, "DIS: timed out waiting to face safe spot - need:{0:F4} have:{1:F4}", needFacing, Me.RenderFacing);
+                            return RunStatus.Failure;
+                        })
+                        ),
+
+                    // stop facing
+                    new Action(ret =>
+                    {
+                        Logger.WriteDebug(Color.Cyan, "DIS: cancel facing now we point the right way");
+                        WoWMovement.StopFace();
+                    }),
+
+                    new Action(r => Logger.WriteDebug("set time of {0} just prior", spell)),
+                    new Sequence(
+                        new PrioritySelector(
+                            Spell.BuffSelf(spell),
+                            new Action(ret => {
+                                Logger.WriteDebug(Color.Cyan, "DIS: {0} cast appears to have failed", spell);
+                                return RunStatus.Failure;
+                                })
+                            ),
+                        new WaitContinue(1, req => !Me.IsAlive || !Me.IsFalling, new ActionAlwaysSucceed()),
+                        new Action(ret =>
+                        {
+                            NextDisengageAllowed = DateTime.Now.Add(TimeSpan.FromMilliseconds(750));
+                            Logger.WriteDebug(Color.Cyan, "DIS: finished {0} cast", spell);
+                            Logger.WriteDebug(Color.Cyan, "DIS: jumped {0:F1} yds away from orig={1} to curr={2}", Me.Location.Distance(safeSpot), origSpot, Me.Location);
+                            if (Kite.IsKitingActive())
+                                Kite.EndKiting(String.Format("BP: Interrupted by {0}", spell));
+                            return RunStatus.Success;
+                        })
+                        )
+
+                )
+            );
+        }
+
+        public static bool CanWeDisengage(string spell, Direction dir, int distance)
+        {
+            if (!SpellManager.HasSpell(spell))
+                return false;
+
+            if (DateTime.Now < NextDisengageAllowed)
+                return false;
+
+            if (!Me.IsAlive || Me.IsFalling || Me.IsCasting || Me.IsSwimming)
+                return false;
+
+            if (Me.Stunned || Me.Rooted || Me.IsStunned() || Me.IsRooted())
+                return false;
+
+            if (!SpellManager.CanCast(spell, Me, false, false))
+                return false;
+
+            mobToGetAwayFrom = SafeArea.NearestEnemyMobAttackingMe;
+            if (mobToGetAwayFrom == null)
+                return false;
+
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+            {
+                List<WoWUnit> attackers = SafeArea.AllEnemyMobsAttackingMe.ToList();
+                if ((attackers.Sum(a => a.MaxHealth) / 3) < Me.MaxHealth && Me.HealthPercent > 40)
+                {
+                    return false;
+                }
+            }
+            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+            {
+                switch (mobToGetAwayFrom.Class)
+                {
+                    default:
+                        return false;
+
+                    case WoWClass.DeathKnight:
+                    case WoWClass.Druid:
+                    case WoWClass.Monk:
+                    case WoWClass.Paladin:
+                    case WoWClass.Rogue:
+                    case WoWClass.Shaman:
+                        break;
+                }
+            }
+
+            if (mobToGetAwayFrom.Distance > mobToGetAwayFrom.MeleeDistance() + 3f)
+                return false;
+
+            SafeArea sa = new SafeArea();
+            sa.MinScanDistance = distance;    // average distance on flat ground
+            sa.MaxScanDistance = sa.MinScanDistance;
+            sa.RaysToCheck = 36;
+            sa.LineOfSightMob = Target;
+            sa.MobToRunFrom = mobToGetAwayFrom;
+            sa.CheckLineOfSightToSafeLocation = true;
+            sa.CheckSpellLineOfSightToMob = false;
+
+            safeSpot = sa.FindLocation();
+            if (safeSpot == WoWPoint.Empty)
+            {
+                Logger.WriteDebug(Color.Cyan, "DIS: no safe landing spots found for {0}", spell);
+                return false;
+            }
+
+            Logger.WriteDebug(Color.Cyan, "DIS: Attempt safe {0} due to {1} @ {2:F1} yds",
+                spell,
+                mobToGetAwayFrom.SafeName(),
+                mobToGetAwayFrom.Distance);
+
+            return true;
+        }
+    }
+
+#endregion
+
 }
 
 

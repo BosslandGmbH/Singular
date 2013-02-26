@@ -38,7 +38,8 @@ namespace Singular.ClassSpecific.Druid
             // Cast motw if player doesn't have it or if in instance/bg, out of combat and 'Buff raid with Motw' is true or if in instance and in combat and both CatRaidRebuff and 'Buff raid with Motw' are true
             return new PrioritySelector(
 
-                PartyBuff.BuffGroup( "Mark of the Wild", ret => !Me.HasAura("Prowl") && !Me.Combat )
+                PartyBuff.BuffGroup( "Mark of the Wild", ret => !Me.HasAura("Prowl") && !Me.Combat ),
+                Spell.BuffSelf( "Mark of the Wild", ret => !Me.HasAura("Prowl") && !Me.IsInGroup() )
 
                 /*   This logic needs work. 
                 new Decorator(
@@ -321,6 +322,8 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
+        #region Symbiosis Support
+
         private static WoWUnit _targetSymb;
         // private static HashSet<string> _preSymb = null;
         public static WoWClass SymbiosisWithClass = WoWClass.None;
@@ -532,12 +535,13 @@ namespace Singular.ClassSpecific.Druid
             { WoWClass.DeathKnight, 0 },
             { WoWClass.Hunter , 1 },
             { WoWClass.Mage , 2 },
-            { WoWClass.Paladin , 3 },
-            { WoWClass.Priest , 4 },
-            { WoWClass.Rogue , 5 },
-            { WoWClass.Shaman , 6 },
-            { WoWClass.Warlock , 7 },
-            { WoWClass.Warrior , 8 },
+            { WoWClass.Monk , 3 },
+            { WoWClass.Paladin , 4 },
+            { WoWClass.Priest , 5 },
+            { WoWClass.Rogue , 6 },
+            { WoWClass.Shaman , 7 },
+            { WoWClass.Warlock , 8 },
+            { WoWClass.Warrior , 9 },
         };
 
         private static string[] SymbSpellNames = new string[]
@@ -554,6 +558,8 @@ namespace Singular.ClassSpecific.Druid
         /* Warlock */    "Unending Resolve" ,   "Life Tap"        ,    "Soul Swap"       ,   "Demonic Circle Teleport" ,
         /* Warrior */    "Intervene"       ,    "Spell Reflection",    "Shattering Blow" ,   "Intimidating Roar"      ,
     };
+
+        #endregion
 
 #if NOT_IN_USE
         public static Composite CreateEscapeFromCc()
@@ -640,7 +646,7 @@ namespace Singular.ClassSpecific.Druid
         }
 #endif
 
-   }
+    }
     #region Nested type: Talents
 
     public enum DruidTalents

@@ -139,6 +139,22 @@ namespace Singular.ClassSpecific.Warlock
 
         #endregion
 
+        #region Loss of control
+
+        [Behavior(BehaviorType.LossOfControl, WoWClass.Warlock)]
+        public static Composite CreateWarlockLossOfControlBehavior()
+        {
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+                    Spell.BuffSelf("Unbound Will")
+                    )
+                );
+        }
+        
+
+        #endregion
+
         #region CombatBuffs
 
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Warlock)]

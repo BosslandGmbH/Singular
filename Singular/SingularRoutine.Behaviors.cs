@@ -50,6 +50,9 @@ namespace Singular
             // Update the current context. Handled in SingularRoutine.Context.cs
             //UpdateContext();
 
+            // special behavior - reset KitingBehavior hook prior to calling class specific createion
+            TreeHooks.Instance.ReplaceHook("KitingBehavior", new ActionAlwaysFail() );
+
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
             if (!EnsureComposite(true, context, BehaviorType.Combat))
             {
@@ -161,19 +164,25 @@ namespace Singular
                     )
                 );
 
-            _combatBuffsBehavior = new Decorator(
-                ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                new LockSelector(
-                    new Decorator(ret => !HotkeyDirector.IsCombatEnabled, new ActionAlwaysSucceed()),
-                    Generic.CreateUseTrinketsBehaviour(),
-                    Generic.CreatePotionAndHealthstoneBehavior(),
-                    Generic.CreateRacialBehaviour(),
-                    new HookExecutor( BehaviorType.CombatBuffs.ToString())
+            _combatBuffsBehavior = new PrioritySelector(
+                new Decorator(
+                    ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                    new LockSelector(
+                        new Decorator(ret => !HotkeyDirector.IsCombatEnabled, new ActionAlwaysSucceed()),
+                        Generic.CreateUseTrinketsBehaviour(),
+                        Generic.CreatePotionAndHealthstoneBehavior(),
+                        Generic.CreateRacialBehaviour(),
+                        new HookExecutor( BehaviorType.CombatBuffs.ToString())
+                        )
                     )
                 );
 
             _healBehavior = new LockSelector(
                 _lostControlBehavior,
+                new Decorator(
+                    ret => Kite.IsKitingActive(),
+                    new HookExecutor("KitingBehavior")
+                    ),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                     new HookExecutor(BehaviorType.Heal.ToString())

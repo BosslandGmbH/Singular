@@ -84,16 +84,24 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(750)]
         [Category("Demonology")]
-        [DisplayName("Switch to Caster %")]
-        [Description("Change to Caster when below this Demonic Fury %")]
+        [DisplayName("Switch to Caster Fury Level")]
+        [Description("Go Caster at this Demonic Fury value (0 - 1000)")]
         public int FurySwitchToCaster { get; set; }
 
         [Setting]
         [DefaultValue(900)]
         [Category("Demonology")]
-        [DisplayName("Switch to Demon %")]
-        [Description("Change to Demon when above this Demonic Fury %")]
+        [DisplayName("Switch to Demon Fury Level")]
+        [Description("Go Demon above this Demonic Fury value (0 - 1000)")]
         public int FurySwitchToDemon { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Demonology")]
+        [DisplayName("Use Demonic Leap")]
+        [Description("Demonic Leap to disengage from melee")]
+        public bool UseDemonicLeap { get; set; }
+
 
 #region Setting Helpers
 

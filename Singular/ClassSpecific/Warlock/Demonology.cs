@@ -34,6 +34,8 @@ namespace Singular.ClassSpecific.Warlock
         [Behavior(BehaviorType.Pull|BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.All)]
         public static Composite CreateWarlockDemonologyNormalCombat()
         {
+            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), null, null);
+
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
@@ -46,19 +48,16 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        new Action(ret =>
-                        {
-                            _mobCount = Common.TargetsInCombat.Count();
-                            return RunStatus.Failure;
-                        }),
+                        // calculate key values
                         new Action( ret => {
+                            Me.CurrentTarget.TimeToDeath();
                             _mobCount = Common.TargetsInCombat.Where(t=>t.Distance <= (Me.MeleeDistance(t) + 3)).Count();
                             return RunStatus.Failure;
                             }),
 
                         CreateWarlockDiagnosticOutputBehavior(),
 
-                        //Helpers.Common.CreateAutoAttack(true),
+                        // Helpers.Common.CreateAutoAttack(true),
                         new Decorator(
                             ret => Me.GotAlivePet && Me.GotTarget && Me.Pet.CurrentTarget != Me.CurrentTarget,
                             new Action( ret => {
@@ -81,6 +80,16 @@ namespace Singular.ClassSpecific.Warlock
                                 )
                             ),
 
+                        new Decorator(
+                            ret => MovementManager.IsClassMovementAllowed
+                                && WarlockSettings.UseDemonicLeap 
+                                && ((Me.HealthPercent < 50 && SingularRoutine.CurrentWoWContext == WoWContext.Normal) || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                                && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsWithinMeleeRange),
+                            new PrioritySelector(
+                                Spell.Cast( "Carrion Swarm", req => Me.HasAura( "Metamorphosis")),
+                                Disengage.CreateDisengageBehavior("Demonic Leap", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
+                                )
+                            ),
 
             #region Felguard Use
 
@@ -134,7 +143,7 @@ namespace Singular.ClassSpecific.Warlock
                             ret => Me.HasAura( "Metamorphosis"),
                             new PrioritySelector(
                                 new Sequence(
-                                    Spell.CastHack( "Metamorphosis: Doom", "Doom", on => Me.CurrentTarget, req => Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom", 10)),
+                                    Spell.CastHack( "Metamorphosis: Doom", "Doom", on => Me.CurrentTarget, req => Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom", 10) && DoesCurrentTargetDeserveToGetDoom()),
                                     new WaitContinue(TimeSpan.FromMilliseconds(250), canRun => Me.CurrentTarget.HasAura("Doom"), new ActionAlwaysSucceed())
                                     ),
                                 Spell.Cast("Soul Fire", ret => Me.HasAura("Molten Core")),
@@ -183,7 +192,7 @@ namespace Singular.ClassSpecific.Warlock
             if (!hasAura && Me.GotTarget)
             {
                 // check if we need Doom and have enough fury for 2 secs in form plus cast
-                if (CurrentDemonicFury >= 72 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom"))
+                if (CurrentDemonicFury >= 72 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom") && DoesCurrentTargetDeserveToGetDoom())
                     shouldCast = true;
                 // check if we have Corruption and we need to dump fury
                 else if (CurrentDemonicFury >= WarlockSettings.FurySwitchToDemon && !Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
@@ -195,6 +204,20 @@ namespace Singular.ClassSpecific.Warlock
             }
 
             return shouldCast;
+        }
+
+        private static bool DoesCurrentTargetDeserveToGetDoom()
+        {
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+                return true;
+
+            if ( Me.CurrentTarget.IsPlayer )
+                return true;
+
+            if ( Me.CurrentTarget.Elite && (Me.CurrentTarget.Level + 10) >= Me.Level )
+                return true;
+
+            return Me.CurrentTarget.TimeToDeath() > 30;
         }
 
         private static bool NeedToCancelMetamorphosis()
@@ -315,5 +338,32 @@ namespace Singular.ClassSpecific.Warlock
             );
         }
 
+        private static Composite CreateSlowMeleeBehavior()
+        {
+            return new PrioritySelector(
+                ctx => SafeArea.NearestEnemyMobAttackingMe,
+                new Decorator(
+                    ret => ret != null,
+                    new PrioritySelector(
+                        new Throttle(2,
+                            new PrioritySelector(
+                                Spell.CastHack("Metamorphosis: Chaos Wave", "Chaos Wave", on => Me.CurrentTarget, req => Me.HasAura("Metamorphosis")),
+                                Spell.Buff("Shadowfury", onUnit => (WoWUnit)onUnit),
+                                Spell.Buff("Howl of Terror", onUnit => (WoWUnit)onUnit),
+                                new Decorator(
+                                    ret => !Me.HasAura("Metamorphosis"),
+                                    new PrioritySelector(
+                                        Spell.Buff("Hand of Gul'dan", onUnit => (WoWUnit)onUnit, req => !TalentManager.HasGlyph("Hand of Gul'dan")),
+                                        Spell.CastOnGround("Hand of Gul'dan", loc => ((WoWUnit)loc).Location, req => Me.GotTarget && TalentManager.HasGlyph("Hand of Gul'dan"), false)
+                                        )
+                                    ),
+                                Spell.Buff("Mortal Coil", onUnit => (WoWUnit)onUnit),
+                                Spell.Buff("Fear", onUnit => (WoWUnit)onUnit)
+                                )
+                            )
+                        )
+                    )
+                );
+        }
     }
 }

@@ -1,3 +1,36 @@
+
+--- Release 3.0.0.1916 ---
+
+General
+
+
+Druid
+
+*new* - Balance - support for Wild Charge (Moonkin Disengage).  Will attempt to slow/stun mob before hitting the eject button.  Option in settings to disable if needed
+
+*new* - Balance - support for kiting.  Option in settings to disable if needed
+
+*new* - Balance - improved support for crowd control including use of Cyclone, Entanbling Roots, Mass Entanglement, Ursol's Vortex, Mighty Bash
+
+change- Balance - Starfall now enabled by default.  Previous default was from when Starfall hit targets you weren't already in combat with
+
+fixed - Balance - if numbr of mobs drops below AoE worth priority and mushrooms are left they are detonated
+
+change- Balance - in normal context (solo), starfall reserve for enemy players or tougher mobs
+
+fixed - All - wrong spell reported as being gained after Symbiosis cast for Druids in most cases
+
+
+Warlock
+
+*new* - Demonology - added cast of Unbound Will in loss of control behavior
+
+*new* - Demonology - added support for Warlock Disengage (Demonic Leap).  Option in settings to disable
+
+change- Demonology - in Normal (solo) context will no longer cast Doom on enemy (they are dying too quick) unless mob is elite, an enemy player, or predicted to live more than 30 seconds.  
+
+
+
 --- Release 3.0.0.1903 ---
 
 General

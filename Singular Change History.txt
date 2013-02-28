@@ -1,4 +1,61 @@
 
+--- Release 3.0.0.1938 ---
+
+General
+
+fixed - fix a lot of users were looking for!!!!  internal issue causing buffs not to be applied ( Arcane Intelligence, Mark of the Wild, etc. etc. etc.)  There were other behaviors implicated too, but this was the most obvious one.  This was an issue which impacted classes across the board and was due to a change made in a recent prior release.
+
+change- check for Loss of Control behavior in Rest in case initial attack out of combat is a stun, fear, etc
+
+*new* - Questing Pull Distance Override setting added for Ranged specs.  Kick's profiles change the Pull Distance setting it to 25 yards for most combat, which gives less distance for ranged classes to kill a mob before it reaches melee range.  Only during Questing, if the Pull Distance is set to 25 (the default for the setting) it will force it to 40 yards for ranged classes.
+
+fixed - now check if moving prior to trying to heal by applying Bandage
+
+change- reorganized global class config setting categorizations and provided revised descriptions 
+
+
+Druid
+
+fixed - Feral - cast of Symbiosis: Feral Spirit
+
+*new* - Feral - cast of Symbiosis: Classh
+
+
+Mage 
+
+fixed - All - now recognizes Scorch can be cast while moving
+
+*new* - All - supports the Ice Floes talent for casting while moving
+
+fixed - All - support for casting/cancelling Ice Block when Cauterize procs
+
+change- All - support for casting damage absorb/heals when Cauterize procs while Ice Block on cooldown
+
+change- All - Mirror Image no longer cast on cooldown.  Instead saved for AoE, Elites, Bosses, and enemy players
+
+change- Goblin Class - support for Rocket Jump when Blink is on cooldown
+
+fixed - Fire - solo and questing spell priority.  Now more effectively kills mobs casting abilities knowing they won't live long enough for Pyroblast! procs in most cases
+
+change- All - Frostjaw now included for ranged spell interrupt
+
+
+Priest
+
+*new* - All - support for Rocket Jump for Goblins as a disengage
+
+*new* - Shadow - support for kiting with Angelic Feather / Body and Soul in battlegrounds.  Setting added to disable
+
+
+Shaman
+
+fixed - Resto - no longer casts Earth Shield spam in Battlegrounds.  I was not able to duplicate this issue report, but believe the issue to be resolved with change made.  Shaman should now only cast Earth Shield on self in battlegrounds.
+
+*new* - Resto - Healing Surge % is now a higher amount by default, then when you train Greater Healing Wave is automatically prioritized down to 21% one time.
+
+
+
+
 --- Release 3.0.0.1916 ---
 
 General

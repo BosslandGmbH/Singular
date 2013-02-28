@@ -228,7 +228,7 @@ namespace Singular.Helpers
             TreeHooks.Instance.ReplaceHook("KitingBehavior", kitingBehavior );
         }
 
-        public static bool IsKitingPossible()
+        public static bool IsKitingPossible(int minScan = -1)
         {
             // note:  PullDistance MUST be longer than our out of melee distance (DISTANCE_WE_NEED_TO_START_BACK_PEDDLING)
             // otherwise it will run back and forth
@@ -257,7 +257,7 @@ namespace Singular.Helpers
             if (Battlegrounds.IsInsideBattleground)
             {
                 sa.MinSafeDistance = 12;
-                sa.MinScanDistance = 15;
+                sa.MinScanDistance = minScan == -1 ? 15 : minScan;
                 sa.IncrementScanDistance = 10;
                 sa.MaxScanDistance = sa.MinScanDistance + 2 * sa.IncrementScanDistance;
                 sa.RaysToCheck = 18;
@@ -269,7 +269,7 @@ namespace Singular.Helpers
             else
             {
                 sa.MinSafeDistance = 20;
-                sa.MinScanDistance = 10;
+                sa.MinScanDistance = minScan == -1 ? 10 : minScan;
                 sa.IncrementScanDistance = 5;
                 sa.MaxScanDistance = sa.MinScanDistance + (2 * sa.IncrementScanDistance);
                 sa.RaysToCheck = 36;
@@ -291,10 +291,10 @@ namespace Singular.Helpers
             return bstate != State.None;
         }
 
-        public static Composite BeginKitingBehavior()
+        public static Composite BeginKitingBehavior(int minScan = -1)
         {
             return new Decorator(
-                ret => IsKitingPossible(),
+                ret => IsKitingPossible(minScan),
                 new ActionAlwaysSucceed()
                 );
         }
@@ -1142,7 +1142,7 @@ namespace Singular.Helpers
                             new Sequence(
                                 new Action(r => Logger.WriteDebug("attempting to slow enemies")),
                                 slowAttack,
-                                new WaitContinue(1, rdy => !Me.IsCasting && !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed())
+                                new WaitContinue(TimeSpan.FromMilliseconds(1500), rdy => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed())
                                 )
                             ),
                         new ActionAlwaysSucceed()

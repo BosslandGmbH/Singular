@@ -149,14 +149,21 @@ namespace Singular.Settings
         [Description("Use Inner Fire, otherwise uses Inner Will")]
         public bool UseInnerFire { get; set; }
 
-/*
         [Setting]
-        [DefaultValue(75)]
+        [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Archangel Mana")]
-        [Description("Archangel will be used at this value")]
-        public int ArchangelMana { get; set; }
-*/
+        [DisplayName("Allow Kiting")]
+        [Description("Allow Kiting mob to minimize damage taken")]
+        public bool AllowKiting { get; set; }
+
+/*
+                [Setting]
+                [DefaultValue(75)]
+                [Category("Common")]
+                [DisplayName("Archangel Mana")]
+                [Description("Archangel will be used at this value")]
+                public int ArchangelMana { get; set; }
+        */
 
         [Setting]
         [DefaultValue(50)]

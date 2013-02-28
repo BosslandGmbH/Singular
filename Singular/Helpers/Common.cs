@@ -215,8 +215,11 @@ namespace Singular.Helpers
             if ( Me.Class == WoWClass.Priest ) 
                 prioSpell.AddChild( Spell.Cast("Silence", ctx => _unitInterrupt));
 
-            if ( Me.Class == WoWClass.DeathKnight)
-                prioSpell.AddChild( Spell.Cast("Strangulate", ctx => _unitInterrupt));
+            if (Me.Class == WoWClass.DeathKnight)
+                prioSpell.AddChild(Spell.Cast("Strangulate", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Mage)
+                prioSpell.AddChild(Spell.Cast("Frostjaw", ctx => _unitInterrupt));
 
             #endregion
 

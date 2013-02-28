@@ -10,6 +10,11 @@ using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.CommonBot.POI;
 using Styx.CommonBot;
+using System;
+using CommonBehaviors.Actions;
+
+using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
 
 namespace Singular.ClassSpecific.Priest
 {
@@ -40,6 +45,28 @@ namespace Singular.ClassSpecific.Priest
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
         public static bool HasTalent( PriestTalent tal ) { return TalentManager.IsSelected((int)tal); }
+
+
+        [Behavior(BehaviorType.Heal, WoWClass.Priest, context:WoWContext.Battlegrounds, priority:2)]
+        public static Composite CreatePriestHealPreface()
+        {
+            return new PrioritySelector(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+
+            #region Avoidance 
+
+                    new Decorator(
+                        ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.SpellDistance() < 8)
+                            && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.HealthPercent < 50)),
+                        CreatePriestAvoidanceBehavior()
+                        )
+
+            #endregion 
+
+                    )
+                );
+        }
 
         [Behavior(BehaviorType.PreCombatBuffs,WoWClass.Priest)]
         public static Composite CreatePriestPreCombatBuffs()
@@ -130,5 +157,55 @@ namespace Singular.ClassSpecific.Priest
                     )
                 );
         }
+
+        #region Avoidance and Disengage
+
+        /// <summary>
+        /// creates a Priest specific avoidance behavior based upon settings.  will check for safe landing
+        /// zones before using WildCharge or rocket jump.  will additionally do a running away or jump turn
+        /// attack while moving away from attacking mob if behaviors provided
+        /// </summary>
+        /// <param name="nonfacingAttack">behavior while running away (back to target - instants only)</param>
+        /// <param name="jumpturnAttack">behavior while facing target during jump turn (instants only)</param>
+        /// <returns></returns>
+        public static Composite CreatePriestAvoidanceBehavior()
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => MovementManager.IsClassMovementAllowed,
+                    Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
+                    ),
+                new Decorator(
+                    ret => MovementManager.IsClassMovementAllowed 
+                        && PriestSettings.AllowKiting
+                        && (Common.HasTalent(PriestTalent.AngelicFeather) || Common.HasTalent(PriestTalent.BodyAndSoul) || Common.HasTalent(PriestTalent.VoidTendrils )),
+                    Kite.BeginKitingBehavior(35)
+                    )
+                );
+        }
+
+        public static Composite CreateSlowMeleeBehavior()
+        {
+            return new PrioritySelector(
+                ctx => SafeArea.NearestEnemyMobAttackingMe,
+                new Decorator(
+                    ret => ret != null,
+                    new Throttle(2,
+                        new PrioritySelector(
+                            Spell.Buff("Void Tendrils", onUnit => (WoWUnit)onUnit, req => true),
+                            Spell.Buff("Psychic Horror", onUnit => (WoWUnit)onUnit, req => true),
+                            Spell.CastOnGround("Psyfiend",
+                                loc => ((WoWUnit)loc).Distance <= 20 ? ((WoWUnit)loc).Location : WoWMovement.CalculatePointFrom(((WoWUnit)loc).Location, (float)((WoWUnit)loc).Distance - 20),
+                                req => ((WoWUnit)req) != null,
+                                false
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+        #endregion
+
     }
 }

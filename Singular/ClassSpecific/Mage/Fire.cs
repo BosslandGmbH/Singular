@@ -82,15 +82,16 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        new Action( r => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; } ),
+
                         CreateFireDiagnosticOutputBehavior(),
 
                         // move to highest in priority to ensure this is cast
                         new Decorator( 
                             ret => !Me.CurrentTarget.IsImmune( WoWSpellSchool.Fire),
                             new PrioritySelector(
-                                Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
-                                Spell.Cast("Pyroblast", 
-                                    ret => Me.HasAura("Pyroblast!") || (Me.CurrentTarget.HealthPercent > 50 && (Me.HasAura("Ice Barrier") || Me.CurrentTarget.HasAura("Frost Nova"))))
+                                Spell.Cast("Pyroblast", ret => Me.ActiveAuras.ContainsKey("Pyroblast!")),
+                                Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up"))
                                 )
                             ),
 
@@ -98,13 +99,10 @@ namespace Singular.ClassSpecific.Mage
                         Helpers.Common.CreateInterruptBehavior(),
 
                         new Decorator(
-                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 10 * 10 && u.IsCrowdControlled()),
-                            new PrioritySelector(
-                                Spell.BuffSelf("Frost Nova",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u =>
-                                                    u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") &&
-                                                    !u.HasAura("Frost Nova") && !u.Stunned))
-                                )),
+                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() < 10 && u.IsCrowdControlled())
+                                && (Unit.NearbyUnitsInCombatWithMe.Count() > 1 || Me.CurrentTarget.TimeToDeath() > 4),
+                            Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() < 8 && !u.IsFrozen()))
+                            ),
 
                         // AoE comes first
                         new Decorator(
@@ -131,7 +129,7 @@ namespace Singular.ClassSpecific.Mage
                         Common.CreateMagePolymorphOnAddBehavior(),
 
                         Spell.Cast("Deep Freeze",
-                             ret => Me.CurrentTarget.HasAura("Frost Nova")),
+                             ret => Me.CurrentTarget.IsFrozen()),
 
                         Spell.Cast("Counterspell", ret => Me.CurrentTarget.IsCasting && Me.CurrentTarget.CanInterruptCurrentSpellCast),
 
@@ -141,14 +139,17 @@ namespace Singular.ClassSpecific.Mage
                             ret =>  !Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire),
                             new PrioritySelector(
                                 Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
-                                Spell.Cast("Pyroblast", ret => Me.ActiveAuras.ContainsKey("Pyroblast!")),
+                                Spell.Cast("Pyroblast", 
+                                    ret => Me.ActiveAuras.ContainsKey("Pyroblast!") || (Me.CurrentTarget.IsFrozen() && !Unit.NearbyUnitsInCombatWithMe.Any(u => u.Guid != Me.CurrentTargetGuid))),
                                 Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
+                                Spell.Cast("Fire Blast", ret => !SpellManager.HasSpell("Inferno Blast")),
+                                Spell.Cast("Scorch"),
                                 Spell.Cast("Fireball")
                                 )
                             ),
 
                         // 
-                        Spell.Cast("Ice Lance", ret => (Me.IsMoving || Me.CurrentTarget.HasAura("Frost Nova")) && Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
+                        Spell.Cast("Ice Lance", ret => (Me.IsMoving || Me.CurrentTarget.IsFrozen()) && Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
                         Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Fireball") || Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire))
                         )
                     ),
@@ -175,22 +176,18 @@ namespace Singular.ClassSpecific.Mage
                 Spell.WaitForCast(true),
 
                 // Defensive stuff
-                new Decorator(
-                    ret => Me.ActiveAuras.ContainsKey("Ice Block"),
-                    new ActionIdle()),
                 Spell.BuffSelf("Ice Block", ret => Me.HealthPercent < 10 && !Me.ActiveAuras.ContainsKey("Hypothermia")),
-                Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && (Me.IsStunned() || Me.IsRooted() || Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 2 * 2))), //Dist check for Melee beating me up.
+                // Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && (Me.IsRooted() || Unit.NearbyUnitsInCombatWithMe.Any( u => u.IsWithinMeleeRange ))),
                 Spell.BuffSelf("Mana Shield", ret => Me.HealthPercent <= 75),
-                Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") && !u.HasAura("Frost Nova") && !u.Stunned)),
+                Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.IsFrozen() && !u.Stunned)),
+                
                 Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < 80),
+
                 // Cooldowns
                 Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
                 Spell.BuffSelf("Mirror Image"),
                 Spell.BuffSelf("Mage Ward", ret => Me.HealthPercent <= 75),
-                Spell.Cast("Deep Freeze", ret => 
-                            Me.ActiveAuras.ContainsKey("Fingers of Frost") ||
-                            Me.CurrentTarget.HasAura("Freeze") ||
-                            Me.CurrentTarget.HasAura("Frost Nova")),
+                Spell.Cast("Deep Freeze", ret => Me.CurrentTarget.IsFrozen()),
                 Spell.Cast("Counter Spell", ret => (Me.CurrentTarget.Class == WoWClass.Paladin ||Me.CurrentTarget.Class == WoWClass.Priest || Me.CurrentTarget.Class == WoWClass.Druid || Me.CurrentTarget.Class == WoWClass.Shaman) && Me.CurrentTarget.IsCasting && Me.CurrentTarget.HealthPercent >= 20),
                 Spell.Cast("Dragon's Breath",
                     ret => Me.IsSafelyFacing(Me.CurrentTarget, 90) &&
@@ -307,14 +304,24 @@ namespace Singular.ClassSpecific.Mage
                     if (target == null)
                         line += ", target=(null)";
                     else
-                        line += string.Format(", target={0} @ {1:F1} yds, h={2:F1}%, face={3}, loss={4}, livbomb={5:F0} ms",
+                    {
+                        line += string.Format(", target={0} @ {1:F1} yds, h={2:F1}%, face={3}, loss={4}, frozen={5}",
                             target.SafeName(),
                             target.Distance,
                             target.HealthPercent,
                             Me.IsSafelyFacing(target),
                             target.InLineOfSpellSight,
-                            target.GetAuraTimeLeft("Living Bomb").TotalMilliseconds
+                            target.GetAuraTimeLeft("Living Bomb").TotalMilliseconds,
+                            target.IsFrozen()
                             );
+
+                        if (Common.HasTalent(MageTalent.NetherTempest))
+                            line += string.Format(", nethtmp={0}", (long)target.GetAuraTimeLeft("Nether Tempest", true).TotalMilliseconds);
+                        else if (Common.HasTalent(MageTalent.LivingBomb))
+                            line += string.Format(", livbomb={0}", (long)target.GetAuraTimeLeft("Living Bomb", true).TotalMilliseconds);
+                        else if (Common.HasTalent(MageTalent.FrostBomb))
+                            line += string.Format(", frstbmb={0}", (long)target.GetAuraTimeLeft("Frost Bomb", true).TotalMilliseconds);
+                    }
 
                     Logger.WriteDebug(Color.Wheat, line);
                     return RunStatus.Success;

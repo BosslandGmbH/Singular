@@ -139,8 +139,25 @@ namespace Singular.Settings
             }
         }
 
+        #region Category: Debug
 
-        #region Category: General
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Debug")]
+        [DisplayName("Debug Logging")]
+        [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
+        public bool EnableDebugLogging { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Debug")]
+        [DisplayName("Debug Logging GCD")]
+        [Description("Enables logging of GCD/Casting in Singular. Debug Logging setting must also be true")]
+        public bool EnableDebugLoggingGCD { get; set; }
+
+        #endregion
+
+        #region Category: Movement
 
         [Setting]
         [DefaultValue(AllowMovementType.Auto)]
@@ -150,56 +167,47 @@ namespace Singular.Settings
         public AllowMovementType AllowMovement { get; set; }
 
         [Setting]
-        [DefaultValue(false)]
-        [Category("Targeting")]
-        [DisplayName("Disable Targeting")]
-        [Description("Disable all Targeting within the CC. This will NOT stop it from casting spells/heals on units other than your target. Only changing actual targets will be disabled.")]
-        public bool DisableAllTargeting { get; set; }
+        [DefaultValue(25)]
+        [Category("Movement")]
+        [DisplayName("Questing Ranged Pull Override")]
+        [Description("Pull Distance we force to 40 for Ranged characters when using Questing BotBase")]
+        public int PullDistanceOverride { get; set; }
 
-        [Setting]
-        [DefaultValue(InterruptType.All)]
-        [Category("General")]
-        [DisplayName("Interrupt Target")]
-        [Description("Select which targets should we interrupt.")]
-        public InterruptType InterruptTarget { get; set; }
+        #endregion 
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("General")]
-        [DisplayName("Wait For Res Sickness")]
-        [Description("Wait for resurrection sickness to wear off.")]
-        public bool WaitForResSickness { get; set; }
+        #region Category: Consumables
 
         [Setting]
         [DefaultValue(65)]
-        [Category("General")]
-        [DisplayName("Min Health")]
+        [Category("Consumables")]
+        [DisplayName("Eat at Health %")]
         [Description("Minimum health to eat at.")]
         public int MinHealth { get; set; }
 
         [Setting]
         [DefaultValue(65)]
-        [Category("General")]
-        [DisplayName("Min Mana")]
+        [Category("Consumables")]
+        [DisplayName("Drink at Mana %")]
         [Description("Minimum mana to drink at.")]
         public int MinMana { get; set; }
+
         [Setting]
         [DefaultValue(30)]
-        [Category("General")]
-        [DisplayName("Potion Health")]
+        [Category("Consumables")]
+        [DisplayName("Potion at Health %")]
         [Description("Health % to use a health pot/trinket/stone at.")]
         public int PotionHealth { get; set; }
 
         [Setting]
         [DefaultValue(30)]
-        [Category("General")]
-        [DisplayName("Potion Mana")]
+        [Category("Consumables")]
+        [DisplayName("Potion at Mana %")]
         [Description("Mana % to use a mana pot/trinket at. (used for all energy forms)")]
         public int PotionMana { get; set; }
 
         [Setting]
         [DefaultValue(false)]
-        [Category("General")]
+        [Category("Consumables")]
         [DisplayName("Use Bandages")]
         [Description("Use bandages in inventory to heal")]
         public bool UseBandages { get; set; }
@@ -209,18 +217,11 @@ namespace Singular.Settings
         #region Category: Misc
 
         [Setting]
-        [DefaultValue(false)]
-        [Category("Misc")]
-        [DisplayName("Debug Logging")]
-        [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
-        public bool EnableDebugLogging { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Misc")]
-        [DisplayName("Debug Logging GCD")]
-        [Description("Enables logging of GCD/Casting in Singular. Debug Logging = true required")]
-        public bool EnableDebugLoggingGCD { get; set; }
+        [DefaultValue(true)]
+        [Category("General")]
+        [DisplayName("Wait For Res Sickness")]
+        [Description("Wait for resurrection sickness to wear off.")]
+        public bool WaitForResSickness { get; set; }
 
         [Setting]
         [DefaultValue(false)]
@@ -229,13 +230,13 @@ namespace Singular.Settings
         [Description("Enabling that will disable non combat behaviors. (Rest, PreCombat buffs)")]
         public bool DisableNonCombatBehaviors { get; set; }
 
-
         [Setting]
         [DefaultValue(false)]
         [Category("Misc")]
         [DisplayName("Disable Pet usage")]
         [Description("Enabling that will disable pet usage")]
         public bool DisablePetUsage { get; set; }
+
         #endregion
 
         #region Category: Group Healing
@@ -280,7 +281,7 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Items")]
         [DisplayName("Use Flasks")]
-        [Description("Uses Flask of the North or Flask of Enhancement.")]
+        [Description("Uses Alchemist Flasks (of the North, of Enhancement...)")]
         public bool UseAlchemyFlasks { get; set; }
 
         [Setting]
@@ -326,7 +327,8 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(false)]
         [Category("Tanking")]
-        [DisplayName("Disable Targeting")]
+        [DisplayName("Disable Target Switching")]
+        [Description("True: stay on current target while Tanking.  False: switch targets based upon threat differential with group")]
         public bool DisableTankTargetSwitching { get; set; }
 
         [Setting]
@@ -337,8 +339,26 @@ namespace Singular.Settings
 
         #endregion
 
+        #region Category: Targeting
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Targeting")]
+        [DisplayName("Disable Targeting")]
+        [Description("Disable all Targeting within the CC. This will NOT stop it from casting spells/heals on units other than your target. Only changing actual targets will be disabled.")]
+        public bool DisableAllTargeting { get; set; }
+
+        [Setting]
+        [DefaultValue(InterruptType.All)]
+        [Category("Targeting")]
+        [DisplayName("Interrupt Target")]
+        [Description("Select which targets should we interrupt.")]
+        public InterruptType InterruptTarget { get; set; }
+
+        #endregion
+
         #region Category: World Behaviors
-/*
+        /*
         [Setting]
         [DefaultValue(WoWContext.Instances)]
         [Category("World Behaviors")]

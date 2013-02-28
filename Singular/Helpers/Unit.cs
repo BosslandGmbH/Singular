@@ -46,8 +46,8 @@ namespace Singular.Helpers
                     StyxWoW.Me.GroupInfo.RaidMemberGuids.Union(StyxWoW.Me.GroupInfo.PartyMemberGuids).Union(new[]
                         {StyxWoW.Me.Guid}).Distinct().ToArray();
 
-                return (
-                    from p in ObjectManager.GetObjectsOfType<WoWPlayer>(false, true)
+                return (  // must check inheritance in getobj because of LocalPlayer
+                    from p in ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
                     where p.IsFriendly && guids.Any(g => g == p.Guid)
                     select p).ToList();
             }

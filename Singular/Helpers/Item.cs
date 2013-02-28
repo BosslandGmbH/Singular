@@ -505,7 +505,7 @@ namespace Singular.Helpers
                     }),
 
                     new Decorator(
-                        ret => bandage != null,
+                        ret => bandage != null && !Me.IsMoving,
 
                         new Sequence(
                             new Action(ret => UseItem(bandage)),

@@ -16,6 +16,7 @@ using System;
 using Action = Styx.TreeSharp.Action;
 using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
+using Styx.Helpers;
 
 namespace Singular
 {
@@ -143,6 +144,7 @@ namespace Singular
                 new LockSelector(
                     new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
                     Spell.WaitForGcdOrCastOrChannel(),
+                    _lostControlBehavior,
                     new HookExecutor(BehaviorType.Rest.ToString())
                     )
                 );
@@ -196,6 +198,7 @@ namespace Singular
                         ret => !HotkeyDirector.IsCombatEnabled,
                         new ActionAlwaysSucceed()
                         ),
+                    new Action( r => { MonitorQuestingPullDistance(); return RunStatus.Failure; } ),
     #if BOTS_NOT_CALLING_PULLBUFFS
                     _pullBuffsBehavior,
     #endif
@@ -292,6 +295,36 @@ namespace Singular
                     return RunStatus.Failure;
                 });
 
+        }
+
+        private static void MonitorQuestingPullDistance()
+        {
+            if (SingularRoutine.IsQuesting && SingularSettings.Instance.PullDistanceOverride == CharacterSettings.Instance.PullDistance)
+            {
+                int newPullDistance = 0;
+                switch (Me.Class)
+                {
+                    case WoWClass.DeathKnight:
+                    case WoWClass.Monk:
+                    case WoWClass.Paladin:
+                    case WoWClass.Rogue:
+                    case WoWClass.Warrior:
+                        break;
+
+                    default:
+                        if (Me.Specialization == WoWSpec.None || Me.Specialization == WoWSpec.DruidFeral || Me.Specialization == WoWSpec.DruidGuardian || Me.Specialization == WoWSpec.ShamanEnhancement)
+                            break;
+
+                        newPullDistance = 40;
+                        break;
+                }
+
+                if (newPullDistance != 0)
+                {
+                    Logger.Write(Color.White, "Quest Profile set Pull Distance to {0}, forcing to {1} for next Pull", CharacterSettings.Instance.PullDistance, newPullDistance);
+                    CharacterSettings.Instance.PullDistance = newPullDistance;
+                }
+            }
         }
 
         #region Nested type: LockSelector

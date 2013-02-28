@@ -229,6 +229,8 @@ namespace Singular.ClassSpecific.Priest
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Battlegrounds)]
         public static Composite CreatePriestShadowPvPPullAndCombat()
         {
+            Kite.CreateKitingBehavior(Common.CreateSlowMeleeBehavior(), Common.CreatePriestMovementBuff("Kiting", checkMoving: false), null);
+
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),

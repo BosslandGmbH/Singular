@@ -31,6 +31,7 @@ namespace Singular.Settings
                     974,    //  Shaman - Earth Shield
                     2825,   //  Shaman - Bloodlust
                     32182,  //  Shaman - Heroism
+                    80353   //  Mage - Time Warp
                 };
             }
         }

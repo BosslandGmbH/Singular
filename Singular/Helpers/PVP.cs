@@ -67,6 +67,10 @@ namespace Singular.Helpers
                 a.Spell.Mechanic == WoWSpellMechanic.Silenced));
         }
 
+        public static bool IsSlowed(this WoWUnit unit)
+        {
+            return unit.GetAllAuras().Any(a => a.Spell.SpellEffects.Any(e => e.AuraType == WoWApplyAuraType.ModDecreaseSpeed));
+        }
 
 #region Battleground Start Timer
 

@@ -34,30 +34,23 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.CombatBuffs | BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Normal )]
         public static Composite CreateRestoShamanHealingBuffsNormal()
         {
-            return new Decorator(
-                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                new PrioritySelector(
+            return new PrioritySelector(
 
-                    Spell.BuffSelf("Water Shield", ret => Me.ManaPercent < 15),
-                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent > 30 && Me.HealthPercent < 65 ),
-                    Spell.BuffSelf("Lightning Shield", ret => Me.ManaPercent > 30 && Me.HealthPercent >= 85 ),
+                Spell.BuffSelf("Water Shield", ret => Me.ManaPercent < 20),
+                Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent > 35),
 
-                    Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
-                    )
+                Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
                 );
         }
 
         [Behavior(BehaviorType.CombatBuffs | BehaviorType.PreCombatBuffs, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Battlegrounds)]
         public static Composite CreateRestoHealingBuffsBattlegrounds()
         {
-            return new Decorator(
-                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                new PrioritySelector(
-                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent > 25),
-                    Spell.BuffSelf("Water Shield", ret => Me.ManaPercent < 15),
+            return new PrioritySelector(
+                Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent > 25),
+                Spell.BuffSelf("Water Shield", ret => Me.ManaPercent < 15),
 
-                    Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
-                    )
+                Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
                 );
         }
 
@@ -111,14 +104,28 @@ namespace Singular.ClassSpecific.Shaman
         /// <returns></returns>
         private static WoWUnit GetBestEarthShieldTargetBattlegrounds()
         {
-            WoWUnit target = Unit.NearbyGroupMembers
+#if SUPPORT_MOST_IN_NEED_EARTHSHIELD_LOGIC
+            var target = Unit.NearbyGroupMembers
                 .Where(u => IsValidEarthShieldTarget(u.ToUnit()))
-                .OrderByDescending(u => Unit.NearbyUnfriendlyUnits.Count(e => e.CurrentTargetGuid == u.Guid))
-                .ThenBy(u => u.HealthPercent)
+                .Select(u => new { Unit = u, Health = u.HealthPercent, EnemyCount = Unit.NearbyUnfriendlyUnits.Count(e => e.CurrentTargetGuid == u.Guid)})
+                .OrderByDescending(v => v.EnemyCount)
+                .ThenBy(v => v.Health )
                 .FirstOrDefault();
 
-            guidLastEarthShield = target != null ? target.Guid : 0;
-            return target;
+            if (target == null)
+            {
+                guidLastEarthShield = Me.Guid;
+            }
+            else if (guidLastEarthShield != target.Unit.Guid)
+            {
+                guidLastEarthShield = target.Unit.Guid;
+                Logger.WriteDebug("Best Earth Shield Target appears to be: {0} @ {1:F0}% with {2} attackers", target.Unit.SafeName(), target.Health, target.EnemyCount);
+            }
+
+            return target == null ? Me : target.Unit;
+#else
+            return Me;
+#endif
         }
 
         private static bool IsValidEarthShieldTarget(WoWUnit unit)
@@ -434,8 +441,8 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-            behavs.AddBehavior( 9999, "Earth Shield", "Earth Shield", 
-                Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()));
+            if ( SingularRoutine.CurrentWoWContext == WoWContext.Instances )
+                behavs.AddBehavior( 9999, "Earth Shield", "Earth Shield", Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()));
 
             int dispelPriority = (SingularSettings.Instance.DispelDebuffs == DispelStyle.HighPriority) ? 9999 : -9999;
             behavs.AddBehavior( dispelPriority, "Purify Spirit", null, Dispelling.CreateDispelBehavior());

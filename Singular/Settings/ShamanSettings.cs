@@ -5,6 +5,8 @@ using Styx.Helpers;
 using Styx.WoWInternals.WoWObjects;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
+using Styx;
+using System.Drawing;
 
 namespace Singular.Settings
 {
@@ -121,6 +123,15 @@ namespace Singular.Settings
             : base("Shaman", ctx)
         {
 
+            if (!HealingSurgeAdjusted && StyxWoW.Me.Level >= 60)
+            {
+                if ( SavedToFile )
+                    Logger.Write(Color.White, "Adjusting saved Healing Surge % from {0} to 21 for Instances.  Visit Class Config and Save to make permanent.", HealingSurge);
+
+                HealingSurge = 21;
+                HealingSurgeAdjusted = true;
+            }
+
             // bit of a hack.  using SavedToFile setting to catch if we have
             // .. written settings yet.  if not, do context specific initialization 
             // .. here since we don't want same DefaultValue() for every context
@@ -149,7 +160,7 @@ namespace Singular.Settings
                 GreaterHealingWave = 70;
                 Ascendance = 40;
                 SpiritLinkTotem = 48;
-                HealingSurge = 50;
+                HealingSurge = 60;
                 AncestralSwiftness = 20;
                 HealingStreamTotem = 87;
                 HealingTideTotemPercent = 49;
@@ -161,6 +172,11 @@ namespace Singular.Settings
         [Browsable(false)]
         [DefaultValue(false)]
         public bool SavedToFile { get; set; }
+
+        [Setting]
+        [Browsable(false)]
+        [DefaultValue(false)]
+        public bool HealingSurgeAdjusted { get; set; }
 
         [Setting]
         [DefaultValue(70)]

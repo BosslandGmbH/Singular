@@ -1308,15 +1308,17 @@ namespace Singular.Helpers
                 return true;
 
             // assume we cant do that, but then check for class specific buffs which allow movement while casting
-            bool allowMove = false;
+            bool allowMovingWhileCasting = false;
             if (Me.Class == WoWClass.Shaman)
-                allowMove = Me.HasAura("Spiritwalker's Grace") || (_spell.Id != 403 && !TalentManager.HasGlyph("Unleashed Lightning"));
+                allowMovingWhileCasting = Me.HasAura("Spiritwalker's Grace") || (_spell.Name == "Lightning Bolt" && TalentManager.HasGlyph("Unleashed Lightning"));
             else if (Me.Class == WoWClass.Warlock)
-                allowMove = ClassSpecific.Warlock.Common.HasTalent(ClassSpecific.Warlock.WarlockTalent.KiljadensCunning);
+                allowMovingWhileCasting = Me.ActiveAuras.ContainsKey("Kil'jaeden's Cunning") || Spell.GetSpellCooldown("Kil'jaeden's Cunning") == TimeSpan.Zero;
+            else if (Me.Class == WoWClass.Mage)
+                allowMovingWhileCasting = _spell.Name == "Scorch" || Me.HasAura("Ice Floes");
             else if (Me.Specialization == WoWSpec.DruidRestoration)
-                allowMove = Me.HasAura("Spiritwalker's Grace");  // Symbiosis
+                allowMovingWhileCasting = Me.HasAura("Spiritwalker's Grace");  // Symbiosis
 
-            return allowMove;
+            return allowMovingWhileCasting;
         }
 
         #endregion

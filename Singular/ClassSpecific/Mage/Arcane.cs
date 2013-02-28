@@ -54,8 +54,7 @@ namespace Singular.ClassSpecific.Mage
                             new PrioritySelector(
                                 Spell.BuffSelf("Frost Nova",
                                     ret => Unit.NearbyUnfriendlyUnits.Any(u =>
-                                                    u.DistanceSqr <= 8 * 8 && !u.HasAura("Freeze") &&
-                                                    !u.HasAura("Frost Nova") && !u.Stunned))
+                                                    u.DistanceSqr <= 8 * 8 && !u.IsFrozen() && !u.Stunned))
                                 )),
 
                         // AoE comes first
@@ -110,12 +109,9 @@ namespace Singular.ClassSpecific.Mage
                 Spell.WaitForCast(true),
 
                 // Defensive stuff
-                new Decorator(
-                    ret => Me.ActiveAuras.ContainsKey("Ice Block"),
-                    new ActionIdle()),
                 Spell.BuffSelf("Ice Block", ret => Me.HealthPercent < 10 && !Me.ActiveAuras.ContainsKey("Hypothermia")),
                 Spell.BuffSelf("Mana Shield", ret => Me.HealthPercent <= 75),
-                Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.HasAura("Frost Nova"))),
+                Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.IsFrozen())),
                 Common.CreateMagePolymorphOnAddBehavior(),
 
 

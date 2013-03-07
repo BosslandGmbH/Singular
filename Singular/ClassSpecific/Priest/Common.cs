@@ -18,33 +18,11 @@ using Rest = Singular.Helpers.Rest;
 
 namespace Singular.ClassSpecific.Priest
 {
-    public enum PriestTalent
-    {
-        VoidTendrils = 1,
-        Psyfiend,
-        DominateMind,
-        BodyAndSoul,
-        AngelicFeather,
-        Phantasm,
-        FromDarknessComesLight,
-        Mindbender,
-        PowerWordSolace,
-        DesperatePrayer,
-        SpectralGuide,
-        AngelicBulwark,
-        TwistOfFate,
-        PowerInfusion,
-        DivineInsight,
-        Cascade,
-        DivineStar,
-        Halo
-    }
-
     public class Common
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
-        public static bool HasTalent( PriestTalent tal ) { return TalentManager.IsSelected((int)tal); }
+        public static bool HasTalent( PriestTalents tal ) { return TalentManager.IsSelected((int)tal); }
 
 
         [Behavior(BehaviorType.Heal, WoWClass.Priest, context:WoWContext.Battlegrounds, priority:2)]
@@ -97,8 +75,8 @@ namespace Singular.ClassSpecific.Priest
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
-                    Spell.Cast("Guardian Spirit", on => Me, ret => Me.Stunned && Me.HealthPercent < 20 && TalentManager.HasGlyph("Desperation")),
-                    Spell.Cast("Pain Suppression", on => Me, ret => Me.Stunned && TalentManager.HasGlyph("Desperation")),
+                    Spell.Cast("Guardian Spirit", on => Me, ret => Me.Stunned && Me.HealthPercent < 20),
+                    Spell.Cast("Pain Suppression", on => Me, ret => Me.Stunned),
                     Spell.Cast("Dispersion", on => Me, ret => Me.HealthPercent < 60)
                     )
                 );
@@ -112,17 +90,59 @@ namespace Singular.ClassSpecific.Priest
                    !unit.HasAura("Commanding Shout");
         }
 
+        public static Decorator CreatePriestMovementBuff()
+        {
+            return new Decorator(
+                ret => MovementManager.IsClassMovementAllowed
+                    && StyxWoW.Me.IsAlive
+                    && !StyxWoW.Me.Mounted
+                    && !StyxWoW.Me.IsOnTransport
+                    && !StyxWoW.Me.OnTaxi
+                    && (SpellManager.HasSpell("Angelic Feather") || TalentManager.IsSelected((int)PriestTalents.BodyAndSoul))
+                    && !StyxWoW.Me.HasAnyAura("Angelic Feather", "Body and Soul")
+                    && !StyxWoW.Me.IsAboveTheGround(),
+
+                new PrioritySelector(
+                    Spell.WaitForCast(),
+                    new Throttle(3,
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+
+                                Spell.BuffSelf("Power Word: Shield",
+                                    ret => TalentManager.IsSelected((int)PriestTalents.BodyAndSoul)
+                                        && !StyxWoW.Me.HasAnyAura("Body and Soul", "Weakened Soul")),
+
+                                new Decorator(
+                                    ret => SpellManager.HasSpell("Angelic Feather")
+                                        && !StyxWoW.Me.HasAura("Angelic Feather"),
+                                    new Sequence(
+                // new Action( ret => Logger.Write( "Speed Buff for {0}", mode ) ),
+                                        Spell.CastOnGround("Angelic Feather",
+                                            ctx => StyxWoW.Me.Location,
+                                            ret => true,
+                                            false),
+                                        Helpers.Common.CreateWaitForLagDuration(orUntil => StyxWoW.Me.CurrentPendingCursorSpell != null),
+                                        new Action(ret => Lua.DoString("SpellStopTargeting()"))
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
         public static Decorator CreatePriestMovementBuff(string mode, bool checkMoving = true)
         {
             return new Decorator(
-                ret => SingularSettings.Instance.Priest().UseSpeedBuff
-                    && MovementManager.IsClassMovementAllowed 
+                ret => MovementManager.IsClassMovementAllowed 
                     && StyxWoW.Me.IsAlive 
                     && (!checkMoving || StyxWoW.Me.IsMoving)
                     && !StyxWoW.Me.Mounted
                     && !StyxWoW.Me.IsOnTransport
                     && !StyxWoW.Me.OnTaxi
-                    && (SpellManager.HasSpell("Angelic Feather") || TalentManager.IsSelected((int) PriestTalent.BodyAndSoul))
+                    && (SpellManager.HasSpell("Angelic Feather") || TalentManager.IsSelected((int) PriestTalents.BodyAndSoul))
                     && !StyxWoW.Me.HasAnyAura("Angelic Feather", "Body and Soul")
                     && (BotPoi.Current == null || BotPoi.Current.Type == PoiType.None || BotPoi.Current.Location.Distance(StyxWoW.Me.Location) > 10)
                     && !StyxWoW.Me.IsAboveTheGround(),
@@ -135,7 +155,7 @@ namespace Singular.ClassSpecific.Priest
                             new PrioritySelector(
 
                                 Spell.BuffSelf( "Power Word: Shield", 
-                                    ret => TalentManager.IsSelected((int) PriestTalent.BodyAndSoul)
+                                    ret => TalentManager.IsSelected((int) PriestTalents.BodyAndSoul)
                                         && !StyxWoW.Me.HasAnyAura("Body and Soul", "Weakened Soul")),
 
                                 new Decorator(
@@ -178,7 +198,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => MovementManager.IsClassMovementAllowed 
                         && PriestSettings.AllowKiting
-                        && (Common.HasTalent(PriestTalent.AngelicFeather) || Common.HasTalent(PriestTalent.BodyAndSoul) || Common.HasTalent(PriestTalent.VoidTendrils )),
+                        && (Common.HasTalent(PriestTalents.AngelicFeather) || Common.HasTalent(PriestTalents.BodyAndSoul) || Common.HasTalent(PriestTalents.VoidTendrils )),
                     Kite.BeginKitingBehavior(35)
                     )
                 );
@@ -208,4 +228,27 @@ namespace Singular.ClassSpecific.Priest
         #endregion
 
     }
+
+    public enum PriestTalents
+    {
+        VoidTendrils = 1,
+        Psyfiend,
+        DominateMind,
+        BodyAndSoul,
+        AngelicFeather,
+        Phantasm,
+        FromDarknessComesLight,
+        Mindbender,
+        SolaceAndInsanity,
+        DesperatePrayer,
+        SpectralGuise,
+        AngelicBulwark,
+        TwistOfFate,
+        PowerInfusion,
+        DivineInsight,
+        Cascade,
+        DivineStar,
+        Halo
+    }
+
 }

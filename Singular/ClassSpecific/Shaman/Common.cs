@@ -38,28 +38,6 @@ namespace Singular.ClassSpecific.Shaman
         Rockbiter = 3021
     }
 
-    public enum ShamanTalents
-    {
-        NaturesGuardian = 1,
-        StoneBulwarkTotem,
-        AstralShift,
-        FrozenPower,
-        EarthgrabTotem,
-        WindwalkTotem,
-        CallOfTheElements,
-        TotemicRestoration,
-        TotemicProjection,
-        ElementalMastery,
-        AncestralSwiftness,
-        EchoOfTheElements,
-        HealingTideTotem,
-        AncestralGuidance,
-        Conductivity,
-        UnleashedFury,
-        PrimalElementalist,
-        ElementalBlast
-    }
-
     public static class Common
     {
         #region Local Helpers
@@ -148,8 +126,12 @@ namespace Singular.ClassSpecific.Shaman
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
                     Spell.Cast(WoWTotem.Tremor.ToSpellId(), on => Me, ret => Me.Fleeing),
-                    Spell.Cast("Thunderstorm", on => Me, ret => Me.Stunned),
-                    Spell.BuffSelf("Shamanistic Rage")
+                    new Decorator(
+                        ret => Me.Fleeing && Spell.CanCastHack("Tremor Totem", Me),
+                        Spell.CastHack("Tremor Totem", on => Me, req => { Logger.WriteDebug( Color.Pink, "Hack Casting Tremor"); return true; })
+                        ),
+                    Spell.Cast("Thunderstorm", on => Me, ret => Me.Stunned && Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange )),
+                    Spell.BuffSelf("Shamanistic Rage", ret => Me.Stunned && Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange))
                     )
                 );
         }
@@ -161,7 +143,8 @@ namespace Singular.ClassSpecific.Shaman
 
                 Totems.CreateTotemsBehavior(),
 
-                Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < 50),
+                Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < ShamanSettings.AstralShiftPercent || Common.StressfulSituation),
+                Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(), ret => !Me.IsMoving && (Common.StressfulSituation || Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Totems.Exist(WoWTotem.EarthElemental))),
                 Spell.BuffSelf("Shamanistic Rage", ret => Me.HealthPercent < 70 || Me.ManaPercent < 70 || Common.StressfulSituation),
 
                 // hex someone if they are not current target, attacking us, and 12 yds or more away
@@ -209,9 +192,9 @@ namespace Singular.ClassSpecific.Shaman
 
                 Spell.BuffSelf("Ascendance", ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal && Common.StressfulSituation),
 
-                Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust),
+                Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust)
 
-                Spell.BuffSelf("Spiritwalker's Grace", ret => Me.IsMoving && Me.Combat)
+                // , Spell.BuffSelf("Spiritwalker's Grace", ret => Me.IsMoving && Me.Combat)
 
                 );
         }
@@ -223,7 +206,8 @@ namespace Singular.ClassSpecific.Shaman
 
                 Totems.CreateTotemsBehavior(),
 
-                Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < 50),
+                Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < ShamanSettings.AstralShiftPercent || Common.StressfulSituation ),
+                Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(), ret => !Me.IsMoving && (Common.StressfulSituation || Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Totems.Exist(WoWTotem.EarthElemental))),
                 Spell.BuffSelf("Shamanistic Rage", ret => Me.HealthPercent < 70 || Me.ManaPercent < 70 || Common.StressfulSituation),
 
                 // hex someone if they are not current target, attacking us, and 12 yds or more away
@@ -245,9 +229,9 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.BuffSelf("Ascendance",
                     ret => ((Me.GotTarget && Me.CurrentTarget.HealthPercent > 70) || Unit.NearbyUnfriendlyUnits.Count() > 1)),
 
-                Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust),
+                Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust)
 
-                Spell.BuffSelf("Spiritwalker's Grace", ret => Me.IsMoving && Me.Combat)
+                // , Spell.BuffSelf("Spiritwalker's Grace", ret => Me.IsMoving && Me.Combat)
 
                 );
         }
@@ -318,7 +302,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static bool CanImbue(WoWItem item)
         {
-            if (item != null && item.ItemInfo.IsWeapon)
+            if (ShamanSettings.UseWeaponImbues && item != null && item.ItemInfo.IsWeapon)
             {
                 // during combat, only mess with imbues if they are missing
                 if (Me.Combat && item.TemporaryEnchantment.Id != 0)
@@ -513,4 +497,27 @@ namespace Singular.ClassSpecific.Shaman
         #endregion
 
     }
+
+    public enum ShamanTalents
+    {
+        NaturesGuardian = 1,
+        StoneBulwarkTotem,
+        AstralShift,
+        FrozenPower,
+        EarthgrabTotem,
+        WindwalkTotem,
+        CallOfTheElements,
+        TotemicRestoration,
+        TotemicProjection,
+        ElementalMastery,
+        AncestralSwiftness,
+        EchoOfTheElements,
+        HealingTideTotem,
+        AncestralGuidance,
+        Conductivity,
+        UnleashedFury,
+        PrimalElementalist,
+        ElementalBlast
+    }
+
 }

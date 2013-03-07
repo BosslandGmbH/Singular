@@ -72,4 +72,15 @@ namespace Singular
         Facing = 0x2,   // only those we are safelyfacing
         InRange = 0x4   // regardless of facing
     }
+
+    [Flags]
+    enum HealingContext
+    {
+        None = 0,
+        Normal = 0x1,
+        Instances = 0x2,
+        Battlegrounds = 0x4,
+        Raids = 0x8
+    }
+
 }

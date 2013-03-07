@@ -125,7 +125,10 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, (WoWSpec)int.MaxValue, WoWContext.Instances | WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Instances | WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.Instances | WoWContext.Battlegrounds)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidRestoration, WoWContext.Instances | WoWContext.Battlegrounds)]
         public static Composite CreateDruidCombatBuffsInstance()
         {
             return new PrioritySelector(
@@ -176,21 +179,6 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 */
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Battlegrounds, 2)]
-        public static Composite CreateFeralDruidBattlegroundCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.Buff("Cyclone",
-                    ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
-                        u => Me.HasAura("Predatory Swiftness")
-                            && u.IsCasting 
-                            && Me.GotTarget
-                            && Me.CurrentTargetGuid != u.Guid
-                        )
-                    )
-                );
-        }
-
         #endregion
 
         #region Heal
@@ -480,7 +468,7 @@ namespace Singular.ClassSpecific.Druid
                     return false;
             }
 
-            if ((spell.CastTime != 0u || Spell.IsFunnel(spell)) && Me.IsMoving && !StyxWoW.Me.HasAnyAura("Spiritwalker's Grace"))
+            if ((spell.CastTime != 0u || Spell.IsFunnel(spell)) && Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura())
                 return false;
 
             if (Me.ChanneledCastingSpellId == 0)

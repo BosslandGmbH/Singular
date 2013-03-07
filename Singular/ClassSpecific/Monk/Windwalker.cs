@@ -80,7 +80,7 @@ namespace Singular.ClassSpecific.Monk
                                 )
                             ),
 
-                        Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
+                        Spell.Cast("Chi Burst", ret => !Me.IsMoving),
                         Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi || Me.HasAura("Combo Breaker: Blackout Kick")),
                         Spell.Cast("Tiger Palm", ret => (Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")) || Me.HasAura("Combo Breaker: Tiger Palm")),
                         Spell.Cast( "Expel Harm", ret => Me.CurrentChi < (Me.MaxChi-2) && Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10 ),
@@ -112,7 +112,7 @@ namespace Singular.ClassSpecific.Monk
                                 u => u.IsTargetingMeOrPet
                                     && (u.IsPlayer || SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds)
                                     && (u.IsWithinMeleeRange || (u.Distance < 20 && TalentManager.HasGlyph("Touch of Karma")))),
-                            ret => Me.CurrentChi >= 2 && Me.HealthPercent < 70),
+                            ret => Me.HealthPercent < 70),
 
                         Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
                         Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
@@ -157,7 +157,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
                         // Symbiosis
-                        Spell.Cast("Bear Hug"),
+                        Spell.Cast("Bear Hug", ret => !Unit.NearbyUnfriendlyUnits.Any( u => u.Guid != Me.CurrentTargetGuid && u.CurrentTargetGuid == Me.Guid)),
 
                         // AoE behavior
                         Spell.Cast("Paralysis", 
@@ -323,7 +323,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
                         Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
                         Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
-                        Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4),
+                        Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4),
                         Spell.BuffSelf("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Me.CurrentTarget.IsBoss() && Me.CurrentTarget.IsWithinMeleeRange)
                         )
                     )
@@ -361,7 +361,7 @@ namespace Singular.ClassSpecific.Monk
 
                             Spell.Cast( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
 
-                            Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)Common.Talents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
+                            Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)MonkTalents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
 #if USE_CHI_BURST                            
                             ,
 

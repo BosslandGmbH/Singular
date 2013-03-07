@@ -433,11 +433,11 @@ namespace Singular.ClassSpecific.Mage
                                 target.GetAuraStacks("Frostbolt", true)
                                 );
 
-                            if (Common.HasTalent(MageTalent.NetherTempest))
+                            if (Common.HasTalent(MageTalents.NetherTempest))
                                 log += string.Format(", nethtmp={0}", (long)target.GetAuraTimeLeft("Nether Tempest", true).TotalMilliseconds);
-                            else if (Common.HasTalent(MageTalent.LivingBomb ))
+                            else if (Common.HasTalent(MageTalents.LivingBomb ))
                                 log += string.Format( ", livbomb={0}", (long)target.GetAuraTimeLeft("Living Bomb", true).TotalMilliseconds);
-                            else if (Common.HasTalent(MageTalent.FrostBomb))
+                            else if (Common.HasTalent(MageTalents.FrostBomb))
                                 log += string.Format( ", frstbmb={0}", (long)target.GetAuraTimeLeft("Frost Bomb", true).TotalMilliseconds);
 
                             if (target.HasAura("Freeze"))

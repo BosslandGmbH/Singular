@@ -52,6 +52,7 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.lblHealTargets = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.pgHealRaid = new System.Windows.Forms.PropertyGrid();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -155,6 +156,7 @@
             // 
             // tabPage4
             // 
+            this.tabPage4.Controls.Add(this.pgHealRaid);
             this.tabPage4.Controls.Add(this.label3);
             this.tabPage4.Controls.Add(this.cboHealContext);
             this.tabPage4.Controls.Add(this.pgHealInstance);
@@ -290,6 +292,14 @@
             this.timer1.Interval = 250;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // pgHealRaid
+            // 
+            this.pgHealRaid.Location = new System.Drawing.Point(0, 32);
+            this.pgHealRaid.Name = "pgHealRaid";
+            this.pgHealRaid.PropertySort = System.Windows.Forms.PropertySort.NoSort;
+            this.pgHealRaid.Size = new System.Drawing.Size(329, 250);
+            this.pgHealRaid.TabIndex = 4;
+            // 
             // ConfigurationForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -348,5 +358,6 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TabPage tabPage5;
         private System.Windows.Forms.PropertyGrid pgHotkeys;
+        private System.Windows.Forms.PropertyGrid pgHealRaid;
     }
 }

@@ -41,13 +41,37 @@ namespace Singular.Helpers
         {
             get
             {
-                // Grab party+raid member + myself GUIDs
-                ulong[] guids =
-                    StyxWoW.Me.GroupInfo.RaidMemberGuids.Union(StyxWoW.Me.GroupInfo.PartyMemberGuids).Union(new[]
-                        {StyxWoW.Me.Guid}).Distinct().ToArray();
+                ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
+                    .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
+                    .Union(new[] { StyxWoW.Me.Guid })
+                    .Distinct()
+                    .ToArray();
 
                 return (  // must check inheritance in getobj because of LocalPlayer
                     from p in ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
+                    where p.IsFriendly && guids.Any(g => g == p.Guid)
+                    select p).ToList();
+            }
+        }
+
+        public static IEnumerable<WoWUnit> GroupMembersAndPets
+        {
+            get
+            {
+                ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
+                    .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
+                    .Union(new[] { StyxWoW.Me.Guid })
+                    .Distinct()
+                    .ToArray();
+
+                guids = guids
+                    .Union(ObjectManager.GetObjectsOfType<WoWPlayer>(true, true)
+                        .Where(p => p.GotAlivePet && p.IsInMyPartyOrRaid )
+                        .Select(p => p.Pet.Guid))
+                    .ToArray();
+
+                return (  // must check inheritance in getobj because of LocalPlayer
+                    from p in ObjectManager.GetObjectsOfType<WoWUnit>(true, true)
                     where p.IsFriendly && guids.Any(g => g == p.Guid)
                     select p).ToList();
             }
@@ -62,7 +86,6 @@ namespace Singular.Helpers
             get { return StyxWoW.Me.GroupInfo.RaidMembers.Union(StyxWoW.Me.GroupInfo.PartyMembers).Distinct(); }
         }
 
-
         public static IEnumerable<WoWPlayer> NearbyGroupMembers
         {
             get
@@ -71,21 +94,11 @@ namespace Singular.Helpers
             }
         }
 
-        public static IEnumerable<WoWUnit> NearbyGroupPets
-        {
-            get
-            {
-                return GroupMembers.Where(p => p.GotAlivePet && p.Pet.DistanceSqr <= 40 * 40).ToList();
-            }
-        }
-
         public static IEnumerable<WoWUnit> NearbyGroupMembersAndPets
         {
             get
             {
-                return NearbyGroupMembers
-                    .Union( NearbyGroupPets )
-                    .ToList();
+                return GroupMembersAndPets.Where(p => p.DistanceSqr <= 40 * 40).ToList();
             }
         }
 
@@ -293,7 +306,9 @@ namespace Singular.Helpers
         /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
         public static bool HasAuraExpired(this WoWUnit u, string spell, string aura, int secs = 3)
         {
-            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, true).TotalSeconds < secs;
+            // need to compare millisecs even though seconds are provided.  otherwise see it as expired 999 ms early because
+            // .. of loss of precision
+            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, true) <= TimeSpan.FromMilliseconds(secs * 1000);
         }
 
 

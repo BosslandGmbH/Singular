@@ -97,7 +97,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Throttle(    // throttle these because most are off the GCD
                     new Decorator( ret => !Spell.IsGlobalCooldown(),
                         new PrioritySelector(
-                            Spell.Cast("Demoralizing Shout", ret => Unit.NearbyUnfriendlyUnits.Any( m => m.Distance < (m.MeleeDistance() + 5))),
+                            Spell.Cast("Demoralizing Shout", ret => Unit.NearbyUnfriendlyUnits.Any( m => m.SpellDistance() < 10)),
                             Spell.BuffSelf("Shield Wall", ret => Me.HealthPercent < WarriorSettings.WarriorShieldWallHealth),
                             Spell.BuffSelf("Shield Barrier", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBarrierHealth),
                             Spell.BuffSelf("Shield Block", ret => Me.HealthPercent < WarriorSettings.WarriorShieldBlockHealth),
@@ -121,9 +121,9 @@ namespace Singular.ClassSpecific.Warrior
 
                             // cast above rage dump so we are sure have rage to do damage
                             Spell.Cast("Bloodbath"),
-                            Spell.Cast("Berserker Rage"),
+                            Spell.Cast("Berserker Rage")
                             // new Action(ret => { UseTrinkets(); return RunStatus.Failure; }),
-                            Spell.Cast("Deadly Calm", ret => TalentManager.HasGlyph("Incite") || Me.CurrentRage >= RageDump)
+                            // Spell.Cast("Deadly Calm", ret => TalentManager.HasGlyph("Incite") || Me.CurrentRage >= RageDump)
                             )
                         )
                     )
@@ -182,7 +182,7 @@ namespace Singular.ClassSpecific.Warrior
                             ),
 
                         // Handle proccing Glyph of Incite buff
-                        Spell.Cast( "Devastate", ret => TalentManager.HasGlyph("Incite") && Me.HasAura("Deadly Calm") && !Me.HasAura("Glyph of Incite")),
+                        // Spell.Cast( "Devastate", ret => TalentManager.HasGlyph("Incite") && Me.HasAura("Deadly Calm") && !Me.HasAura("Glyph of Incite")),
 
                         // Multi-target?  get the debuff on them
                         new Decorator(

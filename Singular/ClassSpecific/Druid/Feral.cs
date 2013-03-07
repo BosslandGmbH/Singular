@@ -207,7 +207,22 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Battlegrounds, 2)]
+        public static Composite CreateFeralDruidBattlegroundCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.Buff("Cyclone",
+                    ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                        u => Me.HasAura("Predatory Swiftness")
+                            && u.IsCasting
+                            && Me.GotTarget
+                            && Me.CurrentTargetGuid != u.Guid
+                        )
+                    )
+                );
+        }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateFeralNormalCombat()
         {
             return new PrioritySelector(
@@ -293,6 +308,143 @@ namespace Singular.ClassSpecific.Druid
                             new PrioritySelector(
                                 CreateFeralWildChargeBehavior(),
                                 Spell.BuffSelf("Dash", ret => Spell.GetSpellCooldown("Wild Charge", 0).TotalSeconds < 13 )
+                                )
+                            )
+
+                        )
+                    ),
+
+                Movement.CreateMoveToMeleeBehavior(true)
+                );
+        }
+
+
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Instances )]
+        public static Composite CreateFeralNormalCombatInstances()
+        {
+            return new PrioritySelector(
+                CreateFeralDiagnosticOutputBehavior("Combat"),
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateAutoAttack(false),
+
+                Spell.WaitForCast(true),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+
+                        // updated time to death tracking values before we need them
+                        new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
+
+                        Helpers.Common.CreateInterruptBehavior(),
+
+                        CreateFeralAoeCombat(),
+
+            #region Symbiosis
+                        new Decorator(
+                            ret => Me.HasAura("Symbiosis") && !Me.HasAura("Prowl"),
+                            new PrioritySelector(
+                                Common.SymbCast(Symbiosis.FeralSpirit, on => Me.CurrentTarget, ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances || Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
+                                Common.SymbCast(Symbiosis.ShatteringBlow, on => Me.CurrentTarget, ret => Me.CurrentTarget.IsPlayer && Me.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield")),
+                                Common.SymbCast(Symbiosis.DeathCoil, on => Me.CurrentTarget, ret => !Me.CurrentTarget.IsWithinMeleeRange),
+                                Common.SymbCast(Symbiosis.Clash, on => Me.CurrentTarget, ret => !Me.CurrentTarget.IsWithinMeleeRange)
+                                )
+                            ),
+            #endregion
+
+                        // 1. Keep Faerie Fire up (if no other armor debuff).
+                        Spell.Cast("Faerie Fire", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
+
+                        new Decorator(
+                            ret => Me.GotTarget
+                                && Me.CurrentTarget.IsBoss()
+                                && Me.SpellDistance(Me.CurrentTarget) < 8,
+
+                            new PrioritySelector(
+                                // 2. Keep Savage Roar up
+                                new Throttle(Spell.Cast("Savage Roar", ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery")))),
+
+                                // 3. Use Tiger’s Fury/Nature's Vigil/Incarnation/Berserking/Force of Nature*
+                                new Throttle(Spell.BuffSelf("Tiger's Fury",
+                                    ret => Me.EnergyPercent <= 35
+                                        && !Me.ActiveAuras.ContainsKey("Clearcasting")
+                                        && !Me.HasAura("Berserk")
+                                        )),
+
+                                new Throttle(
+                                    Spell.BuffSelf("Berserk",
+                                        ret => Me.HasAura("Tiger's Fury")
+                                            && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.CurrentTarget.TimeToDeath() >= 20))
+                                        )
+                                    ),
+
+                                new Throttle(Spell.Cast("Nature's Vigil", ret => Me.HasAura("Berserk"))),
+                                Spell.Cast("Incarnation", ret => Me.HasAura("Berserk")),
+
+                                Spell.CastOnGround("Force of Nature",
+                                    u => (Me.CurrentTarget ?? Me).Location,
+                                    ret => StyxWoW.Me.CurrentTarget != null
+                                        && StyxWoW.Me.CurrentTarget.Distance < 40
+                                        && SpellManager.HasSpell("Force of Nature")),
+
+                                // 4. Use Nature’s Swiftness/Healing touch to generate Wrath of Cenarius procs when GCD will not cause energy cap*
+                                // 5. Use Predatory Swiftness to generate Dream of Cenarius procs when GCD will not cause energy cap, preferably at 4CP.**
+                                new Decorator(
+                                    ret => Me.EnergyPercent < 80 
+                                        && Common.HasTalent( DruidTalents.DreamOfCenarius) 
+                                        && !Me.HasAura("Wrath of Cenarius"),
+                                    new Sequence(
+                                        new PrioritySelector(
+                                            new Decorator(  ret => Me.HasAura("Predatory Swiftness"), new ActionAlwaysSucceed()),
+                                            Spell.BuffSelf( "Nature's Swiftness")
+                                            ),
+                                        Spell.Cast( "Healing Touch", on => Me )
+                                        )
+                                    ),
+
+                                // 6. Ferocious Bite if the boss has less than 25% hp remaining and Rip is near expiring.
+                                Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent < 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds.Between(150, 6000)),
+
+                                // 7. Ferocious Bite if you have 5 CP and at least 6 - 10 seconds on Savage Roar and Rip
+                                Spell.Cast("Ferocious Bite", 
+                                    req => Me.ComboPoints >= 5
+                                        && Me.CurrentTarget.GetAuraTimeLeft("Savage Roar").TotalSeconds.Between(6, 10)
+                                        && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds.Between(6, 10)
+                                        ),
+
+                                // 8. Keep 5 combo point Rip up.
+                                Spell.Buff("Rip", true, on => Me.CurrentTarget, req => Me.ComboPoints >= 5, 3),
+
+                                // 9. Keep Rake up
+                                Spell.Buff("Rake", true, on => Me.CurrentTarget, req => true, 3),
+
+                                // 10. Spend Omen of Clarity procs on Thrash if Thrash has less than 6 seconds remaining.
+                                Spell.Buff("Thrash", true, on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity"), 6),
+
+                                // 11. Ravage to generate combo points if Ravage is available (Incarnation)
+                                Spell.Cast("Ravage", req => Me.ComboPoints < 5 && (Me.IsSafelyBehind(Me.CurrentTarget) || Me.HasAura("Incarnation"))),
+
+                                // 12. Shred to generate combo points if Shred is available (Behind boss, berserk w/glyph, etc)
+                                Spell.Cast("Shred", req => Me.ComboPoints < 5 && (Me.IsSafelyBehind(Me.CurrentTarget) || (TalentManager.HasGlyph("Shred") && Me.HasAnyAura("Tiger's Fury", "Berserk")))),
+
+                                // 13. Use Mangle to generate combo points.
+                                Spell.Cast("Mangle", req => Me.ComboPoints < 5 ),
+
+                                // 14. Maintain Thrash bleed if it will not interfere with Rake, Rip, or SR uptimes.
+                                Spell.Buff("Thrash", true, on => Me.CurrentTarget,
+                                    req => Me.CurrentTarget.GetAuraTimeLeft("Savage Roar").TotalSeconds >= 6
+                                        && Me.CurrentTarget.GetAuraTimeLeft("Rake").TotalSeconds >= 6
+                                        && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds >= 6)
+                                )
+                            ),
+
+                        new Decorator(
+                            ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > (Me.CurrentTarget.IsPlayer ? 10 : 15),
+                            new PrioritySelector(
+                                CreateFeralWildChargeBehavior(),
+                                Spell.BuffSelf("Dash", ret => Spell.GetSpellCooldown("Wild Charge", 0).TotalSeconds < 13)
                                 )
                             )
 

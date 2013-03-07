@@ -98,7 +98,7 @@ namespace Singular.Managers
                     continue;
                 }
 
-                if (p.HealthPercent >= SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
+                if (!p.Combat && p.HealthPercent >= SingularSettings.Instance.IgnoreHealTargetsAboveHealth)
                 {
                     units.RemoveAt(i);
                     continue;

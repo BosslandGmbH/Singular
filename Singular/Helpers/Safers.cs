@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿#define BOT_FIRSTUNIT_GETS_PRIORITY
+
+using System.Drawing;
 using System.Linq;
 using CommonBehaviors.Actions;
 using Singular.Settings;
@@ -99,7 +101,7 @@ namespace Singular.Helpers
                                 }
 
                                 // If the current target is in combat or has aggro towards us, it should be a valid target.
-                                if (!Blacklist.Contains( StyxWoW.Me.CurrentTargetGuid, BlacklistFlags.Combat) && ( StyxWoW.Me.CurrentTarget.Combat || StyxWoW.Me.CurrentTarget.Aggro))
+                                if (!Blacklist.Contains(StyxWoW.Me.CurrentTargetGuid, BlacklistFlags.Combat) && (StyxWoW.Me.CurrentTarget.Combat || StyxWoW.Me.CurrentTarget.Aggro))
                                     return null;
 
                                 // Check botpoi first and make sure our target is set to POI's object.
@@ -109,7 +111,12 @@ namespace Singular.Helpers
 
                                     if (obj != null)
                                     {
-                                        if (StyxWoW.Me.CurrentTarget != obj && (obj as WoWUnit).IsAlive)
+                                        if ((obj as WoWUnit).IsAlive && Blacklist.Contains(obj.Guid, BlacklistFlags.Combat))
+                                        {
+                                            Logger.Write(targetColor, "Current BotPOI " + obj.SafeName() + " was blacklisted!");
+                                            BotPoi.Clear("Blacklisted mob");
+                                        }
+                                        else if (StyxWoW.Me.CurrentTarget != obj && (obj as WoWUnit).IsAlive && !Blacklist.Contains(obj.Guid, BlacklistFlags.Combat))
                                         {
                                             Logger.Write(targetColor, "Current target is not BotPOI.  Switching to " + obj.SafeName() + "!");
                                             return obj;
@@ -119,15 +126,31 @@ namespace Singular.Helpers
 
                                 // Make sure we have the proper target from Targeting. 
                                 // The Botbase should give us the best target in targeting.
+#if BOT_FIRSTUNIT_GETS_PRIORITY
                                 var firstUnit = Targeting.Instance.FirstUnit;
-
                                 if (firstUnit != null)
                                 {
-                                    if (StyxWoW.Me.CurrentTarget != firstUnit)
+                                    if (StyxWoW.Me.CurrentTarget != firstUnit && firstUnit.IsAlive && !Blacklist.Contains(firstUnit.Guid, BlacklistFlags.Combat ))
                                     {
                                         Logger.Write(targetColor, "Current target is not Bots first choice.  Switching to " + firstUnit.SafeName() + "!");
                                         return firstUnit;
                                     }
+                                }
+#else
+                                foreach (var unit in Targeting.Instance.TargetList)
+                                {
+                                    if (StyxWoW.Me.CurrentTargetGuid != unit.Guid && unit.IsAlive && !Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
+                                    {
+                                        Logger.Write(targetColor, "Bot has a higher priority target available.  Switching to " + unit.SafeName() + "!");
+                                        return unit;
+                                    }
+                                }
+#endif
+                                if (Blacklist.Contains(StyxWoW.Me.CurrentTargetGuid, BlacklistFlags.Combat))
+                                {
+                                    Logger.Write(targetColor, "Current target " + StyxWoW.Me.CurrentTarget.SafeName() + " blacklisted and Bot has no other targets!  Clearing target and hoping Bot wakes up!");
+                                    StyxWoW.Me.ClearTarget();
+                                    return null;
                                 }
 
                                 return null;

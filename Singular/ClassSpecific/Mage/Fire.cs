@@ -315,11 +315,11 @@ namespace Singular.ClassSpecific.Mage
                             target.IsFrozen()
                             );
 
-                        if (Common.HasTalent(MageTalent.NetherTempest))
+                        if (Common.HasTalent(MageTalents.NetherTempest))
                             line += string.Format(", nethtmp={0}", (long)target.GetAuraTimeLeft("Nether Tempest", true).TotalMilliseconds);
-                        else if (Common.HasTalent(MageTalent.LivingBomb))
+                        else if (Common.HasTalent(MageTalents.LivingBomb))
                             line += string.Format(", livbomb={0}", (long)target.GetAuraTimeLeft("Living Bomb", true).TotalMilliseconds);
-                        else if (Common.HasTalent(MageTalent.FrostBomb))
+                        else if (Common.HasTalent(MageTalents.FrostBomb))
                             line += string.Format(", frstbmb={0}", (long)target.GetAuraTimeLeft("Frost Bomb", true).TotalMilliseconds);
                     }
 

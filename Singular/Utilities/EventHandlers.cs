@@ -256,7 +256,7 @@ namespace Singular.Utilities
                 
                 if (BotPoi.Current.Guid == unit.Guid)
                 {
-                    BotPoi.Clear("Blacklisting evading mob");
+                    BotPoi.Clear("Blacklisted evading mob");
                 }
 
                 if (StyxWoW.Me.CurrentTargetGuid == guid)

@@ -72,6 +72,7 @@ namespace Singular.GUI
                     pgHealBattleground.SelectedObject = SingularSettings.Instance.Shaman().Battleground;
                     pgHealInstance.SelectedObject = SingularSettings.Instance.Shaman().Instance;
                     pgHealNormal.SelectedObject = SingularSettings.Instance.Shaman().Normal;
+                    pgHealRaid.SelectedObject = SingularSettings.Instance.Shaman().Raid;
                     break;
                 case WoWClass.Mage:
                     toSelect = SingularSettings.Instance.Mage();
@@ -101,17 +102,19 @@ namespace Singular.GUI
         private void InitializeContextDropdown()
         {
             if (pgHealBattleground.SelectedObject != null)
-                cboHealContext.Items.Add(WoWContext.Battlegrounds);
+                cboHealContext.Items.Add(HealingContext.Battlegrounds);
             if (pgHealInstance.SelectedObject != null)
-                cboHealContext.Items.Add(WoWContext.Instances);
+                cboHealContext.Items.Add(HealingContext.Instances);
+            if (pgHealInstance.SelectedObject != null)
+                cboHealContext.Items.Add(HealingContext.Raids);
             if (pgHealNormal.SelectedObject != null)
-                cboHealContext.Items.Add(WoWContext.Normal);
+                cboHealContext.Items.Add(HealingContext.Normal);
 
             cboHealContext.Enabled = cboHealContext.Items.Count > 0;
 
             try
             {
-                cboHealContext.SelectedItem = Singular.SingularRoutine.CurrentWoWContext;
+                cboHealContext.SelectedItem = Singular.SingularRoutine.CurrentHealContext;
             }
             catch
             {
@@ -152,6 +155,9 @@ namespace Singular.GUI
 
                 if (pgHealInstance.SelectedObject != null)
                     ((Styx.Helpers.Settings)pgHealInstance.SelectedObject).Save();
+
+                if (pgHealRaid.SelectedObject != null)
+                    ((Styx.Helpers.Settings)pgHealRaid.SelectedObject).Save();
 
                 if (pgHealNormal.SelectedObject != null)
                     ((Styx.Helpers.Settings)pgHealNormal.SelectedObject).Save();
@@ -202,16 +208,20 @@ namespace Singular.GUI
 
         private void cboHealContext_SelectedIndexChanged(object sender, EventArgs e)
         {
-            WoWContext ctx = (WoWContext) cboHealContext.SelectedItem;
-            bool isBG = ctx == WoWContext.Battlegrounds;
-            bool isInst = ctx == WoWContext.Instances;
-            bool isNorm = ctx == WoWContext.Normal;
+            HealingContext ctx = (HealingContext)cboHealContext.SelectedItem;
+            bool isBG = ctx == HealingContext.Battlegrounds;
+            bool isInst = ctx == HealingContext.Instances;
+            bool isNorm = ctx == HealingContext.Normal;
+            bool isRaid = ctx == HealingContext.Raids;
 
             pgHealBattleground.Enabled = isBG;
             pgHealBattleground.Visible = isBG;
 
             pgHealInstance.Enabled = isInst;
             pgHealInstance.Visible = isInst;
+
+            pgHealRaid.Enabled = isRaid;
+            pgHealRaid.Visible = isRaid;
 
             pgHealNormal.Enabled = isNorm;
             pgHealNormal.Visible = isNorm;

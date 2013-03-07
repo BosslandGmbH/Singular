@@ -173,6 +173,13 @@ namespace Singular.Settings
         [Description("Pull Distance we force to 40 for Ranged characters when using Questing BotBase")]
         public int PullDistanceOverride { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Movement")]
+        [DisplayName("Use Cast While Moving Buffs")]
+        [Description("True: attempting to use a non-instant while moving will first cast Spiritwalker's Grace, Ice Floes, Kil'Jaedan's Cunning, etc.")]
+        public bool UseCastWhileMovingBuffs { get; set; }
+
         #endregion 
 
         #region Category: Consumables

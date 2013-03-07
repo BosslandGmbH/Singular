@@ -1,5 +1,5 @@
 ﻿//#define SHOW_BEHAVIOR_LOAD_DESCRIPTION
-#define BOTS_NOT_CALLING_PULLBUFFS
+//#define BOTS_NOT_CALLING_PULLBUFFS
 
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -124,9 +124,9 @@ namespace Singular
             _lostControlBehavior = new Decorator(
                 ret => Me.Fleeing || Me.Stunned,
                 new PrioritySelector(
-                    new Throttle(1, new Decorator(ret => Me.Fleeing, new Action(r => Logger.Write(Color.White, "FLEEING! (loss of control)")))),
-                    new Throttle(1, new Decorator(ret => Me.Stunned, new Action(r => Logger.Write(Color.White, "STUNNED! (loss of control)")))),
-                    new Throttle(1, new Decorator(ret => Me.Silenced, new Action(r => Logger.Write(Color.White, "SILENCED! (loss of control)")))),
+                    new ThrottlePasses(1, 1, new Decorator(ret => Me.Fleeing, new Action(r => { Logger.Write(Color.White, "FLEEING! (loss of control)"); return RunStatus.Failure; }))),
+                    new ThrottlePasses(1, 1, new Decorator(ret => Me.Stunned, new Action(r => { Logger.Write(Color.White, "STUNNED! (loss of control)"); return RunStatus.Failure;} ))),
+                    new ThrottlePasses(1, 1, new Decorator(ret => Me.Silenced, new Action(r => { Logger.Write(Color.White, "SILENCED! (loss of control)"); return RunStatus.Failure;} ))),
                     new HookExecutor(BehaviorType.LossOfControl.ToString()),
                     new Decorator( 
                         ret => SingularSettings.Instance.UseRacials,
@@ -139,23 +139,27 @@ namespace Singular
                     )
                 );
 
-            _restBehavior = new Decorator(
-                ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                new LockSelector(
-                    new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
-                    Spell.WaitForGcdOrCastOrChannel(),
-                    _lostControlBehavior,
-                    new HookExecutor(BehaviorType.Rest.ToString())
+            _restBehavior = new LockSelector(
+                new Decorator(
+                    ret => !Me.IsFlying && (!Me.IsOnTransport || Me.Transport.Entry == 56171) && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                    new PrioritySelector(
+                        new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
+                        Spell.WaitForGcdOrCastOrChannel(),
+                        _lostControlBehavior,
+                        new HookExecutor(BehaviorType.Rest.ToString())
+                        )
                     )
                 );
 
-            _preCombatBuffsBehavior = new Decorator(
-                ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                new LockSelector(
-                    Spell.WaitForGcdOrCastOrChannel(),
-                    Item.CreateUseAlchemyBuffsBehavior(),
-                    // Generic.CreateFlasksBehaviour(),
-                    new HookExecutor(BehaviorType.PreCombatBuffs.ToString())
+            _preCombatBuffsBehavior = new LockSelector(
+                new Decorator(
+                    ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                    new PrioritySelector(
+                        Spell.WaitForGcdOrCastOrChannel(),
+                        Item.CreateUseAlchemyBuffsBehavior(),
+                        // Generic.CreateFlasksBehaviour(),
+                        new HookExecutor(BehaviorType.PreCombatBuffs.ToString())
+                        )
                     )
                 );
 
@@ -166,10 +170,10 @@ namespace Singular
                     )
                 );
 
-            _combatBuffsBehavior = new PrioritySelector(
+            _combatBuffsBehavior = new LockSelector(
                 new Decorator(
                     ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                    new LockSelector(
+                    new PrioritySelector(
                         new Decorator(ret => !HotkeyDirector.IsCombatEnabled, new ActionAlwaysSucceed()),
                         Generic.CreateUseTrinketsBehaviour(),
                         Generic.CreatePotionAndHealthstoneBehavior(),
@@ -191,31 +195,35 @@ namespace Singular
                     )
                 );
 
-            _pullBehavior = new Decorator(
-                ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat ),
-                new LockSelector(
-                    new Decorator(
-                        ret => !HotkeyDirector.IsCombatEnabled,
-                        new ActionAlwaysSucceed()
-                        ),
-                    new Action( r => { MonitorQuestingPullDistance(); return RunStatus.Failure; } ),
-    #if BOTS_NOT_CALLING_PULLBUFFS
-                    _pullBuffsBehavior,
-    #endif
-                    CreateLogTargetChanges("<<< PULL >>>"),
-                    new HookExecutor(BehaviorType.Pull.ToString())
+            _pullBehavior = new LockSelector(
+                new Decorator(
+                    ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat ),
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => !HotkeyDirector.IsCombatEnabled,
+                            new ActionAlwaysSucceed()
+                            ),
+                        new Action( r => { MonitorQuestingPullDistance(); return RunStatus.Failure; } ),
+#if BOTS_NOT_CALLING_PULLBUFFS
+                        _pullBuffsBehavior,
+#endif
+                        CreateLogTargetChanges("<<< PULL >>>"),
+                        new HookExecutor(BehaviorType.Pull.ToString())
+                        )
                     )
                 );
 
-            _combatBehavior = new Decorator(
-                ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat),
-                new LockSelector(
-                    new Decorator(
-                        ret => !HotkeyDirector.IsCombatEnabled,
-                        new ActionAlwaysSucceed()
-                        ),
-                    CreateLogTargetChanges("<<< ADD >>>"),
-                    new HookExecutor(BehaviorType.Combat.ToString())
+            _combatBehavior = new LockSelector(
+                new Decorator(
+                    ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat),
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => !HotkeyDirector.IsCombatEnabled,
+                            new ActionAlwaysSucceed()
+                            ),
+                        CreateLogTargetChanges("<<< ADD >>>"),
+                        new HookExecutor(BehaviorType.Combat.ToString())
+                        )
                     )
                 );
         }
@@ -262,14 +270,11 @@ namespace Singular
         {
             return new Action(r =>
                 {
-                    if ((SingularSettings.Debug && (Me.CurrentTargetGuid != _guidLastTarget || _timerLastTarget.IsFinished )))
+                    if ((SingularSettings.Debug && Me.CurrentTargetGuid != _guidLastTarget))
                     {
-                        if (Me.CurrentTarget == null)
+                        if (Me.CurrentTargetGuid == 0)
                         {
-                            if (_guidLastTarget != 0)
-                            {
-                                Logger.WriteDebug(sType + " CurrentTarget now: (null)");
-                            }
+                            Logger.WriteDebug(sType + " CurrentTarget now: (null)");
                         }
                         else
                         {

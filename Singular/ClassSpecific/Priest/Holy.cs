@@ -192,7 +192,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Buff("Holy Word: Chastise", ret => StyxWoW.Me.HasAura( "Chakra: Chastise")),
                         Spell.Cast("Mindbender"),
                         Spell.Cast("Holy Fire"),
-                        Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
+                        // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
                         Spell.Cast("Smite"),
                         Movement.CreateMoveToTargetBehavior(true, 35f)
                         ))

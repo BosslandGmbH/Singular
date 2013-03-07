@@ -152,8 +152,7 @@ namespace Singular.ClassSpecific.Shaman
                                 )),
 
                         Helpers.Common.CreateAutoAttack(true),
-                        new Decorator( ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 20 * 20,
-                            Totems.CreateTotemsNormalBehavior()),
+                        Totems.CreateTotemsBehavior(),
                         Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
                         Spell.Cast("Unleash Weapon", 
                             ret => StyxWoW.Me.Inventory.Equipped.OffHand != null 
@@ -188,7 +187,7 @@ namespace Singular.ClassSpecific.Shaman
                         Common.CreateShamanImbueOffHandBehavior(Imbue.Flametongue),
 
                         Common.CreateShamanDpsShieldBehavior(),
-                        Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
+                        // Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret => 
                             ShamanSettings.FeralSpiritCastOn == CastOn.All 
                             || (ShamanSettings.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.Elite)
@@ -257,7 +256,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CreateShamanDpsShieldBehavior(),
 
-                        Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
+                        // Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret =>
                             ShamanSettings.FeralSpiritCastOn == CastOn.All
                             || (ShamanSettings.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.Elite)
@@ -313,7 +312,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CreateShamanDpsShieldBehavior(),
 
-                        Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
+                        // Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret =>
                             ShamanSettings.FeralSpiritCastOn == CastOn.All
                             || (ShamanSettings.FeralSpiritCastOn == CastOn.Bosses && StyxWoW.Me.CurrentTarget.IsBoss() )

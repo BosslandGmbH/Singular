@@ -11,13 +11,13 @@ namespace Singular.Settings
     internal class HealerSettings : Styx.Helpers.Settings
     {
         [Browsable(false)]
-        public WoWContext WoWContext { get; set; }
+        public HealingContext Context { get; set; }
 
         // reqd ctor
-        public HealerSettings(string className, WoWContext ctx)
+        public HealerSettings(string className, HealingContext ctx)
             : base(Path.Combine(SingularSettings.SettingsPath, className + "-Heal-" + ctx.ToString() + ".xml"))
         {
-            WoWContext = ctx;
+            Context = ctx;
         }
 
         // hide default ctor

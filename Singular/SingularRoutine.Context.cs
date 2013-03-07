@@ -67,6 +67,18 @@ namespace Singular
             }
         }
 
+        internal static HealingContext CurrentHealContext
+        {
+            get
+            {
+                WoWContext ctx = CurrentWoWContext;
+                if (ctx == WoWContext.Instances && Me.GroupInfo.IsInRaid)
+                    return HealingContext.Raids;
+
+                return (HealingContext) ctx;
+            }
+        }
+
         private bool _contextEventSubscribed;
         private void UpdateContext()
         {
@@ -113,38 +125,31 @@ namespace Singular
             string sRunningAs = "";
 
             if (Me.CurrentMap == null)
-                sRunningAs = "Solo";
-            else
-            {
-                if (Me.CurrentMap.IsArena)
-                    sRunningAs = " Arena ";
-                else if (Me.CurrentMap.IsBattleground)
-                    sRunningAs = " Battleground ";
-                else if (Me.CurrentMap.IsScenario)
-                    sRunningAs = " Scenario ";
-                else if (Me.CurrentMap.IsDungeon)
-                    sRunningAs = " Dungeon ";
-                else if (Me.CurrentMap.IsRaid)
-                    sRunningAs = " Raid ";
-                else if (Me.CurrentMap.IsInstance)
-                    sRunningAs = " Instance ";
+                sRunningAs = "Unknown";
+            else if (Me.CurrentMap.IsArena)
+                sRunningAs = " Arena ";
+            else if (Me.CurrentMap.IsBattleground)
+                sRunningAs = " Battleground ";
+            else if (Me.CurrentMap.IsScenario)
+                sRunningAs = " Scenario ";
 
-                if (!Me.IsInGroup())
-                    sRunningAs = "Solo " + sRunningAs;
-                else
-                    sRunningAs = string.Format("{0}m {1}", (int) Math.Max(Me.CurrentMap.MaxPlayers, Me.GroupInfo.GroupSize), sRunningAs);
-            }
-
-            Logger.Write(Color.LightGreen, "... running the {0} bot {1}in {2} using {3} BEHAVIORS",
+            Logger.Write(Color.LightGreen, "... running the {0} bot in {1} {2}",
                  GetBotName(),
-                 sRunningAs,
                  Me.RealZoneText,
-                 CurrentWoWContext == WoWContext.Normal ? "SOLO" : CurrentWoWContext.ToString().ToUpper()
+                 !Me.IsInInstance || Battlegrounds.IsInsideBattleground ? "" : GetInstanceDifficultyName()
                 );
+
+            Logger.Write(Color.LightGreen, "... {0} using my {1} Behaviors",
+                 sRunningAs,
+                 CurrentWoWContext == WoWContext.Normal ? "SOLO" : CurrentWoWContext.ToString().ToUpper());
 
             if (CurrentWoWContext != WoWContext.Battlegrounds && Me.IsInGroup())
             {
-                Logger.Write(Color.LightGreen, "... with a group role of {0}", (Me.Role & (WoWPartyMember.GroupRole.Tank | WoWPartyMember.GroupRole.Healer | WoWPartyMember.GroupRole.Damage)).ToString().ToUpper());
+                Logger.Write(Color.LightGreen, "... in a group as {0} role with {1} of {2} players", 
+                    (Me.Role & (WoWPartyMember.GroupRole.Tank | WoWPartyMember.GroupRole.Healer | WoWPartyMember.GroupRole.Damage)).ToString().ToUpper(),
+                     Me.GroupInfo.NumRaidMembers, 
+                     (int) Math.Max(Me.CurrentMap.MaxPlayers, Me.GroupInfo.GroupSize)
+                    );
             }
 
             Item.WriteCharacterGearAndSetupInfo();
@@ -218,6 +223,37 @@ namespace Singular
         {
             string botName = GetBotName().ToUpper();
             return nameSubstrings.Any( s => botName.Contains(s.ToUpper()));
+        }
+
+        private static int GetInstanceDifficulty( )
+        {
+            int diffidx = Lua.GetReturnVal<int>("return GetInstanceDifficulty()", 0);
+            return diffidx;
+        }
+
+
+        private static string[] _InstDiff = new string[] 
+        {
+            /* 0*/  "Unknown Difficulty",
+            /* 1*/  "None; not in an Instance",
+            /* 2*/  "5-player Normal",
+            /* 3*/  "5-player Heroic",
+            /* 4*/  "10-player Raid",
+            /* 5*/  "25-player Raid",
+            /* 6*/  "10-player Heroic Raid",
+            /* 7*/  "25-player Heroic Raid",
+            /* 8*/  "LFR Raid Instance",
+            /* 9*/  "Challenge Mode Raid",
+            /* 10*/  "40-player Raid"
+        };
+
+        private static string GetInstanceDifficultyName( )
+        {
+            int diff = GetInstanceDifficulty();
+            if (diff < _InstDiff.GetLowerBound(0) || diff > _InstDiff.GetUpperBound(0))
+                return string.Format("Difficulty {0} Undefined", diff);
+
+            return _InstDiff[diff];
         }
 
     }

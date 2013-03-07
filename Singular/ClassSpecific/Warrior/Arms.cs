@@ -92,7 +92,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss()),
                         // Spell.Cast("Storm Bolt"),  // in normal rotation
 
-                        Spell.Cast("Deadly Calm", ret => StyxWoW.Me.HasAura("Taste for Blood")),
+                        // Spell.Cast("Deadly Calm", ret => StyxWoW.Me.HasAura("Taste for Blood")),
 
                         // Execute is up, so don't care just cast
                         Spell.Cast("Berserker Rage", ret => Me.CurrentTarget.HealthPercent <= 20),
@@ -126,6 +126,13 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateVictoryRushBehavior(),
 
+                        new Throttle(
+                            new Decorator(
+                                ret => Me.HasAura("Glyph of Incite"),
+                                Spell.Cast("Heroic Strike")
+                                )
+                            ),
+
                         Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
                         Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
 
@@ -149,7 +156,7 @@ namespace Singular.ClassSpecific.Warrior
                         new Decorator(ret => Me.CurrentTarget.HealthPercent > 20,
                             new PrioritySelector(
                                 // Only drop DC if we need to use HS for TFB. This lets us avoid breaking HS as a rage dump, when we don't want it to be one.
-                                Spell.Cast("Deadly Calm", ret => NeedTasteForBloodDump),
+                                // Spell.Cast("Deadly Calm", ret => NeedTasteForBloodDump),
 
                                 // currently makes more sense to burn through a target, so HS instead of Cleave
                                 // Spell.Cast("Cleave", ret => NeedHeroicStrikeDump && Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) > 1),
@@ -166,7 +173,7 @@ namespace Singular.ClassSpecific.Warrior
                                 Spell.Cast("Overpower"),
 
                                 // Rage dump!
-                                Spell.Cast("Slam", ret => (StyxWoW.Me.RagePercent >= 60 || StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash")) && StyxWoW.Me.CurrentTarget.HealthPercent > 20)
+                                Spell.Cast("Slam", ret => (StyxWoW.Me.RagePercent >= 50 || StyxWoW.Me.CurrentTarget.HasAura("Colossus Smash")) && StyxWoW.Me.CurrentTarget.HealthPercent > 20)
 
                                 )
                             ),

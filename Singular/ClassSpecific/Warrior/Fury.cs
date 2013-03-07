@@ -137,6 +137,13 @@ namespace Singular.ClassSpecific.Warrior
                 // engineering gloves
                 Item.UseEquippedItem((uint)WoWInventorySlot.Hands),
 
+                new Throttle(
+                    new Decorator(
+                        ret => StyxWoW.Me.HasAura("Glyph of Incite"),
+                        Spell.Cast("Heroic Strike")
+                        )
+                    ),
+
                 // AOE 
                 // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)
                 new Decorator(  // Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
@@ -167,7 +174,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.BuffSelf("Berserker Rage", ret => !IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
 
                 // DC if we have rage, target has CS, and we're not within execute range.
-                Spell.BuffSelf("Deadly Calm", ret => StyxWoW.Me.RagePercent >= 40 && TargetSmashed && !WithinExecuteRange),
+                // Spell.BuffSelf("Deadly Calm", ret => StyxWoW.Me.RagePercent >= 40 && TargetSmashed && !WithinExecuteRange),
 
                 // Cast CS when the requirements are met. There's a few, so this is extracted into its own property.
                 Spell.Cast("Heroic Strike", ret => NeedHeroicStrike),
@@ -257,8 +264,8 @@ namespace Singular.ClassSpecific.Warrior
                         return true;
                     if (myRage >= 90)
                         return true;
-                    if (myRage >= 30 && StyxWoW.Me.HasAura("Deadly Calm"))
-                        return true;
+//                    if (myRage >= 30 && StyxWoW.Me.HasAura("Deadly Calm"))
+//                        return true;
                 }
                 return false;
             }

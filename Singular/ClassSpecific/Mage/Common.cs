@@ -227,9 +227,9 @@ namespace Singular.ClassSpecific.Mage
                         && (Battlegrounds.IsInsideBattleground && Shaman.Common.IsPvpFightWorthLusting)
                         || (!Me.GroupInfo.IsInRaid && Me.GotTarget && Me.CurrentTarget.IsBoss() && !Me.HasAnyAura("Temporal Displacement", Shaman.Common.SatedName))),
 
-                Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80)),
-
-                Spell.BuffSelf( "Ice Floes", req => Me.IsMoving)
+                Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80))
+                
+                // , Spell.BuffSelf( "Ice Floes", req => Me.IsMoving)
 
                 );
         }
@@ -431,20 +431,20 @@ namespace Singular.ClassSpecific.Mage
             return true;
         }
 
-        public static bool HasTalent( MageTalent tal)
+        public static bool HasTalent( MageTalents tal)
         {
             return TalentManager.IsSelected((int)tal);
         }
     }
 
-    public enum MageTalent
+    public enum MageTalents
     {
         None = 0,
         PresenceOfMind,
-        Scorch,
+        BlazingSpeed,
         IceFloes,
         TemporalShield,
-        BlazingSpeed,
+        Flameglow,
         IceBarrier,
         RingOfFrost,
         IceWard,

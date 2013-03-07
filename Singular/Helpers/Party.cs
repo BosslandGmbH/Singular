@@ -49,9 +49,9 @@ namespace Singular.Helpers
             { "Embrace of the Shale Spider",        PartyBuffType.Stats},
 
             { "Power Word: Fortitude",              PartyBuffType.Stamina},
-            { "Imp: Blood Pact",                    PartyBuffType.Stamina},
             { "Commanding Shout",                   PartyBuffType.Stamina},
             { "Qiraji Fortitude",                   PartyBuffType.Stamina},
+            // { "Dark Intent",                        PartyBuffType.SpellPower | PartyBuffType.Stamina },
 
             { "Horn of Winter",                     PartyBuffType.AttackPower},
             { "Trueshot Aura",                      PartyBuffType.AttackPower},
@@ -60,7 +60,7 @@ namespace Singular.Helpers
             { "Arcane Brilliance",                  PartyBuffType.SpellPower | PartyBuffType.Crit},
             { "Dalaran Brilliance",                 PartyBuffType.SpellPower | PartyBuffType.Crit},
             { "Burning Wrath",                      PartyBuffType.SpellPower},
-            { "Dark Intent",                        PartyBuffType.SpellPower},
+            { "Dark Intent",                        PartyBuffType.SpellPower | PartyBuffType.Stamina },
             { "Still Water",                        PartyBuffType.SpellPower |PartyBuffType.Crit},
 
             { "Unholy Aura",                        PartyBuffType.Haste},

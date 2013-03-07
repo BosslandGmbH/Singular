@@ -120,6 +120,11 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Mangle"),
                         Spell.Cast("Thrash"),
 
+                        Spell.Cast("Bear Hug", 
+                            ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances
+                                && !Me.HasAura("Berserk") 
+                                && !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.CurrentTargetGuid == Me.Guid)),
+
                         new Decorator(
                             ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 2,
                             new PrioritySelector(

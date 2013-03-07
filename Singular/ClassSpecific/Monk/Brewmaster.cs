@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Monk
         {
             get
             {
-                return TalentManager.IsSelected((int)Common.Talents.ChiBrew) && Me.CurrentChi == 0 && Me.CurrentTargetGuid > 0 &&
+                return TalentManager.IsSelected((int)MonkTalents.ChiBrew) && Me.CurrentChi == 0 && Me.CurrentTargetGuid > 0 &&
                        (SingularRoutine.CurrentWoWContext == WoWContext.Instances && Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances);
             }
         }
@@ -77,7 +77,7 @@ namespace Singular.ClassSpecific.Monk
                     Spell.BuffSelf("Guard", ctx => Me.HasAura("Power Guard")),
                     Spell.BuffSelf("Elusive Brew", ctx => MonkSettings.UseElusiveBrew && Me.HasAura("Elusive Brew") && Me.Auras["Elusive Brew"].StackCount >= MonkSettings.ElusiveBrewMinumumStackCount),
                     Spell.Cast("Chi Brew", ctx => UseChiBrew),
-                    Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4));
+                    Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4));
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkBrewmaster, priority: 1)]
@@ -88,11 +88,11 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast(
                     "Chi Wave",
                     ctx =>
-                    TalentManager.IsSelected((int)Common.Talents.ChiWave) &&
+                    TalentManager.IsSelected((int)MonkTalents.ChiWave) &&
                     (Me.HealthPercent < MonkSettings.ChiWavePercent ||
                      Me.RaidMembers.Count(m => m.DistanceSqr <= 20 * 20 && m.HealthPercent <= MonkSettings.ChiWavePercent) >= 3))
 
-                //Spell.Cast("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.RaidMembers.Count(m => m.DistanceSqr <= 20 * 20 && m.HealthPercent <= 70) >= 3)
+                //Spell.Cast("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.RaidMembers.Count(m => m.DistanceSqr <= 20 * 20 && m.HealthPercent <= 70) >= 3)
                 );
         }
 
@@ -168,14 +168,14 @@ namespace Singular.ClassSpecific.Monk
                     new PrioritySelector(
                 // cast breath of fire to apply the dot.
                         Spell.Cast("Breath of Fire", ctx => Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8).Count(u => u.HasAura("Dizzying Haze") && !u.HasAura("Breath of Fire")) >= 3),
-                        Spell.Cast("Zen Sphere", ctx => TalentManager.IsSelected((int)Common.Talents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 4),
+                        Spell.Cast("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 4),
                 // aoe stuns
-                        Spell.Cast("Charging Ox Wave", ctx => TalentManager.IsSelected((int)Common.Talents.ChargingOxWave) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 30) >= 3),
-                        Spell.Cast("Leg Sweep", ctx => TalentManager.IsSelected((int)Common.Talents.LegSweep))
+                        Spell.Cast("Charging Ox Wave", ctx => TalentManager.IsSelected((int)MonkTalents.ChargingOxWave) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 30) >= 3),
+                        Spell.Cast("Leg Sweep", ctx => TalentManager.IsSelected((int)MonkTalents.LegSweep))
                         )),
 
                 // ***** Spend Chi *****
-                Spell.Cast("Rushing Jade Wind", ctx => TalentManager.IsSelected((int)Common.Talents.RushingJadeWind) && (!Me.HasAura("Shuffle") || Me.Auras["Shuffle"].TimeLeft <= TimeSpan.FromSeconds(1))),
+                Spell.Cast("Rushing Jade Wind", ctx => TalentManager.IsSelected((int)MonkTalents.RushingJadeWind) && (!Me.HasAura("Shuffle") || Me.Auras["Shuffle"].TimeLeft <= TimeSpan.FromSeconds(1))),
                 Spell.Cast("Blackout Kick", ctx => !Me.HasAura("Shuffle") || Me.Auras["Shuffle"].TimeLeft <= TimeSpan.FromSeconds(1)),
                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 2 && SpellManager.HasSpell("Guard") && !Me.HasAura("Power Guard")),
                 //Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 2 && SpellManager.HasSpell("Blackout Kick") && (!Me.HasAura("Tiger Power") || Me.Auras["Tiger Power"].StackCount < 3)),
@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Keg Smash", ctx => Me.MaxChi - Me.CurrentChi >= 2 && Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8)),
                 Spell.Cast("Spinning Crane Kick", ctx => Me.MaxChi - Me.CurrentChi >= 1 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
                 // jab with power strike talent is > expel Harm if off CD.
-                new Decorator(ctx => TalentManager.IsSelected((int)Common.Talents.PowerStrikes) && Me.MaxChi - Me.CurrentChi >= 2 && SpellManager.CanCast("Jab") && powerStrikeTimer.IsFinished,
+                new Decorator(ctx => TalentManager.IsSelected((int)MonkTalents.PowerStrikes) && Me.MaxChi - Me.CurrentChi >= 2 && SpellManager.CanCast("Jab") && powerStrikeTimer.IsFinished,
                     new Sequence(
                         new Action(ctx => powerStrikeTimer.Reset()),
                         Spell.Cast("Jab")

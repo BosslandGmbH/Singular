@@ -24,6 +24,7 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
+        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
 
         public static bool IsStealthed { get { return Me.HasAnyAura("Stealth", "Shadow Dance", "Vanish"); } }
 
@@ -169,7 +170,11 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.BuffSelf("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),
                         Spell.BuffSelf("Cloak of Shadows", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
                         Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 40 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr > 4*4 && u.IsAlive && u.Combat && u.IsTargetingMeOrPet) >= 1),
-                        Spell.BuffSelf("Vanish", ret => StyxWoW.Me.HealthPercent < 20),
+                        Spell.BuffSelf("Vanish", ret => StyxWoW.Me.HealthPercent < 20 && !SingularRoutine.IsQuesting ),
+
+                        Spell.BuffSelf("Preparation",
+                            ret => Spell.GetSpellCooldown("Vanish").TotalSeconds > 10
+                                && Spell.GetSpellCooldown("Evasion").TotalSeconds > 10),
 
                         Spell.Cast("Shiv", ret => Me.CurrentTarget.HasAura("Enraged")),
 
@@ -178,8 +183,10 @@ namespace Singular.ClassSpecific.Rogue
                         // Redirect if we have CP left
                         Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
 
+                        Spell.Cast("Marked for Death", ret => StyxWoW.Me.RawComboPoints == 0),
+
                         Spell.Cast( "Deadly Throw", 
-                            ret => Me.ComboPoints >= 5 
+                            ret => Me.ComboPoints >= 3 
                                 && Me.GotTarget
                                 && Me.CurrentTarget.IsCasting 
                                 && Me.CurrentTarget.CanInterruptCurrentSpellCast ),
@@ -192,6 +199,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Sequence( 
                             Spell.BuffSelf("Vanish", 
                                 ret => Me.GotTarget
+                                    && !SingularRoutine.IsQuesting 
                                     && !IsStealthed
                                     && !Me.HasAuraExpired( "Slice and Dice", 4)
                                     && Me.ComboPoints < 2
@@ -224,8 +232,8 @@ namespace Singular.ClassSpecific.Rogue
                 ret => Common.IsStealthed,
                 new PrioritySelector(
                     CreateRoguePickPocket(),
-                    Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget)),
-                    Spell.Cast("Garrote", ret => !Me.IsMoving && !Me.IsSafelyBehind(Me.CurrentTarget)),
+                    Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) || Common.HasTalent( RogueTalents.MarkedForDeath )),
+                    Spell.Cast("Garrote", ret => !Me.IsMoving && !Me.IsSafelyBehind(Me.CurrentTarget) || Common.HasTalent(RogueTalents.MarkedForDeath)),
                     Spell.Cast("Cheap Shot", ret => !Me.IsMoving )
                     )
                 );
@@ -529,14 +537,14 @@ namespace Singular.ClassSpecific.Rogue
         CheatDeath,
         LeechingPoison,
         Elusivenss,
-        Perparation,
+        CloakAndDagger,
         Shadowstep,
         BurstOfSpeed,
         PreyOnTheWeak,
         ParalyticPoison,
         DirtyTricks,
         ShurikenToss,
-        Versatility,
+        MarkedForDeath,
         Anticipation
     }
 }

@@ -106,7 +106,7 @@ namespace Singular
             if ( height == float.MaxValue )
                 return false;   // make this true if better to assume aerial 
 
-            if (height > Spell.MeleeRange)
+            if (height >= StyxWoW.Me.MeleeDistance(u))
                 return true;
 
             return false;

@@ -26,9 +26,35 @@ namespace Singular.ClassSpecific.Shaman
     {
         private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
+        private static bool ShouldWeDropTotemsYet
+        {
+            get
+            {
+                if ( !Me.Combat )
+                    return false;
+
+                if ( Me.Specialization == WoWSpec.ShamanEnhancement )
+                    return Me.GotTarget && Me.CurrentTarget.Distance < Me.MeleeDistance(Me.CurrentTarget) + 10;
+
+                if ( Me.IsMoving )
+                    return false;
+
+                if ( SingularRoutine.CurrentWoWContext == WoWContext.Instances )
+                    return Group.Tanks.Any( t => t.Distance < 50 && t.GotTarget && t.Location.Distance(t.CurrentTarget.Location) <= t.MeleeDistance(t.CurrentTarget) + 5);
+
+                return !Me.GotTarget || Me.CurrentTarget.SpellDistance() < 40;
+            }
+        }
+
         public static Composite CreateTotemsBehavior()
         {
-            return CreateTotemsNormalBehavior();
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                return CreateTotemsNormalBehavior();
+
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds )
+                return CreateTotemsPvPBehavior();
+
+            return CreateTotemsInstanceBehavior();
         }
 
         public static Composite CreateTotemsNormalBehavior()
@@ -73,7 +99,8 @@ namespace Singular.ClassSpecific.Shaman
                         && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
 
                 new Decorator(
-                    ret => !Me.IsMoving || (Me.GotTarget && Me.CurrentTarget.Distance < (Me.MeleeDistance(Me.CurrentTarget) + 3)),
+                    ret => ShouldWeDropTotemsYet,
+
                     new PrioritySelector(
 
                         // check for stress - enemy player or elite within 8 levels nearby
@@ -85,7 +112,7 @@ namespace Singular.ClassSpecific.Shaman
                             ret => ((bool) ret || Group.Tanks.Any( t => t.IsDead && t.Distance < 40)) && !Exist( WoWTotem.StoneBulwark)),
 
                         Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(),
-                            ret => Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Exist( WoWTotem.EarthElemental)),
+                            ret => Me.Combat && Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Exist( WoWTotem.EarthElemental)),
 
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && u.IsPlayer && u.Combat),
@@ -97,13 +124,13 @@ namespace Singular.ClassSpecific.Shaman
                                 ret => (bool)ret && !Exist(WoWTotemType.Earth))
                             ),
 
-
                         // fire totems
                         fireTotemBehavior,
 
                         // water totems
-                        Spell.Cast("Mana Tide Totem", ret => ((bool)ret) && StyxWoW.Me.ManaPercent < 80
-                            && !Exist( WoWTotem.HealingTide )),
+                        Spell.Cast("Mana Tide Totem", 
+                            ret => StyxWoW.Me.ManaPercent < 80
+                                && !Exist( WoWTotem.HealingTide, WoWTotem.HealingStream)),
 
         /* Healing...: handle within Helaing logic
                         Spell.Cast("Healing Tide Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 50
@@ -114,24 +141,23 @@ namespace Singular.ClassSpecific.Shaman
         */
 
                         // air totems
-                        Spell.Cast("Grounding Totem",
-                            ret => ((bool) ret)
-                                && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)
-                                && !Exist(WoWTotemType.Air)),
-
-                        Spell.Cast("Capacitor Totem",
-                            ret => ((bool) ret)
-                                && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))
-                                && !Exist(WoWTotemType.Air)),
-
                         Spell.Cast("Stormlash Totem",
-                            ret => ((bool)ret)
-                                && PartyBuff.WeHaveBloodlust
-                                && !Exist(WoWTotemType.Air)),
+                            ret => PartyBuff.WeHaveBloodlust),
 
-                        Spell.BuffSelf("Windwalk Totem", 
-                            ret => !Exist(WoWTotemType.Air) 
-                                && Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared))
+                        new Decorator(
+                            ret => !Exist(WoWTotemType.Air),
+                            new PrioritySelector(
+                                Spell.Cast("Grounding Totem",
+                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
+
+                                Spell.Cast("Capacitor Totem",
+                                    ret => ((bool) ret)
+                                        && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))),
+
+                                Spell.BuffSelf("Windwalk Totem", 
+                                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared))
+                                )
+                            )
                         )
                     )
                 );
@@ -145,7 +171,76 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateTotemsInstanceBehavior()
         {
-            return CreateTotemsNormalBehavior();
+            // create Fire Totems behavior first, then wrap if needed
+            Composite fireTotemBehavior =
+                new PrioritySelector(
+                    Spell.BuffSelf("Fire Elemental", ret => Me.CurrentTarget.IsBoss()),
+
+                    // Magma handled within each specs AoE support
+
+                    Spell.BuffSelf("Searing Totem",
+                        ret => Me.GotTarget
+                            && Me.CurrentTarget.Distance < GetTotemRange(WoWTotem.Searing) - 2f
+                            && !Exist(WoWTotemType.Fire))
+                    );
+
+            if (Me.Specialization == WoWSpec.ShamanRestoration)
+                fireTotemBehavior = new Decorator(ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyGroupMembers.Any(m => m.IsAlive), fireTotemBehavior);
+
+            // now 
+            return new PrioritySelector(
+
+                Spell.BuffSelf(WoWTotem.Tremor.ToSpellId(),
+                    ret => Unit.GroupMembers.Any(f => f.Fleeing && f.Distance < Totems.GetTotemRange(WoWTotem.Tremor))
+                        && !Exist(WoWTotem.StoneBulwark, WoWTotem.EarthElemental)),
+
+                new Decorator(
+                    ret => ShouldWeDropTotemsYet,
+
+                    new PrioritySelector(
+
+                        // earth totems
+                        Spell.BuffSelf(WoWTotem.EarthElemental.ToSpellId(),
+                            ret => (Group.Tanks.Any(t => t.IsDead && t.Distance < 40)) && !Exist(WoWTotem.StoneBulwark)),
+
+                        // Stone Bulwark handled in CombatBuffs with Astral Shift
+
+                        // fire totems
+                        fireTotemBehavior,
+
+                        // water totems
+                        Spell.Cast("Mana Tide Totem",
+                            ret => StyxWoW.Me.ManaPercent < 80
+                                && !Exist(WoWTotem.HealingTide, WoWTotem.HealingStream)),
+
+        /* Healing...: handle within Helaing logic
+                        Spell.Cast("Healing Tide Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 50
+                            && !Exist(WoWTotem.ManaTide)),
+
+                        Spell.Cast("Healing Stream Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 80
+                            && !Exist( WoWTotemType.Water)),
+        */
+
+                        // air totems
+                        Spell.Cast("Stormlash Totem", ret => PartyBuff.WeHaveBloodlust),
+
+                        new Decorator(
+                            ret => !Exist(WoWTotemType.Air),
+                            new PrioritySelector(
+                                Spell.Cast("Grounding Totem",
+                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
+
+                                Spell.Cast("Capacitor Totem",
+                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))),
+
+                                Spell.BuffSelf("Windwalk Totem",
+                                    ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared))
+                                )
+                            )
+                        )
+                    )
+                );
+
         }
 
         /// <summary>
@@ -320,7 +415,7 @@ namespace Singular.ClassSpecific.Shaman
                     return 30f;
 
                 case WoWTotem.Searing:
-                    if (SpellManager.HasSpell(29000))
+                    if (Me.Specialization == WoWSpec.ShamanElemental )
                         return 35f;
                     return 20f;
 

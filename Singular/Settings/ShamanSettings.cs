@@ -21,16 +21,20 @@ namespace Singular.Settings
 
         private ShamanHealSettings _battleground;
         private ShamanHealSettings _instance;
+        private ShamanHealSettings _raid;
         private ShamanHealSettings _normal;
 
         [Browsable(false)]
-        public ShamanHealSettings Battleground { get { return _battleground ?? (_battleground = new ShamanHealSettings( WoWContext.Battlegrounds )); } }
+        public ShamanHealSettings Battleground { get { return _battleground ?? (_battleground = new ShamanHealSettings( HealingContext.Battlegrounds )); } }
 
         [Browsable(false)]
-        public ShamanHealSettings Instance { get { return _instance ?? (_instance = new ShamanHealSettings( WoWContext.Instances )); } }
+        public ShamanHealSettings Instance { get { return _instance ?? (_instance = new ShamanHealSettings(HealingContext.Instances)); } }
 
         [Browsable(false)]
-        public ShamanHealSettings Normal { get { return _normal ?? (_normal = new ShamanHealSettings( WoWContext.Normal )); } }
+        public ShamanHealSettings Raid { get { return _raid ?? (_raid = new ShamanHealSettings(HealingContext.Raids)); } }
+
+        [Browsable(false)]
+        public ShamanHealSettings Normal { get { return _normal ?? (_normal = new ShamanHealSettings(HealingContext.Normal)); } }
 
         [Browsable(false)]
         public ShamanHealSettings Heal { get { return HealLookup(Singular.SingularRoutine.CurrentWoWContext); } }
@@ -40,7 +44,7 @@ namespace Singular.Settings
             if (ctx == WoWContext.Battlegrounds)
                 return Battleground;
             if (ctx == WoWContext.Instances)
-                return Instance;
+                return StyxWoW.Me.CurrentMap.IsRaid ? Raid : Instance;
             return Normal;
         }
 
@@ -70,6 +74,13 @@ namespace Singular.Settings
         [Description("Lust when appropriate (never when movement disabled)")]
         public bool UseBloodlust { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Weapon Imbues")]
+        [Description("True: Automatically select and apply weapon imbues, False: automatic cast of imbues prevented")]
+        public bool UseWeaponImbues { get; set; }
+
         #endregion
 
         #region Category: Enhancement
@@ -86,14 +97,21 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(85)]
-        [Category("Restoration")]
-        [DisplayName("% Healing Stream Totem")]
+        [Category("Totems")]
+        [DisplayName("Healing Stream Totem %")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int HealHealingStreamTotem { get; set; }
 
         #endregion
 
         #region Talents
+
+        [Setting]
+        [DefaultValue(47)]
+        [Category("Talents")]
+        [DisplayName("Astral Shift %")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int AstralShiftPercent { get; set; }
 
         [Setting]
         [DefaultValue(47)]
@@ -115,11 +133,11 @@ namespace Singular.Settings
     internal class ShamanHealSettings : Singular.Settings.HealerSettings
     {
         private ShamanHealSettings()
-            : base("", WoWContext.None)
+            : base("", HealingContext.None)
         {
         }
 
-        public ShamanHealSettings(WoWContext ctx)
+        public ShamanHealSettings(HealingContext ctx)
             : base("Shaman", ctx)
         {
 
@@ -139,20 +157,25 @@ namespace Singular.Settings
                 return;
 
             SavedToFile = true;
-            if (ctx == Singular.WoWContext.Battlegrounds)
+            if (ctx == Singular.HealingContext.Battlegrounds)
             {
-                HealingWave = 90;
-                ChainHeal = 89;
-                HealingRain = 88;
+                HealingWave = 0;
+                ChainHeal = 94;
+                HealingRain = 93;
                 GreaterHealingWave = 70;
                 Ascendance = 40;
                 SpiritLinkTotem = 48;
-                HealingSurge = 50;
+                HealingSurge = 80;
                 AncestralSwiftness = 35;
                 HealingStreamTotem = 87;
                 HealingTideTotemPercent = 49;
+
+                RollRiptideCount = 0;
+                MinHealingRainCount = 4;
+                MinChainHealCount = 3;
+                MinHealingTideCount = 3;
             }
-            else if (ctx == Singular.WoWContext.Instances)
+            else if (ctx == Singular.HealingContext.Instances)
             {
                 HealingWave = 90;
                 ChainHeal = 89;
@@ -164,6 +187,29 @@ namespace Singular.Settings
                 AncestralSwiftness = 20;
                 HealingStreamTotem = 87;
                 HealingTideTotemPercent = 49;
+
+                RollRiptideCount = 0;
+                MinHealingRainCount = 4;
+                MinChainHealCount = 3;
+                MinHealingTideCount = 2;
+            }
+            else if (ctx == Singular.HealingContext.Raids)
+            {
+                HealingWave = 97;
+                ChainHeal = 96;
+                HealingRain = 95;
+                GreaterHealingWave = 65;
+                Ascendance = 40;
+                SpiritLinkTotem = 48;
+                HealingSurge = 60;
+                AncestralSwiftness = 20;
+                HealingStreamTotem = 87;
+                HealingTideTotemPercent = 49;
+
+                RollRiptideCount = 3;
+                MinHealingRainCount = 3;
+                MinChainHealCount = 2;
+                MinHealingTideCount = 2;
             }
             // omit case for WoWContext.Normal and let it use DefaultValue() values
         }
@@ -235,18 +281,46 @@ namespace Singular.Settings
         public int SpiritLinkTotem { get; set; }
 
         [Setting]
-        [DefaultValue(85)]
+        [DefaultValue(95)]
         [Category("Restoration")]
         [DisplayName("% Healing Stream Totem")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int HealingStreamTotem { get; set; }
 
         [Setting]
-        [DefaultValue(47)]
+        [DefaultValue(70)]
         [Category("Talents")]
         [DisplayName("Healing Tide Totem %")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int HealingTideTotemPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Restoration")]
+        [DisplayName("Roll Riptide Max Count")]
+        [Description("Maximum number of players to roll Riptide on")]
+        public int RollRiptideCount { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Restoration")]
+        [DisplayName("Healing Rain Min Count")]
+        [Description("Minimum number of players below Healing Rain % in area")]
+        public int MinHealingRainCount { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Restoration")]
+        [DisplayName("Chain Heal Min Count")]
+        [Description("Minimum number of players healead")]
+        public int MinChainHealCount { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Restoration")]
+        [DisplayName("Chain Heal Min Count")]
+        [Description("Minimum number of players healead")]
+        public int MinHealingTideCount { get; set; }
 
     }
 }

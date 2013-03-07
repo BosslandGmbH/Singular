@@ -107,9 +107,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CreateShamanDpsShieldBehavior(),
 
-                        new Decorator(
-                            ret => StyxWoW.Me.CurrentTarget.DistanceSqr < 40 * 40,
-                            Totems.CreateTotemsNormalBehavior()),
+                        Totems.CreateTotemsBehavior(),
 
                         // grinding or questing, if target meets these cast Flame Shock if possible
                         // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
@@ -130,7 +128,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         // otherwise, start with Lightning Bolt so we can follow with an instant
                         // to maximize damage at initial aggro
-                        Spell.Cast("Lightning Bolt", ret => !StyxWoW.Me.IsMoving || StyxWoW.Me.HasAura("Spiritwalker's Grace") || TalentManager.HasGlyph("Unleashed Lightning")),
+                        Spell.Cast("Lightning Bolt", ret => !StyxWoW.Me.IsMoving || Spell.HaveAllowMovingWhileCastingAura() || TalentManager.HasGlyph("Unleashed Lightning")),
 
                         // we are moving so throw an instant of some type
                         Spell.Cast("Flame Shock"),
@@ -168,7 +166,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance < 10f ) >= 3),
 
-                        Totems.CreateTotemsNormalBehavior(),
+                        Totems.CreateTotemsBehavior(),
 
                         new Decorator(
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled()),
@@ -197,7 +195,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.Cast("Unleash Elements", ret => 
                             StyxWoW.Me.IsMoving &&
-                            !StyxWoW.Me.HasAura( "Spiritwalker's Grace") &&
+                            !Spell.HaveAllowMovingWhileCastingAura() &&
                             Common.IsImbuedForDPS( StyxWoW.Me.Inventory.Equipped.MainHand)),
 
                         Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
@@ -238,23 +236,45 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CreateShamanDpsShieldBehavior(),
 
-                        Spell.BuffSelf("Thunderstorm", ret => StyxWoW.Me.IsStunned() && Unit.NearbyUnfriendlyUnits.Any( u => u.Distance < 10f)),
-
                         Totems.CreateTotemsPvPBehavior(),
 
-                        Spell.Cast("Elemental Blast"),
-                        Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
+                        // Burst if 7 Stacks
+                        new Decorator(
+                            ret => Me.HasAura("Lightning Shield", 7) && !Me.CurrentTarget.HasAuraExpired("Flame Shock", 8) && Spell.GetSpellCooldown("Elemental Blast") == TimeSpan.Zero,
+                            new PrioritySelector(
+                                new Action( r => { Logger.Write( Color.White, "Burst Rotation"); return RunStatus.Failure;} ),
+                                Spell.Cast( "Unleash Elements", ret => Common.IsImbuedForDPS( Me.Inventory.Equipped.MainHand)),
+                                Spell.Cast( "Elemental Blast"),
+                                Spell.Cast( "Lava Burst"),
+                                Spell.BuffSelf("Ascendance"),       // this is more to buff following sequence since we leave burst after Earth Shock
+                                Spell.Cast( "Earth Shock"),
+                                Spell.Cast( "Lightning Bolt")       // filler in case Shocks on cooldown
+                                )
+                            ),
 
-                        Spell.Buff("Flame Shock", true),
+                        // If targeted, cast as many instants as possible
+                        new Decorator(
+                            ret => !Unit.NearbyUnfriendlyUnits.Any( u => u.CurrentTargetGuid == Me.Guid ),
+                            new PrioritySelector(
+                                Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 9),
+                                Spell.Buff("Flame Shock", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero),
+                                Spell.Cast("Unleash Elements", req => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand) && !Me.HasAura("Lightning Shield", 4)),
+                                Spell.Cast("Lava Burst", ret => Spell.GetSpellCastTime("Lava Burst") == TimeSpan.Zero),
+                                Spell.Cast("Lava Beam"),
+                                Spell.BuffSelf("Searing Totem", ret => Me.GotTarget && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist( WoWTotemType.Fire)),
+                                Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange )),
+                                Spell.Cast("Primal Strike")
+                                )
+                            ),
 
+                        // Else cast freely
+
+                        Spell.Cast("Unleash Elements", req => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand) && !Me.HasAura("Lightning Shield", 4)),
+                        Spell.Cast("Elemental Blast", ret => !Me.HasAura("Lightning Shield", 5)),
+                        Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 9),
+                        Spell.Buff("Flame Shock", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero),
                         Spell.Cast("Lava Burst"),
-                        Spell.Cast("Earth Shock",
-                            ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
-                                   StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
-                        Spell.Cast("Unleash Elements",
-                            ret => StyxWoW.Me.IsMoving && !StyxWoW.Me.HasAura("Spiritwalker's Grace")
-                                && Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
-                        Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
+                        Spell.BuffSelf("Searing Totem", ret => Me.GotTarget && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist(WoWTotemType.Fire)),
                         Spell.Cast("Lightning Bolt")
                         )
                     ),
@@ -309,8 +329,8 @@ namespace Singular.ClassSpecific.Shaman
                             ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
                                    StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
                         Spell.Cast("Unleash Elements",
-                            ret => StyxWoW.Me.IsMoving 
-                                && !StyxWoW.Me.HasAura("Spiritwalker's Grace")
+                            ret => StyxWoW.Me.IsMoving
+                                && !Spell.HaveAllowMovingWhileCastingAura()
                                 && Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
                         Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                         Spell.Cast("Lightning Bolt")

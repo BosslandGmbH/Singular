@@ -20,29 +20,6 @@ using System.Drawing;
 
 namespace Singular.ClassSpecific.Warlock
 {
-    public enum WarlockTalent
-    {
-        None = 0,
-        DarkRegeneration,
-        SoulLeech,
-        HarvestLife,
-        HowlOfTerror,
-        MortalCoil,
-        Shadowfury,
-        SoulLink,
-        SacrificialPact,
-        DarkBargain,
-        BloodFear,
-        BurningRush,
-        UnboundWill,
-        GrimoireOfSupremacy,
-        GrimoireOfService,
-        GrimoireOfSacrifice,
-        ArchimondesVengeance,
-        KiljadensCunning,
-        MannorothsFury
-    }
-
     public class Common
     {
         #region Local Helpers
@@ -56,7 +33,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #region Talents
 
-        public static bool HasTalent(WarlockTalent tal)
+        public static bool HasTalent(WarlockTalents tal)
         {
             return TalentManager.IsSelected((int)tal);
         }
@@ -174,6 +151,9 @@ namespace Singular.ClassSpecific.Warlock
                 // 
                 Spell.BuffSelf("Twilight Ward", ret => NeedTwilightWard ),
 
+                // 
+                Spell.BuffSelf( "Ember Tap", ret => Me.HealthPercent < 80),
+
                 // need combat healing?  check here since mix of buffs and abilities
                 // heal / shield self as needed
                 Spell.BuffSelf("Dark Regeneration", ret => Me.HealthPercent < 45),
@@ -216,6 +196,14 @@ namespace Singular.ClassSpecific.Warlock
                     Spell.Cast("Banish", onUnit => (WoWUnit)onUnit)
                     ),
 
+
+                new Decorator(
+                    ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsWithinMeleeRange),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Blood Horror", ret => Me.HealthPercent > 20),
+                        Spell.BuffSelf("Whiplash")
+                        )
+                    ),
 
                 new PrioritySelector(
                     // find an add within 8 yds (not our current target)
@@ -297,7 +285,7 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.BuffSelf("Dark Soul: Misery"),
                         Spell.BuffSelf("Unending Resolve"),
                         new Decorator(
-                            ret => HasTalent( WarlockTalent.GrimoireOfService),
+                            ret => HasTalent( WarlockTalents.GrimoireOfService),
                             new PrioritySelector(
                                 Spell.Cast("Grimoire: Felhunter", ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds),
                                 Spell.Cast("Grimoire: Voidwalker", ret => Common.GetCurrentPet() != WarlockPet.Voidwalker ),
@@ -340,9 +328,9 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.BuffSelf("Life Tap", ret => Me.HasAnyAura("Dark Bargain")),
                         Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 30 && Me.HealthPercent > 60)
                         )
-                    ),
-
-                Spell.BuffSelf("Kil'jaeden's Cunning", ret => Me.IsMoving && Me.Combat)
+                    )
+                    
+                // , Spell.BuffSelf("Kil'jaeden's Cunning", ret => Me.IsMoving && Me.Combat)
                 );
         }
 
@@ -614,7 +602,7 @@ namespace Singular.ClassSpecific.Warlock
                     && Me.Pet.HealthPercent < petMinHealth 
                     && Me.Pet.Distance < 45
                     && Me.Pet.InLineOfSpellSight
-                    && !HasTalent(WarlockTalent.SoulLink),
+                    && !HasTalent(WarlockTalents.SoulLink),
                 new Sequence(
                     new PrioritySelector(
 
@@ -661,4 +649,28 @@ namespace Singular.ClassSpecific.Warlock
         }
 
     }
+
+    public enum WarlockTalents
+    {
+        None = 0,
+        DarkRegeneration,
+        SoulLeech,
+        HarvestLife,
+        HowlOfTerror,
+        MortalCoil,
+        Shadowfury,
+        SoulLink,
+        SacrificialPact,
+        DarkBargain,
+        BloodHorror,
+        BurningRush,
+        UnboundWill,
+        GrimoireOfSupremacy,
+        GrimoireOfService,
+        GrimoireOfSacrifice,
+        ArchimondesVengeance,
+        KiljadensCunning,
+        MannorothsFury
+    }
+
 }

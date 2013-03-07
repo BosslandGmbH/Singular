@@ -95,9 +95,9 @@ namespace Singular.ClassSpecific.Priest
 
                         Spell.Buff("Devouring Plague", true),
                         Spell.Buff("Vampiric Touch", true),
-                        Spell.Buff("Shadow Word: Pain", true),
+                        Spell.Buff("Shadow Word: Pain", true)
 
-                        Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow))
+                        // Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow))
                         )
                     ),
                 Movement.CreateMoveToTargetBehavior(true, 38f)
@@ -150,7 +150,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Vampiric Embrace", ret => Me, ret => Me.HealthPercent < 65 && Me.TimeToDeath() > 10),
 
                         // Shadow immune npcs.
-                        Spell.Cast("Holy Fire", req => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                        // Spell.Cast("Holy Fire", req => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
 
                         // AoE Rotation
                         new Decorator(
@@ -173,7 +173,7 @@ namespace Singular.ClassSpecific.Priest
                             ),
 
                         // for NPCs immune to shadow damage.
-                        Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                        // Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
 
                         // for targets we will fight longer than 10 seconds (it's a guess)
                         new Decorator(
@@ -229,7 +229,7 @@ namespace Singular.ClassSpecific.Priest
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Battlegrounds)]
         public static Composite CreatePriestShadowPvPPullAndCombat()
         {
-            Kite.CreateKitingBehavior(Common.CreateSlowMeleeBehavior(), Common.CreatePriestMovementBuff("Kiting", checkMoving: false), null);
+            Kite.CreateKitingBehavior(Common.CreateSlowMeleeBehavior(), Common.CreatePriestMovementBuff(), null);
 
             return new PrioritySelector(
                 Safers.EnsureTarget(),
@@ -254,7 +254,7 @@ namespace Singular.ClassSpecific.Priest
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // Defensive stuff
-                        Spell.BuffSelf("Fade", ret => Common.HasTalent(PriestTalent.Phantasm) && (Me.HasAuraWithMechanic(WoWSpellMechanic.Snared) || Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid && (u.Class == WoWClass.Hunter || u.Class == WoWClass.Mage || u.Class == WoWClass.Warlock || u.Class == WoWClass.Priest || u.Class == WoWClass.Shaman || u.Class == WoWClass.Druid)))),
+                        Spell.BuffSelf("Fade", ret => Common.HasTalent(PriestTalents.Phantasm) && (Me.HasAuraWithMechanic(WoWSpellMechanic.Snared) || Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid && (u.Class == WoWClass.Hunter || u.Class == WoWClass.Mage || u.Class == WoWClass.Warlock || u.Class == WoWClass.Priest || u.Class == WoWClass.Shaman || u.Class == WoWClass.Druid)))),
                         Spell.BuffSelf("Fade", ret => ObjectManager.GetObjectsOfType<WoWUnit>(false,false).Any( p => p.Distance < 10 && p.IsPet )),
                         Spell.BuffSelf("Dispersion", ret => Me.HealthPercent < 40 || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
                         Spell.BuffSelf("Psychic Scream", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) >= 1),
@@ -372,7 +372,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Fade", ret => (Me.GroupInfo.IsInParty || Me.GroupInfo.IsInRaid) && Targeting.GetAggroOnMeWithin(Me.Location, 30) > 0),
 
                         // Shadow immune npcs.
-                        Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
+                        // Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
 
                         // AoE Rotation
                         new Decorator(

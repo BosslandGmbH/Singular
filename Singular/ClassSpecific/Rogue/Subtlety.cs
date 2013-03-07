@@ -163,11 +163,6 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.BuffSelf("Shadow Blades", ret => Me.CurrentTarget.IsBoss()),
                         Spell.BuffSelf("Vanish", ret => Me.CurrentTarget.IsBoss() && Me.CurrentTarget.MeIsBehind),
 
-                        Spell.BuffSelf("Preparation",
-                            ret => Spell.GetSpellCooldown("Vanish").TotalSeconds > 10 
-                                && Spell.GetSpellCooldown("Cloak of Shadows").TotalSeconds > 10 
-                                && Spell.GetSpellCooldown("Evasion").TotalSeconds > 10),
-
                         Spell.BuffSelf("Premeditation", ret => Me.HasAura("Stealth") || Me.HasAura("Shadow Dance")),
 
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints >= (Me.CurrentTarget.IsBoss() ? 5 : 1) && Me.HasAuraExpired("Slice and Dice", 2)),

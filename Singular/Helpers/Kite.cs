@@ -49,7 +49,7 @@ namespace Singular.Helpers
 
         const int DISTANCE_WE_NEED_TO_START_BACK_PEDAL = 7;
         const int DISTANCE_CLOSE_ENOUGH_TO_DESTINATION = 2;
-        const int DISTANCE_TOO_FAR_FROM_DESTINATION = 30;
+        static int DISTANCE_TOO_FAR_FROM_DESTINATION;
 
         /// <summary>
         /// creates a behavior that provides kiting support.  intent is to move to closest safest spot possible away from target
@@ -302,6 +302,7 @@ namespace Singular.Helpers
         private static bool BeginKiting(string s)
         {
             bstate =  _SlowAttackBehavior != null ? State.Slow : State.Moving;
+            DISTANCE_TOO_FAR_FROM_DESTINATION = (int) (Me.Location.Distance(safeSpot) + 3);
             Logger.WriteDebug(Color.Gold, s);
             timeOut = DateTime.Now.Add(TimeSpan.FromSeconds(6));
             return true;

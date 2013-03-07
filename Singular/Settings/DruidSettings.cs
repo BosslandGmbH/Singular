@@ -185,13 +185,6 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Balance")]
-        [DisplayName("Starfall")]
-        [Description("Use Starfall.")]
-        public bool UseStarfall { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Balance")]
         [DisplayName("Allow Kiting")]
         [Description("Allow Kiting mob to minimize damage taken")]
         public bool AllowKiting { get; set; }

@@ -55,7 +55,10 @@ namespace Singular.ClassSpecific.Monk
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
-                    Spell.BuffSelf("Dematerialize")
+                    Spell.BuffSelf("Dematerialize"),
+                    Spell.BuffSelf("Nimble Brew", ret => Me.Stunned || Me.Fleeing ),
+                    Spell.BuffSelf("Dampen Harm", ret => Me.Stunned && Unit.NearbyUnitsInCombatWithMe.Any()),
+                    Spell.BuffSelf("Tiger's Lust", ret => Me.Rooted && !Me.HasAuraWithEffect( WoWApplyAuraType.ModIncreaseSpeed))
                     )
                 );
         }
@@ -63,14 +66,16 @@ namespace Singular.ClassSpecific.Monk
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, (WoWSpec)int.MaxValue, WoWContext.All, 2)]
         public static Composite CreateMonkCombatBuffs()
         {
-            return new Decorator(
-                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                new PrioritySelector(               
-                    // check our individual buffs here
-                    Spell.BuffSelf( "Legacy of the White Tiger"),
-                    Spell.BuffSelf( "Legacy of the Emperor"),
-                    Spell.Buff("Disable", ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect( WoWApplyAuraType.ModDecreaseSpeed))
-                    )
+            return new PrioritySelector(               
+                // check our individual buffs here
+                Spell.BuffSelf( "Legacy of the White Tiger"),
+                Spell.BuffSelf( "Legacy of the Emperor"),
+                Spell.Buff("Disable", ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect( WoWApplyAuraType.ModDecreaseSpeed)),
+
+                Spell.BuffSelf( "Ring of Peace", 
+                    ret => Me.GotTarget 
+                        && Me.CurrentTarget.SpellDistance() < 8
+                        && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() > 1))
                 );
         }
 
@@ -79,69 +84,41 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
+                    ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
                     new PrioritySelector(
+                        // pickup free heals from Life Spheres
                         new Decorator(
-                            ret => !StyxWoW.Me.HasAura("Drink") && !StyxWoW.Me.HasAura("Food"),
-                            new PrioritySelector(
-                                // pickup free heals from Life Spheres
-                                new Decorator(
-                                    ret => Me.HealthPercent < 95 && AnySpheres(SphereType.Life, MonkSettings.SphereDistanceAtRest ),
-                                    CreateMoveToSphereBehavior( SphereType.Life, MonkSettings.SphereDistanceAtRest )
-                                    ),
-                                // pickup free chi from Chi Spheres
-                                new Decorator(
-                                    ret => Me.CurrentChi < Me.MaxChi && AnySpheres(SphereType.Chi, MonkSettings.SphereDistanceAtRest),
-                                    CreateMoveToSphereBehavior(SphereType.Chi, MonkSettings.SphereDistanceAtRest)
-                                    ),
-
-                                // heal ourselves... confirm we have spell and enough energy already or waiting for energy regen will
-                                // .. still be faster than eating
-                                new Decorator(
-                                    ret => Me.HealthPercent >= MonkSettings.RestHealingSphereHealth
-                                        && SpellManager.HasSpell("Healing Sphere") 
-                                        && (Me.CurrentEnergy > 40 || Spell.EnergyRegenInactive() >= 10),
-                                    new Sequence(
-                                        // in Rest only, wait up to 4 seconds for Energy Regen and Spell Cooldownb 
-                                        new Wait(4, ret => Me.Combat || (Me.CurrentEnergy >= 40 && Spell.GetSpellCooldown("Healing Sphere") == TimeSpan.Zero), new ActionAlwaysSucceed()),
-                                        Common.CreateHealingSphereBehavior(Math.Max(80, SingularSettings.Instance.MinHealth)),
-                                        Helpers.Common.CreateWaitForLagDuration(ret => Me.Combat)
-                                        )
-                                    )
-                                )
+                            ret => Me.HealthPercent < 95 && AnySpheres(SphereType.Life, MonkSettings.SphereDistanceAtRest ),
+                            CreateMoveToSphereBehavior( SphereType.Life, MonkSettings.SphereDistanceAtRest )
+                            ),
+                        // pickup free chi from Chi Spheres
+                        new Decorator(
+                            ret => Me.CurrentChi < Me.MaxChi && AnySpheres(SphereType.Chi, MonkSettings.SphereDistanceAtRest),
+                            CreateMoveToSphereBehavior(SphereType.Chi, MonkSettings.SphereDistanceAtRest)
                             ),
 
-                        // Rest up damnit! Do this first, so we make sure we're fully rested.
-                        Rest.CreateDefaultRestBehaviour( null, "Resuscitate")
+                        // heal ourselves... confirm we have spell and enough energy already or waiting for energy regen will
+                        // .. still be faster than eating
+                        new Decorator(
+                            ret => Me.HealthPercent >= MonkSettings.RestHealingSphereHealth
+                                && SpellManager.HasSpell("Healing Sphere") 
+                                && (Me.CurrentEnergy > 40 || Spell.EnergyRegenInactive() >= 10),
+                            new Sequence(
+                                // in Rest only, wait up to 4 seconds for Energy Regen and Spell Cooldownb 
+                                new Wait(4, ret => Me.Combat || (Me.CurrentEnergy >= 40 && Spell.GetSpellCooldown("Healing Sphere") == TimeSpan.Zero), new ActionAlwaysSucceed()),
+                                Common.CreateHealingSphereBehavior(Math.Max(80, SingularSettings.Instance.MinHealth)),
+                                Helpers.Common.CreateWaitForLagDuration(ret => Me.Combat)
+                                )
+                            )
                         )
-                    )
+                    ),
+
+                // Rest up damnit! Do this first, so we make sure we're fully rested.
+                Rest.CreateDefaultRestBehaviour( null, "Resuscitate")
                 );
         }
         
-        public enum Talents
-        {
-            Celerity = 1,
-            TigersLust,
-            Momumentum,
-            ChiWave,
-            ZenSphere,
-            ChiBurst,
-            PowerStrikes,
-            Ascension,
-            ChiBrew,
-            DeadlyReach,
-            ChargingOxWave,
-            LegSweep,
-            HealingElixirs,
-            DampenHarm,
-            DiffuseMagic,
-            RushingJadeWind,
-            InvokeXuenTheWhiteTiger,
-            ChiTorpedo
-        }
-
         /// <summary>
         /// a SpellManager.CanCast replacement to allow checking whether a spell can be cast 
         /// without checking if another is in progress, since Monks need to cast during
@@ -382,4 +359,27 @@ namespace Singular.ClassSpecific.Monk
             return new Throttle(1, 5, Spell.Cast("Grapple Weapon", ret => !Me.Elite && Me.CurrentTarget.Distance < 40 && !Me.CurrentTarget.Disarmed));
         }
     }
+
+    public enum MonkTalents
+    {
+        Celerity = 1,
+        TigersLust,
+        Momumentum,
+        ChiWave,
+        ZenSphere,
+        ChiBurst,
+        PowerStrikes,
+        Ascension,
+        ChiBrew,
+        RingOfPeace,
+        ChargingOxWave,
+        LegSweep,
+        HealingElixirs,
+        DampenHarm,
+        DiffuseMagic,
+        RushingJadeWind,
+        InvokeXuenTheWhiteTiger,
+        ChiTorpedo
+    }
+
 }

@@ -36,6 +36,7 @@ namespace Singular.Helpers
     internal static class Spell
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static void LogCast(string sname, WoWUnit unit) { Logger.Write("Casting {0} on {1} @ {2:F1}% at {3:F1} yds", sname, unit.SafeName(), unit.HealthPercent, unit.Distance); }
 
         public static WoWDynamicObject GetGroundEffectBySpellId(int spellId)
         {
@@ -71,32 +72,35 @@ namespace Singular.Helpers
             }
         }
 
+        public static float MeleeDistance(this WoWUnit unit)
+        {
+            return Me.MeleeDistance(unit);
+        }
+
         /// <summary>
         /// get melee distance between two units
         /// </summary>
         /// <param name="unit">unit</param>
-        /// <param name="me">Me if null, otherwise second unit</param>
+        /// <param name="other">Me if null, otherwise second unit</param>
         /// <returns></returns>
-        public static float MeleeDistance(this WoWUnit unit, WoWUnit me = null)
+        public static float MeleeDistance(this WoWUnit unit, WoWUnit other = null)
         {
             // abort if mob null
             if (unit == null)
                 return 0;
 
-            // optional arg implying Me, then make sure not Mob also
-            if (me == null)
+            if (other == null)
             {
-                if ( unit.IsMe)
+                if (unit.IsMe)
                     return 0;
-
-                me = StyxWoW.Me;
+                other = StyxWoW.Me;
             }
 
             // pvp, then keep it close
-            if (unit.IsPlayer && me.IsPlayer)
+            if (unit.IsPlayer && other.IsPlayer)
                 return 3.5f;
 
-            return Math.Max(5f, me.CombatReach + 1.3333334f + unit.CombatReach);
+            return Math.Max(5f, other.CombatReach + 1.3333334f + unit.CombatReach);
         }
 
         public static float MeleeRange
@@ -114,21 +118,21 @@ namespace Singular.Helpers
         /// combat reaches (hitboxes)
         /// </summary>
         /// <param name="unit">unit</param>
-        /// <param name="me">Me if null, otherwise second unit</param>
+        /// <param name="other">Me if null, otherwise second unit</param>
         /// <returns></returns>
-        public static float SpellDistance(this WoWUnit unit, WoWUnit me = null)
+        public static float SpellDistance(this WoWUnit unit, WoWUnit other = null)
         {
             // abort if mob null
             if (unit == null)
                 return 0;
 
             // optional arg implying Me, then make sure not Mob also
-            if (me == null)
-                me = StyxWoW.Me;
+            if (other == null)
+                other = StyxWoW.Me;
 
             // pvp, then keep it close
-            float dist = me.Location.Distance(unit.Location);
-            dist -= me.CombatReach + unit.CombatReach;
+            float dist = other.Location.Distance(unit.Location);
+            dist -= other.CombatReach + unit.CombatReach;
             return Math.Max(0, dist);
         }
 
@@ -738,7 +742,7 @@ namespace Singular.Helpers
                     {
                         WoWSpell sp = WoWSpell.FromId(spellId);
                         string sname = sp != null ? sp.Name : "#" + spellId.ToString();
-                        Logger.Write(string.Format("Casting {0} on {1}", sname, onUnit(ret).SafeName()));
+                        LogCast(sname, onUnit(ret));
                         SpellManager.Cast(spellId);
                     }));
         }
@@ -762,7 +766,7 @@ namespace Singular.Helpers
                     {
                         WoWSpell sp = WoWSpell.FromId(spellId(ret));
                         string sname = sp != null ? sp.Name : "#" + spellId(ret).ToString();
-                        Logger.Write(string.Format("Casting {0} on {1}", sname, onUnit(ret).SafeName()));
+                        LogCast(sname, onUnit(ret));
                         SpellManager.Cast(spellId(ret));
                     }));
         }
@@ -803,9 +807,9 @@ namespace Singular.Helpers
 
         #region Buff - by name
 
-        public static Composite Buff(string name, params string[] buffNames)
+        public static Composite Buff(string name)
         {
-            return buffNames.Length > 0 ? Buff(name, ret => true, buffNames) : Buff(name, ret => true, name);
+            return Buff(name, ret => true);
         }
 
         public static Composite Buff(string name, bool myBuff)
@@ -841,21 +845,6 @@ namespace Singular.Helpers
         public static Composite Buff(string name, UnitSelectionDelegate onUnit)
         {
             return Buff(name, false, onUnit, ret => true, name);
-        }
-
-        public static Composite Buff(string name, bool myBuff, params string[] buffNames)
-        {
-            return Buff(name, myBuff, ret => true, buffNames);
-        }
-
-        public static Composite Buff(string name, UnitSelectionDelegate onUnit, params string[] buffNames)
-        {
-            return Buff(name, onUnit, ret => true, buffNames);
-        }
-
-        public static Composite Buff(string name, SimpleBooleanDelegate requirements, params string[] buffNames)
-        {
-            return Buff(name, ret => StyxWoW.Me.CurrentTarget, requirements, buffNames);
         }
 
         public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit)
@@ -1205,7 +1194,7 @@ namespace Singular.Helpers
                             // save status of queueing spell (lag tolerance - the prior spell still completing)
                             _IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
-                            Logger.Write("Casting {0} on {1}", _spell.Name, onUnit(ret).SafeName());                              
+                            LogCast(_spell.Name, onUnit(ret));
                             if (!SpellManager.Cast(_spell, onUnit(ret)))
                             {
                                 Logger.WriteDebug(Color.LightPink, "cast of {0} on {1} failed!", _spell.Name, onUnit(ret).SafeName());
@@ -1301,7 +1290,13 @@ namespace Singular.Helpers
                 );
         }
 
-        public static bool AllowMovingWhileCasting(WoWSpell _spell)
+        /// <summary>
+        /// checked if the spell has an instant cast, the spell is one which can be cast while moving, or we have an aura active which allows moving without interrupting casting.  
+        /// does not check whether you are presently moving, only whether you could cast if you are moving
+        /// </summary>
+        /// <param name="_spell">spell to cast</param>
+        /// <returns>true if spell can be cast while moving, false if it cannot</returns>
+        private static bool AllowMovingWhileCasting(WoWSpell _spell)
         {
             // quick return for instant spells
             if (_spell.CastTime == 0 && !IsFunnel(_spell))
@@ -1310,15 +1305,58 @@ namespace Singular.Helpers
             // assume we cant do that, but then check for class specific buffs which allow movement while casting
             bool allowMovingWhileCasting = false;
             if (Me.Class == WoWClass.Shaman)
-                allowMovingWhileCasting = Me.HasAura("Spiritwalker's Grace") || (_spell.Name == "Lightning Bolt" && TalentManager.HasGlyph("Unleashed Lightning"));
+                allowMovingWhileCasting = (_spell.Name == "Lightning Bolt" && TalentManager.HasGlyph("Unleashed Lightning"));
+            else if (Me.Specialization == WoWSpec.MageFire)
+                allowMovingWhileCasting = _spell.Name == "Scorch";
+            else if (Me.Class == WoWClass.Hunter)
+                allowMovingWhileCasting = _spell.Name == "Steady Shot" || (_spell.Name == "Aimed Shot" && TalentManager.HasGlyph("Aimed Shot")) || _spell.Name == "Cobra Shot";
             else if (Me.Class == WoWClass.Warlock)
-                allowMovingWhileCasting = Me.ActiveAuras.ContainsKey("Kil'jaeden's Cunning") || Spell.GetSpellCooldown("Kil'jaeden's Cunning") == TimeSpan.Zero;
-            else if (Me.Class == WoWClass.Mage)
-                allowMovingWhileCasting = _spell.Name == "Scorch" || Me.HasAura("Ice Floes");
-            else if (Me.Specialization == WoWSpec.DruidRestoration)
-                allowMovingWhileCasting = Me.HasAura("Spiritwalker's Grace");  // Symbiosis
+                allowMovingWhileCasting = ClassSpecific.Warlock.Common.HasTalent(ClassSpecific.Warlock.WarlockTalents.KiljadensCunning);
+
+//            if (!allowMovingWhileCasting && Me.ZoneId == 5723)
+//                allowMovingWhileCasting = Me.HasAura("Molten Feather");
+
+            if (!allowMovingWhileCasting)
+                allowMovingWhileCasting = HaveAllowMovingWhileCastingAura();
 
             return allowMovingWhileCasting;
+        }
+
+        /// <summary>
+        /// will cast class/specialization specific buff to allow moving without interrupting casting
+        /// </summary>
+        /// <returns>true if able to cast, false otherwise</returns>
+        private static bool CastBuffToAllowCastingWhileMoving()
+        {
+            string spell = null;
+            bool allowMovingWhileCasting = false;
+
+            if (!allowMovingWhileCasting && SingularSettings.Instance.UseCastWhileMovingBuffs)
+            {
+                if (Me.Class == WoWClass.Shaman || Me.Specialization == WoWSpec.DruidRestoration)
+                    spell = "Spiritwalker's Grace";
+                else if (Me.Class == WoWClass.Mage)
+                    spell = "Ice Floes";
+
+                if ( !string.IsNullOrEmpty(spell) && SpellManager.CanCast(spell, Me))
+                {
+                    LogCast(spell, Me);
+                    allowMovingWhileCasting = SpellManager.Cast(spell, Me);
+                    if (!allowMovingWhileCasting)
+                        Logger.WriteDebug("spell cast failed!!! [{0}]", spell);
+                }
+            }
+
+            return allowMovingWhileCasting;
+        }
+
+        /// <summary>
+        /// check for aura which allows moving without interrupting spell casting
+        /// </summary>
+        /// <returns></returns>
+        public static bool HaveAllowMovingWhileCastingAura()
+        {
+            return Me.GetAllAuras().Any(a => a.ApplyAuraType == (WoWApplyAuraType)330 && _spell.CastTime < (uint)a.TimeLeft.TotalMilliseconds);
         }
 
         #endregion
@@ -1456,13 +1494,13 @@ namespace Singular.Helpers
             {
                 if (spell.IsMeleeSpell && !unit.IsWithinMeleeRange)
                     return false;
-                if (spell.HasRange && (unit.Distance > (spell.MaxRange + unit.CombatReach + 1) || unit.Distance < (spell.MinRange + unit.CombatReach + 1.66666675f)))
+                if (spell.HasRange && (unit.Distance > (spell.MaxRange + unit.CombatReach + 1) || (0 != (int) unit.Distance && unit.Distance < (spell.MinRange + unit.CombatReach + 1.66666675f))))
                     return false;
                 if (!unit.InLineOfSpellSight)
                     return false;
             }
 
-            if ((spell.CastTime != 0u || IsFunnel(spell)) && Me.IsMoving && !StyxWoW.Me.HasAnyAura("Spiritwalker's Grace", "Kil'jaeden's Cunning"))
+            if ((spell.CastTime != 0u || IsFunnel(spell)) && Me.IsMoving && !AllowMovingWhileCasting(spell))
                 return false;
 
             if (Me.ChanneledCastingSpellId == 0)
@@ -1509,7 +1547,7 @@ namespace Singular.Helpers
                 new Throttle(
                     new Action(ret =>
                     {
-                        Logger.Write(string.Format("Casting {0} on {1}", castName, onUnit(ret).SafeName()));
+                        LogCast(castName, onUnit(ret));
                         SpellManager.Cast(castName, onUnit(ret));
                     })
                     )

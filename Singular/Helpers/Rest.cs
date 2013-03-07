@@ -183,7 +183,7 @@ namespace Singular.Helpers
                         new Decorator( ret => spellRez != null, Spell.Resurrect( spellRez )),
 
                 // hack:  some bots not calling PreCombatBuffBehavior, so force the call if we are about done resting
-                        SingularRoutine.Instance.PreCombatBuffBehavior,
+                        // SingularRoutine.Instance.PreCombatBuffBehavior,
 
                         Movement.CreateWorgenDarkFlightBehavior()
                         )

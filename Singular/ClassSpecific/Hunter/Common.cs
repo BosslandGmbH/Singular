@@ -126,9 +126,9 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        CreateMisdirectionBehavior(),
-
-                        Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane))
+                        CreateMisdirectionBehavior()
+                        
+                        // , Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane))
                         )
                     )
                 );
@@ -176,12 +176,12 @@ namespace Singular.ClassSpecific.Hunter
                             ),
 
                         // don't use Hunter's Mark in Battlegrounds unless soloing someone
-                        Spell.Buff("Hunter's Mark",
+/*                        Spell.Buff("Hunter's Mark",
                             ret => Unit.ValidUnit(Target)
                                 && !TalentManager.HasGlyph("Marked for Death")
                                 && (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Target.Guid))
                                 && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
-
+*/
                         Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
                         Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPercent),
 
@@ -195,16 +195,19 @@ namespace Singular.ClassSpecific.Hunter
                                 || (!Me.IsInGroup() && SafeArea.AllEnemyMobsAttackingMe.Count() > 2)
                                 || (Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile)),
 
+                        // Level 75 Talents
                         Spell.Cast("A Murder of Crows"),
                         Spell.Cast("Blink Strike", on => Me.CurrentTarget, ret => Me.GotAlivePet && Me.Pet.SpellDistance(Me.CurrentTarget) < 40),
                         Spell.Cast("Lynx Rush", ret => Pet != null && Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
 
+                        // Level 60 Talents
+                        Spell.Cast("Dire Beast"),
+                        Spell.Cast("Fervor", ctx => Me.CurrentFocus < 50),
+
+                        // Level 90 Talents
                         Spell.Cast("Glaive Toss"),
                         Spell.Cast("Powershot"),
                         Spell.Cast("Barrage"),
-
-                        Spell.Cast("Dire Beast"),
-                        Spell.Cast("Fervor", ctx => Me.CurrentFocus < 50),
 
                         // for long cooldowns, spend only when worthwhile                      
                         new Decorator(
@@ -740,4 +743,28 @@ namespace Singular.ClassSpecific.Hunter
             return good;
         }
     }
+
+    enum HunterTalents
+    {
+        None = 0,
+        Posthaste,
+        NarrowEscape,
+        CrouchingTiger,
+        SilencingShot,
+        WyvernSting,
+        BlindingShot,
+        Exhiliration,
+        AspectOfTheIronHawk,
+        SpiritBond,
+        Fervor,
+        DireBeast,
+        ThrillOfTheHunt,
+        MurderOfCrows,
+        BlinkStrike,
+        LynxRush,
+        GlaiveToss,
+        Powershot,
+        Barrage
+    }
+
 }

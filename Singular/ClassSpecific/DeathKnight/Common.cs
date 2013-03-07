@@ -47,9 +47,19 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             get
             {
-                return (SingularRoutine.CurrentWoWContext == WoWContext.Instances && Me.GotTarget &&
-                        Me.CurrentTarget.IsBoss()) ||
-                       SingularRoutine.CurrentWoWContext != WoWContext.Instances;
+                if ( !Me.GotTarget)
+                    return false;
+
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                    return Me.CurrentTarget.IsBoss();
+
+                if (Me.CurrentTarget.IsPlayer)
+                    return Me.CurrentTarget.TimeToDeath() > 3;
+
+                if (Me.CurrentTarget.TimeToDeath() > 20)
+                    return true;
+
+                return Unit.NearbyUnitsInCombatWithMe.Any( u => u.Guid != Me.CurrentTargetGuid);
             }
         }
 

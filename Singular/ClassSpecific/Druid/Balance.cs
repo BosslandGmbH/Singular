@@ -450,7 +450,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
 
-                                Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount == 3),
+                                Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount >= 3),
 
                                 // If Detonate is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
                                 new Sequence(
@@ -464,9 +464,7 @@ namespace Singular.ClassSpecific.Druid
                                     ret => StyxWoW.Me.CurrentTarget.Location,
                                     ret => true ),
 
-                                Spell.Cast("Starfall",
-                                    ret => StyxWoW.Me,
-                                    ret => DruidSettings.UseStarfall),
+                                Spell.Cast("Starfall", ret => StyxWoW.Me),
 
                                 Spell.Cast("Moonfire",
                                     ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
@@ -482,12 +480,12 @@ namespace Singular.ClassSpecific.Druid
 
                         // make sure we always have DoTs 
                         new Sequence(
-                            Spell.Cast("Sunfire", ret => !Me.CurrentTarget.HasMyAura("Sunfire")),
+                            Spell.Cast("Sunfire", ret => Me.CurrentTarget.HasAuraExpired("Sunfire", 2)),
                             new Action(ret => Logger.WriteDebug("Adding DoT:  Sunfire"))
                             ),
 
                         new Sequence(
-                            Spell.Cast("Moonfire", ret => !Me.CurrentTarget.HasMyAura("Moonfire")),
+                            Spell.Cast("Moonfire", ret => Me.CurrentTarget.HasAuraExpired("Moonfire", 2)),
                             new Action(ret => Logger.WriteDebug("Adding DoT:  Moonfire"))
                             ),
 
@@ -503,7 +501,7 @@ namespace Singular.ClassSpecific.Druid
                         CreateDoTRefreshOnEclipse(),
 
                         Spell.Cast("Starsurge"),
-                        Spell.Cast("Starfall", ret => DruidSettings.UseStarfall),
+                        Spell.Cast("Starfall"),
 
                         Spell.Cast("Wrath",
                             ret => GetEclipseDirection() == EclipseType.Lunar ),

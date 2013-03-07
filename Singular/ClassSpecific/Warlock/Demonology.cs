@@ -73,8 +73,8 @@ namespace Singular.ClassSpecific.Warlock
                             ret => Spell.UseAOE && Common.GetCurrentPet() == WarlockPet.Felguard,
                             new Sequence(
                                 new PrioritySelector(
-                                    Pet.CreateCastPetAction("Felstorm", ret => !Common.HasTalent( WarlockTalent.GrimoireOfSupremacy )),
-                                    Pet.CreateCastPetAction("Wrathtorm", ret => Common.HasTalent( WarlockTalent.GrimoireOfSupremacy ))
+                                    Pet.CreateCastPetAction("Felstorm", ret => !Common.HasTalent( WarlockTalents.GrimoireOfSupremacy )),
+                                    Pet.CreateCastPetAction("Wrathtorm", ret => Common.HasTalent( WarlockTalents.GrimoireOfSupremacy ))
                                     ),
                                 new ActionAlwaysFail()  // no GCD on Felstorm, allow to fall through
                                 )

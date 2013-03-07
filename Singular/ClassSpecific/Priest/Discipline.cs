@@ -162,7 +162,7 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Cast("Penance"),
                                 Spell.Cast("Holy Fire"),
-                                Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
+                                // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
                                 Spell.Cast("Smite"),
                                 //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
                                 Movement.CreateMoveToTargetBehavior(true, 35f)
@@ -233,7 +233,7 @@ namespace Singular.ClassSpecific.Priest
                     Spell.Buff("Shadow Word: Pain", true),
                     Spell.Cast("Penance"),
                     Spell.Cast("Holy Fire"),
-                    Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
+                    // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
                     Spell.Cast("Smite"),
                 //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
                     Movement.CreateMoveToTargetBehavior(true, 30)

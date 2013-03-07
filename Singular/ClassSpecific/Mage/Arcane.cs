@@ -82,7 +82,7 @@ namespace Singular.ClassSpecific.Mage
                             ret => Me.IsMoving && Me.HasAuraExpired("Arcane Charge", 2)),
                         Spell.Cast("Arcane Missiles", ret => Me.HasAura("Arcane Missiles!", 2)),
                         Spell.Cast("Arcane Blast", ret => Me.ManaPercent >= 90),
-                        Spell.Cast("Scorch", ret => Me.ManaPercent < 90),
+                        // Spell.Cast("Scorch", ret => Me.ManaPercent < 90),
 
                         Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast"))
                         )
@@ -182,7 +182,7 @@ namespace Singular.ClassSpecific.Mage
                             ret => Me.IsMoving && Me.HasAuraExpired("Arcane Charge", 2)),
                         Spell.Cast("Arcane Missiles", ret => Me.HasAura("Arcane Missiles!", 2)),
                         Spell.Cast("Arcane Blast", ret => Me.ManaPercent >= 90),
-                        Spell.Cast("Scorch", ret => Me.ManaPercent < 90),
+                        // Spell.Cast("Scorch", ret => Me.ManaPercent < 90),
 
                         Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast"))
                         )

@@ -1,4 +1,138 @@
 
+--- Release 3.0.0.1967 ---
+
+General
+
+change- Updates made for 5.2 marked below
+
+fixed - Rest behavior was blocked if mounted.  Fixed so only blocked if flying
+
+*new* - New Raid healing context (additional set of Heal Spell %.)  Currently setup only for Shaman.  See the Group Healing tab in Class Config
+
+change- Correctly indicates the name and level of difficulty of instances/raids
+
+fixed - Kiting logic bug.  If calculated kite distance was larger than expected kiting was cancelled immediately, creating message spam and interfering with spell priority
+
+change- Evade bugged mob logic. Will halt all attacks on blacklisted mobs.  If character stays at evade mob, the BotBase in use must be updated to not attack blacklisted mobs.
+
+*new* - Automatic support for using "cast while moving" abilities.  New option in Class Config to disable if you prefer manual control of Spiritwalker's Grace, Ice Floes, etc.  Will support all buffs of this type including Molten Feather
+
+change- Heal Target setting to Ignore Players above a health % is only used out of combat.  While in combat, whatever values are present in your Class Specific setup are used
+
+
+
+Death Knight
+
+change- All - long cooldowns now check time to death estimate on current target before casting
+
+change- Frost - [5.2] slight change to Instance spell priority due to spell changes
+
+		
+Druid
+		
+change- Balance	- [5.2] removed Use Starfall setting since it no longer strike targets that are affected by crowd control effects or those you aren't already in combat with
+
+fixed - Balance - DoTs refreshed with 2 seconds left.  in some circumstances was allowing to expire first
+
+fixed - Feral - rework of Instance spell priority 
+
+*new* - Feral - will Cyclone nearby enemy if Predatory Swiftness up and enemy is casting and not the current target
+
+change- Guardian - added Bear Hug for Solo and Battleground priorities and not being targeted by any enemy other than current target
+
+		
+Hunter
+		
+change- All - [5.2] No longer casts Hunter's Mark.  Depends upon Arcane Shot, Kill Command, Explosive Shot and Chimera Shot to apply now
+
+
+Mage
+	
+change- All - [5.2] support for Glyph of Fire Blast no longer required for spreading DoT
+
+change- All - [5.2] Scorch removed from Arcane spell priority as its now a Fire Specialization spell
+				
+		
+Monk
+
+*new* - Windwalker/Brewmaster - [5.2] support for Nimble Brew when stunned/feared
+
+*new* - All - [5.2] call to Dampen Harm can now be used while stunned
+
+*new* - All - [5.2] Support for Ring of Peace 	
+
+*new* - All - added support for Tiger's Lust when rooted
+
+change- Windwalker - [5.2] Chi no longer required for Touch of Karma	
+
+change- Windwalker - Symbiosis gained Bear Hug only cast if no enemies other than your target are targeting you
+
+		
+		
+Priest
+		
+change- Holy/Disc - [5.2] revised recognition of Power Word: Solace 
+			
+change - Holy - [5.2] Glyph of Desperation removed and Guardian Spirit can always be cast while stunned
+
+change - Discipline - [5.2] Glyph of Desperation removed and Pain Suppression can always be cast while stunned
+
+
+Rogue
+		
+change- All - [5.2] No longer waits to cast Preparation when Cloak of Shadows on cooldown.
+
+*new* - All - [5.2] New Level 90 Talent: Marked for Death
+			
+*new* - All - [5.2] New Level 60 Talent: Cloak and Dagger
+			
+change- All - [5.2] Deadly Throw now cast for interrupt at 3, 4 and 5 combo points
+
+change- All - Vanish is no longer cast while questing to avoid losing summoned quest mobs when low in health.
+
+
+Shaman		
+
+*new* - All - option in settings to control use of Weapon Imbues to allow you to disable Windfury Weapon, etc. while temporary enchants support is broken in HonorBuddy
+		
+*new* - Elemental - [5.2] uses Shamanistic Rage when stunned or for mana return
+
+fixed - Elemental - no longer casts Thunderstorm when stunned unless enemies within 8 yards
+
+change- All Specs - setting for Astral Shift health % added.  Will always cast if in stressful situation
+
+change- Elemental - Battleground spell priority changed to build up stacks of Lightning Shield and sustained pressure by rolling Flame Shocks in preparation for a burst phase
+
+change- Restoration - revision to default health %'s
+
+change- Restoration - lightened requirements for Healing Rain and Chain Heal so possible to compete for heals in LFR if configured
+
+
+Warlock
+		
+change- All - [5.2] Blood Fear removed
+		
+*new* - All - [5.2] support for Blood Horror when attacked by melee
+
+change- All - [5.2] removed Imp ability Blood Pact from Party Buff support
+
+change- All - [5.2] added Stamina buff to Dark Intent Party Buff support
+
+change- All - [5.2] removed Kil'jaeden's Cunning cast
+
+change- All - [5.2] added Whiplash spell gained via Grimoire of Sacrifice 
+
+change- All - added Ember Tap if health less than 80
+		
+
+Warrior
+		
+change- Prot - [5.2] Removed Deadly Calm 
+
+*new* - All - [5.2] Glyph of Incite now activates off Demoralizing Shout
+
+
+
 --- Release 3.0.0.1938 ---
 
 General

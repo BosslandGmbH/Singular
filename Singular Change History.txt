@@ -1,4 +1,37 @@
 
+--- Release 3.0.0.1981 ---
+
+General
+
+fixed - restored use of trinkets configured for Crowd Control
+
+change- Evade bugged mob handler will now target any mob in the Bot targetlist that isn't blacklisted so combat routine mechanics will move out of current evade situation
+
+
+Druid
+
+fixed - Feral - when entering combat while mining, would pre-buff Rejuvenation since in Normal form.  Changed to only buff if Health % < 95
+
+fixed - Feral - Swipe spam.  Had introduced a bug with 5.2 work that caused it to be in AOE mode if more than one mob within 40 yds rather than 8yds
+
+
+Mage
+
+fixed - All - cast of Frost Armor/Mage Armor/Frost Armor.
+
+
+Paladin
+
+change- Retribution - Avenging Wrath is now controlled by the same Class Config setting used to control Holy Avenger and GotAK
+
+
+Rogue
+
+fixed - All - AoE check for crowd controlled mobs was AoE abilities to be toggled on/off if Gouge or another stun was used.  Now correctly handles when it is current target that is stunned
+
+
+
+
 --- Release 3.0.0.1967 ---
 
 General

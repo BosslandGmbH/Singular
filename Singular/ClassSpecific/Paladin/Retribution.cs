@@ -124,9 +124,11 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast( "Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal ),
 
                         //7	Blow buffs seperatly.  No reason for stacking while grinding.
-                        Spell.Cast("Guardian of Ancient Kings", ret => PaladinSettings.RetGoatK && _mobCount >= 4),
-                        Spell.Cast("Holy Avenger", ret => PaladinSettings.RetGoatK && _mobCount < 4),
-                        Spell.BuffSelf("Avenging Wrath", ret => _mobCount >= 4 || (!Me.HasAura("Holy Avenger") && Spell.GetSpellCooldown("Holy Avenger").TotalSeconds > 10)),
+                        Spell.Cast("Guardian of Ancient Kings", ret => PaladinSettings.RetAvengAndGoatK && _mobCount >= 4),
+                        Spell.Cast("Holy Avenger", ret => PaladinSettings.RetAvengAndGoatK && _mobCount < 4),
+                        Spell.BuffSelf("Avenging Wrath", 
+                            ret => PaladinSettings.RetAvengAndGoatK  
+                                && (_mobCount >= 4 || (!Me.HasAura("Holy Avenger") && Spell.GetSpellCooldown("Holy Avenger").TotalSeconds > 10))),
 
                         Spell.Cast("Execution Sentence", ret => Me.CurrentTarget.TimeToDeath() > 15),
                         Spell.Cast("Holy Prism", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 40)),
@@ -238,16 +240,15 @@ namespace Singular.ClassSpecific.Paladin
                             })),
 
                         new Decorator(
-                            ret => Me.CurrentTarget.IsWithinMeleeRange,
+                            ret => Me.CurrentTarget.IsWithinMeleeRange && PaladinSettings.RetAvengAndGoatK,
                             new PrioritySelector(
                                 Spell.Cast("Guardian of Ancient Kings",
-                                    ret => PaladinSettings.RetGoatK
-                                        && Me.CurrentTarget.IsBoss()
+                                    ret => Me.CurrentTarget.IsBoss()
                                         && Me.ActiveAuras.ContainsKey("Inquisition")),
                                 Spell.BuffSelf("Avenging Wrath", 
                                     ret => Me.ActiveAuras.ContainsKey("Inquisition")
-                                        && (!SpellManager.HasSpell("Guardian of Ancient Kings") || !PaladinSettings.RetGoatK || Common.HasTalent(PaladinTalents.SanctifiedWrath) || Spell.GetSpellCooldown("Guardian of Ancient Kings").TotalSeconds <= 290)),
-                                Spell.Cast("Holy Avenger", ret => PaladinSettings.RetGoatK && Me.HasAura("Avenging Wrath"))
+                                        && (Common.HasTalent(PaladinTalents.SanctifiedWrath) || Spell.GetSpellCooldown("Guardian of Ancient Kings").TotalSeconds <= 290)),
+                                Spell.Cast("Holy Avenger", ret => Me.HasAura("Avenging Wrath"))
                                 )
                             ),
 

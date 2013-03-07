@@ -199,9 +199,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Retribution")]
-        [DisplayName("Auto GotAK and Holy Avenger")]
-        [Description("Automatically use Guardian of the Ancient Kings and Holy Avenger.  When false both will be disabled.")]
-        public bool RetGoatK { get; set; }
+        [DisplayName("Use Aveng Wrath/Holy Aveng/GotAK")]
+        [Description("True: Automatically use Avenging Wrath, Holy Avenger, and Guardian of the Ancient Kings.  False: you will have to cast manually.")]
+        public bool RetAvengAndGoatK { get; set; }
 
         [Setting]
         [DefaultValue(true)]

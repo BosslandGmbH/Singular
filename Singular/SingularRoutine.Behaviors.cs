@@ -127,12 +127,19 @@ namespace Singular
                     new ThrottlePasses(1, 1, new Decorator(ret => Me.Fleeing, new Action(r => { Logger.Write(Color.White, "FLEEING! (loss of control)"); return RunStatus.Failure; }))),
                     new ThrottlePasses(1, 1, new Decorator(ret => Me.Stunned, new Action(r => { Logger.Write(Color.White, "STUNNED! (loss of control)"); return RunStatus.Failure;} ))),
                     new ThrottlePasses(1, 1, new Decorator(ret => Me.Silenced, new Action(r => { Logger.Write(Color.White, "SILENCED! (loss of control)"); return RunStatus.Failure;} ))),
-                    new HookExecutor(BehaviorType.LossOfControl.ToString()),
-                    new Decorator( 
-                        ret => SingularSettings.Instance.UseRacials,
+                    new Throttle( 1,
                         new PrioritySelector(
-                            Spell.Cast( "Will of the Forsaken", on => Me, ret => Me.Race == WoWRace.Undead && Me.Fleeing ),
-                            Spell.Cast( "Every Man for Himself", on => Me, ret => Me.Race == WoWRace.Human && (Me.Stunned || Me.Fleeing ))
+                            new HookExecutor(BehaviorType.LossOfControl.ToString()),
+                            new Decorator( 
+                                ret => SingularSettings.Instance.UseRacials,
+                                new PrioritySelector(
+                                    Spell.Cast( "Will of the Forsaken", on => Me, ret => Me.Race == WoWRace.Undead && Me.Fleeing ),
+                                    Spell.Cast( "Every Man for Himself", on => Me, ret => Me.Race == WoWRace.Human && (Me.Stunned || Me.Fleeing ))
+                                    )
+                                ),
+
+                            Item.UseEquippedTrinket(TrinketUsage.CrowdControlled),
+                            Item.UseEquippedTrinket(TrinketUsage.CrowdControlledSilenced)
                             )
                         ),
                     new ActionAlwaysSucceed()

@@ -261,7 +261,17 @@ namespace Singular.Utilities
 
                 if (StyxWoW.Me.CurrentTargetGuid == guid)
                 {
-                    Logger.WriteDebug("Evade: clear target");
+                    foreach (var target in Targeting.Instance.TargetList)
+                    {
+                        if (target.IsAlive && Unit.ValidUnit(target) && !Blacklist.Contains(target, BlacklistFlags.Combat))
+                        {
+                            Logger.Write(Color.Pink, "Setting target to {0} to get off evade bugged mob!", target.SafeName());
+                            target.Target();
+                            return;
+                        }
+                    }
+
+                    Logger.Write(Color.Pink, "Bot not targeting other mobs nearby -- simply clearing evade target");
                     StyxWoW.Me.ClearTarget();
                 }
 

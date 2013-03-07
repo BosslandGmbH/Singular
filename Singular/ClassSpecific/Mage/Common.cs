@@ -59,7 +59,7 @@ namespace Singular.ClassSpecific.Mage
                                     return true;
                                     } ),
 
-                                Spell.BuffSelf("Mage Armor", ret => !Me.HasAura("Frost Armor")), 
+                                // Spell.BuffSelf("Mage Armor", ret => !Me.HasAura("Frost Armor")), 
 
 
                                 // Don't put up mana shield if we're arcane. Since our mastery works off of how much mana we have!

@@ -566,8 +566,8 @@ namespace Singular.Helpers
         public static uint GetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
         {
             // Reversing note: CGUnit_C::GetPredictedHeals
-            const int PredictedHealsCount = 0x1300;
-            const int PredictedHealsArray = 0x1304;
+            const int PredictedHealsCount = 0x1340;
+            const int PredictedHealsArray = 0x1344;
 
             Debug.Assert(unit != null);
             uint health = unit.CurrentHealth;
@@ -578,7 +578,7 @@ namespace Singular.Helpers
             var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
 
             var heals = StyxWoW.Memory.Read<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
-            return heals.Where(heal => includeMyHeals || !includeMyHeals && heal.OwnerGuid != StyxWoW.Me.Guid)
+            return heals.Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
                 .Aggregate(health, (current, heal) => current + heal.HealAmount);
         }
 

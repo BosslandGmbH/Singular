@@ -320,7 +320,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new Action(ret =>
             {
-                if (Unit.NearbyUnfriendlyUnits.Any(u => u.IsCrowdControlled()))
+                if (Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.IsCrowdControlled()))
                     AoeCount = 1;
                 else
                     AoeCount = Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 3));

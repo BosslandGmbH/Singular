@@ -30,8 +30,16 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-                Spell.BuffSelf("Stealth"),
-                Helpers.Common.CreateAutoAttack(true),
+                Spell.WaitForCastOrChannel(),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Spell.BuffSelf("Stealth"),
+                        Spell.Cast("Sinister Strike"),
+                        Helpers.Common.CreateAutoAttack(true)
+                        )
+                    ),
+                Movement.CreateMoveBehindTargetBehavior(),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }

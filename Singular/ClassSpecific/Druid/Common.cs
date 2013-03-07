@@ -191,7 +191,8 @@ namespace Singular.ClassSpecific.Druid
 
                 // keep rejuv up 
                 Spell.Cast("Rejuvenation", on => Me, 
-                    ret => Me.HasAuraExpired("Rejuvenation", 1) // && Me.HealthPercent < 95
+                    ret => Me.GetPredictedHealthPercent(true) < 95
+                        && Me.HasAuraExpired("Rejuvenation", 1) // && Me.HealthPercent < 95
                         && (Me.Shapeshift == ShapeshiftForm.Normal || (Me.Specialization == WoWSpec.DruidGuardian && Me.ActiveAuras.ContainsKey("Heart of the Wild")))),
 
                 Spell.Cast("Healing Touch", on => Me, ret => Me.HealthPercent <= 80 && Me.ActiveAuras.ContainsKey("Predatory Swiftness")),

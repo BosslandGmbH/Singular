@@ -462,7 +462,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
 
                 new Action( ret => {
-                    _aoeColl = Unit.NearbyUnfriendlyUnits.Where(u => u.MeleeDistance() < 8f);
+                    _aoeColl = Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8f);
                     return RunStatus.Failure;
                     }),
 

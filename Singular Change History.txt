@@ -1,3 +1,109 @@
+--- Release 3.0.0.2048 ---
+
+General
+
+change- Singular version # displayed as part of Combat Routine name in Combat Routine selection window.
+
+*new* - Healing Targets may now include raid member Pets. Pets will also be considered when evaluating AoE heals
+
+*new* - Friendly NPC's which are either the Current Target or Focus Target will now be included in the list of possible heal targets.  This allows healing of NPCs in encounters that require that strategy
+
+fixed - Arcane Torrent racial was being cast without range check.  now casts only if interrupting target within 8 yds
+
+fixed - Arcane Torrent and War Stomp are no longer cast if a crowd controlled enemy exists in AoE range
+
+change- standardized all "Casting ... on ...." messages.  Now include distance and approximate current health %
+
+change- Disable All Targeting setting changed to Targeting by Singular.  this accepts several values, with the default being Auto.  This setting will leave targeting enabled unless running under DungeonBuddy, LazyRaider, or Raid Bot
+
+fixed - no longer buffs out of combat when solo and waiting for invite while running either DUngeonBuddy or BGBuddy
+
+change- CastOnGround behavior used for spells cast on a ground location rather than directly on npc/player now accepts a string to describe the target which is output to log
+
+
+Druid 
+
+fixed - Feral - will no longer cast Cat Form while in aquatic form
+
+
+Mage
+
+fixed - Frost - was incorrectly casting Ice Lance during AoE situation without Fingers of Frost proc
+
+fixed - All - Time Warp was cast at times even when Class Config setting was off
+
+
+Priest
+
+change - Lowbie - changed to 28y pull distance and forcing stop at anything closer than 25y
+
+fixed - All - was ignoring the Use Speed Buff setting and always casting PW:S or Angelic Feather when running out of combat
+
+
+Rogue 
+
+fixed - All - was casting opener too quickly after moving behind target (generated facing errors)
+
+fixed - Combat - prior to learning Recuperate, will now cast Eviscerate if # of seconds target estimated to die is <= # combo points
+
+change- All - Fan of Knives will not be cast while Solo unless 3+ mobs (was previously 2)
+
+fixed - All - Fan of Knives no longer cast if AoE has been turned off
+
+change- All - when Solo and Pulling a Neutral mob, will wait to stealth until just before attack rather than at a distance allowing slightly faster movement to those mobs that do not aggro
+
+fixed - All - Pick Pocket will now stop movement briefly prior to casting spell to avoid large number of missed casts
+
+fixed - All - was checking Priest Use Speed Buff setting before using Blazing Speed.  corrected to reference new Rogue specific setting
+
+
+Shaman
+
+change- Elemental - spell priority for Battlegrounds changed to burst immediately 7 stacks of lightning shield and both shocks and elemental blast off cooldown
+
+fixed - Elemental - was never invoking burst routine if user had not specced for Elemental Blast
+
+*new* - Restoration - added setting for Mana Tide Totem %
+
+fixed - All Specs - bug which was preventing totems from being cast. This could affect all totems, but was most recently reported for Mana Tide
+
+change- Restoration - Riptide will now only be rolled on Tanks
+
+*new* - Restoration - setting for minimum # of Chain Heal targets
+
+*new* - Restoration - setting for minimum # of Healing Rain targets
+
+*new* - Restoration - setting for minimum # of heal targets for Ascendance
+
+change- Restoration - spell priority is Save the Group spells, then AoE spells, then Single target. previously it was was controller entirely by Health %
+
+fixed - Elemental / Enhancement - off healing logic for use of Ancestral Swiftness in Oh SHoot Heal
+
+*new* - Restoration - support for Purify Spirit to cleanse team mates.  Blacklist of spells that should not be cleansed is currently internal and should be  configurable in next release.  Disable Cleansing in Class Config if you encounter issues with dispel of an aura that should not be dispellee due to encounter mechanics
+
+change- Restoration - when a Chain Heal target is selected, will cast Riptide on that target first if not currently buffed
+
+change- Restoration - priority of Chain Heal changed to top-most and Healing Rain to next highest, regardless of health %
+
+change- Restoration - Raid default Health %'s used for healing Raids.  should provide improved heal #'s with greater mana efficiency.
+
+change- Restoration - Instance default Health %'s used for healing Instances.  should cast Healing Rain / Chain Heal much less frequently
+
+change- Restoration - Battleground default Health %'s used for healing all PVP.  will not cast Greater Healing Wave and focuses on instants and burst heals where possible
+
+fixed - Restoration - cancel direct heal casts in progress if targets health goes above maximum of Healing Wave, Greater Healing Wave, Healing Surge, and Ignore Mobs Above health % values.  Typically this should be the Ignore Mobs Above Health % value which defaults to 95%.  this should improve mana conservation and over healing #'s
+
+
+Warrior
+
+change- All - will now additionally cast Berserker Rage when Sapped
+
+fixed - All - no longer casts any combination of Charge, Heroic Leap, or Heroic Throw one after the other
+
+*new* - Arms - separate Battlegrounds spell priority.  Be certain to include log file on any feedback
+
+*new* - Arms - two different Instance spell priority added for 5.2, selectable by config setting.  ANY FEEDBACK ON THIS MUST INCLUDE LOG FILE
+
 
 --- Release 3.0.0.1981 ---
 
@@ -28,8 +134,6 @@ change- Retribution - Avenging Wrath is now controlled by the same Class Config 
 Rogue
 
 fixed - All - AoE check for crowd controlled mobs was AoE abilities to be toggled on/off if Gouge or another stun was used.  Now correctly handles when it is current target that is stunned
-
-
 
 
 --- Release 3.0.0.1967 ---

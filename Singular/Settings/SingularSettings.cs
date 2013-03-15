@@ -9,6 +9,7 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 using Singular.Managers;
 using System.Reflection;
 using System;
+using System.Collections.Generic;
 
 namespace Singular.Settings
 {
@@ -35,6 +36,13 @@ namespace Singular.Settings
         HighPriority
     }
 
+    enum TargetingStyle
+    {
+        None = 0,
+        Enable,
+        Auto
+    }
+
 
     internal class SingularSettings : Styx.Helpers.Settings
     {
@@ -43,6 +51,20 @@ namespace Singular.Settings
         public SingularSettings()
             : base(Path.Combine(CharacterSettingsPath, "SingularSettings.xml"))
         {
+            CleanseBlacklist = new Dictionary<int,string>() {
+                { 96328, "Toxic Torment (Green Cauldron)" },
+                { 96325, "Frostburn Formula (Blue Cauldron)" },
+                { 96326, "Burning Blood (Red Cauldron)" },
+                { 92876, "Blackout (10man)" },
+                { 92878, "Blackout (25man)" },
+                { 30108, "(Warlock) Unstable Affliction" },
+                { 8050,  "(Shaman) Flame Shock" },
+                { 3600,  "(Shaman) Earthbind" },
+                { 34914, "(Priest) Vampiric Touch" },
+                { 104050, "Torrent of Frost" },
+                { 103962, "Torrent of Frost" },
+                { 103904, "Torrent of Frost" }
+            };
         }
 
         public static string CharacterSettingsPath
@@ -94,7 +116,18 @@ namespace Singular.Settings
             if (StyxWoW.Me.Class == WoWClass.Paladin )      LogSettings("PaladinSettings", Paladin());
             if (StyxWoW.Me.Class == WoWClass.Priest )       LogSettings("PriestSettings", Priest());
             if (StyxWoW.Me.Class == WoWClass.Rogue )        LogSettings("RogueSettings", Rogue());
-            if (StyxWoW.Me.Class == WoWClass.Shaman )       LogSettings("ShamanSettings", Shaman());
+
+            if (StyxWoW.Me.Class == WoWClass.Shaman)
+            {
+                LogSettings("ShamanSettings", Shaman());
+                if (StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration)
+                {
+                    LogSettings("Shaman.Heal.Battleground", Shaman().Battleground);
+                    LogSettings("Shaman.Heal.Instance", Shaman().Instance);
+                    LogSettings("Shaman.Heal.Raid", Shaman().Raid);
+                }
+            }
+            
             if (StyxWoW.Me.Class == WoWClass.Warlock )      LogSettings("WarlockSettings", Warlock());
             if (StyxWoW.Me.Class == WoWClass.Warrior )      LogSettings("WarriorSettings", Warrior());
         }
@@ -138,6 +171,22 @@ namespace Singular.Settings
                 return SingularSettings.Instance.EnableDebugLogging || (GlobalSettings.Instance.LogLevel > Styx.Common.LogLevel.Normal);
             }
         }
+
+        [Browsable(false)]
+        public static bool DisableAllTargeting
+        {
+            get
+            {
+                if (SingularSettings.Instance.TypeOfTargeting != TargetingStyle.Auto)
+                    return SingularSettings.Instance.TypeOfTargeting == TargetingStyle.None;
+
+                return MovementManager.IsManualMovementBotActive || SingularRoutine.IsDungeonBuddyActive;
+            }
+        }
+
+        [Browsable(false)]
+        internal static Dictionary<int, string> CleanseBlacklist = new Dictionary<int, string>();
+
 
         #region Category: Debug
 
@@ -246,32 +295,39 @@ namespace Singular.Settings
 
         #endregion
 
-        #region Category: Group Healing
+        #region Category: Group Healing / Support
 
         [Setting]
         [DefaultValue(95)]
-        [Category("Group Healing")]
+        [Category("Group Healing/Support")]
         [DisplayName("Ignore Targets Health")]
-        [Description("Ignore healing targets when their health is above this value.")]
+        [Description("Ignore healing targets with health % above; also cancels casts in progress at this value.")]
         public int IgnoreHealTargetsAboveHealth { get; set; }
 
         [Setting]
         [DefaultValue(75)]
-        [Category("Group Healing")]
+        [Category("Group Healing/Support")]
         [DisplayName("Max Heal Target Range")]
         [Description("Max distance that we will see a heal target (max value: 100)")]
         public int MaxHealTargetRange { get; set; }
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Group Healing")]
+        [Category("Group Healing/Support")]
         [DisplayName("Stay near Tank")]
         [Description("Move within Healing Range of Tank if nobody needs healing")]
         public bool StayNearTank { get; set; }
 
         [Setting]
-        [DefaultValue(DispelStyle.None)]
-        [Category("Group Healing")]
+        [DefaultValue(true)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Include Pets as Heal Targets")]
+        [Description("True: Include Pets as Healing targets (does not affect Owner healing of Pet)")]
+        public bool IncludePetsAsHealTargets { get; set; }
+
+        [Setting]
+        [DefaultValue(DispelStyle.HighPriority)]
+        [Category("Group Healing/Support")]
         [DisplayName("Dispel Debufs")]
         [Description("Dispel harmful debuffs")]
         public DispelStyle DispelDebuffs { get; set; }
@@ -349,11 +405,11 @@ namespace Singular.Settings
         #region Category: Targeting
 
         [Setting]
-        [DefaultValue(false)]
+        [DefaultValue(TargetingStyle.Auto)]
         [Category("Targeting")]
-        [DisplayName("Disable Targeting")]
-        [Description("Disable all Targeting within the CC. This will NOT stop it from casting spells/heals on units other than your target. Only changing actual targets will be disabled.")]
-        public bool DisableAllTargeting { get; set; }
+        [DisplayName("Targeting by Singular")]
+        [Description("None: disabled, Enable: intelligent switching; Auto: disable for DungeonBuddy/manual Assist Bots, otherwise intelligent switching.")]
+        public TargetingStyle TypeOfTargeting { get; set; }
 
         [Setting]
         [DefaultValue(InterruptType.All)]

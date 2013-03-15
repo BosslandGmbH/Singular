@@ -31,7 +31,7 @@ namespace Singular.Helpers
 
             return
                 new Decorator(
-                    ret => !SingularSettings.Instance.DisableAllTargeting,
+                    ret => !SingularSettings.DisableAllTargeting,
                     new PrioritySelector(
 
 #region Tank Targeting

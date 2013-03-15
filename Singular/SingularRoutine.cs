@@ -48,7 +48,7 @@ namespace Singular
 
         public static SingularRoutine Instance { get; private set; }
 
-        public override string Name { get { return "Singular"; } }
+        public override string Name { get { return GetSingularRoutineName(); } }
 
         public override WoWClass Class { get { return StyxWoW.Me.Class; } }
 
@@ -113,12 +113,14 @@ namespace Singular
             }
 
 
-            if (HealerManager.NeedHealTargeting)
-                HealerManager.Instance.Pulse();
+            if (Me.IsInGroup())
+            {
+                if (HealerManager.NeedHealTargeting && CurrentWoWContext != WoWContext.Normal)
+                    HealerManager.Instance.Pulse();
 
-            if (Group.MeIsTank && CurrentWoWContext != WoWContext.Battlegrounds &&
-                (Me.GroupInfo.IsInParty || Me.GroupInfo.IsInRaid))
-                TankManager.Instance.Pulse();
+                if (Group.MeIsTank && CurrentWoWContext == WoWContext.Instances)
+                    TankManager.Instance.Pulse();
+            }
 
             HotkeyDirector.Pulse();
         }
@@ -186,7 +188,7 @@ namespace Singular
 
         private static void WriteSupportInfo()
         {
-            string singularName = "Singular v" + GetSingularVersion();
+            string singularName = GetSingularRoutineName();  // "Singular v" + GetSingularVersion();
             Logger.Write("Starting " + singularName);
 
             // save some support info in case we need
@@ -257,6 +259,11 @@ namespace Singular
             }
 
             return 0;
+        }
+
+        public static string GetSingularRoutineName()
+        {
+            return "Singular v" + GetSingularVersion();
         }
 
         public static string GetSingularSourcePath()

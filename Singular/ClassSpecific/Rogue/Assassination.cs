@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Rogue
                 Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
 
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
@@ -110,7 +110,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Dispatch"), // daggers
 
-                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount > 1 && Spell.UseAOE ),
+                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= 3 && Spell.UseAOE ),
                         Spell.Cast("Mutilate"),  // daggers
 
                         new ThrottlePasses(60,

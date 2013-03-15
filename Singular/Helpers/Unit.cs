@@ -103,6 +103,19 @@ namespace Singular.Helpers
         }
 
         /// <summary>
+        ///   Gets the nearby friendly players that can be seen
+        /// </summary>
+        /// <value>The nearby friendly players.</value>
+        public static IEnumerable<WoWPlayer> FriendlyPlayers(double range = 100.0 )
+        {
+            if ( range >= 100.0)
+                return ObjectManager.GetObjectsOfType<WoWPlayer>(false, true).Where(p => p.IsFriendly).ToList();
+
+            range *= range;
+            return ObjectManager.GetObjectsOfType<WoWPlayer>(false, true).Where(p => p.IsFriendly && p.DistanceSqr < range).ToList();
+        }
+
+        /// <summary>
         ///   Gets the nearby friendly players within 40 yards.
         /// </summary>
         /// <value>The nearby friendly players.</value>
@@ -110,7 +123,7 @@ namespace Singular.Helpers
         {
             get
             {
-                return ObjectManager.GetObjectsOfType<WoWPlayer>(false, true).Where(p => p.DistanceSqr <= 40 * 40 && p.IsFriendly).ToList();
+                return FriendlyPlayers(40);
             }
         }
 
@@ -291,9 +304,9 @@ namespace Singular.Helpers
         /// <param name="u">unit</param>
         /// <param name="aura">name of aura with spell of same name that applies</param>
         /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
-        public static bool HasAuraExpired(this WoWUnit u, string aura, int secs = 3)
+        public static bool HasAuraExpired(this WoWUnit u, string aura, int secs = 3, bool myAura = true)
         {
-            return u.HasAuraExpired(aura, aura, secs);
+            return u.HasAuraExpired(aura, aura, secs, myAura);
         }
 
 
@@ -304,11 +317,11 @@ namespace Singular.Helpers
         /// <param name="spell">spell that applies aura</param>
         /// <param name="aura">aura</param>
         /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
-        public static bool HasAuraExpired(this WoWUnit u, string spell, string aura, int secs = 3)
+        public static bool HasAuraExpired(this WoWUnit u, string spell, string aura, int secs = 3, bool myAura = true)
         {
             // need to compare millisecs even though seconds are provided.  otherwise see it as expired 999 ms early because
             // .. of loss of precision
-            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, true) <= TimeSpan.FromMilliseconds(secs * 1000);
+            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, myAura) <= TimeSpan.FromMilliseconds(secs * 1000);
         }
 
 
@@ -319,9 +332,9 @@ namespace Singular.Helpers
         /// <param name="u">unit</param>
         /// <param name="aura">aura</param>
         /// <returns>true aura missing or less than 'secs' time left, otherwise false</returns>
-        public static bool HasKnownAuraExpired(this WoWUnit u, string aura, int secs = 3)
+        public static bool HasKnownAuraExpired(this WoWUnit u, string aura, int secs = 3, bool myAura = true)
         {
-            return u.GetAuraTimeLeft(aura, true).TotalSeconds < secs;
+            return u.GetAuraTimeLeft(aura, myAura).TotalSeconds < secs;
         }
 
 

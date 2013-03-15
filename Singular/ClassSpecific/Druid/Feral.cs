@@ -162,12 +162,12 @@ namespace Singular.ClassSpecific.Druid
                 new PrioritySelector(
 
                     // cast cat form if not in combat and moving, but only if not recent shapeshift error
-                    new Throttle( 10, Spell.BuffSelf( "Cat Form", ret => Me.IsMoving && !RecentShapeshiftErrorOccurred )),
+                    new Throttle( 10, Spell.BuffSelf( "Cat Form", ret => Me.IsMoving && !RecentShapeshiftErrorOccurred && !Me.IsSwimming && !Me.HasAura("Aquatic Form") )),
 
                     // cancel form if we get a shapeshift error 
                     new Throttle( 5,
                         new Decorator(
-                            ret => !Me.IsMoving && Me.Shapeshift != ShapeshiftForm.Normal && SingularRoutine.IsQuesting && RecentShapeshiftErrorOccurred,
+                            ret => !Me.IsMoving && Me.Shapeshift != ShapeshiftForm.Normal && SingularRoutine.IsQuestBotActive && RecentShapeshiftErrorOccurred,
                             new Action(ret =>
                             {
                                 string formName = Me.Shapeshift.ToString() + " Form";

@@ -94,6 +94,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new Decorator(
                 ret => MovementManager.IsClassMovementAllowed
+                    && PriestSettings.UseSpeedBuff 
                     && StyxWoW.Me.IsAlive
                     && !StyxWoW.Me.Mounted
                     && !StyxWoW.Me.IsOnTransport

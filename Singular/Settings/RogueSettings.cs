@@ -86,5 +86,13 @@ namespace Singular.Settings
         [DisplayName("Use Expose Armor")]
         [Description("Use Expose Armor")]
         public bool UseExposeArmor { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Speed Buff")]
+        [Description("Cast Burst of Speed when running out of combat")]
+        public bool UseSpeedBuff { get; set; }
+
     }
 }

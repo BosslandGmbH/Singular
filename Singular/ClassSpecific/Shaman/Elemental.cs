@@ -240,15 +240,15 @@ namespace Singular.ClassSpecific.Shaman
 
                         // Burst if 7 Stacks
                         new Decorator(
-                            ret => Me.HasAura("Lightning Shield", 7) && !Me.CurrentTarget.HasAuraExpired("Flame Shock", 8) && Spell.GetSpellCooldown("Elemental Blast") == TimeSpan.Zero,
+                            ret => Me.HasAura("Lightning Shield", 7) && Spell.GetSpellCooldown("Earth Shock") == TimeSpan.Zero && Spell.GetSpellCooldown("Elemental Blast", 0) == TimeSpan.Zero,
                             new PrioritySelector(
                                 new Action( r => { Logger.Write( Color.White, "Burst Rotation"); return RunStatus.Failure;} ),
                                 Spell.Cast( "Unleash Elements", ret => Common.IsImbuedForDPS( Me.Inventory.Equipped.MainHand)),
                                 Spell.Cast( "Elemental Blast"),
                                 Spell.Cast( "Lava Burst"),
                                 Spell.BuffSelf("Ascendance"),       // this is more to buff following sequence since we leave burst after Earth Shock
-                                Spell.Cast( "Earth Shock"),
-                                Spell.Cast( "Lightning Bolt")       // filler in case Shocks on cooldown
+                                Spell.Cast( "Earth Shock")
+                                // Spell.Cast( "Lightning Bolt")       // filler in case Shocks on cooldown
                                 )
                             ),
 
@@ -256,14 +256,19 @@ namespace Singular.ClassSpecific.Shaman
                         new Decorator(
                             ret => !Unit.NearbyUnfriendlyUnits.Any( u => u.CurrentTargetGuid == Me.Guid ),
                             new PrioritySelector(
-                                Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 9),
-                                Spell.Buff("Flame Shock", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero),
+                                new Decorator(
+                                    ret => !Me.HasAura("Lightning Shield",  7),
+                                    new PrioritySelector(
+                                        Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 9),
+                                        Spell.Buff("Flame Shock", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero)
+                                        )
+                                    ),
                                 Spell.Cast("Unleash Elements", req => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand) && !Me.HasAura("Lightning Shield", 4)),
                                 Spell.Cast("Lava Burst", ret => Spell.GetSpellCastTime("Lava Burst") == TimeSpan.Zero),
                                 Spell.Cast("Lava Beam"),
                                 Spell.BuffSelf("Searing Totem", ret => Me.GotTarget && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist( WoWTotemType.Fire)),
                                 Spell.BuffSelf("Thunderstorm", ret => Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange )),
-                                Spell.Cast("Primal Strike")
+                                Spell.Cast("Primal Strike") // might as well
                                 )
                             ),
 

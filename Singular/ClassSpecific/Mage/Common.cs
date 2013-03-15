@@ -221,11 +221,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.Cast("Mirror Image", 
                     req => Me.GotTarget &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() >= 3)),
 
-                Spell.BuffSelf("Time Warp",
-                    ret => MageSettings.UseTimeWarp
-                        && MovementManager.IsClassMovementAllowed
-                        && (Battlegrounds.IsInsideBattleground && Shaman.Common.IsPvpFightWorthLusting)
-                        || (!Me.GroupInfo.IsInRaid && Me.GotTarget && Me.CurrentTarget.IsBoss() && !Me.HasAnyAura("Temporal Displacement", Shaman.Common.SatedName))),
+                Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp),
 
                 Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80))
                 
@@ -429,6 +425,28 @@ namespace Singular.ClassSpecific.Mage
                 return false;
 
             return true;
+        }
+
+        public static bool NeedToTimeWarp
+        {
+            get
+            {
+                if ( !MageSettings.UseTimeWarp || !MovementManager.IsClassMovementAllowed)
+                    return false;
+
+                if (Battlegrounds.IsInsideBattleground && Shaman.Common.IsPvpFightWorthLusting) 
+                    return true;
+
+                if (!Me.GroupInfo.IsInRaid && Me.GotTarget)
+                {
+                    if (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 45 || (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHorde != Me.IsHorde))
+                    {
+                        return !Me.HasAnyAura("Temporal Displacement", Shaman.Common.SatedName);
+                    }
+                }
+
+                return false;
+            }
         }
 
         public static bool HasTalent( MageTalents tal)

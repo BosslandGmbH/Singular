@@ -24,6 +24,7 @@ namespace Singular.ClassSpecific.Shaman
 {
     internal static class Totems
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
         private static bool ShouldWeDropTotemsYet
@@ -65,32 +66,35 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.BuffSelf("Fire Elemental",
                         ret => Common.StressfulSituation && !SpellManager.CanBuff(WoWTotem.EarthElemental.ToSpellId(), false)),
 
-/*  Magma - handle within AoE DPS logic only
-                    Spell.BuffSelf("Magma Totem",
-                        ret => Unit.NearbyUnitsInCombatWithMe.Count(u => u.Distance <= GetTotemRange(WoWTotem.Magma)) >= StressMobCount
-                            && !Exist( WoWTotem.FireElemental)),
-*/    
+                    // note: Magma handled in AOE logic in Combat behaviors
+
                     Spell.BuffSelf("Searing Totem",
                         ret => Me.GotTarget 
                             && Me.CurrentTarget.Distance < GetTotemRange(WoWTotem.Searing) - 2f 
                             && !Exist( WoWTotemType.Fire))
                     );
 
-            if ( Me.Specialization == WoWSpec.ShamanRestoration )
-                fireTotemBehavior = new Decorator(ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid), fireTotemBehavior);
+            if (Me.Specialization == WoWSpec.ShamanRestoration)
+            {
+                fireTotemBehavior = new Decorator(
+                    ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid), 
+                    fireTotemBehavior
+                    );
+            }
 
             // now 
             return new PrioritySelector(
 
-                new Throttle( 1,
-                    new Action( r => {
+                new Throttle(1,
+                    new Action(r =>
+                    {
                         bool ccMechanic = Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing | WoWSpellMechanic.Polymorphed | WoWSpellMechanic.Asleep);
                         bool ccEffect = Me.HasAuraWithEffect(WoWApplyAuraType.ModFear | WoWApplyAuraType.ModPacify | WoWApplyAuraType.ModPacifySilence);
                         bool ccAttrib = Me.Fleeing;
                         if (ccMechanic || ccEffect || ccAttrib)
                             Logger.WriteDebug(Color.Pink, "... FEAR CHECKED OUT --  Mechanic={0}  Effect={1}  Attrib={2}", ccMechanic, ccEffect, ccAttrib);
                         return RunStatus.Failure;
-                        })
+                    })
                     ),
 
 
@@ -104,15 +108,15 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
 
                         // check for stress - enemy player or elite within 8 levels nearby
-                        // .. dont use NearbyUnitsInCombatWithMe since it checks .Tagged and we only care if we are being attacked 
-                        ctx => Common.StressfulSituation ,
+                // .. dont use NearbyUnitsInCombatWithMe since it checks .Tagged and we only care if we are being attacked 
+                        ctx => Common.StressfulSituation,
 
                         // earth totems
                         Spell.BuffSelf(WoWTotem.EarthElemental.ToSpellId(),
-                            ret => ((bool) ret || Group.Tanks.Any( t => t.IsDead && t.Distance < 40)) && !Exist( WoWTotem.StoneBulwark)),
+                            ret => ((bool)ret || Group.Tanks.Any(t => t.IsDead && t.Distance < 40)) && !Exist(WoWTotem.StoneBulwark)),
 
                         Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(),
-                            ret => Me.Combat && Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Exist( WoWTotem.EarthElemental)),
+                            ret => Me.Combat && Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Exist(WoWTotem.EarthElemental)),
 
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits.Any(u => u.IsTargetingMeOrPet && u.IsPlayer && u.Combat),
@@ -128,9 +132,16 @@ namespace Singular.ClassSpecific.Shaman
                         fireTotemBehavior,
 
                         // water totems
-                        Spell.Cast("Mana Tide Totem", 
-                            ret => StyxWoW.Me.ManaPercent < 80
-                                && !Exist( WoWTotem.HealingTide, WoWTotem.HealingStream)),
+                        Spell.BuffSelf("Mana Tide Totem",
+                            ret =>
+                            {
+                                Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
+                                if (Me.ManaPercent > ShamanSettings.ManaTideTotemPercent )
+                                    return false;
+                                if (Exist(WoWTotem.HealingTide, WoWTotem.HealingStream))
+                                    return false;
+                                return true;
+                            }),
 
         /* Healing...: handle within Helaing logic
                         Spell.Cast("Healing Tide Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 50
@@ -151,10 +162,10 @@ namespace Singular.ClassSpecific.Shaman
                                     ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
 
                                 Spell.Cast("Capacitor Totem",
-                                    ret => ((bool) ret)
+                                    ret => ((bool)ret)
                                         && Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))),
 
-                                Spell.BuffSelf("Windwalk Totem", 
+                                Spell.BuffSelf("Windwalk Totem",
                                     ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared))
                                 )
                             )
@@ -209,9 +220,17 @@ namespace Singular.ClassSpecific.Shaman
                         fireTotemBehavior,
 
                         // water totems
-                        Spell.Cast("Mana Tide Totem",
-                            ret => StyxWoW.Me.ManaPercent < 80
-                                && !Exist(WoWTotem.HealingTide, WoWTotem.HealingStream)),
+                        Spell.BuffSelf("Mana Tide Totem",
+                            ret =>
+                            {
+                                Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
+                                if (Me.ManaPercent > ShamanSettings.ManaTideTotemPercent)
+                                    return false;
+                                if (Exist(WoWTotem.HealingTide, WoWTotem.HealingStream))
+                                    return false;
+                                return true;
+                            }),
+
 
         /* Healing...: handle within Helaing logic
                         Spell.Cast("Healing Tide Totem", ret => ((bool)ret) && StyxWoW.Me.HealthPercent < 50
@@ -318,7 +337,7 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Totem Existance
 
-        public static bool Exist(WoWTotem ti)
+        public static bool IsRealTotem(WoWTotem ti)
         {
             return ti != WoWTotem.None
                 && ti != WoWTotem.DummyAir
@@ -327,22 +346,55 @@ namespace Singular.ClassSpecific.Shaman
                 && ti != WoWTotem.DummyWater;
         }
 
-        public static bool Exist(WoWTotemInfo ti)
+        /// <summary>
+        /// check if a specific totem (ie Mana Tide Totem) exists
+        /// </summary>
+        /// <param name="wtcheck"></param>
+        /// <returns></returns>
+        public static bool Exist(WoWTotem wtcheck)
         {
-            return Exist(ti.WoWTotem);
+            WoWTotemInfo tiexist = GetTotem(wtcheck);
+            WoWTotem wtexist = tiexist.WoWTotem;
+            return wtcheck == wtexist && IsRealTotem(wtcheck);
         }
 
+        /// <summary>
+        /// check if a WoWTotemInfo object references a real totem (other than None or Dummies)
+        /// </summary>
+        /// <param name="ti"></param>
+        /// <returns></returns>
+        public static bool Exist(WoWTotemInfo ti)
+        {
+            return IsRealTotem(ti.WoWTotem);
+        }
+
+        /// <summary>
+        /// check if a type of totem (ie Air Totem) exists
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static bool Exist(WoWTotemType type)
         {
             WoWTotem wt = GetTotem(type).WoWTotem;
-            return Exist(wt);
+            return IsRealTotem(wt);
         }
 
+        /// <summary>
+        /// check if any of several specific totems exist
+        /// </summary>
+        /// <param name="wt"></param>
+        /// <returns></returns>
         public static bool Exist(params WoWTotem[] wt)
         {
             return wt.Any(t => Exist(t));
         }
 
+        /// <summary>
+        /// check if a specific totem exists within its max range of a given location
+        /// </summary>
+        /// <param name="pt"></param>
+        /// <param name="tt"></param>
+        /// <returns></returns>
         public static bool ExistInRange(WoWPoint pt, WoWTotem tt)
         {
             if ( !Exist(tt))
@@ -352,11 +404,23 @@ namespace Singular.ClassSpecific.Shaman
             return ti.Unit != null && ti.Unit.Location.Distance(pt) < GetTotemRange(tt);
         }
 
+        /// <summary>
+        /// check if any of several totems exist in range
+        /// </summary>
+        /// <param name="pt"></param>
+        /// <param name="awt"></param>
+        /// <returns></returns>
         public static bool ExistInRange(WoWPoint pt, params WoWTotem[] awt)
         {
             return awt.Any(t => ExistInRange(pt, t));
         }
 
+        /// <summary>
+        /// check if type of totem (ie Air Totem) exists in range
+        /// </summary>
+        /// <param name="pt"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static bool ExistInRange(WoWPoint pt, WoWTotemType type)
         {
             WoWTotemInfo ti = GetTotem(type);
@@ -385,6 +449,9 @@ namespace Singular.ClassSpecific.Shaman
             return Me.Totems[(int)type - 1];
         }
 
+        /// <summary>
+        /// check if all totems are within range of Shaman's location
+        /// </summary>
         public static int TotemsInRange 
         { 
             get 
@@ -393,6 +460,11 @@ namespace Singular.ClassSpecific.Shaman
             }
         }
 
+        /// <summary>
+        /// check if all totems are within range of a WoWUnit
+        /// </summary>
+        /// <param name="unit"></param>
+        /// <returns></returns>
         public static int TotemsInRangeOf(WoWUnit unit)
         {
             return StyxWoW.Me.Totems.Where(t => t.Unit != null).Count(t => unit.Location.Distance(t.Unit.Location) < GetTotemRange(t.WoWTotem));
@@ -473,8 +545,6 @@ namespace Singular.ClassSpecific.Shaman
             return (WoWTotemType)((long)totem >> 32);
         }
 
-
-        private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
         static WoWTotem[] totemsWeDontRecall = new WoWTotem[] 
         {

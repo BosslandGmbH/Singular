@@ -18,6 +18,7 @@ namespace Singular.ClassSpecific.Priest
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(25f),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
 
@@ -26,7 +27,7 @@ namespace Singular.ClassSpecific.Priest
 
                 Spell.Buff("Shadow Word: Pain"),
                 Spell.Cast("Smite"),
-                Movement.CreateMoveToTargetBehavior(true, 25f)
+                Movement.CreateMoveToTargetBehavior(true, 28f)
                 );
         }
     }

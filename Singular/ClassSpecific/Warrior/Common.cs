@@ -12,6 +12,7 @@ using Styx;
 using Singular.Managers;
 using Singular.Dynamics;
 using Styx.CommonBot;
+using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -19,6 +20,7 @@ namespace Singular.ClassSpecific.Warrior
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
+        public static bool HasTalent(WarriorTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         public static bool Tier14TwoPieceBonus { get { return Me.HasAura("Item - Warrior T14 DPS 2P Bonus"); } }
         public static bool Tier14FourPieceBonus { get { return Me.HasAura("Item - Warrior T14 DPS 4P Bonus"); } }      
@@ -36,19 +38,16 @@ namespace Singular.ClassSpecific.Warrior
         [Behavior(BehaviorType.LossOfControl, WoWClass.Warrior)]
         public static Composite CreateWarriorLossOfControlBehavior()
         {
-            return new Decorator(
-                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                new PrioritySelector(
-                    Spell.Buff("Berserker Rage", ret => Me.Fleeing),
-                    Spell.Buff("Enraged Regeneration", ret => Me.Stunned && StyxWoW.Me.HealthPercent < 60)
-                    )
+            return new PrioritySelector(
+                Spell.BuffSelf("Berserker Rage", ret => Me.Fleeing || (Me.Stunned && Me.HasAuraWithMechanic(Styx.WoWInternals.WoWSpellMechanic.Sapped))),
+                Spell.BuffSelf("Enraged Regeneration", ret => Me.Stunned && StyxWoW.Me.HealthPercent < 60)
                 );
         }
         
 
         public static string SelectedShout
         {
-            get { return SingularSettings.Instance.Warrior().Shout.ToString().CamelToSpaced(); }
+            get { return SingularSettings.Instance.Warrior().Shout.ToString().CamelToSpaced().Substring(1); }
         }
 
         public static WarriorStance  SelectedStance
@@ -79,24 +78,30 @@ namespace Singular.ClassSpecific.Warrior
 
         public static Composite CreateChargeBehavior()
         {
-            return new Throttle(TimeSpan.FromMilliseconds(500),
+            return new Throttle( 1,
                 new Decorator(
                     ret => Me.CurrentTarget != null,
 
                     new PrioritySelector(
                         Spell.Cast("Charge",
                             ret => MovementManager.IsClassMovementAllowed
+                                && !Me.CurrentTarget.HasMyAura("Charge Stun")
                                 && Me.CurrentTarget.SpellDistance() >= 10 && Me.CurrentTarget.SpellDistance() < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)
                                 && WarriorSettings.UseWarriorCloser),
 
-                        Spell.CastOnGround("Heroic Leap",
-                            ret => Me.CurrentTarget.Location,
-                            ret => MovementManager.IsClassMovementAllowed
-                                && Me.CurrentTarget.SpellDistance() > 9 && !Me.CurrentTarget.HasAura("Charge Stun", 1)
-                                && WarriorSettings.UseWarriorCloser),
+                        Spell.CastOnGround("Heroic Leap", 
+                            on => Me.CurrentTarget, 
+                            req => MovementManager.IsClassMovementAllowed
+                                && !Me.HasAura("Charge")
+                                && Me.CurrentTarget.SpellDistance() > 9
+                                && !Me.CurrentTarget.HasMyAura("Charge Stun")
+                                && WarriorSettings.UseWarriorCloser, 
+                            false),
 
                         Spell.Cast("Heroic Throw",
-                            ret => !Unit.HasAura(Me.CurrentTarget, "Charge Stun"))
+                            ret => !Me.CurrentTarget.HasMyAura("Charge Stun")
+                                && !Me.HasAura("Charge")
+                            )
                         )
                     )
                 );
@@ -136,6 +141,36 @@ namespace Singular.ClassSpecific.Warrior
                     )
                 );
         }
+
+        /// <summary>
+        /// checks if in a relatively balanced fight where atleast 3 of your
+        /// teammates will benefti from long cooldowns.  fight must be atleast 3 v 3
+        /// and size difference between factions nearby in fight cannot be greater
+        /// than size / 3 + 1.  For example:
+        /// 
+        /// Yes:  3 v 3, 3 v 4, 3 v 5, 6 v 9, 9 v 13
+        /// No :  2 v 3, 3 v 6, 4 v 7, 6 v 10, 9 v 14
+        /// </summary>
+        public static bool IsPvpFightWorthBanner
+        {
+            get
+            {
+                int friends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive);
+                int enemies = Unit.NearbyUnfriendlyUnits.Count();
+
+                if (friends < 3 || enemies < 3)
+                    return false;
+
+                int readyfriends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive);
+                if (readyfriends < 3)
+                    return false;
+
+                int diff = Math.Abs(friends - enemies);
+                return diff <= ((friends / 3) + 1);
+            }
+        }
+
+
     }
 
     enum WarriorTalents

@@ -158,6 +158,9 @@ namespace Singular.Helpers
             DispelCapabilities ret = DispelCapabilities.None;
             foreach(var debuff in unit.Debuffs.Values)
             {
+                if (SingularSettings.CleanseBlacklist.ContainsKey(debuff.SpellId))
+                    return DispelCapabilities.None;
+
                 switch (debuff.Spell.DispelType)
                 {
                     case WoWDispelType.Magic:
@@ -194,6 +197,9 @@ namespace Singular.Helpers
 
         private static WoWUnit _unitDispel;
 
+
+
+
         public static Composite CreateDispelBehavior()
         {
             if (SingularSettings.Instance.DispelDebuffs == DispelStyle.None)
@@ -229,7 +235,7 @@ namespace Singular.Helpers
             }
 
             return new Sequence(
-                new Action(r => _unitDispel = Unit.NearbyGroupMembers.FirstOrDefault(u => CanDispel(u))),
+                new Action(r => _unitDispel = HealerManager.Instance.HealList.FirstOrDefault(u => u.IsAlive && CanDispel(u))),
                 prio
                 );
         }

@@ -36,7 +36,7 @@ namespace Singular.ClassSpecific.Rogue
                 Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
 
                         CreateCombatDiagnosticOutputBehavior("Pull"),
@@ -70,6 +70,7 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateFaceTargetBehavior(),
 
                 Spell.WaitForCastOrChannel(),
+
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -111,12 +112,14 @@ namespace Singular.ClassSpecific.Rogue
                             ret => Me.ComboPoints >= 5
                                 && (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds > 6 || Me.CurrentTarget.TimeToDeath() < 6)),
 
+                        Spell.Cast("Eviscerate", ret => !SpellManager.HasSpell("Recuperate") && Me.CurrentTarget.TimeToDeath(999) <= Me.ComboPoints ),
+
                         Spell.Cast("Rupture",
                             ret => Me.ComboPoints >= 4
                                 && Me.CurrentTarget.TimeToDeath() >= 7
                                 && Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 1), // && Me.CurrentTarget.HasBleedDebuff()
 
-                        Spell.Cast("Fan of Knives", ret => Common.AoeCount > 1 && Spell.UseAOE),
+                        Spell.Cast("Fan of Knives", ret => Common.AoeCount >= 3 && Spell.UseAOE),
                         Spell.Cast("Sinister Strike")
                         )
                     ),

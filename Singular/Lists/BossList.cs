@@ -71,6 +71,7 @@ namespace Singular.Lists
                 28860, // Sartharion in The Obsidian Sanctum
                 28859, // Malygos in The Eye of Eternity
                 10184, // Onyxia in Onyxia's Lair
+                56895, // Weak Spot in Gate of the Setting Sun
             };
 
         // this list should only contain bosses that are not found in 5 mans and raids.

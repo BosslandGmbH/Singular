@@ -432,7 +432,7 @@ namespace Singular.ClassSpecific.Shaman
                                 // use non-predicted health as we only off-heal when its already an emergency
                                 new Decorator(
                                     ret => NeedToOffHealSomeone,
-                                    Restoration.CreateRestoShamanHealingOnlyBehavior()
+                                    Restoration.CreateRestoShamanHealingOnlyBehavior(selfOnly:false, moveInRange:true)
                                     ),
 
                                 // use non-predicted health as a trigger for totems

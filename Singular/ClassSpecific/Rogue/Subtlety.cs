@@ -37,7 +37,7 @@ namespace Singular.ClassSpecific.Rogue
                 Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
+                    ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
 
                         CreateSubteltyDiagnosticOutputBehavior("Pull"),
@@ -111,7 +111,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Buff("Hemorrhage"),
                         Spell.Cast("Backstab", ret => Me.IsSafelyBehind(Me.CurrentTarget)),
 
-                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount > 1),
+                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= 3 && Spell.UseAOE),
                 // following cast is as a Combo Point builder if we can't cast Backstab
                         Spell.Cast("Hemorrhage", ret => Me.CurrentEnergy >= 35 || !SpellManager.HasSpell("Backstab") || !Me.IsSafelyBehind(Me.CurrentTarget)),
 

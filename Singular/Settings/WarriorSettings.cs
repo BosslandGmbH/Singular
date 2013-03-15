@@ -30,13 +30,18 @@ namespace Singular.Settings
 
         #region Protection
         [Setting]
+        [DefaultValue(1)]
+        [Category("Arms")]
+        [DisplayName("Spell Priority Selection")]
+        [Description("1:Noxxic, 2:IcyVeins")]
+        public int ArmsSpellPriority { get; set; }
+
+        [Setting]
         [DefaultValue(50)]
         [Category("Protection")]
         [DisplayName("Enraged Regeneration Health")]
         [Description("Enrage Regeneration will be used when your health drops below this value")]
         public int WarriorEnragedRegenerationHealth { get; set; }
-
-
 
         [Setting]
         [DefaultValue(20)]

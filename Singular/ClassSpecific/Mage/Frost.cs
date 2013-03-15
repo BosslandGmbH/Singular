@@ -111,7 +111,7 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
                                 Spell.Cast("Frozen Orb"),
                                 Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
-                                Spell.Cast("Ice Lance", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
+                                Spell.Cast("Ice Lance", ret => Me.HasAura("Fingers of Frost") && Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 4),
                                 new Decorator(
                                     ret => Unit.UnfriendlyUnitsNearTarget(10).Count() >= 4,

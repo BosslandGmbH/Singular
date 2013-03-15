@@ -150,7 +150,7 @@ namespace Singular.Utilities
                         LastLineOfSightError = DateTime.Now;
                         Logger.WriteFile("[CombatLog] cast fail due to los reported at {0}", LastLineOfSightError.ToString("HH:mm:ss.fff"));
                     }
-                    else if ( StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuesting)
+                    else if ( StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuestBotActive)
                     {
                         if (LocalizedShapeshiftErrors.Contains(e.Args[14].ToString()))
                         {
@@ -246,7 +246,7 @@ namespace Singular.Utilities
 
             if (unit != null)
             {
-                Logger.Write("Mob {0}is evading, [{1}]. Blacklisting it! {2}", unit.SafeName(), e.Event, unit.Guid );
+                Logger.Write("Mob {0} is evading, [{1}]. Blacklisting it! {2}", unit.SafeName(), e.Event, unit.Guid );
                 Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(30));
 
                 if (!Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))

@@ -17,6 +17,7 @@ using Action = Styx.TreeSharp.Action;
 using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
 using Styx.Helpers;
+using Styx.WoWInternals;
 
 namespace Singular
 {
@@ -111,6 +112,9 @@ namespace Singular
         /// </summary>
         private void InitBehaviors()
         {
+            // be sure to turn off -- routines needing it will enable when rebuilt
+            HealerManager.NeedHealTargeting = false;
+
             // we only do this one time
             if (_restBehavior != null)
                 return;
@@ -159,8 +163,10 @@ namespace Singular
                 );
 
             _preCombatBuffsBehavior = new LockSelector(
-                new Decorator(
-                    ret => AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                new Decorator(  // suppress non-combat buffing if standing around waiting on DungeonBuddy or BGBuddy queues
+                    ret => AllowBehaviorUsage() 
+                        && !SingularSettings.Instance.DisableNonCombatBehaviors 
+                        && AllowNonCombatBuffing(),
                     new PrioritySelector(
                         Spell.WaitForGcdOrCastOrChannel(),
                         Item.CreateUseAlchemyBuffsBehavior(),
@@ -240,6 +246,17 @@ namespace Singular
             return !IsMounted && (!Me.IsOnTransport || Me.Transport.Entry == 56171);
         }
 
+        private static bool AllowNonCombatBuffing()
+        {
+            if (IsBgBotActive && !Battlegrounds.IsInsideBattleground)
+                return false;
+
+            if (IsDungeonBuddyActive && !Me.IsInInstance)
+                return false;
+
+            return true;
+        }
+
         /// <summary>
         /// Ensures we have a composite for the given BehaviorType.  
         /// </summary>
@@ -311,7 +328,7 @@ namespace Singular
 
         private static void MonitorQuestingPullDistance()
         {
-            if (SingularRoutine.IsQuesting && SingularSettings.Instance.PullDistanceOverride == CharacterSettings.Instance.PullDistance)
+            if (SingularRoutine.IsQuestBotActive && SingularSettings.Instance.PullDistanceOverride == CharacterSettings.Instance.PullDistance)
             {
                 int newPullDistance = 0;
                 switch (Me.Class)

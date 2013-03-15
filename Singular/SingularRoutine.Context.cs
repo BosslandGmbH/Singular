@@ -11,6 +11,7 @@ using Singular.Helpers;
 using Singular.Settings;
 using Styx.WoWInternals.WoWObjects;
 using Styx.WoWInternals;
+using Styx.Common;
 
 namespace Singular
 {
@@ -34,7 +35,9 @@ namespace Singular
         public static event EventHandler<WoWContextEventArg> OnWoWContextChanged;
         private static WoWContext _lastContext;
 
-        internal static bool IsQuesting { get; set; }
+        internal static bool IsQuestBotActive { get; set; }
+        internal static bool IsBgBotActive { get; set; }
+        internal static bool IsDungeonBuddyActive { get; set; }
 
         internal static WoWContext CurrentWoWContext
         {
@@ -98,7 +101,9 @@ namespace Singular
 
             if(current != _lastContext && OnWoWContextChanged!=null)
             {
-                IsQuesting = IsBotInUse("Quest");
+                IsQuestBotActive = IsBotInUse("Quest");
+                IsBgBotActive = IsBotInUse("BGBuddy");
+                IsDungeonBuddyActive = IsBotInUse("DungeonBuddy");
 
                 DescribeContext();
                 try
@@ -122,22 +127,30 @@ namespace Singular
 
             Logger.Write(Color.LightGreen, "Your Level {0}{1} {2} {3} Build is", Me.Level, sRace, SpecializationName(), Me.Class.ToString() );
 
+            Logger.Write(Color.LightGreen, "... running the {0} bot in {1} {2}",
+                 GetBotName(),
+                 Me.RealZoneText,
+                 !Me.IsInInstance || Battlegrounds.IsInsideBattleground ? "" : "[" + GetInstanceDifficultyName() + "]"
+                );
+
             string sRunningAs = "";
 
             if (Me.CurrentMap == null)
                 sRunningAs = "Unknown";
             else if (Me.CurrentMap.IsArena)
-                sRunningAs = " Arena ";
+                sRunningAs = "Arena";
             else if (Me.CurrentMap.IsBattleground)
-                sRunningAs = " Battleground ";
+                sRunningAs = "Battleground";
             else if (Me.CurrentMap.IsScenario)
-                sRunningAs = " Scenario ";
-
-            Logger.Write(Color.LightGreen, "... running the {0} bot in {1} {2}",
-                 GetBotName(),
-                 Me.RealZoneText,
-                 !Me.IsInInstance || Battlegrounds.IsInsideBattleground ? "" : GetInstanceDifficultyName()
-                );
+                sRunningAs = "Scenario";
+            else if (Me.CurrentMap.IsRaid)
+                sRunningAs = "Raid";
+            else if (Me.CurrentMap.IsDungeon)
+                sRunningAs = "Dungeon";
+            else if (Me.CurrentMap.IsInstance)
+                sRunningAs = "Instance";
+            else
+                sRunningAs = "Zone: " + Me.CurrentMap.Name;
 
             Logger.Write(Color.LightGreen, "... {0} using my {1} Behaviors",
                  sRunningAs,

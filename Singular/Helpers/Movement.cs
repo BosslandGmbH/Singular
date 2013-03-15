@@ -76,7 +76,10 @@ namespace Singular.Helpers
             {
                 return new Decorator(
                     ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.IsMoving,
-                    new Action(ret => Navigator.PlayerMover.MoveStop())
+                    new Sequence(
+                        new Action(ret => Logger.WriteDebug("EnsureMovementStopped: stopping!")),
+                        new Action(ret => Navigator.PlayerMover.MoveStop())
+                        )
                     );
             }
 
@@ -84,7 +87,10 @@ namespace Singular.Helpers
                 ret => !MovementManager.IsMovementDisabled
                     && StyxWoW.Me.IsMoving
                     && (!StyxWoW.Me.GotTarget || StyxWoW.Me.CurrentTarget.Distance < range),
-                new Action(ret => Navigator.PlayerMover.MoveStop())
+                new Sequence(
+                    new Action(ret => Logger.WriteDebug("EnsureMovementStopped: stopping because ", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("{0:F1} yds target distance more than {1:F1}", StyxWoW.Me.CurrentTarget.Distance, range ))),
+                    new Action(ret => Navigator.PlayerMover.MoveStop())
+                    )
                 );
         }
 
@@ -98,7 +104,10 @@ namespace Singular.Helpers
                 ret => !MovementManager.IsMovementDisabled
                     && StyxWoW.Me.IsMoving
                     && (!StyxWoW.Me.GotTarget || StyxWoW.Me.CurrentTarget.IsWithinMeleeRange ),
-                new Action(ret => Navigator.PlayerMover.MoveStop())
+                new Sequence(
+                    new Action(ret => Logger.WriteDebug("EnsureMovementStoppedWithinMelee: stopping because ", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("{0:F1} yds target distance is within melee", StyxWoW.Me.CurrentTarget.Distance))),
+                    new Action(ret => Navigator.PlayerMover.MoveStop())
+                    )
                 );
         }
 

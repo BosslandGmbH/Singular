@@ -93,7 +93,7 @@ namespace Singular.Settings
 
         #endregion
 
-        #region Category: Restoration
+        #region Category: Totems
 
         [Setting]
         [DefaultValue(85)]
@@ -101,6 +101,13 @@ namespace Singular.Settings
         [DisplayName("Healing Stream Totem %")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int HealHealingStreamTotem { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Totems")]
+        [DisplayName("Mana Tide Totem %")]
+        [Description("Mana % to cast this ability at. Set to 0 to disable.")]
+        public int ManaTideTotemPercent { get; set; }
 
         #endregion
 
@@ -141,77 +148,79 @@ namespace Singular.Settings
             : base("Shaman", ctx)
         {
 
-            if (!HealingSurgeAdjusted && StyxWoW.Me.Level >= 60)
+            // we haven't created a settings file yet,
+            //  ..  so initialize values for various heal contexts
+
+            if (!SavedToFile)
+            {
+                if (ctx == Singular.HealingContext.Battlegrounds)
+                {
+                    HealingWave = 95;
+                    ChainHeal = 90;
+                    HealingRain = 93;
+                    GreaterHealingWave = 0;
+                    Ascendance = 49;
+                    SpiritLinkTotem = 50;
+                    HealingSurge = 85;
+                    AncestralSwiftness = 35;
+                    HealingStreamTotem = 90;
+                    HealingTideTotem = 55;
+
+                    RollRiptideCount = 0;
+                    MinHealingRainCount = 4;
+                    MinChainHealCount = 3;
+                    MinHealingTideCount = 2;
+                }
+                else if (ctx == Singular.HealingContext.Instances)
+                {
+                    HealingWave = 90;
+                    ChainHeal = 90;
+                    HealingRain = 70;
+                    GreaterHealingWave = 70;
+                    Ascendance = 48;
+                    SpiritLinkTotem = 49;
+                    HealingSurge = 60;
+                    AncestralSwiftness = 20;
+                    HealingStreamTotem = 85;
+                    HealingTideTotem = 50;
+
+                    RollRiptideCount = 1;
+                    MinHealingRainCount = 4;
+                    MinChainHealCount = 3;
+                    MinHealingTideCount = 2;
+                }
+                else if (ctx == Singular.HealingContext.Raids)
+                {
+                    HealingWave = 93;
+                    ChainHeal = 90;
+                    HealingRain = 95;
+                    GreaterHealingWave = 50;
+                    Ascendance = 50;
+                    SpiritLinkTotem = 48;
+                    HealingSurge = 21;
+                    AncestralSwiftness = 20;
+                    HealingStreamTotem = 85;
+                    HealingTideTotem = 70;
+
+                    RollRiptideCount = 2;
+                    MinHealingRainCount = 3;
+                    MinChainHealCount = 2;
+                    MinHealingTideCount = 4;
+                }
+                // omit case for WoWContext.Normal and let it use DefaultValue() values
+            }
+
+            // adjust Healing Surge if we have not previously 
+            if (!HealingSurgeAdjusted && StyxWoW.Me.Level >= 60 && (ctx == HealingContext.Instances || ctx == HealingContext.Raids))
             {
                 if ( SavedToFile )
-                    Logger.Write(Color.White, "Adjusting saved Healing Surge % from {0} to 21 for Instances.  Visit Class Config and Save to make permanent.", HealingSurge);
+                    Logger.Write(Color.White, "Healing Surge % changed from {0} to {1} for {2}.  Visit Class Config and Save to make permanent.", HealingSurge, AncestralSwiftness + 1, ctx.ToString());
 
-                HealingSurge = 21;
+                HealingSurge = AncestralSwiftness + 1;
                 HealingSurgeAdjusted = true;
             }
 
-            // bit of a hack.  using SavedToFile setting to catch if we have
-            // .. written settings yet.  if not, do context specific initialization 
-            // .. here since we don't want same DefaultValue() for every context
-            if (SavedToFile)
-                return;
-
             SavedToFile = true;
-            if (ctx == Singular.HealingContext.Battlegrounds)
-            {
-                HealingWave = 0;
-                ChainHeal = 94;
-                HealingRain = 93;
-                GreaterHealingWave = 70;
-                Ascendance = 40;
-                SpiritLinkTotem = 48;
-                HealingSurge = 80;
-                AncestralSwiftness = 35;
-                HealingStreamTotem = 87;
-                HealingTideTotemPercent = 49;
-
-                RollRiptideCount = 0;
-                MinHealingRainCount = 4;
-                MinChainHealCount = 3;
-                MinHealingTideCount = 3;
-            }
-            else if (ctx == Singular.HealingContext.Instances)
-            {
-                HealingWave = 90;
-                ChainHeal = 89;
-                HealingRain = 88;
-                GreaterHealingWave = 70;
-                Ascendance = 40;
-                SpiritLinkTotem = 48;
-                HealingSurge = 60;
-                AncestralSwiftness = 20;
-                HealingStreamTotem = 87;
-                HealingTideTotemPercent = 49;
-
-                RollRiptideCount = 0;
-                MinHealingRainCount = 4;
-                MinChainHealCount = 3;
-                MinHealingTideCount = 2;
-            }
-            else if (ctx == Singular.HealingContext.Raids)
-            {
-                HealingWave = 97;
-                ChainHeal = 96;
-                HealingRain = 95;
-                GreaterHealingWave = 65;
-                Ascendance = 40;
-                SpiritLinkTotem = 48;
-                HealingSurge = 60;
-                AncestralSwiftness = 20;
-                HealingStreamTotem = 87;
-                HealingTideTotemPercent = 49;
-
-                RollRiptideCount = 3;
-                MinHealingRainCount = 3;
-                MinChainHealCount = 2;
-                MinHealingTideCount = 2;
-            }
-            // omit case for WoWContext.Normal and let it use DefaultValue() values
         }
 
         [Setting]
@@ -235,14 +244,14 @@ namespace Singular.Settings
         [DefaultValue(92)]
         [Category("Restoration")]
         [DisplayName("% Chain Heal")]
-        [Description("Health % to cast this ability at. Must heal minimum 2 people in party, 3 in a raid. Set to 0 to disable.")]
+        [Description("Health % to cast this ability at. Must heal Min 2 people in party, 3 in a raid. Set to 0 to disable.")]
         public int ChainHeal { get; set; }
 
         [Setting]
         [DefaultValue(91)]
         [Category("Restoration")]
         [DisplayName("% Healing Rain")]
-        [Description("Health % to cast this ability at. Must heal minimum of 3 people in party, 4 in a raid. Set to 0 to disable.")]
+        [Description("Health % to cast this ability at. Must heal Min of 3 people in party, 4 in a raid. Set to 0 to disable.")]
         public int HealingRain { get; set; }
 
         [Setting]
@@ -292,35 +301,49 @@ namespace Singular.Settings
         [Category("Talents")]
         [DisplayName("Healing Tide Totem %")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealingTideTotemPercent { get; set; }
+        public int HealingTideTotem { get; set; }
 
         [Setting]
         [DefaultValue(4)]
         [Category("Restoration")]
         [DisplayName("Roll Riptide Max Count")]
-        [Description("Maximum number of players to roll Riptide on")]
+        [Description("Max number of players to roll Riptide on (always Roll on tanks, and tanks are included in count)")]
         public int RollRiptideCount { get; set; }
 
         [Setting]
         [DefaultValue(4)]
         [Category("Restoration")]
         [DisplayName("Healing Rain Min Count")]
-        [Description("Minimum number of players below Healing Rain % in area")]
+        [Description("Min number of players below Healing Rain % in area")]
         public int MinHealingRainCount { get; set; }
 
         [Setting]
-        [DefaultValue(2)]
+        [DefaultValue(3)]
         [Category("Restoration")]
         [DisplayName("Chain Heal Min Count")]
-        [Description("Minimum number of players healead")]
+        [Description("Min number of players healed")]
         public int MinChainHealCount { get; set; }
 
         [Setting]
-        [DefaultValue(2)]
+        [DefaultValue(4)]
         [Category("Restoration")]
-        [DisplayName("Chain Heal Min Count")]
-        [Description("Minimum number of players healead")]
+        [DisplayName("Healing Tide Min Count")]
+        [Description("Min number of players healed")]
         public int MinHealingTideCount { get; set; }
+
+        [Setting]
+        [DefaultValue(1)]
+        [Category("Restoration")]
+        [DisplayName("Spirit Link Min Count")]
+        [Description("Min number of players healed")]
+        public int MinSpiritLinkCount { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Restoration")]
+        [DisplayName("Ascendance Min Count")]
+        [Description("Min number of players healed")]
+        public int MinAscendanceCount { get; set; }
 
     }
 }

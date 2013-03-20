@@ -1,3 +1,38 @@
+--- Release 3.0.0.2073 ---
+
+General
+
+*new* - Use Instance Behaviors while Solo option on the Debugging tab.  This setting is NOT SAVED since it leads to unexpected results, but allows you to temporarily override the behaviors used for testing combat on a training dummy.  If you want to evaluate DPS, you need to enable this option since without it you are using Questing behaviors which save cooldowns, etc for AoE and PVP encounters
+
+fixed - logic for AoE Interrupts Arcane Torrent and War Stomp to prevent use if it would agro neutral mobs or break crowd control
+
+fixed - an issue with Buff support which interfered with some classes casting of cooldown
+
+
+Druid
+
+change- Feral/Guardian - will not suppress healing which would cause leaving form if you are in an Instance/Raid
+
+change- Feral - worked around bug in HonorBuddy which prevented casting Savage Roar and Thrash
+
+*new* - Feral - setting added to control select instance spell priority to use from two options
+
+
+Shaman
+
+fixed - Restoration - a couple remaining issues with healing spell selection
+
+change- Restoration - suppression of some healing spells when not in combat (Healing Rain, Chain Heal, etc.)
+
+change- Restoration - improved selection of Healing Rain target
+
+
+Warlock
+
+*new* - All - config setting to control health % Drain Life is cast at
+
+
+
 --- Release 3.0.0.2048 ---
 
 General

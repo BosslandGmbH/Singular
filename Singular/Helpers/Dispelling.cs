@@ -215,7 +215,8 @@ namespace Singular.Helpers
                     prio.AddChild( Spell.Cast( "Detox", on => _unitDispel));
                     break;
                 case WoWClass.Priest:
-                    prio.AddChild( Spell.Cast( "Purify", on => _unitDispel));
+                    if ( StyxWoW.Me.Specialization == WoWSpec.PriestHoly || StyxWoW.Me.Specialization == WoWSpec.PriestDiscipline )
+                        prio.AddChild( Spell.Cast( "Purify", on => _unitDispel));
                     break;
                 case WoWClass.Druid:
                     if ( StyxWoW.Me.Specialization == WoWSpec.DruidRestoration )

@@ -66,6 +66,9 @@ namespace Singular
                     }
                 }
 
+                if (SingularRoutine.ForceInstanceBehaviors)
+                    return WoWContext.Instances;
+
                 return WoWContext.Normal;
             }
         }
@@ -81,6 +84,8 @@ namespace Singular
                 return (HealingContext) ctx;
             }
         }
+
+        public static bool ForceInstanceBehaviors { get; set; }
 
         private bool _contextEventSubscribed;
         private void UpdateContext()

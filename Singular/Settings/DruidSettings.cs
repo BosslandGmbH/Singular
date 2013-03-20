@@ -319,6 +319,14 @@ namespace Singular.Settings
         #endregion
 
         #region Feral
+
+        [Setting]
+        [DefaultValue(1)]
+        [Category("Feral")]
+        [DisplayName("Instance Spell Priority")]
+        [Description("1:Noxxic, 2:Elitist Jerks")]
+        public int FeralSpellPriority { get; set; }
+
 /*
         [Setting]
         [DefaultValue(50)]

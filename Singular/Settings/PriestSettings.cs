@@ -113,6 +113,14 @@ namespace Singular.Settings
         [DisplayName("Shield Pre-Pull")]
         [Description("Use PW:Shield pre-pull. This setting is not used in Mind Spike rotation")]
         public bool UseShieldPrePull { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Healing")]
+        [DisplayName("Count Mass Dispel")]
+        [Description("Min number of players dispelled (0: disable Mass Dispel)")]
+        public int CountMassDispel { get; set; }
+
 /*
         [Setting]
         [DefaultValue(true)]

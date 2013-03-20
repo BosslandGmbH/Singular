@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Singular.Settings;
+using Singular.Helpers;
 
 using Styx;
 using Styx.Common.Helpers;
 using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using Styx.TreeSharp;
+using System;
+using System.Drawing;
 
 namespace Singular.Managers
 {
@@ -193,5 +197,68 @@ namespace Singular.Managers
                 where (pi.Role & WoWPartyMember.GroupRole.Tank) != 0
                 select pi.Guid);
         }
+
+        /// <summary>
+        /// find best Tank target that is missing Heal Over Time passed
+        /// </summary>
+        /// <param name="hotName">spell name of HoT</param>
+        /// <returns>reference to target that needs the HoT</returns>
+        public static WoWUnit GetBestTankTargetForHOT( string hotName)
+        {
+            WoWUnit hotTarget = null;
+            hotTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.DistanceSqr < 40 * 40 && !u.HasMyAura(hotName) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
+            if (hotTarget != null)
+                Logger.WriteDebug("GetBestTankTargetForHOT('{0}'): found tank {1}, hasmyaura={2} with {3} ms left", hotName, hotTarget.SafeName(), hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft("Riptide").TotalMilliseconds);
+            return hotTarget;
+        }
+
     }
+
+    class PrioritizedBehaviorList
+    {
+        class PrioritizedBehavior
+        {
+            public int Priority { get; set; }
+            public string Name { get; set; }
+            public Composite behavior { get; set; }
+
+            public PrioritizedBehavior(int p, string s, Composite bt)
+            {
+                Priority = p;
+                Name = s;
+                behavior = bt;
+            }
+        }
+
+        List<PrioritizedBehavior> blist = new List<PrioritizedBehavior>();
+
+        public void AddBehavior(int pri, string behavName, string spellName, Composite bt)
+        {
+            if (pri <= 0)
+                Logger.WriteDebug("Skipping Behavior [{0}] configured for Priority {1}", behavName, pri);
+            else if (!String.IsNullOrEmpty(spellName) && !SpellManager.HasSpell(spellName))
+                Logger.WriteDebug("Skipping Behavior [{0}] since spell '{1}' is not known by this character", behavName, spellName);
+            else
+                blist.Add(new PrioritizedBehavior(pri, behavName, bt));
+        }
+
+        public void OrderBehaviors()
+        {
+            blist = blist.OrderByDescending(b => b.Priority).ToList();
+        }
+
+        public Composite GenerateBehaviorTree()
+        {
+            return new PrioritySelector(blist.Select(b => b.behavior).ToArray());
+        }
+
+        public void ListBehaviors()
+        {
+            foreach (PrioritizedBehavior hs in blist)
+            {
+                Logger.WriteDebug(Color.GreenYellow, "   Priority {0} for Behavior [{1}]", hs.Priority, hs.Name);
+            }
+        }
+    }
+
 }

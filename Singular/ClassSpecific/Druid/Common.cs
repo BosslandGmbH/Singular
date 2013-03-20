@@ -211,7 +211,7 @@ namespace Singular.ClassSpecific.Druid
 
                 // for a lowbie Feral or a Bear not serving as Tank in a group
                 new Decorator(
-                    ret => Me.HealthPercent < 40 && !SpellManager.HasSpell("Predatory Swiftness") && !Group.MeIsTank,
+                    ret => Me.HealthPercent < 40 && !SpellManager.HasSpell("Predatory Swiftness") && !Group.MeIsTank && SingularRoutine.CurrentWoWContext != WoWContext.Instances,
                     new PrioritySelector(
                         Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation",1)),
                         Spell.Cast("Healing Touch", on => Me)

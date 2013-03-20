@@ -95,6 +95,8 @@ namespace Singular.GUI
 
             InitializeContextDropdown();
 
+            chkUseInstanceBehaviorsWhenSolo.Checked = SingularRoutine.ForceInstanceBehaviors;
+
             if (!timer1.Enabled)
                 timer1.Start();
         }
@@ -225,6 +227,11 @@ namespace Singular.GUI
 
             pgHealNormal.Enabled = isNorm;
             pgHealNormal.Visible = isNorm;
+        }
+
+        private void chkUseInstanceBehaviorsWhenSolo_CheckedChanged(object sender, EventArgs e)
+        {
+            SingularRoutine.ForceInstanceBehaviors = chkUseInstanceBehaviorsWhenSolo.Checked;
         }
     }
 }

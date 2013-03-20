@@ -470,7 +470,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
                         "Healing Tide Totem",
-                        ret => HealerManager.Instance.HealList.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
+                        ret => Me.Combat && HealerManager.Instance.HealList.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
                         )
                     )
                 );
@@ -480,8 +480,9 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
                         "Healing Stream Totem",
-                        ret => HealerManager.Instance.HealList.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
+                        ret => Me.Combat 
                             && !Totems.Exist(WoWTotemType.Water)
+                            && HealerManager.Instance.HealList.Any(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))
                         )
                     )
                 );
@@ -491,17 +492,37 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
                         context => GetBestHealingRainTarget(),
-                        new Sequence(
-                            BuffUnleashLife(on => (WoWUnit)on),
-                            Helpers.Common.CreateWaitForLagDuration(ret => Spell.IsGlobalCooldown()),
-                            new WaitContinue(TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
-                            Spell.CastOnGround("Healing Rain", on => (WoWUnit)on, req => true, false)
-                            ),
-                        new Action( ret => {
-                            if ( ret != null )
-                                Logger.WriteDebug("Something FAILED with Unleash Life + Healing Rain combat");
-                            return RunStatus.Failure;
-                            })
+                        new Decorator(
+                            ret => ret != null,
+                            new PrioritySelector(
+                                new Sequence(
+                                    new Action(r => Logger.WriteDebug("UE+HR - just before UE check")),
+                                    BuffUnleashLife(on => HealerManager.Instance.HealList.FirstOrDefault()),
+                                    new Action(r => Logger.WriteDebug("UE+HR - past UE")),
+                                    Helpers.Common.CreateWaitForLagDuration(ret => Spell.IsGlobalCooldown()),
+                                    new Action(r => Logger.WriteDebug("UE+HR - past GCD start")),
+                                    new WaitContinue(TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
+                                    new Action(r => Logger.WriteDebug("UE+HR - past GCD stop")),
+                                    Spell.CastOnGround("Healing Rain", on => (WoWUnit)on, req => true, false)
+                                    ),
+                                new Action( ret => {
+                                    if (ret != null)
+                                    {
+                                        if (!((WoWUnit)ret).IsValid)
+                                            Logger.WriteDebug("UE+HR - FAILED - Healing Target object became invalid");
+                                        else if (((WoWUnit)ret).Distance > 40)
+                                            Logger.WriteDebug("UE+HR - FAILED - Healing Target moved out of range");
+                                        else if (!SpellManager.CanCast("Healing Rain"))
+                                            Logger.WriteDebug("UE+HR - FAILED - SpellManager.CanCast() said NO to Healing Target");
+                                        else if (Styx.WoWInternals.World.GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ((WoWUnit) ret).Location))
+                                            Logger.WriteDebug("UE+HR - FAILED - SpellManager.CanCast() unit location not in Line of Sight");
+                                        else
+                                            Logger.WriteDebug("UE+HR - Something FAILED with Unleash Life + Healing Rain cast sequence");
+                                    }
+                                    return RunStatus.Failure;
+                                    })
+                                )
+                            )
                         )
                     )
                 );
@@ -599,14 +620,6 @@ namespace Singular.ClassSpecific.Shaman
                         new Decorator(
                             ret => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
-
-                                new ThrottlePasses(1, 1,
-                                    new Action(ret =>
-                                    {
-                                        Logger.WriteDebug(Color.LightGreen, "Heal Target - {0} {1:F1}% @ {2:F1} yds", ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).GetPredictedHealthPercent(), ((WoWUnit)ret).Distance);
-                                        return RunStatus.Failure;
-                                    })
-                                    ),
 
                                 Totems.CreateTotemsBehavior(),
 
@@ -785,7 +798,6 @@ namespace Singular.ClassSpecific.Shaman
                 if ( Me.Level < 50 || Me.Specialization != WoWSpec.ShamanRestoration)
                     return false;
 
-                // WoWAura tw = Me.ActiveAuras.Where(a => a.Key == "Tidal Waves").Select(a => a.Value).FirstOrDefault();
                 // WoWAura tw = Me.GetAuraByName("Tidal Waves");
                 uint stacks = Me.GetAuraStacks("Tidal Waves");
 
@@ -865,7 +877,7 @@ namespace Singular.ClassSpecific.Shaman
             }
 
             if (target != null)
-                Logger.WriteDebug("Chain Heal Target:  found {0} with {1} nearby", target.SafeName(), count);
+                Logger.WriteDebug("Chain Heal Target:  found {0} with {1} nearby under {2}%", target.SafeName(), count, ShamanSettings.Heal.ChainHeal);
 
             return target;
         }
@@ -875,7 +887,7 @@ namespace Singular.ClassSpecific.Shaman
 #if ORIGINAL
             return Clusters.GetBestUnitForCluster(Unit.NearbyFriendlyPlayers.Cast<WoWUnit>(), ClusterType.Radius, 10f);
 #else
-            if (!Me.IsInGroup())
+            if (!Me.IsInGroup() || !Me.Combat)
                 return null;
 
             if (!Spell.CanCastHack("Healing Rain", Me))
@@ -884,12 +896,17 @@ namespace Singular.ClassSpecific.Shaman
                 return null;
             }
 
+            // build temp list of targets that could use heal and are in range + radius
+            List<WoWUnit> coveredTargets = HealerManager.Instance.HealList
+                .Where(u => u.IsAlive && u.DistanceSqr < 50 * 50 && u.HealthPercent < ShamanSettings.Heal.HealingRain )
+                .ToList();
+
+            // search all targets to find best one in best location to use as anchor for cast on ground
             var t = Unit.NearbyGroupMembersAndPets
-                .Where(p => p.IsAlive && (p.Combat || p.HealthPercent < 100))
                 .Select(p => new {
                     Player = p,
-                    Count = Unit.NearbyGroupMembersAndPets
-                        .Where(pp => pp.IsAlive && pp.HealthPercent < ShamanSettings.Heal.HealingRain && pp.Location.DistanceSqr(p.Location) < 100)
+                    Count = coveredTargets
+                        .Where(pp => pp.IsAlive && pp.Location.DistanceSqr(p.Location) < 10 * 10)
                         .Count()
                     })
                 .OrderByDescending(v => v.Count)
@@ -898,7 +915,7 @@ namespace Singular.ClassSpecific.Shaman
 
             if (t != null && t.Count >= ShamanSettings.Heal.MinHealingRainCount )
             {
-                Logger.WriteDebug("Healing Rain Target:  found {0} with {1} nearby", t.Player.SafeName(), t.Count);
+                Logger.WriteDebug("Healing Rain Target:  found {0} with {1} nearby under {2}%", t.Player.SafeName(), t.Count, ShamanSettings.Heal.HealingRain);
                 return t.Player;
             }
 
@@ -924,53 +941,6 @@ namespace Singular.ClassSpecific.Shaman
             return nHealth == 0 ? 0 : 200 - nHealth;
         }
 
-        class PrioritizedBehaviorList
-        {
-            class PrioritizedBehavior
-            {
-                public int Priority { get; set; }
-                public string Name { get; set; }
-                public Composite behavior { get; set; }
-
-                public PrioritizedBehavior(int p, string s, Composite bt)
-                {
-                    Priority = p;
-                    Name = s;
-                    behavior = bt;
-                }
-            }
-
-            List<PrioritizedBehavior> blist = new List<PrioritizedBehavior>();
-
-            public void AddBehavior(int pri, string behavName, string spellName, Composite bt)
-            {
-                if (pri <= 0)
-                    Logger.WriteDebug("Skipping Behavior [{0}] configured for Priority {1}", behavName, pri);
-                else if (!String.IsNullOrEmpty(spellName) && !SpellManager.HasSpell(spellName))
-                    Logger.WriteDebug("Skipping Behavior [{0}] since spell '{1}' is not known by this character", behavName, spellName);
-                else
-                    blist.Add(new PrioritizedBehavior(pri, behavName, bt));
-            }
-
-            public void OrderBehaviors()
-            {
-                blist = blist.OrderByDescending(b => b.Priority).ToList();
-            }
-
-            public Composite GenerateBehaviorTree()
-            {
-                return new PrioritySelector(blist.Select(b => b.behavior).ToArray());
-            }
-
-            public void ListBehaviors()
-            {
-                foreach (PrioritizedBehavior hs in blist)
-                {
-                    Logger.WriteDebug(Color.GreenYellow, "   Priority {0} for Behavior [{1}]", hs.Priority, hs.Name);
-                }
-            }
-        }
-
         #region Diagnostics
 
         private static Composite CreateRestoDiagnosticOutputBehavior( UnitSelectionDelegate onUnit )
@@ -984,7 +954,7 @@ namespace Singular.ClassSpecific.Shaman
                         uint getaurastks = Me.GetAuraStacks("Tidal Waves");
                         uint actvstks = 0;
 
-                        WoWAura aura = Me.ActiveAuras
+                        WoWAura aura = Me.Auras
                             .Where(kvp => kvp.Key == "Tidal Waves" && kvp.Value.TimeLeft != TimeSpan.Zero)
                             .Select(kvp => kvp.Value).FirstOrDefault();
 
@@ -1022,7 +992,7 @@ namespace Singular.ClassSpecific.Shaman
                         if (healtarget == null)
                             line += ", target=(null)";
                         else
-                            line += string.Format(", target={0}:th={1:F1}% @ {2:F1} yds, combat={3}, tph={4:F1}%, tloss={5}, eshield={6}, riptide={7}",
+                            line += string.Format(", target={0} th={1:F1}% @ {2:F1} yds, combat={3}, tph={4:F1}%, tloss={5}, eshield={6}, riptide={7}",
                                 healtarget.SafeName(),
                                 healtarget.HealthPercent,
                                 healtarget.Distance,

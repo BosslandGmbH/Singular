@@ -266,7 +266,7 @@ namespace Singular.Helpers
         }
 
         private static bool HasAura(this WoWUnit unit, string aura, int stacks, WoWUnit creator)
-        {
+        {           
             return unit.GetAllAuras().Any(a => a.Name == aura && a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid));
         }
 
@@ -489,6 +489,20 @@ namespace Singular.Helpers
                 || u.IsTargetingAnyMinion
                 || Unit.GroupMemberInfos.Any(m => m.Guid == u.CurrentTargetGuid);
 
+        }
+
+        public static bool IsSensitiveDamage(this WoWUnit u, float range)
+        {
+            if (u == StyxWoW.Me.CurrentTarget)
+                return false;
+
+            if (!u.Combat && !u.IsPlayer && u.IsNeutral)
+                return true;
+
+            if (u.SpellDistance() > range)
+                return false;
+
+            return u.IsCrowdControlled();
         }
 
         public static bool IsShredBoss(this WoWUnit unit)

@@ -228,6 +228,20 @@ namespace Singular.ClassSpecific.Priest
 
         #endregion
 
+        public static Composite CreatePriestDispelBehavior()
+        {
+            return new PrioritySelector(
+
+                Spell.Cast( "Mass Dispel", 
+                    on => Me, 
+                    req =>  PriestSettings.CountMassDispel > 0
+                        && Unit.NearbyGroupMembers.Count(u => u.IsAlive && u.SpellDistance() < 15 && Dispelling.CanDispel(u, DispelCapabilities.All)) <= PriestSettings.CountMassDispel),
+
+                Dispelling.CreateDispelBehavior()
+                );
+        }
+
+
     }
 
     public enum PriestTalents

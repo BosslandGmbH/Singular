@@ -18,8 +18,7 @@ namespace Singular.Settings
         None,
         ClassSpecificOnly,
         All,
-        Auto
-        
+        Auto       
     }
 
     enum InterruptType
@@ -42,7 +41,6 @@ namespace Singular.Settings
         Enable,
         Auto
     }
-
 
     internal class SingularSettings : Styx.Helpers.Settings
     {
@@ -186,7 +184,6 @@ namespace Singular.Settings
 
         [Browsable(false)]
         internal static Dictionary<int, string> CleanseBlacklist = new Dictionary<int, string>();
-
 
         #region Category: Debug
 
@@ -418,24 +415,6 @@ namespace Singular.Settings
         [Description("Select which targets should we interrupt.")]
         public InterruptType InterruptTarget { get; set; }
 
-        #endregion
-
-        #region Category: World Behaviors
-        /*
-        [Setting]
-        [DefaultValue(WoWContext.Instances)]
-        [Category("World Behaviors")]
-        [DisplayName("Use Group Behaviors (Needs a restart !)")]
-        [Description("Behaviors when in Group outside of Instances/Battlegrounds")]
-        public WoWContext WorldGroupBehaviors { get; set; }
-
-        [Setting]
-        [DefaultValue(WoWContext.Normal)]
-        [Category("World Behaviors")]
-        [DisplayName("Use Solo Behaviors (Needs a restart !)")]
-        [Description("Behaviors when Solo outside of Instances/Battlegrounds")]
-        public WoWContext WorldSoloBehaviors { get; set; }
-*/
         #endregion
 
         #region Class Late-Loading Wrappers

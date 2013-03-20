@@ -242,7 +242,7 @@ namespace Singular.Helpers
                                     // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
                                     agroMob =
                                         ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
-                                            .Where(p => !Blacklist.Contains(p, BlacklistFlags.Combat) && p.IsHostile && !p.IsOnTransport && !p.IsDead
+                                            .Where(p => !Blacklist.Contains(p, BlacklistFlags.Combat) && !p.IsOnTransport && !p.IsDead
                                                     && !p.Mounted && p.DistanceSqr <= 70 * 70 && (p.Aggro || p.PetAggro))
                                             .OrderBy(u => u.DistanceSqr)
                                             .FirstOrDefault();

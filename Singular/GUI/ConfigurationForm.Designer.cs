@@ -39,6 +39,7 @@
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.pgClass = new System.Windows.Forms.PropertyGrid();
             this.tabPage4 = new System.Windows.Forms.TabPage();
+            this.pgHealRaid = new System.Windows.Forms.PropertyGrid();
             this.label3 = new System.Windows.Forms.Label();
             this.cboHealContext = new System.Windows.Forms.ComboBox();
             this.pgHealInstance = new System.Windows.Forms.PropertyGrid();
@@ -52,7 +53,7 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.lblHealTargets = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.pgHealRaid = new System.Windows.Forms.PropertyGrid();
+            this.chkUseInstanceBehaviorsWhenSolo = new System.Windows.Forms.CheckBox();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -169,6 +170,14 @@
             this.tabPage4.Text = "Group Healing";
             this.tabPage4.UseVisualStyleBackColor = true;
             // 
+            // pgHealRaid
+            // 
+            this.pgHealRaid.Location = new System.Drawing.Point(0, 32);
+            this.pgHealRaid.Name = "pgHealRaid";
+            this.pgHealRaid.PropertySort = System.Windows.Forms.PropertySort.NoSort;
+            this.pgHealRaid.Size = new System.Drawing.Size(329, 250);
+            this.pgHealRaid.TabIndex = 4;
+            // 
             // label3
             // 
             this.label3.AutoSize = true;
@@ -236,6 +245,7 @@
             // 
             // tabPage3
             // 
+            this.tabPage3.Controls.Add(this.chkUseInstanceBehaviorsWhenSolo);
             this.tabPage3.Controls.Add(this.ShowPlayerNames);
             this.tabPage3.Controls.Add(this.button1);
             this.tabPage3.Controls.Add(this.groupBox1);
@@ -292,13 +302,16 @@
             this.timer1.Interval = 250;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
-            // pgHealRaid
+            // chkUseInstanceBehaviorsWhenSolo
             // 
-            this.pgHealRaid.Location = new System.Drawing.Point(0, 32);
-            this.pgHealRaid.Name = "pgHealRaid";
-            this.pgHealRaid.PropertySort = System.Windows.Forms.PropertySort.NoSort;
-            this.pgHealRaid.Size = new System.Drawing.Size(329, 250);
-            this.pgHealRaid.TabIndex = 4;
+            this.chkUseInstanceBehaviorsWhenSolo.AutoSize = true;
+            this.chkUseInstanceBehaviorsWhenSolo.Location = new System.Drawing.Point(80, 139);
+            this.chkUseInstanceBehaviorsWhenSolo.Name = "chkUseInstanceBehaviorsWhenSolo";
+            this.chkUseInstanceBehaviorsWhenSolo.Size = new System.Drawing.Size(193, 17);
+            this.chkUseInstanceBehaviorsWhenSolo.TabIndex = 2;
+            this.chkUseInstanceBehaviorsWhenSolo.Text = "Use Instance Behaviors While Solo";
+            this.chkUseInstanceBehaviorsWhenSolo.UseVisualStyleBackColor = true;
+            this.chkUseInstanceBehaviorsWhenSolo.CheckedChanged += new System.EventHandler(this.chkUseInstanceBehaviorsWhenSolo_CheckedChanged);
             // 
             // ConfigurationForm
             // 
@@ -359,5 +372,6 @@
         private System.Windows.Forms.TabPage tabPage5;
         private System.Windows.Forms.PropertyGrid pgHotkeys;
         private System.Windows.Forms.PropertyGrid pgHealRaid;
+        private System.Windows.Forms.CheckBox chkUseInstanceBehaviorsWhenSolo;
     }
 }

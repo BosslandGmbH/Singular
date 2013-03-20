@@ -905,22 +905,33 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] buffNames)
         {
-            //if (name == _lastBuffCast && _castTimer.IsRunning && _castTimer.ElapsedMilliseconds < 250)
-            //{
-            //    return new Action(ret => RunStatus.Success);
-            //}
+            return new Decorator(
+                ret =>
+                {
+                    if (onUnit == null || onUnit(ret) == null || name == null)
+                        return false;
 
-            //if (name == _lastBuffCast && StyxWoW.Me.IsCasting)
-            //{
-            //    _castTimer.Reset();
-            //    _castTimer.Start();
-            //    return new Action(ret => RunStatus.Success);
-            //}
+                    if (DoubleCastPreventionDict.Contains(onUnit(ret), name))
+                        return false;
 
-            return Buff(name, myBuff, onUnit, requirements, 0, buffNames);
+                    if (!buffNames.Any())
+                        return !(myBuff ? onUnit(ret).HasMyAura(name) : onUnit(ret).HasAura(name));
+
+                    if (myBuff)
+                        return buffNames.All(b => !onUnit(ret).HasMyAura(b));
+
+                    return buffNames.All(b => !onUnit(ret).HasAura(b));
+                },
+                new Sequence(
+                // new Action(ctx => _lastBuffCast = name),
+                    Cast(name, chkMov => true, onUnit, requirements, cancel => false /* causes cast to complete */ ),
+                    new Action(ret => UpdateDoubleCastDict(name, onUnit(ret)))
+                    )
+                );
         }
 
-        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, int expirSecs = 0, params string[] buffNames)
+
+        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, int expirSecs, params string[] buffNames)
         {
             //if (name == _lastBuffCast && _castTimer.IsRunning && _castTimer.ElapsedMilliseconds < 250)
             //{
@@ -935,15 +946,25 @@ namespace Singular.Helpers
             //}
 
             return new Decorator(
-                ret => onUnit != null && onUnit(ret) != null
-                    && name != null && !DoubleCastPreventionDict.Contains(onUnit(ret), name)
-                    && ((!buffNames.Any() && onUnit(ret).HasAuraExpired(name, expirSecs, myBuff)) || (buffNames.Any() && buffNames.All(b => myBuff ? onUnit(ret).HasAuraExpired(b, expirSecs) : !onUnit(ret).HasAura(b)))),
-                    new Sequence(
+                ret =>
+                {
+                    if (onUnit == null || onUnit(ret) == null || name == null)
+                        return false;
+
+                    if (DoubleCastPreventionDict.Contains(onUnit(ret), name))
+                        return false;
+
+                    if (!buffNames.Any())
+                        return onUnit(ret).HasAuraExpired(name, expirSecs, myBuff);
+
+                    return buffNames.All(b => onUnit(ret).HasAuraExpired(b, expirSecs, myBuff));
+                },
+                new Sequence(
                 // new Action(ctx => _lastBuffCast = name),
-                        Cast(name, chkMov => true, onUnit, requirements, cancel => false /* causes cast to complete */ ),
-                        new Action(ret => UpdateDoubleCastDict(name, onUnit(ret)))
-                        )
-                    );
+                    Cast(name, chkMov => true, onUnit, requirements, cancel => false /* causes cast to complete */ ),
+                    new Action(ret => UpdateDoubleCastDict(name, onUnit(ret)))
+                    )
+                );
         }
 
 
@@ -975,7 +996,12 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite BuffSelf(string name)
         {
-            return Buff(name, ret => StyxWoW.Me, ret => true);
+            return Buff(name, false, on => Me, req => true);
+        }
+
+        public static Composite BuffSelf(string name, int expirSecs)
+        {
+            return Buff(name, false, on => Me, req => true, expirSecs);
         }
 
         /// <summary>
@@ -990,7 +1016,12 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite BuffSelf(string name, SimpleBooleanDelegate requirements)
         {
-            return Buff(name, ret => StyxWoW.Me, requirements);
+            return Buff(name, false, on => Me, requirements);
+        }
+
+        public static Composite BuffSelf(string name, SimpleBooleanDelegate requirements, int expirSecs)
+        {
+            return Buff(name, false, on => Me, requirements, expirSecs);
         }
 
         #endregion
@@ -1198,6 +1229,7 @@ namespace Singular.Helpers
 
                                 // check we can cast it on target without checking for movement
                                 if (!SpellManager.CanCast(_spell, _castOnUnit, true, false, allow == LagTolerance.Yes))
+                                // if (!CanCastHack(name(ret), _castOnUnit))
                                     return RunStatus.Failure;
 
                                 // save status of queueing spell (lag tolerance - the prior spell still completing)
@@ -1421,7 +1453,7 @@ namespace Singular.Helpers
                     new Action(ret => _castOnUnit = onUnit(ret) ),
                     new PrioritySelector(
                         new Decorator(
-                            ret => _castOnUnit != null,
+                            ret => _castOnUnit != null && _castOnUnit.Distance < Spell.ActualMaxRange(spell,_castOnUnit),
                             CastOnGround(spell, loc => _castOnUnit.Location, requirements, waitForSpell, desc => string.Format( "{0} @ {1:F1}%", _castOnUnit.SafeName(), _castOnUnit.HealthPercent))
                             ),
                         new Action( r => { _castOnUnit = null; return RunStatus.Failure; } )
@@ -1516,7 +1548,7 @@ namespace Singular.Helpers
                 WoWSpell spell = sfr.Override ?? sfr.Original;
                 if (spell.HasRange)
                 {
-                    return Me.Location.Distance(loc) < spell.MaxRange;
+                    return spell.MinRange <= Me.Location.Distance(loc) && Me.Location.Distance(loc) < spell.MaxRange;
                 }
             }
 
@@ -1547,7 +1579,7 @@ namespace Singular.Helpers
             {
                 if (spell.IsMeleeSpell && !unit.IsWithinMeleeRange)
                     return false;
-                if (spell.HasRange && (unit.Distance > (spell.MaxRange + unit.CombatReach + 1) || (0 != (int) unit.Distance && unit.Distance < (spell.MinRange + unit.CombatReach + 1.66666675f))))
+                if (spell.HasRange && (unit.Distance > (spell.MaxRange + unit.CombatReach + 1) || (0 != (int) spell.MinRange && unit.Distance < (spell.MinRange + unit.CombatReach + 1.66666675f))))
                     return false;
                 if (!unit.InLineOfSpellSight)
                     return false;

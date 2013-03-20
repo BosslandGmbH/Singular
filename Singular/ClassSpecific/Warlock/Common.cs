@@ -267,7 +267,7 @@ namespace Singular.ClassSpecific.Warlock
                 Spell.BuffSelf("Sacrificial Pact", ret => Me.HealthPercent < 60 && GetCurrentPet() != WarlockPet.None && Me.Pet.HealthPercent > 50),
 
                 new Decorator(
-                    ret => Me.HealthPercent < 25 || (Me.HealthPercent < 70 && !Group.AnyHealerNearby),
+                    ret => Me.HealthPercent < WarlockSettings.DrainLifePercentage && !Group.AnyHealerNearby,
                     new Sequence(
                         new PrioritySelector(
                             CreateCastSoulburn( ret => SpellManager.CanCast("Drain Life", Me.CurrentTarget, true, false)),

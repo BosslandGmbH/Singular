@@ -1,5 +1,6 @@
 ﻿//#define SHOW_BEHAVIOR_LOAD_DESCRIPTION
 //#define BOTS_NOT_CALLING_PULLBUFFS
+//#define TESTING_WHILE_IN_VEHICLE_COMPLETED
 
 using Singular.Dynamics;
 using Singular.Helpers;
@@ -152,7 +153,7 @@ namespace Singular
 
             _restBehavior = new LockSelector(
                 new Decorator(
-                    ret => !Me.IsFlying && (!Me.IsOnTransport || Me.Transport.Entry == 56171) && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                    ret => !Me.IsFlying && AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                     new PrioritySelector(
                         new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
                         Spell.WaitForGcdOrCastOrChannel(),
@@ -164,7 +165,7 @@ namespace Singular
 
             _preCombatBuffsBehavior = new LockSelector(
                 new Decorator(  // suppress non-combat buffing if standing around waiting on DungeonBuddy or BGBuddy queues
-                    ret => AllowBehaviorUsage() 
+                    ret => !Me.Mounted
                         && !SingularSettings.Instance.DisableNonCombatBehaviors 
                         && AllowNonCombatBuffing(),
                     new PrioritySelector(
@@ -178,7 +179,7 @@ namespace Singular
 
             _pullBuffsBehavior = new LockSelector(
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                    ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                     new HookExecutor(BehaviorType.PullBuffs.ToString())
                     )
                 );
@@ -203,14 +204,14 @@ namespace Singular
                     new HookExecutor("KitingBehavior")
                     ),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                    ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                     new HookExecutor(BehaviorType.Heal.ToString())
                     )
                 );
 
             _pullBehavior = new LockSelector(
                 new Decorator(
-                    ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat ),
+                    ret => AllowBehaviorUsage() && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat )),
                     new PrioritySelector(
                         new Decorator(
                             ret => !HotkeyDirector.IsCombatEnabled,
@@ -228,7 +229,7 @@ namespace Singular
 
             _combatBehavior = new LockSelector(
                 new Decorator(
-                    ret => !Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat),
+                    ret => AllowBehaviorUsage() && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
                     new PrioritySelector(
                         new Decorator(
                             ret => !HotkeyDirector.IsCombatEnabled,
@@ -243,7 +244,11 @@ namespace Singular
 
         private static bool AllowBehaviorUsage()
         {
-            return !IsMounted && (!Me.IsOnTransport || Me.Transport.Entry == 56171);
+#if TESTING_WHILE_IN_VEHICLE_COMPLETED
+            return (!IsQuestBotActive || !Me.InVehicle) && (!Me.IsOnTransport || Me.Transport.Entry == 56171);
+#else
+            return (!Me.IsOnTransport || Me.Transport.Entry == 56171);
+#endif
         }
 
         private static bool AllowNonCombatBuffing()
@@ -252,6 +257,9 @@ namespace Singular
                 return false;
 
             if (IsDungeonBuddyActive && !Me.IsInInstance)
+                return false;
+
+            if (!AllowBehaviorUsage())
                 return false;
 
             return true;

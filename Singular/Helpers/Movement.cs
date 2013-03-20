@@ -257,20 +257,23 @@ namespace Singular.Helpers
         public static Composite CreateMoveBehindTargetBehavior(SimpleBooleanDelegate requirements)
         {
             return new Decorator(
-                    ret =>
-                    {
-                        if (MovementManager.IsMovementDisabled || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
-                            return false;
-                        var currentTarget = StyxWoW.Me.CurrentTarget;
-                        if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry) )
-                            return false;
-                        var targetOfTarget = currentTarget.CurrentTarget;
-                        return targetOfTarget != StyxWoW.Me || targetOfTarget.Stunned;
-                    },
-                    new PrioritySelector(
-                        ctx => CalculatePointBehindTarget(),
-                        new Decorator(behindPoint => Navigator.CanNavigateFully(StyxWoW.Me.Location, (WoWPoint)behindPoint, 4),
-                            new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint)))));
+                ret =>
+                {
+                    if (MovementManager.IsMovementDisabled || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
+                        return false;
+                    var currentTarget = StyxWoW.Me.CurrentTarget;
+                    if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry) )
+                        return false;
+                    return currentTarget.Stunned || currentTarget.CurrentTarget != StyxWoW.Me;
+                },
+                new PrioritySelector(
+                    ctx => CalculatePointBehindTarget(),
+                    new Decorator(
+                        behindPoint => Navigator.CanNavigateFully(StyxWoW.Me.Location, (WoWPoint)behindPoint, 4),
+                        new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint))
+                        )
+                    )
+                );
         }
 
         public static WoWPoint CalculatePointBehindTarget()

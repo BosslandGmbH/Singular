@@ -40,14 +40,6 @@ namespace Singular
                     // so we're not reliant on anything outside of ourselves for updates.
                     UpdateContext();
                 };
-		
-
-            TreeHooks.Instance.HooksCleared += () =>
-                {
-                    Logger.Write(Color.White, "Hooks cleared, re-creating behaviors");
-                    RebuildBehaviors();
-                    Spell.GcdInitialize();
-                };
 
             // install botevent handler so we can consolidate validation on whether 
             // .. local botevent handlers should be called or not

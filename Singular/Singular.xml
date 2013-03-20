@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>03/20/2013 18:58:34</ScanTime>
+  <ScanTime>03/20/2013 19:20:37</ScanTime>
   <FileList>
     <File Hash="25940" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="21291" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -110,7 +110,7 @@
     <File Hash="17848" Name="SingularRoutine.Behaviors.cs" />
     <File Hash="2036" Name="SingularRoutine.BotEvents.cs" />
     <File Hash="9858" Name="SingularRoutine.Context.cs" />
-    <File Hash="12188" Name="SingularRoutine.cs" />
+    <File Hash="12460" Name="SingularRoutine.cs" />
     <File Hash="2587" Name="SingularRoutine.Version.cs" />
     <File Hash="2800" Name="Utilities\CombatLog.cs" />
     <File Hash="1912" Name="Utilities\Enumeration.cs" />

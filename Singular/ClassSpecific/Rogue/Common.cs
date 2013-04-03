@@ -155,13 +155,13 @@ namespace Singular.ClassSpecific.Rogue
                 // Spell.BuffSelf("Combat Readiness", ret => AoeCount > 2 && !Me.HasAura("Feint")),
 
                 // Symbiosis
-                new Throttle( 179, Spell.BuffSelf( "Growl", ret => Me.HealthPercent < 65 && SingularRoutine.CurrentWoWContext != WoWContext.Instances )),
+                new Throttle(179, Spell.BuffSelf("Growl", ret => Me.HealthPercent < 65 && SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
 
                 // Spell.BuffSelf("Feint", ret => AoeCount > 2 && !Me.HasAura("Combat Readiness") && HaveTalent(RogueTalents.Elusivenss)),
                 Spell.BuffSelf("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),
                 Spell.BuffSelf("Cloak of Shadows", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
-                Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 40 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr > 4*4 && u.IsAlive && u.Combat && u.IsTargetingMeOrPet) >= 1),
-                Spell.BuffSelf("Vanish", ret => StyxWoW.Me.HealthPercent < 20 && !SingularRoutine.IsQuestBotActive ),
+                Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 40 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr > 4 * 4 && u.IsAlive && u.Combat && u.IsTargetingMeOrPet) >= 1),
+                Spell.BuffSelf("Vanish", ret => StyxWoW.Me.HealthPercent < 20 && !SingularRoutine.IsQuestBotActive),
 
                 Spell.BuffSelf("Preparation",
                     ret => Spell.GetSpellCooldown("Vanish").TotalSeconds > 10
@@ -176,27 +176,52 @@ namespace Singular.ClassSpecific.Rogue
 
                 Spell.Cast("Marked for Death", ret => StyxWoW.Me.RawComboPoints == 0),
 
-                Spell.Cast( "Deadly Throw", 
-                    ret => Me.ComboPoints >= 3 
+                Spell.Cast("Deadly Throw",
+                    ret => Me.ComboPoints >= 3
                         && Me.GotTarget
-                        && Me.CurrentTarget.IsCasting 
-                        && Me.CurrentTarget.CanInterruptCurrentSpellCast ),
+                        && Me.CurrentTarget.IsCasting
+                        && Me.CurrentTarget.CanInterruptCurrentSpellCast),
 
                 // Pursuit
                 Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12 && Unit.CurrentTargetIsMovingAwayFromMe),
                 Spell.Cast("Burst of Speed", ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > 10 && Unit.CurrentTargetIsMovingAwayFromMe),
 
                 // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
-                new Sequence( 
-                    Spell.BuffSelf("Vanish", 
+                new Sequence(
+                    Spell.BuffSelf("Vanish",
                         ret => Me.GotTarget
-                            && !SingularRoutine.IsQuestBotActive 
+                            && !SingularRoutine.IsQuestBotActive
                             && !IsStealthed
-                            && !Me.HasAuraExpired( "Slice and Dice", 4)
+                            && !Me.HasAuraExpired("Slice and Dice", 4)
                             && Me.ComboPoints < 2
-                            && Me.IsSafelyBehind( Me.CurrentTarget)),
-                    new Wait( TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed()),
+                            && Me.IsSafelyBehind(Me.CurrentTarget)),
+                    new Wait(TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed()),
                     CreateRogueOpenerBehavior()
+                    ),
+
+                // DPS Boost               
+                new Sequence(
+                    new Throttle(TimeSpan.FromSeconds(2),
+                        new Decorator(
+                            req => UseLongCoolDownAbility,
+                            Spell.BuffSelf("Shadow Blades", req =>
+                            {
+                                switch (Me.Specialization)
+                                {
+                                    default:
+                                    case WoWSpec.RogueAssassination:
+                                        return Me.ComboPoints <= 2;
+
+                                    case WoWSpec.RogueCombat:
+                                        return Me.HasAura("Adrenaline Rush");
+
+                                    case WoWSpec.RogueSubtlety:
+                                        return Me.ComboPoints <= 2 && !Me.HasAura("Find Weakness");
+                                }
+                            }))
+                        ),
+
+                    new ActionAlwaysFail()
                     )
                 );
 
@@ -308,7 +333,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new Action(ret =>
             {
-                if (Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.IsCrowdControlled()))
+                if (!Spell.UseAOE || Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.IsCrowdControlled()))
                     AoeCount = 1;
                 else
                     AoeCount = Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 3));
@@ -325,7 +350,8 @@ namespace Singular.ClassSpecific.Rogue
         internal static Composite CreateAttackFlyingMobs()
         {
             return new Decorator(
-                ret => Me.CurrentTarget.IsFlying || Me.CurrentTarget.IsAboveTheGround() || Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= 5,
+                // changed to only do on non-player targets
+                ret => !Me.CurrentTarget.IsPlayer && (Me.CurrentTarget.IsFlying || Me.CurrentTarget.IsAboveTheGround() || Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= 5),
                 new PrioritySelector(
                     Spell.Cast("Deadly Throw"),
                     Spell.Cast("Throw"),
@@ -458,6 +484,25 @@ namespace Singular.ClassSpecific.Rogue
             return option != null && !string.IsNullOrEmpty(option[0]) && option[0] == "1";
         }
 
+        internal static bool UseLongCoolDownAbility
+        {
+            get
+            {
+                if (!Me.GotTarget || !Me.CurrentTarget.IsWithinMeleeRange )
+                    return false;
+
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                    return Me.CurrentTarget.IsBoss();
+
+                if (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.TimeToDeath() > 3)
+                    return true;
+
+                if (Me.CurrentTarget.TimeToDeath() > 20)
+                    return true;
+
+                return Unit.NearbyUnitsInCombatWithMe.Any(u => u.Guid != Me.CurrentTargetGuid && !u.IsPet && u.IsWithinMeleeRange );
+            }
+        }
 
         public static WoWItem FindLockedBox()
         {

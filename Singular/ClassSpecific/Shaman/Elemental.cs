@@ -105,6 +105,8 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        CreateElementalDiagnosticOutputBehavior("PULL"),
+
                         Common.CreateShamanDpsShieldBehavior(),
 
                         Totems.CreateTotemsBehavior(),
@@ -154,7 +156,7 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        CreateElementalDiagnosticOutputBehavior(),
+                        CreateElementalDiagnosticOutputBehavior("COMBAT"),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -350,7 +352,7 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Diagnostics
 
-        private static Composite CreateElementalDiagnosticOutputBehavior()
+        private static Composite CreateElementalDiagnosticOutputBehavior(string behav)
         {
             return new Throttle( 1,
                 new Decorator(
@@ -366,7 +368,8 @@ namespace Singular.ClassSpecific.Shaman
                                 Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  have {0} stacks but Me.HasAura('Lightning Shield', {0}) was False!!!!", lstks, lstks);
                         }
 
-                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, lstks={2}",
+                        string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, lstks={3}",
+                            behav,
                             Me.HealthPercent,
                             Me.ManaPercent,
                             lstks

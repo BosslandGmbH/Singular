@@ -163,7 +163,7 @@ namespace Singular.Helpers
 
         public static bool ValidUnit(WoWUnit p)
         {
-            if (IgnoreMobs.Contains(p.Entry))
+            if (StyxWoW.Me.IsInInstance && IgnoreMobs.Contains(p.Entry))
                 return false;
 
             // Ignore shit we can't select/attack
@@ -175,8 +175,8 @@ namespace Singular.Helpers
                 return false;
 
             // check for enemy players here as friendly only seems to work on npc's
-            if (p.IsPlayer && p.ToPlayer().IsHorde != StyxWoW.Me.IsHorde)
-                return true;
+            if (p.IsPlayer)
+                return p.ToPlayer().IsHorde != StyxWoW.Me.IsHorde;
 
             // Ignore friendlies!
             if (p.IsFriendly)
@@ -372,7 +372,7 @@ namespace Singular.Helpers
         public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
         {
             WoWAura wantedAura =
-                onUnit.GetAllAuras().Where(a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+                onUnit.GetAllAuras().Where(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }

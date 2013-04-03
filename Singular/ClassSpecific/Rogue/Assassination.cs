@@ -91,7 +91,7 @@ namespace Singular.ClassSpecific.Rogue
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.Cast("Fan of Knives"),
+                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                                 Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives")),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
@@ -110,7 +110,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Dispatch"), // daggers
 
-                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= 3 && Spell.UseAOE ),
+                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                         Spell.Cast("Mutilate"),  // daggers
 
                         new ThrottlePasses(60,
@@ -167,7 +167,7 @@ namespace Singular.ClassSpecific.Rogue
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.Cast("Fan of Knives"),
+                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                                 Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives")),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
@@ -178,17 +178,12 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Garrote", ret => Common.IsStealthed && Me.CurrentTarget.MeIsBehind),
                         Spell.Buff("Vendetta",  ret => Me.CurrentTarget.IsBoss() &&  (Me.CurrentTarget.HealthPercent < 35 || TalentManager.IsSelected(13))),
 
-                        new Decorator(
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8*8) >= 3,
-                            Spell.BuffSelf("Fan of Knives", ret => Item.RangedIsType(WoWItemWeaponClass.Thrown))
-                            ),
-
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                         Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
                         Spell.Buff("Envenom", true, ret => (Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3 && Me.ComboPoints > 0) || Me.ComboPoints == 5),
                         Spell.Cast("Dispatch"),
 
-                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount > 1 && Spell.UseAOE),
+                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                         Spell.Cast("Mutilate")
                         )
                     ),

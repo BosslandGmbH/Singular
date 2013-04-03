@@ -114,20 +114,23 @@ namespace Singular.Settings
             if (StyxWoW.Me.Class == WoWClass.Paladin )      LogSettings("PaladinSettings", Paladin());
             if (StyxWoW.Me.Class == WoWClass.Priest )       LogSettings("PriestSettings", Priest());
             if (StyxWoW.Me.Class == WoWClass.Rogue )        LogSettings("RogueSettings", Rogue());
+            if (StyxWoW.Me.Class == WoWClass.Shaman)        LogSettings("ShamanSettings", Shaman());
+            if (StyxWoW.Me.Class == WoWClass.Warlock)       LogSettings("WarlockSettings", Warlock());
+            if (StyxWoW.Me.Class == WoWClass.Warrior)       LogSettings("WarriorSettings", Warrior());
 
-            if (StyxWoW.Me.Class == WoWClass.Shaman)
+            if (StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration)
             {
-                LogSettings("ShamanSettings", Shaman());
-                if (StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration)
-                {
-                    LogSettings("Shaman.Heal.Battleground", Shaman().Battleground);
-                    LogSettings("Shaman.Heal.Instance", Shaman().Instance);
-                    LogSettings("Shaman.Heal.Raid", Shaman().Raid);
-                }
+                LogSettings("Shaman.Heal.Battleground", Shaman().Battleground);
+                LogSettings("Shaman.Heal.Instance", Shaman().Instance);
+                LogSettings("Shaman.Heal.Raid", Shaman().Raid);
             }
-            
-            if (StyxWoW.Me.Class == WoWClass.Warlock )      LogSettings("WarlockSettings", Warlock());
-            if (StyxWoW.Me.Class == WoWClass.Warrior )      LogSettings("WarriorSettings", Warrior());
+
+            if (StyxWoW.Me.Specialization == WoWSpec.PriestHoly)
+            {
+                LogSettings("Priest.Holy.Heal.Battleground", Priest().HolyBattleground);
+                LogSettings("Priest.Holy.Heal.Instance", Priest().HolyInstance);
+                LogSettings("Priest.Holy.Heal.Raid", Priest().HolyRaid);
+            }
         }
 
         public void LogSettings(string desc, Styx.Helpers.Settings set)
@@ -200,6 +203,33 @@ namespace Singular.Settings
         [DisplayName("Debug Logging GCD")]
         [Description("Enables logging of GCD/Casting in Singular. Debug Logging setting must also be true")]
         public bool EnableDebugLoggingGCD { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Debug")]
+        [DisplayName("Debug Logging Spell.CanCast")]
+        [Description("Enables logging of tests if a spell can be cast")]
+        public bool EnableDebugLoggingCanCast { get; set; }
+
+        #endregion
+
+        #region Window Layout
+
+        [Browsable(false)]
+        [Setting]
+        [DefaultValue(337)]
+        public int FormHeight { get; set; }
+
+        [Browsable(false)]
+        [Setting]
+        [DefaultValue(378)]
+        public int FormWidth { get; set; }
+
+        [Browsable(false)]
+        [Setting]
+        [DefaultValue(0)]
+        public int FormTabIndex { get; set; }
+
 
         #endregion
 
@@ -283,14 +313,25 @@ namespace Singular.Settings
         [Description("Enabling that will disable non combat behaviors. (Rest, PreCombat buffs)")]
         public bool DisableNonCombatBehaviors { get; set; }
 
+        #endregion
+
+        #region Pets
+
         [Setting]
         [DefaultValue(false)]
-        [Category("Misc")]
+        [Category("Pets")]
         [DisplayName("Disable Pet usage")]
         [Description("Enabling that will disable pet usage")]
         public bool DisablePetUsage { get; set; }
 
-        #endregion
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Pets")]
+        [DisplayName("Solo: Pet Tank Adds")]
+        [Description("True: when Solo, switch to pickup targets attacking player")]
+        public bool PetTankAdds { get; set; }
+
+        #endregion 
 
         #region Category: Group Healing / Support
 

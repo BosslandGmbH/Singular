@@ -59,8 +59,24 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static bool InLineOfSpellSight(WoWUnit unit)
         {
-            return unit.InLineOfSpellSight
-                && (unit.IsWithinMeleeRange || (DateTime.Now - EventHandlers.LastLineOfSightError).TotalMilliseconds > 1000);
+            if (unit.InLineOfSpellSight)
+            {
+                if ((DateTime.Now - EventHandlers.LastLineOfSightError).TotalMilliseconds < 1000)
+                {
+                    if (unit.IsWithinMeleeRange)
+                    {
+                        Logger.WriteDebug("InLineOfSpellSight: last LoS error < 1 sec but in melee range, pretending we are in LoS");
+                        return true;
+                    }
+
+                    Logger.WriteDebug("InLineOfSpellSight: last LoS error < 1 sec, pretending still not in LoS");
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -70,7 +86,7 @@ namespace Singular.Helpers
         ///   Created 5/1/2011.
         /// </remarks>
         /// <returns>.</returns>
-        public static Composite CreateEnsureMovementStoppedBehavior(float range = float.MaxValue)
+        public static Composite CreateEnsureMovementStoppedBehavior(float range = float.MaxValue, UnitSelectionDelegate onUnit = null)
         {
             if (range == float.MaxValue)
             {
@@ -83,12 +99,15 @@ namespace Singular.Helpers
                     );
             }
 
+            if (onUnit == null)
+                onUnit = del => StyxWoW.Me.CurrentTarget;
+
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled
                     && StyxWoW.Me.IsMoving
-                    && (!StyxWoW.Me.GotTarget || StyxWoW.Me.CurrentTarget.Distance < range),
+                    && (onUnit(ret) == null || (InLineOfSpellSight(onUnit(ret)) && onUnit(ret).Distance < range)),
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug("EnsureMovementStopped: stopping because ", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("{0:F1} yds target distance more than {1:F1}", StyxWoW.Me.CurrentTarget.Distance, range ))),
+                    new Action(ret => Logger.WriteDebug("EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("{0:F1} yds target distance less than {1:F1}", onUnit(ret).Distance, range))),
                     new Action(ret => Navigator.PlayerMover.MoveStop())
                     )
                 );
@@ -103,7 +122,7 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled
                     && StyxWoW.Me.IsMoving
-                    && (!StyxWoW.Me.GotTarget || StyxWoW.Me.CurrentTarget.IsWithinMeleeRange ),
+                    && (!StyxWoW.Me.GotTarget || StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
                 new Sequence(
                     new Action(ret => Logger.WriteDebug("EnsureMovementStoppedWithinMelee: stopping because ", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("{0:F1} yds target distance is within melee", StyxWoW.Me.CurrentTarget.Distance))),
                     new Action(ret => Navigator.PlayerMover.MoveStop())
@@ -166,7 +185,7 @@ namespace Singular.Helpers
             return
                 new Decorator(
                     ret => onUnit != null && onUnit(ret) != null && onUnit(ret) != StyxWoW.Me && !Spell.IsCastingOrChannelling(),
-                    CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, ret => range));
+                    CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, ret => onUnit(ret).SpellRange(range)));
         }
 
 #if USE_OLD_VERSION
@@ -262,14 +281,14 @@ namespace Singular.Helpers
                     if (MovementManager.IsMovementDisabled || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
                         return false;
                     var currentTarget = StyxWoW.Me.CurrentTarget;
-                    if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry) )
+                    if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry))
                         return false;
                     return currentTarget.Stunned || currentTarget.CurrentTarget != StyxWoW.Me;
                 },
                 new PrioritySelector(
                     ctx => CalculatePointBehindTarget(),
                     new Decorator(
-                        behindPoint => Navigator.CanNavigateFully(StyxWoW.Me.Location, (WoWPoint)behindPoint, 4),
+                        req => Navigator.CanNavigateFully(StyxWoW.Me.Location, (WoWPoint)req, 4),
                         new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint))
                         )
                     )

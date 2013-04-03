@@ -56,6 +56,8 @@ namespace Singular.Utilities
         public static DateTime LastUnitNotInfrontError { get; set; }
         public static DateTime LastShapeshiftError { get; set; }
 
+        public static Dictionary<ulong, int> MobsThatEvaded = new Dictionary<ulong, int>();
+
         /// <summary>
         /// the value of localized values for testing certain types of spell failures
         /// </summary>
@@ -246,33 +248,44 @@ namespace Singular.Utilities
 
             if (unit != null)
             {
-                Logger.Write("Mob {0} is evading, [{1}]. Blacklisting it! {2}", unit.SafeName(), e.Event, unit.Guid );
-                Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(30));
+                if ( !MobsThatEvaded.ContainsKey( unit.Guid ))
+                    MobsThatEvaded.Add( unit.Guid, 0);
 
-                if (!Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
+                MobsThatEvaded[unit.Guid]++;
+                if (MobsThatEvaded[unit.Guid] <= 5)
                 {
-                    Logger.Write(Color.Pink, "error: blacklist does not contain entry for {0} just added {1}", unit.SafeName(), unit.Guid);
+                    Logger.Write("Mob {0} has evaded {1} time.  Keeping an eye on {2:X0} for now!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid);
                 }
-                
-                if (BotPoi.Current.Guid == unit.Guid)
+                else
                 {
-                    BotPoi.Clear("Blacklisted evading mob");
-                }
+                    Logger.Write("Mob {0} has evaded {1} times. Blacklisting {2:X0}!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid);
+                    Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(30));
 
-                if (StyxWoW.Me.CurrentTargetGuid == guid)
-                {
-                    foreach (var target in Targeting.Instance.TargetList)
+                    if (!Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
                     {
-                        if (target.IsAlive && Unit.ValidUnit(target) && !Blacklist.Contains(target, BlacklistFlags.Combat))
-                        {
-                            Logger.Write(Color.Pink, "Setting target to {0} to get off evade bugged mob!", target.SafeName());
-                            target.Target();
-                            return;
-                        }
+                        Logger.Write(Color.Pink, "error: blacklist does not contain entry for {0} just added {1}", unit.SafeName(), unit.Guid);
                     }
 
-                    Logger.Write(Color.Pink, "Bot not targeting other mobs nearby -- simply clearing evade target");
-                    StyxWoW.Me.ClearTarget();
+                    if (BotPoi.Current.Guid == unit.Guid)
+                    {
+                        BotPoi.Clear("Blacklisted evading mob");
+                    }
+
+                    if (StyxWoW.Me.CurrentTargetGuid == guid)
+                    {
+                        foreach (var target in Targeting.Instance.TargetList)
+                        {
+                            if (target.IsAlive && Unit.ValidUnit(target) && !Blacklist.Contains(target, BlacklistFlags.Combat))
+                            {
+                                Logger.Write(Color.Pink, "Setting target to {0} to get off evade bugged mob!", target.SafeName());
+                                target.Target();
+                                return;
+                            }
+                        }
+
+                        Logger.Write(Color.Pink, "Bot not targeting other mobs nearby -- simply clearing evade target");
+                        StyxWoW.Me.ClearTarget();
+                    }
                 }
 
             }

@@ -41,9 +41,9 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(WarlockPet.Auto)]
-        [Category("Common")]
-        [DisplayName("Pet")]
-        [Description("The Pet to use. Auto will auto select.  Voidwalker used if choice not available.")]
+        [Category("Pet")]
+        [DisplayName("Pet to Summon")]
+        [Description("Auto: will automatically select best pet.")]
         public WarlockPet Pet { get; set; }
 
         [Setting]

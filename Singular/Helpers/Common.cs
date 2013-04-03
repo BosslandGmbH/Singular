@@ -15,6 +15,7 @@ using Singular.Settings;
 using Singular.ClassSpecific;
 using Styx.WoWInternals.WoWObjects;
 using Singular.ClassSpecific.Warlock;
+using System.Drawing;
 
 namespace Singular.Helpers
 {
@@ -32,31 +33,73 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CreateAutoAttack(bool includePet)
         {
-            const int spellIdAutoShot = 75;
+            PrioritySelector prio = new PrioritySelector();
+            // const int spellIdAutoShot = 75;
+            bool autoAttack = Me.Class == WoWClass.DeathKnight
+                || (Me.Class == WoWClass.Druid && Me.Specialization != WoWSpec.DruidRestoration)
+                || Me.Class == WoWClass.Monk
+                || (Me.Class == WoWClass.Paladin && Me.Specialization != WoWSpec.PaladinHoly)
+                || Me.Class == WoWClass.Rogue
+                || (Me.Class == WoWClass.Shaman && Me.Specialization != WoWSpec.ShamanRestoration)
+                || Me.Class == WoWClass.Warrior;
 
-            return new PrioritySelector(
-                new Throttle( TimeSpan.FromMilliseconds(500),
-                    new Decorator(
-                        ret => !StyxWoW.Me.IsAutoAttacking && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
-                        new Action(ret =>
-                            {
-                                Lua.DoString("StartAttack()");
-                                return RunStatus.Failure;
-                            })
+            if (autoAttack)
+            {
+                prio.AddChild(
+                    new Throttle(TimeSpan.FromMilliseconds(500),
+                        new Decorator(
+                            ret => !StyxWoW.Me.IsAutoAttacking, // && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
+                            new Action(ret =>
+                                {
+                                    Lua.DoString("StartAttack()");
+                                    return RunStatus.Failure;
+                                })
+                            )
                         )
-                    ),
-                new Throttle(TimeSpan.FromMilliseconds(500),
-                    new Decorator(
-                        ret => includePet && StyxWoW.Me.GotAlivePet && (StyxWoW.Me.Pet.CurrentTarget == null || StyxWoW.Me.Pet.CurrentTarget != StyxWoW.Me.CurrentTarget),
-                        new Action(
-                            delegate
-                            {
-                                PetManager.CastPetAction("Attack");
-                                return RunStatus.Failure;
-                            })
+                    );
+            }
+
+            if ( includePet && (SingularRoutine.CurrentWoWContext != WoWContext.Normal || !SingularSettings.Instance.PetTankAdds ))
+            {
+                // pet assist: always keep pet on my target
+                prio.AddChild( 
+                    new ThrottlePasses(TimeSpan.FromMilliseconds(500),
+                        new Decorator(
+                            // check pet targeting same target as Me
+                            ret => Me.GotAlivePet && (!Me.Pet.GotTarget || Me.Pet.CurrentTargetGuid != Me.CurrentTargetGuid),
+                            new Action( delegate
+                                {
+                                    PetManager.CastPetAction("Attack");
+                                    return RunStatus.Failure;
+                                })
+                            )
                         )
-                    )
-                );
+                    );
+            }
+
+            if ( includePet && SingularRoutine.CurrentWoWContext == WoWContext.Normal && SingularSettings.Instance.PetTankAdds )
+            {
+                // pet tank: if pet's target isn't targeting Me, check if we should switch to one that is targeting Me
+                prio.AddChild(
+                    new ThrottlePasses(TimeSpan.FromMilliseconds(500),
+                        new Decorator(
+                            ret => Me.GotAlivePet && (!Me.Pet.GotTarget || Me.Pet.CurrentTarget.CurrentTargetGuid != Me.Guid),
+                            new PrioritySelector(
+                                ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && u.GotTarget && u.CurrentTarget.IsMe).FirstOrDefault() ?? Me.CurrentTarget,
+                                new Decorator(
+                                    ret => ret != null && Me.Pet.CurrentTargetGuid != ((WoWUnit)ret).Guid,
+                                    new Action(r => {
+                                        PetManager.CastPetAction("Attack", (WoWUnit)r);
+                                        return RunStatus.Failure;
+                                        })
+                                    )
+                                )
+                            )
+                        )
+                    );
+            }
+
+            return prio;
         }
 
         /// <summary>
@@ -148,7 +191,7 @@ namespace Singular.Helpers
             if ( Me.Class == WoWClass.Rogue)
             {
                 prioSpell.AddChild( Spell.Cast("Kick", ctx => _unitInterrupt));
-                prioSpell.AddChild( Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && !_unitInterrupt.MeIsSafelyBehind));
+                prioSpell.AddChild( Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && Me.IsSafelyFacing(_unitInterrupt)));
             }
 
             if ( Me.Class == WoWClass.Warrior)

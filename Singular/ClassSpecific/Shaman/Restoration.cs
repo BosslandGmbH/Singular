@@ -605,7 +605,9 @@ namespace Singular.ClassSpecific.Shaman
             #endregion
 
             behavs.OrderBehaviors();
-            behavs.ListBehaviors();
+
+            if (selfOnly == false && Singular.Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat)
+                behavs.ListBehaviors();
 
 
             return new PrioritySelector(

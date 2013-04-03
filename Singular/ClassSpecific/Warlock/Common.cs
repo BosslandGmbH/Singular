@@ -97,7 +97,7 @@ namespace Singular.ClassSpecific.Warlock
                     new PrioritySelector(
                         //new ThrottlePasses(5, new Action(r => { Logger.Write("in PreCombatBuff()"); return RunStatus.Failure; })),
                         CreateWarlockSummonPet(),
-                        Spell.BuffSelf("Soul Link", ret => !Me.HasAura("Soul Link") && Me.GotAlivePet && PetManager.PetTimer.IsFinished ),
+                        Spell.BuffSelf("Soul Link", ret => !Me.HasAura("Soul Link") && Me.GotAlivePet && PetManager.PetSummonAfterDismountTimer.IsFinished ),
                         new Throttle(5, Spell.Cast("Create Healthstone", ret => !HaveHealthStone && !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 25))),
                         Spell.BuffSelf("Soulstone", ret => NeedToSoulstoneMyself()),
                         PartyBuff.BuffGroup("Dark Intent"),
@@ -304,7 +304,9 @@ namespace Singular.ClassSpecific.Warlock
                 PartyBuff.BuffGroup("Dark Intent"),
 
                 new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.Level > Me.Level - (Me.CurrentTarget.Elite ? 10 : 6),
+                    ret => Me.GotTarget 
+                        && Unit.ValidUnit(Me.CurrentTarget)
+                        && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath() > 45),
                     new Throttle( 2,
                         new PrioritySelector(
                             Spell.Buff( "Curse of the Elements", true,
@@ -347,21 +349,20 @@ namespace Singular.ClassSpecific.Warlock
                 ret => !SingularSettings.Instance.DisablePetUsage
                     && !Me.HasAura( "Grimoire of Sacrifice")        // don't summon pet if this buff active
                     && GetBestPet() != GetCurrentPet()
-                    && PetManager.PetTimer.IsFinished
                     && SpellManager.CanCast( "Summon Imp"), 
 
                 new Sequence(
                     // wait for possible auto-spawn if supposed to have a pet and none present
                     new DecoratorContinue(
-                        ret => GetCurrentPet() == WarlockPet.None && GetBestPet() != WarlockPet.None,
+                        ret => GetCurrentPet() == WarlockPet.None && GetBestPet() != WarlockPet.None && !PetManager.PetSummonAfterDismountTimer.IsFinished,
                         new Sequence(
-                            new Action(ret => Logger.WriteDebug("Summon Pet:  waiting briefly for live pet to appear", GetBestPet().ToString())),
-                            new WaitContinue( 
-                                TimeSpan.FromMilliseconds( 1000),
-                                ret => GetCurrentPet() != WarlockPet.None, 
+                            new Action(ret => Logger.WriteDebug("Summon Pet:  waiting {0:F0} for live {1} to appear", PetManager.PetSummonAfterDismountTimer.TimeLeft.TotalMilliseconds, GetBestPet().ToString())),
+                            new WaitContinue(
+                                TimeSpan.FromDays(1),    // really large value... use PetSummonAfterDismountTimer to control wait duration instead
+                                ret => GetCurrentPet() != WarlockPet.None || GetBestPet() == WarlockPet.None || PetManager.PetSummonAfterDismountTimer.IsFinished, 
                                 new Sequence(
-                                    new Action( ret => Logger.WriteDebug("Summon Pet:  live {0} detected", GetCurrentPet().ToString())),
-                                    new Action( r => { return RunStatus.Failure; } )
+                                    new Action( ret => Logger.WriteDebug("Summon Pet:  found '{0}' after waiting", GetCurrentPet().ToString())),
+                                    new Action( r => { return GetBestPet() == GetCurrentPet() ? RunStatus.Failure : RunStatus.Success ; } )
                                     )
                                 )
                             )
@@ -425,7 +426,7 @@ namespace Singular.ClassSpecific.Warlock
                                 chkMov => true,
                                 onUnit => Me, 
                                 req => true,
-                                cncl => false),
+                                cncl => GetBestPet() == GetCurrentPet()),
 
                             // make sure we see pet alive before continuing
                             new Wait( 1, ret => GetCurrentPet() != WarlockPet.None, new ActionAlwaysSucceed() )

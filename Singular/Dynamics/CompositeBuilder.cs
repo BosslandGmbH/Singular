@@ -17,6 +17,13 @@ namespace Singular.Dynamics
 {
     public static class CompositeBuilder
     {
+        /// <summary>
+        /// allows generic behaviors to query current type of behavior
+        /// during behavior construction
+        /// </summary>
+        public static BehaviorType CurrentBehaviorType { get; set; }
+
+
         private static List<MethodInfo> _methods = new List<MethodInfo>();
 
         public static Composite GetComposite(WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context, out int behaviourCount)
@@ -65,8 +72,12 @@ namespace Singular.Dynamics
                             behavior, wowClass.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced(),
                             attribute.PriorityLevel));
 
+                        CurrentBehaviorType = behavior;
+
                         // if it blows up here, you defined a method with the exact same attribute and priority as one already found
                         matchedMethods.Add(attribute, mi.Invoke(null, null) as Composite);
+
+                        CurrentBehaviorType = 0;
                     }
                 }
             }
@@ -85,7 +96,6 @@ namespace Singular.Dynamics
 
             return result;
         }
-
 
         private static bool IsMatchingMethod(BehaviorAttribute attribute, WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context)
         {

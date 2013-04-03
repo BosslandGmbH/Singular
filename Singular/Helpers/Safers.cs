@@ -20,6 +20,33 @@ namespace Singular.Helpers
     {
         private static Color targetColor = Color.LightCoral;
 
+#if WE_NEED_TO_REMOVE_FRIENDLY_CURRENT_TARGETS
+        // following will work, but there is a larger issue of responsibility.  DungeonBuddy needs for Singular
+        // to leave a friendly NPC targeted as an indication that it should be healed.   this gets a bit contradictory
+        // when we also have code intending on removing friendly npcs from the target list (which would cause Singular
+        // to change targets)
+        // ----
+        // just commenting out for now
+        //
+        static Safers()
+        {
+            Targeting.Instance.RemoveTargetsFilter += new RemoveTargetsFilterDelegate(Instance_RemoveTargetsFilter);
+        }
+
+        static void Instance_RemoveTargetsFilter(System.Collections.Generic.List<WoWObject> units)
+        {
+            for (int i = units.Count - 1; i >= 0; i--)
+            {
+                WoWUnit unit = units[i].ToUnit();
+                if (unit == null || !unit.IsValid || unit.IsFriendly )
+                {
+                    units.RemoveAt(i);
+                    continue;
+                }
+            }
+        }
+#endif
+
         /// <summary>
         ///  This behavior SHOULD be called at top of the combat behavior. This behavior won't let the rest of the combat behavior to be called
         /// if you don't have a target. Also it will find a proper target, if the current target is dead or you don't have a target and still in combat.
@@ -109,14 +136,19 @@ namespace Singular.Helpers
                                 {
                                     var obj = BotPoi.Current.AsObject;
 
-                                    if (obj != null)
+                                    if (obj != null && ((WoWUnit)obj).IsAlive )
                                     {
-                                        if ((obj as WoWUnit).IsAlive && Blacklist.Contains(obj.Guid, BlacklistFlags.Combat))
+                                        if (Blacklist.Contains(obj.Guid, BlacklistFlags.Combat))
                                         {
-                                            Logger.Write(targetColor, "Current BotPOI " + obj.SafeName() + " was blacklisted!");
+                                            Logger.Write(targetColor, "BotPOI " + obj.SafeName() + " is blacklisted -- clearing POI!");
                                             BotPoi.Clear("Blacklisted mob");
                                         }
-                                        else if (StyxWoW.Me.CurrentTarget != obj && (obj as WoWUnit).IsAlive && !Blacklist.Contains(obj.Guid, BlacklistFlags.Combat))
+                                        else if (StyxWoW.Me.CurrentTargetGuid == obj.Guid )
+                                        {
+                                            Logger.WriteDebug(targetColor, "Current target is BotPOI, continuing...");
+                                            return obj;
+                                        }
+                                        else
                                         {
                                             Logger.Write(targetColor, "Current target is not BotPOI.  Switching to " + obj.SafeName() + "!");
                                             return obj;
@@ -128,9 +160,18 @@ namespace Singular.Helpers
                                 // The Botbase should give us the best target in targeting.
 #if BOT_FIRSTUNIT_GETS_PRIORITY
                                 var firstUnit = Targeting.Instance.FirstUnit;
-                                if (firstUnit != null)
+                                if (firstUnit != null && firstUnit.IsAlive )
                                 {
-                                    if (StyxWoW.Me.CurrentTarget != firstUnit && firstUnit.IsAlive && !Blacklist.Contains(firstUnit.Guid, BlacklistFlags.Combat ))
+                                    if (Blacklist.Contains(firstUnit.Guid, BlacklistFlags.Combat))
+                                    {
+                                        Logger.Write(targetColor, "Bot FirstUnit is blacklist -- ignoring!");
+                                    }
+                                    else if (StyxWoW.Me.CurrentTarget == firstUnit)
+                                    {
+                                        Logger.WriteDebug("Current target already Bots first choice, continuing...");
+                                        return firstUnit;
+                                    }
+                                    else
                                     {
                                         Logger.Write(targetColor, "Current target is not Bots first choice.  Switching to " + firstUnit.SafeName() + "!");
                                         return firstUnit;
@@ -158,16 +199,15 @@ namespace Singular.Helpers
 
 #endregion
 
-#region Change targets if something better found
+#region Change targets if better target was found
 
                             new Decorator(
-                                ret => ret != null,
+                                ret => ret != null && ((WoWUnit)ret).Guid != StyxWoW.Me.CurrentTargetGuid,
                                 new Sequence(
                                     new Action(ret => ((WoWUnit)ret).Target()),
                                     new WaitContinue(
                                         2,
-                                        ret => StyxWoW.Me.CurrentTarget != null &&
-                                                StyxWoW.Me.CurrentTarget == (WoWUnit)ret,
+                                        ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == (WoWUnit)ret,
                                         new ActionAlwaysSucceed())
                                     )
                                 )
@@ -204,6 +244,17 @@ namespace Singular.Helpers
                                             Logger.Write(targetColor, "Current target invalid. Switching to POI " + unit.SafeName() + "!");
                                             return unit;
                                         }
+
+                                        if (unit == null )
+                                        {
+                                            Logger.Write(targetColor, "Current Kill POI invalid. Clearing POI!");
+                                            BotPoi.Clear();
+                                        }
+                                        else if (!unit.IsAlive)
+                                        {
+                                            Logger.Write(targetColor, "Current Kill POI dead. Clearing POI " + unit.SafeName() + "!");
+                                            BotPoi.Clear();
+                                        }
                                     }
 
                                     // Does the target list have anything in it? And is the unit in combat?
@@ -215,11 +266,11 @@ namespace Singular.Helpers
                                         Logger.Write(targetColor, "Current target invalid. Switching to Bot First Unit " + firstUnit.SafeName() + "!");
                                         return firstUnit;
                                     }
-
+/*
                                     // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
                                     var agroMob =
                                         ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
-                                            .Where(p => !Blacklist.Contains(p, BlacklistFlags.Combat) && p.IsHostile && !p.IsOnTransport && !p.IsDead
+                                            .Where(p => !Blacklist.Contains(p, BlacklistFlags.Combat) && p.IsHostile && !p.IsDead
                                                     && !p.Mounted && p.DistanceSqr <= 70 * 70 && p.IsPlayer && p.Combat && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))
                                             .OrderBy(u => u.DistanceSqr)
                                             .FirstOrDefault();
@@ -238,14 +289,17 @@ namespace Singular.Helpers
 
                                         return agroMob;
                                     }
-
+*/
                                     // Cache this query, since we'll be using it for 2 checks. No need to re-query it.
-                                    agroMob =
-                                        ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
-                                            .Where(p => !Blacklist.Contains(p, BlacklistFlags.Combat) && !p.IsOnTransport && !p.IsDead
-                                                    && !p.Mounted && p.DistanceSqr <= 70 * 70 && (p.Aggro || p.PetAggro))
-                                            .OrderBy(u => u.DistanceSqr)
-                                            .FirstOrDefault();
+                                    var agroMob = ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
+                                        .Where(
+                                            p => !Blacklist.Contains(p, BlacklistFlags.Combat) 
+                                            && Unit.ValidUnit(p)
+                                            && p.DistanceSqr <= 40 * 40
+                                            && (p.Aggro || p.PetAggro || (p.Combat && p.GotTarget && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))))
+                                        .OrderBy(u => u.IsPlayer )
+                                        .ThenBy(u => u.DistanceSqr)
+                                        .FirstOrDefault();
 
                                     if (agroMob != null)
                                     {
@@ -255,6 +309,7 @@ namespace Singular.Helpers
                                     }
 
                                     // And there's nothing left, so just return null, kthx.
+                                    Logger.Write(targetColor, "Current target invalid.  No other targets available");
                                     return null;
                                 },
                                 // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)

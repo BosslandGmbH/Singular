@@ -18,13 +18,30 @@ namespace Singular.Lists
         {
             // contains the list of all the 5 man and raid bosses.
             CurrentMapBosses = new HashSet<string>();
+
+            /* -- problems with static class registering context handler so no called in SingularRoutine.cs
             SingularRoutine.OnWoWContextChanged +=
-                (sender, arg) => CurrentMapBosses = new HashSet<string>(StyxWoW.Db[ClientDb.DungeonEncounter].Where(r => r.GetField<int>(1) == StyxWoW.Me.MapId).Select(r => r.GetStringField(5)));
+                (sender, arg) => Init();
+            */
 
             foreach (var bossId in _dummies)
             {
                 _bosses.Add(bossId);
             }
+
+        }
+
+        public static void Init()
+        {
+            CurrentMapBosses = new HashSet<string>(StyxWoW.Db[ClientDb.DungeonEncounter].Where(r => r.GetField<int>(1) == StyxWoW.Me.MapId).Select(r => r.GetStringField(5)));
+
+            // output list of bosses
+            Logger.WriteFile("BossList: for {0}", StyxWoW.Me.CurrentMap.Name + " - " + StyxWoW.Me.CurrentMap.MapDescription);
+            foreach (var s in Singular.Lists.BossList.CurrentMapBosses)
+            {
+                Logger.WriteFile("- boss {0}", s);
+            }
+            Logger.WriteFile("BossList: contains {0} entries", Singular.Lists.BossList.CurrentMapBosses.Count());
         }
 
         public static HashSet<uint> BossIds
@@ -72,6 +89,9 @@ namespace Singular.Lists
                 28859, // Malygos in The Eye of Eternity
                 10184, // Onyxia in Onyxia's Lair
                 56895, // Weak Spot in Gate of the Setting Sun
+                63191, // Garalon in Heart of Fear This boss is riding an invisible vehicle and facing is relative to vehicle's facing.
+                69465, // Jin'rokh the Breaker in Throne of Thunder
+                68476, // Horridon in Throne of Thunder
             };
 
         // this list should only contain bosses that are not found in 5 mans and raids.

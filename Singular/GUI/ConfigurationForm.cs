@@ -69,10 +69,6 @@ namespace Singular.GUI
                     break;
                 case WoWClass.Shaman:
                     toSelect = SingularSettings.Instance.Shaman();
-                    pgHealBattleground.SelectedObject = SingularSettings.Instance.Shaman().Battleground;
-                    pgHealInstance.SelectedObject = SingularSettings.Instance.Shaman().Instance;
-                    pgHealNormal.SelectedObject = SingularSettings.Instance.Shaman().Normal;
-                    pgHealRaid.SelectedObject = SingularSettings.Instance.Shaman().Raid;
                     break;
                 case WoWClass.Mage:
                     toSelect = SingularSettings.Instance.Mage();
@@ -86,6 +82,7 @@ namespace Singular.GUI
                 default:
                     break;
             }
+
             if (toSelect != null)
             {
                 pgClass.SelectedObject = toSelect;
@@ -93,36 +90,59 @@ namespace Singular.GUI
 
             pgHotkeys.SelectedObject = SingularSettings.Instance.Hotkeys();
 
-            InitializeContextDropdown();
 
+            InitializeHealContextDropdown(StyxWoW.Me.Class);
             chkUseInstanceBehaviorsWhenSolo.Checked = SingularRoutine.ForceInstanceBehaviors;
 
             if (!timer1.Enabled)
                 timer1.Start();
         }
 
-        private void InitializeContextDropdown()
+        /// <summary>
+        /// populates the cboHealContext dropdown with an object list of all healing context setups
+        /// that apply to current character.  will initially clear the list, then populate, and
+        /// finally set the current context as selected (or first in list if not applicable)
+        /// </summary>
+        /// <param name="cls"></param>
+        private void InitializeHealContextDropdown(WoWClass cls)
         {
-            if (pgHealBattleground.SelectedObject != null)
-                cboHealContext.Items.Add(HealingContext.Battlegrounds);
-            if (pgHealInstance.SelectedObject != null)
-                cboHealContext.Items.Add(HealingContext.Instances);
-            if (pgHealInstance.SelectedObject != null)
-                cboHealContext.Items.Add(HealingContext.Raids);
-            if (pgHealNormal.SelectedObject != null)
-                cboHealContext.Items.Add(HealingContext.Normal);
+            cboHealContext.Items.Clear();
+            if (cls == WoWClass.Shaman)
+            {
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Normal, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Normal));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Battleground));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Instance));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Raid));
+            }
+
+            if (cls == WoWClass.Priest)
+            {
+/*
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Normal, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscNormal));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscBattleground));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscInstance));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscRaid));
+ */ 
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.PriestHoly, SingularSettings.Instance.Priest().HolyBattleground));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.PriestHoly, SingularSettings.Instance.Priest().HolyInstance));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.PriestHoly, SingularSettings.Instance.Priest().HolyRaid));
+            }
 
             cboHealContext.Enabled = cboHealContext.Items.Count > 0;
 
-            try
+            foreach (var obj in cboHealContext.Items)
             {
-                cboHealContext.SelectedItem = Singular.SingularRoutine.CurrentHealContext;
+                HealContextItem ctx = (HealContextItem)obj;
+                if (ctx.Spec == StyxWoW.Me.Specialization && ctx.Context == SingularRoutine.CurrentHealContext)
+                {
+                    cboHealContext.SelectedItem = ctx;
+                    break;
+                }
             }
-            catch
-            {
-                if ( cboHealContext.Enabled)
-                    cboHealContext.SelectedIndex = 0;
-            }
+
+            if (cboHealContext.SelectedItem == null && cboHealContext.Items.Count > 0)
+                cboHealContext.SelectedIndex = 0;
+
         }
 
         private void Instance_OnTargetListUpdateFinished(object context)
@@ -134,9 +154,9 @@ namespace Singular.GUI
             }
 
             var sb = new StringBuilder();
-            foreach (WoWPlayer u in HealerManager.Instance.HealList)
+            foreach (WoWUnit u in HealerManager.Instance.HealList)
             {
-                sb.AppendLine(u.Name + " - " + u.HealthPercent);
+                sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
             }
             lblHealTargets.Text = sb.ToString();
         }
@@ -147,24 +167,24 @@ namespace Singular.GUI
         { // prevent an exception from closing HB.
             try
             {
+                SingularSettings.Instance.FormHeight = this.Height;
+                SingularSettings.Instance.FormWidth = this.Width;
+                SingularSettings.Instance.FormTabIndex = tabControl1.SelectedIndex; ;
+
                 ((SingularSettings)pgGeneral.SelectedObject).Save();
 
                 if (pgClass.SelectedObject != null)
                     ((Styx.Helpers.Settings)pgClass.SelectedObject).Save();
 
-                if (pgHealBattleground.SelectedObject != null)
-                    ((Styx.Helpers.Settings)pgHealBattleground.SelectedObject).Save();
+                if (pgHotkeys.SelectedObject != null)
+                    ((Styx.Helpers.Settings)pgHotkeys.SelectedObject).Save();
 
-                if (pgHealInstance.SelectedObject != null)
-                    ((Styx.Helpers.Settings)pgHealInstance.SelectedObject).Save();
+                foreach (var obj in cboHealContext.Items)
+                {
+                    HealContextItem ctx = (HealContextItem)obj;
+                    ctx.Settings.Save();
+                }
 
-                if (pgHealRaid.SelectedObject != null)
-                    ((Styx.Helpers.Settings)pgHealRaid.SelectedObject).Save();
-
-                if (pgHealNormal.SelectedObject != null)
-                    ((Styx.Helpers.Settings)pgHealNormal.SelectedObject).Save();
-
-                ((Styx.Helpers.Settings)pgHotkeys.SelectedObject).Save();
                 Close();
             }
             catch (Exception ex)
@@ -178,9 +198,9 @@ namespace Singular.GUI
         private void timer1_Tick(object sender, EventArgs e)
         {
             var sb = new StringBuilder();
-            foreach (WoWPlayer u in HealerManager.Instance.HealList.Where(p => p != null && p.IsValid))
+            foreach (WoWUnit u in HealerManager.Instance.HealList.Where(p => p != null && p.IsValid))
             {
-                sb.AppendLine(u.Name + " - " + u.HealthPercent);
+                sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
             }
             lblHealTargets.Text = sb.ToString();
         }
@@ -210,23 +230,8 @@ namespace Singular.GUI
 
         private void cboHealContext_SelectedIndexChanged(object sender, EventArgs e)
         {
-            HealingContext ctx = (HealingContext)cboHealContext.SelectedItem;
-            bool isBG = ctx == HealingContext.Battlegrounds;
-            bool isInst = ctx == HealingContext.Instances;
-            bool isNorm = ctx == HealingContext.Normal;
-            bool isRaid = ctx == HealingContext.Raids;
-
-            pgHealBattleground.Enabled = isBG;
-            pgHealBattleground.Visible = isBG;
-
-            pgHealInstance.Enabled = isInst;
-            pgHealInstance.Visible = isInst;
-
-            pgHealRaid.Enabled = isRaid;
-            pgHealRaid.Visible = isRaid;
-
-            pgHealNormal.Enabled = isNorm;
-            pgHealNormal.Visible = isNorm;
+            HealContextItem ctx = (HealContextItem)cboHealContext.SelectedItem;
+            pgHeal.SelectedObject = ctx.Settings;
         }
 
         private void chkUseInstanceBehaviorsWhenSolo_CheckedChanged(object sender, EventArgs e)
@@ -234,4 +239,37 @@ namespace Singular.GUI
             SingularRoutine.ForceInstanceBehaviors = chkUseInstanceBehaviorsWhenSolo.Checked;
         }
     }
+
+    public class HealContextItem
+    {
+        public HealingContext Context { get; set; }
+        public WoWSpec Spec { get; set; }
+        public HealerSettings Settings { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return ToString() == obj.ToString();
+        }
+
+        public override string ToString()
+        {
+            return Spec.ToString().CamelToSpaced().Trim() + " - " + Context.ToString();
+        }
+
+        // ctor for list item
+        public HealContextItem(HealingContext context, WoWSpec spec, HealerSettings stgs)
+        {
+            Context = context;
+            Spec = spec;
+            Settings = stgs;
+        }
+
+        // ctor for lookup only
+        public HealContextItem(HealingContext context, WoWSpec spec)
+        {
+            Context = context;
+            Spec = spec;
+        }
+    }
+
 }

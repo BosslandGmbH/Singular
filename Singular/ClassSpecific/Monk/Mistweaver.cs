@@ -107,14 +107,14 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMistweaverCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        Spell.BuffSelf("Stance of the Wise Serpent", ret => Me.IsInGroup()),
-                        Spell.BuffSelf("Stance of the Fierce Tiger", ret => !Me.IsInGroup())
-                        )
-                    )
+                Spell.BuffSelf("Stance of the Wise Serpent"), // ret => Me.IsInGroup()),
+                // Spell.BuffSelf("Stance of the Fierce Tiger", ret => !Me.IsInGroup())
+
+                // cast Mana Tea if low on Mana
+                Spell.Cast( "Mana Tea", 
+                    on => Me,
+                    req => Me.ManaPercent < SingularSettings.Instance.PotionMana && Me.HasAura("Stance of the Wise Serpent"), 
+                    cancel => Me.ManaPercent > 95 )
                 );
         }
 

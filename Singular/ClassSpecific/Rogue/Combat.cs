@@ -95,12 +95,12 @@ namespace Singular.ClassSpecific.Rogue
                         CreateBladeFlurryBehavior(),
 
                         new Decorator(
-                            ret => Common.AoeCount >= 4 && Spell.UseAOE,
+                            ret => Common.AoeCount >= RogueSettings.AoeSpellPriorityCount && Spell.UseAOE,
                             new PrioritySelector(
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
                                 Spell.BuffSelf("Fan of Knives"),
-                                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Fan of Knives")),
+                                Spell.Cast("Sinister Strike"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
@@ -110,16 +110,17 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Eviscerate",
                             ret => Me.ComboPoints >= 5
-                                && (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds > 6 || Me.CurrentTarget.TimeToDeath() < 6)),
+                                && ( Me.HasAura("Blade Flurry") || Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds > 6 || Me.CurrentTarget.TimeToDeath() < 6)),
 
                         Spell.Cast("Eviscerate", ret => !SpellManager.HasSpell("Recuperate") && Me.CurrentTarget.TimeToDeath(999) <= Me.ComboPoints ),
 
                         Spell.Cast("Rupture",
                             ret => Me.ComboPoints >= 4
+                                && !Me.HasAura("Blade Flurry")
                                 && Me.CurrentTarget.TimeToDeath() >= 7
                                 && Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 1), // && Me.CurrentTarget.HasBleedDebuff()
 
-                        Spell.Cast("Fan of Knives", ret => Common.AoeCount >= 3 && Spell.UseAOE),
+                        Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
                         Spell.Cast("Sinister Strike")
                         )
                     ),
@@ -168,25 +169,28 @@ namespace Singular.ClassSpecific.Rogue
                         CreateBladeFlurryBehavior(),
 
                         new Decorator(
-                            ret => Common.AoeCount >= 4 && Spell.UseAOE,
+                            ret => Common.AoeCount >= RogueSettings.AoeSpellPriorityCount,
                             new PrioritySelector(
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
                                 Spell.Cast("Fan of Knives"),
-                                Spell.Cast("Sinister Strike", ret => !SpellManager.HasSpell("Fan of Knives")),
+                                Spell.Cast("Sinister Strike"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
 
                         Spell.Cast("Revealing Strike", ret => !Me.CurrentTarget.HasMyAura("Revealing Strike")),
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
+
                         Spell.Buff("Rupture", true,
-                            ret => RogueSettings.CombatUseRuptureFinisher && Me.ComboPoints >= 4 &&
-                                   Me.CurrentTarget.Elite && Me.CurrentTarget.HasBleedDebuff()),
+                            ret => RogueSettings.CombatUseRuptureFinisher 
+                                && Common.AoeCount <= 1
+                                && Me.ComboPoints >= 4 
+                                && Me.CurrentTarget.HasBleedDebuff()),
 
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints == 5),
 
-                        Spell.Cast("Fan of Knives", ret => Common.AoeCount > 1 && Spell.UseAOE),
+                        Spell.Cast("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount),
                         Spell.Cast("Sinister Strike")
                         )
                     ),

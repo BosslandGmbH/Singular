@@ -54,7 +54,7 @@ namespace Singular
             //UpdateContext();
 
             // special behavior - reset KitingBehavior hook prior to calling class specific createion
-            TreeHooks.Instance.ReplaceHook("KitingBehavior", new ActionAlwaysFail() );
+            TreeHooks.Instance.ReplaceHook("KitingBehavior", new ActionAlwaysFail());
 
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
             if (!EnsureComposite(true, context, BehaviorType.Combat))
@@ -69,8 +69,8 @@ namespace Singular
 
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
             EnsureComposite(false, context, BehaviorType.Rest);
-            if ( TreeHooks.Instance.Hooks[BehaviorType.Rest.ToString()] == null)
-                TreeHooks.Instance.ReplaceHook( BehaviorType.Rest.ToString(), Helpers.Rest.CreateDefaultRestBehaviour());
+            if (TreeHooks.Instance.Hooks[BehaviorType.Rest.ToString()] == null)
+                TreeHooks.Instance.ReplaceHook(BehaviorType.Rest.ToString(), Helpers.Rest.CreateDefaultRestBehaviour());
 
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
@@ -130,16 +130,16 @@ namespace Singular
                 ret => Me.Fleeing || Me.Stunned,
                 new PrioritySelector(
                     new ThrottlePasses(1, 1, new Decorator(ret => Me.Fleeing, new Action(r => { Logger.Write(Color.White, "FLEEING! (loss of control)"); return RunStatus.Failure; }))),
-                    new ThrottlePasses(1, 1, new Decorator(ret => Me.Stunned, new Action(r => { Logger.Write(Color.White, "STUNNED! (loss of control)"); return RunStatus.Failure;} ))),
-                    new ThrottlePasses(1, 1, new Decorator(ret => Me.Silenced, new Action(r => { Logger.Write(Color.White, "SILENCED! (loss of control)"); return RunStatus.Failure;} ))),
-                    new Throttle( 1,
+                    new ThrottlePasses(1, 1, new Decorator(ret => Me.Stunned, new Action(r => { Logger.Write(Color.White, "STUNNED! (loss of control)"); return RunStatus.Failure; }))),
+                    new ThrottlePasses(1, 1, new Decorator(ret => Me.Silenced, new Action(r => { Logger.Write(Color.White, "SILENCED! (loss of control)"); return RunStatus.Failure; }))),
+                    new Throttle(1,
                         new PrioritySelector(
                             new HookExecutor(BehaviorType.LossOfControl.ToString()),
-                            new Decorator( 
+                            new Decorator(
                                 ret => SingularSettings.Instance.UseRacials,
                                 new PrioritySelector(
-                                    Spell.Cast( "Will of the Forsaken", on => Me, ret => Me.Race == WoWRace.Undead && Me.Fleeing ),
-                                    Spell.Cast( "Every Man for Himself", on => Me, ret => Me.Race == WoWRace.Human && (Me.Stunned || Me.Fleeing ))
+                                    Spell.Cast("Will of the Forsaken", on => Me, ret => Me.Race == WoWRace.Undead && Me.Fleeing),
+                                    Spell.Cast("Every Man for Himself", on => Me, ret => Me.Race == WoWRace.Human && (Me.Stunned || Me.Fleeing))
                                     )
                                 ),
 
@@ -166,12 +166,12 @@ namespace Singular
             _preCombatBuffsBehavior = new LockSelector(
                 new Decorator(  // suppress non-combat buffing if standing around waiting on DungeonBuddy or BGBuddy queues
                     ret => !Me.Mounted
-                        && !SingularSettings.Instance.DisableNonCombatBehaviors 
+                        && !SingularSettings.Instance.DisableNonCombatBehaviors
                         && AllowNonCombatBuffing(),
                     new PrioritySelector(
                         Spell.WaitForGcdOrCastOrChannel(),
                         Item.CreateUseAlchemyBuffsBehavior(),
-                        // Generic.CreateFlasksBehaviour(),
+                // Generic.CreateFlasksBehaviour(),
                         new HookExecutor(BehaviorType.PreCombatBuffs.ToString())
                         )
                     )
@@ -192,7 +192,7 @@ namespace Singular
                         Generic.CreateUseTrinketsBehaviour(),
                         Generic.CreatePotionAndHealthstoneBehavior(),
                         Generic.CreateRacialBehaviour(),
-                        new HookExecutor( BehaviorType.CombatBuffs.ToString())
+                        new HookExecutor(BehaviorType.CombatBuffs.ToString())
                         )
                     )
                 );
@@ -211,17 +211,17 @@ namespace Singular
 
             _pullBehavior = new LockSelector(
                 new Decorator(
-                    ret => AllowBehaviorUsage() && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat )),
+                    ret => AllowBehaviorUsage() && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
                     new PrioritySelector(
                         new Decorator(
                             ret => !HotkeyDirector.IsCombatEnabled,
                             new ActionAlwaysSucceed()
                             ),
-                        new Action( r => { MonitorQuestingPullDistance(); return RunStatus.Failure; } ),
+                        new Action(r => { MonitorQuestingPullDistance(); return RunStatus.Failure; }),
 #if BOTS_NOT_CALLING_PULLBUFFS
                         _pullBuffsBehavior,
 #endif
-                        CreateLogTargetChanges("<<< PULL >>>"),
+ CreateLogTargetChanges("<<< PULL >>>"),
                         new HookExecutor(BehaviorType.Pull.ToString())
                         )
                     )
@@ -247,7 +247,9 @@ namespace Singular
 #if TESTING_WHILE_IN_VEHICLE_COMPLETED
             return (!IsQuestBotActive || !Me.InVehicle) && (!Me.IsOnTransport || Me.Transport.Entry == 56171);
 #else
-            return (!Me.IsOnTransport || Me.Transport.Entry == 56171);
+            // The boss 'Elegon' sits on a transport, this is just one of several examples why bot needs to fight back when on a transport while in an dungeon.
+            // return (IsDungeonBuddyActive || !Me.IsOnTransport || Me.Transport.Entry == 56171 || Me.IsInInstance);
+            return true;
 #endif
         }
 
@@ -283,7 +285,7 @@ namespace Singular
             // handle those composites we need to default if not found
             if (composite == null)
             {
-                if ( type == BehaviorType.Rest)
+                if (type == BehaviorType.Rest)
                     composite = Helpers.Rest.CreateDefaultRestBehaviour();
             }
 
@@ -291,7 +293,7 @@ namespace Singular
 
             if ((composite == null || count <= 0) && error)
             {
-                StopBot( string.Format( "Singular does not support {0} for this {1} {2} in {3} context!", type, StyxWoW.Me.Class, TalentManager.CurrentSpec, context));
+                StopBot(string.Format("Singular does not support {0} for this {1} {2} in {3} context!", type, StyxWoW.Me.Class, TalentManager.CurrentSpec, context));
                 return false;
             }
 
@@ -311,7 +313,7 @@ namespace Singular
                         else
                         {
                             WoWUnit target = Me.CurrentTarget;
-                            Logger.WriteDebug( sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, faction={7}, loss={8}, facing={9}",
+                            Logger.WriteDebug(sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, faction={7}, loss={8}, facing={9}",
                                 target.SafeName(),
                                 target.HealthPercent,
                                 target.MaxHealth,
@@ -372,7 +374,8 @@ namespace Singular
         /// </summary>
         private class LockSelector : PrioritySelector
         {
-            public LockSelector(params Composite[] children) : base(children)
+            public LockSelector(params Composite[] children)
+                : base(children)
             {
             }
 

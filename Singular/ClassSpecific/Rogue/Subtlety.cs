@@ -76,25 +76,24 @@ namespace Singular.ClassSpecific.Rogue
                         Common.CreateRogueOpenerBehavior(),
 
                         new Decorator(
-                            ret => Common.AoeCount > 1 && Spell.UseAOE,
+                            ret => Common.AoeCount > 1,
                             new PrioritySelector(
                                 Spell.BuffSelf("Shadow Dance", ret => Common.AoeCount >= 3),
                                 Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5 && Common.AoeCount < 7 && !Me.CurrentTarget.HasAuraExpired("Crimson Tempest", 7)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= 7)
+                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount )
                                 )
                             ),
                         new Decorator(
-                            ret => Common.AoeCount >= 3 && Spell.UseAOE,
+                            ret => Common.AoeCount >= 3,
                             new PrioritySelector(
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives"),
+                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                                 Spell.Cast("Hemorrhage", ret => !SpellManager.HasSpell("Fan of Knives")),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
-
 
                         // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
                         Spell.BuffSelf("Shadow Dance",
@@ -110,8 +109,8 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.IsStealthed),
                         Spell.Buff("Hemorrhage"),
                         Spell.Cast("Backstab", ret => Me.IsSafelyBehind(Me.CurrentTarget)),
+                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
 
-                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= 3 && Spell.UseAOE),
                 // following cast is as a Combo Point builder if we can't cast Backstab
                         Spell.Cast("Hemorrhage", ret => Me.CurrentEnergy >= 35 || !SpellManager.HasSpell("Backstab") || !Me.IsSafelyBehind(Me.CurrentTarget)),
 
@@ -154,13 +153,12 @@ namespace Singular.ClassSpecific.Rogue
                             new PrioritySelector(
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.Cast("Fan of Knives", ctx => Common.AoeCount >= 6)
+                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount)
                                 )
                             ),
 
                         Movement.CreateMoveBehindTargetBehavior(),
                         Spell.BuffSelf("Shadow Dance", ret => Me.CurrentTarget.MeIsBehind && !Me.HasAura("Stealth")),
-                        Spell.BuffSelf("Shadow Blades", ret => Me.CurrentTarget.IsBoss()),
                         Spell.BuffSelf("Vanish", ret => Me.CurrentTarget.IsBoss() && Me.CurrentTarget.MeIsBehind),
 
                         Spell.BuffSelf("Premeditation", ret => Me.HasAura("Stealth") || Me.HasAura("Shadow Dance")),

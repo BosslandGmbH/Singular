@@ -5,6 +5,8 @@ using System.IO;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
+using Styx;
+using System.Drawing;
 
 namespace Singular.Settings
 {
@@ -14,6 +16,66 @@ namespace Singular.Settings
             : base(Path.Combine(SingularSettings.SettingsPath, "Priest.xml"))
         {
         }
+
+        #region Holy Healing Context Late Loading Wrappers
+
+        private HolyPriestHealSettings _holybattleground;
+        private HolyPriestHealSettings _holyinstance;
+        private HolyPriestHealSettings _holyraid;
+
+        [Browsable(false)]
+        public HolyPriestHealSettings HolyBattleground { get { return _holybattleground ?? (_holybattleground = new HolyPriestHealSettings(HealingContext.Battlegrounds)); } }
+
+        [Browsable(false)]
+        public HolyPriestHealSettings HolyInstance { get { return _holyinstance ?? (_holyinstance = new HolyPriestHealSettings(HealingContext.Instances)); } }
+
+        [Browsable(false)]
+        public HolyPriestHealSettings HolyRaid { get { return _holyraid ?? (_holyraid = new HolyPriestHealSettings(HealingContext.Raids)); } }
+
+        [Browsable(false)]
+        public HolyPriestHealSettings HolyHeal { get { return HolyHealLookup(Singular.SingularRoutine.CurrentWoWContext); } }
+
+        public HolyPriestHealSettings HolyHealLookup(WoWContext ctx)
+        {
+            if (ctx == WoWContext.Instances)
+                return StyxWoW.Me.CurrentMap.IsRaid ? HolyRaid : HolyInstance;
+            return HolyBattleground;
+        }
+
+        #endregion
+
+        #region Disc Healing Context Late Loading Wrappers
+        /*
+        private DiscPriestHealSettings _discbattleground;
+        private DiscPriestHealSettings _discinstance;
+        private DiscPriestHealSettings _discraid;
+        private DiscPriestHealSettings _discnormal;
+
+        [Browsable(false)]
+        public DiscPriestHealSettings DiscBattleground { get { return _discbattleground ?? (_discbattleground = new DiscPriestHealSettings(HealingContext.Battlegrounds)); } }
+
+        [Browsable(false)]
+        public DiscPriestHealSettings DiscInstance { get { return _discinstance ?? (_discinstance = new DiscPriestHealSettings(HealingContext.Instances)); } }
+
+        [Browsable(false)]
+        public DiscPriestHealSettings DiscRaid { get { return _discraid ?? (_discraid = new DiscPriestHealSettings(HealingContext.Raids)); } }
+
+        [Browsable(false)]
+        public DiscPriestHealSettings DiscNormal { get { return _discnormal ?? (_discnormal = new DiscPriestHealSettings(HealingContext.Normal)); } }
+
+        [Browsable(false)]
+        public DiscPriestHealSettings DiscHeal { get { return DiscHealLookup(Singular.SingularRoutine.CurrentWoWContext); } }
+
+        public DiscPriestHealSettings DiscHealLookup(WoWContext ctx)
+        {
+            if (ctx == WoWContext.Battlegrounds)
+                return DiscBattleground;
+            if (ctx == WoWContext.Instances)
+                return StyxWoW.Me.CurrentMap.IsRaid ? DiscRaid : DiscInstance;
+            return DiscNormal;
+        }
+        */
+        #endregion
 
         #region Shadow
 
@@ -115,7 +177,7 @@ namespace Singular.Settings
         public bool UseShieldPrePull { get; set; }
 
         [Setting]
-        [DefaultValue(0)]
+        [DefaultValue(00)]
         [Category("Healing")]
         [DisplayName("Count Mass Dispel")]
         [Description("Min number of players dispelled (0: disable Mass Dispel)")]
@@ -174,21 +236,21 @@ namespace Singular.Settings
         */
 
         [Setting]
-        [DefaultValue(50)]
+        [DefaultValue(75)]
         [Category("Common")]
-        [DisplayName("Shadowfiend Mana")]
-        [Description("Shadowfiend will be used at this value")]
+        [DisplayName("Shadowfiend/Mindbender Mana")]
+        [Description("% Mana to cast Shadowfiend or Mindbender")]
         public int ShadowfiendMana { get; set; }
-
+/*
         [Setting]
         [DefaultValue(50)]
         [Category("Common")]
         [DisplayName("Mindbender Mana")]
-        [Description("Mindbender will be used at this value")]
+        [Description("Mindbender will be used at this value")] 
         public int MindbenderMana { get; set; }
-
+*/
         [Setting]
-        [DefaultValue(40)]
+        [DefaultValue(50)]
         [Category("Common")]
         [DisplayName("Hymn of Hope Mana")]
         [Description("Hymn of Hope will be used at this value")]
@@ -253,7 +315,7 @@ namespace Singular.Settings
         [Category("Discipline")]
         [DisplayName("Heal Health")]
         [Description("Heal will be used at this value")]
-        public int Heal { get; set; }
+        public int HealHealthPercentage { get; set; }
 
         [Setting]
         [DefaultValue(70)]
@@ -290,7 +352,6 @@ namespace Singular.Settings
         [Description("Prayer of Healing will be used at this value")]
         public int PrayerOfHealing { get; set; }
 
-
         [Setting]
         [DefaultValue(40)]
         [Category("Discipline")]
@@ -321,7 +382,7 @@ namespace Singular.Settings
         [Category("Holy")]
         [DisplayName("Heal Health")]
         [Description("Heal will be used at this value")]
-        public int HolyHeal { get; set; }
+        public int HolyHealPercent { get; set; }
 
         [Setting]
         [DefaultValue(50)]
@@ -379,6 +440,484 @@ namespace Singular.Settings
         [Description("Circle of Healing will be used when this many heal targets below the Circle of Healing Health percent")]
         public int CircleOfHealingCount { get; set; }
 
+
+
+
         #endregion
     }
+
+    internal class HolyPriestHealSettings : Singular.Settings.HealerSettings
+    {
+        private HolyPriestHealSettings()
+            : base("", HealingContext.None)
+        {
+        }
+
+        public HolyPriestHealSettings(HealingContext ctx)
+            : base("Priest-Holy", ctx)
+        {
+
+            // we haven't created a settings file yet,
+            //  ..  so initialize values for various heal contexts
+
+            if (!SavedToFile)
+            {
+                if (ctx == Singular.HealingContext.Battlegrounds)
+                {
+                    Renew = 95;
+                    PrayerOfMending = 94;
+                    Heal = 0;
+                    GreaterHeal = 0;
+                    FlashHeal = 80;
+                    BindingHeal = 55;
+                    HolyLevel90Talent = 85;
+                    HolyWordSanctuary = 95;
+                    HolyWordSerenity = 85;
+                    CircleOfHealing = 90;
+                    PrayerOfHealing = 85;
+                    DivineHymn = 75;
+                    GuardianSpirit = 35;
+                    VoidShift = 15;
+                    CountHolyWordSanctuary = 3;
+                    CountLevel90Talent = 3;
+                    CountCircleOfHealing = 3;
+                    CountPrayerOfHealing = 3;
+                    CountDivineHymn = 4;
+                }
+                else if (ctx == Singular.HealingContext.Instances)
+                {
+                    Renew = 95;
+                    PrayerOfMending = 85;
+                    Heal = 90;
+                    GreaterHeal = 65;
+                    FlashHeal = 65;
+                    BindingHeal = 35;
+                    HolyLevel90Talent = 80;
+                    HolyWordSanctuary = 0;
+                    HolyWordSerenity = 85;
+                    CircleOfHealing = 93;
+                    PrayerOfHealing = 85;
+                    DivineHymn = 75;
+                    GuardianSpirit = 20;
+                    VoidShift = 19;
+                    CountHolyWordSanctuary = 3;
+                    CountLevel90Talent = 3;
+                    CountCircleOfHealing = 3;
+                    CountPrayerOfHealing = 3;
+                    CountDivineHymn = 4;
+                }
+                else if (ctx == Singular.HealingContext.Raids)
+                {
+                    PowerWordShield = 100;
+                    Renew = 95;
+                    PrayerOfMending = 94;
+                    Heal = 0;
+                    GreaterHeal = 40;
+                    FlashHeal = 20;
+                    BindingHeal = 30;
+                    HolyLevel90Talent = 80;
+                    HolyWordSanctuary = 92;
+                    HolyWordSerenity = 0;
+                    CircleOfHealing = 93;
+                    PrayerOfHealing = 85;
+                    DivineHymn = 75;
+                    GuardianSpirit = 20;
+                    VoidShift = 19;
+                    CountHolyWordSanctuary = 3;
+                    CountLevel90Talent = 4;
+                    CountCircleOfHealing = 4;
+                    CountPrayerOfHealing = 3;
+                    CountDivineHymn = 5;
+                }
+                // omit case for WoWContext.Normal and let it use DefaultValue() values
+            }
+
+            // adjust Flash Heal if we have not previously 
+            if (!FlashHealAdjusted && StyxWoW.Me.Level >= 34 && (ctx == HealingContext.Instances || ctx == HealingContext.Raids))
+            {
+                if (SavedToFile)
+                    Logger.Write(Color.White, "Flash Heal % changed from {0} to {1} for {2}.  Visit Class Config and Save to make permanent.", FlashHeal, GuardianSpirit + 1, ctx.ToString());
+
+                FlashHeal = GuardianSpirit + 1;
+                FlashHealAdjusted = true;
+            }
+
+            SavedToFile = true;
+        }
+
+        #region Saved Conversion State
+
+        [Setting]
+        [Browsable(false)]
+        [DefaultValue(false)]
+        public bool SavedToFile { get; set; }
+
+        [Setting]
+        [Browsable(false)]
+        [DefaultValue(false)]
+        public bool FlashHealAdjusted { get; set; }
+
+        #endregion
+
+        [Setting]
+        [DefaultValue(100)]
+        [Category("Health %")]
+        [DisplayName("% Power Word: Shield")]
+        [Description("Health % to cast this ability on Tanks. Set to 0 to disable.")]
+        public int PowerWordShield { get; set; }
+
+        [Setting]
+        [DefaultValue(95)]
+        [Category("Health %")]
+        [DisplayName("% Renew")]
+        [Description("Health % to cast this ability on Tanks. Set to 0 to disable.")]
+        public int Renew { get; set; }
+
+        [Setting]
+        [DefaultValue(94)]
+        [Category("Health %")]
+        [DisplayName("% Prayer of Mending")]
+        [Description("Health % to cast this ability on Tanks. Set to 0 to disable.")]
+        public int PrayerOfMending { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Health %")]
+        [DisplayName("% Heal")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Heal { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Health %")]
+        [DisplayName("% Greater Heal")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int GreaterHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(20)]
+        [Category("Health %")]
+        [DisplayName("% Flash Heal")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int FlashHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Health %")]
+        [DisplayName("% Binding Heal")]
+        [Description("Health % to cast this ability at.Set to 0 to disable.")]
+        public int BindingHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(75)]
+        [Category("Health %")]
+        [DisplayName("% Level 90 Talent")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HolyLevel90Talent { get; set; }
+
+        [Setting]
+        [DefaultValue(92)]
+        [Category("Health %")]
+        [DisplayName("% Holy Word: Sanctuary")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HolyWordSanctuary { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Health %")]
+        [DisplayName("% Holy Word: Serenity")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HolyWordSerenity { get; set; }
+
+        [Setting]
+        [DefaultValue(93)]
+        [Category("Health %")]
+        [DisplayName("% Circle of Healing")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int CircleOfHealing { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Health %")]
+        [DisplayName("% Prayer of Healing")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int PrayerOfHealing { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Health %")]
+        [DisplayName("% Divine Hymn")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int DivineHymn { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Health %")]
+        [DisplayName("% Guardian Spirit")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int GuardianSpirit { get; set; }
+
+        [Setting]
+        [DefaultValue(19)]
+        [Category("Health %")]
+        [DisplayName("% Void Shift")]
+        [Description("Caster health % or greater to allow this ability. Set to 0 to disable.")]
+        public int VoidShift { get; set; }
+
+        #region Counts
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Target Minimum")]
+        [DisplayName("Count Holy Word: Sanctuary")]
+        [Description("Min number of players below Holy Word: Sanctuary % in area")]
+        public int CountHolyWordSanctuary { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Target Minimum")]
+        [DisplayName("Count Level 90 Talent")]
+        [Description("Min number of players healed")]
+        public int CountLevel90Talent { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Target Minimum")]
+        [DisplayName("Count Circle of Healing")]
+        [Description("Min number of players healed")]
+        public int CountCircleOfHealing { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Target Minimum")]
+        [DisplayName("Count Prayer of Healing")]
+        [Description("Min number of players healed")]
+        public int CountPrayerOfHealing { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Target Minimum")]
+        [DisplayName("Count Divine Hymn")]
+        [Description("Min number of players healed")]
+        public int CountDivineHymn { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Target Minimum")]
+        [DisplayName("Count Prayer of Mending")]
+        [Description("Min number of players healed")]
+        public int CountPrayerOfMending { get; set; }
+
+        #endregion
+
+        /*
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Discipline")]
+        [DisplayName("% Penance")]
+        [Description("Power Word: Shield will be used at this value")]
+        public int Penance { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Discipline")]
+        [DisplayName("% Power Word: Shield")]
+        [Description("Power Word: Shield will be used at this value")]
+        public int PowerWordShield { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Discipline")]
+        [DisplayName("% Archangel")]
+        [Description("Power Word: Shield will be used at this value")]
+        public int Archangel { get; set; }
+        */
+    }
+
+    /*
+    internal class DiscPriestHealSettings : Singular.Settings.HealerSettings
+    {
+        private DiscPriestHealSettings()
+            : base("", HealingContext.None)
+        {
+        }
+
+        public DiscPriestHealSettings(HealingContext ctx)
+            : base("Priest-Discipline", ctx)
+        {
+
+            // we haven't created a settings file yet,
+            //  ..  so initialize values for various heal contexts
+
+            if (!SavedToFile)
+            {
+                if (ctx == Singular.HealingContext.Battlegrounds)
+                {
+                }
+                else if (ctx == Singular.HealingContext.Instances)
+                {
+                }
+                else if (ctx == Singular.HealingContext.Raids)
+                {
+                }
+                // omit case for WoWContext.Normal and let it use DefaultValue() values
+            }
+
+            SavedToFile = true;
+        }
+
+        [Setting]
+        [Browsable(false)]
+        [DefaultValue(false)]
+        public bool SavedToFile { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("% Renew")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Renew { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("% Prayer of Mending")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int PrayerOfMending { get; set; }
+
+        [Setting]
+        [DefaultValue(93)]
+        [Category("Healing")]
+        [DisplayName("% Heal")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Heal { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Healing")]
+        [DisplayName("% Greater Heal")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int GreaterHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(20)]
+        [Category("Healing")]
+        [DisplayName("% Flash Heal")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int FlashHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(90)]
+        [Category("Healing")]
+        [DisplayName("% Binding Heal")]
+        [Description("Health % to cast this ability at.Set to 0 to disable.")]
+        public int BindingHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("% Disc Word: Sanctuary")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int DiscWordSanctuary { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("% Disc Word: Serenity")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int DiscWordSerenity { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("% Circle of Healing")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int CircleOfHealing { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("% Prayer of Healing")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int PrayerOfHealing { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("% Divine Hymn")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int DivineHymn { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("% Guardian Spirit")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int GuardianSpirit { get; set; }
+
+        [Setting]
+        [DefaultValue(19)]
+        [Category("Healing")]
+        [DisplayName("% Void Shift")]
+        [Description("Caster health % or greater to allow this ability. Set to 0 to disable.")]
+        public int VoidShift { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("Count Disc Word: Sanctuary")]
+        [Description("Min number of players below Disc Word: Sanctuary % in area")]
+        public int CountDiscWordSanctuary { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Healing")]
+        [DisplayName("Count Prayer of Mending")]
+        [Description("Min number of players healed")]
+        public int CountPrayerOfMending { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("Count Cascade")]
+        [Description("Min number of players healed")]
+        public int CountCascade { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Healing")]
+        [DisplayName("Count Circle of Healing")]
+        [Description("Min number of players healed")]
+        public int CountCircleOfHealing { get; set; }
+
+        [Setting]
+        [DefaultValue(00)]
+        [Category("Healing")]
+        [DisplayName("Count Divine Hymn")]
+        [Description("Min number of players healed")]
+        public int CountDivineHymn { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Discipline")]
+        [DisplayName("% Penance")]
+        [Description("Power Word: Shield will be used at this value")]
+        public int Penance { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Discipline")]
+        [DisplayName("% Power Word: Shield")]
+        [Description("Power Word: Shield will be used at this value")]
+        public int PowerWordShield { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Discipline")]
+        [DisplayName("% Archangel")]
+        [Description("Power Word: Shield will be used at this value")]
+        public int Archangel { get; set; }
+
+    }
+    */
 }

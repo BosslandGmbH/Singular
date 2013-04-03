@@ -17,6 +17,10 @@ namespace Singular.ClassSpecific.Priest
 {
     public class Discipline
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
+        public static bool HasTalent(PriestTalents tal) { return TalentManager.IsSelected((int)tal); }
+
         [Behavior(BehaviorType.Rest,WoWClass.Priest,WoWSpec.PriestDiscipline)]
         public static Composite CreateDiscHealRest()
         {
@@ -87,13 +91,13 @@ namespace Singular.ClassSpecific.Priest
                         ),
 
                         // Mana check is for mana management. Don't mess with it
-                        Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().ShadowfiendMana && StyxWoW.Me.CurrentTarget.HealthPercent >= 20), 
+                        Common.CreateShadowfiendBehavior(),
 
                         // Cast Hymn of Hope if we are low on mana.
                         Spell.BuffSelf(
-                        "Hymn of Hope",
-                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().HymnofHopeMana
-                        ),
+                            "Hymn of Hope",
+                            ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Priest().HymnofHopeMana),
+
                         // use fade to drop aggro.
                         Spell.Cast("Fade", ret => (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && StyxWoW.Me.CurrentMap.IsInstance && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
                         Spell.Cast("Desperate Prayer", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 30),
@@ -140,7 +144,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast(
                             "Heal",
                             ret => (WoWUnit)ret, 
-                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().Heal),
+                            ret => ((WoWUnit)ret).HealthPercent < SingularSettings.Instance.Priest().HolyHealPercent),
                         Spell.Cast(
                             "Renew",
                             ret => (WoWUnit)ret, 
@@ -156,8 +160,7 @@ namespace Singular.ClassSpecific.Priest
                                 Movement.CreateMoveToLosBehavior(),
                                 Movement.CreateFaceTargetBehavior(),
                                 Helpers.Common.CreateInterruptBehavior(),
-                                Spell.Cast("Mindbender"),
-                                Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
+                                Common.CreateShadowfiendBehavior(),
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Cast("Penance"),
@@ -226,8 +229,7 @@ namespace Singular.ClassSpecific.Priest
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateDismount("Pulling"),
                     Helpers.Common.CreateInterruptBehavior(),
-                    Spell.Cast("Mindbender"),
-                    Spell.Cast("Shadowfiend", ret => StyxWoW.Me.ManaPercent < 50),
+                    Common.CreateShadowfiendBehavior(),
                     //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
                     Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                     Spell.Buff("Shadow Word: Pain", true),

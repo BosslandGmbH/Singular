@@ -75,11 +75,14 @@ namespace Singular.Managers
                     outgoingUnits.Add(StyxWoW.Me.Pet);
             }
 
-            if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsFriendly && !StyxWoW.Me.CurrentTarget.IsPet && !StyxWoW.Me.CurrentTarget.IsPlayer)
-                outgoingUnits.Add(StyxWoW.Me.CurrentTarget);
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+            {
+                if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.IsFriendly && !StyxWoW.Me.CurrentTarget.IsPlayer)
+                    outgoingUnits.Add(StyxWoW.Me.CurrentTarget);
 
-            if (StyxWoW.Me.FocusedUnit != null && StyxWoW.Me.FocusedUnit.IsFriendly && !StyxWoW.Me.FocusedUnit.IsPet && !StyxWoW.Me.FocusedUnit.IsPlayer)
-                outgoingUnits.Add(StyxWoW.Me.FocusedUnit);
+                if (StyxWoW.Me.FocusedUnit != null && StyxWoW.Me.FocusedUnit.IsFriendly && !StyxWoW.Me.FocusedUnit.IsPet && !StyxWoW.Me.FocusedUnit.IsPlayer)
+                    outgoingUnits.Add(StyxWoW.Me.FocusedUnit);
+            }
         }
 
         protected override void DefaultRemoveTargetsFilter(List<WoWObject> units)
@@ -158,7 +161,16 @@ namespace Singular.Managers
                 // The more health they have, the lower the score.
                 // This should give -500 for units at 100%
                 // And -50 for units at 10%
-                prio.Score -= u.HealthPercent * 5;
+                try
+                {
+                    prio.Score -= u.HealthPercent * 5;
+                }
+                catch
+                {
+                    prio.Score = -9999f;
+                    continue;
+                }
+
 
                 // If they're out of range, give them a bit lower score.
                 if (u.DistanceSqr > 40 * 40)
@@ -203,15 +215,26 @@ namespace Singular.Managers
         /// </summary>
         /// <param name="hotName">spell name of HoT</param>
         /// <returns>reference to target that needs the HoT</returns>
-        public static WoWUnit GetBestTankTargetForHOT( string hotName)
+        public static WoWUnit GetBestTankTargetForHOT( string hotName, float health = 100f)
         {
             WoWUnit hotTarget = null;
-            hotTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.DistanceSqr < 40 * 40 && !u.HasMyAura(hotName) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
+            hotTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.HealthPercent < health && u.DistanceSqr < 40 * 40 && !u.HasMyAura(hotName) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
             if (hotTarget != null)
-                Logger.WriteDebug("GetBestTankTargetForHOT('{0}'): found tank {1}, hasmyaura={2} with {3} ms left", hotName, hotTarget.SafeName(), hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft("Riptide").TotalMilliseconds);
+                Logger.WriteDebug("GetBestTankTargetForHOT('{0}'): found tank {1} @ {2:F1}%, hasmyaura={3} with {4} ms left", hotName, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft("Riptide").TotalMilliseconds);
             return hotTarget;
         }
 
+        public static WoWUnit GetBestTankTargetForPWS(float health = 100f)
+        {
+            WoWUnit hotTarget = null;
+            string hotName = "Power Word: Shield";
+            string hotDebuff = "Weakened Soul";
+
+            hotTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.HealthPercent < health && u.DistanceSqr < 40 * 40 && !u.HasAura(hotName) && !u.HasAura(hotDebuff) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
+            if (hotTarget != null)
+                Logger.WriteDebug("GetBestTankTargetForPWS('{0}'): found tank {1} @ {2:F1}%, hasmyaura={3} with {4} ms left", hotName, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft("Riptide").TotalMilliseconds);
+            return hotTarget;
+        }
     }
 
     class PrioritizedBehaviorList

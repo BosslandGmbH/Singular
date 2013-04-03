@@ -8,7 +8,7 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
-    internal class HealerSettings : Styx.Helpers.Settings
+    public class HealerSettings : Styx.Helpers.Settings
     {
         [Browsable(false)]
         public HealingContext Context { get; set; }

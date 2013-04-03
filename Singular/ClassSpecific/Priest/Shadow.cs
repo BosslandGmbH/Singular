@@ -40,37 +40,30 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateShadowHeal()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
+                Spell.Cast("Desperate Prayer", ret => Me, ret => Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
+
+                Spell.BuffSelf("Power Word: Shield", ret => (Me.HealthPercent < PriestSettings.ShieldHealthPercent || !Me.HasAura("Shadowform")) && !Me.HasAura("Weakened Soul")),
+
+                // keep heal buffs on if glyphed
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-
+                    ret => TalentManager.HasGlyph("Dark Binding") || !Me.HasAura("Shadowform"),
                     new PrioritySelector(
-                        Spell.Cast("Desperate Prayer", ret => Me, ret => Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
-
-                        Spell.BuffSelf("Power Word: Shield", ret => (Me.HealthPercent < PriestSettings.ShieldHealthPercent || !Me.HasAura("Shadowform")) && !Me.HasAura("Weakened Soul")),
-
-                        // keep heal buffs on if glyphed
-                        new Decorator(
-                            ret => TalentManager.HasGlyph("Dark Binding") || !Me.HasAura("Shadowform"),
-                            new PrioritySelector(
-                                Spell.BuffSelf("Prayer of Mending", ret => Me.HealthPercent <= 90),
-                                Spell.BuffSelf("Renew", ret => Me.HealthPercent <= 90)
-                                )
-                            ),
-
-                        Spell.Cast("Psychic Scream", ret => PriestSettings.UsePsychicScream
-                            && Me.HealthPercent <= PriestSettings.ShadowFlashHealHealth
-                            && (Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= PriestSettings.PsychicScreamAddCount || (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 8 )))),
-
-                        Spell.Cast("Flash Heal",
-                            ctx => Me,
-                            ret => Me.HealthPercent <= PriestSettings.ShadowFlashHealHealth),
-
-                        Spell.Cast("Flash Heal",
-                            ctx => Me,
-                            ret => !Me.Combat && Me.GetPredictedHealthPercent(true) <= 85)
+                        Spell.BuffSelf("Prayer of Mending", ret => Me.HealthPercent <= 90),
+                        Spell.BuffSelf("Renew", ret => Me.HealthPercent <= 90)
                         )
-                    )
+                    ),
+
+                Spell.Cast("Psychic Scream", ret => PriestSettings.UsePsychicScream
+                    && Me.HealthPercent <= PriestSettings.ShadowFlashHealHealth
+                    && (Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= PriestSettings.PsychicScreamAddCount || (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 8 )))),
+
+                Spell.Cast("Flash Heal",
+                    ctx => Me,
+                    ret => Me.HealthPercent <= PriestSettings.ShadowFlashHealHealth),
+
+                Spell.Cast("Flash Heal",
+                    ctx => Me,
+                    ret => !Me.Combat && Me.GetPredictedHealthPercent(true) <= 85)
                 );
         }
 
@@ -127,13 +120,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.BuffSelf("Shadowform"),
 
                         // Mana Management stuff - send in the fiends
-                        new Decorator(
-                            ret => Me.CurrentTarget.TimeToDeath() >= 15 || AoeTargets.Count() > 1,
-                            new PrioritySelector(
-                                Spell.Cast("Mindbender", ret => Me.ManaPercent <= PriestSettings.MindbenderMana ),
-                                Spell.Cast("Shadowfiend", ret => Me.ManaPercent <= PriestSettings.ShadowfiendMana  ) 
-                                )
-                            ),
+                        Common.CreateShadowfiendBehavior(),
 
                         // Defensive stuff
                         Spell.BuffSelf("Dispersion",
@@ -408,7 +395,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Power Infusion"),
                         Spell.Buff("Vampiric Touch", true, on => Me.CurrentTarget, req => true, 3),
                         Spell.Buff("Shadow Word: Pain", true, on => Me.CurrentTarget, req => true, 3),
-                        Spell.Cast("Shadowfiend", ret => Me.ManaPercent <= PriestSettings.ShadowfiendMana && Me.CurrentTarget.TimeToDeath() > 30), // Mana check is for mana management. Don't mess with it
+                        Common.CreateShadowfiendBehavior(),
                         Spell.Cast("Mind Flay", ret => Me.ManaPercent >= PriestSettings.MindFlayMana)
                         )
                     ),

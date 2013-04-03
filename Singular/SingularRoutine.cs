@@ -85,8 +85,14 @@ namespace Singular
         private ConfigurationForm _configForm;
         public override void OnButtonPress()
         {
-            if(_configForm == null || _configForm.IsDisposed || _configForm.Disposing)
+            if (_configForm == null || _configForm.IsDisposed || _configForm.Disposing)
+            {
                 _configForm = new ConfigurationForm();
+                _configForm.Height = SingularSettings.Instance.FormHeight;
+                _configForm.Width = SingularSettings.Instance.FormWidth;
+                TabControl tab = (TabControl) _configForm.Controls["tabControl1"];
+                tab.SelectedIndex = SingularSettings.Instance.FormTabIndex;
+            }
 
             _configForm.Show();
         }
@@ -160,6 +166,7 @@ namespace Singular
                     Logger.Write(Color.White, "Context changed, re-creating behaviors");
                     RebuildBehaviors();
                     Spell.GcdInitialize();
+                    Singular.Lists.BossList.Init();
                 };
             RoutineManager.Reloaded += (s, e) =>
                 {
@@ -184,6 +191,7 @@ namespace Singular
             MovementManager.Init();
             SoulstoneManager.Init();
             Dispelling.Init();
+            Singular.Lists.BossList.Init();
 
             //Logger.Write("Combat log event handler started.");
 

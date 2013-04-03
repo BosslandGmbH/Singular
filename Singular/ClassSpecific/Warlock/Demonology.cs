@@ -57,7 +57,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateWarlockDiagnosticOutputBehavior(),
 
-                        // Helpers.Common.CreateAutoAttack(true),
+                        Helpers.Common.CreateAutoAttack(true),
                         new Decorator(
                             ret => Me.GotAlivePet && Me.GotTarget && Me.Pet.CurrentTarget != Me.CurrentTarget,
                             new Action( ret => {
@@ -217,7 +217,7 @@ namespace Singular.ClassSpecific.Warlock
             if ( Me.CurrentTarget.Elite && (Me.CurrentTarget.Level + 10) >= Me.Level )
                 return true;
 
-            return Me.CurrentTarget.TimeToDeath() > 30;
+            return Me.CurrentTarget.TimeToDeath() > 45;
         }
 
         private static bool NeedToCancelMetamorphosis()

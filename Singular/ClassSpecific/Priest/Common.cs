@@ -15,6 +15,7 @@ using CommonBehaviors.Actions;
 
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
+using Styx.Helpers;
 
 namespace Singular.ClassSpecific.Priest
 {
@@ -241,6 +242,15 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
+        public static Composite CreateShadowfiendBehavior()
+        {
+            return Spell.Cast("Shadowfiend",
+                ret => Me.ManaPercent < PriestSettings.ShadowfiendMana
+                    && Me.GotTarget
+                    && Unit.ValidUnit(Me.CurrentTarget)
+                    && Me.CurrentTarget.TimeToDeath() > 15
+                );
+        }
 
     }
 

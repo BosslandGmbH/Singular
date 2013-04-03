@@ -74,7 +74,7 @@ namespace Singular
     }
 
     [Flags]
-    enum HealingContext
+    public enum HealingContext
     {
         None = 0,
         Normal = 0x1,

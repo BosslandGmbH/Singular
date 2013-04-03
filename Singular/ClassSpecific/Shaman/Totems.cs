@@ -135,6 +135,9 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.BuffSelf("Mana Tide Totem",
                             ret =>
                             {
+                                if (Me.Specialization != WoWSpec.ShamanRestoration)
+                                    return false;
+
                                 Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
                                 if (Me.ManaPercent > ShamanSettings.ManaTideTotemPercent )
                                     return false;
@@ -223,6 +226,9 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.BuffSelf("Mana Tide Totem",
                             ret =>
                             {
+                                if (Me.Specialization != WoWSpec.ShamanRestoration)
+                                    return false;
+
                                 Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
                                 if (Me.ManaPercent > ShamanSettings.ManaTideTotemPercent)
                                     return false;

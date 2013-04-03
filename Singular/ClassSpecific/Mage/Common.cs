@@ -98,7 +98,7 @@ namespace Singular.ClassSpecific.Mage
                             ),
 
                         new Decorator(
-                            ctx => ShouldSummonTable && !Gotfood && SpellManager.CanCast("Conjure Refreshment Table"),
+                            ctx => ShouldSummonTable && (!Gotfood || NeedTableForBattleground) && SpellManager.CanCast("Conjure Refreshment Table"),
                             new Sequence(
                                 new DecoratorContinue(
                                     ctx => StyxWoW.Me.IsMoving,
@@ -208,7 +208,7 @@ namespace Singular.ClassSpecific.Mage
 
                 Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
-                new Throttle( TimeSpan.FromMilliseconds(10000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => true, false) ),
+                new Throttle( TimeSpan.FromMilliseconds(10000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => !Me.HasAura("Rune of Power"), false) ),
 
                 //  Spell.CastOnGround("Rune of Power", loc => Me.Location.RayCast(Me.RenderFacing, 1.25f), ret => !Me.IsMoving),
 
@@ -452,6 +452,32 @@ namespace Singular.ClassSpecific.Mage
         public static bool HasTalent( MageTalents tal)
         {
             return TalentManager.IsSelected((int)tal);
+        }
+
+        private static int _secsBeforeBattle = 0;
+
+        public static int secsBeforeBattle
+        {
+            get
+            {
+                if (_secsBeforeBattle == 0)
+                    _secsBeforeBattle = new Random().Next(30, 60);
+
+                return _secsBeforeBattle;
+            }
+
+            set
+            {
+                _secsBeforeBattle = value;
+            }
+        }
+
+        public static bool NeedTableForBattleground 
+        {
+            get
+            {
+                return SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && PVP.PrepTimeLeft < secsBeforeBattle && Me.HasAnyAura("Preparation", "Arena Preparation");
+            }
         }
     }
 

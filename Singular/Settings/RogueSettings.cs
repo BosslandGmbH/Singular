@@ -45,6 +45,20 @@ namespace Singular.Settings
 
 
         [Setting]
+        [DefaultValue(2)]
+        [Category("Common")]
+        [DisplayName("Fan of Knives Count")]
+        [Description("Use FoK as Combo Point builder at this enemy count")]
+        public int FanOfKnivesCount { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Common")]
+        [DisplayName("AOE Spell Priority Count")]
+        [Description("Use AOE Spell Priorities at this enemy count")]
+        public int AoeSpellPriorityCount { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Interrupt Spells")]

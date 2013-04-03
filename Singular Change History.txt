@@ -1,3 +1,87 @@
+--- Release 3.0.0.2150 ---
+
+General
+
+*new* - Extensive rewrite to Holy Priest support.  See the Priest section for info.
+
+change- Class Config form (settings GUI) now dynamically sizes.  The size of the form and the current tab displayed is remembered.
+
+*new* - Solo Pet Tanking.  While solo, classes with a Pet will send that pet to agro targets attacking the player, as long as the pets current target is not the player.  This will increase survivability in multi-mob fights especially at lower levels.  A setting in Class Config named Solo Pet Tanking can be set to false if you prefer the Pet remain on your current target.  This applies to solo (questing/grinding) only.  In PVP and Instances, the Pet will always attack players current target.
+
+fixed - problem with list of Bosses not initiliazing
+
+change- Singular no longer prevents Combat or other behaviors when on transports.  This was interfering with some DungeonBuddy scripts.  The primary place this would be needed is during questing and that should now be handled by Quest Behaviors if needed
+
+change- Heal settings are output to long once per context change.  previously output for each behavior which referenced them creating setting spam in log in some cases.  Currently only noticeable with Shaman and Holy Priests
+
+change- Auto Attack started only for Melee classes/specs.  This has been requested numerous times, so if you encounter any issues be certain to attach a complete debug log with your post
+
+fixed - Targeting. Singular does not target often, but will validate the current target and switch if the Bot indicates it should.  Some minor refinements as well as a bug fix for some cases where Questing bot had a BotPOI that was different than the Targeting.FirstUnit it prioritized
+
+fixed - workaround for some issues where HonorBuddy SpellManager.canCast() was indicating false for certain spells.
+
+fixed - Evade mobs issue (character stops fighting back.)  Mobs in WOW have begin having single Evade spell misses without being evade bugged, causing issues with Combat Routines that check for Evade bugged mobs.  Singular will now require a minimum number of evade misses on the same NPC before it will be treated as evade bugged.
+
+
+Hunter
+
+change- All Specs - Misdirection will only be cast as part of Pull Buffs in Instances.  If the BotBase in use does not call the Pull Buffs behavior (Raidbot for example) you will need to cast Misdirection manually if needed or request a change to the BotBase.
+
+fixed - All Specs - Revive Pet should now work.  Additional logging added in this area, so be sure to attach a complete log file if you continue to have a problem
+
+*new* - All Specs - support for Heart of the Phoenix as instant Revive for Tenacity Pets
+
+*new* - All Specs - support for Bullheaded and Last Stand pet abilities
+
+change- All Specs - will no longer cast stun or slow abilities prior to Disengage if the Narrow Escape talent is taken (since that does it for you.)
+
+
+Shaman
+
+change- Elemental - additional log info to help identify issue where character stops fighting 
+
+
+Mage
+
+*new* - All Specs - should now summon refreshment table during last 15 seconds of Battleground Preparation phase (prior to start.) Previously only summoned table if the Mage needed food.
+
+
+Monk
+
+fixed - Mistweaver - should now remain in Stance of Wise Serpent at all times
+
+change- Mistweaver - will consume Mana Tea during combat in all contexts.  Previously was only during Rest
+
+
+Paladin
+
+change- Retribution - in Normal and Battleground contexts, will cast Guardian of Ancient Kings if 4 or more mobs or current target will live more than 30 seconds.  Previously only cast for AOE situations
+
+
+Priest
+
+*new* - Holy - rewrite of Instance and Raid healing logic
+
+*new* - Holy - heal settings now appear on the Group Healing tab of Class Config.  Separate values for each healing context are kept (Battlegrounds, Instances, and Raids)
+
+change- All Specs - Shadowfiend and Mindbender now share the same mana % setting in Class Config.  Default increased from 50% to 75% and is only cast if current target expected to live longer than 15 seconds
+
+
+Rogue
+
+*new* - All Specs - added setting Fan of Knives Count to allow user to control number of mobs required for FoK to cast
+
+fixed - Combat - when Blade Flurry is active will favor using Eviscerate over Rupture as finisher
+
+*new* - All Specs - support for Shadow Blades
+
+
+Warlock
+
+fixed - Demonology - Doom check for target life expectancy increased from 30 seconds to 45, as on machines with lag we were still casting Doom on characters it would never tick on
+
+
+
 --- Release 3.0.0.2076 ---
 
 General

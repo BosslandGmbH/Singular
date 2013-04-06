@@ -215,7 +215,7 @@ namespace Singular
 
             _pullBehavior = new LockSelector(
                 new Decorator(
-                    ret => AllowBehaviorUsage() && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
+                    ret => AllowBehaviorUsage(), // && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
                     new PrioritySelector(
                         new Decorator(
                             ret => !HotkeyDirector.IsCombatEnabled,
@@ -233,7 +233,7 @@ namespace Singular
 
             _combatBehavior = new LockSelector(
                 new Decorator(
-                    ret => AllowBehaviorUsage() && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
+                    ret => AllowBehaviorUsage(), // && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
                     new PrioritySelector(
                         new Decorator(
                             ret => !HotkeyDirector.IsCombatEnabled,

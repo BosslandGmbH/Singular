@@ -1,3 +1,10 @@
+--- Release 3.0.0.2187 ---
+
+General
+
+fixed - check code preventing combat with blacklisted mob attacking player
+
+
 --- Release 3.0.0.2182 ---
 
 General

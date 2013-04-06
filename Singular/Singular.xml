@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>04/03/2013 01:26:50</ScanTime>
+  <ScanTime>04/06/2013 00:28:35</ScanTime>
   <FileList>
     <File Hash="25940" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="21291" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -8,14 +8,14 @@
     <File Hash="2715" Name="ClassSpecific\DeathKnight\Lowbie.cs" />
     <File Hash="17734" Name="ClassSpecific\DeathKnight\Unholy.cs" />
     <File Hash="38977" Name="ClassSpecific\Druid\Balance.cs" />
-    <File Hash="32565" Name="ClassSpecific\Druid\Common.cs" />
+    <File Hash="32773" Name="ClassSpecific\Druid\Common.cs" />
     <File Hash="34582" Name="ClassSpecific\Druid\Feral.cs" />
     <File Hash="7276" Name="ClassSpecific\Druid\Guardian.cs" />
     <File Hash="2397" Name="ClassSpecific\Druid\Lowbie.cs" />
     <File Hash="12788" Name="ClassSpecific\Druid\Resto.cs" />
     <File Hash="7093" Name="ClassSpecific\Generic.cs" />
     <File Hash="9929" Name="ClassSpecific\Hunter\BeastMaster.cs" />
-    <File Hash="42472" Name="ClassSpecific\Hunter\Common.cs" />
+    <File Hash="42465" Name="ClassSpecific\Hunter\Common.cs" />
     <File Hash="1908" Name="ClassSpecific\Hunter\Lowbie.cs" />
     <File Hash="10459" Name="ClassSpecific\Hunter\Marksman.cs" />
     <File Hash="9645" Name="ClassSpecific\Hunter\Survival.cs" />
@@ -24,7 +24,7 @@
     <File Hash="17010" Name="ClassSpecific\Mage\Fire.cs" />
     <File Hash="23156" Name="ClassSpecific\Mage\Frost.cs" />
     <File Hash="1530" Name="ClassSpecific\Mage\Lowbie.cs" />
-    <File Hash="12358" Name="ClassSpecific\Monk\Brewmaster.cs" />
+    <File Hash="12748" Name="ClassSpecific\Monk\Brewmaster.cs" />
     <File Hash="17886" Name="ClassSpecific\Monk\Common.cs" />
     <File Hash="1598" Name="ClassSpecific\Monk\Lowbie.cs" />
     <File Hash="12413" Name="ClassSpecific\Monk\Mistweaver.cs" />
@@ -33,15 +33,15 @@
     <File Hash="11822" Name="ClassSpecific\Paladin\Holy.cs" />
     <File Hash="2481" Name="ClassSpecific\Paladin\Lowbie.cs" />
     <File Hash="12732" Name="ClassSpecific\Paladin\Protection.cs" />
-    <File Hash="18180" Name="ClassSpecific\Paladin\Retribution.cs" />
-    <File Hash="12603" Name="ClassSpecific\Priest\Common.cs" />
+    <File Hash="18935" Name="ClassSpecific\Paladin\Retribution.cs" />
+    <File Hash="12652" Name="ClassSpecific\Priest\Common.cs" />
     <File Hash="14010" Name="ClassSpecific\Priest\Discipline.cs" />
     <File Hash="41697" Name="ClassSpecific\Priest\Holy.cs" />
     <File Hash="1197" Name="ClassSpecific\Priest\Lowbie.cs" />
-    <File Hash="25925" Name="ClassSpecific\Priest\Shadow.cs" />
+    <File Hash="26019" Name="ClassSpecific\Priest\Shadow.cs" />
     <File Hash="11722" Name="ClassSpecific\Rogue\Assassination.cs" />
     <File Hash="12299" Name="ClassSpecific\Rogue\Combat.cs" />
-    <File Hash="27486" Name="ClassSpecific\Rogue\Common.cs" />
+    <File Hash="27614" Name="ClassSpecific\Rogue\Common.cs" />
     <File Hash="1816" Name="ClassSpecific\Rogue\Lowbie.cs" />
     <File Hash="3603" Name="ClassSpecific\Rogue\Poisons.cs" />
     <File Hash="11723" Name="ClassSpecific\Rogue\Subtlety.cs" />
@@ -62,29 +62,29 @@
     <File Hash="2840" Name="ClassSpecific\Warrior\Lowbie.cs" />
     <File Hash="15393" Name="ClassSpecific\Warrior\Protection.cs" />
     <File Hash="1275" Name="Dynamics\Attributes.cs" />
-    <File Hash="5088" Name="Dynamics\CompositeBuilder.cs" />
+    <File Hash="5095" Name="Dynamics\CompositeBuilder.cs" />
     <File Hash="837" Name="Dynamics\SessionState.cs" />
-    <File Hash="4431" Name="Extensions.cs" />
-    <File Hash="11172" Name="GUI\ConfigurationForm.cs" />
-    <File Hash="19617" Name="GUI\ConfigurationForm.Designer.cs" />
+    <File Hash="5194" Name="Extensions.cs" />
+    <File Hash="12904" Name="GUI\ConfigurationForm.cs" />
+    <File Hash="22324" Name="GUI\ConfigurationForm.Designer.cs" />
     <File Hash="6336" Name="Helpers\Clusters.cs" />
     <File Hash="20379" Name="Helpers\Common.cs" />
     <File Hash="8560" Name="Helpers\Dispelling.cs" />
     <File Hash="3653" Name="Helpers\Group.cs" />
     <File Hash="25186" Name="Helpers\Item.cs" />
     <File Hash="63565" Name="Helpers\Kite.cs" />
-    <File Hash="21727" Name="Helpers\Movement.cs" />
+    <File Hash="21723" Name="Helpers\Movement.cs" />
     <File Hash="15802" Name="Helpers\Party.cs" />
     <File Hash="7976" Name="Helpers\Pet.cs" />
     <File Hash="4327" Name="Helpers\PVP.cs" />
     <File Hash="11683" Name="Helpers\Rest.cs" />
-    <File Hash="19478" Name="Helpers\Safers.cs" />
-    <File Hash="79938" Name="Helpers\Spell.cs" />
+    <File Hash="21338" Name="Helpers\Safers.cs" />
+    <File Hash="80183" Name="Helpers\Spell.cs" />
     <File Hash="11700" Name="Helpers\Throttle.cs" />
     <File Hash="35715" Name="Helpers\Unit.cs" />
     <File Hash="53488" Name="Lists\BossList.cs" />
     <File Hash="1407" Name="Lists\CataHeroicDpsList.cs" />
-    <File Hash="11593" Name="Managers\HealerManager.cs" />
+    <File Hash="12379" Name="Managers\HealerManager.cs" />
     <File Hash="15004" Name="Managers\HotkeyManager.cs" />
     <File Hash="2021" Name="Managers\MountManager.cs" />
     <File Hash="7829" Name="Managers\MovementManager.cs" />
@@ -94,7 +94,7 @@
     <File Hash="3723" Name="Managers\TalentManager.cs" />
     <File Hash="4461" Name="Managers\TankManager.cs" />
     <File Hash="6666" Name="Settings\DeathKnightSettings.cs" />
-    <File Hash="17726" Name="Settings\DruidSettings.cs" />
+    <File Hash="17732" Name="Settings\DruidSettings.cs" />
     <File Hash="1021" Name="Settings\HealerSettings.cs" />
     <File Hash="3194" Name="Settings\HotkeySettings.cs" />
     <File Hash="2176" Name="Settings\HunterSettings.cs" />
@@ -104,17 +104,17 @@
     <File Hash="32758" Name="Settings\PriestSettings.cs" />
     <File Hash="3543" Name="Settings\RogueSettings.cs" />
     <File Hash="12596" Name="Settings\ShamanSettings.cs" />
-    <File Hash="18717" Name="Settings\SingularSettings.cs" />
+    <File Hash="19147" Name="Settings\SingularSettings.cs" />
     <File Hash="3427" Name="Settings\WarlockSettings.cs" />
     <File Hash="4227" Name="Settings\WarriorSettings.cs" />
-    <File Hash="18049" Name="SingularRoutine.Behaviors.cs" />
+    <File Hash="18782" Name="SingularRoutine.Behaviors.cs" />
     <File Hash="2036" Name="SingularRoutine.BotEvents.cs" />
     <File Hash="9858" Name="SingularRoutine.Context.cs" />
-    <File Hash="12900" Name="SingularRoutine.cs" />
+    <File Hash="14673" Name="SingularRoutine.cs" />
     <File Hash="2587" Name="SingularRoutine.Version.cs" />
     <File Hash="2800" Name="Utilities\CombatLog.cs" />
     <File Hash="1919" Name="Utilities\Enumeration.cs" />
-    <File Hash="13938" Name="Utilities\EventHandlers.cs" />
+    <File Hash="14647" Name="Utilities\EventHandlers.cs" />
     <File Hash="3576" Name="Utilities\FileModCheck.cs" />
     <File Hash="6002" Name="Utilities\Logger.cs" />
   </FileList>

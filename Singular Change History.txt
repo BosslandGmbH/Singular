@@ -1,3 +1,52 @@
+--- Release 3.0.0.2182 ---
+
+General
+
+*new* - GUI - Debug tab now has Targetlist visible for seeing the list of targets from the BotBase
+
+fixed - GUI - setting descriptions were not being displayed
+
+*new* - GUI - added LOGMARK button.  Uses can click this to output a distinctive entry to the log file making it easy to reference when something happened if you need to post an issue
+
+fixed - Targeting - several issues associated with validating and selecting a new target quickly while in combat
+
+
+Druid
+
+*new* - Feral - now casts Survival Instincts based upon config setting
+
+
+Hunter
+
+fixed - All Specs - was not casting Misdirection on pet when solo
+
+
+Monk
+
+*new* - Brewmaster - now casts Touch of Death in all contexts if able
+
+
+Paladin
+
+fixed - Retribution - bug causing Paladin to stop fighting when Bloodlust, Heroism, Ancient Hysteria, or Time Warp is cast in an instance.
+
+
+Priest
+
+change- All Specs - avoidance behavior also enabled when fighting player in any context
+
+change- Shadow - Psychic Scream also cast when fighting player in any context
+
+fixed - Shadow - Vampiric Embrace now references correct target in estimating time to death.  previously would always cast if player health < 65%
+
+
+Rogue
+
+fixed - All Specs - Redirect was in some circumstances (mostly PVP) being cast upon player that already had combo pts, resulting in an fail cast error message spam fest.
+
+change- All Specs - AOE abilities disabled in Battlegrounds and Arena.  will use single target abilities only
+
+
 --- Release 3.0.0.2150 ---
 
 General
@@ -80,6 +129,7 @@ Warlock
 
 fixed - Demonology - Doom check for target life expectancy increased from 30 seconds to 45, as on machines with lag we were still casting Doom on characters it would never tick on
 
+fixed - All Specs - Pet summoning logic should be smoother. Will now wait slightly longer after Dismount, will summon more quickly if dies during Combat, and will cancel a summon in progress if live pet appears during Summon Pet cast
 
 
 --- Release 3.0.0.2076 ---

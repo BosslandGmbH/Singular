@@ -25,6 +25,24 @@ namespace Singular
             return value >= min && value <= max;
         }
 
+        public static string AlignLeft(this string s, int width)
+        {
+            int len = s.Length;
+            if (len >= width)
+                return s.Substring(0, width);
+
+            return s + ("                                                                                                                          ".Substring(0, width - len));
+        }
+
+        public static string AlignRight(this string s, int width)
+        {
+            int len = s.Length;
+            if (len >= width)
+                return s.Substring(0, width);
+
+            return ("                                                                                                                          ".Substring(0, width - len)) + s;
+        }
+
         /// <summary>
         ///   A string extension method that turns a Camel-case string into a spaced string. (Example: SomeCamelString -> Some Camel String)
         /// </summary>

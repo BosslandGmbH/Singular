@@ -189,6 +189,9 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
 
+                // defensive check first
+                Spell.BuffSelf("Survival Instincts", ret => Me.Specialization == WoWSpec.DruidFeral && Me.HealthPercent < DruidSettings.SurvivalInstinctsHealth ),
+
                 // keep rejuv up 
                 Spell.Cast("Rejuvenation", on => Me, 
                     ret => Me.GetPredictedHealthPercent(true) < 95

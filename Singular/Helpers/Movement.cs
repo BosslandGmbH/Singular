@@ -107,7 +107,7 @@ namespace Singular.Helpers
                     && StyxWoW.Me.IsMoving
                     && (onUnit(ret) == null || (InLineOfSpellSight(onUnit(ret)) && onUnit(ret).Distance < range)),
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug("EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("{0:F1} yds target distance less than {1:F1}", onUnit(ret).Distance, range))),
+                    new Action(ret => Logger.WriteDebug("EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range))),
                     new Action(ret => Navigator.PlayerMover.MoveStop())
                     )
                 );

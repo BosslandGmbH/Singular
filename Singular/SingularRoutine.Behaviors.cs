@@ -19,6 +19,7 @@ using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
 using Styx.Helpers;
 using Styx.WoWInternals;
+using Styx.Common.Helpers;
 
 namespace Singular
 {
@@ -39,6 +40,9 @@ namespace Singular
         public override Composite PullBehavior { get { return _pullBehavior; } }
         public override Composite PullBuffBehavior { get { return _pullBuffsBehavior; } }
         public override Composite RestBehavior { get { return _restBehavior; } }
+
+        private static ulong _guidLastTarget = 0;
+        private static WaitTimer _timerLastTarget = new WaitTimer(TimeSpan.FromSeconds(5));
 
         public bool RebuildBehaviors(bool silent = false)
         {
@@ -155,7 +159,7 @@ namespace Singular
                 new Decorator(
                     ret => !Me.IsFlying && AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                     new PrioritySelector(
-                        new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
+                        // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
                         Spell.WaitForGcdOrCastOrChannel(),
                         _lostControlBehavior,
                         new HookExecutor(BehaviorType.Rest.ToString())
@@ -221,7 +225,7 @@ namespace Singular
 #if BOTS_NOT_CALLING_PULLBUFFS
                         _pullBuffsBehavior,
 #endif
- CreateLogTargetChanges("<<< PULL >>>"),
+                        CreateLogTargetChanges("<<< PULL >>>"),
                         new HookExecutor(BehaviorType.Pull.ToString())
                         )
                     )
@@ -312,8 +316,16 @@ namespace Singular
                         }
                         else
                         {
+                            string info = "";
                             WoWUnit target = Me.CurrentTarget;
-                            Logger.WriteDebug(sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, faction={7}, loss={8}, facing={9}",
+
+                            if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
+                                info += string.Format(", IsBotPoi={0}", Styx.CommonBot.POI.BotPoi.Current.Type);
+
+                            if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
+                                info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
+
+                            Logger.WriteDebug(sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, faction={7}, loss={8}, facing={9}" + info,
                                 target.SafeName(),
                                 target.HealthPercent,
                                 target.MaxHealth,
@@ -321,7 +333,7 @@ namespace Singular
                                 target.CombatReach,
                                 target.IsPlayer.ToYN(),
                                 target.IsHostile.ToYN(),
-                                target.Faction,
+                                target.FactionId ,
                                 target.InLineOfSpellSight.ToYN(),
                                 Me.IsSafelyFacing(target).ToYN()
                                 );

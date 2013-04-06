@@ -131,6 +131,12 @@ namespace Singular.Settings
                 LogSettings("Priest.Holy.Heal.Instance", Priest().HolyInstance);
                 LogSettings("Priest.Holy.Heal.Raid", Priest().HolyRaid);
             }
+
+            Logger.WriteFile("====== Evaluated/Dynamic Settings ======");
+            Logger.WriteFile("  {0}: {1}", "Debug", SingularSettings.Debug.ToYN());
+            Logger.WriteFile("  {0}: {1}", "DisableAllMovement", SingularSettings.Instance.DisableAllMovement.ToYN());
+            Logger.WriteFile("  {0}: {1}", "DisableAllTargeting", SingularSettings.DisableAllTargeting.ToYN());
+            Logger.WriteFile("");
         }
 
         public void LogSettings(string desc, Styx.Helpers.Settings set)

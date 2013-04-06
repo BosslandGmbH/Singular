@@ -116,7 +116,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Recuperate", 
                     on => Me,
                     ret => StyxWoW.Me.RawComboPoints > 0 
-                        && !SpellManager.HasSpell( "Redirect")
+                        && (!SpellManager.HasSpell( "Redirect") || Spell.IsSpellOnCooldown("Redirect"))
                         && Me.HasAuraExpired("Recuperate", 3 + Me.RawComboPoints * 6))
                 );
         }
@@ -131,7 +131,7 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
                         // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
                         CreateStealthBehavior( ret => !IsStealthed && Me.GotTarget && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral ? 8 : 99 )),
-                        Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0),
+                        Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0 && Me.ComboPointsTarget != Me.CurrentTargetGuid ),
                         Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
                         // Throttle Shadowstep because cast can fail with no message
                         new Throttle( 2, Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 12)),
@@ -333,7 +333,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new Action(ret =>
             {
-                if (!Spell.UseAOE || Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.IsCrowdControlled()))
+                if (!Spell.UseAOE || Battlegrounds.IsInsideBattleground || Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.IsCrowdControlled()))
                     AoeCount = 1;
                 else
                     AoeCount = Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 3));

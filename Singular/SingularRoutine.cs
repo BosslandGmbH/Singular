@@ -97,9 +97,6 @@ namespace Singular
             _configForm.Show();
         }
 
-        private static ulong _guidLastTarget = 0;
-        private static WaitTimer _timerLastTarget = new WaitTimer(TimeSpan.FromSeconds(5));
-
         public override void Pulse()
         {
             // No pulsing if we're loading or out of the game.
@@ -114,6 +111,9 @@ namespace Singular
 
             // Double cast shit
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow > t);
+
+            // Output if Target changed 
+            CheckCurrentTarget();
 
             //Only pulse for classes with pets
             switch (StyxWoW.Me.Class)
@@ -137,6 +137,48 @@ namespace Singular
             }
 
             HotkeyDirector.Pulse();
+        }
+
+        private static ulong _lastCheckGuid = 0;
+
+        private void CheckCurrentTarget()
+        {
+            if ((!SingularSettings.Debug || Me.CurrentTargetGuid == _lastCheckGuid))
+                return;
+
+            if (Me.CurrentTarget == null)
+            {
+                Logger.WriteDebug("CheckCurrentTarget: changed to: (null)");
+                _lastCheckGuid = 0;
+            }
+            else
+            {
+                WoWUnit target = Me.CurrentTarget;
+                _lastCheckGuid = Me.CurrentTarget.Guid;
+
+                string info = "";
+                if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
+                    info += string.Format(", IsBotPoi={0}", Styx.CommonBot.POI.BotPoi.Current.Type);
+
+                if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
+                    info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
+
+                Logger.WriteDebug("CheckCurrentTarget: changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, entry={7}, faction={8}, loss={9}, facing={10}, blacklist={11}" + info,
+                    target.SafeName(),
+                    target.HealthPercent,
+                    target.MaxHealth,
+                    target.Distance,
+                    target.CombatReach,
+                    target.IsPlayer.ToYN(),
+                    target.IsHostile.ToYN(),
+                    target.Entry,
+                    target.FactionId,
+                    target.InLineOfSpellSight.ToYN(),
+                    Me.IsSafelyFacing(target).ToYN(),
+                    Blacklist.Contains(target.Guid, BlacklistFlags.Combat).ToYN()
+                    );
+
+            }
         }
 
         public override void Initialize()

@@ -105,6 +105,10 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
+
+                // execute if we can
+                Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
+
                 // make sure I have aggro.
                 Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
                 Spell.Cast("Keg Smash", ctx => Me.CurrentChi < 4 && Unit.NearbyUnitsInCombatWithMe.Any(u => u.DistanceSqr <= 8 * 8)),
@@ -113,6 +117,7 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
                 Spell.Cast("Jab"),
                 TryCastClashBehavior(),
+
                 //Only roll to get to the mob quicker. 
                 Spell.Cast("Roll",
                     ret => MovementManager.IsClassMovementAllowed
@@ -130,6 +135,7 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
+                Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
                 Spell.Cast("Jab"),
@@ -155,6 +161,9 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
+
+                // Execute if we can
+                Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
                 // make sure I have aggro.
                 Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),

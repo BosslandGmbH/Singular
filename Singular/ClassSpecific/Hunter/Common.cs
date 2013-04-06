@@ -607,7 +607,7 @@ namespace Singular.ClassSpecific.Hunter
                     new Decorator( 
                         ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal && !Me.HasAura("Misdirection"),
                         new Sequence(
-                            Spell.Cast("Misdirection", ctx => (WoWUnit) ctx, req => Me.GotAlivePet && Pet.Distance < 100),
+                            Spell.Cast("Misdirection", ctx => Me.Pet, req => Me.GotAlivePet && Pet.Distance < 100),
                             new ActionAlwaysFail()  // not on the GCD, so continue immediately
                             )
                         )

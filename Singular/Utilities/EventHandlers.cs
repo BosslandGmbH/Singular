@@ -254,21 +254,28 @@ namespace Singular.Utilities
                 MobsThatEvaded[unit.Guid]++;
                 if (MobsThatEvaded[unit.Guid] <= 5)
                 {
-                    Logger.Write("Mob {0} has evaded {1} time.  Keeping an eye on {2:X0} for now!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid);
+                    Logger.Write("Mob {0} has evaded {1} times.  Keeping an eye on {2:X0} for now!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid);
                 }
                 else
                 {
-                    Logger.Write("Mob {0} has evaded {1} times. Blacklisting {2:X0}!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid);
-                    Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(30));
+                    const int MinutesToBlacklist = 5;
 
-                    if (!Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
+                    if (Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
+                        Logger.Write(Color.LightGoldenrodYellow, "Mob {0} has evaded {1} times. Previously blacklisted {2:X0} for {3} minutes!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid, MinutesToBlacklist);
+                    else
                     {
-                        Logger.Write(Color.Pink, "error: blacklist does not contain entry for {0} just added {1}", unit.SafeName(), unit.Guid);
+                        Logger.Write(Color.LightGoldenrodYellow, "Mob {0} has evaded {1} times. Blacklisting {2:X0} for {3} minutes!", unit.SafeName(), MobsThatEvaded[unit.Guid], unit.Guid, MinutesToBlacklist);
+                        Blacklist.Add(unit.Guid, BlacklistFlags.Combat, TimeSpan.FromMinutes(MinutesToBlacklist));
+                        if (!Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
+                        {
+                            Logger.Write(Color.Pink, "error: blacklist does not contain entry for {0} so adding {1}", unit.SafeName(), unit.Guid);
+                        }
                     }
 
                     if (BotPoi.Current.Guid == unit.Guid)
                     {
-                        BotPoi.Clear("Blacklisted evading mob");
+                        Logger.WriteDebug("EvadeHandling: Current BotPOI type={0} is Evading, clearing now...", BotPoi.Current.Type);
+                        BotPoi.Clear("Singular recognized Evade bugged mob");
                     }
 
                     if (StyxWoW.Me.CurrentTargetGuid == guid)
@@ -283,8 +290,8 @@ namespace Singular.Utilities
                             }
                         }
 
-                        Logger.Write(Color.Pink, "Bot not targeting other mobs nearby -- simply clearing evade target");
-                        StyxWoW.Me.ClearTarget();
+                        Logger.Write(Color.Pink, "BotBase has 0 entries in Target list not blacklisted -- nothing else we can do at this point!");
+                        // StyxWoW.Me.ClearTarget();
                     }
                 }
 

@@ -153,10 +153,23 @@ namespace Singular.GUI
                 return;
             }
 
+            int i = 0;
             var sb = new StringBuilder();
+            foreach (WoWUnit u in Targeting.Instance.TargetList)
+            {
+                sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
+                if (++i == 5)
+                    break;
+            }
+            lblTargets.Text = sb.ToString();
+
+            i = 0;
+            sb = new StringBuilder();
             foreach (WoWUnit u in HealerManager.Instance.HealList)
             {
                 sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
+                if (++i == 5)
+                    break;
             }
             lblHealTargets.Text = sb.ToString();
         }
@@ -197,10 +210,39 @@ namespace Singular.GUI
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            int i = 0;
             var sb = new StringBuilder();
-            foreach (WoWUnit u in HealerManager.Instance.HealList.Where(p => p != null && p.IsValid))
+
+            foreach (WoWUnit u in Targeting.Instance.TargetList)
             {
-                sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
+                try
+                {
+                    sb.AppendLine(u.SafeName().AlignLeft(18) + " " + u.HealthPercent.ToString("F1").AlignRight(5) + "%  " + u.Distance.ToString("F1").AlignRight(5) + " yds");
+                    if (++i == 5)
+                        break;
+                }
+                catch (System.AccessViolationException)
+                {
+                }
+            }
+            lblTargets.Text = sb.ToString();
+
+            if (!HealerManager.NeedHealTargeting)
+                return;
+
+            i = 0;
+            sb = new StringBuilder();
+            foreach (WoWUnit u in HealerManager.Instance.HealList)
+            {
+                try
+                {
+                    sb.AppendLine(u.SafeName().AlignLeft(15) + "- " + u.HealthPercent.ToString("F1").AlignRight(5) + "% @ " + u.Distance.ToString("F1").AlignRight(5) + " yds");
+                    if (++i == 5)
+                        break;
+                }
+                catch (System.AccessViolationException)
+                {
+                }
             }
             lblHealTargets.Text = sb.ToString();
         }
@@ -237,6 +279,13 @@ namespace Singular.GUI
         private void chkUseInstanceBehaviorsWhenSolo_CheckedChanged(object sender, EventArgs e)
         {
             SingularRoutine.ForceInstanceBehaviors = chkUseInstanceBehaviorsWhenSolo.Checked;
+        }
+
+        private static int LogMarkIndex = 1;
+        private void btnLogMark_Click(object sender, EventArgs e)
+        {
+            Logger.Write( Color.HotPink, " LOGMARK # {0} at {1}", LogMarkIndex++, DateTime.Now.ToString("HH:mm:ss.fff"));
+            btnLogMark.Text = "LOGMARK! " + LogMarkIndex;
         }
     }
 

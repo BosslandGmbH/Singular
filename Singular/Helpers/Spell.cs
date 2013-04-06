@@ -324,9 +324,17 @@ namespace Singular.Helpers
 #if HONORBUDDY_GCD_IS_WORKING
                 return SpellManager.GlobalCooldownLeft;
 #else
-                if (_gcdCheck == null)
-                    return SpellManager.GlobalCooldownLeft;
-                return _gcdCheck.CooldownTimeLeft;
+                try
+                {
+                    if (_gcdCheck != null)
+                        return _gcdCheck.CooldownTimeLeft;
+                }
+                catch (System.AccessViolationException e)
+                {
+                    Logger.WriteFile("GcdTimeLeft:  exception=", e.Message );
+                }
+
+                return SpellManager.GlobalCooldownLeft;
 #endif
             }
         }

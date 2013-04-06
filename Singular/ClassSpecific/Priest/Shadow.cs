@@ -129,12 +129,12 @@ namespace Singular.ClassSpecific.Priest
                                 || (Me.ManaPercent < SingularSettings.Instance.MinMana && Me.IsSwimming)
                                 || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
 
-                        Spell.Cast("Psychic Scream",  ret => PriestSettings.UsePsychicScream && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= PriestSettings.PsychicScreamAddCount),
+                        Spell.Cast("Psychic Scream",  ret => (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.CurrentTargetGuid == Me.Guid) || PriestSettings.UsePsychicScream && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= PriestSettings.PsychicScreamAddCount),
 
                         Spell.Cast("Power Infusion", ret => Me.CurrentTarget.TimeToDeath() > 20 || AoeTargets.Count() > 2),
                 
                         // don't attempt to heal unless below a certain percentage health
-                        Spell.Cast("Vampiric Embrace", ret => Me, ret => Me.HealthPercent < 65 && Me.TimeToDeath() > 10),
+                        Spell.Cast("Vampiric Embrace", ret => Me, ret => Me.HealthPercent < 65 && Me.CurrentTarget.TimeToDeath() > 10),
 
                         // Shadow immune npcs.
                         // Spell.Cast("Holy Fire", req => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
@@ -146,7 +146,7 @@ namespace Singular.ClassSpecific.Priest
                                 ctx => AoeTargets.FirstOrDefault(),
 
                                 // halo only if nothing near we aren't already in combat with
-                                Spell.Cast("Halo", ret => !Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 32 && !u.IsTargetingMeOrPet && !u.Fleeing)),
+                                Spell.Cast("Halo", ret => !Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 34 && !u.IsTargetingMeOrPet && !u.Fleeing)),
                                 Spell.Cast("Mind Sear", mov => true, ctx => (WoWUnit)ctx, ret => AoeTargets.Count() > 5, cancel => Me.HealthPercent < PriestSettings.ShadowFlashHealHealth ),
 
                                 new PrioritySelector(

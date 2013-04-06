@@ -108,9 +108,9 @@ namespace Singular.Dynamics
             if (attribute.SpecificSpec != (WoWSpec)int.MaxValue && attribute.SpecificSpec != spec)
                 return false;
 
-            Logger.WriteDebug("IsMatchingMethod({0}, {1}, {2}, {3}) - {4}, {5}, {6}, {7}, {8}", wowClass, spec, behavior,
+            /* Logger.WriteDebug("IsMatchingMethod({0}, {1}, {2}, {3}) - {4}, {5}, {6}, {7}, {8}", wowClass, spec, behavior,
                 context, attribute.SpecificClass, attribute.SpecificSpec, attribute.Type, attribute.SpecificContext,
-                attribute.PriorityLevel);
+                attribute.PriorityLevel);  */
             return true;
         }
     }

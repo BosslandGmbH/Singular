@@ -37,7 +37,7 @@ namespace Singular.ClassSpecific.Priest
 
                     new Decorator(
                         ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.SpellDistance() < 8)
-                            && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.HealthPercent < 50)),
+                            && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (Me.GotTarget && Me.CurrentTarget.IsPlayer) || (SingularRoutine.CurrentWoWContext == WoWContext.Normal && (Me.HealthPercent < 50))),
                         CreatePriestAvoidanceBehavior()
                         )
 

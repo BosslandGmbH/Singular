@@ -334,15 +334,15 @@ namespace Singular.Settings
         [DisplayName("Barkskin Health")]
         [Description("Barkskin will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int FeralBarkskin { get; set; }
-
+*/
 
         [Setting]
         [DefaultValue(55)]
         [Category("Feral")]
-        [DisplayName("Survival Instincts Health")]
+        [DisplayName("Survival Instincts Health %")]
         [Description("SI will be used at this value. Set this to 100 to enable on cooldown usage. (Recommended: 55)")]
         public int SurvivalInstinctsHealth { get; set; }
-
+/*
         [Setting]
         [DefaultValue(30)]
         [Category("Feral PvP")]

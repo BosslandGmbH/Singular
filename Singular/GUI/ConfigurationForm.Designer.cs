@@ -45,14 +45,18 @@
             this.chkUseInstanceBehaviorsWhenSolo = new System.Windows.Forms.CheckBox();
             this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
             this.button1 = new System.Windows.Forms.Button();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.lblTargets = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.lblHealTargets = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.grpFooter = new System.Windows.Forms.GroupBox();
+            this.btnLogMark = new System.Windows.Forms.Button();
             this.btnSaveAndClose = new System.Windows.Forms.Button();
             this.lblVersion = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -60,23 +64,26 @@
             this.grpHealHeader.SuspendLayout();
             this.tabPage5.SuspendLayout();
             this.tabPage3.SuspendLayout();
+            this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.grpFooter.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
             // 
+            this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Controls.Add(this.tabPage4);
             this.tabControl1.Controls.Add(this.tabPage5);
             this.tabControl1.Controls.Add(this.tabPage3);
-            this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Multiline = true;
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(337, 378);
+            this.tabControl1.Size = new System.Drawing.Size(340, 463);
             this.tabControl1.TabIndex = 4;
             // 
             // tabPage1
@@ -85,7 +92,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(329, 352);
+            this.tabPage1.Size = new System.Drawing.Size(332, 437);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "General";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -95,7 +102,7 @@
             this.pgGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pgGeneral.Location = new System.Drawing.Point(3, 3);
             this.pgGeneral.Name = "pgGeneral";
-            this.pgGeneral.Size = new System.Drawing.Size(323, 346);
+            this.pgGeneral.Size = new System.Drawing.Size(326, 431);
             this.pgGeneral.TabIndex = 0;
             // 
             // tabPage2
@@ -104,7 +111,7 @@
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(329, 352);
+            this.tabPage2.Size = new System.Drawing.Size(332, 352);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Class Specific";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -114,7 +121,7 @@
             this.pgClass.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pgClass.Location = new System.Drawing.Point(3, 3);
             this.pgClass.Name = "pgClass";
-            this.pgClass.Size = new System.Drawing.Size(323, 346);
+            this.pgClass.Size = new System.Drawing.Size(326, 346);
             this.pgClass.TabIndex = 0;
             // 
             // tabPage4
@@ -123,7 +130,7 @@
             this.tabPage4.Controls.Add(this.grpHealHeader);
             this.tabPage4.Location = new System.Drawing.Point(4, 22);
             this.tabPage4.Name = "tabPage4";
-            this.tabPage4.Size = new System.Drawing.Size(329, 352);
+            this.tabPage4.Size = new System.Drawing.Size(332, 352);
             this.tabPage4.TabIndex = 3;
             this.tabPage4.Text = "Group Healing";
             this.tabPage4.UseVisualStyleBackColor = true;
@@ -134,7 +141,7 @@
             this.pgHeal.Location = new System.Drawing.Point(0, 39);
             this.pgHeal.Name = "pgHeal";
             this.pgHeal.PropertySort = System.Windows.Forms.PropertySort.NoSort;
-            this.pgHeal.Size = new System.Drawing.Size(329, 313);
+            this.pgHeal.Size = new System.Drawing.Size(332, 313);
             this.pgHeal.TabIndex = 5;
             // 
             // grpHealHeader
@@ -147,7 +154,7 @@
             this.grpHealHeader.Margin = new System.Windows.Forms.Padding(0);
             this.grpHealHeader.Name = "grpHealHeader";
             this.grpHealHeader.Padding = new System.Windows.Forms.Padding(0);
-            this.grpHealHeader.Size = new System.Drawing.Size(329, 39);
+            this.grpHealHeader.Size = new System.Drawing.Size(332, 39);
             this.grpHealHeader.TabIndex = 1;
             this.grpHealHeader.TabStop = false;
             // 
@@ -180,7 +187,7 @@
             this.tabPage5.Location = new System.Drawing.Point(4, 22);
             this.tabPage5.Name = "tabPage5";
             this.tabPage5.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage5.Size = new System.Drawing.Size(329, 352);
+            this.tabPage5.Size = new System.Drawing.Size(332, 352);
             this.tabPage5.TabIndex = 4;
             this.tabPage5.Text = "Hotkeys";
             this.tabPage5.UseVisualStyleBackColor = true;
@@ -198,11 +205,12 @@
             this.tabPage3.Controls.Add(this.chkUseInstanceBehaviorsWhenSolo);
             this.tabPage3.Controls.Add(this.ShowPlayerNames);
             this.tabPage3.Controls.Add(this.button1);
+            this.tabPage3.Controls.Add(this.groupBox2);
             this.tabPage3.Controls.Add(this.groupBox1);
             this.tabPage3.Location = new System.Drawing.Point(4, 22);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage3.Size = new System.Drawing.Size(329, 352);
+            this.tabPage3.Size = new System.Drawing.Size(332, 352);
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "Debugging";
             this.tabPage3.UseVisualStyleBackColor = true;
@@ -210,7 +218,7 @@
             // chkUseInstanceBehaviorsWhenSolo
             // 
             this.chkUseInstanceBehaviorsWhenSolo.AutoSize = true;
-            this.chkUseInstanceBehaviorsWhenSolo.Location = new System.Drawing.Point(80, 139);
+            this.chkUseInstanceBehaviorsWhenSolo.Location = new System.Drawing.Point(80, 255);
             this.chkUseInstanceBehaviorsWhenSolo.Name = "chkUseInstanceBehaviorsWhenSolo";
             this.chkUseInstanceBehaviorsWhenSolo.Size = new System.Drawing.Size(193, 17);
             this.chkUseInstanceBehaviorsWhenSolo.TabIndex = 2;
@@ -221,7 +229,7 @@
             // ShowPlayerNames
             // 
             this.ShowPlayerNames.AutoSize = true;
-            this.ShowPlayerNames.Location = new System.Drawing.Point(80, 116);
+            this.ShowPlayerNames.Location = new System.Drawing.Point(80, 232);
             this.ShowPlayerNames.Name = "ShowPlayerNames";
             this.ShowPlayerNames.Size = new System.Drawing.Size(188, 17);
             this.ShowPlayerNames.TabIndex = 2;
@@ -231,7 +239,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(109, 198);
+            this.button1.Location = new System.Drawing.Point(109, 314);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(116, 23);
             this.button1.TabIndex = 1;
@@ -239,10 +247,29 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.lblTargets);
+            this.groupBox2.Location = new System.Drawing.Point(8, 12);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(313, 104);
+            this.groupBox2.TabIndex = 0;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Target List";
+            // 
+            // lblTargets
+            // 
+            this.lblTargets.AutoSize = true;
+            this.lblTargets.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTargets.Location = new System.Drawing.Point(6, 16);
+            this.lblTargets.Name = "lblTargets";
+            this.lblTargets.Size = new System.Drawing.Size(0, 14);
+            this.lblTargets.TabIndex = 0;
+            // 
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.lblHealTargets);
-            this.groupBox1.Location = new System.Drawing.Point(8, 6);
+            this.groupBox1.Location = new System.Drawing.Point(8, 122);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(313, 104);
             this.groupBox1.TabIndex = 0;
@@ -266,25 +293,39 @@
             // 
             // grpFooter
             // 
+            this.grpFooter.Controls.Add(this.btnLogMark);
             this.grpFooter.Controls.Add(this.btnSaveAndClose);
             this.grpFooter.Controls.Add(this.lblVersion);
             this.grpFooter.Controls.Add(this.label2);
             this.grpFooter.Controls.Add(this.label1);
             this.grpFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.grpFooter.ForeColor = System.Drawing.SystemColors.Control;
-            this.grpFooter.Location = new System.Drawing.Point(0, 307);
+            this.grpFooter.Location = new System.Drawing.Point(0, 466);
             this.grpFooter.Margin = new System.Windows.Forms.Padding(0);
             this.grpFooter.Name = "grpFooter";
             this.grpFooter.Padding = new System.Windows.Forms.Padding(0);
-            this.grpFooter.Size = new System.Drawing.Size(337, 71);
+            this.grpFooter.Size = new System.Drawing.Size(340, 71);
             this.grpFooter.TabIndex = 5;
             this.grpFooter.TabStop = false;
+            // 
+            // btnLogMark
+            // 
+            this.btnLogMark.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.btnLogMark.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.btnLogMark.Location = new System.Drawing.Point(132, 33);
+            this.btnLogMark.Name = "btnLogMark";
+            this.btnLogMark.Size = new System.Drawing.Size(96, 23);
+            this.btnLogMark.TabIndex = 7;
+            this.btnLogMark.Text = "LOGMARK!";
+            this.toolTip1.SetToolTip(this.btnLogMark, "Add a LogMark to log file to simplify indicating where a problem occurred");
+            this.btnLogMark.UseVisualStyleBackColor = true;
+            this.btnLogMark.Click += new System.EventHandler(this.btnLogMark_Click);
             // 
             // btnSaveAndClose
             // 
             this.btnSaveAndClose.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnSaveAndClose.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnSaveAndClose.Location = new System.Drawing.Point(232, 33);
+            this.btnSaveAndClose.Location = new System.Drawing.Point(234, 33);
             this.btnSaveAndClose.Name = "btnSaveAndClose";
             this.btnSaveAndClose.Size = new System.Drawing.Size(96, 23);
             this.btnSaveAndClose.TabIndex = 7;
@@ -327,7 +368,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(337, 378);
+            this.ClientSize = new System.Drawing.Size(340, 537);
             this.Controls.Add(this.grpFooter);
             this.Controls.Add(this.tabControl1);
             this.MaximizeBox = false;
@@ -346,6 +387,8 @@
             this.tabPage5.ResumeLayout(false);
             this.tabPage3.ResumeLayout(false);
             this.tabPage3.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.grpFooter.ResumeLayout(false);
@@ -380,5 +423,9 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.PropertyGrid pgHeal;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.Label lblTargets;
+        private System.Windows.Forms.Button btnLogMark;
+        private System.Windows.Forms.ToolTip toolTip1;
     }
 }

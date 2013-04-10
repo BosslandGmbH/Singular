@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>04/10/2013 15:54:48</ScanTime>
+  <ScanTime>04/10/2013 16:15:42</ScanTime>
   <FileList>
     <File Hash="25940" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="21291" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -65,7 +65,7 @@
     <File Hash="5095" Name="Dynamics\CompositeBuilder.cs" />
     <File Hash="837" Name="Dynamics\SessionState.cs" />
     <File Hash="5261" Name="Extensions.cs" />
-    <File Hash="13100" Name="GUI\ConfigurationForm.cs" />
+    <File Hash="13320" Name="GUI\ConfigurationForm.cs" />
     <File Hash="22396" Name="GUI\ConfigurationForm.Designer.cs" />
     <File Hash="6336" Name="Helpers\Clusters.cs" />
     <File Hash="20379" Name="Helpers\Common.cs" />

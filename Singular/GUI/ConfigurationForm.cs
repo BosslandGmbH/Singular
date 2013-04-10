@@ -213,6 +213,11 @@ namespace Singular.GUI
             int i = 0;
             var sb = new StringBuilder();
 
+            // exit quickly if Debug tab not displayed
+            if (tabControl1.SelectedTab != tabPage3)
+                return;
+
+            // update list of Targets
             foreach (WoWUnit u in Targeting.Instance.TargetList)
             {
                 try
@@ -233,6 +238,7 @@ namespace Singular.GUI
             if (!HealerManager.NeedHealTargeting)
                 return;
 
+            // update list of Heal Targets
             i = 0;
             sb = new StringBuilder();
             foreach (WoWUnit u in HealerManager.Instance.HealList)

@@ -1,4 +1,4 @@
---- Release 3.0.0.2218 ---
+--- Release 3.0.0.2223 ---
 
 General
 
@@ -14,6 +14,7 @@ fixed - Targeting a Pet causese walking the chain of ownership to find owning pl
 
 *new* - user setting in Class Config allowing users to disable message written to Chat Frame of WOW Client.  Default is to write messages when combat/movement/aoe is toggled via hotkey
 
+fixed - error occurring sometimes when accessing the Class Config form while HonorBuddy was running
 
 Druid
 

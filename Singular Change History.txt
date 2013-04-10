@@ -1,3 +1,46 @@
+--- Release 3.0.0.2218 ---
+
+General
+
+fixed - Singular recognizes when the user or a component changes the current target and writes to log.  Fixed a bug in this code which would cause false (null) reports
+
+fixed - PetManager was not handling detecting situation where toon dismounted and waiting for auto-summon of pet to occur
+
+fixed - Class Config form -> Hotkeys tab was not formatted properly when form resized
+
+fixed - Targeting issue where toon would get stuck looking for valid target when an NPC with a Pet was killed but Pet doesn't die
+
+fixed - Targeting a Pet causese walking the chain of ownership to find owning player/npc and switches to it.  Previously did this without checking if parent was blacklisted or dead
+
+*new* - user setting in Class Config allowing users to disable message written to Chat Frame of WOW Client.  Default is to write messages when combat/movement/aoe is toggled via hotkey
+
+
+Druid
+
+fixed - All Specs - issue with Faerie Fire spam when the Faerie Swarm talent is selected
+
+
+Rogue
+
+fixed - Assassination - now correctly moves behind target during Pull
+
+fixed - Subtlety - now correctly moves behind target during Pull
+
+change- Subtlety - support for Premeditation added.  Removed conditional cast of Sinister Strike since isn't needed and fired inappropriately at times
+
+
+Warlock
+
+fixed - Affliction - now correctly sends Pet after targets based upon user settings
+
+fixed - Affliction - Soulburn cast for Seed of Corruption correctly handled.  Was at times leaving Soulburn active and not casting Seed
+
+fixed - All Specs - will no longer Summon Pet while mounted (which was forcing a dismount at times)
+
+*new* - All Specs - cast of Unending Breath when swimming
+
+ 
+
 --- Release 3.0.0.2187 ---
 
 General

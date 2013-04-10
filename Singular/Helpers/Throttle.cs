@@ -84,6 +84,12 @@ namespace Singular.Helpers
 
         }
 
+        public ThrottlePasses(int Limit, TimeSpan ts, Composite child)
+            : this(Limit, ts, RunStatus.Failure, child)
+        {
+
+        }
+
         /// <summary>
         ///   Implements a 'throttle' composite. This composite limits the number of times the child 
         ///   will be run within a given time span.  Returns Failure if limit reached, otherwise

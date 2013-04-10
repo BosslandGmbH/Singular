@@ -73,6 +73,8 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
 
+                Helpers.Common.CreateAutoAttack(true),
+
                 Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 // cancel an early drain soul if done to proc 1 soulshard
@@ -283,8 +285,13 @@ namespace Singular.ClassSpecific.Warlock
                         ret => _mobCount >= 4 && SpellManager.HasSpell("Seed of Corruption"),
                         new PrioritySelector(
                             ctx => Common.TargetsInCombat.FirstOrDefault(m => !m.HasAura("Seed of Corruption")),
-                            Spell.BuffSelf("Soulburn", ret => ret != null),
-                            Spell.Cast("Seed of Corruption", ret => (WoWUnit)ret)
+                            new Sequence(
+                                new PrioritySelector(
+                                    Common.CreateCastSoulburn(ret => ret != null),
+                                    new ActionAlwaysSucceed()
+                                    ),
+                                Spell.Cast("Seed of Corruption", ret => (WoWUnit)ret)
+                                )
                             )
                         ),
                     new Decorator(

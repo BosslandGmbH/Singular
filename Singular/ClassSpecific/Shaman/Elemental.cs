@@ -17,6 +17,7 @@ using Styx.Common;
 using System.Drawing;
 using System;
 using Styx.Helpers;
+using CommonBehaviors.Actions;
 
 
 namespace Singular.ClassSpecific.Shaman
@@ -73,6 +74,17 @@ namespace Singular.ClassSpecific.Shaman
                 );
         }
 
+        /// <summary>
+        /// perform diagnostic output logging at highest priority behavior that occurs while in Combat
+        /// </summary>
+        /// <returns></returns>
+        [Behavior(BehaviorType.Heal | BehaviorType.Pull, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.All, 999)]
+        public static Composite CreateElementalLogDiagnostic()
+        {
+            return CreateElementalDiagnosticOutputBehavior();
+        }
+
+
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal | WoWContext.Instances)]
         public static Composite CreateShamanElementalHeal()
         {
@@ -104,8 +116,6 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-
-                        CreateElementalDiagnosticOutputBehavior("PULL"),
 
                         Common.CreateShamanDpsShieldBehavior(),
 
@@ -156,7 +166,6 @@ namespace Singular.ClassSpecific.Shaman
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        CreateElementalDiagnosticOutputBehavior("COMBAT"),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -352,45 +361,46 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Diagnostics
 
-        private static Composite CreateElementalDiagnosticOutputBehavior(string behav)
+        private static Composite CreateElementalDiagnosticOutputBehavior()
         {
-            return new Throttle( 1,
-                new Decorator(
-                    ret => SingularSettings.Debug,
-                    new Action(ret =>
-                    {
-                        uint lstks = 0;
-                        WoWAura aura = Me.GetAuraByName("Lightning Shield");
-                        if (aura != null)
-                        {
-                            lstks = aura.StackCount;
-                            if (!Me.HasAura("Lightning Shield", (int)lstks))
-                                Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  have {0} stacks but Me.HasAura('Lightning Shield', {0}) was False!!!!", lstks, lstks);
-                        }
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
 
-                        string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, lstks={3}",
-                            behav,
-                            Me.HealthPercent,
-                            Me.ManaPercent,
-                            lstks
+            return new ThrottlePasses(1, 1,
+                new Action(ret =>
+                {
+                    uint lstks = 0;
+                    WoWAura aura = Me.GetAuraByName("Lightning Shield");
+                    if (aura != null)
+                    {
+                        lstks = aura.StackCount;
+                        if (!Me.HasAura("Lightning Shield", (int)lstks))
+                            Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  have {0} stacks but Me.HasAura('Lightning Shield', {0}) was False!!!!", lstks, lstks);
+                    }
+
+                    string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, lstks={3}",
+                        CompositeBuilder.CurrentBehaviorType.ToString(),
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        lstks
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target == null)
+                        line += ", target=(null)";
+                    else
+                        line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, face={3} tlos={4}, tloss={5}",
+                            target.SafeName(),
+                            target.Distance,
+                            target.HealthPercent,
+                            Me.IsSafelyFacing(target),
+                            target.InLineOfSight,
+                            target.InLineOfSpellSight
                             );
 
-                        WoWUnit target = Me.CurrentTarget;
-                        if (target == null)
-                            line += ", target=(null)";
-                        else
-                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, face={3} tlos={4}, tloss={5}",
-                                target.SafeName(),
-                                target.Distance,
-                                target.HealthPercent,
-                                Me.IsSafelyFacing(target, 70f),
-                                target.InLineOfSight,
-                                target.InLineOfSpellSight
-                                );
-
-                        Logger.WriteDebug(Color.Yellow, line);
-                        return RunStatus.Success;
-                    }))
+                    Logger.WriteDebug(Color.Yellow, line);
+                    return RunStatus.Failure;
+                })
                 );
         }
 

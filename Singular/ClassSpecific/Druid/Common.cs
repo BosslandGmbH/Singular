@@ -289,12 +289,12 @@ namespace Singular.ClassSpecific.Druid
 
         public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
         {
-            if ( !DruidSettings.UseRebirth )
+            if (!DruidSettings.UseRebirth)
                 return new PrioritySelector();
 
-            if ( onUnit == null)
+            if (onUnit == null)
             {
-                Logger.WriteDebug( "CreateRebirthBehavior: error - onUnit == null");
+                Logger.WriteDebug("CreateRebirthBehavior: error - onUnit == null");
                 return new PrioritySelector();
             }
 
@@ -304,12 +304,26 @@ namespace Singular.ClassSpecific.Druid
                     ret => onUnit(ret) != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
                     new PrioritySelector(
                         Spell.WaitForCast(true),
-                        Movement.CreateMoveToRangeAndStopBehavior( ret => (WoWUnit) ret, range => 40f),
+                        Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, range => 40f),
                         new Decorator(
                             ret => !Spell.IsGlobalCooldown(),
-                            Spell.Cast("Rebirth", ret => (WoWUnit) ret)
+                            Spell.Cast("Rebirth", ret => (WoWUnit)ret)
                             )
                         )
+                    )
+                );
+        }
+
+        public static Composite CreateFaerieFireBehavior(UnitSelectionDelegate onUnit, SimpleBooleanDelegate Required)
+        {
+            if (onUnit == null)
+                onUnit = on => Me.CurrentTarget;
+
+            // Fairie Fire has a 1.5 sec GCD, Faerie Swarm 0.0.  Handle both here
+            return new ThrottlePasses( 1, TimeSpan.FromMilliseconds(500),
+                new Sequence(
+                    Spell.Buff("Faerie Fire", on => onUnit(on), ret => Required(ret)),
+                    new DecoratorContinue( req => HasTalent(DruidTalents.FaerieSwarm), new ActionAlwaysFail())
                     )
                 );
         }

@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Druid
                         new Decorator(
                             ret => Me.CurrentTarget.IsAboveTheGround(),
                             new PrioritySelector(
-                                Spell.Buff("Faerie Fire", ret => Me.CurrentTarget.Distance < 35),
+                                Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => Me.CurrentTarget.Distance < 35),
                                 Spell.Cast("Moonfire", ret => Me.CurrentTarget.Distance < 40),
                                 Movement.CreateMoveToTargetBehavior(true, 27f)
                                 )),
@@ -258,7 +258,7 @@ namespace Singular.ClassSpecific.Druid
 #endregion
 
                         //Single target
-                        Spell.Cast("Faerie Fire", ret =>!Me.CurrentTarget.HasAura("Weakened Armor", 3)),
+                        Common.CreateFaerieFireBehavior( on => Me.CurrentTarget, req => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
 
                         ///
                         /// Savage Roar - original spell id = 52610, override is 127538.  both spells valid but there is not an obvious need for the
@@ -361,7 +361,7 @@ namespace Singular.ClassSpecific.Druid
             #endregion
 
                         // 1. Keep Faerie Fire up (if no other armor debuff).
-                        Spell.Cast("Faerie Fire", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
+                        Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
 
                         new Decorator(
                             ret => Me.GotTarget

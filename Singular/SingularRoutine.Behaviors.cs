@@ -308,14 +308,22 @@ namespace Singular
         {
             return new Action(r =>
                 {
+                    // there are moments where CurrentTargetGuid != 0 but CurrentTarget == null. following
+                    // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
                     if ((SingularSettings.Debug && Me.CurrentTargetGuid != _guidLastTarget))
                     {
-                        if (Me.CurrentTargetGuid == 0)
+                        if (Me.CurrentTarget == null)
                         {
-                            Logger.WriteDebug(sType + " CurrentTarget now: (null)");
+                            if (_guidLastTarget != 0)
+                            {
+                                Logger.WriteDebug(sType + " CurrentTarget now: (null)");
+                                _guidLastTarget = 0;
+                            }
                         }
                         else
                         {
+                            _guidLastTarget = Me.CurrentTargetGuid;
+
                             string info = "";
                             WoWUnit target = Me.CurrentTarget;
 
@@ -339,7 +347,6 @@ namespace Singular
                                 );
                         }
 
-                        _guidLastTarget = Me.CurrentTargetGuid;
                         _timerLastTarget.Reset();
                     }
 

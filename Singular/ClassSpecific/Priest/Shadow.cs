@@ -36,6 +36,17 @@ namespace Singular.ClassSpecific.Priest
 
         }
 
+        /// <summary>
+        /// perform diagnostic output logging at highest priority behavior that occurs while in Combat
+        /// </summary>
+        /// <returns></returns>
+        [Behavior(BehaviorType.Heal | BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.All, 999)]
+        public static Composite CreateShadowLogDiagnostic()
+        {
+            return CreateShadowDiagnosticOutputBehavior();
+        }
+
+
         [Behavior(BehaviorType.Heal, WoWClass.Priest, WoWSpec.PriestShadow, WoWContext.Normal | WoWContext.Battlegrounds )]
         public static Composite CreateShadowHeal()
         {
@@ -113,8 +124,6 @@ namespace Singular.ClassSpecific.Priest
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-
-                        CreateShadowDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateInterruptBehavior(),
                         Spell.BuffSelf("Shadowform"),
@@ -229,8 +238,6 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-
-                        CreateShadowDiagnosticOutputBehavior(),
 
                         Spell.BuffSelf("Shadowform"),
 
@@ -349,8 +356,6 @@ namespace Singular.ClassSpecific.Priest
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        CreateShadowDiagnosticOutputBehavior(),
-
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.BuffSelf("Shadowform"),
@@ -432,41 +437,43 @@ namespace Singular.ClassSpecific.Priest
 
         private static Composite CreateShadowDiagnosticOutputBehavior()
         {
-            return new Throttle(1,
-                new Decorator(
-                    ret => SingularSettings.Debug,
-                    new Action(ret =>
-                    {
-                        uint orbs = Me.GetCurrentPower(WoWPowerType.ShadowOrbs);
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
 
-                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, moving={2}, form={3}, orbs={4}, surgdark={5}, divinsight={6}",
-                            Me.HealthPercent,
-                            Me.ManaPercent,
-                            Me.IsMoving,
-                            Me.Shapeshift,
-                            orbs,
-                            (long)Me.GetAuraTimeLeft("Surge of Darkness", true).TotalMilliseconds,
-                            (long)Me.GetAuraTimeLeft("Divine Insight", true).TotalMilliseconds
+            return new ThrottlePasses(1, 1,
+                new Action(ret =>
+                {
+                    uint orbs = Me.GetCurrentPower(WoWPowerType.ShadowOrbs);
+
+                    string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, moving={3}, form={4}, orbs={5}, surgdark={6}, divinsight={7}",
+                        CompositeBuilder.CurrentBehaviorType.ToString(),
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        Me.IsMoving,
+                        Me.Shapeshift,
+                        orbs,
+                        (long)Me.GetAuraTimeLeft("Surge of Darkness", true).TotalMilliseconds,
+                        (long)Me.GetAuraTimeLeft("Divine Insight", true).TotalMilliseconds
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target == null)
+                        line += ", target=(null)";
+                    else
+                        line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tface={3}, tloss={4}, sw:p={5}, vamptch={6}, devplague={7}",
+                            target.SafeName(),
+                            target.Distance,
+                            target.HealthPercent,
+                            Me.IsSafelyFacing(target),
+                            target.InLineOfSpellSight,
+                            (long)target.GetAuraTimeLeft("Shadow Word: Pain", true).TotalMilliseconds,
+                            (long)target.GetAuraTimeLeft("Vampiric Touch", true).TotalMilliseconds,
+                            (long)target.GetAuraTimeLeft("Devouring Plague", true).TotalMilliseconds
                             );
 
-                        WoWUnit target = Me.CurrentTarget;
-                        if (target == null)
-                            line += ", target=(null)";
-                        else
-                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tface={3}, tloss={4}, sw:p={5}, vamptch={6}, devplague={7}",
-                                target.SafeName(),
-                                target.Distance,
-                                target.HealthPercent,
-                                Me.IsSafelyFacing(target,70f),
-                                target.InLineOfSpellSight,
-                                (long)target.GetAuraTimeLeft("Shadow Word: Pain", true).TotalMilliseconds,
-                                (long)target.GetAuraTimeLeft("Vampiric Touch", true).TotalMilliseconds,
-                                (long)target.GetAuraTimeLeft("Devouring Plague", true).TotalMilliseconds
-                                );
-
-                        Logger.WriteDebug(Color.Wheat, line);
-                        return RunStatus.Success;
-                    }))
+                    Logger.WriteDebug(Color.Wheat, line);
+                    return RunStatus.Failure;
+                })
                 );
         }
 

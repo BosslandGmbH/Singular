@@ -333,6 +333,10 @@ namespace Singular.Helpers
                 {
                     Logger.WriteFile("GcdTimeLeft:  exception=", e.Message );
                 }
+                catch (Styx.InvalidObjectPointerException e)
+                {
+                    Logger.WriteFile("GcdTimeLeft:  exception=", e.Message);
+                }
 
                 return SpellManager.GlobalCooldownLeft;
 #endif

@@ -75,7 +75,10 @@ namespace Singular.ClassSpecific.Warlock
                     Helpers.Common.CreateWaitForLagDuration()
                     ),
 
-                Common.CreateWarlockSummonPet(),
+                new Decorator(
+                    ret => !Me.Mounted,
+                    Common.CreateWarlockSummonPet()
+                    ),
 
                 Rest.CreateDefaultRestBehaviour(),
 
@@ -101,7 +104,8 @@ namespace Singular.ClassSpecific.Warlock
                         new Throttle(5, Spell.Cast("Create Healthstone", ret => !HaveHealthStone && !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 25))),
                         Spell.BuffSelf("Soulstone", ret => NeedToSoulstoneMyself()),
                         PartyBuff.BuffGroup("Dark Intent"),
-                        Spell.BuffSelf( "Grimoire of Sacrifice", ret => GetCurrentPet() != WarlockPet.None )
+                        Spell.BuffSelf( "Grimoire of Sacrifice", ret => GetCurrentPet() != WarlockPet.None ),
+                        Spell.BuffSelf( "Unending Breath", req => Me.IsSwimming )
                         )
                     )
                 );
@@ -356,7 +360,7 @@ namespace Singular.ClassSpecific.Warlock
                     new DecoratorContinue(
                         ret => GetCurrentPet() == WarlockPet.None && GetBestPet() != WarlockPet.None && !PetManager.PetSummonAfterDismountTimer.IsFinished,
                         new Sequence(
-                            new Action(ret => Logger.WriteDebug("Summon Pet:  waiting {0:F0} for live {1} to appear", PetManager.PetSummonAfterDismountTimer.TimeLeft.TotalMilliseconds, GetBestPet().ToString())),
+                            new Action(ret => Logger.WriteDebug("Summon Pet:  waiting {0:F0} on dismount timer for live {1} to appear", PetManager.PetSummonAfterDismountTimer.TimeLeft.TotalMilliseconds, GetBestPet().ToString())),
                             new WaitContinue(
                                 TimeSpan.FromDays(1),    // really large value... use PetSummonAfterDismountTimer to control wait duration instead
                                 ret => GetCurrentPet() != WarlockPet.None || GetBestPet() == WarlockPet.None || PetManager.PetSummonAfterDismountTimer.IsFinished, 

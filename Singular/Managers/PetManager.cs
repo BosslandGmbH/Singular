@@ -44,12 +44,6 @@ namespace Singular.Managers
 
         internal static void Pulse()
         {
-            if (!StyxWoW.Me.GotAlivePet)
-            {
-                PetSpells.Clear();
-                return;
-            }
-
             if (StyxWoW.Me.Mounted)
             {
                 _wasMounted = true;
@@ -68,6 +62,11 @@ namespace Singular.Managers
                 // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
                 PetSpells.AddRange(StyxWoW.Me.PetSpells);
                 PetSummonAfterDismountTimer.Reset();
+            }
+
+            if (!StyxWoW.Me.GotAlivePet)
+            {
+                PetSpells.Clear();
             }
         }
 

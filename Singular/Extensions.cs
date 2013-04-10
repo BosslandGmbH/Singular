@@ -93,7 +93,8 @@ namespace Singular
             }
             else if (obj is WoWUnit && obj.ToUnit().IsPet)
             {
-                name =  obj.ToUnit().OwnedByRoot.SafeName()  + ":Pet";
+                WoWUnit root = obj.ToUnit().OwnedByRoot;
+                name =  root == null ? "(unknown)" : root.SafeName()  + ":Pet";
             }
             else
             {

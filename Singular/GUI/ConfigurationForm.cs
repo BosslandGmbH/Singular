@@ -224,6 +224,9 @@ namespace Singular.GUI
                 catch (System.AccessViolationException)
                 {
                 }
+                catch (Styx.InvalidObjectPointerException)
+                {
+                }
             }
             lblTargets.Text = sb.ToString();
 
@@ -241,6 +244,9 @@ namespace Singular.GUI
                         break;
                 }
                 catch (System.AccessViolationException)
+                {
+                }
+                catch (Styx.InvalidObjectPointerException)
                 {
                 }
             }

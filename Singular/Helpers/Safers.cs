@@ -80,7 +80,7 @@ namespace Singular.Helpers
                                 new Action(
                                     ret =>
                                     {
-                                        Logger.WriteDebug("Targeting first unit of TankTargeting");
+                                        Logger.WriteDebug("EnsureTarget: Targeting first unit of TankTargeting");
                                         TankManager.Instance.FirstUnit.Target();
                                     }),
                                 Helpers.Common.CreateWaitForLagDuration(),
@@ -209,9 +209,13 @@ namespace Singular.Helpers
 
                                 // at this point, stick with it if in Targetlist
                                 if (Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
+                                {
+                                    Logger.WriteDebug("EnsureTarget: target is in TargetList, continuing...");
                                     return Me.CurrentTarget;
+                                }
 
                                 // otherwise, let's get a new one
+                                Logger.WriteDebug("EnsureTarget: invalid target, so forcing selection of a new one");
                                 return null;
                             },
 
@@ -299,6 +303,7 @@ namespace Singular.Helpers
                                         target = Targeting.Instance.TargetList
                                             .Where(
                                                 p => !Blacklist.Contains(p, BlacklistFlags.Combat)
+                                                && p.IsAlive
                                                 && p.DistanceSqr <= 40 * 40)
                                             .OrderBy(u => u.IsPlayer)
                                             .ThenBy(u => u.DistanceSqr)
@@ -345,10 +350,14 @@ namespace Singular.Helpers
                                         new Sequence(
                                             new DecoratorContinue(
                                                 ret => StyxWoW.Me.CurrentPendingCursorSpell != null,
-                                                new Action(ctx => Lua.DoString("SpellStopTargeting()"))
+                                                new Sequence(
+                                                    new Action( r => Logger.WriteDebug( "EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
+                                                    new Action(ctx => Lua.DoString("SpellStopTargeting()"))
+                                                    )
                                                 ),
+                                            new Action(ret => Logger.WriteDebug("EnsureTarget: set target to chosen target {0}", ((WoWUnit)ret).SafeName())),
                                             new Action(ret => ((WoWUnit)ret).Target()),
-                                            new WaitContinue( 2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == (WoWUnit)ret, new ActionAlwaysSucceed())
+                                            new WaitContinue( 2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTargetGuid == ((WoWUnit)ret).Guid, new ActionAlwaysSucceed())
                                             )
                                         ),
 

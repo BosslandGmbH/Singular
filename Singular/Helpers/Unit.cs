@@ -186,17 +186,29 @@ namespace Singular.Helpers
             if (p.IsTrainingDummy() || p.IsBoss())
                 return true;
 
-            // If its a pet, lets ignore it please.
-            if (p.IsPet || p.OwnedByRoot != null)
+            // If it is a pet/minion/totem, lets find the root of ownership chain
+            WoWUnit pOwner = p;
+            while (true)
+            {
+                if (pOwner.OwnedByUnit != null)
+                    pOwner = pOwner.OwnedByRoot;
+                else if (pOwner.SummonedByUnit != null)
+                    pOwner = pOwner.SummonedByUnit;
+                else 
+                    break;
+            }
+
+            // ignore if owner is player, alive, and not blacklisted then ignore (since killing owner kills it)
+            if (p != pOwner && pOwner.IsPlayer && pOwner.IsAlive && !Blacklist.Contains(pOwner, BlacklistFlags.Combat))
                 return false;
 
             // And ignore critters (except for those ferocious ones) /non-combat pets
             if (p.IsNonCombatPet || p.IsCritter && p.ThreatInfo.ThreatValue == 0 && !p.IsTargetingMyRaidMember)
                 return false;
-
+/*
             if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
                 return false;
-
+*/
             return true;
         }
 

@@ -125,19 +125,13 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRoguePullBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
-                        CreateStealthBehavior( ret => !IsStealthed && Me.GotTarget && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral ? 8 : 99 )),
-                        Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0 && Me.ComboPointsTarget != Me.CurrentTargetGuid ),
-                        Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
-                        // Throttle Shadowstep because cast can fail with no message
-                        new Throttle( 2, Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 12)),
-                        Spell.BuffSelf("Sprint", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 15 && (!SpellManager.HasSpell("Shadowstep") || !SpellManager.CanCast("Shadowstep", true)))
-                        )
-                    )
+                // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
+                CreateStealthBehavior( ret => !IsStealthed && Me.GotTarget && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral ? 8 : 99 )),
+                Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0 && Me.ComboPointsTarget != Me.CurrentTargetGuid ),
+                Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
+                // Throttle Shadowstep because cast can fail with no message
+                new Throttle( 2, Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 12)),
+                Spell.BuffSelf("Sprint", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 15 && (!SpellManager.HasSpell("Shadowstep") || !SpellManager.CanCast("Shadowstep", true)))
                 );
 
         }

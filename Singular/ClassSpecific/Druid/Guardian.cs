@@ -54,7 +54,7 @@ namespace Singular.ClassSpecific.Druid
                             )),
 
                         Spell.BuffSelf("Bear Form"),
-                        Spell.Cast("Faerie Fire")
+                        Common.CreateFaerieFireBehavior( on => Me.CurrentTarget, req => true)
                         )
                     ),
 
@@ -133,7 +133,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
                         Spell.Cast("Lacerate"),
-                        Spell.Buff("Faerie Fire"),
+                        Common.CreateFaerieFireBehavior( on => Me.CurrentTarget, req => true),
                         Spell.Cast("Maul", ret=> Me.CurrentRage >= 90 && StyxWoW.Me.HasAura("Tooth and Claw")),
 
                         // Symbiosis

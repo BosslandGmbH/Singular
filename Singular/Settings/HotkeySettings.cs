@@ -50,6 +50,13 @@ namespace Singular.Settings
         public bool SavedToFile { get; set; }
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("Behavior Messaging")]
+        [DisplayName("Chat Frame Message")]
+        [Description("Outputs message to Chat frame when toggle pressed")]
+        public bool ChatFrameMessage { get; set; }
+
+        [Setting]
         [DefaultValue(Keys.None)]
         [Category("Behavior Toggle")]
         [DisplayName("AOE Combat Toggle")]

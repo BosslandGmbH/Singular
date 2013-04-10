@@ -72,6 +72,9 @@ namespace Singular.Managers
                 catch (System.AccessViolationException)
                 {
                 }
+                catch (Styx.InvalidObjectPointerException)
+                {
+                }
             }
 
             if (!foundMe)
@@ -153,6 +156,11 @@ namespace Singular.Managers
                     units.RemoveAt(i);
                     continue;
                 }
+                catch (Styx.InvalidObjectPointerException)
+                {
+                    units.RemoveAt(i);
+                    continue;
+                }
             }
         }
 
@@ -184,7 +192,11 @@ namespace Singular.Managers
                     prio.Score = -9999f;
                     continue;
                 }
-
+                catch (Styx.InvalidObjectPointerException)
+                {
+                    prio.Score = -9999f;
+                    continue;
+                }
 
                 // If they're out of range, give them a bit lower score.
                 if (u.DistanceSqr > 40 * 40)

@@ -44,11 +44,12 @@ namespace Singular.ClassSpecific.Rogue
 
                         Common.CreateRogueOpenerBehavior(),
                         Common.CreateAttackFlyingMobs(),
-                        Spell.Cast("Hemorrhage", ret => !Me.IsMoving && !Me.IsSafelyBehind(Me.CurrentTarget)),
-                        Spell.Cast("Sinister Strike")
+                        Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints < 5),
+                        Spell.Cast("Hemorrhage")
                         )
                     ),
 
+                Movement.CreateMoveBehindTargetBehavior(),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
@@ -74,6 +75,8 @@ namespace Singular.ClassSpecific.Rogue
                         Movement.CreateMoveBehindTargetBehavior(),
 
                         Common.CreateRogueOpenerBehavior(),
+
+                        Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints <= 3),
 
                         new Decorator(
                             ret => Common.AoeCount > 1,
@@ -148,6 +151,8 @@ namespace Singular.ClassSpecific.Rogue
                         CreateSubteltyDiagnosticOutputBehavior("Combat"),
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints <= 3),
+
                         new Decorator(
                             ret => Common.AoeCount >= 3 && Spell.UseAOE,
                             new PrioritySelector(
@@ -160,8 +165,6 @@ namespace Singular.ClassSpecific.Rogue
                         Movement.CreateMoveBehindTargetBehavior(),
                         Spell.BuffSelf("Shadow Dance", ret => Me.CurrentTarget.MeIsBehind && !Me.HasAura("Stealth")),
                         Spell.BuffSelf("Vanish", ret => Me.CurrentTarget.IsBoss() && Me.CurrentTarget.MeIsBehind),
-
-                        Spell.BuffSelf("Premeditation", ret => Me.HasAura("Stealth") || Me.HasAura("Shadow Dance")),
 
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints >= (Me.CurrentTarget.IsBoss() ? 5 : 1) && Me.HasAuraExpired("Slice and Dice", 2)),
                         Spell.Buff("Rupture", true, ret => Me.ComboPoints == 5),

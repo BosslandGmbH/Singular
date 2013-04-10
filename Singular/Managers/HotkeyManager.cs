@@ -286,7 +286,7 @@ namespace Singular.Managers
         {
             string msg = string.Format(template, args);
             Logger.Write( Color.Yellow, string.Format("Hotkey: " + msg));
-            if ( true )
+            if ( HotkeySettings.ChatFrameMessage )
                 Lua.DoString(string.Format("print('{0}!')", msg));
         }
 

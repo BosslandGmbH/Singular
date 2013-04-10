@@ -146,10 +146,15 @@ namespace Singular
             if ((!SingularSettings.Debug || Me.CurrentTargetGuid == _lastCheckGuid))
                 return;
 
+            // there are moments where CurrentTargetGuid != 0 but CurrentTarget == null. following
+            // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
             if (Me.CurrentTarget == null)
             {
-                Logger.WriteDebug("CheckCurrentTarget: changed to: (null)");
-                _lastCheckGuid = 0;
+                if (_lastCheckGuid != 0)
+                {
+                    _lastCheckGuid = 0;
+                    Logger.WriteDebug("CheckCurrentTarget: changed to: (null)");
+                }
             }
             else
             {
@@ -163,7 +168,7 @@ namespace Singular
                 if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
                     info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
 
-                Logger.WriteDebug("CheckCurrentTarget: changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, entry={7}, faction={8}, loss={9}, facing={10}, blacklist={11}" + info,
+                Logger.WriteDebug("YourCurrentTarget: changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, entry={7}, faction={8}, loss={9}, facing={10}, blacklist={11}" + info,
                     target.SafeName(),
                     target.HealthPercent,
                     target.MaxHealth,
@@ -177,7 +182,6 @@ namespace Singular
                     Me.IsSafelyFacing(target).ToYN(),
                     Blacklist.Contains(target.Guid, BlacklistFlags.Combat).ToYN()
                     );
-
             }
         }
 

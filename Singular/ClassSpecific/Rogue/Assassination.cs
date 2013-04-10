@@ -58,6 +58,7 @@ namespace Singular.ClassSpecific.Rogue
                         )
                     ),
 
+                Movement.CreateMoveBehindTargetBehavior(),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }

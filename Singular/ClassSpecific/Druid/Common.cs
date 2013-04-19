@@ -261,10 +261,11 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
                         && (Me.GetPredictedHealthPercent(true) < SingularSettings.Instance.MinHealth || (Me.Shapeshift == ShapeshiftForm.Normal && Me.GetPredictedHealthPercent(true) < 85))
-                        && SpellManager.HasSpell("Healing Touch") && SpellManager.CanCast("Healing Touch", Me, false, false),
+                        && ((Me.HasAuraExpired("Rejuvenation", 1) && SpellManager.CanCast("Rejuvenation", Me, false, false)) || (SpellManager.HasSpell("Healing Touch") && SpellManager.CanCast("Healing Touch", Me, false, false))),
                     new PrioritySelector(
-                        Movement.CreateEnsureMovementStoppedBehavior(),
+                        Movement.CreateEnsureMovementStoppedBehavior( reason:"to heal"),
                         new Action(r => { Logger.WriteDebug("Druid Rest Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift ); return RunStatus.Failure; }),
+                        Spell.BuffSelf("Rejuvenation", req => !SpellManager.HasSpell("Healing Touch")),
                         Spell.Cast("Healing Touch",
                             mov => true,
                             on => Me,

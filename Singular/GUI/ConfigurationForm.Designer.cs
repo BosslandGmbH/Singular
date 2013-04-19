@@ -83,7 +83,7 @@
             this.tabControl1.Multiline = true;
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(340, 463);
+            this.tabControl1.Size = new System.Drawing.Size(340, 368);
             this.tabControl1.TabIndex = 4;
             // 
             // tabPage1
@@ -92,7 +92,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(332, 437);
+            this.tabPage1.Size = new System.Drawing.Size(332, 342);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "General";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -102,7 +102,7 @@
             this.pgGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pgGeneral.Location = new System.Drawing.Point(3, 3);
             this.pgGeneral.Name = "pgGeneral";
-            this.pgGeneral.Size = new System.Drawing.Size(326, 431);
+            this.pgGeneral.Size = new System.Drawing.Size(326, 336);
             this.pgGeneral.TabIndex = 0;
             // 
             // tabPage2
@@ -301,7 +301,7 @@
             this.grpFooter.Controls.Add(this.label1);
             this.grpFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.grpFooter.ForeColor = System.Drawing.SystemColors.Control;
-            this.grpFooter.Location = new System.Drawing.Point(0, 466);
+            this.grpFooter.Location = new System.Drawing.Point(0, 371);
             this.grpFooter.Margin = new System.Windows.Forms.Padding(0);
             this.grpFooter.Name = "grpFooter";
             this.grpFooter.Padding = new System.Windows.Forms.Padding(0);
@@ -369,7 +369,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(340, 537);
+            this.ClientSize = new System.Drawing.Size(340, 442);
             this.Controls.Add(this.grpFooter);
             this.Controls.Add(this.tabControl1);
             this.MaximizeBox = false;

@@ -20,6 +20,7 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.Helpers;
 using Styx.WoWInternals;
 using Styx.Common.Helpers;
+using System.Collections.Generic;
 
 namespace Singular
 {
@@ -133,6 +134,15 @@ namespace Singular
             _lostControlBehavior = new Decorator(
                 ret => Me.Fleeing || Me.Stunned,
                 new PrioritySelector(
+                    new Action( r => { 
+                        if ( !StyxWoW.IsInGame )
+                        {
+                            Logger.WriteDebug(Color.White, "Not in game...");
+                            return RunStatus.Success;
+                        }
+                        
+                        return RunStatus.Failure; 
+                        }),
                     new ThrottlePasses(1, 1, new Decorator(ret => Me.Fleeing, new Action(r => { Logger.Write(Color.White, "FLEEING! (loss of control)"); return RunStatus.Failure; }))),
                     new ThrottlePasses(1, 1, new Decorator(ret => Me.Stunned, new Action(r => { Logger.Write(Color.White, "STUNNED! (loss of control)"); return RunStatus.Failure; }))),
                     new ThrottlePasses(1, 1, new Decorator(ret => Me.Silenced, new Action(r => { Logger.Write(Color.White, "SILENCED! (loss of control)"); return RunStatus.Failure; }))),
@@ -156,91 +166,105 @@ namespace Singular
                 );
 
             _restBehavior = new LockSelector(
-                new Decorator(
-                    ret => !Me.IsFlying && AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
-                    new PrioritySelector(
-                        // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
-                        Spell.WaitForGcdOrCastOrChannel(),
-                        _lostControlBehavior,
-                        new HookExecutor(BehaviorType.Rest.ToString())
+                new CallWatch( "Rest",
+                    new Decorator(
+                        ret => !Me.IsFlying && AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
+                        new PrioritySelector(
+                            // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
+                            Spell.WaitForGcdOrCastOrChannel(),
+                            _lostControlBehavior,
+                            new HookExecutor(BehaviorType.Rest.ToString())
+                            )
                         )
                     )
                 );
 
             _preCombatBuffsBehavior = new LockSelector(
-                new Decorator(  // suppress non-combat buffing if standing around waiting on DungeonBuddy or BGBuddy queues
-                    ret => !Me.Mounted
-                        && !SingularSettings.Instance.DisableNonCombatBehaviors
-                        && AllowNonCombatBuffing(),
-                    new PrioritySelector(
-                        Spell.WaitForGcdOrCastOrChannel(),
-                        Item.CreateUseAlchemyBuffsBehavior(),
-                // Generic.CreateFlasksBehaviour(),
-                        new HookExecutor(BehaviorType.PreCombatBuffs.ToString())
+                new CallWatch( "PreCombat",
+                    new Decorator(  // suppress non-combat buffing if standing around waiting on DungeonBuddy or BGBuddy queues
+                        ret => !Me.Mounted
+                            && !SingularSettings.Instance.DisableNonCombatBehaviors
+                            && AllowNonCombatBuffing(),
+                        new PrioritySelector(
+                            Spell.WaitForGcdOrCastOrChannel(),
+                            Item.CreateUseAlchemyBuffsBehavior(),
+                    // Generic.CreateFlasksBehaviour(),
+                            new HookExecutor(BehaviorType.PreCombatBuffs.ToString())
+                            )
                         )
                     )
                 );
 
             _pullBuffsBehavior = new LockSelector(
-                new Decorator(
-                    ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                    new HookExecutor(BehaviorType.PullBuffs.ToString())
+                new CallWatch("PullBuffs",
+                    new Decorator(
+                        ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                        new HookExecutor(BehaviorType.PullBuffs.ToString())
+                        )
                     )
                 );
 
             _combatBuffsBehavior = new LockSelector(
-                new Decorator(
-                    ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                    new PrioritySelector(
-                        new Decorator(ret => !HotkeyDirector.IsCombatEnabled, new ActionAlwaysSucceed()),
-                        Generic.CreateUseTrinketsBehaviour(),
-                        Generic.CreatePotionAndHealthstoneBehavior(),
-                        Generic.CreateRacialBehaviour(),
-                        new HookExecutor(BehaviorType.CombatBuffs.ToString())
+                new CallWatch("CombatBuffs",
+                    new Decorator(
+                        ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                        new PrioritySelector(
+                            new Decorator(ret => !HotkeyDirector.IsCombatEnabled, new ActionAlwaysSucceed()),
+                            Generic.CreateUseTrinketsBehaviour(),
+                            Generic.CreatePotionAndHealthstoneBehavior(),
+                            Generic.CreateRacialBehaviour(),
+                            new HookExecutor(BehaviorType.CombatBuffs.ToString())
+                            )
                         )
                     )
                 );
 
             _healBehavior = new LockSelector(
-                _lostControlBehavior,
-                new Decorator(
-                    ret => Kite.IsKitingActive(),
-                    new HookExecutor("KitingBehavior")
-                    ),
-                new Decorator(
-                    ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                    new HookExecutor(BehaviorType.Heal.ToString())
+                new CallWatch("PullBuffs",
+                    _lostControlBehavior,
+                    new Decorator(
+                        ret => Kite.IsKitingActive(),
+                        new HookExecutor("KitingBehavior")
+                        ),
+                    new Decorator(
+                        ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                        new HookExecutor(BehaviorType.Heal.ToString())
+                        )
                     )
                 );
 
             _pullBehavior = new LockSelector(
-                new Decorator(
-                    ret => AllowBehaviorUsage(), // && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
-                    new PrioritySelector(
-                        new Decorator(
-                            ret => !HotkeyDirector.IsCombatEnabled,
-                            new ActionAlwaysSucceed()
-                            ),
-                        new Action(r => { MonitorQuestingPullDistance(); return RunStatus.Failure; }),
-#if BOTS_NOT_CALLING_PULLBUFFS
-                        _pullBuffsBehavior,
-#endif
-                        CreateLogTargetChanges("<<< PULL >>>"),
-                        new HookExecutor(BehaviorType.Pull.ToString())
+                new CallWatch("Pull",
+                    new Decorator(
+                        ret => AllowBehaviorUsage(), // && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
+                        new PrioritySelector(
+                            new Decorator(
+                                ret => !HotkeyDirector.IsCombatEnabled,
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Action(r => { MonitorQuestingPullDistance(); return RunStatus.Failure; }),
+    #if BOTS_NOT_CALLING_PULLBUFFS
+                            _pullBuffsBehavior,
+    #endif
+                            CreateLogTargetChanges("<<< PULL >>>"),
+                            new HookExecutor(BehaviorType.Pull.ToString())
+                            )
                         )
                     )
                 );
 
             _combatBehavior = new LockSelector(
-                new Decorator(
-                    ret => AllowBehaviorUsage(), // && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
-                    new PrioritySelector(
-                        new Decorator(
-                            ret => !HotkeyDirector.IsCombatEnabled,
-                            new ActionAlwaysSucceed()
-                            ),
-                        CreateLogTargetChanges("<<< ADD >>>"),
-                        new HookExecutor(BehaviorType.Combat.ToString())
+                new CallWatch("PullBuffs",
+                    new Decorator(
+                        ret => AllowBehaviorUsage(), // && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
+                        new PrioritySelector(
+                            new Decorator(
+                                ret => !HotkeyDirector.IsCombatEnabled,
+                                new ActionAlwaysSucceed()
+                                ),
+                            CreateLogTargetChanges("<<< ADD >>>"),
+                            new HookExecutor(BehaviorType.Combat.ToString())
+                            )
                         )
                     )
                 );
@@ -253,7 +277,9 @@ namespace Singular
 #else
             // The boss 'Elegon' sits on a transport, this is just one of several examples why bot needs to fight back when on a transport while in an dungeon.
             // return (IsDungeonBuddyActive || !Me.IsOnTransport || Me.Transport.Entry == 56171 || Me.IsInInstance);
-            return true;
+
+            return !IsQuestBotActive || !Me.InVehicle;
+            // return true;
 #endif
         }
 
@@ -408,5 +434,42 @@ namespace Singular
         }
 
         #endregion
+    }
+
+
+    public class CallWatch : PrioritySelector
+    {
+        public static DateTime LastAll { get; set; }
+        public static ulong CountAll { get; set; }
+        public static double WarnTime { get; set; }
+
+        public string Name { get; set; }
+
+        public CallWatch(string name, params Composite[] children)
+            : base(children)
+        {
+            if (WarnTime == 0)
+                WarnTime = 5;
+
+            Name = name;
+            LastAll = DateTime.MinValue;
+        }
+
+        protected override IEnumerable<RunStatus> Execute(object context)
+        {
+            CountAll++;
+
+            if (SingularSettings.Debug)
+            {
+                DateTime rightNow = DateTime.Now;
+                if ((rightNow - LastAll).TotalSeconds > WarnTime && LastAll != DateTime.MinValue )
+                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", (rightNow - LastAll).TotalSeconds, Name);
+            }
+
+            IEnumerable<RunStatus> ret = base.Execute(context);
+
+            LastAll = DateTime.Now;
+            return ret;
+        }
     }
 }

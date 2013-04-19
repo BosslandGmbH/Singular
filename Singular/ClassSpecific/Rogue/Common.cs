@@ -17,6 +17,7 @@ using Singular.Settings;
 using System;
 using Styx.CommonBot.POI;
 using System.Collections.Generic;
+using Styx.Helpers;
 
 namespace Singular.ClassSpecific.Rogue
 {
@@ -32,18 +33,10 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        CreateStealthBehavior( ret => StyxWoW.Me.HasAura("Food")),
-                        Rest.CreateDefaultRestBehaviour( ),
-
-                        CreateRogueOpenBoxes(),
-                        CreateRoguePreCombatBuffs(),
-                        CreateRogueGeneralMovementBuff("Rest")
-                        )
-                    )
+                CreateStealthBehavior( ret => StyxWoW.Me.HasAura("Food")),
+                Rest.CreateDefaultRestBehaviour( ),
+                CreateRogueOpenBoxes(),
+                CreateRogueGeneralMovementBuff("Rest")
                 );
         }
 
@@ -109,6 +102,14 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRoguePreCombatBuffs()
         {
             return new PrioritySelector(
+
+                CreateStealthBehavior(
+                    ret => RogueSettings.StealthAlways
+                        && BotPoi.Current.Type != PoiType.Loot
+                        && BotPoi.Current.Type != PoiType.Skin
+                        && !ObjectManager.GetObjectsOfType<WoWUnit>().Any(u => u.IsDead && ((CharacterSettings.Instance.LootMobs && u.CanLoot && u.Lootable) || (CharacterSettings.Instance.SkinMobs && u.Skinnable && u.CanSkin)) && u.Distance < CharacterSettings.Instance.LootRadius)
+                        ),
+
                 // new Action(r => { Logger.WriteDebug("PreCombatBuffs -- stealthed={0}", Stealthed); return RunStatus.Failure; }),
                 CreateApplyPoisons(),
 
@@ -116,7 +117,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.Cast("Recuperate", 
                     on => Me,
                     ret => StyxWoW.Me.RawComboPoints > 0 
-                        && (!SpellManager.HasSpell( "Redirect") || Spell.IsSpellOnCooldown("Redirect"))
+                        && Spell.IsSpellOnCooldown("Redirect")
                         && Me.HasAuraExpired("Recuperate", 3 + Me.RawComboPoints * 6))
                 );
         }
@@ -367,7 +368,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 new Sequence(
-                    Spell.BuffSelf("Stealth", ret => req == null || req(ret)),
+                    Spell.BuffSelf("Stealth", ret => !IsStealthed && req == null || req(ret)),
                     new Wait( TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed())
                     )                
                 );
@@ -440,7 +441,8 @@ namespace Singular.ClassSpecific.Rogue
                 ret => RogueSettings.UsePickLock,
                 new PrioritySelector(
                     new Decorator( 
-                        ret => SpellManager.HasSpell("Pick Lock") 
+                        ret => !IsStealthed 
+                            && SpellManager.HasSpell("Pick Lock") 
                             && SpellManager.CanCast("Pick Lock", Me, false, true)
                             && AutoLootIsEnabled(),
                         new Sequence(
@@ -451,7 +453,8 @@ namespace Singular.ClassSpecific.Rogue
                             new Wait( 1, ret => Me.CurrentPendingCursorSpell != null, new ActionAlwaysSucceed()),
                             new Action( r => Logger.WriteDebug( "picklock: use item")),
                             new Action( r => box.Use() ),
-                            new Action( r => Logger.WriteDebug( "picklock: wait for spell in progress")),
+                            new Action(r => Blacklist.Add(box.Guid, BlacklistFlags.Node, TimeSpan.FromSeconds(30))),
+                            new Action(r => Logger.WriteDebug("picklock: wait for spell in progress")),
                             new Wait( 1, ret => Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
                             new Action( r => Logger.WriteDebug( "picklock: wait for spell to complete")),
                             new Wait( 6, ret => !Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
@@ -465,6 +468,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Sequence(
                             new Action( r => Logger.WriteDebug( "open box - wait for openable")),
                             new Wait(2, ret => box.IsOpenable && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), new Action(r => box.UseContainerItem())),
+                            new Action(r => Blacklist.Add(box.Guid, BlacklistFlags.Loot, TimeSpan.FromSeconds(30))),
                             Helpers.Common.CreateWaitForLagDuration()
                             )
                         )
@@ -507,6 +511,7 @@ namespace Singular.ClassSpecific.Rogue
                     && !b.IsOpenable
                     && b.Usable
                     && b.Cooldown <= 0
+                    && !Blacklist.Contains(b.Guid, BlacklistFlags.Node)
                     && _boxes.Contains(b.Entry))
                 .FirstOrDefault();
         }
@@ -519,6 +524,7 @@ namespace Singular.ClassSpecific.Rogue
                     && b.IsOpenable
                     && b.Usable
                     && b.Cooldown <= 0
+                    && !Blacklist.Contains(b.Guid, BlacklistFlags.Loot)
                     && _boxes.Contains(b.Entry))
                 .FirstOrDefault();
         }

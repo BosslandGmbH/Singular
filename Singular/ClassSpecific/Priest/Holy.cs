@@ -202,7 +202,7 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Cast("Power Word: Shield", on =>
                     {
                         WoWUnit unit = HealerManager.GetBestTankTargetForPWS(PriestSettings.HolyHeal.PowerWordShield);
-                        if (unit != null && Spell.CanCastHack("Power Word: Shield", unit))
+                        if (unit != null && Spell.CanCastHack("Power Word: Shield", unit, skipWowCheck: true))
                         {
                             Logger.WriteDebug("Buffing Power Word: Shield ON TANK: {0}", unit.SafeName());
                             return unit;
@@ -422,7 +422,7 @@ VoidShift               Void Shift
                                 .OrderBy(u => u.HealthPercent)
                                 .FirstOrDefault();
 
-                            if (unit != null && Spell.CanCastHack("Renew", unit))
+                            if (unit != null && Spell.CanCastHack("Renew", unit, skipWowCheck: true))
                             {
                                 Logger.WriteDebug("Refreshing RENEW ON TANK: {0}", unit.SafeName());
                                 return unit;
@@ -439,7 +439,7 @@ VoidShift               Void Shift
                 Spell.Cast("Renew", on =>
                     {
                         WoWUnit unit = HealerManager.GetBestTankTargetForHOT("Renew", PriestSettings.HolyHeal.Renew);
-                        if (unit != null && Spell.CanCastHack("Renew", unit))
+                        if (unit != null && Spell.CanCastHack("Renew", unit, skipWowCheck: true))
                         {
                             Logger.WriteDebug("Buffing RENEW ON TANK: {0}", unit.SafeName());
                             return unit;
@@ -494,46 +494,15 @@ VoidShift               Void Shift
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
-                    ret => moveInRange,
-                    new PrioritySelector(
-                        new Action(r =>
-                        {
-                            _moveToHealTarget = RaFHelper.Leader ?? Group.Tanks.Where(t => t.IsAlive).OrderBy(t => t.Distance).FirstOrDefault();
-                            if (_moveToHealTarget == null)
-                                _moveToHealTarget = (WoWUnit)r;
-
-                            if (_lastMoveToTarget != _moveToHealTarget)
-                            {
-                                if ( _moveToHealTarget == null )
-                                    Logger.WriteDebug(Color.White, "MoveToHealTarget:  no current heal movement target");
-                                else
-                                    Logger.WriteDebug(Color.White, "MoveToHealTarget:  in range of {0} @ {1:F1} yds", _moveToHealTarget.SafeName(), _moveToHealTarget.Distance);
-
-                                _lastMoveToTarget = _moveToHealTarget;
-                            }
-
-                            return RunStatus.Failure;
-                        }),
-
-                        Movement.CreateMoveToLosBehavior(moveTo => _moveToHealTarget),
-                        Movement.CreateEnsureMovementStoppedBehavior(30f, on => _moveToHealTarget)
-                        )
-                    ),
-
-                new Decorator(
                     ret => !Spell.IsGlobalCooldown() && ret != null,
                     behavs.GenerateBehaviorTree()
                     ),
 
                 new Decorator(
                     ret => moveInRange,
-                    new Sequence(
-                        new Action( r => {
-                            if (_moveToHealTarget != null && _moveToHealTarget.IsValid && _moveToHealTarget.Distance > 35)
-                                Logger.Write(Color.White, "heal target {0} is {1:F1} yds away", _moveToHealTarget.SafeName(), _moveToHealTarget.Distance);
-                            }),
-                        // Movement.CreateMoveToRangeAndStopBehavior(ret => _moveToHealTarget, ret => 35f)
-                        Movement.CreateMoveToTargetBehavior( true, 35f, ret => _moveToHealTarget )
+                    Movement.CreateMoveToRangeAndStopBehavior(
+                        ret => Battlegrounds.IsInsideBattleground ? (WoWUnit)ret : Group.Tanks.Where(a => a.IsAlive).OrderBy(a => a.Distance).FirstOrDefault(),
+                        ret => 35f
                         )
                     )
                 );
@@ -684,7 +653,7 @@ VoidShift               Void Shift
             if (!Me.IsInGroup() || !Me.Combat)
                 return null;
 
-            if (!Spell.CanCastHack(spell, Me))
+            if (!Spell.CanCastHack(spell, Me, skipWowCheck: true))
             {
                 if ( !SingularSettings.Instance.EnableDebugLoggingCanCast )
                     Logger.WriteDebug("GetBestCoverageTarget: CanCastHack says NO to [{0}]", spell);
@@ -741,13 +710,6 @@ VoidShift               Void Shift
         private static Composite CreateHolyDiagnosticOutputBehavior( string context)
         {
             return new Sequence(
-                new Action( r => {
-                    double sinceLast = _LastDiag == DateTime.MinValue ? -1 : (DateTime.Now - _LastDiag).TotalSeconds;
-                    _LastDiag = DateTime.Now;
-
-                    if (sinceLast > 3 && Me.IsInGroup())
-                        Logger.Write(Color.Violet, "Warning: {0:F1} seconds since BotBase called Singular to check healing", sinceLast);
-                }),
                 new Decorator(
                     ret => SingularSettings.Debug,
                     new ThrottlePasses(1, 1,

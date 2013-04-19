@@ -57,7 +57,7 @@ namespace Singular.Helpers
                             ret => spellHeal != null && SpellManager.HasSpell(spellHeal) && SpellManager.CanCast( spellHeal, Me, false, false)
                                 && Me.GetPredictedHealthPercent(true) <= 85 && !Me.HasAura("Drink") && !Me.HasAura("Food"),
                             new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(),
+                                Movement.CreateEnsureMovementStoppedBehavior(reason:"to heal"),
                                 new Action( r => { Logger.WriteDebug( "Rest Heal - {0} @ {1:F1}% and moving:{2}", spellHeal, Me.HealthPercent, Me.IsMoving ); return RunStatus.Failure; } ),
                                 Spell.Cast(spellHeal,
                                     mov => true,
@@ -78,7 +78,7 @@ namespace Singular.Helpers
                                 && SpellManager.CanCast("Cannibalize") 
                                 && CorpseAround,
                             new Sequence(
-                                new DecoratorContinue( ret => Me.IsMoving, Movement.CreateEnsureMovementStoppedBehavior()),
+                                new DecoratorContinue( ret => Me.IsMoving, Movement.CreateEnsureMovementStoppedBehavior(reason:"to cannibalize")),
                                 new Wait( 1, ret => !Me.IsMoving, new ActionAlwaysSucceed()),
                                 new Action(ret => Logger.Write( "Casting Cannibalize @ health:{0:F1}%{1}", Me.HealthPercent, (Me.PowerType != WoWPowerType.Mana) ? "" : string.Format( " mana:{0:F1}%", Me.ManaPercent ))),
                                 new Action(ret => SpellManager.Cast("Cannibalize")),
@@ -125,7 +125,7 @@ namespace Singular.Helpers
                             ret => !Me.IsSwimming && Me.GetPredictedHealthPercent(true) <= SingularSettings.Instance.MinHealth 
                                 && !Me.HasAura("Food") && Consumable.GetBestFood(false) != null,
                             new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(),
+                                Movement.CreateEnsureMovementStoppedBehavior(reason:"to eat"),
                                 new Sequence(
                                     new Action(
                                         ret =>
@@ -142,7 +142,7 @@ namespace Singular.Helpers
                             ret => !Me.IsSwimming && (Me.PowerType == WoWPowerType.Mana || Me.Class == WoWClass.Druid) 
                                 && Me.ManaPercent <= SingularSettings.Instance.MinMana && !Me.HasAura("Drink") && Consumable.GetBestDrink(false) != null,
                             new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(),
+                                Movement.CreateEnsureMovementStoppedBehavior(reason:"to drink"),
                                 new Sequence(
                                     new Action(ret =>
                                         {

@@ -78,7 +78,7 @@ namespace Singular.ClassSpecific.Warrior
 
         public static Composite CreateChargeBehavior()
         {
-            return new Throttle( 1,
+            return new Throttle( TimeSpan.FromMilliseconds(1500),
                 new Decorator(
                     ret => Me.CurrentTarget != null,
 

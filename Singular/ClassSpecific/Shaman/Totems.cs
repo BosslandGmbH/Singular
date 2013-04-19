@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific.Shaman
                                 if (Me.Specialization != WoWSpec.ShamanRestoration)
                                     return false;
 
-                                Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
+                                // Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
                                 if (Me.ManaPercent > ShamanSettings.ManaTideTotemPercent )
                                     return false;
                                 if (Exist(WoWTotem.HealingTide, WoWTotem.HealingStream))
@@ -155,8 +155,7 @@ namespace Singular.ClassSpecific.Shaman
         */
 
                         // air totems
-                        Spell.Cast("Stormlash Totem",
-                            ret => PartyBuff.WeHaveBloodlust),
+                        Spell.Cast("Stormlash Totem", ret => PartyBuff.WeHaveBloodlust && !Me.HasAura("Stormlash Totem")),
 
                         new Decorator(
                             ret => !Exist(WoWTotemType.Air),
@@ -229,7 +228,7 @@ namespace Singular.ClassSpecific.Shaman
                                 if (Me.Specialization != WoWSpec.ShamanRestoration)
                                     return false;
 
-                                Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
+                                // Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
                                 if (Me.ManaPercent > ShamanSettings.ManaTideTotemPercent)
                                     return false;
                                 if (Exist(WoWTotem.HealingTide, WoWTotem.HealingStream))
@@ -247,7 +246,7 @@ namespace Singular.ClassSpecific.Shaman
         */
 
                         // air totems
-                        Spell.Cast("Stormlash Totem", ret => PartyBuff.WeHaveBloodlust),
+                        Spell.Cast("Stormlash Totem", ret => PartyBuff.WeHaveBloodlust && !Me.HasAura("Stormlash Totem")),
 
                         new Decorator(
                             ret => !Exist(WoWTotemType.Air),

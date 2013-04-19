@@ -43,26 +43,6 @@ namespace Singular.ClassSpecific.DeathKnight
             get { return Me.Minions.Any(u => u.Entry == Ghoul); }
         }
 
-        internal static bool UseLongCoolDownAbility
-        {
-            get
-            {
-                if ( !Me.GotTarget)
-                    return false;
-
-                if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-                    return Me.CurrentTarget.IsBoss();
-
-                if (Me.CurrentTarget.IsPlayer)
-                    return Me.CurrentTarget.TimeToDeath() > 3;
-
-                if (Me.CurrentTarget.TimeToDeath() > 20)
-                    return true;
-
-                return Unit.NearbyUnitsInCombatWithMe.Any( u => u.Guid != Me.CurrentTargetGuid);
-            }
-        }
-
         internal static bool ShouldSpreadDiseases
         {
             get
@@ -288,11 +268,11 @@ namespace Singular.ClassSpecific.DeathKnight
                     // never use army of the dead in instances if not blood specced unless you have the army of the dead glyph to take away the taunting
                     Spell.BuffSelf("Army of the Dead", 
                         ret => Settings.UseArmyOfTheDead 
-                            && UseLongCoolDownAbility 
+                            && Helpers.Common.UseLongCoolDownAbility
                             && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || TalentManager.HasGlyph("Army of the Dead"))),
 
                     Spell.BuffSelf("Empower Rune Weapon",
-                            ret => UseLongCoolDownAbility && Me.RunicPowerPercent < 70 && ActiveRuneCount == 0),
+                            ret => Helpers.Common.UseLongCoolDownAbility && Me.RunicPowerPercent < 70 && ActiveRuneCount == 0),
 
                     Spell.BuffSelf("Death's Advance",
                         ret => Common.HasTalent( DeathKnightTalents.DeathsAdvance) 

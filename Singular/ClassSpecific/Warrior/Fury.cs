@@ -41,7 +41,8 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Heroic Throw"),
                         Spell.Cast("Throw"),
                         Movement.CreateMoveToTargetBehavior(true, 27f)
-                        )),
+                        )
+                    ),
 
                 //low level support
                 new Decorator(
@@ -52,7 +53,9 @@ namespace Singular.ClassSpecific.Warrior
                                 && StyxWoW.Me.CurrentTarget.Distance.Between(12, 25)),
                         Spell.Cast("Heroic Throw", ret => !StyxWoW.Me.CurrentTarget.HasAura("Charge Stun")),
                         Spell.Cast("Throw"),
-                        Movement.CreateMoveToTargetBehavior(true, 5f))),
+                        Movement.CreateMoveToMeleeBehavior(true)
+                        )
+                    ),
 
                 // Get closer to target
                 Spell.Cast("Charge", 
@@ -112,7 +115,7 @@ namespace Singular.ClassSpecific.Warrior
                 new Decorator(ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")),
                     new PrioritySelector(
                         Spell.WaitForCast(),
-                        Movement.CreateEnsureMovementStoppedBehavior(),
+                        Movement.CreateEnsureMovementStoppedBehavior(reason:"for shattering throw"),
                         Spell.Cast("Shattering Throw"),
                         Movement.CreateMoveToTargetBehavior(true, 30f)
                         )),

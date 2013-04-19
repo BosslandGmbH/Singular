@@ -96,6 +96,16 @@ namespace Singular.GUI
 
             if (!timer1.Enabled)
                 timer1.Start();
+
+            Screen screen = Screen.FromHandle(this.Handle);
+            if (this.Left.Between(0, screen.WorkingArea.Width) && this.Top.Between(0, screen.WorkingArea.Height))
+            {
+                int height = screen.WorkingArea.Height - this.Top;
+                if (height > 200)
+                {
+                    this.Height = height;
+                }
+            }
         }
 
         /// <summary>

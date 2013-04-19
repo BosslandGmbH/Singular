@@ -86,10 +86,22 @@ namespace Singular
             string name;
             if (obj is WoWPlayer)
             {
-                if (RaFHelper.Leader == obj)
-                    return "Tank";
-
-                name = ShowPlayerNames ? ((WoWPlayer)obj).Name : ((WoWPlayer)obj).Class.ToString();
+                if (!obj.ToPlayer().IsFriendly)
+                {
+                    name = "Enemy.";
+                }
+                else
+                {
+                    if (RaFHelper.Leader == obj)
+                        name = "Lead.";
+                    else if (Group.Tanks.Any(t => t.Guid == obj.Guid))
+                        name = "Tank.";
+                    else if (Group.Healers.Any(t => t.Guid == obj.Guid))
+                        name = "Healer.";
+                    else
+                        name = "Dps.";
+                }
+                name += ShowPlayerNames ? ((WoWPlayer)obj).Name : ((WoWPlayer)obj).Class.ToString();
             }
             else if (obj is WoWUnit && obj.ToUnit().IsPet)
             {
@@ -101,10 +113,7 @@ namespace Singular
                 name = obj.Name;
             }
 
-            if (SingularSettings.Debug)
-                return name + "." + UnitID(obj.Guid);
-
-            return name;
+            return name + "." + UnitID(obj.Guid);
         }
 
         public static bool IsWanding(this LocalPlayer me)

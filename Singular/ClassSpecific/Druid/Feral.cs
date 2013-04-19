@@ -16,6 +16,8 @@ using System.Collections.Generic;
 using CommonBehaviors.Actions;
 using Styx.WoWInternals;
 using System.Drawing;
+using Styx.CommonBot.POI;
+using Styx.Helpers;
 
 #endregion
 
@@ -146,7 +148,7 @@ namespace Singular.ClassSpecific.Druid
             // save WC for later if Dash is active. also throttle to deal with possible pathing issues
             return new Throttle(7,
                 new Sequence(
-                    Spell.Cast("Wild Charge", ret => MovementManager.IsClassMovementAllowed && !Me.HasAura("Dash")),
+                    Spell.CastHack("Wild Charge", ret => MovementManager.IsClassMovementAllowed && !Me.HasAura("Dash")),
                     new Wait(1, until => !Me.GotTarget || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                     )
                 );
@@ -175,6 +177,13 @@ namespace Singular.ClassSpecific.Druid
                                 Me.CancelAura(formName);
                             })
                             )
+                        ),
+
+                    Common.CreateProwlBehavior(
+                        ret => DruidSettings.ProwlAlways
+                            && BotPoi.Current.Type != PoiType.Loot
+                            && BotPoi.Current.Type != PoiType.Skin
+                            && !ObjectManager.GetObjectsOfType<WoWUnit>().Any(u => u.IsDead && ((CharacterSettings.Instance.LootMobs && u.CanLoot && u.Lootable) || (CharacterSettings.Instance.SkinMobs && u.Skinnable && u.CanSkin)) && u.Distance < CharacterSettings.Instance.LootRadius)
                         )
                     )
                 );
@@ -284,10 +293,10 @@ namespace Singular.ClassSpecific.Druid
                         new Throttle( Spell.Cast("Nature's Vigil", ret => Me.HasAura("Berserk"))),
                         Spell.Cast("Incarnation", ret => Me.HasAura("Berserk")),
 
-                        // bite if rip good for awhile or target dying soon
+                        // bite if rip on for awhile or target dying soon
                         Spell.Cast("Ferocious Bite", 
-                            ret => Me.ComboPoints >= 5
-                                && (Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds > 6 || Me.CurrentTarget.TimeToDeath() < 6)),
+                            ret => (Me.ComboPoints >= 5 && !Me.HasAuraExpired("Rip", 6))
+                                || Me.ComboPoints >= Me.CurrentTarget.TimeToDeath(99)),
 
                         Spell.Cast("Rip",
                             ret => Me.ComboPoints >= 5
@@ -343,6 +352,7 @@ namespace Singular.ClassSpecific.Druid
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
+                        CreateFeralDiagnosticOutputBehavior("Combat"),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -365,7 +375,6 @@ namespace Singular.ClassSpecific.Druid
 
                         new Decorator(
                             ret => Me.GotTarget
-                                && Me.CurrentTarget.IsBoss()
                                 && Me.SpellDistance(Me.CurrentTarget) < 8,
 
                             new PrioritySelector(
@@ -426,8 +435,8 @@ namespace Singular.ClassSpecific.Druid
                                         // 7. Ferocious Bite if you have 5 CP and at least 6 - 10 seconds on Savage Roar and Rip
                                         Spell.Cast("Ferocious Bite", 
                                             req => Me.ComboPoints >= 5
-                                                && Me.GetAuraTimeLeft("Savage Roar").TotalSeconds > 6
-                                                && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds > 6
+                                                && !Me.HasAuraExpired("Savage Roar", 6)
+                                                && !Me.HasAuraExpired("Rip", 6)
                                                 ),
 
                                         // 8. Keep 5 combo point Rip up.
@@ -472,10 +481,10 @@ namespace Singular.ClassSpecific.Druid
                                             new PrioritySelector(
                                                 Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent < 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds.Between(150, 6000)),
                                                 Spell.Cast("Ferocious Bite",
-                                                    req => Me.GetAuraTimeLeft("Savage Roar").TotalSeconds > 6
-                                                        && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalSeconds > 6
+                                                    req => !Me.HasAuraExpired("Savage Roar", 6)
+                                                        && !Me.HasAuraExpired("Rip", 6)
                                                         ),
-                                                Spell.Buff("Rip", true, on => Me.CurrentTarget, req => Me.ComboPoints >= 5, 3)
+                                                Spell.Buff("Rip", true, on => Me.CurrentTarget, req => true, 3)
                                                 )
                                             ),
 
@@ -512,6 +521,10 @@ namespace Singular.ClassSpecific.Druid
 
         private static Composite CreateFeralAoeCombat()
         {
+            // disable AOE for PVP
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                return new ActionAlwaysFail();
+
             return new PrioritySelector(
 
                 new Action( ret => {
@@ -519,7 +532,7 @@ namespace Singular.ClassSpecific.Druid
                     return RunStatus.Failure;
                     }),
 
-                new Decorator(ret => Spell.UseAOE && _aoeColl.Count() >= 3 && !_aoeColl.Any(m => m.IsCrowdControlled()),
+                new Decorator(ret => Spell.UseAOE && _aoeColl.Count() >= 3 && !_aoeColl.Any(m => m.IsCrowdControlled()) && Me.Level >= 22,
 
                     new PrioritySelector(
 
@@ -538,8 +551,8 @@ namespace Singular.ClassSpecific.Druid
 
                         // bite if rip good for awhile or target dying soon
                         Spell.Cast("Ferocious Bite",
-                            ret => Me.ComboPoints >= 5
-                                && (Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds > 6 || Me.CurrentTarget.TimeToDeath() < 8)),
+                            ret => (Me.ComboPoints >= 5 && !Me.HasAuraExpired("Rip", 6))
+                                || Me.ComboPoints >= Me.CurrentTarget.TimeToDeath(99)),
 
                         Spell.Cast("Rip",
                             ret => Me.ComboPoints >= 5
@@ -597,11 +610,12 @@ namespace Singular.ClassSpecific.Druid
                         WoWUnit target = Me.CurrentTarget;
                         if (target != null)
                         {
-                            log += string.Format(", th={0:F1}%, dist={1:F1}, face={2}, loss={3}, dead={4} secs, rake={5}, rip={6}, thrash={7}",
+                            log += string.Format(", th={0:F1}%, dist={1:F1}, inmelee={2}, face={3}, loss={4}, dead={5} secs, rake={6}, rip={7}, thrash={8}",
                                 target.HealthPercent,
                                 target.Distance,
-                                Me.IsSafelyFacing(target),
-                                target.InLineOfSpellSight,
+                                target.IsWithinMeleeRange.ToYN(),
+                                Me.IsSafelyFacing(target).ToYN(),
+                                target.InLineOfSpellSight.ToYN(),
                                 target.TimeToDeath(),
                                 (long)target.GetAuraTimeLeft("Rake", true).TotalMilliseconds,
                                 (long)target.GetAuraTimeLeft("Rip", true).TotalMilliseconds,

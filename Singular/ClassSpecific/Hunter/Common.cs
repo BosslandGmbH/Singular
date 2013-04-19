@@ -338,7 +338,7 @@ namespace Singular.ClassSpecific.Hunter
                         ret => (Pet == null || !Pet.IsAlive) && (!Me.Combat || reviveInCombat),
                         new Sequence(
                             new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(),
+                                Movement.CreateEnsureMovementStoppedBehavior(reason:"to call pet"),
                                 new ActionAlwaysSucceed()
                                 ),
                             new Action(ret => Logger.WriteDebug("CallPet: attempting Revive Pet - cancast={0}", SpellManager.CanCast("Revive Pet"))),

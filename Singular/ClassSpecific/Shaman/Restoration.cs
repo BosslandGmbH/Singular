@@ -176,10 +176,7 @@ namespace Singular.ClassSpecific.Shaman
                             Movement.CreateFaceTargetBehavior(),
                             Helpers.Common.CreateDismount("Pulling"),
 
-                            new Decorator(
-                                ret => Me.GotTarget && Me.CurrentTarget.Distance < 35,
-                                Movement.CreateEnsureMovementStoppedBehavior()
-                                ),
+                            Movement.CreateEnsureMovementStoppedBehavior(35, on => Me.CurrentTarget),
 
                             Spell.WaitForCastOrChannel(),
 
@@ -233,10 +230,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
 
-                new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.Distance < 35,
-                    Movement.CreateEnsureMovementStoppedBehavior()
-                    ),
+                Movement.CreateEnsureMovementStoppedBehavior(35, on => Me.CurrentTarget),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -305,13 +299,33 @@ namespace Singular.ClassSpecific.Shaman
             return new PrioritySelector(
                 Spell.WaitForCastOrChannel(),
 
-                CreateRestoShamanHealingOnlyBehavior(selfOnly: false, moveInRange: true),
-
                 // no healing needed, then move within heal range of tank
-                Movement.CreateMoveToRangeAndStopBehavior(ret => BestTankToMoveNear, ret => 38f),
+                new Decorator(
+                    ret => HealerManager.TankToMoveTowards != null,
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => !HealerManager.TankToMoveTowards.InLineOfSpellSight,      
+                            new Sequence(
+                                new Action(r => Logger.WriteDebug("move in loss of {0} @ {1:F1} yds", HealerManager.TankToMoveTowards.SafeName(), HealerManager.TankToMoveTowards.Distance)),
+                                Movement.CreateMoveToLosBehavior(on => HealerManager.TankToMoveTowards),
+                                new ActionAlwaysFail()
+                                )
+                            ),
+                        new Decorator(
+                            ret => HealerManager.TankToMoveTowards.Distance > 38f,
+                            new Sequence(
+                                new Action( r => Logger.WriteDebug( "moving to {0} @ {1:F1} yds", HealerManager.TankToMoveTowards.SafeName(), HealerManager.TankToMoveTowards.Distance)),
+                                Movement.CreateMoveToRangeAndStopBehavior(ret => HealerManager.TankToMoveTowards, ret => 30f),
+                                new ActionAlwaysFail()
+                                )
+                            )
+                        )
+                    ),
+
+                CreateRestoShamanHealingOnlyBehavior(selfOnly: false, moveInRange: false),
 
                 new Decorator(
-                    ret => !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid) || TalentManager.HasGlyph("Telluric Currents"),
+                    ret => !Me.IsMoving && (!Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid) || TalentManager.HasGlyph("Telluric Currents")),
                     new PrioritySelector(
                         Safers.EnsureTarget(),
                         Movement.CreateMoveToLosBehavior(),
@@ -342,20 +356,6 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
-        }
-
-        private static WoWUnit BestTankToMoveNear
-        {
-            get
-            {
-                if (!SingularSettings.Instance.StayNearTank)
-                    return null;
-
-                if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && RaFHelper.Leader.IsAlive && RaFHelper.Leader.Distance < 100)
-                    return RaFHelper.Leader;
-
-                return Group.Tanks.Where(t => t.IsAlive && t.Distance < SingularSettings.Instance.MaxHealTargetRange).OrderBy(t => t.Distance).FirstOrDefault();
-            }
         }
 
         #endregion
@@ -513,9 +513,11 @@ namespace Singular.ClassSpecific.Shaman
                                         else if (((WoWUnit)ret).Distance > 40)
                                             Logger.WriteDebug("UE+HR - FAILED - Healing Target moved out of range");
                                         else if (!SpellManager.CanCast("Healing Rain"))
-                                            Logger.WriteDebug("UE+HR - FAILED - SpellManager.CanCast() said NO to Healing Target");
-                                        else if (Styx.WoWInternals.World.GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ((WoWUnit) ret).Location))
+                                            Logger.WriteDebug("UE+HR - FAILED - SpellManager.CanCast() said NO to Healing Rain");
+                                        else if (Styx.WoWInternals.World.GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ((WoWUnit)ret).Location))
                                             Logger.WriteDebug("UE+HR - FAILED - SpellManager.CanCast() unit location not in Line of Sight");
+                                        else if (Spell.IsSpellOnCooldown("Healing Rain"))
+                                            Logger.WriteDebug("UE+HR - FAILED - Healing Rain is on cooldown");
                                         else
                                             Logger.WriteDebug("UE+HR - Something FAILED with Unleash Life + Healing Rain cast sequence");
                                     }
@@ -611,7 +613,18 @@ namespace Singular.ClassSpecific.Shaman
 
 
             return new PrioritySelector(
-                ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
+                ctx => {
+                    if ( selfOnly)
+                        return Me;
+
+                    if (HealerManager.Instance.FirstUnit == null)
+                        return null;
+
+                    if (!HealerManager.Instance.FirstUnit.IsValid )
+                        return null;
+
+                    return HealerManager.Instance.FirstUnit;
+                    },
 
                 CreateRestoDiagnosticOutputBehavior(ret => (WoWUnit)ret),
 
@@ -636,7 +649,7 @@ namespace Singular.ClassSpecific.Shaman
                                     Spell.Cast("Riptide", on =>
                                     {
                                         WoWUnit unit = GetBestRiptideTankTarget();
-                                        if (unit != null && Spell.CanCastHack("Riptide", unit))
+                                        if (unit != null && Spell.CanCastHack("Riptide", unit, skipWowCheck: true))
                                         {
                                             Logger.WriteDebug("Buffing RIPTIDE ON TANK: {0}", unit.SafeName());
                                             return unit;
@@ -655,7 +668,7 @@ namespace Singular.ClassSpecific.Shaman
                                 new Decorator(
                                     ret => {
                                         int rollCount = HealerManager.Instance.HealList.Count(u => u.IsAlive && u.HasMyAura("Riptide"));
-                                        Logger.WriteDebug("GetBestRiptideTarget:  currently {0} group members have my Riptide", rollCount);
+                                        // Logger.WriteDebug("GetBestRiptideTarget:  currently {0} group members have my Riptide", rollCount);
                                         return rollCount < ShamanSettings.Heal.RollRiptideCount;
                                         },
                                     new Sequence(
@@ -674,7 +687,7 @@ namespace Singular.ClassSpecific.Shaman
                                         }),
                                         new Action(r => TidalWaveRefresh())
                                         )
-                                    )
+                                    ),
 
 
 
@@ -702,12 +715,18 @@ namespace Singular.ClassSpecific.Shaman
                                     )
                                 )
 #endif
-)
-                        ),
-
-                        new Decorator(
-                            ret => moveInRange,
-                            Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, ret => 38f))
+                                new Decorator(
+                                    ret => moveInRange,
+                                    new PrioritySelector(
+                                        Movement.CreateMoveToLosBehavior( on => (WoWUnit) on),
+                                        new Decorator(
+                                            ret =>  ((WoWUnit)ret).Distance > 40f,
+                                            Movement.CreateMoveToRangeAndStopBehavior( on => (WoWUnit) on, range => 30f)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
                         )
                     )
                 );
@@ -849,7 +868,7 @@ namespace Singular.ClassSpecific.Shaman
             if (!Me.IsInGroup())
                 return null;
 
-            if (!Spell.CanCastHack("Chain Heal", Me))
+            if (!Spell.CanCastHack("Chain Heal", Me, skipWowCheck: true))
             {
                 Logger.WriteDebug("GetBestChainHealTarget: CanCastHack says NO to Chain Heal");
                 return null;
@@ -892,7 +911,7 @@ namespace Singular.ClassSpecific.Shaman
             if (!Me.IsInGroup() || !Me.Combat)
                 return null;
 
-            if (!Spell.CanCastHack("Healing Rain", Me))
+            if (!Spell.CanCastHack("Healing Rain", Me, skipWowCheck: true))
             {
                 Logger.WriteDebug("GetBestHealingRainTarget: CanCastHack says NO to Healing Rain");
                 return null;
@@ -989,10 +1008,12 @@ namespace Singular.ClassSpecific.Shaman
                             Me.Combat.ToYN(),
                             actvstks,
                             shield
-                            );                      
+                            );
 
                         if (healtarget == null)
                             line += ", target=(null)";
+                        else if (!healtarget.IsValid)
+                            line += ", target=(invalid)";
                         else
                             line += string.Format(", target={0} th={1:F1}% @ {2:F1} yds, combat={3}, tph={4:F1}%, tloss={5}, eshield={6}, riptide={7}",
                                 healtarget.SafeName(),

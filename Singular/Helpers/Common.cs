@@ -24,6 +24,29 @@ namespace Singular.Helpers
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public static bool UseLongCoolDownAbility
+        {
+            get
+            {
+                if (!Me.GotTarget)
+                    return false;
+
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                    return Me.CurrentTarget.IsBoss();
+
+                if (Me.CurrentTarget.IsPlayer)
+                    return Me.CurrentTarget.TimeToDeath() > 3;
+
+                if (Me.CurrentTarget.TimeToDeath() > 30)
+                    return true;
+
+                return Unit.NearbyUnitsInCombatWithMe.Count(u => u.Guid != Me.CurrentTargetGuid) >= 3;
+            }
+        }
+
+        /// <summary>
         ///  Creates a behavior to start auto attacking to current target.
         /// </summary>
         /// <remarks>

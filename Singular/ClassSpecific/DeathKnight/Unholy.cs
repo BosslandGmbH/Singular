@@ -49,9 +49,9 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.BuffSelf("Unholy Frenzy",
                             ret => Me.CurrentTarget.IsWithinMeleeRange 
                                 && !PartyBuff.WeHaveBloodlust
-                                && Common.UseLongCoolDownAbility),
+                                && Helpers.Common.UseLongCoolDownAbility),
 
-                        Spell.Cast("Summon Gargoyle", ret => DeathKnightSettings.UseSummonGargoyle && Common.UseLongCoolDownAbility),
+                        Spell.Cast("Summon Gargoyle", ret => DeathKnightSettings.UseSummonGargoyle && Helpers.Common.UseLongCoolDownAbility),
 
                         // aoe
                         new Decorator(
@@ -190,9 +190,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                        ret =>
                                        StyxWoW.Me.CurrentTarget.IsWithinMeleeRange &&
                                        !PartyBuff.WeHaveBloodlust &&
-                                       Common.UseLongCoolDownAbility),
+                                       Helpers.Common.UseLongCoolDownAbility),
                         Spell.Cast("Summon Gargoyle",
-                            ret => DeathKnightSettings.UseSummonGargoyle && Common.UseLongCoolDownAbility),
+                            ret => DeathKnightSettings.UseSummonGargoyle && Helpers.Common.UseLongCoolDownAbility),
 
 
                         // *** Single target rotation. ***
@@ -259,10 +259,10 @@ namespace Singular.ClassSpecific.DeathKnight
                                        ret =>
                                        StyxWoW.Me.CurrentTarget.IsWithinMeleeRange &&
                                        !PartyBuff.WeHaveBloodlust &&
-                                       Common.UseLongCoolDownAbility),
+                                       Helpers.Common.UseLongCoolDownAbility),
                         Spell.Cast("Summon Gargoyle",
                                    ret =>
-                                   DeathKnightSettings.UseSummonGargoyle && Common.UseLongCoolDownAbility),
+                                   DeathKnightSettings.UseSummonGargoyle && Helpers.Common.UseLongCoolDownAbility),
 
                         // Start AoE section
                         new Decorator(

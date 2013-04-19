@@ -214,7 +214,7 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Debug")]
         [DisplayName("Debug Logging Spell.CanCast")]
-        [Description("Enables logging of tests if a spell can be cast")]
+        [Description("EXTREMELY VERBOSE!! Enables logging of reason each spell in priority cannot be cast")]
         public bool EnableDebugLoggingCanCast { get; set; }
 
         #endregion

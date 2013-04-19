@@ -38,7 +38,7 @@ namespace Singular.ClassSpecific.Warrior
                 Spell.Cast("Heroic Strike"),
                 Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50),
                 //move to melee
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 
@@ -65,7 +65,7 @@ namespace Singular.ClassSpecific.Warrior
                     ret =>
                     StyxWoW.Me.CurrentTarget.IsFlying && (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
                 // move to melee
-                Movement.CreateMoveToTargetBehavior(true, 5f)
+                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
     }

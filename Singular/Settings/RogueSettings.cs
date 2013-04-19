@@ -43,6 +43,12 @@ namespace Singular.Settings
         [Description("Non Lethal Poison")]
         public NonLethalPoisonType NonLethalPoison { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Stealth Always")]
+        [Description("Stealth at all times out of combat. Does not disable mounting (you can in HB Settings if desired)")]
+        public bool StealthAlways { get; set; }
 
         [Setting]
         [DefaultValue(2)]

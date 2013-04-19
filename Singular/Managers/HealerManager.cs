@@ -261,6 +261,21 @@ namespace Singular.Managers
                 Logger.WriteDebug("GetBestTankTargetForPWS('{0}'): found tank {1} @ {2:F1}%, hasmyaura={3} with {4} ms left", hotName, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft("Riptide").TotalMilliseconds);
             return hotTarget;
         }
+
+
+        public static WoWUnit TankToMoveTowards
+        {
+            get
+            {
+                if (!SingularSettings.Instance.StayNearTank)
+                    return null;
+
+                if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && RaFHelper.Leader.IsAlive && RaFHelper.Leader.Distance < SingularSettings.Instance.MaxHealTargetRange)
+                    return RaFHelper.Leader;
+
+                return Group.Tanks.Where(t => t.IsAlive && t.Distance < SingularSettings.Instance.MaxHealTargetRange).OrderBy(t => t.Distance).FirstOrDefault();
+            }
+        }
     }
 
     class PrioritizedBehaviorList

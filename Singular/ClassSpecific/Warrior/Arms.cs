@@ -49,6 +49,8 @@ namespace Singular.ClassSpecific.Warrior
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        CreateDiagnosticOutputBehavior("Pull"),
+
                         //Buff up
                         Spell.Cast(Common.SelectedShout),
 
@@ -121,7 +123,7 @@ namespace Singular.ClassSpecific.Warrior
 
                     new PrioritySelector(
                         
-                        CreateDiagnosticOutputBehavior(),
+                        CreateDiagnosticOutputBehavior("Combat"),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -336,7 +338,7 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.BuffSelf(Common.SelectedShout),
 
-                        Spell.Cast("Die by the Sword", req => Me.HealthPercent < 70),
+                        Spell.BuffSelf("Die by the Sword", req => Me.HealthPercent < 70),
 
                         Spell.BuffSelf("Rallying Cry", req => Me.HealthPercent < 60),
 
@@ -564,7 +566,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                if (Me.GotTarget && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget))
+                if (Me.GotTarget && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget, skipWowCheck: true))
                 {
                     if (Me.RagePercent >= 85 && (Me.CurrentTarget.HealthPercent > 20 || !SpellManager.HasSpell("Colossus Smash")))
                     {
@@ -587,7 +589,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             get
             {
-                if (Me.GotTarget && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget))
+                if (Me.GotTarget && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget, skipWowCheck: true))
                 {
                     if (Me.CurrentTarget.HasAura("Colossus Smash") || Me.CurrentTarget.TimeToDeath() < 8)
                     {
@@ -617,22 +619,44 @@ namespace Singular.ClassSpecific.Warrior
             return false;
         }
 
-        private static Composite CreateDiagnosticOutputBehavior()
+        private static Composite CreateDiagnosticOutputBehavior(string context = null)
         {
-            return new ThrottlePasses( 1,
-                new Decorator(
-                    ret => SingularSettings.Debug,
+            if (context == null)
+                context = "...";
+            else
+                context = "<<" + context + ">>";
+
+            return new Decorator(
+                ret => SingularSettings.Debug,
+                new ThrottlePasses(1,
                     new Action(ret =>
-                        {
-                        Logger.Write( Color.Yellow, ".... h={0:F1}%/r={1:F1}%, Enrage={2} Coloss={3} MortStrk={4}",
+                    {
+                        string log;
+                        log = string.Format(context + " h={0:F1}%/r={1:F1}%, stance={2}, Enrage={3} Coloss={4} MortStrk={5}",
                             Me.HealthPercent,
                             Me.CurrentRage,
+                            Me.Shapeshift,
                             Me.ActiveAuras.ContainsKey("Enrage"),
-                            (int) Spell.GetSpellCooldown("Colossus Smash").TotalMilliseconds,
-                            (int) Spell.GetSpellCooldown("Mortal Strike").TotalMilliseconds
+                            (int) Spell.GetSpellCooldown("Colossus Smash", -1).TotalMilliseconds,
+                            (int) Spell.GetSpellCooldown("Mortal Strike", -1).TotalMilliseconds
                             );
+
+                        WoWUnit target = Me.CurrentTarget;
+                        if (target != null)
+                        {
+                            log += string.Format(", th={0:F1}%, dist={1:F1}, inmelee={2}, face={3}, loss={4}, dead={5} secs",
+                                target.HealthPercent,
+                                target.Distance,
+                                target.IsWithinMeleeRange.ToYN(),
+                                Me.IsSafelyFacing(target).ToYN(),
+                                target.InLineOfSpellSight.ToYN(),
+                                target.TimeToDeath()
+                                );
+                        }
+
+                        Logger.WriteDebug(Color.AntiqueWhite, log);
                         return RunStatus.Failure;
-                        })
+                    })
                     )
                 );
         }

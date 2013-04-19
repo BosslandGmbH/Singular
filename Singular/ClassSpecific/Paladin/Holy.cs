@@ -82,7 +82,7 @@ namespace Singular.ClassSpecific.Paladin
                                 )
                             ),
 
-                        Movement.CreateMoveToTargetBehavior(true, 5f)
+                        Movement.CreateMoveToMeleeBehavior(true)
                         )
                     )
                 );
@@ -99,7 +99,7 @@ namespace Singular.ClassSpecific.Paladin
                         Helpers.Common.CreateDismount("Pulling"),
                         Spell.Cast("Judgment"),
                         Helpers.Common.CreateAutoAttack(true),
-                        Movement.CreateMoveToTargetBehavior(true, 5f)
+                        Movement.CreateMoveToMeleeBehavior(true)
                         ))
                 );
         }
@@ -190,7 +190,7 @@ namespace Singular.ClassSpecific.Paladin
                                     Spell.Cast("Holy Shock"),
                                     Spell.Cast("Crusader Strike"),
                                     Spell.Cast("Denounce"),
-                                    Movement.CreateMoveToTargetBehavior(true, 5f)
+                                    Movement.CreateMoveToMeleeBehavior(true)
                                     )),
                             new Decorator(
                                 ret => moveInRange,

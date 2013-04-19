@@ -1237,7 +1237,7 @@ namespace Singular.Helpers
         /// <param name="allow">allow next spell to queue before this one completes</param>
         /// <returns>.</returns>
         public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
-            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes)
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, bool skipWowCheck = false)
         {
             return new Decorator(
                 ret => name != null && checkMovement != null && onUnit != null && requirements != null && name(ret) != null,
@@ -1265,8 +1265,8 @@ namespace Singular.Helpers
                                     return RunStatus.Failure;
 
                                 // check we can cast it on target without checking for movement
-                                if (!SpellManager.CanCast(_spell, _castOnUnit, true, false, allow == LagTolerance.Yes))
-                                    // if (!CanCastHack(name(ret), _castOnUnit))
+                                // if (!SpellManager.CanCast(_spell, _castOnUnit, true, false, allow == LagTolerance.Yes))
+                                if (!CanCastHack(name(ret), _castOnUnit, skipWowCheck ))
                                     return RunStatus.Failure;
 
                                 // save status of queueing spell (lag tolerance - the prior spell still completing)
@@ -1437,7 +1437,7 @@ namespace Singular.Helpers
                 else if (Me.Class == WoWClass.Mage)
                     spell = "Ice Floes";
 
-                if (!string.IsNullOrEmpty(spell) && SpellManager.CanCast(spell, Me))
+                if (!string.IsNullOrEmpty(spell) && CanCastHack(spell, Me)) // SpellManager.CanCast(spell, Me))
                 {
                     LogCast(spell, Me);
                     allowMovingWhileCasting = SpellManager.Cast(spell, Me);
@@ -1521,7 +1521,7 @@ namespace Singular.Helpers
                 new Decorator(
                     ret => requirements(ret)
                         && onLocation != null
-                        && Spell.CanCastHack(spell, null)
+                        && Spell.CanCastHack(spell, null, skipWowCheck:true)
                         && LocationInRange(spell, onLocation(ret))
                         && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), onLocation(ret)),
                     new Sequence(
@@ -1607,7 +1607,7 @@ namespace Singular.Helpers
         /// <param name="onUnit"></param>
         /// <param name="requirements"></param>
         /// <returns></returns>
-        public static bool CanCastHack(string castName, WoWUnit unit)
+        public static bool CanCastHack(string castName, WoWUnit unit, bool skipWowCheck = false)
         {
             SpellFindResults sfr;
             if (!SpellManager.FindSpell(castName, out sfr))
@@ -1624,7 +1624,7 @@ namespace Singular.Helpers
                 if (spell.IsMeleeSpell && !unit.IsWithinMeleeRange)
                 {
                     if (SingularSettings.Instance.EnableDebugLoggingCanCast )
-                        Logger.WriteDebug("CanCastHack[{0}]: not in melee range", castName);
+                        Logger.WriteDebug("CanCastHack[{0}]: target @ {1:F1} yds not in melee range", castName, unit.Distance);
                     return false;
                 }
                 if (spell.HasRange )
@@ -1683,6 +1683,13 @@ namespace Singular.Helpers
                 return false;
             }
 
+            if (!skipWowCheck && !spell.CanCast)
+            {
+                if (SingularSettings.Instance.EnableDebugLoggingCanCast)
+                    Logger.WriteDebug("CanCastHack[{0}]: spell specific CanCast failed", castName);
+                return false;
+            }
+
             return true;
         }
 
@@ -1715,7 +1722,7 @@ namespace Singular.Helpers
                     new Action(ret =>
                     {
                         _castOnUnit = onUnit(ret);
-                        if (_castOnUnit == null || !requirements(ret) || !CanCastHack(canCastName, _castOnUnit))
+                        if (_castOnUnit == null || !requirements(ret) || !CanCastHack(canCastName, _castOnUnit, skipWowCheck:true))
                             return RunStatus.Failure;
 
                         LogCast(castName, _castOnUnit);

@@ -85,7 +85,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 // *** Offensive Cooldowns ***
                 // I am using pet as dps bonus
                 Spell.BuffSelf("Raise Dead",
-                    ret => Common.UseLongCoolDownAbility
+                    ret => Helpers.Common.UseLongCoolDownAbility
                         && Settings.UseGhoulAsDpsCdBlood 
                         && !Common.GhoulMinionIsActive),
 

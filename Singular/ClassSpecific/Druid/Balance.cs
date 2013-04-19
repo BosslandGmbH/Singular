@@ -751,8 +751,10 @@ namespace Singular.ClassSpecific.Druid
                                         loc => ((WoWUnit)loc).Location,
                                         req => req != null && !Spell.IsSpellOnCooldown("Wild Mushroom: Detonate")
                                         ),
-                                    new Wait( 1, until => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling() && MushroomCount > 0, new ActionAlwaysSucceed()),
-                                    Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount > 0)
+                                    new Action( r => Logger.WriteDebug( "SlowMelee: waiting for Mushroom to appear")),
+                                    new WaitContinue( TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling() && MushroomCount > 0, new ActionAlwaysSucceed()),
+                                    new Action(r => Logger.WriteDebug("SlowMelee: found {0} mushrooms", MushroomCount)),
+                                    Spell.Cast("Wild Mushroom: Detonate")
                                     )
                                 )
                             )

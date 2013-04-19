@@ -3,6 +3,7 @@ using System.Linq;
 using Styx;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using Styx.CommonBot;
 
 namespace Singular.Helpers
 {
@@ -31,7 +32,10 @@ namespace Singular.Helpers
 
                 return StyxWoW.Me.GroupInfo.RaidMembers.Where(p => p.HasRole(WoWPartyMember.GroupRole.Tank))
                     .Select(p => p.ToPlayer())
-                    .Where(p => p != null).ToList();
+                    .Union(new[] { RaFHelper.Leader })
+                    .Where(p => p != null && p.IsValid)
+                    .Distinct()
+                    .ToList();
             }
         }
 

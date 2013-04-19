@@ -1,3 +1,70 @@
+--- Release 3.0.0.2265 ---
+
+General
+
+change- friendly target names will now include their role (if any) and all targets have a unique identifier
+
+*new* - debugging mode only: will monitor how long since last call to combat routine and post to log if > 4 seconds
+
+fixed - while Questing botbase is active, Singular will disable all behaviors when in a quest vehicle
+
+*new* - Class Config form will resize based upon size of screen when displayed
+
+*new* - spell casting will now log more detail when Debug Logging Spell.CanCast is true.
+
+
+Druid 
+
+fixed - Balance - detonate mushroom was cast too quickly after setting mushrooms when trying to kite melee enemies
+
+change- Feral / Guardian / Balance - prior to learning Healing Touch, when entering rest behavior and health below desired level, will cast Rejuvenation
+
+fixed - Feral - Wild Charge was being reported by HB/WOW as not being a usable spell.  workaround in place
+
+*new* - Feral - Prowl Always option.  Will cast prowl early allowing druid to spend most of time in stealth 
+
+fixed - Feral - was not attacking anything that isn't a boss in Instances
+
+fixed - Feral - will correctly cast Ferocious Bite on targets dying soon (seconds of life expectancy <= # combo points)
+
+change- Feral - diagnostic logging includes additional detail on  whether in melee range
+
+change- Feral - will no longer cast AoE abilities in PVP and focuses solely on burst
+
+
+Paladin
+
+fixed - Lowbie/Holy - solo combat behaviors were not taking toon all the way into melee range
+
+
+Rogue
+
+*new* - All Specs - Stealth Always setting will allow rogue to remain stealthed a majority of the time on foot
+
+fixed - All Specs - infrequent bug where stealth was cast when not needed, taking rogue out of stealth
+
+fixed - All Specs - will not use Pick Lock while stealthed
+
+fixed - All Specs - Pick Lock and Open Box will now attempt each lockbox a maximum of one time in thirty seconds 
+
+
+Shaman
+
+fixed - Resto - movement with DungeonBuddy now smoother.  Prioritizes staying with tank above all else
+
+fixed - All Specs - Stormlash Totem cast now checks if another Stormlast Totem already exists
+
+
+Warrior
+
+fixed - Lowbie - problem with moving into melee range at levels 1 - 9
+
+*new* - Arms - enhanced diagnostic output when Debug Logging set to true
+
+ 
+
+
+
 --- Release 3.0.0.2223 ---
 
 General

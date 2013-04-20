@@ -1,3 +1,30 @@
+--- Release 3.0.0.2275 ---
+
+General
+
+fixed - Issue encountered while calculating gear score prior to the item info for them being available
+
+change- throttled following message to reduce spamming when Combat Routine is called repeatedly with nothing to kill or heal: "Current target invalid.  No other targets available"
+
+change- time since last call to combat routine reset each time Start button is pressed
+
+
+Mage
+
+fixed - Frost - issue with not casting spells after Pull until reaching Level 12 and learning Frostbolt
+
+
+Priest
+
+fixed - All Specs - Use Speed Buff setting was being ignored (note: Use Speed Buff does not prevent use of Mount.  Speed Buffs are cast by Singular only at the point when BotBase has decided to run to the next location rather than mounting.)
+
+
+Warlock
+
+change- All Specs - no longer uses Banish in Battlegrounds
+
+
+
 --- Release 3.0.0.2265 ---
 
 General

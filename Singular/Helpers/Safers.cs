@@ -15,6 +15,7 @@ using Styx.TreeSharp;
 using Singular.Managers;
 using Action = Styx.TreeSharp.Action;
 using Styx.Helpers;
+using System;
 
 namespace Singular.Helpers
 {
@@ -23,6 +24,8 @@ namespace Singular.Helpers
         private static Color targetColor = Color.LightCoral;
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
+        private static DateTime _timeNextInvalidTargetMessage = DateTime.MinValue;
 
 #if WE_NEED_TO_REMOVE_FRIENDLY_CURRENT_TARGETS
         // following will work, but there is a larger issue of responsibility.  DungeonBuddy needs for Singular
@@ -341,9 +344,16 @@ namespace Singular.Helpers
                                         }
     */
                                         // And there's nothing left, so just return null, kthx.
-                                        Logger.Write(targetColor, "Current target invalid.  No other targets available");
+                                        // ... but show a message about botbase still calling our Combat behavior with nothing to kill
+                                        if ( DateTime.Now >= _timeNextInvalidTargetMessage)
+                                        {
+                                            _timeNextInvalidTargetMessage = DateTime.Now + TimeSpan.FromSeconds(1);
+                                            Logger.Write(targetColor, "Current target invalid.  No other targets available");
+                                        }
+
                                         return null;
                                     },
+
                                     // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
                                     new Decorator(
                                         ret => ret != null && ((WoWUnit)ret).Guid != StyxWoW.Me.CurrentTargetGuid,

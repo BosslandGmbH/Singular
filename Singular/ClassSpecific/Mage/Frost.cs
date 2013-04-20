@@ -79,7 +79,7 @@ namespace Singular.ClassSpecific.Mage
                      ret => !Spell.IsGlobalCooldown(),
                      new PrioritySelector(
 
-                         CreateFrostDiagnosticOutputBehavior(), 
+                        CreateFrostDiagnosticOutputBehavior(), 
 
                         CreateSummonWaterElemental(),
 
@@ -145,7 +145,7 @@ namespace Singular.ClassSpecific.Mage
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                         new Decorator(
-                            ret => Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost),
+                            ret => Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) || !SpellManager.HasSpell("Frostbolt"),
                             new PrioritySelector(
                                 Spell.Cast("Fire Blast"),
                                 Spell.Cast("Frostfire Bolt")

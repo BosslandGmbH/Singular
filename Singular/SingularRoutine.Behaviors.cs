@@ -445,6 +445,22 @@ namespace Singular
 
         public string Name { get; set; }
 
+        private static bool _init = false;
+
+        private static void Initialize()
+        {
+            if (_init)
+                return;
+
+            _init = true;
+            SingularRoutine.OnBotEvent += (src, arg) =>
+            {
+                // reset time on Start
+                if (arg.Event == SingularBotEvent.BotStart)
+                    LastAll = DateTime.Now;
+            };
+        }
+
         public CallWatch(string name, params Composite[] children)
             : base(children)
         {

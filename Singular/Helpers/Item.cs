@@ -300,7 +300,7 @@ namespace Singular.Helpers
 
         public static void WriteCharacterGearAndSetupInfo()
         {
-            if (GlobalSettings.Instance.LogLevel < LogLevel.Normal)
+            if (!SingularSettings.Debug)
                 return;
 
             uint totalItemLevel;
@@ -416,20 +416,20 @@ namespace Singular.Helpers
                 WoWItem item = Me.Inventory.Equipped.GetItemBySlot(slot);
                 if (item != null && IsItemImportantToGearScore(item))
                 {
-                    uint itemLvl = GearScore(item);
+                    uint itemLvl = GetGearScore(item);
                     totalItemLevel += itemLvl;
                     // Logger.WriteFile("  good:  item[{0}]: {1}  [{2}]", slot, itemLvl, item.Name);
                 }
             }
 
             // double main hand score if have a 2H equipped
-            if (Me.Inventory.Equipped.MainHand != null && Me.Inventory.Equipped.MainHand.ItemInfo.InventoryType == InventoryType.TwoHandWeapon)
-                totalItemLevel += GearScore(Me.Inventory.Equipped.MainHand);
+            if (GetInventoryType(Me.Inventory.Equipped.MainHand) == InventoryType.TwoHandWeapon)
+                totalItemLevel += GetGearScore(Me.Inventory.Equipped.MainHand);
 
             return totalItemLevel;
         }
 
-        private static uint GearScore(WoWItem item)
+        private static uint GetGearScore(WoWItem item)
         {
             uint iLvl = 0;
             try
@@ -439,10 +439,26 @@ namespace Singular.Helpers
             }
             catch
             {
-                ;
+                Logger.WriteDebug("GearScore: ItemInfo not available for [0] #{1}", item.Name, item.Entry );
             }
 
             return iLvl;
+        }
+
+        private static InventoryType GetInventoryType(WoWItem item)
+        {
+            InventoryType typ = Styx.InventoryType.None;
+            try
+            {
+                if (item != null)
+                    typ = item.ItemInfo.InventoryType;
+            }
+            catch
+            {
+                Logger.WriteDebug("InventoryType: ItemInfo not available for [0] #{1}", item.Name, item.Entry);
+            }
+
+            return typ;
         }
 
         private static bool IsItemImportantToGearScore(WoWItem item)

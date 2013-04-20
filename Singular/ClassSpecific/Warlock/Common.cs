@@ -194,6 +194,7 @@ namespace Singular.ClassSpecific.Warlock
                                 && !u.IsBoss() 
                                 && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
                                 && !u.IsCrowdControlled() && !u.HasAura("Banish")
+                                && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds 
                                 && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
                         .OrderByDescending(u => u.Distance)
                         .FirstOrDefault(),

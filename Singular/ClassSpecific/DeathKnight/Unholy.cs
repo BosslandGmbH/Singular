@@ -209,8 +209,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Dark Transformation",
                                    ret => StyxWoW.Me.GotAlivePet &&
                                           !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") &&
-                                          StyxWoW.Me.HasAura("Shadow Infusion") &&
-                                          StyxWoW.Me.Auras["Shadow Infusion"].StackCount >= 5),
+                                          StyxWoW.Me.HasAura("Shadow Infusion", 5)),
                         Spell.CastOnGround("Death and Decay",
                                            ret => StyxWoW.Me.CurrentTarget.Location,
                                            ret => StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount > 0, false),

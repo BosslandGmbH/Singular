@@ -225,7 +225,7 @@ namespace Singular.Helpers
                         )
                     );
 
-            TreeHooks.Instance.ReplaceHook("KitingBehavior", kitingBehavior );
+            TreeHooks.Instance.ReplaceHook(SingularRoutine.HookName("KitingBehavior"), kitingBehavior );
         }
 
         public static bool IsKitingPossible(int minScan = -1)
@@ -316,7 +316,7 @@ namespace Singular.Helpers
             WoWMovement.StopFace();
             WoWMovement.MoveStop(WoWMovement.MovementDirection.All);
 
-            // TreeHooks.Instance.ReplaceHook("KitingBehavior", kiteBehavior);
+            // TreeHooks.Instance.ReplaceHook(SingularRoutine.LocalHookName("KitingBehavior"), kiteBehavior);
 
             return RunStatus.Success;
         }

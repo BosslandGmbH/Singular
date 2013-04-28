@@ -236,7 +236,7 @@ namespace Singular.Helpers
             }
 
             return new Sequence(
-                new Action(r => _unitDispel = HealerManager.Instance.HealList.FirstOrDefault(u => u.IsAlive && CanDispel(u))),
+                new Action(r => _unitDispel = HealerManager.Instance.TargetList.FirstOrDefault(u => u.IsAlive && CanDispel(u))),
                 prio
                 );
         }

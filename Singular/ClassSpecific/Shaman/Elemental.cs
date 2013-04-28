@@ -109,7 +109,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -148,7 +148,7 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
@@ -159,7 +159,7 @@ namespace Singular.ClassSpecific.Shaman
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                // Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -214,7 +214,7 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => NormalPullDistance)
                 );
         }
@@ -231,7 +231,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -295,13 +295,15 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
         #endregion
 
         #region Instance Rotation
+
+        private static bool _doWeWantAcendance;
 
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Instances)]
         public static Composite CreateShamanElementalInstancePullAndCombat()
@@ -312,7 +314,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
 
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -336,14 +338,20 @@ namespace Singular.ClassSpecific.Shaman
                                 )),
 
                         Spell.Cast("Elemental Blast"),
+
+                        Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
+
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 
-                        Spell.Buff("Flame Shock", true),
+                        new Sequence(
+                            Spell.Cast("Ascendance", req => Me.CurrentTarget.IsBoss()),
+                            new ActionAlwaysFail()  // Ascendance off the GCD, so fall through
+                            ),
 
                         Spell.Cast("Lava Burst"),
-                        Spell.Cast("Earth Shock", 
-                            ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
-                                   StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
+                        Spell.Cast("Earth Shock",
+                            ret => Me.HasAura("Lightning Shield", 5)
+                                && Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
                         Spell.Cast("Unleash Elements",
                             ret => StyxWoW.Me.IsMoving
                                 && !Spell.HaveAllowMovingWhileCastingAura()
@@ -353,7 +361,7 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
@@ -389,13 +397,14 @@ namespace Singular.ClassSpecific.Shaman
                     if (target == null)
                         line += ", target=(null)";
                     else
-                        line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, face={3} tlos={4}, tloss={5}",
+                        line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, face={3} los={4}, loss={5}, fs={6}",
                             target.SafeName(),
                             target.Distance,
                             target.HealthPercent,
                             Me.IsSafelyFacing(target),
                             target.InLineOfSight,
-                            target.InLineOfSpellSight
+                            target.InLineOfSpellSight,
+                            (long)target.GetAuraTimeLeft("Flame Shock").TotalMilliseconds
                             );
 
                     Logger.WriteDebug(Color.Yellow, line);

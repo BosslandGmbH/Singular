@@ -33,6 +33,7 @@ namespace Singular.ClassSpecific.Paladin
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateDismount("Pulling"),
+                    Movement.CreateEnsureMovementStoppedWithinMelee(),
                     Helpers.Common.CreateAutoAttack(true),
                     Spell.Cast("Judgment"),
                     Movement.CreateMoveToMeleeBehavior(true)

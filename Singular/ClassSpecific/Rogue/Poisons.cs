@@ -7,6 +7,7 @@ using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using System;
+using Singular.Managers;
 
 namespace Singular.ClassSpecific.Rogue
 {
@@ -32,6 +33,7 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
+        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
 
         private const int RefreshAtMinutesLeft = 30;
 

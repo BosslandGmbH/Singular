@@ -92,6 +92,7 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Combat"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -192,6 +193,7 @@ namespace Singular.ClassSpecific.Paladin
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
 
                 Spell.WaitForCastOrChannel(),
 

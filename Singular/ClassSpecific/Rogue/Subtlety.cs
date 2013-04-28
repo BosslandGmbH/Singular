@@ -22,6 +22,7 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
+        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
 
         #region Normal Rotation
 
@@ -35,6 +36,7 @@ namespace Singular.ClassSpecific.Rogue
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                    
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
@@ -43,6 +45,7 @@ namespace Singular.ClassSpecific.Rogue
                         CreateSubteltyDiagnosticOutputBehavior("Pull"),
 
                         Common.CreateRogueOpenerBehavior(),
+                        Common.CreatePullMobMovingAwayFromMe(),
                         Common.CreateAttackFlyingMobs(),
                         Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints < 5),
                         Spell.Cast("Hemorrhage")

@@ -305,7 +305,7 @@ namespace Singular.ClassSpecific.Druid
                     ret => onUnit(ret) != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
                     new PrioritySelector(
                         Spell.WaitForCast(true),
-                        Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, range => 40f),
+                        Movement.CreateMoveToUnitBehavior( onUnit, 40f, 40f),
                         new Decorator(
                             ret => !Spell.IsGlobalCooldown(),
                             Spell.Cast("Rebirth", ret => (WoWUnit)ret)

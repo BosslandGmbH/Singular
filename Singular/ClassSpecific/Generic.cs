@@ -53,7 +53,7 @@ namespace Singular.ClassSpecific
 
             if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.OnCooldownInCombat))
             {
-                ps.AddChild(Item.UseEquippedTrinket(TrinketUsage.OnCooldownInCombat));
+                ps.AddChild( new Decorator( ret => StyxWoW.Me.Combat, Item.UseEquippedTrinket(TrinketUsage.OnCooldownInCombat)));
             }
 
             if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.LowHealth))
@@ -91,10 +91,18 @@ namespace Singular.ClassSpecific
                     ret => SingularSettings.Instance.UseRacials,
                     new PrioritySelector(
                         new Decorator(
-                            ret => SpellManager.CanCast("Stoneform") && StyxWoW.Me.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Bleeding ||
-                                a.Spell.DispelType == WoWDispelType.Disease ||
-                                a.Spell.DispelType == WoWDispelType.Poison),
-                            Spell.Cast("Stoneform")),
+                            ret => {
+                                if ( !SpellManager.CanCast("Stoneform") )
+                                    return false;
+                                if ( StyxWoW.Me.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Bleeding || a.Spell.DispelType == WoWDispelType.Disease || a.Spell.DispelType == WoWDispelType.Poison))
+                                    return true;
+                                if (Unit.NearbyUnitsInCombatWithMe.Count() > 2)
+                                    return true;
+                                if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid && StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2))
+                                    return true;
+                                return false;
+                                },
+                            Spell.BuffSelf("Stoneform")),
                         new Decorator(
                             ret => SpellManager.CanCast("Escape Artist") && Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared),
                             Spell.BuffSelf("Escape Artist")),

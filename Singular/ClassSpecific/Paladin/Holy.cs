@@ -97,6 +97,7 @@ namespace Singular.ClassSpecific.Paladin
                         Movement.CreateMoveToLosBehavior(),
                         Movement.CreateFaceTargetBehavior(),
                         Helpers.Common.CreateDismount("Pulling"),
+                        Movement.CreateEnsureMovementStoppedWithinMelee(),
                         Spell.Cast("Judgment"),
                         Helpers.Common.CreateAutoAttack(true),
                         Movement.CreateMoveToMeleeBehavior(true)
@@ -114,26 +115,27 @@ namespace Singular.ClassSpecific.Paladin
             return CreatePaladinHealBehavior(selfOnly, false);
         }
 
+        private static WoWUnit _healTarget;
+
         internal static Composite CreatePaladinHealBehavior(bool selfOnly, bool moveInRange)
         {
             HealerManager.NeedHealTargeting = true;
 
             return
                 new PrioritySelector(
-                    ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
+                    ctx => _healTarget = (selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit),
                     new Decorator(
-                    ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
+                        ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
                         new PrioritySelector(
                             Spell.WaitForCast(),
                             new Decorator(
                                 ret => moveInRange,
                                 Movement.CreateMoveToLosBehavior(ret => (WoWUnit)ret)),
+
                             Spell.Cast(
                                 "Beacon of Light",
                                 ret => (WoWUnit)ret,
                                 ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Beacon of Light"))),
-
-
 
                                 //Try and keep it up if requested
                              Spell.Cast(
@@ -191,13 +193,19 @@ namespace Singular.ClassSpecific.Paladin
                                     Spell.Cast("Crusader Strike"),
                                     Spell.Cast("Denounce"),
                                     Movement.CreateMoveToMeleeBehavior(true)
-                                    )),
+                                    )
+                                ),
                             new Decorator(
                                 ret => moveInRange,
                 // Get in range
-                                Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
-                            )));
+                                Movement.CreateMoveToUnitBehavior( on => _healTarget, 35f, 30f)
+                                )
+                            )
+                        )
+                    );
         }
+
+        private static WoWUnit _rebirthTarget;
 
         public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
         {
@@ -213,15 +221,15 @@ namespace Singular.ClassSpecific.Paladin
             return new Decorator(
                 ret => Me.HasAura("Symbiosis"),
                 new PrioritySelector(
-                    ctx => onUnit(ctx),
+                    ctx => _rebirthTarget = onUnit(ctx),
                     new Decorator(
-                        ret => ((WoWUnit)ret) != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
+                        ret => _rebirthTarget != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
                         new PrioritySelector(
                             Spell.WaitForCast(true),
-                            Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, range => 40f),
+                            Movement.CreateMoveToUnitBehavior( ret => _rebirthTarget , 40f),
                             new Decorator(
                                 ret => !Spell.IsGlobalCooldown(),
-                                Spell.Cast("Rebirth", ret => (WoWUnit)ret)
+                                Spell.Cast("Rebirth", ret => _rebirthTarget )
                                 )
                             )
                         )

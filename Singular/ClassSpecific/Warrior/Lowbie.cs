@@ -53,6 +53,7 @@ namespace Singular.ClassSpecific.Warrior
                 // face target
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
                 // charge

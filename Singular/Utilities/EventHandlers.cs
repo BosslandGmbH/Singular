@@ -27,11 +27,51 @@ namespace Singular.Utilities
 
         public static void Init()
         {
+            // get locale specific messasge strings we'll check for
+            InitializeLocalizedValues();
+
+            // set default values for timed error states
+            LastLineOfSightFailure = DateTime.MinValue;
+            LastUnitNotInfrontFailure = DateTime.MinValue;
+            LastShapeshiftFailure = DateTime.MinValue;
+
+            // hook combat log event if we are debugging or not in performance critical circumstance
             if (SingularSettings.Debug || (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid))
                 AttachCombatLogEvent();
 
+            // add context handler that reacts to context change with above rules for logging
+            SingularRoutine.OnWoWContextChanged += HandleContextChanged;
+
+            // hook PVP start timer so we can identify end of prep phase
             PVP.AttachStartTimer();
-            SingularRoutine.OnWoWContextChanged += HandleContextChanged;           
+
+            // also hook wow error messages
+            Lua.Events.AttachEvent("UI_ERROR_MESSAGE", HandleErrorMessage);
+        }
+
+        private static void InitializeLocalizedValues()
+        {
+            // get localized copies of spell failure error messages
+            LocalizedLineOfSightFailure = GetSymbolicLocalizeValue( "SPELL_FAILED_LINE_OF_SIGHT");
+            LocalizedUnitNotInfrontFailure = GetSymbolicLocalizeValue( "SPELL_FAILED_UNIT_NOT_INFRONT");
+            LocalizedNoPocketsToPickFailure = GetSymbolicLocalizeValue( "SPELL_FAILED_TARGET_NO_POCKETS");
+            LocalizedAlreadyPickPocketedError = GetSymbolicLocalizeValue("ERR_ALREADY_PICKPOCKETED");
+
+            // monitor ERR_ strings in Error Message Handler
+            LocalizedShapeshiftMessages = new Dictionary<string, string>();
+
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "ERR_CANT_INTERACT_SHAPESHIFTED");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "ERR_MOUNT_SHAPESHIFTED");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "ERR_NOT_WHILE_SHAPESHIFTED");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "ERR_NO_ITEMS_WHILE_SHAPESHIFTED");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "ERR_SHAPESHIFT_FORM_CANNOT_EQUIP");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "ERR_TAXIPLAYERSHAPESHIFTED");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "SPELL_FAILED_CUSTOM_ERROR_125");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "SPELL_FAILED_CUSTOM_ERROR_99");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "SPELL_FAILED_NOT_SHAPESHIFT");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "SPELL_FAILED_NO_ITEMS_WHILE_SHAPESHIFTED");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "SPELL_NOT_SHAPESHIFTED");
+            LocalizedShapeshiftMessages.AddSymbolicLocalizeValue( "SPELL_NOT_SHAPESHIFTED_NOSPACE");
         }
 
         internal static void HandleContextChanged(object sender, WoWContextEventArg e)
@@ -52,18 +92,22 @@ namespace Singular.Utilities
         /// LoS and LoSS functions are true but still fails in WOW.
         /// See CreateMoveToLosBehavior() for usage
         /// </summary>
-        public static DateTime LastLineOfSightError { get; set; }
-        public static DateTime LastUnitNotInfrontError { get; set; }
-        public static DateTime LastShapeshiftError { get; set; }
+        public static DateTime LastLineOfSightFailure { get; set; }
+        public static DateTime LastUnitNotInfrontFailure { get; set; }
+        public static DateTime LastShapeshiftFailure { get; set; }
 
         public static Dictionary<ulong, int> MobsThatEvaded = new Dictionary<ulong, int>();
 
         /// <summary>
         /// the value of localized values for testing certain types of spell failures
         /// </summary>
-        private static string LocalizedLineOfSightError;
-        private static string LocalizedUnitNotInfrontError;
-        private static HashSet<string> LocalizedShapeshiftErrors;
+        private static string LocalizedLineOfSightFailure;
+        private static string LocalizedUnitNotInfrontFailure;
+        private static string LocalizedNoPocketsToPickFailure;
+        private static string LocalizedAlreadyPickPocketedError;
+
+        // a combination of errors and spell failures we search for Druid shape shift errors
+        private static Dictionary<string,string> LocalizedShapeshiftMessages;
 
         private static void AttachCombatLogEvent()
         {
@@ -87,28 +131,6 @@ namespace Singular.Utilities
                 Logger.Write( "ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
             }
 
-            // get localized copies of spell failure error messages
-            LocalizedLineOfSightError = Lua.GetReturnVal<string>("return SPELL_FAILED_LINE_OF_SIGHT", 0);
-            LocalizedUnitNotInfrontError = Lua.GetReturnVal<string>("return SPELL_FAILED_UNIT_NOT_INFRONT", 0);
-
-            LocalizedShapeshiftErrors = new HashSet<string>();
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_CANT_INTERACT_SHAPESHIFTED", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_MOUNT_SHAPESHIFTED", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_NOT_WHILE_SHAPESHIFTED", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_NO_ITEMS_WHILE_SHAPESHIFTED", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_SHAPESHIFT_FORM_CANNOT_EQUIP", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return ERR_TAXIPLAYERSHAPESHIFTED", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_FAILED_CUSTOM_ERROR_125", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_FAILED_CUSTOM_ERROR_99", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_FAILED_NOT_SHAPESHIFT", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_FAILED_NO_ITEMS_WHILE_SHAPESHIFTED", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_NOT_SHAPESHIFTED", 0));
-            LocalizedShapeshiftErrors.Add(Lua.GetReturnVal<string>("return SPELL_NOT_SHAPESHIFTED_NOSPACE", 0));
-
-            LastLineOfSightError = DateTime.MinValue;
-            LastUnitNotInfrontError = DateTime.MinValue;
-            LastShapeshiftError = DateTime.MinValue;
-                      
             Logger.WriteDebug("Attached combat log");
             _combatLogAttached = true;
         }
@@ -147,19 +169,36 @@ namespace Singular.Utilities
                     else
                         Logger.WriteDebug("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14]);
 
-                    if ( e.Args[14].ToString() == LocalizedLineOfSightError )
+                    if ( e.Args[14].ToString() == LocalizedLineOfSightFailure )
                     {
-                        LastLineOfSightError = DateTime.Now;
-                        Logger.WriteFile("[CombatLog] cast fail due to los reported at {0}", LastLineOfSightError.ToString("HH:mm:ss.fff"));
+                        LastLineOfSightFailure = DateTime.Now;
+                        Logger.WriteFile("[CombatLog] cast fail due to los reported at {0}", LastLineOfSightFailure.ToString("HH:mm:ss.fff"));
                     }
                     else if ( StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuestBotActive)
                     {
-                        if (LocalizedShapeshiftErrors.Contains(e.Args[14].ToString()))
+                        if (LocalizedShapeshiftMessages.ContainsKey(e.Args[14].ToString()))
                         {
-                            LastShapeshiftError = DateTime.Now;
-                            Logger.WriteFile("[CombatLog] cast fail due to shapeshift error while questing reported at {0}", LastShapeshiftError.ToString("HH:mm:ss.fff"));
+                            string symbolicName = LocalizedShapeshiftMessages[e.Args[14].ToString()];
+                            LastShapeshiftFailure = DateTime.Now;
+                            Logger.WriteFile("[CombatLog] cast fail due to shapeshift error '{0}' while questing reported at {1}", symbolicName, LastShapeshiftFailure.ToString("HH:mm:ss.fff"));
                         }
-                    }   
+                    }
+                    else if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket)
+                    {
+                        if (e.Args[14].ToString() == LocalizedNoPocketsToPickFailure )
+                        {
+                            // args on this event don't match standard SPELL_CAST_FAIL
+                            // -- so, Singular only casts on current target so use that assumption
+                            WoWUnit unit = StyxWoW.Me.CurrentTarget;    
+                            if (unit == null)
+                                Logger.WriteFile("[CombatLog] has no pockets event did not have a valid unit");
+                            else
+                            {
+                                Logger.WriteDebug("[CombatLog] {0} has no pockets, blacklisting from pick pocket for 2 minutes", unit.SafeName());
+                                Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2));
+                            }
+                        }
+                    }
                     break;
 
 #if SOMEONE_USES_LAST_SPELL_AT_SOME_POINT
@@ -301,6 +340,42 @@ namespace Singular.Utilities
             // StyxWoW.SleepForLagDuration();
         }
 
+        private static void HandleErrorMessage(object sender, LuaEventArgs args)
+        {
+            if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket && args.Args[0].ToString() == LocalizedAlreadyPickPocketedError)
+            {
+                if (StyxWoW.Me.GotTarget)
+                {
+                    WoWUnit unit = StyxWoW.Me.CurrentTarget;
+                    Logger.WriteDebug("[WowErrorMessage] already pick pocketed {0}, blacklisting from pick pocket for 2 minutes", unit.SafeName());
+                    Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2));
+                }
+           }
 
+            if (StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuestBotActive)
+            {
+                if (LocalizedShapeshiftMessages.ContainsKey(args.Args[0].ToString()))
+                {
+                    string symbolicName = LocalizedShapeshiftMessages[args.Args[0].ToString()];
+                    LastShapeshiftFailure = DateTime.Now;
+                    Logger.WriteFile("[WowErrorMessage] cast fail due to shapeshift error '{0}' while questing reported at {1}", symbolicName, LastShapeshiftFailure.ToString("HH:mm:ss.fff"));
+                }
+            }
+        }
+
+        private static string GetSymbolicLocalizeValue(string symbolicName)
+        {
+            string localString = Lua.GetReturnVal<string>("return " + symbolicName, 0);
+            return localString;
+        }
+
+        private static void AddSymbolicLocalizeValue( this Dictionary<string,string> dict, string symbolicName)
+        {
+            string localString = GetSymbolicLocalizeValue(symbolicName);
+            if (!string.IsNullOrEmpty(localString) && !dict.ContainsKey(localString))
+            {
+                dict.Add(localString, symbolicName);
+            }
+        }
     }
 }

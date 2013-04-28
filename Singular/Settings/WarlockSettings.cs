@@ -68,9 +68,9 @@ namespace Singular.Settings
         public int HealthFunnelRest { get; set; }
 
         [Setting]
-        [DefaultValue(60)]
+        [DefaultValue(20)]
         [Category("Common")]
-        [DisplayName("Health Funnel %")]
+        [DisplayName("Drain Life%")]
         [Description("Health % which we should Drain Life")]
         public int DrainLifePercentage { get; set; }
 

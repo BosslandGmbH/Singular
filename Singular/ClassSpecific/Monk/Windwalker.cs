@@ -33,6 +33,7 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(2f),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(true),
@@ -90,7 +91,7 @@ namespace Singular.ClassSpecific.Monk
 
                 new Decorator( 
                     ret => Me.CurrentTarget.IsAboveTheGround(), 
-                    Movement.CreateMoveToTargetBehavior(true, 35f )
+                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
                     ),
 
                 Movement.CreateMoveToMeleeBehavior(true)
@@ -295,6 +296,7 @@ namespace Singular.ClassSpecific.Monk
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(true),
@@ -343,37 +345,29 @@ namespace Singular.ClassSpecific.Monk
         [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateWindwalkerMonkHeal()
         {
-            return 
-                new PrioritySelector(
-                    Spell.WaitForCast(true),
+            return new PrioritySelector(
 
+                    // not likely, but if one close don't waste it
                     new Decorator(
-                        ret => !Spell.IsGlobalCooldown() && !Me.Stunned,
-                        new PrioritySelector(
+                        ret => Me.HealthPercent < 80 && Common.AnySpheres(SphereType.Life, MonkSettings.SphereDistanceInCombat ),
+                        Common.CreateMoveToSphereBehavior(SphereType.Life, MonkSettings.SphereDistanceInCombat)
+                        ),
 
-                            // not likely, but if one close don't waste it
-                            new Decorator(
-                                ret => Me.HealthPercent < 80 && Common.AnySpheres(SphereType.Life, MonkSettings.SphereDistanceInCombat ),
-                                Common.CreateMoveToSphereBehavior(SphereType.Life, MonkSettings.SphereDistanceInCombat)
-                                ),
+                    Common.CreateHealingSphereBehavior(65),
 
-                            Common.CreateHealingSphereBehavior(65),
+                    Spell.Cast( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
 
-                            Spell.Cast( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
-
-                            Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)MonkTalents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
+                    Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)MonkTalents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
 #if USE_CHI_BURST                            
-                            ,
+                    ,
 
-                            // check if spell exists in requirement since we dont want to evaluate onUnit if talent not taken
-                            Spell.Cast("Chi Burst", 
-                                ctx => BestChiBurstTarget(), 
-                                ret => SpellManager.HasSpell("Chi Burst") 
-                                    && Me.CurrentChi >= 2 
-                                    && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
+                    // check if spell exists in requirement since we dont want to evaluate onUnit if talent not taken
+                    Spell.Cast("Chi Burst", 
+                        ctx => BestChiBurstTarget(), 
+                        ret => SpellManager.HasSpell("Chi Burst") 
+                            && Me.CurrentChi >= 2 
+                            && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
 #endif
-                            )
-                        )
                     );
         }
 

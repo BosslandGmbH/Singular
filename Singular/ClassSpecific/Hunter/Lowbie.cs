@@ -19,7 +19,7 @@ namespace Singular.ClassSpecific.Hunter
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(30f),
+                Movement.CreateEnsureMovementStoppedBehavior(25f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -40,7 +40,7 @@ namespace Singular.ClassSpecific.Hunter
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 30f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 30f, 25f)
                 );
         }
     }

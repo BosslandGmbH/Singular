@@ -93,7 +93,8 @@ namespace Singular.Settings
         public static bool IsTrinketUsageWanted(TrinketUsage usage)
         {
             return usage == SingularSettings.Instance.Trinket1Usage
-                || usage == SingularSettings.Instance.Trinket2Usage;
+                || usage == SingularSettings.Instance.Trinket2Usage
+                || usage == SingularSettings.Instance.GloveUsage;
         }
 
         /// <summary>
@@ -402,6 +403,12 @@ namespace Singular.Settings
         [Category("Items")]
         [DisplayName("Trinket 2 Usage")]
         public TrinketUsage Trinket2Usage { get; set; }
+
+        [Setting]
+        [DefaultValue(TrinketUsage.OnCooldownInCombat)]
+        [Category("Items")]
+        [DisplayName("Glove Enchant Usage")]
+        public TrinketUsage GloveUsage { get; set; }
 
         #endregion
 

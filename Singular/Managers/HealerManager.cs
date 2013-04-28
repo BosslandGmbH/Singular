@@ -13,6 +13,9 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
 using System;
 using System.Drawing;
+using CommonBehaviors.Actions;
+
+using Action = Styx.TreeSharp.Action;
 
 namespace Singular.Managers
 {
@@ -42,7 +45,7 @@ namespace Singular.Managers
 
         public static bool NeedHealTargeting { get; set; }
 
-        public List<WoWUnit> HealList { get { return ObjectList.ConvertAll(o => o.ToUnit()); } }
+        private List<WoWUnit> HealList { get { return ObjectList.ConvertAll(o => o.ToUnit()); } }
 
         protected override List<WoWObject> GetInitialObjectList()
         {
@@ -98,7 +101,12 @@ namespace Singular.Managers
         protected override void DefaultRemoveTargetsFilter(List<WoWObject> units)
         {
             bool isHorde = StyxWoW.Me.IsHorde;
-            int maxHealRangeSqr = SingularSettings.Instance.MaxHealTargetRange * SingularSettings.Instance.MaxHealTargetRange;
+            int maxHealRangeSqr;
+            
+            if ( MovementManager.IsMovementDisabled)
+                maxHealRangeSqr = 40 * 40;
+            else
+                maxHealRangeSqr = SingularSettings.Instance.MaxHealTargetRange * SingularSettings.Instance.MaxHealTargetRange;
 
             for (int i = units.Count - 1; i >= 0; i--)
             {
@@ -112,10 +120,10 @@ namespace Singular.Managers
                     }
 
                     WoWPlayer p = null;
-                    if (unit.IsPet)
-                        p = unit.OwnedByRoot.ToPlayer();
-                    else if (unit is WoWPlayer)
+                    if (unit is WoWPlayer)
                         p = unit.ToPlayer();
+                    else if (unit.IsPet && unit.OwnedByRoot != null && unit.OwnedByRoot.IsPlayer)
+                        p = unit.OwnedByRoot.ToPlayer();
 
                     if (p != null)
                     {
@@ -145,7 +153,7 @@ namespace Singular.Managers
                     // Almost all healing is 40 yards, so we'll use that. If in Battlegrounds use a slightly larger value to expane our 
                     // healing range, but not too large that we are running all over the bg zone 
                     // note: reordered following tests so only one floating point distance comparison done due to evalution of DisableAllMovement
-                    if ((MovementManager.IsMovementDisabled && unit.DistanceSqr > 40 * 40) || unit.DistanceSqr > maxHealRangeSqr)
+                    if (unit.DistanceSqr > maxHealRangeSqr)
                     {
                         units.RemoveAt(i);
                         continue;
@@ -237,6 +245,42 @@ namespace Singular.Managers
         }
 
         /// <summary>
+        /// finds the lowest health target in HealerManager.  HealerManager updates the list over multiple pulses, resulting in 
+        /// the .FirstUnit entry often being at higher health than later entries.  This method dynamically searches the current
+        /// list and returns the lowest at this moment.
+        /// </summary>
+        /// <returns></returns>
+        public static WoWUnit FindLowestHealthTarget()
+        {
+#if LOWEST_IS_FIRSTUNIT
+            return HealerManager.Instance.FirstUnit;
+#else
+            double minHealth = 999;
+            WoWUnit minUnit = null;
+
+            // iterate the list so we make a single pass through it
+            foreach (WoWUnit unit in HealerManager.Instance.TargetList)
+            {
+                try
+                {
+                    if (unit.HealthPercent < minHealth)
+                    {
+                        minHealth = unit.HealthPercent;
+                        minUnit = unit;
+                    }
+                }
+                catch
+                {
+                    // simply eat the exception here
+                }
+            }
+
+            return minUnit;
+#endif
+        }
+
+
+        /// <summary>
         /// find best Tank target that is missing Heal Over Time passed
         /// </summary>
         /// <param name="hotName">spell name of HoT</param>
@@ -275,6 +319,35 @@ namespace Singular.Managers
 
                 return Group.Tanks.Where(t => t.IsAlive && t.Distance < SingularSettings.Instance.MaxHealTargetRange).OrderBy(t => t.Distance).FirstOrDefault();
             }
+        }
+
+        public static Composite CreateStayNearTankBehavior()
+        {
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+                return new ActionAlwaysFail();
+
+            return
+                // no healing needed, then move within heal range of tank
+                new Decorator(
+                    ret => HealerManager.TankToMoveTowards != null,
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => !HealerManager.TankToMoveTowards.InLineOfSpellSight,      
+                            new Sequence(
+                                Movement.CreateMoveToLosBehavior(on => HealerManager.TankToMoveTowards),
+                                new ActionAlwaysFail()
+                                )
+                            ),
+                        new Decorator(
+                            ret => HealerManager.TankToMoveTowards.Distance > 38f,
+                            new Sequence(
+                                Movement.CreateMoveToUnitBehavior( 30f, ret => HealerManager.TankToMoveTowards),
+                                new ActionAlwaysFail()
+                                )
+                            )
+                        )
+                    );
+
         }
     }
 

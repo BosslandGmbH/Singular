@@ -32,15 +32,17 @@ namespace Singular.ClassSpecific.Warrior
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
+        private static bool HasTalent(WarriorTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.All)]
         public static Composite CreateArmsNormalPull()
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateFaceTargetBehavior(),
                 Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(),
@@ -60,7 +62,7 @@ namespace Singular.ClassSpecific.Warrior
                             new PrioritySelector(
                                 Spell.Cast("Heroic Throw"),
                                 Spell.Cast("Throw"),
-                                Movement.CreateMoveToTargetBehavior(true, 27f)
+                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                                 )),
 
                         Common.CreateChargeBehavior()
@@ -80,26 +82,49 @@ namespace Singular.ClassSpecific.Warrior
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, WoWSpec.WarriorArms, WoWContext.Instances)]
         public static Composite CreateArmsCombatBuffsNormal()
         {
-            return new Throttle( 
-                new Decorator( 
+            return new Throttle(
+                new Decorator(
                     ret => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
 
                     new PrioritySelector(
-                        Spell.BuffSelf(Common.SelectedShout),
+                        Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60),
+
+                        new Decorator(
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
+                                && (Me.CurrentTarget.IsPlayer || 4 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1)) || Me.CurrentTarget.TimeToDeath() > 40),
+                            new PrioritySelector(
+                                Spell.BuffSelf("Die by the Sword", req => Me.HealthPercent < 50),
+                                Spell.CastOnGround("Demoralizing Banner", on => Me.CurrentTarget, req => true, false),
+                                Spell.Cast("Skull Banner"),
+                                Spell.Cast("Avatar"),
+                                Spell.Cast("Bloodbath")
+                                )
+                            ),
+
+                        Spell.BuffSelf("Rallying Cry", req => !Me.IsInGroup() && Me.HealthPercent < 50),
 
                         Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
-                        Spell.Cast("Skull Banner", ret => Me.CurrentTarget.IsBoss()),
 
-                        Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss()),
-                        Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss()),
+                        new Decorator(
+                            ret => Me.CurrentTarget.IsBoss(),
+                            new PrioritySelector(
+                                Spell.Cast("Skull Banner", ret => Me.CurrentTarget.IsBoss()),
+                                Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss()),
+                                Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss())
+                                )
+                            ),
+
                         Spell.Cast("Storm Bolt"),  // in normal rotation
-
-                        // Spell.Cast("Deadly Calm", ret => StyxWoW.Me.HasAura("Taste for Blood")),
 
                         // Execute is up, so don't care just cast
                         Spell.Cast("Berserker Rage", ret => Me.CurrentTarget.HealthPercent <= 20),
+
                         // May get an Enrage off Mortal Strike + Colossus Smash pair, so try to avoid overlapping Enrages
-                        Spell.Cast("Berserker Rage", ret => !Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6)
+                        Spell.Cast("Berserker Rage", ret => !Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6),
+                        Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified)),
+
+                        Spell.BuffSelf(Common.SelectedShout)
+
                         )
                     )
                 );

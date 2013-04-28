@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(true),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
                 Spell.WaitForCast(true),
 
                 new Decorator(
@@ -56,10 +56,11 @@ namespace Singular.ClassSpecific.Mage
                     new PrioritySelector(
                         CreateSummonWaterElemental(),
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-                        Spell.Cast("Frostfire Bolt"),
-                        Movement.CreateMoveToTargetBehavior(true, 38f)
+                        Spell.Cast("Frostfire Bolt")
                         )
-                    )
+                    ),
+
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
@@ -71,7 +72,7 @@ namespace Singular.ClassSpecific.Mage
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
                  Movement.CreateMoveToLosBehavior(),
                  Movement.CreateFaceTargetBehavior(),
-                 Movement.CreateEnsureMovementStoppedBehavior(35f),
+                 // Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                  Spell.WaitForCast(true),
 
@@ -99,9 +100,9 @@ namespace Singular.ClassSpecific.Mage
 
                         Spell.Cast("Icy Veins"),
 
-                        new Decorator(ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10).Count() > 1,
+                        new Decorator(ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10).Count() > 2 && !Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.IsFrozen()),
                             new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(5f),
+                                // Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 new Throttle(1,
                                     new Decorator(
                                         ret => !Me.HasAura("Fingers of Frost", 2),
@@ -115,17 +116,18 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 4),
                                 new Decorator(
                                     ret => Unit.UnfriendlyUnitsNearTarget(10).Count() >= 4,
-                                    Movement.CreateMoveToTargetBehavior(true, 10f)
+                                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 10f, 5f)
                                     )
                                 )
                             ),
 
-                        Movement.CreateEnsureMovementStoppedBehavior(35f),
+                        // Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                         Common.CreateMagePolymorphOnAddBehavior(),
 
                         // nether tempest in CombatBuffs
-                        Spell.Cast("Frozen Orb", ret => Spell.UseAOE ),
+                        Spell.Cast("Frozen Orb", ret => Spell.UseAOE && 
+                            0 == Clusters.GetClusterCount( Me, Unit.NearbyUnfriendlyUnits.Where(u=>u.IsNeutral && !u.Combat).ToList(), ClusterType.Cone, 25f)),
 
                         // on mobs that will live a long time, build up the debuff... otherwise react to procs more quickly
                         // this is the main element that departs from normal instance rotation
@@ -154,7 +156,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
@@ -171,7 +173,7 @@ namespace Singular.ClassSpecific.Mage
                  Movement.CreateMoveToLosBehavior(),
                  Movement.CreateFaceTargetBehavior(),
                  Helpers.Common.CreateDismount("Pulling"),
-                 Movement.CreateEnsureMovementStoppedBehavior(35f),
+                 Movement.CreateEnsureMovementStoppedBehavior(33f),
                  Spell.WaitForCast(true),
 
                  new Decorator(
@@ -218,7 +220,7 @@ namespace Singular.ClassSpecific.Mage
                          )
                     ),
 
-                 Movement.CreateMoveToTargetBehavior(true, 38f)
+                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                  );
         }
 
@@ -233,6 +235,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(25f),
                 Spell.WaitForCast(true),
 
                 new Decorator(
@@ -254,7 +257,7 @@ namespace Singular.ClassSpecific.Mage
                                         CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(8), ClusterType.Radius, 8))
                                         )
                                     ),
-                                Movement.CreateEnsureMovementStoppedBehavior(5f),
+                                // Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
                                 Spell.Cast("Frozen Orb"),
                                 Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
@@ -262,7 +265,7 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 4),
                                 new Decorator(
                                     ret => Unit.UnfriendlyUnitsNearTarget(10).Count() >= 4,
-                                    Movement.CreateMoveToTargetBehavior(true, 10f)
+                                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 10f, 5f)
                                     )
                                 )
                             ),
@@ -284,7 +287,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 30f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 30f, 25f)
                 );
         }
 

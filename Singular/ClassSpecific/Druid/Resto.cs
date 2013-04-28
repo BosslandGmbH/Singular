@@ -138,19 +138,22 @@ namespace Singular.ClassSpecific.Druid
                                 Spell.Buff("Moonfire"),
                                 Spell.Cast("Starfire", ret => StyxWoW.Me.HasAura("Fury of Stormrage")),
                                 Spell.Cast("Wrath"),
-                                Movement.CreateMoveToTargetBehavior(true, 35f)
+                                Movement.CreateMoveToUnitBehavior(35f, on=> Me.CurrentTarget )
                                 )),
                         new Decorator(
                             ret => moveInRange,
-                            Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
+                            Movement.CreateMoveToUnitBehavior(35f, ret => (WoWUnit)ret))
                         )));
         }
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidHealBehavior()
         {
-            return
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
-                    CreateRestoDruidHealOnlyBehavior());
+                    CreateRestoDruidHealOnlyBehavior()
+                    )
+                );
         }
         [Behavior(BehaviorType.Combat|BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidCombat()
@@ -164,11 +167,12 @@ namespace Singular.ClassSpecific.Druid
                             Movement.CreateMoveToLosBehavior(),
                             Movement.CreateFaceTargetBehavior(),
                             Helpers.Common.CreateDismount("Pulling"),
+                            Movement.CreateEnsureMovementStoppedBehavior(30f),
                             Helpers.Common.CreateInterruptBehavior(),
                             Spell.Buff("Moonfire"),
                             Spell.Cast("Starfire", ret => StyxWoW.Me.HasAura("Fury of Stormrage")),
                             Spell.Cast("Wrath"),
-                            Movement.CreateMoveToTargetBehavior(true, 35f)
+                            Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 35f, 30f)
                             ))
                     );
         }

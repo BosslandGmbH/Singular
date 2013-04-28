@@ -4,11 +4,16 @@ using Singular.Managers;
 using Styx;
 
 using Styx.TreeSharp;
+using Styx.WoWInternals.WoWObjects;
+using Singular.Settings;
 
 namespace Singular.ClassSpecific.Rogue
 {
     public class Lowbie
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
+
         [Behavior(BehaviorType.Combat, WoWClass.Rogue, 0)]
         public static Composite CreateLowbieRogueCombat()
         {

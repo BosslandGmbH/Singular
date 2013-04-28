@@ -82,9 +82,6 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementHeal()
         {
             return new PrioritySelector(
-
-                Spell.WaitForCastOrChannel(),
-
                 Spell.Cast("Healing Surge", on => Me, 
                     ret => Me.GetPredictedHealthPercent(true) < 80 && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
 
@@ -95,16 +92,13 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Instances)]
         public static Composite CreateShamanEnhancementHealInstances()
         {
-            return Common.CreateShamanDpsHealBehavior( );
+            return Common.CreateShamanDpsHealBehavior();
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanEnhancement, WoWContext.Battlegrounds )]
         public static Composite CreateShamanEnhancementHealPvp()
         {
             return new PrioritySelector(
-
-                Spell.WaitForCastOrChannel(),
-
                 new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5),
                     new PrioritySelector(
                         Spell.Cast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.GetPredictedHealthPercent() < 75),
@@ -131,6 +125,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
@@ -148,7 +143,7 @@ namespace Singular.ClassSpecific.Shaman
                             ret => StyxWoW.Me.Level < 20,
                             new PrioritySelector(
                                 Spell.Cast("Lightning Bolt"),
-                                Movement.CreateMoveToTargetBehavior(true, 35f)
+                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
                                 )),
 
                         Helpers.Common.CreateAutoAttack(true),
@@ -241,6 +236,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(), 
@@ -299,6 +295,7 @@ namespace Singular.ClassSpecific.Shaman
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Spell.WaitForCastOrChannel(),
                 Helpers.Common.CreateAutoAttack(true),
 

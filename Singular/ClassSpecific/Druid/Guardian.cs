@@ -29,11 +29,12 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 // Ensure Target
                 Safers.EnsureTarget(),
-                //face target
-                Movement.CreateFaceTargetBehavior(),
                 // LOS check
                 Movement.CreateMoveToLosBehavior(),
+                //face target
+                Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
                 //Dismount
@@ -50,7 +51,7 @@ namespace Singular.ClassSpecific.Druid
                         ret => Me.CurrentTarget.IsFlying,
                         new PrioritySelector(
                             Spell.Cast("Moonfire"),
-                            Movement.CreateMoveToTargetBehavior(true, 27f)
+                            Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                             )),
 
                         Spell.BuffSelf("Bear Form"),

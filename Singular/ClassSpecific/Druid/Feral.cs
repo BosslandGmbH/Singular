@@ -91,9 +91,10 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 CreateFeralDiagnosticOutputBehavior( "Pull" ),
                 Safers.EnsureTarget(),
-                Movement.CreateFaceTargetBehavior(),
                 Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(),
@@ -108,7 +109,7 @@ namespace Singular.ClassSpecific.Druid
                             new PrioritySelector(
                                 Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => Me.CurrentTarget.Distance < 35),
                                 Spell.Cast("Moonfire", ret => Me.CurrentTarget.Distance < 40),
-                                Movement.CreateMoveToTargetBehavior(true, 27f)
+                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                                 )),
 
                         Spell.BuffSelf("Cat Form"),
@@ -193,7 +194,7 @@ namespace Singular.ClassSpecific.Druid
         {
             get
             {
-                return Utilities.EventHandlers.LastShapeshiftError.AddSeconds(60);
+                return Utilities.EventHandlers.LastShapeshiftFailure.AddSeconds(60);
             }
         }
 

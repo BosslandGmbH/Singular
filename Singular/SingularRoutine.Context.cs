@@ -33,17 +33,38 @@ namespace Singular
     partial class SingularRoutine
     {
         public static event EventHandler<WoWContextEventArg> OnWoWContextChanged;
-        private static WoWContext _lastContext;
+        private static WoWContext _lastContext = WoWContext.None;
 
         internal static bool IsQuestBotActive { get; set; }
         internal static bool IsBgBotActive { get; set; }
         internal static bool IsDungeonBuddyActive { get; set; }
+        internal static bool IsPokeBuddyActive { get; set; }
 
         internal static WoWContext CurrentWoWContext
         {
             get
             {
-                if(!StyxWoW.IsInGame)
+                return DetermineCurrentWoWContext;
+            }
+        }
+
+        internal static HealingContext CurrentHealContext
+        {
+            get
+            {
+                WoWContext ctx = CurrentWoWContext;
+                if (ctx == WoWContext.Instances && Me.GroupInfo.IsInRaid)
+                    return HealingContext.Raids;
+
+                return (HealingContext) ctx;
+            }
+        }
+
+        private static WoWContext DetermineCurrentWoWContext
+        {
+            get
+            {
+                if (!StyxWoW.IsInGame)
                     return WoWContext.None;
 
                 Map map = StyxWoW.Me.CurrentMap;
@@ -73,18 +94,6 @@ namespace Singular
             }
         }
 
-        internal static HealingContext CurrentHealContext
-        {
-            get
-            {
-                WoWContext ctx = CurrentWoWContext;
-                if (ctx == WoWContext.Instances && Me.GroupInfo.IsInRaid)
-                    return HealingContext.Raids;
-
-                return (HealingContext) ctx;
-            }
-        }
-
         public static bool ForceInstanceBehaviors { get; set; }
 
         private bool _contextEventSubscribed;
@@ -98,7 +107,7 @@ namespace Singular
                 _contextEventSubscribed = true;
             }
 
-            var current = CurrentWoWContext;
+            var current = DetermineCurrentWoWContext;
 
             // Can't update the context when it doesn't exist.
             if (current == WoWContext.None)
@@ -106,9 +115,11 @@ namespace Singular
 
             if(current != _lastContext && OnWoWContextChanged!=null)
             {
+                // store values that require scanning lists
                 IsQuestBotActive = IsBotInUse("Quest");
                 IsBgBotActive = IsBotInUse("BGBuddy");
                 IsDungeonBuddyActive = IsBotInUse("DungeonBuddy");
+                IsPokeBuddyActive = IsPluginActive("Pokébuddy");
 
                 DescribeContext();
                 try
@@ -119,9 +130,9 @@ namespace Singular
                 {
                     // Eat any exceptions thrown.
                 }
+
                 _lastContext = current;
-            }
-                
+            }               
         }
 
         public static void DescribeContext()
@@ -134,10 +145,31 @@ namespace Singular
 
             Logger.Write(Color.LightGreen, "... running the {0} bot in {1} {2}",
                  GetBotName(),
-                 Me.RealZoneText,
+                 Me.RealZoneText, 
                  !Me.IsInInstance || Battlegrounds.IsInsideBattleground ? "" : "[" + GetInstanceDifficultyName() + "]"
                 );
 
+            Logger.WriteFile("   MapId            = {0}", Me.MapId);
+            Logger.WriteFile("   ZoneId           = {0}", Me.ZoneId);
+/*
+            if (Me.CurrentMap != null && Me.CurrentMap.IsValid)
+            {
+                Logger.WriteFile("   AreaTableId      = {0}", Me.CurrentMap.AreaTableId);
+                Logger.WriteFile("   InternalName     = {0}", Me.CurrentMap.InternalName);
+                Logger.WriteFile("   IsArena          = {0}", Me.CurrentMap.IsArena.ToYN());
+                Logger.WriteFile("   IsBattleground   = {0}", Me.CurrentMap.IsBattleground.ToYN());
+                Logger.WriteFile("   IsContinent      = {0}", Me.CurrentMap.IsContinent.ToYN());
+                Logger.WriteFile("   IsDungeon        = {0}", Me.CurrentMap.IsDungeon.ToYN());
+                Logger.WriteFile("   IsInstance       = {0}", Me.CurrentMap.IsInstance.ToYN());
+                Logger.WriteFile("   IsRaid           = {0}", Me.CurrentMap.IsRaid.ToYN());
+                Logger.WriteFile("   IsScenario       = {0}", Me.CurrentMap.IsScenario.ToYN());
+                Logger.WriteFile("   MapDescription   = {0}", Me.CurrentMap.MapDescription);
+                Logger.WriteFile("   MapDescription2  = {0}", Me.CurrentMap.MapDescription2);
+                Logger.WriteFile("   MapType          = {0}", Me.CurrentMap.MapType);
+                Logger.WriteFile("   MaxPlayers       = {0}", Me.CurrentMap.MaxPlayers);
+                Logger.WriteFile("   Name             = {0}", Me.CurrentMap.Name);
+            }
+*/
             string sRunningAs = "";
 
             if (Me.CurrentMap == null)
@@ -241,6 +273,12 @@ namespace Singular
         {
             string botName = GetBotName().ToUpper();
             return nameSubstrings.Any( s => botName.Contains(s.ToUpper()));
+        }
+
+        public static bool IsPluginActive(params string[] nameSubstrings)
+        {
+            bool res = nameSubstrings.Any( s => Styx.Common.Plugins.PluginManager.GetEnabledPlugins().Any(p => p.ToUpper() == s.ToUpper()));
+            return res;
         }
 
         private static int GetInstanceDifficulty( )

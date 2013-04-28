@@ -183,7 +183,12 @@ namespace Singular.ClassSpecific.Warlock
 
 
                 // remove our banish if they are our CurrentTarget 
-                new Throttle( 2, Spell.Cast("Banish", ret => Me.CurrentTarget.HasMyAura( "Banish")) ),
+                new Throttle( 2, Spell.Cast("Banish", ret => {
+                    bool isBanished = Me.CurrentTarget.HasMyAura( "Banish");
+                    if (isBanished)
+                        Logger.WriteDebug("Banish: attempting to remove from current target");
+                    return isBanished;
+                    })),
                             
                 // banish someone if they are not current target, attacking us, and 12 yds or more away
                 new PrioritySelector(
@@ -195,6 +200,7 @@ namespace Singular.ClassSpecific.Warlock
                                 && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
                                 && !u.IsCrowdControlled() && !u.HasAura("Banish")
                                 && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds 
+                                && (!u.Elite || SingularRoutine.CurrentWoWContext == WoWContext.Instances)
                                 && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
                         .OrderByDescending(u => u.Distance)
                         .FirstOrDefault(),
@@ -519,6 +525,9 @@ namespace Singular.ClassSpecific.Warlock
             if (!Me.GotAlivePet)
                 return WarlockPet.None;
 
+            if (Me.Pet == null || Me.Pet.CreatureFamilyInfo == null)
+                return WarlockPet.None;
+
             switch ((WarlockGrimoireOfSupremecyPets) Me.Pet.CreatureFamilyInfo.Id)
             {
                 case WarlockGrimoireOfSupremecyPets.FelImp:
@@ -538,6 +547,8 @@ namespace Singular.ClassSpecific.Warlock
 
         #endregion
 
+        private static WoWUnit _targetRez;
+
         public static Composite CreateWarlockRessurectBehavior(UnitSelectionDelegate onUnit)
         {
             if (!UseSoulstoneForBattleRez())
@@ -551,12 +562,15 @@ namespace Singular.ClassSpecific.Warlock
 
             return new Decorator(
                 ret => onUnit(ret) != null && onUnit(ret).IsDead && SpellManager.CanCast( "Soulstone", onUnit(ret), true, true),
-                new PrioritySelector(
-                    Spell.WaitForCastOrChannel(),
-                    Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, range => 40f),
-                    new Decorator(
-                        ret => !Spell.IsGlobalCooldown(),
-                        Spell.Cast("Soulstone", ret => (WoWUnit)ret)
+                new Sequence(
+                    new Action( r => _targetRez = onUnit(r)),
+                    new PrioritySelector(
+                        Spell.WaitForCastOrChannel(),
+                        Movement.CreateMoveToUnitBehavior(ret => _targetRez, 40f),
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            Spell.Cast("Soulstone", ret => _targetRez)
+                            )
                         )
                     )
                 );
@@ -630,7 +644,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         // neither of instant funnels available, so stop moving
                         new Sequence(
-                            new Action(ctx => WoWMovement.MoveStop()),
+                            new Action(ctx => StopMoving.Now()),
                             new Wait( 1, until => !Me.IsMoving, new ActionAlwaysSucceed() )
                             )
                         ),

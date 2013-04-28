@@ -86,7 +86,7 @@ namespace Singular.ClassSpecific.Priest
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCast(true),
@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Priest
                         // Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow))
                         )
                     ),
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
@@ -114,7 +114,7 @@ namespace Singular.ClassSpecific.Priest
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                // Movement.CreateEnsureMovementStoppedBehavior(35f),
                 Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCast(true),
 
@@ -155,7 +155,8 @@ namespace Singular.ClassSpecific.Priest
                                 ctx => AoeTargets.FirstOrDefault(),
 
                                 // halo only if nothing near we aren't already in combat with
-                                Spell.Cast("Halo", ret => !Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 34 && !u.IsTargetingMeOrPet && !u.Fleeing)),
+                                Spell.Cast("Halo", 
+                                    ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
                                 Spell.Cast("Mind Sear", mov => true, ctx => (WoWUnit)ctx, ret => AoeTargets.Count() > 5, cancel => Me.HealthPercent < PriestSettings.ShadowFlashHealHealth ),
 
                                 new PrioritySelector(
@@ -188,7 +189,7 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Cast("Mind Flay", ret => Me.ManaPercent >= PriestSettings.MindFlayMana),
                                 Spell.Cast("Mind Blast"),
 
-                                Movement.CreateMoveToTargetBehavior(true, 35f)
+                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
                                 )
                             ),
 
@@ -206,7 +207,8 @@ namespace Singular.ClassSpecific.Priest
                                     )
                                 ),
 
-                            Spell.Cast("Halo", ret => !Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 32 && !u.IsTargetingMeOrPet && !u.Fleeing)),
+                            Spell.Cast("Halo", 
+                                ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),                           
 
                             Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
                             Spell.Cast("Mind Flay")
@@ -214,7 +216,7 @@ namespace Singular.ClassSpecific.Priest
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
@@ -230,7 +232,7 @@ namespace Singular.ClassSpecific.Priest
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Spell.WaitForCast(true),
@@ -277,7 +279,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Halo", 
                             ret => !Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 32 && u.IsCrowdControlled())
                                 && Unit.NearbyUnfriendlyUnits.Count( u => Me.SpellDistance(u) < 32) > 1
-                                && Unit.NearbyFriendlyPlayers.Any( f => f.HealthPercent < 70)),
+                                && Unit.NearbyFriendlyPlayers.Any( f => f.HealthPercent < 80)),
 
                         // snipe kills where possible
                         Spell.Cast("Shadow Word: Death", 
@@ -324,7 +326,7 @@ namespace Singular.ClassSpecific.Priest
                             })
                         )
                     ),
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
@@ -347,7 +349,7 @@ namespace Singular.ClassSpecific.Priest
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Combat"),
                 Spell.WaitForCast(true),
@@ -373,7 +375,8 @@ namespace Singular.ClassSpecific.Priest
                                 ctx => Me.CurrentTarget,
 
                                 // halo only if nothing near we aren't already in combat with
-                                Spell.Cast("Halo", ret => !Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 32 && (u.IsCrowdControlled() || !u.IsTargetingMeOrPet && !u.IsTargetingMyRaidMember))),
+                                Spell.Cast("Halo", 
+                                    ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
                                 Spell.Cast("Mind Sear", mov => true, ctx => (WoWUnit)ctx, ret => AoeTargets.Count() >= 5, cancel => Me.HealthPercent < PriestSettings.ShadowFlashHealHealth ),
 
                                 new PrioritySelector(
@@ -393,7 +396,8 @@ namespace Singular.ClassSpecific.Priest
 
                         Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20),
 
-                        Spell.Cast("Halo", ret => !Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 32 && (u.IsCrowdControlled() || !u.IsTargetingMeOrPet && !u.IsTargetingMyRaidMember))),
+                        Spell.Cast("Halo", 
+                            ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
 
                         Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
                         Spell.Cast("Mindbender"),
@@ -405,7 +409,7 @@ namespace Singular.ClassSpecific.Priest
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 

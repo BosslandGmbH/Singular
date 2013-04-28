@@ -59,7 +59,7 @@ namespace Singular
             //UpdateContext();
 
             // special behavior - reset KitingBehavior hook prior to calling class specific createion
-            TreeHooks.Instance.ReplaceHook("KitingBehavior", new ActionAlwaysFail());
+            TreeHooks.Instance.ReplaceHook(HookName("KitingBehavior"), new ActionAlwaysFail());
 
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
             if (!EnsureComposite(true, context, BehaviorType.Combat))
@@ -74,8 +74,8 @@ namespace Singular
 
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
             EnsureComposite(false, context, BehaviorType.Rest);
-            if (TreeHooks.Instance.Hooks[BehaviorType.Rest.ToString()] == null)
-                TreeHooks.Instance.ReplaceHook(BehaviorType.Rest.ToString(), Helpers.Rest.CreateDefaultRestBehaviour());
+            if (TreeHooks.Instance.Hooks[HookName(BehaviorType.Rest)] == null)
+                TreeHooks.Instance.ReplaceHook(HookName(BehaviorType.Rest), Helpers.Rest.CreateDefaultRestBehaviour());
 
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
@@ -148,7 +148,7 @@ namespace Singular
                     new ThrottlePasses(1, 1, new Decorator(ret => Me.Silenced, new Action(r => { Logger.Write(Color.White, "SILENCED! (loss of control)"); return RunStatus.Failure; }))),
                     new Throttle(1,
                         new PrioritySelector(
-                            new HookExecutor(BehaviorType.LossOfControl.ToString()),
+                            new HookExecutor(HookName(BehaviorType.LossOfControl)),
                             new Decorator(
                                 ret => SingularSettings.Instance.UseRacials,
                                 new PrioritySelector(
@@ -173,7 +173,7 @@ namespace Singular
                             // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
                             Spell.WaitForGcdOrCastOrChannel(),
                             _lostControlBehavior,
-                            new HookExecutor(BehaviorType.Rest.ToString())
+                            new HookExecutor(HookName(BehaviorType.Rest))
                             )
                         )
                     )
@@ -189,7 +189,7 @@ namespace Singular
                             Spell.WaitForGcdOrCastOrChannel(),
                             Item.CreateUseAlchemyBuffsBehavior(),
                     // Generic.CreateFlasksBehaviour(),
-                            new HookExecutor(BehaviorType.PreCombatBuffs.ToString())
+                            new HookExecutor(HookName(BehaviorType.PreCombatBuffs))
                             )
                         )
                     )
@@ -199,7 +199,7 @@ namespace Singular
                 new CallWatch("PullBuffs",
                     new Decorator(
                         ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                        new HookExecutor(BehaviorType.PullBuffs.ToString())
+                        new HookExecutor(HookName(BehaviorType.PullBuffs))
                         )
                     )
                 );
@@ -213,22 +213,22 @@ namespace Singular
                             Generic.CreateUseTrinketsBehaviour(),
                             Generic.CreatePotionAndHealthstoneBehavior(),
                             Generic.CreateRacialBehaviour(),
-                            new HookExecutor(BehaviorType.CombatBuffs.ToString())
+                            new HookExecutor(HookName(BehaviorType.CombatBuffs))
                             )
                         )
                     )
                 );
 
             _healBehavior = new LockSelector(
-                new CallWatch("PullBuffs",
+                new CallWatch("Heal",
                     _lostControlBehavior,
                     new Decorator(
                         ret => Kite.IsKitingActive(),
-                        new HookExecutor("KitingBehavior")
+                        new HookExecutor(HookName("KitingBehavior"))
                         ),
                     new Decorator(
                         ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                        new HookExecutor(BehaviorType.Heal.ToString())
+                        new HookExecutor(HookName(BehaviorType.Heal))
                         )
                     )
                 );
@@ -242,19 +242,18 @@ namespace Singular
                                 ret => !HotkeyDirector.IsCombatEnabled,
                                 new ActionAlwaysSucceed()
                                 ),
-                            new Action(r => { MonitorQuestingPullDistance(); return RunStatus.Failure; }),
     #if BOTS_NOT_CALLING_PULLBUFFS
                             _pullBuffsBehavior,
     #endif
                             CreateLogTargetChanges("<<< PULL >>>"),
-                            new HookExecutor(BehaviorType.Pull.ToString())
+                            new HookExecutor(HookName(BehaviorType.Pull))
                             )
                         )
                     )
                 );
 
             _combatBehavior = new LockSelector(
-                new CallWatch("PullBuffs",
+                new CallWatch("Combat",
                     new Decorator(
                         ret => AllowBehaviorUsage(), // && (!Me.GotTarget || !Blacklist.Contains(Me.CurrentTargetGuid, BlacklistFlags.Combat)),
                         new PrioritySelector(
@@ -263,11 +262,21 @@ namespace Singular
                                 new ActionAlwaysSucceed()
                                 ),
                             CreateLogTargetChanges("<<< ADD >>>"),
-                            new HookExecutor(BehaviorType.Combat.ToString())
+                            new HookExecutor(HookName(BehaviorType.Combat))
                             )
                         )
                     )
                 );
+        }
+
+        internal static string HookName(string name)
+        {
+            return "Singular." + name;
+        }
+
+        internal static string HookName(BehaviorType typ)
+        {
+            return "Singular." + typ.ToString();
         }
 
         private static bool AllowBehaviorUsage()
@@ -277,9 +286,9 @@ namespace Singular
 #else
             // The boss 'Elegon' sits on a transport, this is just one of several examples why bot needs to fight back when on a transport while in an dungeon.
             // return (IsDungeonBuddyActive || !Me.IsOnTransport || Me.Transport.Entry == 56171 || Me.IsInInstance);
-
-            return !IsQuestBotActive || !Me.InVehicle;
-            // return true;
+            
+            return !IsQuestBotActive || (!Me.InVehicle && !PetBattleInProgress());
+            // return true; 
 #endif
         }
 
@@ -295,6 +304,27 @@ namespace Singular
                 return false;
 
             return true;
+        }
+
+        private static bool _lastPetBattleCheck = false;
+        private static WaitTimer _timerLastPetBattleCheck = new WaitTimer(TimeSpan.FromSeconds(1));
+
+        private static bool PetBattleInProgress()
+        {
+            if (!_timerLastPetBattleCheck.IsFinished)
+                return _lastPetBattleCheck;
+
+            _timerLastPetBattleCheck.Reset();
+            List<string> results = Lua.GetReturnValues("return C_PetBattles.IsTrapAvailable()");
+            try
+            {
+                _lastPetBattleCheck = (results[1] != "0");
+            }
+            catch
+            {
+                _lastPetBattleCheck = false;
+            }
+            return false;
         }
 
         /// <summary>
@@ -319,7 +349,7 @@ namespace Singular
                     composite = Helpers.Rest.CreateDefaultRestBehaviour();
             }
 
-            TreeHooks.Instance.ReplaceHook(type.ToString(), composite);
+            TreeHooks.Instance.ReplaceHook(HookName(type), composite);
 
             if ((composite == null || count <= 0) && error)
             {
@@ -381,32 +411,45 @@ namespace Singular
 
         }
 
+        private static int _prevPullDistance = -1;
+
         private static void MonitorQuestingPullDistance()
         {
-            if (SingularRoutine.IsQuestBotActive && SingularSettings.Instance.PullDistanceOverride == CharacterSettings.Instance.PullDistance)
+            if (SingularRoutine.IsQuestBotActive)
             {
-                int newPullDistance = 0;
-                switch (Me.Class)
+                if ( SingularSettings.Instance.PullDistanceOverride == CharacterSettings.Instance.PullDistance)
                 {
-                    case WoWClass.DeathKnight:
-                    case WoWClass.Monk:
-                    case WoWClass.Paladin:
-                    case WoWClass.Rogue:
-                    case WoWClass.Warrior:
-                        break;
-
-                    default:
-                        if (Me.Specialization == WoWSpec.None || Me.Specialization == WoWSpec.DruidFeral || Me.Specialization == WoWSpec.DruidGuardian || Me.Specialization == WoWSpec.ShamanEnhancement)
+                    int newPullDistance = 0;
+                    switch (Me.Class)
+                    {
+                        case WoWClass.DeathKnight:
+                        case WoWClass.Monk:
+                        case WoWClass.Paladin:
+                        case WoWClass.Rogue:
+                        case WoWClass.Warrior:
                             break;
 
-                        newPullDistance = 40;
-                        break;
+                        default:
+                            if (Me.Specialization == WoWSpec.None || Me.Specialization == WoWSpec.DruidFeral || Me.Specialization == WoWSpec.DruidGuardian || Me.Specialization == WoWSpec.ShamanEnhancement)
+                                break;
+
+                            newPullDistance = 40;
+                            break;
+                    }
+
+                    if (newPullDistance != 0)
+                    {
+                        Logger.Write(Color.White, "Quest Profile set Pull Distance to {0}, forcing to {1} for next Pull", CharacterSettings.Instance.PullDistance, newPullDistance);
+                        CharacterSettings.Instance.PullDistance = newPullDistance;
+                        _prevPullDistance = newPullDistance;
+                    }
                 }
 
-                if (newPullDistance != 0)
+                if (_prevPullDistance != CharacterSettings.Instance.PullDistance)
                 {
-                    Logger.Write(Color.White, "Quest Profile set Pull Distance to {0}, forcing to {1} for next Pull", CharacterSettings.Instance.PullDistance, newPullDistance);
-                    CharacterSettings.Instance.PullDistance = newPullDistance;
+                    _prevPullDistance = CharacterSettings.Instance.PullDistance;
+                    if ( _prevPullDistance != -1 )
+                        Logger.WriteDebug( Color.White, "warning: Pull Distance set to {0} yds by Questing Profile", _prevPullDistance );
                 }
             }
         }
@@ -458,12 +501,23 @@ namespace Singular
                 // reset time on Start
                 if (arg.Event == SingularBotEvent.BotStart)
                     LastAll = DateTime.Now;
+                else if (arg.Event == SingularBotEvent.BotStop)
+                {
+                    if (SingularSettings.Debug)
+                    {
+                        DateTime rightNow = DateTime.Now;
+                        if ((rightNow - LastAll).TotalSeconds > WarnTime && LastAll != DateTime.MinValue)
+                            Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", (rightNow - LastAll).TotalSeconds);
+                    }
+                }
             };
         }
 
         public CallWatch(string name, params Composite[] children)
             : base(children)
         {
+            Initialize();
+
             if (WarnTime == 0)
                 WarnTime = 5;
 

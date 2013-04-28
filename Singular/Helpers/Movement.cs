@@ -16,6 +16,8 @@ using Styx.CommonBot.POI;
 using CommonBehaviors.Actions;
 using System.Diagnostics;
 using Singular.Managers;
+using System.Drawing;
+using Styx.CommonBot;
 
 namespace Singular.Helpers
 {
@@ -42,8 +44,9 @@ namespace Singular.Helpers
                     && toUnit(ret) != StyxWoW.Me
                     && !InLineOfSpellSight(toUnit(ret)),
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug( "MoveToLoss: moving to LoSS of {0}", toUnit(ret).SafeName())),
-                    new Action(ret => Navigator.MoveTo(toUnit(ret).Location))
+                    new Action(ret => Logger.WriteDebug(Color.White, "MoveToLoss: moving to LoSS of {0} @ {1:F1} yds", toUnit(ret).SafeName(), toUnit(ret).Distance)),
+                    new Action(ret => Navigator.MoveTo(toUnit(ret).Location)),
+                    new Action(ret => StopMoving.InLosOfUnit(toUnit(ret)))
                     )
                 );
         }
@@ -64,15 +67,15 @@ namespace Singular.Helpers
         {
             if (unit.InLineOfSpellSight)
             {
-                if ((DateTime.Now - EventHandlers.LastLineOfSightError).TotalMilliseconds < 1000)
+                if ((DateTime.Now - EventHandlers.LastLineOfSightFailure).TotalMilliseconds < 1000)
                 {
                     if (unit.IsWithinMeleeRange)
                     {
-                        Logger.WriteDebug("InLineOfSpellSight: last LoS error < 1 sec but in melee range, pretending we are in LoS");
+                        Logger.WriteDebug( Color.White, "InLineOfSpellSight: last LoS error < 1 sec but in melee range, pretending we are in LoS");
                         return true;
                     }
 
-                    Logger.WriteDebug("InLineOfSpellSight: last LoS error < 1 sec, pretending still not in LoS");
+                    Logger.WriteDebug( Color.White, "InLineOfSpellSight: last LoS error < 1 sec, pretending still not in LoS");
                     return false;
                 }
 
@@ -96,8 +99,8 @@ namespace Singular.Helpers
                 return new Decorator(
                     ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.IsMoving,
                     new Sequence(
-                        new Action(ret => Logger.WriteDebug("EnsureMovementStopped: stopping! {0}", reason ?? "")),
-                        new Action(ret => Navigator.PlayerMover.MoveStop())
+                        new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping! {0}", reason ?? "")),
+                        new Action(ret => StopMoving.Now())
                         )
                     );
             }
@@ -110,8 +113,8 @@ namespace Singular.Helpers
                     && StyxWoW.Me.IsMoving
                     && (onUnit(ret) == null || (InLineOfSpellSight(onUnit(ret)) && onUnit(ret).Distance < range)),
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug("EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range))),
-                    new Action(ret => Navigator.PlayerMover.MoveStop())
+                    new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range))),
+                    new Action(ret => StopMoving.Now())
                     )
                 );
         }
@@ -127,8 +130,8 @@ namespace Singular.Helpers
                     && StyxWoW.Me.IsMoving
                     && InMoveToMeleeStopRange,
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug("EnsureMovementStoppedWithinMelee: stopping because ", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("{0:F1} yds target distance is within melee", StyxWoW.Me.CurrentTarget.Distance))),
-                    new Action(ret => Navigator.PlayerMover.MoveStop())
+                    new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStoppedWithinMelee: stopping because ", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("{0:F1} yds target distance is within melee", StyxWoW.Me.CurrentTarget.Distance))),
+                    new Action(ret => StopMoving.Now())
                     )
                 );
         }
@@ -191,6 +194,23 @@ namespace Singular.Helpers
                     CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, ret => onUnit(ret).SpellRange(range)));
         }
 
+        public static Composite CreateMoveToUnitBehavior(float range, UnitSelectionDelegate onUnit)
+        {
+            return CreateMoveToUnitBehavior(onUnit, range);
+        }
+
+        public static Composite CreateMoveToUnitBehavior(UnitSelectionDelegate onUnit, float range, float stopAt = float.MinValue )
+        {
+            return new Decorator(
+                ret => !MovementManager.IsMovementDisabled && onUnit != null && onUnit(ret) != null && onUnit(ret).Distance > range,
+                new Sequence(
+                    new Action(ret => Logger.WriteDebug(Color.White, "MoveToUnit: moving within {0:F1} yds of {1} @ {2:F1} yds", range, onUnit(ret).SafeName(), onUnit(ret).Distance)),
+                    new Action(ret => Navigator.MoveTo(onUnit(ret).Location)),
+                    new Action(ret => StopMoving.InRangeOfUnit(onUnit(ret), stopAt == float.MinValue ? range : stopAt))
+                    )
+                );
+        }
+
 #if USE_OLD_VERSION
         /// <summary>
         ///   Creates a move to melee range behavior. Will return RunStatus.Success if it has reached the location, or stopped in range. Best used at the end of a rotation.
@@ -226,9 +246,13 @@ namespace Singular.Helpers
                             new Action(ret => RunStatus.Success)
                             )
                         ),
-                    new Sequence(
-                        new Action( ret => Logger.WriteDebug( "MoveToMelee: towards {0} @ {1:F1} yds", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.Distance)),
-                        new Action(ret => Navigator.MoveTo(StyxWoW.Me.CurrentTarget.Location))
+                    new Decorator(
+                        ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget.IsValid,
+                        new Sequence(
+                            new Action(ret => Logger.WriteDebug(Color.White, "MoveToMelee: towards {0} @ {1:F1} yds", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance)),
+                            new Action(ret => Navigator.MoveTo(StyxWoW.Me.CurrentTarget.Location)),
+                            new Action(ret => StopMoving.InMeleeRangeOfUnit(StyxWoW.Me.CurrentTarget, and => InMoveToMeleeStopRange ))
+                            )
                         )
                     )
                 );
@@ -238,7 +262,7 @@ namespace Singular.Helpers
         {
             get
             {
-                if (!StyxWoW.Me.GotTarget)
+                if (StyxWoW.Me.CurrentTarget == null || !StyxWoW.Me.CurrentTarget.IsValid)
                     return true;
 
                 if (StyxWoW.Me.CurrentTarget.IsPlayer)
@@ -249,13 +273,6 @@ namespace Singular.Helpers
         }
 #endif
 
-        public static Composite CreateMoveToMeleeBehavior(LocationRetriever location, bool stopInRange)
-        {
-            return
-                new Decorator(
-                    ret => !Spell.IsCastingOrChannelling(),
-                    CreateMoveToLocationBehavior(location, stopInRange, ret => StyxWoW.Me.CurrentTarget.IsPlayer ? 2f : Spell.MeleeRange));
-        }
 
         #region Move Behind
 
@@ -295,7 +312,10 @@ namespace Singular.Helpers
                     ctx => CalculatePointBehindTarget(),
                     new Decorator(
                         req => Navigator.CanNavigateFully(StyxWoW.Me.Location, (WoWPoint)req, 4),
-                        new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint))
+                        new Action(behindPoint => {
+                            Navigator.MoveTo((WoWPoint)behindPoint);
+                            StopMoving.AtLocation((WoWPoint)behindPoint);
+                            })
                         )
                     )
                 );
@@ -344,12 +364,14 @@ namespace Singular.Helpers
                                 new Action(ret => RunStatus.Success)
                                 )
                             ),
-                        new Action(ret => Navigator.MoveTo(location(ret)))
+                        new Action(ret => Navigator.MoveTo(location(ret))),
+                        new Action(ret => StopMoving.InRangeOfLocation(location(ret), range(ret)))
                         ));
         }
 
         #endregion
 
+/*
         private static WoWPoint lastMoveToRangeSpot = WoWPoint.Empty;
         private static bool inRange = false;
         /// <summary>
@@ -364,77 +386,15 @@ namespace Singular.Helpers
         /// <param name = "toUnit">unit to move towards</param>
         /// <param name = "range">The range.</param>
         /// <returns>.</returns>       
+        private static float _range;
         public static Composite CreateMoveToRangeAndStopBehavior(UnitSelectionDelegate toUnit, DynamicRangeRetriever range)
         {
-            return
-                new Decorator(
-
-                    ret => !MovementManager.IsMovementDisabled && toUnit != null && toUnit(ret) != null,
-
-                    new PrioritySelector(
-                // save check for whether we are in range to avoid duplicate calls
-                        new Action(ret =>
-                        {
-                            inRange = toUnit(ret).Distance < range(ret) && InLineOfSpellSight(toUnit(ret));
-                            return RunStatus.Failure;
-                        }),
-
-                        // check if we are still out of range and either not moving or have reached the last spot
-                        new Decorator(
-                            ret => !inRange && (!StyxWoW.Me.IsMoving || StyxWoW.Me.Location.Distance(lastMoveToRangeSpot) <= 0.5),
-                            new Action(ret =>
-                            {
-                                WoWPoint[] spots = Navigator.GeneratePath(StyxWoW.Me.Location, toUnit(ret).Location);
-                                if (spots.GetLength(0) <= 0)
-                                {
-                                    Logger.Write("MoveToRangeAndStop: can't move, unable to calculate path to {0} @ {1:F1} yds and LoSS={2}", toUnit(ret).SafeName(), toUnit(ret).Distance, toUnit(ret).InLineOfSpellSight);
-                                    return RunStatus.Failure;
-                                }
-
-                                int i = 0;
-                                WoWPoint nextSpot;
-                                do
-                                {
-                                    nextSpot = spots[i];
-                                } while (++i < spots.GetLength(0) && StyxWoW.Me.Location.Distance(nextSpot) < Navigator.PathPrecision);
-
-                                if (StyxWoW.Me.Location.Distance(nextSpot) < Navigator.PathPrecision)
-                                {
-                                    Logger.Write("MoveToRangeAndStop: can't move, furthest point in path {0} @ {1:F1} yds less than PathPrecision {2}", nextSpot, StyxWoW.Me.Location.Distance(nextSpot), Navigator.PathPrecision);
-                                    return RunStatus.Failure;
-                                }
-
-                                if (StyxWoW.Me.Location.Distance(nextSpot) > 20)
-                                {
-                                    Logger.WriteDebug("MoveToRangeAndStop: next spot in path {0} @ {1:F1} yds, shortening to 10 yds", nextSpot, StyxWoW.Me.Location.Distance(nextSpot));
-                                    nextSpot = WoWMathHelper.CalculatePointFrom(StyxWoW.Me.Location, nextSpot, 10);
-                                }
-
-                                Logger.WriteDebug("MoveToRangeAndStop: moving to {0} @ {1:F1} yds which is towards {2} @ {3:F1} yds", nextSpot, StyxWoW.Me.Location.Distance(nextSpot), toUnit(ret).SafeName(), toUnit(ret).Distance);
-                                lastMoveToRangeSpot = nextSpot;
-                                Navigator.MoveTo(lastMoveToRangeSpot);
-                                return RunStatus.Success;
-                            })
-                            ),
-
-                        // we are now in range 
-                        new Decorator(
-                            ret => inRange && StyxWoW.Me.IsMoving && StyxWoW.Me.Combat,
-                            new Action(ret =>
-                            {
-                                Logger.WriteDebug("MoveToRangeAndStop:  stopping - within {0:F1} yds and LoSS of {1}", range(ret), toUnit(ret).SafeName());
-                                Navigator.PlayerMover.MoveStop();
-                            })
-                            ),
-
-                        // at this point if we are moving, tell tree we are still busy
-                        new Decorator(
-                            ret => StyxWoW.Me.IsMoving,
-                            new ActionAlwaysSucceed()
-                            )
-                        )
-                    );
+            return new Sequence(
+                new Action(r => _range = range(r)),
+                CreateMoveToUnitBehavior(toUnit, _range)
+                );
         }
+*/
 
         public static Composite CreateWorgenDarkFlightBehavior()
         {
@@ -459,6 +419,132 @@ namespace Singular.Helpers
                         )
                     )
                 );
+        }
+    }
+
+    public static class StopMoving
+    {
+        internal static StopType Type { get; set; }
+        internal static WoWPoint Point { get; set; }
+        internal static WoWUnit Unit { get; set; }
+        internal static double Range { get; set; }
+        internal static SimpleBooleanDelegate StopNow { get; set; }
+
+        public enum StopType
+        {
+            None = 0,
+            AsSoonAsPossible,
+            Location,
+            RangeOfLocation,
+            RangeOfUnit,
+            MeleeRangeOfUnit,
+            LosOfUnit
+        }
+
+        static StopMoving()
+        {
+            Clear();
+        }
+
+        public static void Clear()
+        {
+            Set(StopType.None, null, WoWPoint.Empty, 0, stop => false, null);
+        }
+
+        public static void Pulse()
+        {
+            if ( Type == StopType.None )
+                return;
+
+            bool stopMovingNow;
+            try
+            {
+                stopMovingNow = StopNow(null);
+            }
+            catch
+            {
+                stopMovingNow = true;
+            }
+
+            if (stopMovingNow )
+            {
+                if (!StyxWoW.Me.IsMoving)
+                    Logger.Write(Color.White, "StopMoving: character already stopped, clearing stop {0} request", Type);
+                else
+                {
+                    Navigator.PlayerMover.MoveStop();
+
+                    string line = string.Format("StopMoving: {0}", Type);
+                    if ( Type == StopType.Location)
+                        line += string.Format(", within {0:F1} yds of {1}", StyxWoW.Me.Location.Distance(Point), Point);
+                    else if ( Type == StopType.RangeOfLocation )
+                        line += string.Format(", within {0:F1} yds of {1} @ {2:F1} yds", Range, Point, StyxWoW.Me.Location.Distance(Point));
+                    else if ( Unit ==  null || !Unit.IsValid )
+                        line += ", unit == null";
+                    else if ( Type == StopType.LosOfUnit)
+                        line += string.Format(", have LoSS of {0} @ {1:F1} yds", Unit.SafeName(), Unit.Distance );
+                    else if ( Type == StopType.MeleeRangeOfUnit)
+                        line += string.Format(", within melee range of {0} @ {1:F1} yds", Unit.SafeName(), Unit.Distance);
+                    else if ( Type == StopType.RangeOfUnit)
+                        line += string.Format(", within {0:F1} yds of {1} @ {2:F1} yds", Range, Unit.SafeName(), Unit.Distance);
+
+                    Logger.WriteDebug(Color.White, line);
+                }
+
+                Clear();
+            }
+        }
+
+        private static void Set( StopType type, WoWUnit unit, WoWPoint pt, double range, SimpleBooleanDelegate stop, SimpleBooleanDelegate and )
+        {
+            if (MovementManager.IsMovementDisabled)
+                return;
+
+            Type = type;
+            Unit = unit;
+            Point = pt;
+            Range = range;
+
+            if (and == null)
+                and = ret => true;
+
+            StopNow = ret => stop(ret) && and(ret);
+        }
+
+        public static void AtLocation(WoWPoint pt, SimpleBooleanDelegate and = null)
+        {
+            Set( StopType.Location, null, pt, 0, at => StyxWoW.Me.Location.Distance(pt) <= 1, and);
+        }
+
+        public static void InRangeOfLocation(WoWPoint pt, double range, SimpleBooleanDelegate and = null)
+        {
+            Set(StopType.RangeOfLocation, null, pt, range, at => StyxWoW.Me.Location.Distance(pt) <= range, and);
+        }
+
+        public static void InRangeOfUnit(WoWUnit unit, double range, SimpleBooleanDelegate and = null)
+        {
+            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, range, at => Unit == null || !Unit.IsValid || Unit.Distance <= range, and);
+        }
+
+        public static void InMeleeRangeOfUnit(WoWUnit unit, SimpleBooleanDelegate and = null)
+        {
+            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, 0, at => Unit == null || !Unit.IsValid || Unit.IsWithinMeleeRange, and);
+        }
+
+        public static void InLosOfUnit(WoWUnit unit, SimpleBooleanDelegate and = null)
+        {
+            Set(StopType.LosOfUnit, unit, WoWPoint.Empty, 0, at => Unit == null || !Unit.IsValid || Movement.InLineOfSpellSight(Unit), and);
+        }
+
+        public static void Now()
+        {
+            Clear();
+            Navigator.PlayerMover.MoveStop();
+        }
+
+        public static void AsSoonAsPossible( SimpleBooleanDelegate and = null)
+        {
+            Set(StopType.AsSoonAsPossible, null, WoWPoint.Empty, 0, at => true, and);
         }
     }
 

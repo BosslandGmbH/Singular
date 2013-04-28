@@ -41,7 +41,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
 
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
 
                 Spell.WaitForCast(true),
 
@@ -60,9 +60,16 @@ namespace Singular.ClassSpecific.Warlock
                         )
                     ),
 
-                Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
+                Movement.CreateMoveToUnitBehavior(ret => Me.CurrentTarget, 38, 33)
                 );
         }
+
+        [Behavior(BehaviorType.Heal, WoWClass.Warlock, WoWSpec.WarlockAffliction, priority: 999)]
+        public static Composite CreateWarlockAfflictionHeal()
+        {
+            return CreateWarlockDiagnosticOutputBehavior("Combat");
+        }
+
 
         [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Normal)]
         [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockAffliction, WoWContext.Instances)]
@@ -75,7 +82,9 @@ namespace Singular.ClassSpecific.Warlock
 
                 Helpers.Common.CreateAutoAttack(true),
 
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                // Movement.CreateEnsureMovementStoppedBehavior(35f),
+
+                new Action(r => { if ( Me.GotTarget) Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; } ),
 
                 // cancel an early drain soul if done to proc 1 soulshard
                 new Decorator(
@@ -122,8 +131,6 @@ namespace Singular.ClassSpecific.Warlock
                             return RunStatus.Failure;
                         }),
 
-                        CreateWarlockDiagnosticOutputBehavior("Combat"),
-
                         CreateAoeBehavior(),
 
                         // following Drain Soul only while Solo combat to maximize Soul Shard generation
@@ -136,9 +143,9 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateApplyDotsBehavior(
                             ret => Me.CurrentTarget,
-//                            ret => Me.CurrentTarget.HealthPercent < 20 || Me.CurrentTarget.HasAnyAura("Agony", "Corruption", "Unstable Affliction")),
-                            ret => (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.HealthPercent > 20)
-                                && !Me.CurrentTarget.HasAnyOfMyAuras("Agony", "Corruption", "Unstable Affliction")),
+                //                            ret => Me.CurrentTarget.HealthPercent < 20 || Me.CurrentTarget.HasAnyAura("Agony", "Corruption", "Unstable Affliction")),
+                            ret => (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.HealthPercent > 20 || Me.TimeToDeath() > 15)
+                                && !Me.CurrentTarget.HasAnyOfMyAuras("Agony", "Corruption", "Unstable Affliction", "Haunt")),
 
                         Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent >= 20),
                         Spell.Cast("Shadow Bolt", ret => !SpellManager.HasSpell("Malefic Grasp")),
@@ -151,7 +158,8 @@ namespace Singular.ClassSpecific.Warlock
                         )
                     ),
 
-                Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
+                Movement.CreateMoveToUnitBehavior(ret => Me.CurrentTarget, 35f)
+                // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
                 );
 
         }
@@ -165,7 +173,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
 
-                Movement.CreateEnsureMovementStoppedBehavior(30f),
+                // Movement.CreateEnsureMovementStoppedBehavior(30f),
 
                 // cancel an early drain soul if done to proc 1 soulshard
                 new Decorator(
@@ -212,8 +220,6 @@ namespace Singular.ClassSpecific.Warlock
                             _mobCount = Common.TargetsInCombat.Count();
                             return RunStatus.Failure;
                         }),
-
-                        CreateWarlockDiagnosticOutputBehavior("Combat"),
 
 #if NOT_NOW
                         new Throttle( 4, 
@@ -270,7 +276,8 @@ namespace Singular.ClassSpecific.Warlock
                         )
                     ),
 
-                Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
+                Movement.CreateMoveToUnitBehavior(ret => Me.CurrentTarget, 35f, 30f)
+                // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
                 );
 
         }
@@ -310,14 +317,22 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new PrioritySelector(
 
-                    // target below 20% we have a higher prior on Haunt (but skip if soulburn already up...)
-                   Spell.Buff("Haunt", 
-                        true,
-                        ctx => onUnit(ctx),
-                        req => Me.CurrentSoulShards > 0
-                            && Me.CurrentTarget.HealthPercent < 20
-                            && !Me.HasAura("Soulburn"),
-                        2),
+                    new Decorator(
+                        ret => !Me.HasAura("Soulburn"),
+                        new PrioritySelector(
+                            // target below 20% we have a higher prior on Haunt (but skip if soulburn already up...)
+                           Spell.Buff("Haunt", 
+                                true,
+                                ctx => onUnit(ctx),
+                                req => Me.CurrentSoulShards > 0
+                                    && Me.CurrentTarget.HealthPercent < 20
+                                    && !Me.HasAura("Soulburn"),
+                                2),
+
+                            // otherwise, save 2 shards for Soulburn and instant pet rez if needed (unless Misery buff up)
+                            Spell.Buff("Haunt", true, ctx => onUnit(ctx), req => Me.CurrentSoulShards > 2 || Me.HasAura("Dark Soul: Misery"), 2)
+                            )
+                        ),
 
                     new Sequence(
                        Common.CreateCastSoulburn(
@@ -334,8 +349,7 @@ namespace Singular.ClassSpecific.Warlock
 
                     Spell.Buff("Agony", true, ctx => onUnit(ctx), ret => true, 3),
                     Spell.Buff("Corruption", true, ctx => onUnit(ctx), ret => true, 3),
-                    Spell.Buff("Unstable Affliction", true, ctx => onUnit(ctx), req => true, 3),
-                    Spell.Buff("Haunt", true, ctx => onUnit(ctx), req => true, 2)
+                    Spell.Buff("Unstable Affliction", true, ctx => onUnit(ctx), req => true, 3)
                     );
         }
 

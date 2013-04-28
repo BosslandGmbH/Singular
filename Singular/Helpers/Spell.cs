@@ -187,11 +187,22 @@ namespace Singular.Helpers
             return TimeSpan.FromSeconds(indetermValue);
         }
 
-        public static bool IsSpellOnCooldown(string spell)
+        public static bool IsSpellOnCooldown(string castName)
         {
             SpellFindResults sfr;
-            if (SpellManager.FindSpell(spell, out sfr))
-                return (sfr.Override ?? sfr.Original).Cooldown;
+            if (!SpellManager.FindSpell(castName, out sfr))
+                return true;
+
+            WoWSpell spell = sfr.Override ?? sfr.Original;
+            if (Me.ChanneledCastingSpellId == 0)
+            {
+                uint num = StyxWoW.WoWClient.Latency * 2u;
+                if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
+                    return false;
+
+                if (spell.CooldownTimeLeft.TotalMilliseconds > num)
+                    return false;
+            }
 
             return true;
         }
@@ -520,10 +531,13 @@ namespace Singular.Helpers
         /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <param name = "allow">Whether or not to allow lag tollerance for spell queueing</param>
         /// <returns></returns>
-        public static Composite WaitForChannel(LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForChannel(bool faceDuring = false, LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
-                Movement.CreateFaceTargetBehavior(),
+                new Decorator(
+                    ret => faceDuring,
+                    Movement.CreateFaceTargetBehavior()
+                    ),
                 new Action(ret =>
                 {
                     if (IsChannelling(allow))
@@ -555,8 +569,8 @@ namespace Singular.Helpers
         public static Composite WaitForCastOrChannel(LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
-                WaitForCast(true, allow),
-                WaitForChannel(allow)
+                WaitForCast(false, allow),
+                WaitForChannel(false, allow)
                 );
         }
 
@@ -564,8 +578,8 @@ namespace Singular.Helpers
         {
             return new PrioritySelector(
                 WaitForGlobalCooldown(allow),
-                WaitForCast(true, allow),
-                WaitForChannel(allow)
+                WaitForCast(false, allow),
+                WaitForChannel(false, allow)
                 );
         }
 
@@ -936,27 +950,44 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] buffNames)
         {
+            return Buff(sp => name, myBuff, onUnit, requirements, buffNames);
+        }
+
+        private static string _buffName { get; set; }
+        private static WoWUnit _buffUnit { get; set; }
+
+        public static Composite Buff(SimpleStringDelegate name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, params string[] buffNames)
+        {
             return new Decorator(
                 ret =>
                 {
-                    if (onUnit == null || onUnit(ret) == null || name == null)
+                    if (onUnit == null || name == null || requirements == null)
                         return false;
 
-                    if (DoubleCastPreventionDict.Contains(onUnit(ret), name))
+                    _buffUnit = onUnit(ret);
+                    if (_buffUnit == null)
+                        return false;
+
+                    _buffName = name(ret);
+                    if (_buffName == null)
+                        return false;
+
+                    if (DoubleCastPreventionDict.Contains(_buffUnit, _buffName))
                         return false;
 
                     if (!buffNames.Any())
-                        return !(myBuff ? onUnit(ret).HasMyAura(name) : onUnit(ret).HasAura(name));
+                        return !(myBuff ? _buffUnit.HasMyAura(_buffName) : _buffUnit.HasAura(_buffName));
 
                     if (myBuff)
-                        return buffNames.All(b => !onUnit(ret).HasMyAura(b));
+                        return buffNames.All(b => !_buffUnit.HasMyAura(b));
 
-                    return buffNames.All(b => !onUnit(ret).HasAura(b));
+                    bool buffFound = buffNames.Any(b => _buffUnit.HasAura(b));
+                    return !buffFound;
                 },
                 new Sequence(
                 // new Action(ctx => _lastBuffCast = name),
-                    Cast(name, chkMov => true, onUnit, requirements, cancel => false /* causes cast to complete */ ),
-                    new Action(ret => UpdateDoubleCastDict(name, onUnit(ret)))
+                    Cast( sp => _buffName, chkMov => true, on => _buffUnit, requirements, cancel => false /* causes cast to complete */ ),
+                    new Action(ret => UpdateDoubleCastDict(_buffName, _buffUnit))
                     )
                 );
         }
@@ -964,36 +995,44 @@ namespace Singular.Helpers
 
         public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, int expirSecs, params string[] buffNames)
         {
-            //if (name == _lastBuffCast && _castTimer.IsRunning && _castTimer.ElapsedMilliseconds < 250)
-            //{
-            //    return new Action(ret => RunStatus.Success);
-            //}
+            return Buff(sp => name, myBuff, onUnit, requirements, expirSecs, buffNames);
+        }
 
-            //if (name == _lastBuffCast && StyxWoW.Me.IsCasting)
-            //{
-            //    _castTimer.Reset();
-            //    _castTimer.Start();
-            //    return new Action(ret => RunStatus.Success);
-            //}
 
+        public static Composite Buff(SimpleStringDelegate name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, int expirSecs, params string[] buffNames)
+        {
             return new Decorator(
                 ret =>
                 {
-                    if (onUnit == null || onUnit(ret) == null || name == null)
+                    if (onUnit == null || name == null || requirements == null)
                         return false;
 
-                    if (DoubleCastPreventionDict.Contains(onUnit(ret), name))
+                    _buffUnit = onUnit(ret);
+                    if (_buffUnit == null)
+                        return false;
+
+                    _buffName = name(ret);
+                    if (_buffName == null)
+                        return false;
+
+                    if (DoubleCastPreventionDict.Contains(onUnit(ret), name(ret)))
                         return false;
 
                     if (!buffNames.Any())
-                        return onUnit(ret).HasAuraExpired(name, expirSecs, myBuff);
+                    {
+                        bool hasExpired = onUnit(ret).HasAuraExpired(name(ret), expirSecs, myBuff);
+                        if (hasExpired)
+                            Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, auraleft={2:F1} secs", name(ret), SpellManager.HasSpell(name(ret)).ToYN(), onUnit(ret).GetAuraTimeLeft(name(ret), true).TotalSeconds);
+
+                        return hasExpired;
+                    }
 
                     return buffNames.All(b => onUnit(ret).HasAuraExpired(b, expirSecs, myBuff));
                 },
                 new Sequence(
                 // new Action(ctx => _lastBuffCast = name),
                     Cast(name, chkMov => true, onUnit, requirements, cancel => false /* causes cast to complete */ ),
-                    new Action(ret => UpdateDoubleCastDict(name, onUnit(ret)))
+                    new Action(ret => UpdateDoubleCastDict(name(ret), onUnit(ret)))
                     )
                 );
         }
@@ -1054,6 +1093,17 @@ namespace Singular.Helpers
         {
             return Buff(name, false, on => Me, requirements, expirSecs);
         }
+
+        public static Composite BuffSelf(SimpleStringDelegate name, SimpleBooleanDelegate requirements)
+        {
+            return Buff(name, false, on => Me, requirements);
+        }
+
+        public static Composite BuffSelf(SimpleStringDelegate name, SimpleBooleanDelegate requirements, int expirSecs)
+        {
+            return Buff(name, false, on => Me, requirements, expirSecs);
+        }
+
 
         #endregion
 

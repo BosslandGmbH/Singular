@@ -41,16 +41,23 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Pull, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbiePull()
         {
-            return
-                new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateDismount("Pulling"),
-                    Spell.WaitForCast(true),
-                    CreateLowbieDiagnosticOutputBehavior(),
-                    Spell.Cast("Lightning Bolt"),
-                    Movement.CreateMoveToTargetBehavior(true, 25f));
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(25f),
+                Spell.WaitForCast(true),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        CreateLowbieDiagnosticOutputBehavior(),
+                        Spell.Cast("Earth Shock", ret => Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet),
+                        Spell.Cast("Lightning Bolt")
+                        )
+                    ),
+                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 30f, 20f)
+                );
         }
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbieHeal()
@@ -69,12 +76,17 @@ namespace Singular.ClassSpecific.Shaman
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Spell.WaitForCast(true),
-                    CreateLowbieDiagnosticOutputBehavior(),
-                    Helpers.Common.CreateAutoAttack(true),
-                    Spell.Cast("Earth Shock"),      // always use
-                    Spell.Cast("Primal Strike"),    // always use
-                    Spell.Cast("Lightning Bolt"),                   
-                    Movement.CreateMoveToTargetBehavior(true, 25f)
+                    new Decorator(
+                        ret => !Spell.IsGlobalCooldown(),
+                        new PrioritySelector(
+                            CreateLowbieDiagnosticOutputBehavior(),
+                            Helpers.Common.CreateAutoAttack(true),
+                            Spell.Cast("Earth Shock", req => Me.CurrentTarget.Distance < 15 || !Me.CurrentTarget.IsMoving  ),      // always use
+                            Spell.Cast("Primal Strike"),    // always use
+                            Spell.Cast("Lightning Bolt")
+                            )
+                        ),
+                    Movement.CreateMoveToUnitBehavior(25f, on => Me.CurrentTarget)
                     );
         }
 

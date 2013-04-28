@@ -160,7 +160,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -191,7 +191,8 @@ namespace Singular.ClassSpecific.Druid
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
+                // Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
@@ -209,7 +210,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
-                Movement.CreateEnsureMovementStoppedBehavior( 35f),
+                // Movement.CreateEnsureMovementStoppedBehavior( 35f),
 
                 Spell.WaitForCast(true),
 
@@ -296,7 +297,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
                 );
         }
 
@@ -401,7 +402,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
                 );
         }
 
@@ -421,7 +422,7 @@ namespace Singular.ClassSpecific.Druid
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
                 Helpers.Common.CreateAutoAttack(false),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(30f),
 
                 Spell.WaitForCast(true),
 
@@ -509,7 +510,7 @@ namespace Singular.ClassSpecific.Druid
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
                 );
         }
 

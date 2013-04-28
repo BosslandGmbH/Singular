@@ -41,7 +41,7 @@ namespace Singular.ClassSpecific.Warlock
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
 
                 Spell.WaitForCast(true),
 
@@ -166,7 +166,7 @@ namespace Singular.ClassSpecific.Warlock
                         )
                     ),
 
-                Movement.CreateMoveToRangeAndStopBehavior( toUnit => Me.CurrentTarget, range => 35f)
+                Movement.CreateMoveToUnitBehavior(toUnit => Me.CurrentTarget, 38f, 33f)
                 );
         }
 

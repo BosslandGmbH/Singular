@@ -582,6 +582,7 @@ namespace Singular.ClassSpecific.Hunter
                             if (Navigator.CanNavigateFully(Me.Location, moveTo))
                             {
                                 Navigator.MoveTo(moveTo);
+                                StopMoving.AtLocation(moveTo);
                                 return RunStatus.Success;
                             }
 

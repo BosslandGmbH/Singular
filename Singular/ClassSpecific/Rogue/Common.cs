@@ -18,6 +18,7 @@ using System;
 using Styx.CommonBot.POI;
 using System.Collections.Generic;
 using Styx.Helpers;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Rogue
 {
@@ -56,7 +57,7 @@ namespace Singular.ClassSpecific.Rogue
                             new PrioritySelector(
                                 new Decorator(
                                     ret => Me.IsMoving && !MovementManager.IsMovementDisabled,
-                                    new Action(ret => { Navigator.PlayerMover.MoveStop(); return RunStatus.Failure; })
+                                    new Action(ret => { StopMoving.Now(); return RunStatus.Failure; })
                                     ),
                                 new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.IsMoving, new ActionAlwaysFail()),
                                 new Decorator(
@@ -113,12 +114,15 @@ namespace Singular.ClassSpecific.Rogue
                 // new Action(r => { Logger.WriteDebug("PreCombatBuffs -- stealthed={0}", Stealthed); return RunStatus.Failure; }),
                 CreateApplyPoisons(),
 
-                // don't waste the combo points if we have them
-                Spell.Cast("Recuperate", 
-                    on => Me,
-                    ret => StyxWoW.Me.RawComboPoints > 0 
-                        && Spell.IsSpellOnCooldown("Redirect")
-                        && Me.HasAuraExpired("Recuperate", 3 + Me.RawComboPoints * 6))
+                // don't waste the combo points if we have them. try one cast and wait
+                new Throttle(
+                    TimeSpan.FromSeconds(3),
+                    Spell.Cast("Recuperate", 
+                        on => Me,
+                        ret => StyxWoW.Me.RawComboPoints > 0 
+                            && Spell.IsSpellOnCooldown("Redirect")
+                            && Me.HasAuraExpired("Recuperate", 3 + Me.RawComboPoints * 6))
+                    )
                 );
         }
 
@@ -127,7 +131,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
-                CreateStealthBehavior( ret => !IsStealthed && Me.GotTarget && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral ? 8 : 99 )),
+                CreateStealthBehavior( ret => Me.GotTarget && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 99 )),
                 Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0 && Me.ComboPointsTarget != Me.CurrentTargetGuid ),
                 Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
                 // Throttle Shadowstep because cast can fail with no message
@@ -173,13 +177,14 @@ namespace Singular.ClassSpecific.Rogue
 
                 Spell.Cast("Deadly Throw",
                     ret => Me.ComboPoints >= 3
-                        && Me.GotTarget
+                        && Me.IsSafelyFacing(Me.CurrentTarget)
                         && Me.CurrentTarget.IsCasting
                         && Me.CurrentTarget.CanInterruptCurrentSpellCast),
 
                 // Pursuit
                 Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12 && Unit.CurrentTargetIsMovingAwayFromMe),
                 Spell.Cast("Burst of Speed", ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > 10 && Unit.CurrentTargetIsMovingAwayFromMe),
+                Spell.Cast("Shuriken Toss", ret => Me.IsSafelyFacing(Me.CurrentTarget) && Me.CurrentTarget.SpellDistance().Between(10, 30)),
 
                 // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
                 new Sequence(
@@ -193,6 +198,9 @@ namespace Singular.ClassSpecific.Rogue
                     new Wait(TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed()),
                     CreateRogueOpenerBehavior()
                     ),
+
+                // Pick Pocket? for those that favor coin over combat, try here in case we restealth
+                CreateRoguePickPocket(),
 
                 // DPS Boost               
                 new Sequence(
@@ -222,6 +230,33 @@ namespace Singular.ClassSpecific.Rogue
 
         }
 
+        public static Composite CreatePullMobMovingAwayFromMe()
+        {
+            return new Throttle( 2,
+                new Decorator(
+                    ret => Me.GotTarget 
+                        && Me.CurrentTarget.IsMoving && Me.IsMoving 
+                        && Me.CurrentTarget.MovementInfo.CurrentSpeed >= Me.MovementInfo.CurrentSpeed
+                        && Me.IsSafelyBehind( Me.CurrentTarget),
+                    new Sequence(
+                        new Action(r => Logger.WriteDebug("MovingAwayFromMe: Target ({0:F2}) faster than Me ({1:F2}) -- trying Sprint or Ranged Attack", Me.CurrentTarget.MovementInfo.CurrentSpeed, Me.MovementInfo.CurrentSpeed)),
+                        new PrioritySelector(
+                            Spell.Cast("Sap", req => Me.IsStealthed && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon)),
+                            Spell.BuffSelf("Sprint"),
+                            new Decorator(
+                                req => !Me.CurrentTarget.IsPlayer,
+                                new PrioritySelector(
+                                    Spell.Cast("Shuriken Toss"),
+                                    Spell.CastOnGround("Distract", on => Me.CurrentTarget, req => true, false)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+
+        }
+
         public static Composite CreateApplyPoisons()
         {
             return new Sequence(
@@ -241,9 +276,9 @@ namespace Singular.ClassSpecific.Rogue
                 ret => Common.IsStealthed,
                 new PrioritySelector(
                     CreateRoguePickPocket(),
-                    Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) || Common.HasTalent( RogueTalents.MarkedForDeath )),
-                    Spell.Cast("Garrote", ret => !Me.IsMoving && !Me.IsSafelyBehind(Me.CurrentTarget) || Common.HasTalent(RogueTalents.MarkedForDeath)),
-                    Spell.Cast("Cheap Shot", ret => !Me.IsMoving )
+                    Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) || Common.HasTalent( RogueTalents.CloakAndDagger)),
+                    Spell.Cast("Garrote", ret => (!Me.IsMoving && !Me.IsSafelyBehind(Me.CurrentTarget)) || Common.HasTalent(RogueTalents.CloakAndDagger)),
+                    Spell.Cast("Cheap Shot", ret => !Me.IsMoving || Common.HasTalent(RogueTalents.CloakAndDagger))
                     )
                 );
         }
@@ -264,7 +299,7 @@ namespace Singular.ClassSpecific.Rogue
             {
                 if (!StyxWoW.Me.GroupInfo.IsInParty && !StyxWoW.Me.GroupInfo.IsInRaid)
                     return null;
-
+                
                 // If the player has a focus target set, use it instead. TODO: Add Me.FocusedUnit to the HB API.
                 if (StyxWoW.Me.FocusedUnitGuid != 0)
                     return StyxWoW.Me.FocusedUnit;
@@ -348,7 +383,8 @@ namespace Singular.ClassSpecific.Rogue
                 // changed to only do on non-player targets
                 ret => !Me.CurrentTarget.IsPlayer && (Me.CurrentTarget.IsFlying || Me.CurrentTarget.IsAboveTheGround() || Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= 5),
                 new PrioritySelector(
-                    Spell.Cast("Deadly Throw"),
+                    Spell.Cast("Deadly Throw", req => Me.ComboPoints > 0),
+                    Spell.Cast("Shuriken Toss"),
                     Spell.Cast("Throw"),
 
                     // nothing else worked, so cancel stealth so we can proximity aggro
@@ -374,22 +410,48 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        private static Helpers.Throttle CreateRoguePickPocket()
+        public static Composite CreateRoguePickPocket()
         {
+            if (!RogueSettings.UsePickPocket)
+            {
+                return new ActionAlwaysFail();
+            }
+
+            // don't create behavior if pick pocket in combat not enabled
+            if (!RogueSettings.AllowPickPocketInCombat && (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.CombatBuffs))
+            {
+                return new ActionAlwaysFail();
+            }
+
+            if (HasTalent(RogueTalents.CloakAndDagger) && RogueSettings.UsePickPocket && !RogueSettings.AllowPickPocketInCombat)
+            {
+                Logger.Write(Color.White, "warning:  Pick Pocket disabled due to Cloak and Dagger talent - enable Allow Pick Pocket In Combat setting to allow use");
+                return new ActionAlwaysFail();
+            }
+
+            if (!AutoLootIsEnabled())
+            {
+                Logger.Write(Color.White, "warning:  Auto Loot off, Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
+                return new ActionAlwaysFail();
+            }
+
             return new Throttle(5,
                 new Decorator(
-                    ret => RogueSettings.UsePickPocket
+                    ret => (!Me.Combat || RogueSettings.AllowPickPocketInCombat)
                         && IsStealthed
                         && Me.GotTarget
                         && Me.CurrentTarget.IsAlive
                         && !Me.CurrentTarget.IsPlayer
                         && (Me.CurrentTarget.IsWithinMeleeRange || (TalentManager.HasGlyph("Pick Pocket") && Me.CurrentTarget.SpellDistance() < 10))
                         && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsUndead)
-                        && AutoLootIsEnabled(),
+                        && !Blacklist.Contains( Me.CurrentTarget, BlacklistFlags.Node),
                     new Sequence(
-                        new Action( r => { Navigator.PlayerMover.MoveStop(); } ),
+                        new Action( r => { StopMoving.Now(); } ),
                         new Wait( TimeSpan.FromMilliseconds(500), until => !Me.IsMoving, new ActionAlwaysSucceed()),
+                        new WaitContinue(TimeSpan.FromMilliseconds(RogueSettings.PrePickPocketPause), req => false, new ActionAlwaysSucceed()),
                         Spell.Cast("Pick Pocket", on => Me.CurrentTarget),
+                        new WaitContinue( TimeSpan.FromMilliseconds( RogueSettings.PostPickPocketPause), req => false, new ActionAlwaysSucceed()),
+                        new Action( r => Blacklist.Add( Me.CurrentTarget, BlacklistFlags.Node, TimeSpan.FromMinutes( 2))),
                         new ActionAlwaysFail() // not on the GCD, so fail
                         )
                     )
@@ -504,8 +566,12 @@ namespace Singular.ClassSpecific.Rogue
 
         public static WoWItem FindLockedBox()
         {
+            if (Me.CarriedItems == null)
+                return null;
+
             return Me.CarriedItems
-                .Where(b => b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
+                .Where(b => b != null && b.IsValid && b.ItemInfo != null
+                    && b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
                     && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
                     && b.ItemInfo.Level <= Me.Level
                     && !b.IsOpenable
@@ -518,8 +584,12 @@ namespace Singular.ClassSpecific.Rogue
 
         public static WoWItem FindUnlockedBox()
         {
+            if (Me.CarriedItems == null)
+                return null;
+
             return Me.CarriedItems
-                .Where(b => b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
+                .Where(b => b != null && b.IsValid && b.ItemInfo != null
+                    && b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
                     && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
                     && b.IsOpenable
                     && b.Usable

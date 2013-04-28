@@ -215,7 +215,7 @@ namespace Singular.ClassSpecific.Shaman
                     ctx => Unit.NearbyUnfriendlyUnits
                         .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
                                 && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
+                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && Me.GotTarget && u.Location.Distance(Me.CurrentTarget.Location) > 10)
                         .OrderByDescending(u => u.Distance)
                         .FirstOrDefault(),
                     Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
@@ -398,68 +398,66 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateShamanDpsHealBehavior()
         {
-            return new PrioritySelector(
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+            // use predicted health for non-combat healing to reduce drinking downtime and help
+            // .. avoid unnecessary heal casts
+                    new Decorator(
+                        ret => !Me.Combat,
+                        Spell.Cast("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) <= 85)
+                        ),
 
-                Spell.WaitForCastOrChannel(),
+                    new Decorator(
+                        ret => Me.Combat && !Spell.IsGlobalCooldown(),
 
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                // use predicted health for non-combat healing to reduce drinking downtime and help
-                // .. avoid unnecessary heal casts
-                        new Decorator(
-                            ret => !Me.Combat,
-                            Spell.Cast("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) <= 85)
-                            ),
+                        new PrioritySelector(
 
-                        new Decorator(
-                            ret => Me.Combat && !Spell.IsGlobalCooldown(),
+                            Spell.BuffSelf("Ancestral Guidance", ret => Me.HealthPercent < (Common.StressfulSituation ? 60 : 40)),
 
-                            new PrioritySelector(
-
-                                Spell.BuffSelf("Ancestral Guidance", ret => Me.HealthPercent < (Common.StressfulSituation ? 60 : 40)),
-
-                                // save myself if possible
-                                new Decorator(
-                                    ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
-                                        && Me.HealthPercent < 25,
+                            // save myself if possible
+                            new Decorator(
+                                ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
+                                    && Me.HealthPercent < 25,
+                                new Sequence(
+                                    Spell.BuffSelf("Ancestral Swiftness", ret => Me.GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness),
                                     new Sequence(
-                                        Spell.BuffSelf("Ancestral Swiftness", ret => Me.GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness),
+                                        Spell.Cast("Greater Healing Wave", ret => Me),
                                         Spell.Cast("Healing Surge", ret => Me)
                                         )
-                                    ),
+                                    )
+                                ),
 
-                                // use non-predicted health as we only off-heal when its already an emergency
-                                new Decorator(
-                                    ret => NeedToOffHealSomeone,
-                                    Restoration.CreateRestoShamanHealingOnlyBehavior(selfOnly:false, moveInRange:true)
-                                    ),
+                            // use non-predicted health as we only off-heal when its already an emergency
+                            new Decorator(
+                                ret => NeedToOffHealSomeone,
+                                Restoration.CreateRestoShamanHealingOnlyBehavior(selfOnly:false)
+                                ),
 
-                                // use non-predicted health as a trigger for totems
-                                new Decorator(
-                                    ret => !Common.AnyHealersNearby,
-                                    new PrioritySelector(
-                                        Spell.BuffSelf(
-                                            "Healing Tide Totem",
-                                            ret => !Me.IsMoving
-                                                && Unit.GroupMembers.Any(
-                                                    p => p.HealthPercent < ShamanSettings.HealingTideTotemPercent
-                                                        && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
-                                        Spell.BuffSelf(
-                                            "Healing Stream Totem",
-                                            ret => !Me.IsMoving
-                                                && !Totems.Exist(WoWTotemType.Water)
-                                                && Unit.GroupMembers.Any(
-                                                    p => p.HealthPercent < ShamanSettings.HealHealingStreamTotem
-                                                        && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
+                            // use non-predicted health as a trigger for totems
+                            new Decorator(
+                                ret => !Common.AnyHealersNearby,
+                                new PrioritySelector(
+                                    Spell.BuffSelf(
+                                        "Healing Tide Totem",
+                                        ret => !Me.IsMoving
+                                            && Unit.GroupMembers.Any(
+                                                p => p.HealthPercent < ShamanSettings.HealingTideTotemPercent
+                                                    && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
+                                    Spell.BuffSelf(
+                                        "Healing Stream Totem",
+                                        ret => !Me.IsMoving
+                                            && !Totems.Exist(WoWTotemType.Water)
+                                            && Unit.GroupMembers.Any(
+                                                p => p.HealthPercent < ShamanSettings.HealHealingStreamTotem
+                                                    && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
 
-                                        // use actual health for following, not predicted as its a low health value
-                // .. and its okay for multiple heals at that point
-                                        Spell.Cast(
-                                            "Healing Surge",
-                                            ret => Me,
-                                            ret => Me.HealthPercent <= 40)
-                                        )
+                                    // use actual health for following, not predicted as its a low health value
+            // .. and its okay for multiple heals at that point
+                                    Spell.Cast(
+                                        "Healing Surge",
+                                        ret => Me,
+                                        ret => Me.HealthPercent <= 40)
                                     )
                                 )
                             )

@@ -112,8 +112,13 @@ namespace Singular
             // Double cast shit
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow > t);
 
+            MonitorQuestingPullDistance();
+
             // Output if Target changed 
             CheckCurrentTarget();
+
+            // Pulse our StopAt manager
+            StopMoving.Pulse();
 
             //Only pulse for classes with pets
             switch (StyxWoW.Me.Class)
@@ -153,7 +158,7 @@ namespace Singular
                 if (_lastCheckGuid != 0)
                 {
                     _lastCheckGuid = 0;
-                    Logger.WriteDebug("CheckCurrentTarget: changed to: (null)");
+                    Logger.WriteDebug("YourCurrentTarget: changed to: (null)");
                 }
             }
             else
@@ -168,13 +173,21 @@ namespace Singular
                 if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
                     info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
 
-                Logger.WriteDebug("YourCurrentTarget: changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, entry={7}, faction={8}, loss={9}, facing={10}, blacklist={11}" + info,
+                string playerInfo = "N";
+                if (target.IsPlayer)
+                {
+                    WoWPlayer p = target.ToPlayer();
+                    playerInfo = string.Format("Y, Friend={0}, IsPvp={1}, CtstPvp={2}, FfaPvp={3}", Me.IsHorde == p.IsHorde, p.IsPvPFlagged, p.ContestedPvPFlagged, p.IsFFAPvPFlagged);
+                }
+
+                Logger.WriteDebug("YourCurrentTarget: changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, attackable={6}, hostile={7}, entry={8}, faction={9}, loss={10}, facing={11}, blacklist={12}" + info,
                     target.SafeName(),
                     target.HealthPercent,
                     target.MaxHealth,
                     target.Distance,
                     target.CombatReach,
-                    target.IsPlayer.ToYN(),
+                    playerInfo,
+                    target.Attackable.ToYN(),
                     target.IsHostile.ToYN(),
                     target.Entry,
                     target.FactionId,

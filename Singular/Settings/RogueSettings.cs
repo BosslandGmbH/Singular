@@ -81,13 +81,6 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Use Pick Pocket")]
-        [Description("Requires AutoLoot ON; pick pocket mob before opener")]
-        public bool UsePickPocket { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
         [DisplayName("Use Pick Lock")]
         [Description("Requires AutoLoot ON; unlock boxes in bags during rest")]
         public bool UsePickLock { get; set; }
@@ -113,6 +106,34 @@ namespace Singular.Settings
         [DisplayName("Use Speed Buff")]
         [Description("Cast Burst of Speed when running out of combat")]
         public bool UseSpeedBuff { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Pick Pocket")]
+        [DisplayName("Use Pick Pocket")]
+        [Description("Requires AutoLoot ON; pick pocket mob before opener")]
+        public bool UsePickPocket { get; set; }
+
+        [Setting]
+        [DefaultValue(200)]
+        [Category("Pick Pocket")]
+        [DisplayName("Post-Pick Pocket Pause")]
+        [Description("Milliseconds to pause after Pick Pocket (for systems with a slow Auto Loot reaction since Pick Pocket has no GCD)")]
+        public int PostPickPocketPause { get; set; }
+
+        [Setting]
+        [DefaultValue(100)]
+        [Category("Pick Pocket")]
+        [DisplayName("Pre-Pick Pocket ms Pause")]
+        [Description("Milliseconds to pause before Pick Pocket (for systems with lag)")]
+        public int PrePickPocketPause { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Pick Pocket")]
+        [DisplayName("Allow Pick Pocket in Combat")]
+        [Description("Allow use in Combat on Current Target if spell usable and current target valid")]
+        public bool AllowPickPocketInCombat { get; set; }
 
     }
 }

@@ -68,7 +68,7 @@ namespace Singular.Settings
         [Category("Brewmaster")]
         [DisplayName("Avert Harm Group Health Percent")]
         [Description("Avert Harm is used when the averge health percent of group falls below this value")]
-        public float AvertHarmGroupHealthPercent { get; set; }
+        public int AvertHarmGroupHealthPct { get; set; }
 
         [Setting]
         [Styx.Helpers.DefaultValue(true)]
@@ -81,7 +81,7 @@ namespace Singular.Settings
         [Category("Brewmaster")]
         [DisplayName("Elusive Brew Min. Stack")]
         [Description("Elusive Brew is used when player has this many stacks of Elusive Brew or more")]
-        public float ElusiveBrewMinumumStackCount { get; set; }
+        public int ElusiveBrewMinumumCount { get; set; }
 
         [Setting]
         [Styx.Helpers.DefaultValue(true)]

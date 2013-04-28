@@ -22,6 +22,7 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
+        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
 
         #region Normal Rotation
         [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueCombat, WoWContext.Normal | WoWContext.Battlegrounds | WoWContext.Instances )]
@@ -42,7 +43,7 @@ namespace Singular.ClassSpecific.Rogue
                         CreateCombatDiagnosticOutputBehavior("Pull"),
 
                         Common.CreateRogueOpenerBehavior(),
-
+                        Common.CreatePullMobMovingAwayFromMe(),
                         Common.CreateAttackFlyingMobs(),
 
                         // ok, everything else failed so just hit him!!!!

@@ -11,8 +11,6 @@ namespace Singular.ClassSpecific.Warlock
 {
     public class Lowbie
     {
-
-
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, 0, priority: 1)]
         public static Composite CreateLowbieWarlockCombat()
         {
@@ -23,7 +21,7 @@ namespace Singular.ClassSpecific.Warlock
                 Helpers.Common.CreateAutoAttack(false),
                 Helpers.Common.CreateDismount("Pulling"),
 
-                Movement.CreateEnsureMovementStoppedBehavior( 35f ),
+                Movement.CreateEnsureMovementStoppedBehavior( 33f ),
 
                 Spell.WaitForCast(true),
 
@@ -41,7 +39,7 @@ namespace Singular.ClassSpecific.Warlock
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 35f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38, 33)
                 );
         }
     }

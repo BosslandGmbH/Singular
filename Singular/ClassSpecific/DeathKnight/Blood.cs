@@ -96,7 +96,6 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 Spell.BuffSelf("Blood Tap",
                     ret => StyxWoW.Me.HasAura("Blood Charge", 5)
-                        &&  StyxWoW.Me.Auras["Blood Charge"].StackCount >= 5 
                         && (Common.BloodRuneSlotsActive == 0 || Common.FrostRuneSlotsActive == 0 || Common.UnholyRuneSlotsActive == 0)),
 
                 Spell.Cast("Plague Leech", ret => Common.CanCastPlagueLeech)
@@ -278,6 +277,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateDismount("Pulling"),
+                    Movement.CreateEnsureMovementStoppedWithinMelee(),
                     Spell.WaitForCast(),
 
                     Helpers.Common.CreateAutoAttack(true),

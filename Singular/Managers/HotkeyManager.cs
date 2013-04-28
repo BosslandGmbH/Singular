@@ -334,7 +334,7 @@ namespace Singular.Managers
         { 
             _MovementEnabled = _MovementEnabled ? false : true;
             if ( !_MovementEnabled )
-                WoWMovement.MoveStop();
+                StopMoving.Now();
 
 #if !REACT_TO_HOTKEYS_IN_PULSE
             MovementKeyHandler();

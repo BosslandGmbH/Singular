@@ -92,7 +92,7 @@ namespace Singular.Helpers
                             ret => Me.GotAlivePet && (!Me.Pet.GotTarget || Me.Pet.CurrentTargetGuid != Me.CurrentTargetGuid),
                             new Action( delegate
                                 {
-                                    PetManager.CastPetAction("Attack");
+                                    PetManager.CastPetAction("Attack", Me.CurrentTarget);
                                     return RunStatus.Failure;
                                 })
                             )
@@ -351,7 +351,7 @@ namespace Singular.Helpers
                             new DecoratorContinue(ret => StyxWoW.Me.IsMoving,
                                 new Sequence(
                                     new Action(ret => Logger.WriteDebug("Stopping to descend..." + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty))),
-                                    new Action(ret => WoWMovement.MoveStop()),
+                                    new Action(ret => StopMoving.Now()),
                                     new Wait( 1, ret => !StyxWoW.Me.IsMoving, new ActionAlwaysSucceed())
                                     )
                                 ),
@@ -393,10 +393,7 @@ namespace Singular.Helpers
                 new PrioritySelector(
                     new Decorator(
                         ret => StyxWoW.Me.IsMoving,
-                        new Sequence( 
-                            new Action(ret => Logger.WriteDebug("Stopping..." + (!string.IsNullOrEmpty(reason) ? (" Reason: " + reason) : string.Empty))),
-                            Movement.CreateEnsureMovementStoppedBehavior()
-                            )
+                        Movement.CreateEnsureMovementStoppedBehavior( reason: string.IsNullOrEmpty(reason) ? string.Empty : (" StopDismount Reason: " + reason))
                         ),
 
                     CreateDismount( reason)

@@ -76,35 +76,46 @@ namespace Singular.ClassSpecific.Warrior
             }
         }
 
+        /// <summary>
+        /// keep a single copy of Charge Behavior so the wrapping Throttle will account for 
+        /// uses across multiple behaviors that reference this method
+        /// </summary>
+        private static Composite _singletonChargeBehavior = null;
+       
         public static Composite CreateChargeBehavior()
         {
-            return new Throttle( TimeSpan.FromMilliseconds(1500),
-                new Decorator(
-                    ret => Me.CurrentTarget != null,
+            if (_singletonChargeBehavior == null)
+            {
+                _singletonChargeBehavior = new Throttle(TimeSpan.FromMilliseconds(1500),
+                    new Decorator(
+                        ret => Me.CurrentTarget != null,
 
-                    new PrioritySelector(
-                        Spell.Cast("Charge",
-                            ret => MovementManager.IsClassMovementAllowed
-                                && !Me.CurrentTarget.HasMyAura("Charge Stun")
-                                && Me.CurrentTarget.SpellDistance() >= 10 && Me.CurrentTarget.SpellDistance() < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)
-                                && WarriorSettings.UseWarriorCloser),
+                        new PrioritySelector(
+                            Spell.Cast("Charge",
+                                ret => MovementManager.IsClassMovementAllowed
+                                    && !Me.CurrentTarget.HasMyAura("Charge Stun")
+                                    && Me.CurrentTarget.SpellDistance() >= 10 && Me.CurrentTarget.SpellDistance() < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)
+                                    && WarriorSettings.UseWarriorCloser),
 
-                        Spell.CastOnGround("Heroic Leap", 
-                            on => Me.CurrentTarget, 
-                            req => MovementManager.IsClassMovementAllowed
-                                && !Me.HasAura("Charge")
-                                && Me.CurrentTarget.SpellDistance() > 9
-                                && !Me.CurrentTarget.HasMyAura("Charge Stun")
-                                && WarriorSettings.UseWarriorCloser, 
-                            false),
+                            Spell.CastOnGround("Heroic Leap",
+                                on => Me.CurrentTarget,
+                                req => MovementManager.IsClassMovementAllowed
+                                    && !Me.HasAura("Charge")
+                                    && Me.CurrentTarget.SpellDistance() > 9
+                                    && !Me.CurrentTarget.HasMyAura("Charge Stun")
+                                    && WarriorSettings.UseWarriorCloser,
+                                false),
 
-                        Spell.Cast("Heroic Throw",
-                            ret => !Me.CurrentTarget.HasMyAura("Charge Stun")
-                                && !Me.HasAura("Charge")
+                            Spell.Cast("Heroic Throw",
+                                ret => !Me.CurrentTarget.HasMyAura("Charge Stun")
+                                    && !Me.HasAura("Charge")
+                                )
                             )
                         )
-                    )
-                );
+                    );
+            }
+
+            return _singletonChargeBehavior;
         }
 
         private static int _VictoryRushHealth = 0;

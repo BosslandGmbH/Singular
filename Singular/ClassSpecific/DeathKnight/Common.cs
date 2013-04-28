@@ -87,6 +87,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 Movement.CreateMoveToLosBehavior(), 
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
@@ -116,6 +117,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateDismount("Pulling"),
+                    Movement.CreateEnsureMovementStoppedWithinMelee(),
                     Spell.Cast("Howling Blast"),
                     Spell.Cast("Icy Touch"),
                     Movement.CreateMoveToMeleeBehavior(true)
@@ -315,7 +317,10 @@ namespace Singular.ClassSpecific.DeathKnight
             return new Throttle( 1,
                 new PrioritySelector(
                     CreateDeathGripBehavior(),
-                    CreateChainsOfIceBehavior()
+                    new Decorator(
+                        ret => (Me.Combat || Me.CurrentTarget.Combat) && (Me.CurrentTarget.IsPlayer || (Me.CurrentTarget.IsMoving && !Me.CurrentTarget.IsWithinMeleeRange && Me.IsSafelyBehind(Me.CurrentTarget))),
+                        CreateChainsOfIceBehavior()
+                        )
                     )
                 );
         }
@@ -329,7 +334,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         && Me.CurrentTarget.DistanceSqr > 10 * 10 
                         && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe)
                     ),
-                new DecoratorContinue( ret => Me.IsMoving, new Action(ret => Navigator.PlayerMover.MoveStop())),
+                new DecoratorContinue( ret => Me.IsMoving, new Action(ret => StopMoving.Now())),
                 new WaitContinue( 1, until => Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                 );
         }
@@ -401,7 +406,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     ret => onUnit(ret) != null && Spell.GetSpellCooldown("Raise Ally") == TimeSpan.Zero,
                     new PrioritySelector(
                         Spell.WaitForCast(true),
-                        Movement.CreateMoveToRangeAndStopBehavior(ret => (WoWUnit)ret, range => 40f),
+                        Movement.CreateMoveToUnitBehavior(ret => (WoWUnit)ret, 40f),
                         new Decorator(
                             ret => !Spell.IsGlobalCooldown(),
                             Spell.Cast("Raise Ally", ret => (WoWUnit)ret)

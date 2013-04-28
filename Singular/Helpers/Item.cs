@@ -55,7 +55,9 @@ namespace Singular.Helpers
                 ctx => StyxWoW.Me.Inventory.GetItemBySlot(slot),
                 new Decorator(
                     ctx => ctx != null && CanUseEquippedItem((WoWItem)ctx),
-                    new Action(ctx => UseItem((WoWItem)ctx))));
+                    new Action(ctx => UseItem((WoWItem)ctx))
+                    )
+                );
 
         }
 
@@ -64,23 +66,15 @@ namespace Singular.Helpers
             return new PrioritySelector(
                 new Decorator(
                     ret => usage == SingularSettings.Instance.Trinket1Usage,
-                    new PrioritySelector(
-                        ctx => StyxWoW.Me.Inventory.GetItemBySlot((uint) WoWInventorySlot.Trinket1 ),
-                        new Decorator( 
-                            ctx => ctx != null && CanUseEquippedItem((WoWItem)ctx),
-                            new Action(ctx => UseItem((WoWItem)ctx))
-                            )
-                        )
+                    UseEquippedItem( (uint) WoWInventorySlot.Trinket1 )
                     ),
                 new Decorator(
                     ret => usage == SingularSettings.Instance.Trinket2Usage,
-                    new PrioritySelector(
-                        ctx => StyxWoW.Me.Inventory.GetItemBySlot((uint) WoWInventorySlot.Trinket2 ),
-                        new Decorator( 
-                            ctx => ctx != null && CanUseEquippedItem((WoWItem)ctx),
-                            new Action(ctx => UseItem((WoWItem)ctx))
-                            )
-                        )
+                    UseEquippedItem( (uint) WoWInventorySlot.Trinket2 )
+                    ),
+                new Decorator(
+                    ret => usage == SingularSettings.Instance.GloveUsage,
+                    UseEquippedItem( (uint) WoWInventorySlot.Hands )
                     )
                 );
         }

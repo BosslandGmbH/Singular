@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
 
                 Spell.WaitForCast(true),
 
@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.Mage
                        )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 
@@ -108,19 +108,19 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(5f),
+                                // Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.Cast("Dragon's Breath", ret => Me.CurrentTarget.DistanceSqr <= 12 * 12),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3),
                                 new Decorator(
                                     ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3,
-                                    Movement.CreateMoveToTargetBehavior(true, 10f)
+                                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 10f, 5f)
                                     )
                                 )
                             ),
 
-                        Movement.CreateEnsureMovementStoppedBehavior(35f),
+                        // Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                         Spell.Cast("Dragon's Breath",
                             ret => Me.IsSafelyFacing(Me.CurrentTarget, 90) &&
@@ -154,7 +154,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
 
         }
@@ -171,7 +171,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(35f),
+                Movement.CreateEnsureMovementStoppedBehavior(34f),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.WaitForCast(true),
 
@@ -206,7 +206,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.Cast("Fireball", ret => !SpellManager.HasSpell("Scorch")),
                 Spell.Cast("Frostfire bolt", ret => !SpellManager.HasSpell("Fireball")),
                 Spell.Cast("Scorch"),
-                Movement.CreateMoveToTargetBehavior(true, 39f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 39f, 34f)
                 );
         }
 
@@ -221,6 +221,7 @@ namespace Singular.ClassSpecific.Mage
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedBehavior(33f),
                 /*
                                 new Throttle( 8,
                                     new Decorator(
@@ -249,19 +250,19 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(5f),
+                                // Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.Cast("Dragon's Breath", ret => Me.CurrentTarget.DistanceSqr <= 12 * 12),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3),
                                 new Decorator( 
                                     ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3,
-                                    Movement.CreateMoveToTargetBehavior(true, 10f)
+                                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 10f, 5f)
                                     )
                                 )
                             ),
 
-                        Movement.CreateEnsureMovementStoppedBehavior(35f),
+                        // Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                         // Single Target
                         // living bomb in Common
@@ -274,7 +275,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 
-                Movement.CreateMoveToTargetBehavior(true, 38f)
+                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
                 );
         }
 

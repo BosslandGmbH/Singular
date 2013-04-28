@@ -198,7 +198,7 @@ namespace Singular.ClassSpecific.Shaman
                     );
 
             if (Me.Specialization == WoWSpec.ShamanRestoration)
-                fireTotemBehavior = new Decorator(ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyGroupMembers.Any(m => m.IsAlive), fireTotemBehavior);
+                fireTotemBehavior = new Decorator(ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !HealerManager.Instance.TargetList.Any(m => m.IsAlive), fireTotemBehavior);
 
             // now 
             return new PrioritySelector(

@@ -12,6 +12,15 @@ using System.Xml.Serialization;
 
 namespace Singular.Settings
 {
+    public enum MageArmor
+    {
+        None = 0,
+        Auto = 1,
+        Frost,
+        Mage,
+        Molten
+    }
+
     internal class MageSettings : Styx.Helpers.Settings
     {
         public MageSettings()
@@ -58,6 +67,13 @@ namespace Singular.Settings
         [DisplayName("Use Time Warp")]
         [Description("Time Warp when appropriate (never when movement disabled)")]
         public bool UseTimeWarp { get; set; }
+
+        [Setting]
+        [DefaultValue(MageArmor.Auto)]
+        [Category("Common")]
+        [DisplayName("Armor Buff")]
+        [Description("Which Armor Buff to cast (None: user controlled, Auto: best choice)")]
+        public MageArmor Armor { get; set; }
 
         #endregion
 

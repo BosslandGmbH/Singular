@@ -78,6 +78,7 @@ namespace Singular.ClassSpecific.Monk
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateDismount("Pulling"),
+                    Movement.CreateEnsureMovementStoppedWithinMelee(),
                     Helpers.Common.CreateAutoAttack(true),
 
                     Spell.WaitForCast(),
@@ -167,16 +168,18 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
+        private static WoWUnit _targetHeal; 
+
         public static Composite CreateMistweaverMonkHealing(bool selfOnly)
         {
             HealerManager.NeedHealTargeting = true;
 
             return new PrioritySelector(
 
-                ctx => ChooseBestMonkHealTarget(selfOnly ? Me : HealerManager.Instance.FirstUnit),
+                ctx => _targetHeal = ChooseBestMonkHealTarget(selfOnly ? Me : HealerManager.Instance.FirstUnit),
                 
                 // if channeling soothing mist and they aren't best target, cancel the cast
-                new Decorator(ret => Me.ChanneledCastingSpellId == SOOTHING_MIST && Me.ChannelObject != null && Me.ChannelObject != ((WoWUnit)ret),
+                new Decorator(ret => Me.ChanneledCastingSpellId == SOOTHING_MIST && Me.ChannelObject != null && Me.ChannelObject != _targetHeal ,
                     new Sequence(
                         new Action( ret => Logger.Write( System.Drawing.Color.OrangeRed, "/stopcasting: cancel {0} on {1} @ {2:F1}", Me.ChanneledSpell.Name, Me.ChannelObject.SafeName(), Me.ChannelObject.ToUnit().HealthPercent) ),
                         new Action( ret => SpellManager.StopCasting() ),
@@ -190,11 +193,11 @@ namespace Singular.ClassSpecific.Monk
 
                     new PrioritySelector(
 
-                        new Decorator(ret => ((WoWUnit)ret) != null && ((WoWUnit)ret).GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
+                        new Decorator(ret => _targetHeal != null && _targetHeal.GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
                 
                             new PrioritySelector(
 
-                                ShowHealTarget(ret => ((WoWUnit)ret)),
+                                ShowHealTarget(ret => _targetHeal),
 
                                 Spell.BuffSelf("Stance of the Wise Serpent"),
 
@@ -204,17 +207,17 @@ namespace Singular.ClassSpecific.Monk
 
                                 Common.CastLikeMonk("Mana Tea", ret => Me, ret => Me.ManaPercent < 60 && Me.HasAura("Mana Tea", 2)),
 
-                                Common.CastLikeMonk("Surging Mist", ret => ((WoWUnit)ret),
-                                    ret => ((WoWUnit)ret).HealthPercent < 30 && Me.HasAura("Vital Mists", 5)),
+                                Common.CastLikeMonk("Surging Mist", ret => _targetHeal,
+                                    ret => _targetHeal.HealthPercent < 30 && Me.HasAura("Vital Mists", 5)),
 
-                                Common.CastLikeMonk("Soothing Mist", ret => ((WoWUnit)ret),
-                                    ret => ((WoWUnit)ret).HealthPercent < 90 && Me.ChanneledSpell == null),
+                                Common.CastLikeMonk("Soothing Mist", ret => _targetHeal,
+                                    ret => _targetHeal.HealthPercent < 90 && Me.ChanneledSpell == null),
 
-                                Common.CastLikeMonk("Surging Mist", ret => ((WoWUnit)ret),
-                                    ret => ((WoWUnit)ret).HealthPercent < 60),
+                                Common.CastLikeMonk("Surging Mist", ret => _targetHeal,
+                                    ret => _targetHeal.HealthPercent < 60),
 
-                                Common.CastLikeMonk("Enveloping Mist", ret => ((WoWUnit)ret),
-                                    ret => ((WoWUnit)ret).HealthPercent < 89 && Me.CurrentChi >= 3)
+                                Common.CastLikeMonk("Enveloping Mist", ret => _targetHeal,
+                                    ret => _targetHeal.HealthPercent < 89 && Me.CurrentChi >= 3)
                                 )
                             )
                         )
@@ -222,7 +225,7 @@ namespace Singular.ClassSpecific.Monk
 
                 new Decorator(
                     ret => !Me.IsCasting,
-                    Movement.CreateMoveToRangeAndStopBehavior(ret => ((WoWUnit)ret), ret => 38f)
+                    Movement.CreateMoveToUnitBehavior( ret => _targetHeal, 38f)
                     )
                 );
 

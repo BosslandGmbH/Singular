@@ -53,12 +53,15 @@ namespace Singular.ClassSpecific.Priest
             return CreateDiscHealOnlyBehavior(selfOnly, false);
         }
 
+        private static WoWUnit _healTarget;
+
         public static Composite CreateDiscHealOnlyBehavior(bool selfOnly, bool moveInRange)
         {
             HealerManager.NeedHealTargeting = true;
             return new
                 PrioritySelector(
-                ret => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
+                    ret => _healTarget = (selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit),
+
                     new Decorator(
                         ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
                         new PrioritySelector(
@@ -168,11 +171,11 @@ namespace Singular.ClassSpecific.Priest
                                 // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
                                 Spell.Cast("Smite"),
                                 //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
-                                Movement.CreateMoveToTargetBehavior(true, 35f)
+                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
                                 )),
                         new Decorator(
                             ret => moveInRange,
-                            Movement.CreateMoveToTargetBehavior(true, 35f, ret => (WoWUnit)ret))
+                            Movement.CreateMoveToUnitBehavior( on => _healTarget, 35f, 30f)
 
                         // Divine Hymn
                         // Desperate Prayer
@@ -180,40 +183,42 @@ namespace Singular.ClassSpecific.Priest
                         // Prayer of Healing
                         // Power Word: Barrier
                         // TODO: Add smite healing. Atonement is now specced as all discs. (Its useless otherwise)
-                        )));
+                            )
+                        )
+                    )
+                );
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Priest, WoWSpec.PriestDiscipline )]
         public static Composite CreateDiscHealComposite()
         {
-            return
-                new PrioritySelector(
-                    // group healing
-                    new Decorator(
-                        ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
-                        CreateDiscHealOnlyBehavior(false, true)),
-                    // solo healing
-                    new Decorator(
-                        ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
-                        new PrioritySelector(
-                            Spell.Cast("Flash Heal",
-                                ctx => StyxWoW.Me,
-                                ret => StyxWoW.Me.HealthPercent <= 20 // check actual health for low health situations
-                                    || (!StyxWoW.Me.Combat && StyxWoW.Me.GetPredictedHealthPercent(true) <= 85)),
+            return new PrioritySelector(
+                // group healing
+                new Decorator(
+                    ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    CreateDiscHealOnlyBehavior(false, true)),
+                // solo healing
+                new Decorator(
+                    ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    new PrioritySelector(
+                        Spell.Cast("Flash Heal",
+                            ctx => StyxWoW.Me,
+                            ret => StyxWoW.Me.HealthPercent <= 20 // check actual health for low health situations
+                                || (!StyxWoW.Me.Combat && StyxWoW.Me.GetPredictedHealthPercent(true) <= 85)),
 
-                            Spell.BuffSelf("Renew",
-                                ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 75),
+                        Spell.BuffSelf("Renew",
+                            ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 75),
 
-                            Spell.Cast("Greater Heal",
-                                ctx => StyxWoW.Me,
-                                ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50),
+                        Spell.Cast("Greater Heal",
+                            ctx => StyxWoW.Me,
+                            ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50),
 
-                            Spell.Cast("Flash Heal",
-                                ctx => StyxWoW.Me,
-                                ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50)
-                            )
+                        Spell.Cast("Flash Heal",
+                            ctx => StyxWoW.Me,
+                            ret => StyxWoW.Me.GetPredictedHealthPercent(true) <= 50)
                         )
-                    );
+                    )
+                );
         }
 
         // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
@@ -228,6 +233,7 @@ namespace Singular.ClassSpecific.Priest
                     Movement.CreateMoveToLosBehavior(),
                     Movement.CreateFaceTargetBehavior(),
                     Helpers.Common.CreateDismount("Pulling"),
+                    Movement.CreateEnsureMovementStoppedBehavior(25f),
                     Helpers.Common.CreateInterruptBehavior(),
                     Common.CreateShadowfiendBehavior(),
                     //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
@@ -238,7 +244,7 @@ namespace Singular.ClassSpecific.Priest
                     // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
                     Spell.Cast("Smite"),
                 //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
-                    Movement.CreateMoveToTargetBehavior(true, 30)
+                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 30f, 25f)
                     )
                 );
         }

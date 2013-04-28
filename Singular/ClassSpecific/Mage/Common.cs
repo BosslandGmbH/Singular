@@ -50,34 +50,12 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds,
                             new PrioritySelector(
-
-                                // only FA if in battlegrounds or we have move slightly since last FA (to avoid repeated casts in place when stuck)
-                                Spell.BuffSelf("Frost Armor", ret => {
-                                    if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && Me.Location.Distance(locLastFrostArmor) < 1)
-                                        return false;
-                                    locLastFrostArmor = Me.Location;
-                                    return true;
-                                    } ),
-
-                                // Spell.BuffSelf("Mage Armor", ret => !Me.HasAura("Frost Armor")), 
-
-
                                 // Don't put up mana shield if we're arcane. Since our mastery works off of how much mana we have!
                                 Spell.BuffSelf("Mana Shield", ret => TalentManager.CurrentSpec != WoWSpec.MageArcane)
                                 )
                             ),
 
-                        // Outside of BGs, we really only have 2 choices of armor. Molten, or mage. Mage for arcane, molten for frost/fire.
-                        new Throttle( 3,
-                            new Decorator(
-                                ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) == 0,
-                                new PrioritySelector(
-                    // Arcane is a mana whore, we want molten if we don't have mage yet. Otherwise, stick with Mage armor.
-                                    Spell.BuffSelf("Molten Armor", ret => (TalentManager.CurrentSpec != WoWSpec.MageArcane || !SpellManager.HasSpell("Mage Armor"))),
-                                    Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == WoWSpec.MageArcane)
-                                    )
-                                )
-                            ),
+                        CreateMageArmorBehavior(),
 
                         new PrioritySelector(
                             ctx => MageTable,
@@ -103,7 +81,7 @@ namespace Singular.ClassSpecific.Mage
                                 new DecoratorContinue(
                                     ctx => StyxWoW.Me.IsMoving,
                                     new Sequence(
-                                        new Action(ctx => WoWMovement.MoveStop()),
+                                        new Action(ctx => StopMoving.Now()),
                                         new WaitContinue(2, ctx => !StyxWoW.Me.IsMoving, new ActionAlwaysSucceed())
                                         )
                                     ),
@@ -328,32 +306,56 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateStayAwayFromFrozenTargetsBehavior()
         {
             return new PrioritySelector(
-                ctx => Unit.NearbyUnfriendlyUnits.
-                           Where( u => u.IsFrozen() && u.Distance < Spell.MeleeRange + 3f).
-                           OrderBy(u => u.DistanceSqr).FirstOrDefault(),
+                ctx => Unit.NearbyUnfriendlyUnits
+                           .Where( u => u.IsFrozen() && u.Distance < Spell.MeleeRange + 3f)
+                           .OrderBy(u => u.DistanceSqr).FirstOrDefault(),
                 new Decorator(
                     ret => ret != null && MovementManager.IsClassMovementAllowed,
                     new PrioritySelector(
-                        Disengage.CreateDisengageBehavior("Blink", Disengage.Direction.Frontwards, 20, null),
-                        Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, null),
-                        new Action(
-                            ret =>
-                            {
-                                WoWPoint moveTo =
-                                    WoWMathHelper.CalculatePointBehind(
-                                        ((WoWUnit)ret).Location,
-                                        ((WoWUnit)ret).Rotation,
-                                        -(Spell.MeleeRange + 5f));
-
-                                if (Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                        new Decorator(
+                            ret => Spell.GetSpellCooldown("Blink").TotalSeconds > 1 
+                                && Spell.GetSpellCooldown("Rocket Jump").TotalSeconds > 1,
+                            new Action(
+                                ret =>
                                 {
-                                    Logger.Write("Getting away from frozen target");
-                                    Navigator.MoveTo(moveTo);
-                                    return RunStatus.Success;
-                                }
+                                    if (Me.IsMoving && StopMoving.Type == StopMoving.StopType.Location)
+                                    {
+                                        Logger.WriteDebug("StayAwayFromFrozne:  looks like we are moving away");
+                                        return RunStatus.Success;
+                                    }
 
-                                return RunStatus.Failure;
-                            }))));
+                                    WoWPoint moveTo =
+                                        WoWMathHelper.CalculatePointBehind(
+                                            ((WoWUnit)ret).Location,
+                                            ((WoWUnit)ret).Rotation,
+                                            -(Spell.MeleeRange + 5f));
+
+                                    if (!Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
+                                    {
+                                        Logger.WriteDebug("StayAwayFromFrozne:  unable to navigate to point behind me {0:F1} yds away", StyxWoW.Me.Location.Distance(moveTo));
+                                    }
+                                    else
+                                    {
+                                        Logger.Write("Getting away from frozen target");
+                                        Navigator.MoveTo(moveTo);
+                                        StopMoving.AtLocation(moveTo);
+                                        return RunStatus.Success;
+                                    }
+
+                                    return RunStatus.Failure;
+                                })
+                            ),
+
+                        new Decorator(
+                            ret => !Me.IsMoving,
+                            new PrioritySelector(
+                                Disengage.CreateDisengageBehavior("Blink", Disengage.Direction.Frontwards, 20, null),
+                                Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, null)
+                                )
+                            )
+                        )
+                    )
+                );
         }
 
         public static Composite CreateMageSpellstealBehavior()
@@ -479,6 +481,73 @@ namespace Singular.ClassSpecific.Mage
                 return SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && PVP.PrepTimeLeft < secsBeforeBattle && Me.HasAnyAura("Preparation", "Arena Preparation");
             }
         }
+
+        /// <summary>
+        /// behavior to cast appropriate Armor 
+        /// </summary>
+        /// <returns></returns>
+        public static Composite CreateMageArmorBehavior()
+        {
+            return new Throttle(TimeSpan.FromMilliseconds(500),
+                new Sequence(
+                    new Action(ret => _Armor = GetBestArmor()),
+                    new Decorator(
+                        ret => _Armor != MageArmor.None
+                            && !Me.HasMyAura(ArmorSpell(_Armor))
+                            && SpellManager.CanCast(ArmorSpell(_Armor), Me),
+                        Spell.BuffSelf(s => ArmorSpell(_Armor), ret => !Me.HasAura(ArmorSpell(_Armor)))
+                        )
+                    )
+                );
+        }
+
+        static MageArmor _Armor;
+
+        static string ArmorSpell(MageArmor s)
+        {
+            return s.ToString() + " Armor";
+        }
+
+        /// <summary>
+        /// determines the best MageArmor value to use.  Attempts to use 
+        /// user setting first, but defaults to something reasonable otherwise
+        /// </summary>
+        /// <returns>MageArmor to use</returns>
+        public static MageArmor GetBestArmor()
+        {
+            if (MageSettings.Armor == MageArmor.None)
+                return MageArmor.None;
+
+            if (StyxWoW.Me.Specialization == WoWSpec.None)
+                return MageArmor.None;
+
+            MageArmor bestArmor;
+            if (MageSettings.Armor != Settings.MageArmor.Auto)
+                bestArmor = MageSettings.Armor;
+            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                bestArmor = MageArmor.Frost;
+            else
+            {
+                if (Me.Specialization == WoWSpec.MageArcane)
+                    bestArmor = MageArmor.Mage;
+                else if (Me.Specialization == WoWSpec.MageFrost)
+                    bestArmor = MageArmor.Frost;
+                else
+                    bestArmor = MageArmor.Molten;
+            }
+
+            if (bestArmor == MageArmor.Mage && Me.Level < 80)
+                bestArmor = MageArmor.Frost;
+
+            if (bestArmor == MageArmor.Frost && Me.Level < 54)
+                bestArmor = MageArmor.Molten;
+
+            if (bestArmor == MageArmor.Molten && Me.Level < 34)
+                bestArmor = MageArmor.None;
+
+            return bestArmor;
+        }
+
     }
 
     public enum MageTalents

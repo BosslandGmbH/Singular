@@ -20,6 +20,11 @@ namespace Singular
             return distance >= min && distance <= max;
         }
 
+        public static bool Between(this float distance, float min, float max)
+        {
+            return distance >= min && distance <= max;
+        }
+
         public static bool Between(this int value, int min, int max)
         {
             return value >= min && value <= max;
@@ -93,13 +98,13 @@ namespace Singular
                 else
                 {
                     if (RaFHelper.Leader == obj)
-                        name = "Lead.";
+                        name = "lead.";
                     else if (Group.Tanks.Any(t => t.Guid == obj.Guid))
-                        name = "Tank.";
+                        name = "tank.";
                     else if (Group.Healers.Any(t => t.Guid == obj.Guid))
-                        name = "Healer.";
+                        name = "healer.";
                     else
-                        name = "Dps.";
+                        name = "dps.";
                 }
                 name += ShowPlayerNames ? ((WoWPlayer)obj).Name : ((WoWPlayer)obj).Class.ToString();
             }

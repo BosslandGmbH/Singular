@@ -109,10 +109,15 @@ namespace Singular.Helpers
 
         internal static void HandleContextChanged(object sender, WoWContextEventArg e)
         {
-            if (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds)
+            if (e.CurrentContext != WoWContext.Battlegrounds)
                 BattlegroundStart = DateTime.Now;
             else
                 BattlegroundStart = DateTime.Now + TimeSpan.FromSeconds(120);   // just add enough for now... accurate time set by event handler
+
+            if (e.PreviousContext == WoWContext.Battlegrounds)
+            {
+                StopMoving.AsSoonAsPossible(when => Styx.StyxWoW.IsInGame );
+            }
         }
 
 #endregion

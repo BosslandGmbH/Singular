@@ -203,7 +203,7 @@ namespace Singular.Helpers
                 return false;
 
             // And ignore critters (except for those ferocious ones) /non-combat pets
-            if (p.IsNonCombatPet || p.IsCritter && p.ThreatInfo.ThreatValue == 0 && !p.IsTargetingMyRaidMember)
+            if (p.IsNonCombatPet || (p.IsCritter && p.ThreatInfo.ThreatValue == 0 && !p.IsTargetingMyRaidMember))
                 return false;
 /*
             if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
@@ -333,7 +333,7 @@ namespace Singular.Helpers
         {
             // need to compare millisecs even though seconds are provided.  otherwise see it as expired 999 ms early because
             // .. of loss of precision
-            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, myAura) <= TimeSpan.FromMilliseconds(secs * 1000);
+            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, myAura).TotalSeconds <= secs;
         }
 
 
@@ -480,13 +480,36 @@ namespace Singular.Helpers
             return unit.Auras.Values.Any( a => a.Spell != null && a.Spell.SpellEffects.Any(se => hashes.Contains(se.AuraType)));
         }
 
+        /// <summary>
+        /// IsBoss() checks usually appear in a sequence testing same target repeatedly.  
+        /// Cache the values for a fast return in that circumstanc
+        /// </summary>
+        private static ulong _lastIsBossGuid = 0;
+        private static bool _lastIsBossResult = false;
+   
+        /// <summary>
+        /// checks if unit is in list of bosses. cache of prior check kept for faster return in 
+        /// instance behaviors which repeatedly test this as part of criteria for different
+        /// cooldown casts
+        /// </summary>
+        /// <param name="unit">unit to test if they are a known boss</param>
+        /// <returns>true: if boss</returns>
         public static bool IsBoss(this WoWUnit unit)
         {
-            return unit != null && (Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry));
+            ulong guid = unit == null ? 0 : unit.Guid;
+            if ( guid == _lastIsBossGuid )
+                return _lastIsBossResult;
+
+            _lastIsBossGuid = guid;
+            _lastIsBossResult = unit != null && (Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry));
+            return _lastIsBossResult;
         }
 
         public static bool IsTrainingDummy(this WoWUnit unit)
         {
+            if (!unit.IsMechanical)
+                return false;
+
             return Lists.BossList.TrainingDummies.Contains(unit.Entry);
         }
 

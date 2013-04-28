@@ -112,10 +112,14 @@ namespace Singular.Helpers
                                 // check if current target is owned by a player
                                 if (StyxWoW.Me.CurrentTarget.OwnedByRoot != null )
                                 {
-                                    if (StyxWoW.Me.CurrentTarget.OwnedByRoot.IsPlayer)
+                                    WoWUnit newTarget = Me.CurrentTarget.OwnedByRoot;
+                                    if (newTarget.IsPlayer && Unit.ValidUnit(newTarget) && !Blacklist.Contains(newTarget, BlacklistFlags.Combat))
                                     {
-                                        Logger.Write(targetColor, "Current target owned by a player.  Switching to " + StyxWoW.Me.CurrentTarget.OwnedByRoot.SafeName() + "!");
-                                        return StyxWoW.Me.CurrentTarget.OwnedByRoot;
+                                        Logger.Write(targetColor, "Current target owned by a player.  Switching to " + newTarget.SafeName() + "!");
+                                        if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.Guid == Me.CurrentTarget.Guid)
+                                            BotPoi.Clear("Singular detected as Player Pet");
+
+                                        return newTarget;
                                     }
                                 }
 
@@ -127,9 +131,12 @@ namespace Singular.Helpers
                                         newTarget = newTarget.SummonedByUnit;
                                     } while (newTarget.SummonedByUnit != null);
 
-                                    if (newTarget.IsPlayer )
+                                    if (newTarget.IsPlayer && Unit.ValidUnit(newTarget) && !Blacklist.Contains(newTarget, BlacklistFlags.Combat))
                                     {
                                         Logger.Write(targetColor, "Current target summoned by a player.  Switching to " + newTarget.SafeName() + "!");
+                                        if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.Guid == Me.CurrentTarget.Guid)
+                                            BotPoi.Clear("Singular detected as Player Pet");
+
                                         return newTarget;
                                     }
                                 }
@@ -197,7 +204,7 @@ namespace Singular.Helpers
                                 {
                                     if (Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet)
                                     {
-                                        Logger.Write(targetColor, "Current target " + StyxWoW.Me.CurrentTarget.SafeName() + " blacklisted and Bot has no other targets!  Clearing target and hoping Bot wakes up!");
+                                        Logger.Write(targetColor, "Current target " + StyxWoW.Me.CurrentTarget.SafeName() + " blacklisted and Bot has no other targets!  Fighting this one and hoping Bot wakes up if its Evade bugged!");
                                         return Me.CurrentTarget;
                                     }
 
@@ -272,10 +279,10 @@ namespace Singular.Helpers
                                                 Logger.Write(targetColor, "Current Kill POI dead. Clearing POI " + unit.SafeName() + "!");
                                                 BotPoi.Clear("Unit is dead");
                                             }
-                                            else if (!Blacklist.Contains(unit, BlacklistFlags.Combat))
+                                            else if (Blacklist.Contains(unit, BlacklistFlags.Combat))
                                             {
                                                 Logger.Write(targetColor, "Current Kill POI is blacklisted. Clearing POI " + unit.SafeName() + "!");
-                                                BotPoi.Clear("Unit is dead");
+                                                BotPoi.Clear("Unit is Blacklisted");
                                             }
                                             else 
                                             {
@@ -289,7 +296,7 @@ namespace Singular.Helpers
                                             .Where(
                                                 p => !Blacklist.Contains(p, BlacklistFlags.Combat)
                                                 && Unit.ValidUnit(p)
-                                                && p.DistanceSqr <= 40 * 40
+                                                // && p.DistanceSqr <= 40 * 40  // dont restrict check to 40 yds
                                                 && (p.Aggro || p.PetAggro || (p.Combat && p.GotTarget && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))))
                                             .OrderBy(u => u.IsPlayer)
                                             .ThenBy(u => u.DistanceSqr)
@@ -307,7 +314,8 @@ namespace Singular.Helpers
                                             .Where(
                                                 p => !Blacklist.Contains(p, BlacklistFlags.Combat)
                                                 && p.IsAlive
-                                                && p.DistanceSqr <= 40 * 40)
+                                                // && p.DistanceSqr <= 40 * 40 // don't restrict check to 40 yds
+                                                )
                                             .OrderBy(u => u.IsPlayer)
                                             .ThenBy(u => u.DistanceSqr)
                                             .FirstOrDefault();

@@ -175,7 +175,7 @@ namespace Singular.GUI
 
             i = 0;
             sb = new StringBuilder();
-            foreach (WoWUnit u in HealerManager.Instance.HealList)
+            foreach (WoWUnit u in HealerManager.Instance.TargetList)
             {
                 sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
                 if (++i == 5)
@@ -251,7 +251,7 @@ namespace Singular.GUI
             // update list of Heal Targets
             i = 0;
             sb = new StringBuilder();
-            foreach (WoWUnit u in HealerManager.Instance.HealList)
+            foreach (WoWUnit u in HealerManager.Instance.TargetList)
             {
                 try
                 {

@@ -33,9 +33,10 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateFaceTargetBehavior(),
                 Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Helpers.Common.CreateDismount("Pulling"),
@@ -47,7 +48,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.WaitForCast(),
                         Spell.Cast("Heroic Throw"),
                         Spell.Cast("Throw"),
-                        Movement.CreateMoveToTargetBehavior(true, 27f)
+                        Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                         )
                     ),
 

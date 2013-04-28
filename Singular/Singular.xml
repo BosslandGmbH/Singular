@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>04/28/2013 16:13:39</ScanTime>
+  <ScanTime>04/28/2013 16:20:11</ScanTime>
   <FileList>
     <File Hash="25941" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="21066" Name="ClassSpecific\DeathKnight\Common.cs" />

@@ -1,3 +1,110 @@
+--- Release 3.0.0.2341 ---
+
+General
+
+fixed - bug in target validation logic that affected some quests and clearing BotPoi
+
+change- movement / stop moving logic revised for all classes and specializations.  should eliminate occurrences of casters running into melee or healers running to tank
+
+change- renamed internally used TreeHook names to prefix with 'Singular.'  This will affect Singular customizations which were referencing hooks by name.
+
+change- Stoneform racial now cast when fighting 3+ mobs or mob with double max health is attacking you in addition to previous behavior of casting when bleeds detected
+
+*new* - setting and support for Glove enchant usage
+
+change- heal targets limited to those within 40 yds when movement is disabled
+
+change- will stop movement after leaving a battleground to 
+
+
+Death Knight
+
+change- All Specs - previously was casting Chains of Ice during Pull if Death Grip on cooldown. now uses Chains of Ice only if they are a player or moving away from you
+
+
+Mage
+
+*new* - new Class Specific setting which allows user to choose armor spell cast or allow to be automatically selected
+
+change- Frozen Orb in Normal Context now only cast if it won't agro neutral mobs in area not already in combat
+
+change- Lowbie spell priority revised to use Fire Blast on cooldown rather than as finisher
+
+change- additional check in Frost Nova cast for Lowbie's to avoid wasting
+
+
+Priest
+
+fixed - Holy - revision to heal target selection
+
+fixed - Shadow - Halo check for mobs not in combat corrected
+
+
+Rogue
+
+*new* - All Specs - pre- and post- pick pocket wait time setting to provide customization for users encountering latency issues relative to the use of pick pocket. the pre-pick pocket delay helps with ensuring the Rogue is a full stop.  The post-pick pocket delay gives allows additional time for the Auto Loot to occur before casting attacks on the enemy (which has been reported as needed in cases where mobs are one shot.)  These values should be left at their default settings unless you encounter a problem with this feature.
+
+*new* - All specs - option to allow Pick Pocket cast in combat (if Stealth still active and current target not pick pocketed yet.)  Default is false.
+
+change- All Specs - after casting pick pocket, the mob will temporarily be blacklisted (as a node, not for combat) to prevent subsequent casts
+
+change- All Specs - now detects pick pocket errors and will temporarily blacklist mob from further pick pocket attempts
+
+fixed - All Specs - exception occurring for some rogue users when searching for locked boxes
+
+*new* - All Specs - support for Cloak and Dagger. will now cast Ambush, Garrrote, or Cheap Shot at range
+
+*new* - All Specs - support for Shuriken Toss talent
+
+change- All Specs - casting Recuperate with unused combo points on corpse sometimes failed even though available points exist.  limited to trying once every 3 seconds at most to reduce cast spam
+
+change- All Specs - when Pulling will use Sprint or ranged abilities if gap closer not available and mob is moving away and faster than character
+
+
+Shaman
+
+fixed - All Specs - error occurring when no current target active and hexable mob nearby
+
+fixed - Restoration - revision to heal target selection
+
+fixed - Elemental - in Instances will cast Ascendance on cooldown on bosses only
+
+fixed - Lowbie - revised use of Earth Shock in spell priority to favor Lightning Bolt on mobs still at range
+
+fixed - Restoration - issue with selecting Earth Shield target when tank dies
+
+change- Restoration - diagnostic info to cover both dps and heal targets
+
+*new* - Restoration - staying within range of tank is highest priority when movement not disabled
+
+
+Warlock
+
+fixed - Affliction - will now cast Haunt more frequently
+
+fixed - All Specs - setting for Drain Life % was being displayed as Health Funnel %
+
+change- All Specs - lowered default Drain Life % from 60 to 20
+
+change- All Specs - fixed bug where banish was cast on world elite
+
+
+Warrior
+
+fixed - All Specs - will no longer cast Charge, Heroic Leap, or Heroic Throw in Combat immediately after one of these was cast in Pull Behavior
+
+change- Fury - when Solo, made top-most priority in Single target situation Raging Blow when at 2 stacks or buff about fall off
+
+*new* - Fury - support for Die by the Sword, Demoralizing Banner, Skull Banner, Avatar, Bloodbath, Storm Bolt, and Rallying Cry when Solo or Battlegrounds
+
+change- Fury - addition of diagnostic logging of character status when Debug enabled
+
+fixed - Fury - previously did not include support for Charge while in combat.  will now use closing abilities when switching to another target even while in combat
+
+*new* - Arms - support for Enraged Regeneration below 60% health.  
+
+
+
 --- Release 3.0.0.2275 ---
 
 General
@@ -22,6 +129,10 @@ fixed - All Specs - Use Speed Buff setting was being ignored (note: Use Speed Bu
 Warlock
 
 change- All Specs - no longer uses Banish in Battlegrounds
+
+
+Warrior
+
 
 
 

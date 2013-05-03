@@ -1,3 +1,76 @@
+--- Release 3.0.0.  ---
+
+General
+
+fixed - Melee movement towards neutral mobs or while stealthed
+
+fixed - Berserking, Blood Fury, and Lifeblood only cast if current target in range to avoid wasted casts
+
+*new* - Melee Dismount Range setting.  Melee characters mounted when Pull is received, will continue riding to this range until dismounting.
+
+
+Death Knight
+
+fixed - All Specs - Disable AOE HotKey is now recognized for DnD, Howling Blast, and Blood Boil even if those spells were used in a single target rotation
+
+fixed - Frost - if Disable AOE active, Icy Touch will be cast in place of Howling Blast
+
+*new* - All Specs - setting to choose Presence.  Auto: Singular chooses, None: User has full control and can switch in combat
+
+
+Druid 
+
+*new* - All Specs - a self-heal section of settings has been added to control health %% that Rejuvenation, Healing Touch, etc. are cast at when Solo or PVP for non-healer.
+
+*new* - Feral - improved debug logging to assist users with errors.  This is enabled by Class Config -> Debug Logging = true
+
+fixed - Feral/Guardian - spell CanCast issue where powertype of spell is not available.  This would interfere at times with cast of self-heals
+
+*new* - Balance - added Moon Beast Rejuvenation and Moon Beast Healing Touch so health %'s for casting those treated seperately from values when not glyphed
+
+*new* - Feral - added Predatory Swiftness Healing Touch health %
+
+
+Hunter
+
+*new* - Use Misdirection in Instances setting, defaults to the true.  Setting to false prevents all Misdirection casts in Instance
+
+change- framework for context specific pets added.  Will become fully functional when Pet Number issue in stable release of HB fixed
+
+
+Rogue
+
+change- All Specs - will now move behind target in combat also, as long as it is stunned or not targeting Rogue
+
+fixed - All Specs - Sprint will only be used if Use Sprint setting is enabled
+
+
+Shaman
+
+*new* - Enhancement - setting to avoid casting Nature spells when Maelstrom Weapon has procced.  Intended for use by those doing manual assist in PVP
+
+fixed - All Specs - Ancestral Guidance now correctly treated as being off-GCD
+
+fixed - All Specs - Movement Buff (use of Ghost Wolf when out of combat) Will no longer spam messages in debug when already in Ghost Wolf.  
+
+fixed - All Specs - Movement Buff (use of Ghost Wolf when out of combat) will also cast for characters that have not learned Apprentice Riding Skill yet
+
+*new* - All Specs - added Self-Heal section with settings to control when healing spells cast while Solo and PVP
+
+fixed - All Specs - no longer tries to cast Wind Shear if not facing target
+
+
+
+
+
+
+*new* ---- Release 3.0.0.2341 ---
+
+General
+
+
+
+
 --- Release 3.0.0.2341 ---
 
 General

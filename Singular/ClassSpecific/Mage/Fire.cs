@@ -32,10 +32,7 @@ namespace Singular.ClassSpecific.Mage
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCast(true),
 
@@ -58,9 +55,7 @@ namespace Singular.ClassSpecific.Mage
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Combat"),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
 /*
                 new Throttle(8,
@@ -168,10 +163,7 @@ namespace Singular.ClassSpecific.Mage
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(34f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Helpers.Common.CreateAutoAttack(true),
                 Spell.WaitForCast(true),
 
@@ -217,11 +209,7 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateMageFireInstancePullAndCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 /*
                                 new Throttle( 8,
                                     new Decorator(

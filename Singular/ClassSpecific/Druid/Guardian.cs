@@ -27,18 +27,9 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateGuardianNormalPull()
         {
             return new PrioritySelector(
-                // Ensure Target
-                Safers.EnsureTarget(),
-                // LOS check
-                Movement.CreateMoveToLosBehavior(),
-                //face target
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
-                //Dismount
-                Helpers.Common.CreateDismount("Pulling"),
 
                 Spell.WaitForCast(true),
 
@@ -92,7 +83,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.BuffSelf("Might of Ursoc", ret => Me.HealthPercent < Settings.TankMightOfUrsoc),
                 Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent < Settings.TankSurvivalInstinctsHealth),
                 Spell.BuffSelf("Barkskin", ret => Me.HealthPercent < Settings.TankFeralBarkskin),
-                Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < Settings.RenewalHealth)
+                Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < Settings.SelfRenewalHealth)
 
                 );
         }
@@ -102,13 +93,7 @@ namespace Singular.ClassSpecific.Druid
         {
            // Logger.Write("guardian loop.");
             return new PrioritySelector(
-                //Ensure Target
-                Safers.EnsureTarget(),
-                //LOS check
-                Movement.CreateMoveToLosBehavior(),
-                // face target
-                Movement.CreateFaceTargetBehavior(),
-                // Auto Attack
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(true),

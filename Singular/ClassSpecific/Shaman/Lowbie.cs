@@ -42,11 +42,7 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanLowbiePull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(25f),
+                Helpers.Common.EnsureReadyToAttackFromMediumRange(),
                 Spell.WaitForCast(true),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -55,8 +51,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Earth Shock", ret => Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet),
                         Spell.Cast("Lightning Bolt")
                         )
-                    ),
-                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 30f, 20f)
+                    )
                 );
         }
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, 0)]
@@ -70,31 +65,27 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Combat, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbieCombat()
         {
-            return 
-                new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Spell.WaitForCast(true),
-                    new Decorator(
-                        ret => !Spell.IsGlobalCooldown(),
-                        new PrioritySelector(
-                            CreateLowbieDiagnosticOutputBehavior(),
-                            Helpers.Common.CreateAutoAttack(true),
-                            Spell.Cast("Earth Shock", req => Me.CurrentTarget.Distance < 15 || !Me.CurrentTarget.IsMoving  ),      // always use
-                            Spell.Cast("Primal Strike"),    // always use
-                            Spell.Cast("Lightning Bolt")
-                            )
-                        ),
-                    Movement.CreateMoveToUnitBehavior(25f, on => Me.CurrentTarget)
-                    );
+            return new PrioritySelector(
+                Helpers.Common.EnsureReadyToAttackFromMediumRange(),
+                Spell.WaitForCast(true),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        CreateLowbieDiagnosticOutputBehavior(),
+                        Helpers.Common.CreateAutoAttack(true),
+                        Spell.Cast("Earth Shock", req => Me.CurrentTarget.Distance < 15 || !Me.CurrentTarget.IsMoving  ),      // always use
+                        Spell.Cast("Primal Strike"),    // always use
+                        Spell.Cast("Lightning Bolt")
+                        )
+                    )
+                );
         }
 
         #region Diagnostics
 
         private static Composite CreateLowbieDiagnosticOutputBehavior()
         {
-            return new Throttle(1,
+            return new ThrottlePasses(1, 1,
                 new Decorator(
                     ret => SingularSettings.Debug,
                     new Action(ret =>
@@ -119,8 +110,8 @@ namespace Singular.ClassSpecific.Shaman
                                 target.InLineOfSpellSight
                                 );
 
-                        Logger.WriteDebug(Color.PaleVioletRed, line);
-                        return RunStatus.Success;
+                        Logger.WriteDebug(Color.Yellow, line);
+                        return RunStatus.Failure;
                     }))
                 );
         }

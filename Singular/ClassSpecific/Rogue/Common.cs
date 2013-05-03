@@ -136,7 +136,7 @@ namespace Singular.ClassSpecific.Rogue
                 Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
                 // Throttle Shadowstep because cast can fail with no message
                 new Throttle( 2, Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 12)),
-                Spell.BuffSelf("Sprint", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 15 && (!SpellManager.HasSpell("Shadowstep") || !SpellManager.CanCast("Shadowstep", true)))
+                Spell.BuffSelf("Sprint", ret => MovementManager.IsClassMovementAllowed && RogueSettings.UseSprint && StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 15 && (!SpellManager.HasSpell("Shadowstep") || !SpellManager.CanCast("Shadowstep", true)))
                 );
 
         }
@@ -242,7 +242,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(r => Logger.WriteDebug("MovingAwayFromMe: Target ({0:F2}) faster than Me ({1:F2}) -- trying Sprint or Ranged Attack", Me.CurrentTarget.MovementInfo.CurrentSpeed, Me.MovementInfo.CurrentSpeed)),
                         new PrioritySelector(
                             Spell.Cast("Sap", req => Me.IsStealthed && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon)),
-                            Spell.BuffSelf("Sprint"),
+                            Spell.BuffSelf("Sprint", req => RogueSettings.UseSprint),
                             new Decorator(
                                 req => !Me.CurrentTarget.IsPlayer,
                                 new PrioritySelector(

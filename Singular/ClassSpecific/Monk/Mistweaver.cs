@@ -74,11 +74,7 @@ namespace Singular.ClassSpecific.Monk
                 ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
 
                 new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateDismount("Pulling"),
-                    Movement.CreateEnsureMovementStoppedWithinMelee(),
+                    Helpers.Common.EnsureReadyToAttackFromMelee(),
                     Helpers.Common.CreateAutoAttack(true),
 
                     Spell.WaitForCast(),
@@ -126,9 +122,7 @@ namespace Singular.ClassSpecific.Monk
                 ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
 
                 new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.EnsureReadyToAttackFromMelee(),
                     Helpers.Common.CreateAutoAttack(true),
 
                     Spell.WaitForCast(),

@@ -280,8 +280,8 @@ if $(ConfigurationName) == Bobby53 (
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HB\Routines\Singular\" /i /f /v /y
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HBB\Routines\Singular\" /i /f /s /v /y
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HBB\Routines\Singular\" /i /f /v /y
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HBC\Routines\Singular\" /i /f /s /v /y
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HBC\Routines\Singular\" /i /f /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HB-BRODIE\Routines\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HB-BRODIE\Routines\Singular\" /i /f /v /y
 )
 
 if $(ConfigurationName) == HighVoltz (

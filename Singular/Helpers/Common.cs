@@ -265,7 +265,7 @@ namespace Singular.Helpers
             #region 25 yards
 
             if ( Me.Class == WoWClass.Shaman)
-                prioSpell.AddChild( Spell.Cast("Wind Shear", ctx => _unitInterrupt));
+                prioSpell.AddChild( Spell.Cast("Wind Shear", ctx => _unitInterrupt, req => Me.IsSafelyFacing(_unitInterrupt)));
 
             #endregion
 
@@ -447,5 +447,73 @@ namespace Singular.Helpers
                 return tmp;
             }
         }
+
+        public static Composite EnsureReadyToAttackFromMelee()
+        {
+            PrioritySelector prio = new PrioritySelector(
+                Safers.EnsureTarget() ,
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                new Decorator(
+                    req => Me.CurrentTarget.Distance < SingularSettings.Instance.MeleeDismountRange,
+                    Helpers.Common.CreateDismount( Dynamics.CompositeBuilder.CurrentBehaviorType.ToString())   // should be Pull or Combat 99% of the time
+                    )
+                );
+
+            if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull)
+            {
+                prio.AddChild(
+                    new PrioritySelector(
+                        ctx => Me.CurrentTarget.IsAboveTheGround(),
+                        new Decorator(
+                            req => (bool)req,
+                            new PrioritySelector(
+                                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 27, 22),
+                                Movement.CreateEnsureMovementStoppedBehavior(22)
+                                )
+                            ),
+                        new Decorator(
+                            req => !(bool)req,
+                            new PrioritySelector(
+                                Movement.CreateMoveToMeleeBehavior(true),
+                                Movement.CreateEnsureMovementStoppedWithinMelee()
+                                )
+                            )
+                        )
+                    );
+            }
+            else
+            {
+                prio.AddChild( Movement.CreateMoveToMeleeBehavior(true));
+                prio.AddChild(Movement.CreateEnsureMovementStoppedWithinMelee());
+            }
+
+            return prio;
+        }
+
+        public static Composite EnsureReadyToAttackFromMediumRange( )
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),   // should be Pull or Combat 99% of the time
+                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 25, 22),
+                Movement.CreateEnsureMovementStoppedBehavior(22f)
+                );
+        }
+
+        public static Composite EnsureReadyToAttackFromLongRange()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Movement.CreateMoveToLosBehavior(),
+                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.CreateDismount(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),   // should be Pull or Combat 99% of the time
+                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 40, 36),
+                Movement.CreateEnsureMovementStoppedBehavior(36f)
+                );
+        }
+
     }
 }

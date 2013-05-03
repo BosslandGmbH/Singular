@@ -33,8 +33,8 @@ namespace Singular.ClassSpecific.Rogue
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
 
                 Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Movement.CreateMoveBehindTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateDismount("Pulling"),
                     
                 Spell.WaitForCastOrChannel(),
@@ -50,10 +50,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints < 5),
                         Spell.Cast("Hemorrhage")
                         )
-                    ),
-
-                Movement.CreateMoveBehindTargetBehavior(),
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
         [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueSubtlety, WoWContext.Normal | WoWContext.Battlegrounds)]
@@ -61,8 +58,8 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Movement.CreateMoveBehindTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
@@ -74,8 +71,6 @@ namespace Singular.ClassSpecific.Rogue
                         CreateSubteltyDiagnosticOutputBehavior("Combat"),
 
                         new Throttle(Helpers.Common.CreateInterruptBehavior()),
-
-                        Movement.CreateMoveBehindTargetBehavior(),
 
                         Common.CreateRogueOpenerBehavior(),
 
@@ -127,9 +122,7 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             )
                         )
-                    ),
-
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 
@@ -142,8 +135,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Movement.CreateMoveBehindTargetBehavior(),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -165,7 +157,6 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             ),
 
-                        Movement.CreateMoveBehindTargetBehavior(),
                         Spell.BuffSelf("Shadow Dance", ret => Me.CurrentTarget.MeIsBehind && !Me.HasAura("Stealth")),
                         Spell.BuffSelf("Vanish", ret => Me.CurrentTarget.IsBoss() && Me.CurrentTarget.MeIsBehind),
 
@@ -177,8 +168,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Buff("Hemorrhage"),
                         Spell.Cast("Backstab", ret => Me.CurrentTarget.MeIsBehind && HasDaggersEquipped),
                         Spell.Cast("Hemorrhage", ret => !Me.CurrentTarget.MeIsBehind || !HasDaggersEquipped))
-                    ),
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 

@@ -5,21 +5,21 @@ using Styx;
 
 using Styx.CommonBot;
 using Styx.TreeSharp;
+using Singular.Settings;
+using Styx.WoWInternals.WoWObjects;
 
 namespace Singular.ClassSpecific.Druid
 {
     public class Lowbie
     {
+        private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid(); } }
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
         [Behavior(BehaviorType.Pull, WoWClass.Druid, 0)]
         public static Composite CreateLowbieDruidPull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(25f),
+                Helpers.Common.EnsureReadyToAttackFromMediumRange(),
                 Spell.WaitForCast(true),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -28,8 +28,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Buff("Moonfire", ret => SpellManager.HasSpell("Cat Form")),
                         Spell.Cast("Wrath")
                         )
-                    ),
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 30f, 25f)
+                    )
                 );
         }
 
@@ -37,9 +36,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateLowbieDruidCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCast(true),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -51,7 +48,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.BuffSelf("Cat Form"),
                         Helpers.Common.CreateInterruptBehavior(),
                         //Healing if needed in combat
-                        Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 60 && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
+                        Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= DruidSettings.SelfRejuvenationHealth && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
                         Helpers.Common.CreateAutoAttack(true),
 
                         new Decorator(

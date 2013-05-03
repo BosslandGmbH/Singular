@@ -25,10 +25,8 @@ namespace Singular.ClassSpecific.DeathKnight
         public static Composite CreateLowbieDeathKnightCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
 
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(

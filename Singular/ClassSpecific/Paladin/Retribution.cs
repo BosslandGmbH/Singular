@@ -88,11 +88,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return new PrioritySelector(
 
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Combat"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -189,11 +185,7 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinRetributionInstancePullAndCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCastOrChannel(),
 

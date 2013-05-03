@@ -15,14 +15,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateLowbieWarlockCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(false),
-                Helpers.Common.CreateDismount("Pulling"),
-
-                Movement.CreateEnsureMovementStoppedBehavior( 33f ),
-
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Spell.WaitForCast(true),
 
                 new Decorator( 
@@ -37,9 +30,7 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Buff("Corruption"),
                         Spell.Cast("Shadow Bolt")
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38, 33)
+                    )
                 );
         }
     }

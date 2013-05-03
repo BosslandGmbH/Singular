@@ -26,11 +26,10 @@ namespace Singular.ClassSpecific.DeathKnight
         public static Composite CreateDeathKnightUnholyNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
 
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
+
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -55,7 +54,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         // aoe
                         new Decorator(
-                            ret => Unit.UnfriendlyUnitsNearTarget(12f).Count() >= DeathKnightSettings.DeathAndDecayCount,
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= DeathKnightSettings.DeathAndDecayCount,
                             new PrioritySelector(
                                 // Spell.Cast("Gorefiend's Grasp"),
                                 Spell.Cast("Remorseless Winter"),
@@ -81,7 +80,8 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Spell.CastOnGround("Death and Decay",
                             ret => StyxWoW.Me.CurrentTarget.Location,
-                            ret => StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount > 0, false),
+                            ret => Spell.UseAOE && (StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount > 0), 
+                            false),
 
                         Spell.Cast("Blood Tap"),
 
@@ -166,11 +166,10 @@ namespace Singular.ClassSpecific.DeathKnight
         public static Composite CreateDeathKnightUnholyPvPCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
 
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
+
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -239,9 +238,8 @@ namespace Singular.ClassSpecific.DeathKnight
         public static Composite CreateDeathKnightUnholyInstanceCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
@@ -266,7 +264,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Start AoE section
                         new Decorator(
                             ret =>
-                            Spell.UseAOE && DeathKnightSettings.UseAoeInInstance && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= DeathKnightSettings.DeathAndDecayCount,
+                            Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= DeathKnightSettings.DeathAndDecayCount,
                             new PrioritySelector(
                                 // Diseases
                                 Common.CreateApplyDiseases(),
@@ -286,7 +284,8 @@ namespace Singular.ClassSpecific.DeathKnight
 
                                 Spell.CastOnGround("Death and Decay",
                                     loc => StyxWoW.Me.CurrentTarget.Location,
-                                    req => StyxWoW.Me.UnholyRuneCount == 2, false),
+                                    req => Spell.UseAOE && StyxWoW.Me.UnholyRuneCount == 2, 
+                                    false),
 
                                 Spell.Cast("Blood Boil",
                                     ret => StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 && StyxWoW.Me.DeathRuneCount > 0 

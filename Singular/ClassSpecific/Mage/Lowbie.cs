@@ -20,13 +20,8 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateLowbieMagePull()
         {
             return new PrioritySelector(
-                 Safers.EnsureTarget(),
-                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
-                 Movement.CreateMoveToLosBehavior(),
-                 Movement.CreateFaceTargetBehavior(),
-                 Helpers.Common.CreateDismount("Pulling"),
-                 Movement.CreateEnsureMovementStoppedBehavior(33f),
-                 Spell.WaitForCast(true),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                Spell.WaitForCast(true),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -40,9 +35,7 @@ namespace Singular.ClassSpecific.Mage
                          // otherwise take advantage of casting without incoming damage
                          Spell.Cast("Frostfire Bolt")
                          )
-                     ),
-
-                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
+                     )
                  );
         }
 
@@ -50,12 +43,7 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateLowbieMageCombat()
         {
             return new PrioritySelector(
-                 Safers.EnsureTarget(),
-                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
-                 Movement.CreateMoveToLosBehavior(),
-                 Movement.CreateFaceTargetBehavior(),
-                 Helpers.Common.CreateDismount("Pulling"),
-                 // Movement.CreateEnsureMovementStoppedBehavior(33f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                  Spell.WaitForCast(true),
 
                 new Decorator(
@@ -68,9 +56,7 @@ namespace Singular.ClassSpecific.Mage
                          Spell.Cast("Fire Blast"),
                          Spell.Cast("Frostfire Bolt")
                          )
-                     ),
-
-                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
+                     )
                  );
         }
     }

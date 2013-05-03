@@ -41,9 +41,8 @@ namespace Singular.ClassSpecific.Rogue
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
 
                 Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
+                Movement.CreateMoveBehindTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
@@ -59,10 +58,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Mutilate")
                         )
-                    ),
-
-                Movement.CreateMoveBehindTargetBehavior(),
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
         [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Normal | WoWContext.Battlegrounds )]
@@ -70,8 +66,9 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Movement.CreateMoveBehindTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
+
                 Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCastOrChannel(),
@@ -130,8 +127,7 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             )
                         )
-                    ),
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 
@@ -143,8 +139,8 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Movement.CreateMoveBehindTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
@@ -190,9 +186,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                         Spell.Cast("Mutilate")
                         )
-                    ),
-
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 

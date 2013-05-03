@@ -1662,19 +1662,19 @@ namespace Singular.Helpers
             SpellFindResults sfr;
             if (!SpellManager.FindSpell(castName, out sfr))
             {
-                // Logger.WriteDebug("CanCastHack: spell [{0}] not known", castName);
+                // Logger.WriteDebug("CanCast: spell [{0}] not known", castName);
                 return false;
             }
 
             WoWSpell spell = sfr.Override ?? sfr.Original;
-
+            
             // check range
             if (unit != null && !spell.IsSelfOnlySpell && !unit.IsMe)
             {
                 if (spell.IsMeleeSpell && !unit.IsWithinMeleeRange)
                 {
                     if (SingularSettings.Instance.EnableDebugLoggingCanCast )
-                        Logger.WriteDebug("CanCastHack[{0}]: target @ {1:F1} yds not in melee range", castName, unit.Distance);
+                        Logger.WriteDebug("CanCast[{0}]: target @ {1:F1} yds not in melee range", castName, unit.Distance);
                     return false;
                 }
                 if (spell.HasRange )
@@ -1682,13 +1682,13 @@ namespace Singular.Helpers
                     if (unit.Distance > spell.ActualMaxRange(unit))
                     {
                         if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                            Logger.WriteDebug("CanCastHack[{0}]: out of range - further than {1:F1}", castName, spell.ActualMaxRange(unit));
+                            Logger.WriteDebug("CanCast[{0}]: out of range - further than {1:F1}", castName, spell.ActualMaxRange(unit));
                         return false;
                     }
                     if (unit.Distance < spell.ActualMinRange(unit))
                     {
                         if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                            Logger.WriteDebug("CanCastHack[{0}]: out of range - closer than {1:F1}", castName, spell.ActualMinRange(unit));
+                            Logger.WriteDebug("CanCast[{0}]: out of range - closer than {1:F1}", castName, spell.ActualMinRange(unit));
                         return false;
                     }
                 }
@@ -1696,7 +1696,7 @@ namespace Singular.Helpers
                 if (!unit.InLineOfSpellSight)
                 {
                     if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                        Logger.WriteDebug("CanCastHack[{0}]: not in spell line of {1}", castName, unit.SafeName());
+                        Logger.WriteDebug("CanCast[{0}]: not in spell line of {1}", castName, unit.SafeName());
                     return false;
                 }
             }
@@ -1704,7 +1704,7 @@ namespace Singular.Helpers
             if ((spell.CastTime != 0u || IsFunnel(spell)) && Me.IsMoving && !AllowMovingWhileCasting(spell))
             {
                 if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                    Logger.WriteDebug("CanCastHack[{0}]: cannot cast while moving", castName);
+                    Logger.WriteDebug("CanCast[{0}]: cannot cast while moving", castName);
                 return false;
             }
 
@@ -1714,29 +1714,50 @@ namespace Singular.Helpers
                 if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
                 {
                     if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                        Logger.WriteDebug("CanCastHack[{0}]: current cast of [1] has {2:F0} ms left", castName, Me.CurrentCastId, Me.CurrentCastTimeLeft.TotalMilliseconds - num);
+                        Logger.WriteDebug("CanCast[{0}]: current cast of [1] has {2:F0} ms left", castName, Me.CurrentCastId, Me.CurrentCastTimeLeft.TotalMilliseconds - num);
                     return false;
                 }
 
                 if (spell.CooldownTimeLeft.TotalMilliseconds > num)
                 {
                     if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                        Logger.WriteDebug("CanCastHack[{0}]: still on cooldown for {1:F0} ms", castName, spell.CooldownTimeLeft.TotalMilliseconds - num);
+                        Logger.WriteDebug("CanCast[{0}]: still on cooldown for {1:F0} ms", castName, spell.CooldownTimeLeft.TotalMilliseconds - num);
                     return false;
                 }
             }
 
-            if (Me.CurrentPower < spell.PowerCost)
+            bool formSwitch = false;
+            uint currentPower = Me.CurrentPower;
+            if (Me.Class == WoWClass.Druid)
+            {
+                if (Me.Shapeshift == ShapeshiftForm.Cat || Me.Shapeshift == ShapeshiftForm.Bear || Me.Shapeshift == ShapeshiftForm.DireBear )
+                {
+                    if ( Me.HealingSpellIds.Contains( spell.Id))
+                    {
+                        formSwitch = true;
+                        currentPower = Me.CurrentMana;
+                    }
+                    else if (spell.PowerCost >= 100)
+                    {
+                        formSwitch = true;
+                        currentPower = Me.CurrentMana;
+                    }
+                }
+            }
+
+            if (currentPower < (uint) spell.PowerCost)
             {
                 if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                    Logger.WriteDebug("CanCastHack[{0}]: insufficient power (needs {1:F0} but have {2:F0})", castName, spell.PowerCost, Me.CurrentPower );
+                    Logger.WriteDebug("CanCast[{0}]: insufficient power (need {1:F0}, have {2:F0} {3})", castName, spell.PowerCost, currentPower, formSwitch ? "Mana in Form" : Me.PowerType.ToString() );
                 return false;
             }
 
-            if (!skipWowCheck && !spell.CanCast)
+            // override spell will sometimes always have cancast=false, so check original also
+            if (!skipWowCheck && !_spell.CanCast && (sfr.Override == null || !sfr.Original.CanCast))
             {
                 if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                    Logger.WriteDebug("CanCastHack[{0}]: spell specific CanCast failed", castName);
+                    Logger.WriteDebug("CanCast[{0}]: spell specific CanCast failed (#{1})", castName, _spell.Id);
+
                 return false;
             }
 

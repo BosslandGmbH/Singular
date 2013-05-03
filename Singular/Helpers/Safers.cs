@@ -117,7 +117,7 @@ namespace Singular.Helpers
                                     {
                                         Logger.Write(targetColor, "Current target owned by a player.  Switching to " + newTarget.SafeName() + "!");
                                         if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.Guid == Me.CurrentTarget.Guid)
-                                            BotPoi.Clear("Singular detected as Player Pet");
+                                            BotPoi.Clear("Singular detected as Player Owned Pet");
 
                                         return newTarget;
                                     }
@@ -135,7 +135,7 @@ namespace Singular.Helpers
                                     {
                                         Logger.Write(targetColor, "Current target summoned by a player.  Switching to " + newTarget.SafeName() + "!");
                                         if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.Guid == Me.CurrentTarget.Guid)
-                                            BotPoi.Clear("Singular detected as Player Pet");
+                                            BotPoi.Clear("Singular detected as Player Summoned Pet");
 
                                         return newTarget;
                                     }
@@ -153,7 +153,7 @@ namespace Singular.Helpers
                                         if (Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
                                         {
                                             Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " is blacklisted -- clearing POI!");
-                                            BotPoi.Clear("Blacklisted mob");
+                                            BotPoi.Clear("Singular detected Blacklisted mob");
 
                                             if (unit == Me.CurrentTarget && (Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet))
                                                 return unit;
@@ -272,17 +272,17 @@ namespace Singular.Helpers
                                             if (unit == null)
                                             {
                                                 Logger.Write(targetColor, "Current Kill POI invalid. Clearing POI!");
-                                                BotPoi.Clear("Unit is null");
+                                                BotPoi.Clear("Singular detected null POI");
                                             }
                                             else if (!unit.IsAlive)
                                             {
                                                 Logger.Write(targetColor, "Current Kill POI dead. Clearing POI " + unit.SafeName() + "!");
-                                                BotPoi.Clear("Unit is dead");
+                                                BotPoi.Clear("Singular detected Unit is dead");
                                             }
                                             else if (Blacklist.Contains(unit, BlacklistFlags.Combat))
                                             {
                                                 Logger.Write(targetColor, "Current Kill POI is blacklisted. Clearing POI " + unit.SafeName() + "!");
-                                                BotPoi.Clear("Unit is Blacklisted");
+                                                BotPoi.Clear("Singular detected Unit is Blacklisted");
                                             }
                                             else 
                                             {

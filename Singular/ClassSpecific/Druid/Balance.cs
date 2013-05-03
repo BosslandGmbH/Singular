@@ -92,14 +92,18 @@ namespace Singular.ClassSpecific.Druid
 
             #endregion 
 
-                    Spell.Cast("Rejuvenation", mov => false, on => Me, ret => _ImaMoonBeast && Me.HasAuraExpired("Rejuvenation", 1)),
+                    Spell.Cast("Rejuvenation", on => Me, 
+                        req => {
+                            int setting = _ImaMoonBeast ? DruidSettings.MoonBeastRejuvenationHealth : DruidSettings.SelfRejuvenationHealth;
+                            return Me.HealthPercent <= setting && Me.HasAuraExpired("Rejuvenation", 1);
+                        }),
 
-                    Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < 60),
-                    Spell.Cast("Renewal", ret => Me.HealthPercent < DruidSettings.RenewalHealth),
-                    Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 85 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)) > 1),
+                    Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < DruidSettings.SelfNaturesSwiftnessHealth ),
+                    Spell.BuffSelf("Renewal", ret => Me.HealthPercent < DruidSettings.SelfRenewalHealth),
+                    Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < DruidSettings.SelfCenarionWardHealth),
 
                     new Decorator(
-                        ret => Me.HealthPercent < 40 || (_CrowdControlTarget != null && _CrowdControlTarget.IsValid && (_CrowdControlTarget.IsCrowdControlled() || Spell.DoubleCastPreventionDict.ContainsAny( _CrowdControlTarget, "Disorienting Roar", "Mighty Bash", "Cyclone", "Hibernate"))),
+                        ret => Me.HealthPercent < DruidSettings.SelfHealingTouchHealth || (_CrowdControlTarget != null && _CrowdControlTarget.IsValid && (_CrowdControlTarget.IsCrowdControlled() || Spell.DoubleCastPreventionDict.ContainsAny( _CrowdControlTarget, "Disorienting Roar", "Mighty Bash", "Cyclone", "Hibernate"))),
                         new PrioritySelector(
 
                             Spell.Buff("Disorienting Roar", req => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.IsCrowdControlled()),
@@ -143,7 +147,9 @@ namespace Singular.ClassSpecific.Druid
                                 Spell.Cast("Healing Touch", mov => true, on => Me, req => Me.GetPredictedHealthPercent(true) < 90, req => Me.HealthPercent > 95)
                                 )
                             )
-                        )
+                        ),
+
+                    Spell.Cast("Healing Touch", on => Me, req => _ImaMoonBeast && Me.HealthPercent <= DruidSettings.MoonBeastHealingTouch && Me.HasAuraExpired("Rejuvenation", 1))
                     )
                 );
         }
@@ -156,11 +162,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalancePullNormal()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -204,13 +206,7 @@ namespace Singular.ClassSpecific.Druid
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(
 
-                Safers.EnsureTarget(),
-
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Helpers.Common.CreateAutoAttack(false),
-                // Movement.CreateEnsureMovementStoppedBehavior( 35f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCast(true),
 
@@ -295,9 +291,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => GetEclipseDirection() == EclipseType.Solar )
 
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+                    )
                 );
         }
 
@@ -313,11 +307,7 @@ namespace Singular.ClassSpecific.Druid
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
 
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(30f),  // cause forced stop a little closer in PVP
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 // Ensure we do /petattack if we have treants up.
                 Helpers.Common.CreateAutoAttack(true),
@@ -400,9 +390,7 @@ namespace Singular.ClassSpecific.Druid
                             on => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.Distance < 35 && !u.HasAura( "Weakened Armor") && Me.IsSafelyFacing(u) && u.InLineOfSpellSight ))
 
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+                    )
                 );
         }
 
@@ -417,12 +405,7 @@ namespace Singular.ClassSpecific.Druid
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(
 
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Helpers.Common.CreateAutoAttack(false),
-                Movement.CreateEnsureMovementStoppedBehavior(30f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCast(true),
 
@@ -508,9 +491,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => GetEclipseDirection() == EclipseType.Solar )
 
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+                    )
                 );
         }
 

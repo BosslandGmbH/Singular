@@ -113,9 +113,9 @@ namespace Singular.ClassSpecific.DeathKnight
         public static Composite CreateDeathKnightBloodNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
+
                 Spell.WaitForCast(),
 
                 new Decorator(
@@ -164,17 +164,16 @@ namespace Singular.ClassSpecific.DeathKnight
                                     Spell.Cast("Rune Strike"),
                                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
-                                    Movement.CreateMoveToMeleeBehavior(true)
+                                    new ActionAlwaysSucceed()
                                     )
                                 )
                             ),
 
-
                         // refresh diseases if possible
                         new Throttle( 2,
                             new PrioritySelector(
-                                Spell.Cast("Blood Boil", ret => UseBloodBoilForDiseases()),
-                                Spell.Cast("Pestilence", ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases)
+                                Spell.Cast("Blood Boil", ret => Spell.UseAOE && UseBloodBoilForDiseases()),
+                                Spell.Cast("Pestilence", ret => Spell.UseAOE && !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases)
                                 )
                             ),
 
@@ -202,9 +201,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         // ... not much to do here, just use our Unholy Runes on PS prior to learning DS
                         Spell.Cast("Plague Strike", ret => !SpellManager.HasSpell( "Death Strike"))
                         )
-                    ),
-  
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 
@@ -217,9 +214,9 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             return
                 new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
+
+                    Helpers.Common.EnsureReadyToAttackFromMelee(),
+
                     Spell.WaitForCast(),
                     Helpers.Common.CreateAutoAttack(true),
                     new Decorator(
@@ -273,11 +270,8 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             return
                 new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateDismount("Pulling"),
-                    Movement.CreateEnsureMovementStoppedWithinMelee(),
+
+                    Helpers.Common.EnsureReadyToAttackFromMelee(),
                     Spell.WaitForCast(),
 
                     Helpers.Common.CreateAutoAttack(true),
@@ -303,10 +297,9 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             return
                 new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Spell.WaitForCast(),
+
+                    Helpers.Common.EnsureReadyToAttackFromMelee(),
+                    Spell.WaitForCastOrChannel(),
                     Helpers.Common.CreateAutoAttack(true),
 
                     new Decorator(
@@ -386,7 +379,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                     Spell.Cast("Rune Strike"),
                                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
-                                    Movement.CreateMoveToMeleeBehavior(true)
+                                    new ActionAlwaysSucceed()
                                     )
                                 )
                             ),

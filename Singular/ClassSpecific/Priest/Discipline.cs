@@ -159,9 +159,7 @@ namespace Singular.ClassSpecific.Priest
                         new Decorator(
                             ret => StyxWoW.Me.Combat && StyxWoW.Me.ManaPercent > SingularSettings.Instance.Priest().DpsMana,
                             new PrioritySelector(
-                                Safers.EnsureTarget(),
-                                Movement.CreateMoveToLosBehavior(),
-                                Movement.CreateFaceTargetBehavior(),
+                                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                                 Helpers.Common.CreateInterruptBehavior(),
                                 Common.CreateShadowfiendBehavior(),
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
@@ -229,11 +227,7 @@ namespace Singular.ClassSpecific.Priest
             return new Decorator(
                 ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                 new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateDismount("Pulling"),
-                    Movement.CreateEnsureMovementStoppedBehavior(25f),
+                    Helpers.Common.EnsureReadyToAttackFromMediumRange(),
                     Helpers.Common.CreateInterruptBehavior(),
                     Common.CreateShadowfiendBehavior(),
                     //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
@@ -242,9 +236,8 @@ namespace Singular.ClassSpecific.Priest
                     Spell.Cast("Penance"),
                     Spell.Cast("Holy Fire"),
                     // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
-                    Spell.Cast("Smite"),
-                //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace")),
-                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 30f, 25f)
+                    Spell.Cast("Smite")
+                    //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace"))
                     )
                 );
         }

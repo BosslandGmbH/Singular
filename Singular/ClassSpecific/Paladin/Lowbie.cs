@@ -15,9 +15,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Safers.EnsureTarget(),
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
+                    Helpers.Common.EnsureReadyToAttackFromMelee(),
                     Helpers.Common.CreateAutoAttack(true),
                     Helpers.Common.CreateInterruptBehavior(),
                     Spell.Cast("Crusader Strike"),
@@ -30,10 +28,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return
                 new PrioritySelector(
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateDismount("Pulling"),
-                    Movement.CreateEnsureMovementStoppedWithinMelee(),
+                    Helpers.Common.EnsureReadyToAttackFromMelee(),
                     Helpers.Common.CreateAutoAttack(true),
                     Spell.Cast("Judgment"),
                     Movement.CreateMoveToMeleeBehavior(true)

@@ -16,13 +16,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateLowbieWarriorCombat()
         {
             return new PrioritySelector(
-                // Ensure Target
-                Safers.EnsureTarget(),
-                // LOS Check
-                Movement.CreateMoveToLosBehavior(),
-                // face target
-                Movement.CreateFaceTargetBehavior(),
-                // Auto Attack
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
                 Helpers.Common.CreateInterruptBehavior(),
                 // Heal
@@ -46,15 +40,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateLowbieWarriorPull()
         {
             return new PrioritySelector(
-                // Ensure Target
-                Safers.EnsureTarget(),
-                // LOS
-                Movement.CreateMoveToLosBehavior(),
-                // face target
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
-                // Auto Attack
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
                 // charge
                 Spell.Cast("Charge",

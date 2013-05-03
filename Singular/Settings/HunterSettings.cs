@@ -21,8 +21,20 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(1)]
         [Category("Pet")]
-        [DisplayName("Pet Number ( 1 thru 5 )")]
-        public int PetNumber { get; set; }
+        [DisplayName("(Solo) Pet Number ( 1 thru 5 )")]
+        public int PetNumberSolo { get; set; }
+
+        [Setting]
+        [DefaultValue(1)]
+        [Category("Pet")]
+        [DisplayName("(PvP) Pet Number ( 1 thru 5 )")]
+        public int PetNumberPvp { get; set; }
+
+        [Setting]
+        [DefaultValue(1)]
+        [Category("Pet")]
+        [DisplayName("(Instance) Pet Number ( 1 thru 5 )")]
+        public int PetNumberInstance { get; set; }
 
         [Setting]
         [DefaultValue(70)]
@@ -40,6 +52,13 @@ namespace Singular.Settings
         [DisplayName("Use Disengage")]
         [Description("Will be used in battlegrounds no matter what this is set")]
         public bool UseDisengage { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Misdirection in Instances")]
+        [Description("Cast Misdirection on Tank during Pull in Instances, and on Pet if all Tanks dead and Hunter gets aggro")]
+        public bool UseMisdirectionInInstances { get; set; }
 
         [Setting]
         [DefaultValue(false)]

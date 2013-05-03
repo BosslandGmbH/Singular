@@ -90,11 +90,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 CreateFeralDiagnosticOutputBehavior( "Pull" ),
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(),
@@ -164,7 +160,10 @@ namespace Singular.ClassSpecific.Druid
                 ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(), 
                 new PrioritySelector(
 
-                    // cast cat form if not in combat and moving, but only if not recent shapeshift error
+                    // cast cat form 
+                    // since this check comes while not in combat (so will be doing other things like Questing) need to add some checks:
+                    // - only if Moving
+                    // - only if No Recent Shapefhift Error (since form may have resulted from error in picking up Quest, completing Quest objectives, or turning in Quest)
                     new Throttle( 10, Spell.BuffSelf( "Cat Form", ret => Me.IsMoving && !RecentShapeshiftErrorOccurred && !Me.IsSwimming && !Me.HasAura("Aquatic Form") )),
 
                     // cancel form if we get a shapeshift error 
@@ -174,7 +173,7 @@ namespace Singular.ClassSpecific.Druid
                             new Action(ret =>
                             {
                                 string formName = Me.Shapeshift.ToString() + " Form";
-                                Logger.Write("/cancel [{0}] due to shapeshift error and prevent out of combat {1:F0} seconds while Questing", formName, (SuppressShapeshiftUntil - DateTime.Now).TotalSeconds );
+                                Logger.Write("/cancel [{0}] due to shapeshift error in Questing; disabling form for {1:F0} secs while not in combat", formName, (SuppressShapeshiftUntil - DateTime.Now).TotalSeconds );
                                 Me.CancelAura(formName);
                             })
                             )
@@ -206,14 +205,20 @@ namespace Singular.ClassSpecific.Druid
             }
         }
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All, 1)]
-        public static Composite CreateFeralNormalCombatBuffs()
+        [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All, 999)]
+        public static Composite CreateFeralCombatHeal()
         {
-            return new Decorator( 
-                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
-                new PrioritySelector(
-                    Spell.BuffSelf("Cat Form")
-                    )
+            return new PrioritySelector(
+                CreateFeralDiagnosticOutputBehavior("Combat")
+                );
+        }
+
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All, 1)]
+        public static Composite CreateFeralCombatBuffs()
+        {
+            return new PrioritySelector(
+                Spell.BuffSelf("Cat Form")
                 );
         }
 
@@ -236,10 +241,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralNormalCombat()
         {
             return new PrioritySelector(
-                CreateFeralDiagnosticOutputBehavior("Combat"),
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(true),
@@ -339,10 +341,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralCombatInstances()
         {
             return new PrioritySelector(
-                CreateFeralDiagnosticOutputBehavior("Combat"),
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(true),
@@ -353,7 +352,6 @@ namespace Singular.ClassSpecific.Druid
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-                        CreateFeralDiagnosticOutputBehavior("Combat"),
 
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -427,8 +425,8 @@ namespace Singular.ClassSpecific.Druid
                                     new PrioritySelector(
                                         // made a higher priority to prioritize consuming Omen of Clarity with Thrash if needed
                                         // note:  id used to fix Thrash Spell Override bug (similar to Savage Roar)
-                                        // Spell.Buff("Thrash", true, on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity"), 3),
-                                        Spell.Buff(106832, on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity") && Me.CurrentTarget.HasAuraExpired("Thrash", 3)),
+                                        Spell.Buff("Thrash", true, on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity"), 3),
+                                        // Spell.Buff(106832, on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity") && Me.CurrentTarget.HasAuraExpired("Thrash", 3)),
 
                                         // 6. Ferocious Bite if the boss has less than 25% hp remaining and Rip is near expiring.
                                         Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent < 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds.Between(150, 6000)),
@@ -588,46 +586,46 @@ namespace Singular.ClassSpecific.Druid
             else
                 context = "<<" + context + ">>";
 
-            return new Decorator(
-                ret => SingularSettings.Debug,
-                new ThrottlePasses(1,
-                    new Action(ret =>
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
+
+            return new ThrottlePasses(1,
+                new Action(ret =>
+                {
+                    string log;
+                    log = string.Format(context + " h={0:F1}%/e={1:F1}%/m={2:F1}%, shape={3}, prowl={4}, savage={5}, tfury={6}, brsrk={7}, predswf={8}, omen={9}, pts={10}",
+                        Me.HealthPercent,
+                        Me.EnergyPercent,
+                        Me.ManaPercent,
+                        Me.Shapeshift.ToString().Length < 4 ? Me.Shapeshift.ToString() : Me.Shapeshift.ToString().Substring(0, 4),
+                        Me.HasAura("Prowl").ToYN(),
+                        (long)Me.GetAuraTimeLeft("Savage Roar", true).TotalMilliseconds,
+                        (long)Me.GetAuraTimeLeft("Tiger's Fury", true).TotalMilliseconds,
+                        (long)Me.GetAuraTimeLeft("Berserk", true).TotalMilliseconds,
+                        (long)Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds,
+                        (long)Me.GetAuraTimeLeft("Omen of Clarity", true).TotalMilliseconds,
+                        Me.ComboPoints 
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
                     {
-                        string log;
-                        log = string.Format(context + " h={0:F1}%/e={1:F1}%/m={2:F1}%, shape={3}, prowl={4}, savage={5}, tfury={6}, brsrk={7}, predswf={8}, omen={9}, pts={10}",
-                            Me.HealthPercent,
-                            Me.EnergyPercent,
-                            Me.ManaPercent,
-                            Me.Shapeshift.ToString().Length < 4 ? Me.Shapeshift.ToString() : Me.Shapeshift.ToString().Substring(0, 4),
-                            Me.HasAura("Prowl").ToYN(),
-                            (long)Me.GetAuraTimeLeft("Savage Roar", true).TotalMilliseconds,
-                            (long)Me.GetAuraTimeLeft("Tiger's Fury", true).TotalMilliseconds,
-                            (long)Me.GetAuraTimeLeft("Berserk", true).TotalMilliseconds,
-                            (long)Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds,
-                            (long)Me.GetAuraTimeLeft("Omen of Clarity", true).TotalMilliseconds,
-                            Me.ComboPoints 
+                        log += string.Format(", th={0:F1}%, dist={1:F1}, inmelee={2}, face={3}, loss={4}, dead={5} secs, rake={6}, rip={7}, thrash={8}",
+                            target.HealthPercent,
+                            target.Distance,
+                            target.IsWithinMeleeRange.ToYN(),
+                            Me.IsSafelyFacing(target).ToYN(),
+                            target.InLineOfSpellSight.ToYN(),
+                            target.TimeToDeath(),
+                            (long)target.GetAuraTimeLeft("Rake", true).TotalMilliseconds,
+                            (long)target.GetAuraTimeLeft("Rip", true).TotalMilliseconds,
+                            (long)target.GetAuraTimeLeft("Thrash", true).TotalMilliseconds
                             );
+                    }
 
-                        WoWUnit target = Me.CurrentTarget;
-                        if (target != null)
-                        {
-                            log += string.Format(", th={0:F1}%, dist={1:F1}, inmelee={2}, face={3}, loss={4}, dead={5} secs, rake={6}, rip={7}, thrash={8}",
-                                target.HealthPercent,
-                                target.Distance,
-                                target.IsWithinMeleeRange.ToYN(),
-                                Me.IsSafelyFacing(target).ToYN(),
-                                target.InLineOfSpellSight.ToYN(),
-                                target.TimeToDeath(),
-                                (long)target.GetAuraTimeLeft("Rake", true).TotalMilliseconds,
-                                (long)target.GetAuraTimeLeft("Rip", true).TotalMilliseconds,
-                                (long)target.GetAuraTimeLeft("Thrash", true).TotalMilliseconds
-                                );
-                        }
-
-                        Logger.WriteDebug(Color.AntiqueWhite, log);
-                        return RunStatus.Failure;
-                    })
-                    )
+                    Logger.WriteDebug(Color.AntiqueWhite, log);
+                    return RunStatus.Failure;
+                })
                 );
         }
 

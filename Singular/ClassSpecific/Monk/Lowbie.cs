@@ -18,12 +18,8 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateLowbieMonkCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
                 Helpers.Common.CreateInterruptBehavior(),
                 Spell.Cast("Tiger Palm", ret => !SpellManager.HasSpell("Blackout Kick") && StyxWoW.Me.CurrentChi >= 1),
                 Spell.Cast("Tiger Palm", ret => SpellManager.HasSpell("Blackout Kick") && StyxWoW.Me.CurrentChi >= 1 && StyxWoW.Me.HasKnownAuraExpired("Tiger Power")),

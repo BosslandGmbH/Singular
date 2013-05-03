@@ -91,16 +91,55 @@ namespace Singular.Settings
         [Description("Selecet on what type of fight you would like to cast Feral Spirit")]
         public CastOn FeralSpiritCastOn  { get; set; }
 
+        [Setting]
+        [DefaultValue(75)]
+        [Category("Enhancement")]
+        [DisplayName("Maelstrom Healing Surge %")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int MaelHealingSurge { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Enhancement")]
+        [DisplayName("Disable Maelstrom DPS Casts")]
+        [Description("Disable Lightning Bolt, Chain Lightning, and Hex")]
+        public bool AvoidMaelstromDamage { get; set; }
+
+        [Setting]
+        [DefaultValue(35)]
+        [Category("Enhancement")]
+        [DisplayName("Maelstrom PVP Off-Heal %")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int MaelPvpOffHeal { get; set; }
+
         #endregion
 
-        #region Category: Totems
+        #region Category: Self-Healing
 
         [Setting]
         [DefaultValue(85)]
-        [Category("Totems")]
+        [Category("Self-Heal")]
         [DisplayName("Healing Stream Totem %")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int HealHealingStreamTotem { get; set; }
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int SelfHealingStreamTotem { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Self-Heal")]
+        [DisplayName("Healing Surge %")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int SelfHealingSurge { get; set; }
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Self-Heal")]
+        [DisplayName("Ancestral Swiftness Heal %")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int SelfAncestralSwiftnessHeal { get; set; }
+
+        #endregion
+
+        #region Category: Totems
 
         [Setting]
         [DefaultValue(80)]

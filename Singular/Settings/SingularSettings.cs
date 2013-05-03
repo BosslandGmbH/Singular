@@ -257,6 +257,13 @@ namespace Singular.Settings
         public int PullDistanceOverride { get; set; }
 
         [Setting]
+        [DefaultValue(12)]
+        [Category("Movement")]
+        [DisplayName("Melee Dismount Range")]
+        [Description("Distance from target that melee should dismount")]
+        public int MeleeDismountRange { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("Movement")]
         [DisplayName("Use Cast While Moving Buffs")]

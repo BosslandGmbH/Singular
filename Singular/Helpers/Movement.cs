@@ -41,7 +41,7 @@ namespace Singular.Helpers
                 ret => !MovementManager.IsMovementDisabled
                     && toUnit != null
                     && toUnit(ret) != null
-                    && toUnit(ret) != StyxWoW.Me
+                    && !toUnit(ret).IsMe
                     && !InLineOfSpellSight(toUnit(ret)),
                 new Sequence(
                     new Action(ret => Logger.WriteDebug(Color.White, "MoveToLoss: moving to LoSS of {0} @ {1:F1} yds", toUnit(ret).SafeName(), toUnit(ret).Distance)),
@@ -111,7 +111,7 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled
                     && StyxWoW.Me.IsMoving
-                    && (onUnit(ret) == null || (InLineOfSpellSight(onUnit(ret)) && onUnit(ret).Distance < range)),
+                    && (onUnit(ret) == null || onUnit(ret).Distance < range),
                 new Sequence(
                     new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range))),
                     new Action(ret => StopMoving.Now())
@@ -128,7 +128,7 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled
                     && StyxWoW.Me.IsMoving
-                    && InMoveToMeleeStopRange,
+                    && InMoveToMeleeStopRange(StyxWoW.Me.CurrentTarget),
                 new Sequence(
                     new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStoppedWithinMelee: stopping because ", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("{0:F1} yds target distance is within melee", StyxWoW.Me.CurrentTarget.Distance))),
                     new Action(ret => StopMoving.Now())
@@ -206,7 +206,8 @@ namespace Singular.Helpers
                 new Sequence(
                     new Action(ret => Logger.WriteDebug(Color.White, "MoveToUnit: moving within {0:F1} yds of {1} @ {2:F1} yds", range, onUnit(ret).SafeName(), onUnit(ret).Distance)),
                     new Action(ret => Navigator.MoveTo(onUnit(ret).Location)),
-                    new Action(ret => StopMoving.InRangeOfUnit(onUnit(ret), stopAt == float.MinValue ? range : stopAt))
+                    new Action(ret => StopMoving.InRangeOfUnit(onUnit(ret), stopAt == float.MinValue ? range : stopAt)),
+                    new ActionAlwaysFail()
                     )
                 );
         }
@@ -236,11 +237,12 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CreateMoveToMeleeBehavior(bool stopInRange)
         {
+#if OLD_MELEE_MOVE
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled,
                 new PrioritySelector(
                     new Decorator(
-                        ret => stopInRange && InMoveToMeleeStopRange,
+                        ret => stopInRange && InMoveToMeleeStopRange(StyxWoW.Me.CurrentTarget),
                         new PrioritySelector(
                             CreateEnsureMovementStoppedWithinMelee(),
                             new Action(ret => RunStatus.Success)
@@ -251,25 +253,41 @@ namespace Singular.Helpers
                         new Sequence(
                             new Action(ret => Logger.WriteDebug(Color.White, "MoveToMelee: towards {0} @ {1:F1} yds", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance)),
                             new Action(ret => Navigator.MoveTo(StyxWoW.Me.CurrentTarget.Location)),
-                            new Action(ret => StopMoving.InMeleeRangeOfUnit(StyxWoW.Me.CurrentTarget, and => InMoveToMeleeStopRange ))
+                            new Action(ret => StopMoving.InMeleeRangeOfUnit(StyxWoW.Me.CurrentTarget, and => InMoveToMeleeStopRange(StyxWoW.Me.CurrentTarget))),
+                            new ActionAlwaysFail()
                             )
                         )
                     )
                 );
+#else
+            return new Decorator(
+                ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,
+                new Sequence(
+                    new Action(ret => Logger.WriteDebug(Color.White, "MoveToMelee: towards {0} @ {1:F1} yds", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance)),
+                    new Action(ret => Navigator.MoveTo(StyxWoW.Me.CurrentTarget.Location)),
+                    new Action(ret => StopMoving.InMeleeRangeOfUnit( StyxWoW.Me.CurrentTarget)),
+                    new ActionAlwaysFail()
+                    )
+                );
+#endif
         }
 
-        private static bool InMoveToMeleeStopRange
+        public static bool InMoveToMeleeStopRange( WoWUnit unit)
         {
-            get
-            {
-                if (StyxWoW.Me.CurrentTarget == null || !StyxWoW.Me.CurrentTarget.IsValid)
-                    return true;
+            if (unit == null || !unit.IsValid)
+                return true;
 
-                if (StyxWoW.Me.CurrentTarget.IsPlayer)
-                    return StyxWoW.Me.CurrentTarget.DistanceSqr < (2 * 2);
+            if (unit.IsPlayer)
+                return unit.DistanceSqr < (2 * 2);
 
-                return StyxWoW.Me.CurrentTarget.IsWithinMeleeRange;
-            }
+            if ( !unit.IsWithinMeleeRange)
+                return false;
+
+            float preferredDistance = Spell.MeleeDistance(unit) - 1;
+            if (unit.Distance > preferredDistance)
+                return false;
+
+            return true;
         }
 #endif
 
@@ -528,7 +546,7 @@ namespace Singular.Helpers
 
         public static void InMeleeRangeOfUnit(WoWUnit unit, SimpleBooleanDelegate and = null)
         {
-            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, 0, at => Unit == null || !Unit.IsValid || Unit.IsWithinMeleeRange, and);
+            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, 0, at => Unit == null || !Unit.IsValid || Movement.InMoveToMeleeStopRange(Unit), and);
         }
 
         public static void InLosOfUnit(WoWUnit unit, SimpleBooleanDelegate and = null)

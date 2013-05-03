@@ -38,11 +38,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateArmsNormalPull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(),
@@ -136,9 +132,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateArmsCombatNormal()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(true),
@@ -398,9 +392,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateArmsCombatBattlegrounds()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(true),
@@ -481,7 +473,7 @@ namespace Singular.ClassSpecific.Warrior
                             req => {
                                 if (Me.CurrentTarget.SpellDistance() <= 8)
                                 {
-                                    if (IsMeleeEnemy(Me.CurrentTarget) && !Me.CurrentTarget.HasAura("Weakened Blows"))
+                                    if (Me.CurrentTarget.IsMelee() && !Me.CurrentTarget.HasAura("Weakened Blows"))
                                         return true;
 
                                     if (!Me.CurrentTarget.IsWithinMeleeRange || !Me.IsSafelyFacing(Me.CurrentTarget))
@@ -624,24 +616,6 @@ namespace Singular.ClassSpecific.Warrior
                 }
                 return false;
             }
-        }
-
-        static bool IsMeleeEnemy( WoWUnit unit)
-        {
-            if ( unit.Class == WoWClass.DeathKnight 
-                || unit.Class == WoWClass.Paladin
-                || unit.Class == WoWClass.Monk
-                || unit.Class == WoWClass.Rogue 
-                || unit.Class == WoWClass.Warrior )
-                return true;
-
-            if (unit.Class == WoWClass.Druid && unit.HasAura("Cat Form"))
-                return true;
-
-            if (unit.Class == WoWClass.Shaman && unit.GetAllAuras().Any(a => a.Name == "Unleashed Rage" && a.CreatorGuid == unit.Guid))
-                return true;
-
-            return false;
         }
 
         private static Composite CreateDiagnosticOutputBehavior(string context = null)

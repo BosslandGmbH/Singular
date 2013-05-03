@@ -83,7 +83,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Spell.Cast("Healing Surge", on => Me, 
-                    ret => Me.GetPredictedHealthPercent(true) < 80 && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+                    ret => Me.GetPredictedHealthPercent(true) < ShamanSettings.MaelHealingSurge && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
 
                 Common.CreateShamanDpsHealBehavior()
                 );
@@ -101,8 +101,8 @@ namespace Singular.ClassSpecific.Shaman
             return new PrioritySelector(
                 new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5),
                     new PrioritySelector(
-                        Spell.Cast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.GetPredictedHealthPercent() < 75),
-                        Spell.Cast("Healing Surge", ret => (WoWPlayer)Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < 50 && p.Distance < 40).FirstOrDefault())
+                        Spell.Cast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.GetPredictedHealthPercent() < ShamanSettings.MaelHealingSurge),
+                        Spell.Cast("Healing Surge", ret => (WoWPlayer)Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < ShamanSettings.MaelPvpOffHeal && p.Distance < 40).FirstOrDefault())
                         )
                     ),
 
@@ -121,11 +121,8 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementNormalPull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                new Decorator(req => Me.Level < 20, Helpers.Common.EnsureReadyToAttackFromLongRange()),
+                new Decorator(req => Me.Level >= 20, Helpers.Common.EnsureReadyToAttackFromMelee()),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
@@ -141,22 +138,18 @@ namespace Singular.ClassSpecific.Shaman
 
                         new Decorator(
                             ret => StyxWoW.Me.Level < 20,
-                            new PrioritySelector(
-                                Spell.Cast("Lightning Bolt"),
-                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
-                                )),
+                            Spell.Cast("Lightning Bolt")
+                            ),
 
                         Helpers.Common.CreateAutoAttack(true),
                         Totems.CreateTotemsBehavior(),
-                        Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+                        Spell.Cast("Lightning Bolt", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
                         Spell.Cast("Unleash Weapon", 
                             ret => StyxWoW.Me.Inventory.Equipped.OffHand != null 
                                 && StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 5),
                         Spell.Cast("Earth Shock")
                         )
-                    ),
-
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 
@@ -164,9 +157,7 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
                 Helpers.Common.CreateAutoAttack(true),
 
@@ -211,7 +202,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Primal Strike", ret => !SpellManager.HasSpell("Stormstrike")),
                         Spell.Cast("Unleash Elements"),
 
-                        new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds < 3000 || StyxWoW.Me.GetPredictedHealthPercent(true) > 90),
+                        new Decorator(ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds < 3000 || StyxWoW.Me.GetPredictedHealthPercent(true) > 90),
                             new PrioritySelector(
                                 Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                                 Spell.Cast("Lightning Bolt")
@@ -232,11 +223,7 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementPvPPullAndCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(), 
@@ -267,7 +254,7 @@ namespace Singular.ClassSpecific.Shaman
                             ret => StyxWoW.Me.Inventory.Equipped.OffHand != null && 
                                    StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon),
 
-                        new Decorator(ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds < 3000 || StyxWoW.Me.GetPredictedHealthPercent() > 90),
+                        new Decorator(ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds < 3000 || StyxWoW.Me.GetPredictedHealthPercent() > 90),
                             new PrioritySelector(
                                 Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                                 Spell.Cast("Lightning Bolt")
@@ -291,11 +278,7 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementInstancePullAndCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
                 Helpers.Common.CreateAutoAttack(true),
 
@@ -325,7 +308,7 @@ namespace Singular.ClassSpecific.Shaman
                                            StyxWoW.Me.Inventory.Equipped.OffHand != null && 
                                            StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon),
                                 Spell.Cast("Fire Nova"),
-                                Spell.Cast("Chain Lightning", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+                                Spell.Cast("Chain Lightning", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
                                 Spell.Cast("Stormstrike"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )),
@@ -338,7 +321,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Lava Lash",
                             ret => StyxWoW.Me.Inventory.Equipped.OffHand != null && 
                                    StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon),
-                        Spell.Cast("Lightning Bolt", ret => StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
+                        Spell.Cast("Lightning Bolt", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
                         Spell.Cast("Unleash Elements"),
                         Spell.Buff("Flame Shock", true, ret => StyxWoW.Me.HasAura("Unleash Wind") || !SpellManager.HasSpell("Unleash Elements")),
                         Spell.Cast("Earth Shock", ret => StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 6)

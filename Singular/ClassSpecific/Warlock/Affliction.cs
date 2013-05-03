@@ -36,12 +36,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockAfflictionNormalPull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCast(true),
 
@@ -58,9 +53,7 @@ namespace Singular.ClassSpecific.Warlock
                         Helpers.Common.CreateAutoAttack(true),
                         CreateApplyDotsBehavior(onUnit => Me.CurrentTarget, ret => true)
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior(ret => Me.CurrentTarget, 38, 33)
+                    )
                 );
         }
 
@@ -76,9 +69,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockAfflictionNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Helpers.Common.CreateAutoAttack(true),
 
@@ -156,10 +147,7 @@ namespace Singular.ClassSpecific.Warlock
                         // only a lowbie should hit this
                         Spell.Cast("Drain Life", ret => !SpellManager.HasSpell("Malefic Grasp"))
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior(ret => Me.CurrentTarget, 35f)
-                // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
+                    )
                 );
 
         }
@@ -169,11 +157,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockAfflictionPvpCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-
-                // Movement.CreateEnsureMovementStoppedBehavior(30f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 // cancel an early drain soul if done to proc 1 soulshard
                 new Decorator(
@@ -274,10 +258,7 @@ namespace Singular.ClassSpecific.Warlock
                         // only a lowbie should hit this
                         Spell.Cast("Drain Life", ret => !SpellManager.HasSpell("Malefic Grasp"))
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior(ret => Me.CurrentTarget, 35f, 30f)
-                // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => 35f)
+                    )
                 );
 
         }

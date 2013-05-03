@@ -132,8 +132,7 @@ namespace Singular.ClassSpecific.Druid
                         new Decorator(
                             ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                             new PrioritySelector(
-                                Movement.CreateMoveToLosBehavior(),
-                                Movement.CreateFaceTargetBehavior(),
+                                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                                 Helpers.Common.CreateInterruptBehavior(),
                                 Spell.Buff("Moonfire"),
                                 Spell.Cast("Starfire", ret => StyxWoW.Me.HasAura("Fury of Stormrage")),
@@ -163,11 +162,7 @@ namespace Singular.ClassSpecific.Druid
                     new Decorator(
                         ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                         new PrioritySelector(
-                            Safers.EnsureTarget(),
-                            Movement.CreateMoveToLosBehavior(),
-                            Movement.CreateFaceTargetBehavior(),
-                            Helpers.Common.CreateDismount("Pulling"),
-                            Movement.CreateEnsureMovementStoppedBehavior(30f),
+                            Helpers.Common.EnsureReadyToAttackFromLongRange(),
                             Helpers.Common.CreateInterruptBehavior(),
                             Spell.Buff("Moonfire"),
                             Spell.Cast("Starfire", ret => StyxWoW.Me.HasAura("Fury of Stormrage")),

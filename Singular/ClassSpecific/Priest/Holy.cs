@@ -602,10 +602,7 @@ VoidShift               Void Shift
                 new Decorator(
                     ret => Me.Combat && !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                     new PrioritySelector(
-                        Safers.EnsureTarget(),
-                        Movement.CreateMoveToLosBehavior(),
-                        Movement.CreateFaceTargetBehavior(),
-                        Movement.CreateEnsureMovementStoppedBehavior(33f),
+                        Helpers.Common.EnsureReadyToAttackFromLongRange(),
                         Spell.WaitForCastOrChannel(),
 
                         new Decorator( 
@@ -621,9 +618,7 @@ VoidShift               Void Shift
                                 // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
                                 Spell.Cast("Smite")
                                 )
-                            ),
-
-                        Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
+                            )
                         )
                     )
                 );

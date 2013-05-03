@@ -182,10 +182,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(33),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -206,10 +203,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled())),
                         Spell.Cast("Lightning Bolt")
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 38f, 33f)
-                // Movement.CreateMoveToRangeAndStopBehavior(ret => Me.CurrentTarget, ret => NormalPullDistance)
+                    )
                 );
         }
 
@@ -238,10 +232,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown() && !HealerManager.Instance.TargetList.Any( t => !t.IsMe && t.IsAlive ),
                     new PrioritySelector(
 
-                        Safers.EnsureTarget(),
-                        Movement.CreateMoveToLosBehavior(),
-                        Movement.CreateFaceTargetBehavior(),
-                        Movement.CreateEnsureMovementStoppedBehavior(30),
+                        Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                         Spell.WaitForCastOrChannel(),
 
@@ -260,9 +251,7 @@ namespace Singular.ClassSpecific.Shaman
                                 Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled())),
                                 Spell.Cast("Lightning Bolt")
                                 )
-                            ),
-
-                        Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 36f, 30f)
+                            )
                         )
                     )
                 );

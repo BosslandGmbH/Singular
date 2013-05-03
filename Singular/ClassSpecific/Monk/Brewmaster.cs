@@ -43,11 +43,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateBrewmasterMonkPull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
                 Spell.CastOnGround("Dizzying Haze", ctx => Me.CurrentTarget.Location, ctx => Unit.UnfriendlyUnitsNearTarget(8).Count() > 1, true),
@@ -104,9 +100,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateBrewmasterMonkNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
 
@@ -134,10 +128,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateBrewmasterMonkPvpCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateInterruptBehavior(),
                 Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
@@ -160,9 +151,7 @@ namespace Singular.ClassSpecific.Monk
             var powerStrikeTimer = new WaitTimer(TimeSpan.FromSeconds(20));
 
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
 

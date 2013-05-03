@@ -37,14 +37,14 @@ namespace Singular.ClassSpecific.Hunter
         #region Manage Growl for Instances
 
         static Common()
-        {
+        {           
             // Lets hook this event so we can disable growl
-            SingularRoutine.OnWoWContextChanged += SingularRoutine_OnWoWContextChanged;
+            SingularRoutine.OnWoWContextChanged += Hunter_OnWoWContextChanged;
         }
 
-        // Disable pet growl in instances but enable it outside.
-        static void SingularRoutine_OnWoWContextChanged(object sender, WoWContextEventArg e)
+        static void Hunter_OnWoWContextChanged(object sender, WoWContextEventArg e)
         {
+            // Disable pet growl in instances but enable it outside.
             Lua.DoString(e.CurrentContext == WoWContext.Instances
                              ? "DisableSpellAutocast(GetSpellInfo(2649))"
                              : "EnableSpellAutocast(GetSpellInfo(2649))");
@@ -70,6 +70,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
                             new Sequence(
+                                new Action( ctx => Logger.Write( "/dismiss Pet #{0}")),
                                 new Action(ctx => SpellManager.Cast("Dismiss Pet")),
                                 new WaitContinue(1, ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )
@@ -127,7 +128,7 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        CreateMisdirectionBehavior( buffForPull: true)
+                        CreateMisdirectionBehavior()
                         
                         // , Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane))
                         )
@@ -309,9 +310,10 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new Decorator(
                 ret =>  !SingularSettings.Instance.DisablePetUsage 
-                    && !Me.GotAlivePet 
+                    && (!Me.GotAlivePet || Pet.PetNumber != PetWeWant)
                     && PetManager.PetSummonAfterDismountTimer.IsFinished 
-                    && !Me.Mounted && !Me.OnTaxi,
+                    && !Me.Mounted 
+                    && !Me.OnTaxi,
 
                 new PrioritySelector(
 
@@ -334,27 +336,42 @@ namespace Singular.ClassSpecific.Hunter
                         ),
 
                     // try Revive always (since sometimes pet is dead and we don't get ptr to it)
-                    new Throttle( 3, new Decorator(
+                    new Throttle(3, new Decorator(
                         ret => (Pet == null || !Pet.IsAlive) && (!Me.Combat || reviveInCombat),
                         new Sequence(
                             new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(reason:"to call pet"),
+                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to call pet"),
                                 new ActionAlwaysSucceed()
                                 ),
                             new Action(ret => Logger.WriteDebug("CallPet: attempting Revive Pet - cancast={0}", SpellManager.CanCast("Revive Pet"))),
-                            Spell.Cast("Revive Pet", mov => true, on => Me, req => true, cancel => Me.GotAlivePet ),
+                            Spell.Cast("Revive Pet", mov => true, on => Me, req => true, cancel => Me.GotAlivePet),
                             Helpers.Common.CreateWaitForLagDuration(),
                             new Wait(TimeSpan.FromMilliseconds(500), ret => Me.GotAlivePet, new ActionAlwaysSucceed())
                             )
                         )),
-
+#if HB_PET_NUMBER_FIXED
+                    // dismiss if we don't have correct Pet out
+                    new Decorator(
+                        ret => (Pet != null && Me.PetNumber != PetWeWant ),
+                        new Sequence(
+                            new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to dismiss pet"),
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Action(ret => Logger.WriteDebug("CallPet: attempting Dismiss Pet - cancast={0}", SpellManager.CanCast("Dismiss Pet"))),
+                            Spell.Cast("Dismiss Pet", mov => true, on => Me, req => true, cancel => false),
+                            Helpers.Common.CreateWaitForLagDuration(),
+                            new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
+                            )
+                        ),
+#endif
                     // lastly, we Call Pet
                     new Decorator(
                         ret => Pet == null,
                         new Sequence(
-                            new Action(ret => Logger.WriteDebug("CallPet: attempting Call Pet {0} - cancast={1}", HunterSettings.PetNumber, SpellManager.CanCast("Call Pet " + HunterSettings.PetNumber.ToString(), Pet))),
+                            new Action(ret => Logger.WriteDebug("CallPet: attempting Call Pet {0} - cancast={1}", PetWeWant, SpellManager.CanCast("Call Pet " + PetWeWant.ToString(), Pet))),
                             // new Action(ret => PetManager.CallPet(HunterSettings.PetNumber.ToString())),
-                            Spell.Cast(ret => "Call Pet " + HunterSettings.PetNumber.ToString(), on => Me),
+                            Spell.Cast(ret => "Call Pet " + PetWeWant.ToString(), on => Me),
 
                             Helpers.Common.CreateWaitForLagDuration(),
                             new WaitContinue(1, ret => Me.GotAlivePet, new ActionAlwaysSucceed())
@@ -372,6 +389,26 @@ namespace Singular.ClassSpecific.Hunter
                         )
                     )
                 );
+        }
+
+        private static int PetWeWant
+        {
+            get
+            {
+                int pet = HunterSettings.PetNumberSolo;
+
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                    pet = HunterSettings.PetNumberInstance;
+                else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds )
+                    pet = HunterSettings.PetNumberPvp;
+                else
+                    pet = HunterSettings.PetNumberSolo;
+
+                if (!SpellManager.HasSpell(string.Format("Call Pet {0}", pet.ToString())))
+                    pet = 1;
+
+                return pet;
+            }
         }
 
         #region Avoidance and Disengage
@@ -599,14 +636,14 @@ namespace Singular.ClassSpecific.Hunter
         /// <param name="buffForPull">applies to Instances only.  true = call is for pull behavior so allow use in instances; 
         /// false = disabled in instances</param>
         /// <returns></returns>
-        public static Composite CreateMisdirectionBehavior(bool buffForPull = false)
+        public static Composite CreateMisdirectionBehavior()
         {
             // Normal - misdirect onto Pet on cooldown
             if ( SingularRoutine.CurrentWoWContext == WoWContext.Normal )
             {
                 return new ThrottlePasses( 5,
                     new Decorator( 
-                        ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal && !Me.HasAura("Misdirection"),
+                        ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
                         new Sequence(
                             Spell.Cast("Misdirection", ctx => Me.Pet, req => Me.GotAlivePet && Pet.Distance < 100),
                             new ActionAlwaysFail()  // not on the GCD, so continue immediately
@@ -616,17 +653,20 @@ namespace Singular.ClassSpecific.Hunter
             }
 
             // Instances - misdirect only if pullCheck == true
-            if (buffForPull && SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && HunterSettings.UseMisdirectionInInstances )
             {
-                return new ThrottlePasses(5,
-                    new Decorator(
-                        ret => buffForPull && SingularRoutine.CurrentWoWContext == WoWContext.Instances && !Me.HasAura("Misdirection"),
-                        new Sequence(
-                            Spell.Cast("Misdirection", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 100)),
-                            new ActionAlwaysFail()  // not on the GCD, so continue immediately
+                if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.PullBuffs || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull)
+                {
+                    return new ThrottlePasses(5,
+                        new Decorator(
+                            ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
+                            new Sequence(
+                                Spell.Cast("Misdirection", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 100)),
+                                new ActionAlwaysFail()  // not on the GCD, so continue immediately
+                                )
                             )
-                        )
-                    );
+                        );
+                }
             }
 
             return new ActionAlwaysFail();

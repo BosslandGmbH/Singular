@@ -34,6 +34,42 @@ namespace Singular.Helpers
                     || unit.CreatureType == WoWCreatureType.Demon;
         }
 
+        public static bool IsMelee(this WoWUnit unit)
+        {
+            if (unit.Class == WoWClass.DeathKnight
+                || unit.Class == WoWClass.Paladin
+                || unit.Class == WoWClass.Rogue
+                || unit.Class == WoWClass.Warrior)
+                return true;
+
+            if (!unit.IsMe)
+            {
+                if (unit.Class == WoWClass.Monk)
+                    return true;
+
+                if (unit.Class == WoWClass.Druid && unit.HasAura("Cat Form"))
+                    return true;
+
+                if (unit.Class == WoWClass.Shaman && unit.GetAllAuras().Any(a => a.Name == "Unleashed Rage" && a.CreatorGuid == unit.Guid))
+                    return true;
+
+                return false;
+            }
+
+            switch (StyxWoW.Me.Specialization)
+            {
+                case WoWSpec.DruidFeral:
+                case WoWSpec.DruidGuardian:
+                case WoWSpec.MonkBrewmaster:
+                case WoWSpec.MonkWindwalker:
+                case WoWSpec.ShamanEnhancement:
+                    return true;
+            }
+
+            return false;
+        }
+
+
         /// <summary>
         /// List of WoWPlayer in your Group. Deals with Party / Raid in a list independent manner and does not restrict distance
         /// </summary>

@@ -47,14 +47,14 @@ namespace Singular.ClassSpecific.Warrior
 
         public static string SelectedShout
         {
-            get { return SingularSettings.Instance.Warrior().Shout.ToString().CamelToSpaced().Substring(1); }
+            get { return WarriorSettings.Shout.ToString().CamelToSpaced().Substring(1); }
         }
 
         public static WarriorStance  SelectedStance
         {
             get
             {
-                var stance = SingularSettings.Instance.Warrior().Stance;
+                var stance = WarriorSettings.Stance;
                 if (stance == WarriorStance.Auto)
                 {
                     switch (Me.Specialization)

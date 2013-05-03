@@ -15,11 +15,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateLowbieCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(25f),
+                Helpers.Common.EnsureReadyToAttackFromMediumRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -38,9 +34,7 @@ namespace Singular.ClassSpecific.Hunter
                         Spell.Cast("Arcane Shot"),
                         Spell.Cast("Steady Shot")
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 30f, 25f)
+                    )
                 );
         }
     }

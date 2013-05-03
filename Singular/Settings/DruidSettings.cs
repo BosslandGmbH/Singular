@@ -157,26 +157,49 @@ namespace Singular.Settings
                         [Description("Healing Touch will be used at this value.")]
                         public int NonRestoHealingTouch { get; set; }
 
-                        [Setting]
-                        [DefaultValue(40)]
-                        [Category("Common")]
-                        [DisplayName("Rejuvenation Health (Balance and Feral)")]
-                        [Description("Rejuvenation will be used at this value")]
-                        public int NonRestoRejuvenation { get; set; }
                 */
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Self Healing")]
+        [DisplayName("Rejuvenation")]
+        [Description("Health Percent to cast for self-heal when Solo")]
+        public int SelfRejuvenationHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Self Healing")]
+        [DisplayName("Healing Touch")]
+        [Description("Health Percent to cast for self-heal when Solo")]
+        public int SelfHealingTouchHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(35)]
+        [Category("Self Healing")]
+        [DisplayName("Renewal")]
+        [Description("Health Percent to cast for self-heal when Solo")]
+        public int SelfRenewalHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(20)]
+        [Category("Self Healing")]
+        [DisplayName("Ancestral Swiftness")]
+        [Description("Health Percent to cast for self-heal when Solo")]
+        public int SelfNaturesSwiftnessHealth { get; set; } 
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Self Healing")]
+        [DisplayName("Cenarion Ward")]
+        [Description("Health Percent to cast for self-heal when Solo")]
+        public int SelfCenarionWardHealth { get; set; }
+
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Use Combat Rez")]
         [Description("If set to true, it will rez while in combat.")]
-        public bool UseRebirth { get; set; }
-
-        [Setting]
-        [DefaultValue(35)]
-        [Category("Common")]
-        [DisplayName("Renewal Health")]
-        [Description("Renewal will be used at this value. ")]
-        public int RenewalHealth { get; set; }
+        public bool UseRebirthHealth { get; set; }
 
         #endregion
 
@@ -188,6 +211,21 @@ namespace Singular.Settings
         [DisplayName("Allow Kiting")]
         [Description("Allow Kiting mob to minimize damage taken")]
         public bool AllowKiting { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Balance")]
+        [DisplayName("Moon Beast Rejuvenation")]
+        [Description("Health Percent to cast for Moon Beast-heal when Solo")]
+        public int MoonBeastRejuvenationHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Balance")]
+        [DisplayName("Moon Beast Healing Touch")]
+        [Description("Health Percent to cast for Moon Beast-heal when Solo")]
+        public int MoonBeastHealingTouch { get; set; }
+
 
         #endregion
 
@@ -326,6 +364,15 @@ namespace Singular.Settings
         [DisplayName("Instance Spell Priority")]
         [Description("1:Noxxic, 2:Elitist Jerks")]
         public int FeralSpellPriority { get; set; }
+
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Feral")]
+        [DisplayName("Pred Swift Healing Touch")]
+        [Description("Health Percent to cast for Predatory Swiftness heal when Solo")]
+        public int PredSwiftnessHealingTouchHealth { get; set; }
+
 
 /*
         [Setting]

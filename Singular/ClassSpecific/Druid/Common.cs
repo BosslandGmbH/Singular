@@ -194,27 +194,31 @@ namespace Singular.ClassSpecific.Druid
 
                 // keep rejuv up 
                 Spell.Cast("Rejuvenation", on => Me, 
-                    ret => Me.GetPredictedHealthPercent(true) < 95
-                        && Me.HasAuraExpired("Rejuvenation", 1) // && Me.HealthPercent < 95
-                        && (Me.Shapeshift == ShapeshiftForm.Normal || (Me.Specialization == WoWSpec.DruidGuardian && Me.ActiveAuras.ContainsKey("Heart of the Wild")))),
+                    ret => {
+                        if (!Me.HasAuraExpired("Rejuvenation", 1))
+                            return false;
+                        if ( Me.Specialization == WoWSpec.DruidGuardian && Me.HasAura("Heart of the Wild") && Me.HealthPercent < 95 )
+                            return true;
+                        return !Group.MeIsTank && Me.GetPredictedHealthPercent(true) < DruidSettings.SelfRejuvenationHealth ;
+                    }),
 
-                Spell.Cast("Healing Touch", on => Me, ret => Me.HealthPercent <= 80 && Me.ActiveAuras.ContainsKey("Predatory Swiftness")),
-                Spell.Cast("Healing Touch", on => Me, ret => Me.HealthPercent <= 95 && Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalSeconds.Between(1, 3)),
+                Spell.Cast("Healing Touch", on => Me, ret => Me.HealthPercent <= DruidSettings.PredSwiftnessHealingTouchHealth && Me.ActiveAuras.ContainsKey("Predatory Swiftness")),
+                Spell.Cast("Healing Touch", on => Me, ret => Me.HealthPercent <= 95 && Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds.Between(500, 2000)),
 
-                Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < DruidSettings.RenewalHealth ),
-                Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < 85 || Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet)) > 1),
+                Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < DruidSettings.SelfRenewalHealth ),
+                Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < DruidSettings.SelfCenarionWardHealth),
 
-                CreateNaturesSwiftnessHeal( ret => Me.HealthPercent < 60),
+                CreateNaturesSwiftnessHeal( ret => Me.HealthPercent < DruidSettings.SelfNaturesSwiftnessHealth ),
 
-                Spell.Cast("Disorienting Roar", ret => Me.HealthPercent <= 25 && Unit.NearbyUnfriendlyUnits.Any(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet))),
-                Spell.Cast("Might of Ursoc", ret => Me.HealthPercent < 25),
+                Spell.Cast("Disorienting Roar", ret => Me.HealthPercent <= DruidSettings.SelfNaturesSwiftnessHealth && Unit.NearbyUnfriendlyUnits.Any(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet))),
+                Spell.Cast("Might of Ursoc", ret => Me.HealthPercent < DruidSettings.SelfNaturesSwiftnessHealth),
 
                 // heal out of form at this point (try to Barkskin at least)
                 new Throttle( Spell.BuffSelf( "Barkskin", ret => Me.HealthPercent < DruidSettings.Barkskin)),
 
                 // for a lowbie Feral or a Bear not serving as Tank in a group
                 new Decorator(
-                    ret => Me.HealthPercent < 40 && !SpellManager.HasSpell("Predatory Swiftness") && !Group.MeIsTank && SingularRoutine.CurrentWoWContext != WoWContext.Instances,
+                    ret => Me.HealthPercent < DruidSettings.SelfHealingTouchHealth && !SpellManager.HasSpell("Predatory Swiftness") && !Group.MeIsTank && SingularRoutine.CurrentWoWContext != WoWContext.Instances,
                     new PrioritySelector(
                         Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation",1)),
                         Spell.Cast("Healing Touch", on => Me)
@@ -290,7 +294,7 @@ namespace Singular.ClassSpecific.Druid
 
         public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
         {
-            if (!DruidSettings.UseRebirth)
+            if (!DruidSettings.UseRebirthHealth)
                 return new PrioritySelector();
 
             if (onUnit == null)

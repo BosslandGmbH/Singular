@@ -62,10 +62,7 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                     new PrioritySelector(
-                        Safers.EnsureTarget(),
-                        Movement.CreateMoveToLosBehavior(),
-                        Movement.CreateFaceTargetBehavior(),
-                        Helpers.Common.CreateDismount("Combat"),
+                        Helpers.Common.EnsureReadyToAttackFromMelee(),
                         Spell.WaitForCastOrChannel(),
 
                         new Decorator( 
@@ -94,10 +91,7 @@ namespace Singular.ClassSpecific.Paladin
                 new Decorator(
                     ret => !StyxWoW.Me.GroupInfo.IsInParty && !StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
-                        Movement.CreateMoveToLosBehavior(),
-                        Movement.CreateFaceTargetBehavior(),
-                        Helpers.Common.CreateDismount("Pulling"),
-                        Movement.CreateEnsureMovementStoppedWithinMelee(),
+                        Helpers.Common.EnsureReadyToAttackFromMelee(),
                         Spell.Cast("Judgment"),
                         Helpers.Common.CreateAutoAttack(true),
                         Movement.CreateMoveToMeleeBehavior(true)
@@ -183,9 +177,7 @@ namespace Singular.ClassSpecific.Paladin
                             new Decorator(
                                 ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
                                 new PrioritySelector(
-                                    Movement.CreateMoveToLosBehavior(),
-                                    Movement.CreateFaceTargetBehavior(),
-                                    Helpers.Common.CreateAutoAttack(true),
+                                    Helpers.Common.EnsureReadyToAttackFromMelee(),
                                     Helpers.Common.CreateInterruptBehavior(),
                                     Spell.Buff("Judgment"),
                                     Spell.Cast("Hammer of Wrath"),

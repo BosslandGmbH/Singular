@@ -14,11 +14,7 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreateLowbiePriestCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(23f),
+                Helpers.Common.EnsureReadyToAttackFromMediumRange(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
 
@@ -26,8 +22,7 @@ namespace Singular.ClassSpecific.Priest
                 Spell.Cast("Flash Heal", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= 40),
 
                 Spell.Buff("Shadow Word: Pain"),
-                Spell.Cast("Smite"),
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 28f, 23f)
+                Spell.Cast("Smite")
                 );
         }
     }

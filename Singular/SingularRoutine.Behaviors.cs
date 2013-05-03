@@ -482,8 +482,8 @@ namespace Singular
 
     public class CallWatch : PrioritySelector
     {
-        public static DateTime LastAll { get; set; }
-        public static ulong CountAll { get; set; }
+        public static DateTime LastCall { get; set; }
+        public static ulong CountCall { get; set; }
         public static double WarnTime { get; set; }
 
         public string Name { get; set; }
@@ -500,14 +500,19 @@ namespace Singular
             {
                 // reset time on Start
                 if (arg.Event == SingularBotEvent.BotStart)
-                    LastAll = DateTime.Now;
+                    LastCall = DateTime.Now;
                 else if (arg.Event == SingularBotEvent.BotStop)
                 {
                     if (SingularSettings.Debug)
                     {
                         DateTime rightNow = DateTime.Now;
-                        if ((rightNow - LastAll).TotalSeconds > WarnTime && LastAll != DateTime.MinValue)
-                            Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", (rightNow - LastAll).TotalSeconds);
+                        if ((rightNow - LastCall).TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
+                        {
+                            if ( SingularSettings.Debug)
+                                Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", (rightNow - LastCall).TotalSeconds);
+                            else
+                                Logger.WriteFile("warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", (rightNow - LastCall).TotalSeconds);
+                        }
                     }
                 }
             };
@@ -522,23 +527,23 @@ namespace Singular
                 WarnTime = 5;
 
             Name = name;
-            LastAll = DateTime.MinValue;
+            LastCall = DateTime.MinValue;
         }
 
         protected override IEnumerable<RunStatus> Execute(object context)
         {
-            CountAll++;
+            CountCall++;
 
             if (SingularSettings.Debug)
             {
                 DateTime rightNow = DateTime.Now;
-                if ((rightNow - LastAll).TotalSeconds > WarnTime && LastAll != DateTime.MinValue )
-                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", (rightNow - LastAll).TotalSeconds, Name);
+                if ((rightNow - LastCall).TotalSeconds > WarnTime && LastCall != DateTime.MinValue )
+                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", (rightNow - LastCall).TotalSeconds, Name);
             }
 
             IEnumerable<RunStatus> ret = base.Execute(context);
 
-            LastAll = DateTime.Now;
+            LastCall = DateTime.Now;
             return ret;
         }
     }

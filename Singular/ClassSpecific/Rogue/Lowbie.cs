@@ -18,9 +18,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateLowbieRogueCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
                 Spell.Cast("Eviscerate", ret => StyxWoW.Me.ComboPoints == 5 || StyxWoW.Me.CurrentTarget.HealthPercent <= 40 && StyxWoW.Me.ComboPoints >= 2),
@@ -32,9 +30,9 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateLowbieRoguePull()
         {
             return new PrioritySelector(
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
+                Safers.EnsureTarget(),
+                Movement.CreateMoveBehindTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

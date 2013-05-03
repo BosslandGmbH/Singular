@@ -9,6 +9,15 @@ using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 
 namespace Singular.Settings
 {
+    public enum DeathKnightPresence
+    {
+        None = 0,
+        Auto,
+        Blood,
+        Frost,
+        Unholy
+    }
+
     internal class DeathKnightSettings : Styx.Helpers.Settings
     {
         public DeathKnightSettings()
@@ -17,6 +26,14 @@ namespace Singular.Settings
         }
 
         #region Common
+
+        [Setting]
+        [DefaultValue(DeathKnightPresence.Auto)]
+        [Category("Common")]
+        [DisplayName("Presence")]
+        [Description("Auto: best presence for Spec/Role/Context, None: user controlled")]
+        public DeathKnightPresence Presence { get; set; }
+
         [Setting]
         [DefaultValue(false)]
         [Category("Common")]
@@ -28,12 +45,6 @@ namespace Singular.Settings
         [Category("Common")]
         [DisplayName("Path of Frost")]
         public bool UsePathOfFrost { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Use Aoe In Instance [DPS]")]
-        public bool UseAoeInInstance { get; set; }
 
         [Setting]
         [DefaultValue(60)]

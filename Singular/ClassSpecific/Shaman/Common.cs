@@ -148,30 +148,35 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.BuffSelf("Shamanistic Rage", ret => Me.HealthPercent < 70 || Me.ManaPercent < 70 || Common.StressfulSituation),
 
                 // hex someone if they are not current target, attacking us, and 12 yds or more away
-                new PrioritySelector(
-                    ctx => Unit.NearbyUnfriendlyUnits
-                        .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
-                                && Me.CurrentTargetGuid != u.Guid
-                                && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                                && !u.IsCrowdControlled()
-                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
-                        .OrderByDescending(u => u.Distance)
-                        .FirstOrDefault(),
-                    Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
-                        ),
+                new Decorator(
+                    req => Me.Specialization != WoWSpec.ShamanEnhancement || !ShamanSettings.AvoidMaelstromDamage,
+                    new PrioritySelector(
+                        new PrioritySelector(
+                            ctx => Unit.NearbyUnfriendlyUnits
+                                .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
+                                        && Me.CurrentTargetGuid != u.Guid
+                                        && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                        && !u.IsCrowdControlled()
+                                        && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                .OrderByDescending(u => u.Distance)
+                                .FirstOrDefault(),
+                            Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
+                            ),
 
-                // bind someone if we can
-                new PrioritySelector(
-                    ctx => Unit.NearbyUnfriendlyUnits
-                        .Where(u => u.CreatureType == WoWCreatureType.Elemental
-                                && Me.CurrentTargetGuid != u.Guid
-                                && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                                && !u.IsCrowdControlled()
-                                && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
-                        .OrderByDescending(u => u.Distance)
-                        .FirstOrDefault(),
-                    Spell.Cast("Bind Elemental", onUnit => (WoWUnit)onUnit)
-                        ),
+                        // bind someone if we can
+                        new PrioritySelector(
+                            ctx => Unit.NearbyUnfriendlyUnits
+                                .Where(u => u.CreatureType == WoWCreatureType.Elemental
+                                        && Me.CurrentTargetGuid != u.Guid
+                                        && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                        && !u.IsCrowdControlled()
+                                        && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                .OrderByDescending(u => u.Distance)
+                                .FirstOrDefault(),
+                            Spell.Cast("Bind Elemental", onUnit => (WoWUnit)onUnit)
+                            )
+                        )
+                    ),
 
                 new Decorator(
                     ret => ShamanSettings.UseBloodlust
@@ -413,14 +418,17 @@ namespace Singular.ClassSpecific.Shaman
 
                         new PrioritySelector(
 
-                            Spell.BuffSelf("Ancestral Guidance", ret => Me.HealthPercent < (Common.StressfulSituation ? 60 : 40)),
+                            new Sequence(
+                                Spell.BuffSelf("Ancestral Guidance", ret => Me.HealthPercent < (Common.StressfulSituation ? 60 : 40)),
+                                new ActionAlwaysFail()  // not on GCD
+                                ),
 
                             // save myself if possible
                             new Decorator(
                                 ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
-                                    && Me.HealthPercent < 25,
+                                    && Me.HealthPercent < ShamanSettings.SelfAncestralSwiftnessHeal,
                                 new Sequence(
-                                    Spell.BuffSelf("Ancestral Swiftness", ret => Me.GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness),
+                                    Spell.BuffSelf("Ancestral Swiftness"),
                                     new Sequence(
                                         Spell.Cast("Greater Healing Wave", ret => Me),
                                         Spell.Cast("Healing Surge", ret => Me)
@@ -444,20 +452,19 @@ namespace Singular.ClassSpecific.Shaman
                                             && Unit.GroupMembers.Any(
                                                 p => p.HealthPercent < ShamanSettings.HealingTideTotemPercent
                                                     && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
-                                    Spell.BuffSelf(
-                                        "Healing Stream Totem",
+                                    Spell.BuffSelf( "Healing Stream Totem",
                                         ret => !Me.IsMoving
                                             && !Totems.Exist(WoWTotemType.Water)
                                             && Unit.GroupMembers.Any(
-                                                p => p.HealthPercent < ShamanSettings.HealHealingStreamTotem
+                                                p => p.HealthPercent < ShamanSettings.SelfHealingStreamTotem 
                                                     && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
 
                                     // use actual health for following, not predicted as its a low health value
-            // .. and its okay for multiple heals at that point
+                                    // .. and its okay for multiple heals at that point
                                     Spell.Cast(
                                         "Healing Surge",
                                         ret => Me,
-                                        ret => Me.HealthPercent <= 40)
+                                        ret => Me.HealthPercent <= ShamanSettings.SelfHealingSurge)
                                     )
                                 )
                             )
@@ -478,14 +485,21 @@ namespace Singular.ClassSpecific.Shaman
                     && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
                     && Me.IsAlive
                     && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport
+                    && !Me.HasAura("Ghost Wolf")
                     && SpellManager.HasSpell("Ghost Wolf")
                     && BotPoi.Current != null
                     && BotPoi.Current.Type != PoiType.None && BotPoi.Current.Type != PoiType.Hotspot
                     && BotPoi.Current.Location.Distance(Me.Location) > 10
-                    && (BotPoi.Current.Location.Distance(Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance || (Me.IsIndoors && !Mount.CanMount()))
+                    && (BotPoi.Current.Location.Distance(Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance || (Me.IsIndoors && !Mount.CanMount()) || (Me.GetSkill(SkillLine.Riding).CurrentValue == 0))
                     && !Me.IsAboveTheGround(),
                 new Sequence(
-                    new Action(r => Logger.WriteDebug("sham-move-buff: poitype={0} poidist={1:F1}", BotPoi.Current.Type, BotPoi.Current.Location.Distance(Me.Location))),
+                    new Action(r => Logger.WriteDebug("ShamanMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount{3} riding={4}", 
+                        BotPoi.Current.Type, 
+                        BotPoi.Current.Location.Distance(Me.Location),
+                        Me.IsIndoors.ToYN(),
+                        Mount.CanMount().ToYN(),
+                        Me.GetSkill(SkillLine.Riding).CurrentValue
+                        )),
                     Spell.BuffSelf("Ghost Wolf"),
                     Helpers.Common.CreateWaitForLagDuration()
                     )

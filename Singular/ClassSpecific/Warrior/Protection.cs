@@ -32,11 +32,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateProtectionNormalPull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Helpers.Common.CreateDismount("Pulling"),
@@ -138,9 +134,8 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 ctx => TankManager.Instance.FirstUnit ?? Me.CurrentTarget,
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(),

@@ -37,11 +37,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockDestructionNormalPull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
@@ -51,9 +47,7 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
                         Spell.Cast("Incinerate")
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior(ret => Me.CurrentTarget, 38f, 33f)
+                    )
                 );
         }
 
@@ -61,10 +55,7 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateWarlockDestructionNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCast(true),
                 Helpers.Common.CreateAutoAttack(true),
@@ -99,9 +90,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         Spell.Cast("Shadow Bolt")
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior(ret => Me.CurrentTarget, 38f, 33f)
+                    )
                 );
 
         }

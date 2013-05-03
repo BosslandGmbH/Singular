@@ -37,11 +37,7 @@ namespace Singular.ClassSpecific.Warlock
             Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), null, null);
 
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCast(true),
 
@@ -164,9 +160,7 @@ namespace Singular.ClassSpecific.Warlock
 
             #endregion
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior(toUnit => Me.CurrentTarget, 38f, 33f)
+                    )
                 );
         }
 

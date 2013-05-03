@@ -30,11 +30,7 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateFuryNormalPull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 Spell.WaitForCast(),
@@ -122,13 +118,7 @@ namespace Singular.ClassSpecific.Warrior
         {
             _slows = new[] { "Hamstring", "Piercing Howl", "Crippling Poison", "Hand of Freedom", "Infected Wounds" };
             return new PrioritySelector(
-                // Ensure Target
-                Safers.EnsureTarget(),
-                // LOS check
-                Movement.CreateMoveToLosBehavior(),
-                // Face Target
-                Movement.CreateFaceTargetBehavior(),
-                // Auto Attack
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
                 new Decorator(

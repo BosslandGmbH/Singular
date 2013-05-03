@@ -19,7 +19,7 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Common")]
         [DisplayName("Use Sprint")]
-        [Description("Sprint to close destinations or when unable to mount")]
+        [Description("Sprint to close to target during Pull or Combat")]
         public bool UseSprint { get; set; }
 
         [Setting]

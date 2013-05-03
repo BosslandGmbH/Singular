@@ -44,11 +44,7 @@ namespace Singular.ClassSpecific.Mage
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Helpers.Common.CreateAutoAttack(true),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Spell.WaitForCast(true),
 
                 new Decorator(
@@ -70,10 +66,7 @@ namespace Singular.ClassSpecific.Mage
             return new PrioritySelector(
                  Safers.EnsureTarget(),
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
-                 Movement.CreateMoveToLosBehavior(),
-                 Movement.CreateFaceTargetBehavior(),
-                 // Movement.CreateEnsureMovementStoppedBehavior(35f),
-
+                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
                  Spell.WaitForCast(true),
 
                  new Decorator(
@@ -170,10 +163,7 @@ namespace Singular.ClassSpecific.Mage
             return new PrioritySelector(
                  Safers.EnsureTarget(),
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
-                 Movement.CreateMoveToLosBehavior(),
-                 Movement.CreateFaceTargetBehavior(),
-                 Helpers.Common.CreateDismount("Pulling"),
-                 Movement.CreateEnsureMovementStoppedBehavior(33f),
+                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
                  Spell.WaitForCast(true),
 
                  new Decorator(
@@ -231,11 +221,7 @@ namespace Singular.ClassSpecific.Mage
         public static Composite CreateMageFrostInstanceCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(25f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Spell.WaitForCast(true),
 
                 new Decorator(

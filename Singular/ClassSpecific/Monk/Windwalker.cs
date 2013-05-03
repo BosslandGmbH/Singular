@@ -29,11 +29,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkPullNormal()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(2f),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(true),
@@ -92,9 +88,7 @@ namespace Singular.ClassSpecific.Monk
                 new Decorator( 
                     ret => Me.CurrentTarget.IsAboveTheGround(), 
                     Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
-                    ),
-
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 
@@ -130,9 +124,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkCombatNormal()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator( 
@@ -205,9 +197,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkCombatBattlegrounds()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(
@@ -292,11 +282,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkPullInstances()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCast(true),

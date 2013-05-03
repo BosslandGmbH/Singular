@@ -84,11 +84,7 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreatePriestShadowNormalPull()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Spell.WaitForCast(true),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -103,8 +99,7 @@ namespace Singular.ClassSpecific.Priest
 
                         // Spell.Cast("Holy Fire", ctx => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow))
                         )
-                    ),
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
+                    )
                 );
         }
 
@@ -112,10 +107,7 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreatePriestShadowNormalCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                // Movement.CreateEnsureMovementStoppedBehavior(35f),
-                Movement.CreateFaceTargetBehavior(),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Spell.WaitForCast(true),
 
                 new Decorator(
@@ -187,9 +179,7 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Buff("Vampiric Touch"),
                                 Spell.Buff("Shadow Word: Pain", true, ret => Me.CurrentTarget.Elite || Me.CurrentTarget.HealthPercent > 40),
                                 Spell.Cast("Mind Flay", ret => Me.ManaPercent >= PriestSettings.MindFlayMana),
-                                Spell.Cast("Mind Blast"),
-
-                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+                                Spell.Cast("Mind Blast")
                                 )
                             ),
 
@@ -214,9 +204,7 @@ namespace Singular.ClassSpecific.Priest
                             Spell.Cast("Mind Flay")
                             )
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
+                    )
                 );
         }
 
@@ -230,11 +218,7 @@ namespace Singular.ClassSpecific.Priest
             Kite.CreateKitingBehavior(Common.CreateSlowMeleeBehavior(), Common.CreatePriestMovementBuff(), null);
 
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Spell.WaitForCast(true),
 
                 new Decorator(
@@ -325,8 +309,7 @@ namespace Singular.ClassSpecific.Priest
                                 return true;
                             })
                         )
-                    ),
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
+                    )
                 );
         }
 
@@ -347,11 +330,7 @@ namespace Singular.ClassSpecific.Priest
         public static Composite CreatePriestShadowInstancePullAndCombat()
         {
             return new PrioritySelector(
-                Safers.EnsureTarget(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateEnsureMovementStoppedBehavior(33f),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Combat"),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Spell.WaitForCast(true),
 
                 new Decorator(
@@ -407,9 +386,7 @@ namespace Singular.ClassSpecific.Priest
                         Common.CreateShadowfiendBehavior(),
                         Spell.Cast("Mind Flay", ret => Me.ManaPercent >= PriestSettings.MindFlayMana)
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 38f, 33f)
+                    )
                 );
         }
 

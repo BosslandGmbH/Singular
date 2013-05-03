@@ -26,13 +26,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
 
-                Safers.EnsureTarget(),
-
-                //Common.CreateHunterBackPedal(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(30f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -110,13 +104,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
 
-                Safers.EnsureTarget(),
-
-                //Common.CreateHunterBackPedal(),
-                Movement.CreateMoveToLosBehavior(),
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedBehavior(30f),
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -161,9 +149,7 @@ namespace Singular.ClassSpecific.Hunter
                         Spell.Cast("Cobra Shot"),
                         Common.CastSteadyShot(on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot"))
                         )
-                    ),
-
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+                    )
                 );
         }
 

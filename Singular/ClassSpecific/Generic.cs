@@ -86,6 +86,8 @@ namespace Singular.ClassSpecific
         // [Behavior(BehaviorType.Combat, priority: 998)]
         public static Composite CreateRacialBehaviour()
         {
+            int mobRangeForRacials = StyxWoW.Me.IsMelee() ? 5 : 40;
+
             return new Throttle( TimeSpan.FromMilliseconds(250),
                 new Decorator(
                     ret => SingularSettings.Instance.UseRacials,
@@ -102,17 +104,14 @@ namespace Singular.ClassSpecific
                                     return true;
                                 return false;
                                 },
-                            Spell.BuffSelf("Stoneform")),
-                        new Decorator(
-                            ret => SpellManager.CanCast("Escape Artist") && Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared),
-                            Spell.BuffSelf("Escape Artist")),
-                        new Decorator(
-                            ret => SpellManager.CanCast("Gift of the Naaru") && StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP,
-                            Spell.Cast("Gift of the Naaru")),
+                            Spell.BuffSelf("Stoneform")
+                            ),
+                        Spell.BuffSelf("Escape Artist", req => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared)),
+                        Spell.BuffSelf("Gift of the Naaru", req => StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP),
                         Spell.BuffSelf("Shadowmeld", ret => NeedShadowmeld()),
-                        Spell.BuffSelf("Lifeblood", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAnyAura("Lifeblood", "Berserking")),
-                        Spell.BuffSelf("Berserking", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAura("Lifeblood")),
-                        Spell.BuffSelf("Blood Fury")
+                        Spell.BuffSelf("Lifeblood", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAnyAura("Lifeblood", "Berserking") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.SpellDistance() <= mobRangeForRacials),
+                        Spell.BuffSelf("Berserking", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAura("Lifeblood") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.SpellDistance() <= mobRangeForRacials),
+                        Spell.BuffSelf("Blood Fury", ret => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.SpellDistance() <= mobRangeForRacials)
                         )
                     )
                 );

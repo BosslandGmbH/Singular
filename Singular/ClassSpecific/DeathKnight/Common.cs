@@ -43,6 +43,11 @@ namespace Singular.ClassSpecific.DeathKnight
             get { return Me.Minions.Any(u => u.Entry == Ghoul); }
         }
 
+        internal static void DestroyGhoulMinion()
+        {
+            Lua.DoString("DestroyTotem(1)");
+        }
+
         internal static bool ShouldSpreadDiseases
         {
             get
@@ -84,10 +89,8 @@ namespace Singular.ClassSpecific.DeathKnight
         public static Composite CreateDeathKnightNormalAndPvPPull()
         {
             return new PrioritySelector(
-                Movement.CreateMoveToLosBehavior(), 
-                Movement.CreateFaceTargetBehavior(),
-                Helpers.Common.CreateDismount("Pulling"),
-                Movement.CreateEnsureMovementStoppedWithinMelee(),
+
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
@@ -112,16 +115,18 @@ namespace Singular.ClassSpecific.DeathKnight
         [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, WoWSpec.DeathKnightFrost, WoWContext.Instances)]
         public static Composite CreateDeathKnightFrostAndUnholyInstancePull()
         {
-            return
-                new PrioritySelector(
-                    Movement.CreateMoveToLosBehavior(),
-                    Movement.CreateFaceTargetBehavior(),
-                    Helpers.Common.CreateDismount("Pulling"),
-                    Movement.CreateEnsureMovementStoppedWithinMelee(),
-                    Spell.Cast("Howling Blast"),
-                    Spell.Cast("Icy Touch"),
-                    Movement.CreateMoveToMeleeBehavior(true)
-                    );
+            return new PrioritySelector(
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Spell.WaitForCastOrChannel(),
+                new Decorator( 
+                    ret => !Spell.IsGlobalCooldown(),
+                        new PrioritySelector(
+                        Spell.Cast("Howling Blast"),
+                        Spell.Cast("Icy Touch")
+                        )
+                    ),
+                Movement.CreateMoveToMeleeBehavior(true)
+                );
         }
 
         #endregion
@@ -300,12 +305,49 @@ namespace Singular.ClassSpecific.DeathKnight
         /// <returns></returns>
         public static Composite CreateDeathKnightPresenceBehavior()
         {
-            return new PrioritySelector(
-                Spell.BuffSelf("Frost Presence", ret => TalentManager.CurrentSpec == (WoWSpec)0),
-                Spell.BuffSelf("Frost Presence", ret => TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost),
-                Spell.BuffSelf("Blood Presence", ret => TalentManager.CurrentSpec == WoWSpec.DeathKnightBlood),
-                Spell.BuffSelf("Unholy Presence", ret => TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy)
-                );
+            return Spell.BuffSelf(sp => SelectedPresence.ToString() + " Presence", req => SelectedPresence != DeathKnightPresence.None);
+        }
+
+        /// <summary>
+        /// returns the users selected Presence after validating.  return is guarranteed
+        /// to be valid for casting if != .None
+        /// </summary>
+        public static DeathKnightPresence SelectedPresence
+        {
+            get
+            {
+                var Presence = Settings.Presence;
+                if ( Presence == DeathKnightPresence.None)
+                    return Presence;
+
+                if (Presence == DeathKnightPresence.Auto)
+                {
+                    switch (Me.Specialization)
+                    {
+                        case WoWSpec.DeathKnightBlood:
+                            Presence = DeathKnightPresence.Blood;
+                            break;
+                        default:
+                        case WoWSpec.DeathKnightFrost:
+                            Presence = DeathKnightPresence.Frost;
+                            break;
+                        case WoWSpec.DeathKnightUnholy:
+                            Presence = DeathKnightPresence.Unholy ;
+                            break;
+                    }
+                }
+
+                if (!SpellManager.HasSpell(Presence.ToString() + " Presence"))
+                {
+                    Presence = DeathKnightPresence.Frost;
+                    if (!SpellManager.HasSpell(Presence.ToString() + " Presence"))
+                    {
+                        Presence = DeathKnightPresence.None;
+                    }
+                }
+
+                return Presence;
+            }
         }
 
         #endregion 
@@ -379,8 +421,8 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Decorator(
                         ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentTarget.HasAuraExpired("Frost Fever"),
                         new PrioritySelector(
-                            Spell.Cast("Howling Blast", ret => Me.Specialization == WoWSpec.DeathKnightFrost),
-                            Spell.Cast("Icy Touch", ret => Me.Specialization != WoWSpec.DeathKnightFrost)
+                            Spell.Cast("Howling Blast", ret => Spell.UseAOE && Me.Specialization == WoWSpec.DeathKnightFrost),
+                            Spell.Cast("Icy Touch", ret => !Spell.UseAOE || Me.Specialization != WoWSpec.DeathKnightFrost)
                             )
                         ),
 

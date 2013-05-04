@@ -47,7 +47,7 @@ namespace Singular.Settings
         #region Category: Common
 
         [Setting]
-        [DefaultValue(false)]
+        [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Use Disengage")]
         [Description("Will be used in battlegrounds no matter what this is set")]

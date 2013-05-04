@@ -310,7 +310,8 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new Decorator(
                 ret =>  !SingularSettings.Instance.DisablePetUsage 
-                    && (!Me.GotAlivePet || Pet.PetNumber != PetWeWant)
+                    // && (!Me.GotAlivePet || Pet.PetNumber != PetWeWant)
+                    && !Me.GotAlivePet 
                     && PetManager.PetSummonAfterDismountTimer.IsFinished 
                     && !Me.Mounted 
                     && !Me.OnTaxi,
@@ -320,7 +321,15 @@ namespace Singular.ClassSpecific.Hunter
                     Spell.WaitForCast(),
 
                     new Action( r => {
-                        Logger.WriteDebug("CreateHunterCallPetBehavior({0}):  {1}", reviveInCombat, Pet == null ? "no pet currently" : "pet is dead");
+                        string line = string.Format("CreateHunterCallPetBehavior({0}):  ", reviveInCombat); 
+                        if ( Pet == null )
+                            line += "no pet currently";
+                        else if ( !Pet.IsAlive )
+                            line += "pet is dead";
+                        else 
+                            line += string.Format( "have pet {0} but want pet {1}", Pet.PetNumber, PetWeWant );
+
+                        Logger.WriteDebug(line);
                         return RunStatus.Failure;
                         }),
 

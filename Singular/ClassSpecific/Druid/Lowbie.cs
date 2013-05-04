@@ -7,6 +7,7 @@ using Styx.CommonBot;
 using Styx.TreeSharp;
 using Singular.Settings;
 using Styx.WoWInternals.WoWObjects;
+using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Druid
 {
@@ -36,19 +37,44 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateLowbieDruidCombat()
         {
             return new PrioritySelector(
+                new Decorator(
+                    req => !SpellManager.HasSpell("Cat Form"),
+                    new PrioritySelector(
+                        Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                        Spell.WaitForCast(true),
+                        new Decorator(
+                            req => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+                                Helpers.Common.CreateAutoAttack(true),
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= DruidSettings.SelfRejuvenationHealth && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
+                                Spell.Buff("Moonfire"),
+
+                                //Pre Cat spells
+                                Spell.Cast("Wrath")
+                                )
+                            ),
+                        new ActionAlwaysSucceed()
+                        )
+                    ),
+
+
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCast(true),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Spell.Buff("Moonfire", req => StyxWoW.Me.Shapeshift != ShapeshiftForm.Cat ),
+                        Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                        // Make sure we're in cat form first, period.
+                        // rejuv will take us out of form if needed
+                        Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= DruidSettings.SelfRejuvenationHealth && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
+
+                        // moonfire if already out of form
+                        Spell.Buff("Moonfire", req => StyxWoW.Me.Shapeshift != ShapeshiftForm.Cat || StyxWoW.Me.CurrentTarget.Distance > 8),
+
                         Spell.BuffSelf("Cat Form"),
                         Helpers.Common.CreateInterruptBehavior(),
-                        //Healing if needed in combat
-                        Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent <= DruidSettings.SelfRejuvenationHealth && StyxWoW.Me.HasAuraExpired("Rejuvenation", 1)),
                         Helpers.Common.CreateAutoAttack(true),
 
                         new Decorator(
@@ -61,11 +87,7 @@ namespace Singular.ClassSpecific.Druid
                                 Spell.Cast("Mangle"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
-                            ),
-
-                        //Pre Cat spells
-                        Spell.Cast("Wrath"),
-                        Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 30f, 25f)
+                            )
                         )
                     )
                 );

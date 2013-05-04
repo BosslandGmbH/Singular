@@ -1,4 +1,19 @@
---- Release 3.0.0.  ---
+--- Release 3.0.0.2382 ---
+
+Druid 
+
+fixed - Lowbie - now better handles transition at point it learns Cat Form
+
+
+Hunter
+
+fixed - All Specs - an errant message displayed in debug mode about pet being dead fixed
+
+change- All Specs - default for Use Disengage settings now true.  Only effects new users or new installations
+
+
+
+--- Release 3.0.0.2373  ---
 
 General
 

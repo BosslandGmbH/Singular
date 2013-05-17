@@ -1,3 +1,118 @@
+--- Release 3.0.0.2472 ---
+
+General
+
+*new* - 'Disable in Quest Vehicles' setting which defaults to 'true'.  Quest Profiles will be undergoing a transition in the near future where they will be disabling the Combat Routine for different vehicle quests. Until that work is completed, the Combat Routine has to disable itself.  This setting will allow Singular to work correctly in both situations.  To understand whether this should be 'true' or 'false' for your usage, check with your Quest Profile Author.
+
+fixed - Singular recognition of a Pet Battle in progress is fixed.
+
+change- Singular now recognizes BG Bot as a common battleground bot and enables the handling in place for BGBuddy (suppressing group buffs until last 10 seconds, etc.)
+
+*new* - Kiting: settings for Kiting for classes that use that behavior.  Kiting now will not begin unless either the Health % or ## of mobs attacking setting is reached.
+
+*new* - Disenage: settings for Disengage for classes that have a similar ability.  Disengage now will not begin unless either the Health % or ## of mobs attacking setting is reached.  Other abilities similar to Disengage are Rocket Jump, Wild Charge, Displacer Beast, Blink, and Demonic Leap
+
+fixed - Kiting: now clears any pending Stop request which were causing early cancel of Kiting and odd movement at times
+
+fixed - Kiting: bug which falsely detected character was too far away from safe spot in some circumstances
+
+fixed - Spell Casting: IsSpellOnCooldown bug which caused it always to return true when off cooldown. this caused random problems with Psyfiend, Wild Mushroom Detonate, Shadow Word: Death, Redirect, Healing Rain, Howl of Terror, Health Funnel, Charge, and Storm Bolt
+
+fixed - Facing: slight refinement to FaceTargetBehavior to prevent lower priority behaviors from having to repeat check
+
+fixed - Targeting: Singular will now detect that it has aggroed mobs prior to entering combat with current target and will stop and switch targets before proceeding.
+
+change- Targeting: solo behavior: Singular will not force the current target to be the BotPoi.  If current target is missing or dead, will use BotPoi as highest priority
+
+change- Mounting: BotBases would attempt to mount while moving, causing it to fail.  Singular will now detect Bot is attempting to mount and will stop if moving to improve chance of successful cast
+
+fixed - Pets: PetSpells were being loaded too quickly, causing abilities to not be available.  This affected everything including sending Pet to attack target
+
+change- Talents and Glyphs: Singular now correctly detects when talents and/or glyphs change and rebuilds behaviors
+
+
+
+Death Knight
+
+fixed - All Specs - added/clarified descriptions for Class Config settings 
+
+
+Druid
+
+*new* - Guardian - support for Wild Charge on Pull and in Combat
+
+*new* - Guardian - support for Taunts if enabled
+
+*new* - Guardian - slight revision to spell priority to boost damage, especially when solo or target is targeting another player
+
+change- Guardian - changed to use context specific priorities for Symbiosis target selection.  For Tanking top is Bone Shield, for PVP top is Spell Reflect.
+
+*new* - Guardian - added Symbiosis: Frost Armor support for PVP
+
+
+Hunter
+
+*new* - All Specs - support for Glyph of Fetch.  Setting in Class Config allows you to disable.
+
+change- All Specs - Kiting and Disengage settings moved to the first tab of Class Config
+
+fixed - All Specs - Feign Death cast requirements were too restrictive.  Now supports a Feign Death Health % setting in Class Config.  Also setting to control if Feign Death in PVP to lose enemy pets briefly.  
+
+*new* - All Specs - in Instances will correctly Feign Death to drop agro
+
+*new* - All Specs - support for Reflective Armor Plating pet ability
+
+fixed - All Specs - Deterrence cast requirements too restrictive, so added settings to cast below a certain Health % or when attacked by minimum ## of mobs
+
+
+Mage
+
+fixed - All Specs - move away from frozen targets logic (including Lowbie)
+
+change- Arcane - solo behavior now uses remaining life expectency of target to determine whether to cast Arcane Barrage or Arcane Missles.  for example, if a mob has 3 seconds or less of life left, it will case one of those if there is atleast 1 Arcane Charge to finish it off.  
+
+change- Arcane - solo behavior now only requires 2 arcance charges before casting Arcane Missles or Arcane Barrage since mobs die so quickly.
+
+*new* - All Specs - enhanced support for Spellsteal. Settings allow full control including a global spellsteal list where you specify which spells may be stolen.
+
+change- Fire - solo behavior now will make sure any current target expected to live more than 15 seconds has Pyroblast DoT on it
+
+
+Paladin
+
+change- All Specs - new settings to control when Word of Glory is cast based upon # of Holy Power and Health %
+
+
+Priest
+
+*new* - All Specs - support for Dispel Magic.  Settings are part of the Purge group on first tab of Class Config
+
+
+Shaman
+
+*new* - All Specs - support for Purge.  Settings are part of the Purge group on first tab of class config.
+
+
+Warlock
+
+change - Affliction - solo behavior: cancel of Malefic Grasp and cast of Drain Soul should be quicker when 20% health is reached
+
+change - Affliction - code added to avoid casting any DoT when target has less than 4 seconds to live
+
+fixed - All Specs - cast of Create Healthstone was getting interrupted by Bot movement
+
+fixed - Demonology - Wrathstorm is now correctly cast if appropriate
+
+fixed - Demonology - low-level Demo's would stand still not casting when they entered Demon form.  Now will cast Shadow Bolt as a filler prior to learning Soul Fire.
+
+
+
+
+
+
+
+
+
 --- Release 3.0.0.2382 ---
 
 Druid 
@@ -77,15 +192,6 @@ fixed - All Specs - no longer tries to cast Wind Shear if not facing target
 
 
 
-
-
-*new* ---- Release 3.0.0.2341 ---
-
-General
-
-
-
-
 --- Release 3.0.0.2341 ---
 
 General
@@ -102,7 +208,7 @@ change- Stoneform racial now cast when fighting 3+ mobs or mob with double max h
 
 change- heal targets limited to those within 40 yds when movement is disabled
 
-change- will stop movement after leaving a battleground to 
+change- added check to stop moving when exiting a battleground as currently BGBuddy not doing this
 
 
 Death Knight

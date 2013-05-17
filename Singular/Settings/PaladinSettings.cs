@@ -34,7 +34,7 @@ namespace Singular.Settings
     internal class PaladinSettings : Styx.Helpers.Settings
     {
         public PaladinSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "Paladin.xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "Paladin.xml"))
         {
         }
 
@@ -85,11 +85,32 @@ namespace Singular.Settings
         public int FlashOfLightHealth { get; set; }
 
         [Setting]
+        [DefaultValue(0)]
+        [Category("Common")]
+        [DisplayName("Word of Glory 1+ Holy Power")]
+        [Description("Health % to Cast Holy Power if only 1 Holy Power")]
+        public int WordOfGloryHealth1 { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Common")]
+        [DisplayName("Word of Glory 2+ Holy Power")]
+        [Description("Health % to Cast Holy Power at 2+ Holy Power")]
+        public int WordOfGloryHealth2 { get; set; }
+
+        [Setting]
         [DefaultValue(65)]
         [Category("Common")]
-        [DisplayName("Word of Glory / Eternal Flame Health")]
-        [Description("Word of Glory / Eternal Flame will be used at this value")]
-        public int WordOfGloryHealth { get; set; }
+        [DisplayName("Word of Glory 3+ Holy Power")]
+        [Description("Health % to Cast Holy Power at 3+ Holy Power")]
+        public int WordOfGloryHealth3 { get; set; }
+
+        [Setting]
+        [DefaultValue(65)]
+        [Category("Common")]
+        [DisplayName("Eternal Flame Health %")]
+        [Description("Health % to cast Eternal Flame at 3+ Holy Power")]
+        public int EternalFlameHealth { get; set; }
 
         [Setting]
         [DefaultValue(true)]

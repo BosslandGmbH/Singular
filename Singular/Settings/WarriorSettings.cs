@@ -24,7 +24,7 @@ namespace Singular.Settings
     internal class WarriorSettings : Styx.Helpers.Settings
     {
         public WarriorSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "Warrior.xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "Warrior.xml"))
         {
         }
 

@@ -68,7 +68,6 @@ namespace Singular.ClassSpecific.Rogue
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-                        CreateSubteltyDiagnosticOutputBehavior("Combat"),
 
                         new Throttle(Helpers.Common.CreateInterruptBehavior()),
 
@@ -143,7 +142,6 @@ namespace Singular.ClassSpecific.Rogue
 
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-                        CreateSubteltyDiagnosticOutputBehavior("Combat"),
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints <= 3),
@@ -184,6 +182,12 @@ namespace Singular.ClassSpecific.Rogue
         }
 
         #endregion
+
+        [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueAssassination, priority: 99)]
+        public static Composite CreateRogueHeal()
+        {
+            return CreateSubteltyDiagnosticOutputBehavior("Combat");
+        }
 
         private static Composite CreateSubteltyDiagnosticOutputBehavior(string sState = "")
         {

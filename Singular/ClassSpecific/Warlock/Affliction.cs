@@ -95,7 +95,7 @@ namespace Singular.ClassSpecific.Warlock
                         // cancel malefic grasp if target health < 20% and cast drain soul (revisit and add check for minimum # of dots)
                         new Decorator(
                             ret => Me.ChanneledSpell.Name == "Malefic Grasp"
-                                && Me.CurrentSoulShards < Me.MaxSoulShards
+                                // && Me.CurrentSoulShards < Me.MaxSoulShards
                                 && Me.CurrentTarget.HealthPercent <= 20,
                             new Sequence(
                                 new Action(ret => Logger.WriteDebug("/cancel Malefic Grasp on {0} @ {1:F1}%", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HealthPercent)),
@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific.Warlock
                             ret => (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.HealthPercent > 20 || Me.TimeToDeath() > 15)
                                 && !Me.CurrentTarget.HasAnyOfMyAuras("Agony", "Corruption", "Unstable Affliction", "Haunt")),
 
-                        Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent >= 20),
+                        Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent > 20),
                         Spell.Cast("Shadow Bolt", ret => !SpellManager.HasSpell("Malefic Grasp")),
                         Spell.Cast("Drain Soul"),
 
@@ -251,7 +251,7 @@ namespace Singular.ClassSpecific.Warlock
                             CreateApplyDotsBehaviorPvp(on => (WoWUnit)on, ret => true)
                             ),
 
-                        Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent >= 20),
+                        Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent > 20),
                         Spell.Cast("Shadow Bolt", ret => !SpellManager.HasSpell("Malefic Grasp")),
                         Spell.Cast("Drain Soul"),
 
@@ -294,6 +294,8 @@ namespace Singular.ClassSpecific.Warlock
                 );
         }
 
+        private static int _dotCount = 0;
+
         public static Composite CreateApplyDotsBehavior(UnitSelectionDelegate onUnit, SimpleBooleanDelegate soulBurn)
         {
             return new PrioritySelector(
@@ -328,9 +330,33 @@ namespace Singular.ClassSpecific.Warlock
                         CreateCastSoulSwap(onUnit)
                         ),
 
-                    Spell.Buff("Agony", true, ctx => onUnit(ctx), ret => true, 3),
-                    Spell.Buff("Corruption", true, ctx => onUnit(ctx), ret => true, 3),
-                    Spell.Buff("Unstable Affliction", true, ctx => onUnit(ctx), req => true, 3)
+                    new Action( ret => {
+                        _dotCount = 0;
+                        if (onUnit != null && onUnit(ret) != null)
+                        {
+                            if (!onUnit(ret).HasAuraExpired("Agony", 3))
+                                ++_dotCount;
+                            if (!onUnit(ret).HasAuraExpired("Corruption", 3))
+                                ++_dotCount;
+                            if (!onUnit(ret).HasAuraExpired("Unstable Affliction", 3))
+                                ++_dotCount;
+                            if (!onUnit(ret).HasAuraExpired("Haunt", 3))
+                                ++_dotCount;
+
+                            // if mob dying very soon, skip DoTs
+                            if (onUnit(ret).TimeToDeath() < 4)
+                                _dotCount = 4;
+                        }
+                        return RunStatus.Failure;
+                        }),
+                    new Decorator(
+                        req => _dotCount < 4,
+                        new PrioritySelector(
+                            Spell.Buff("Agony", true, onUnit, ret => true, 3),
+                            Spell.Buff("Corruption", true, onUnit, ret => true, 3),
+                            Spell.Buff("Unstable Affliction", true, onUnit, req => true, 3)
+                            )
+                        )
                     );
         }
 
@@ -416,7 +442,7 @@ namespace Singular.ClassSpecific.Warlock
                         sState,
                         Me.HealthPercent,
                         Me.ManaPercent,
-                        Me.IsMoving,
+                        Me.IsMoving.ToYN(),
                         Me.GotAlivePet ? Me.Pet.HealthPercent : 0,
                         Me.GotAlivePet ? Me.Pet.Distance : 0,
                         (long)Me.GetAuraTimeLeft("Soulburn", true).TotalMilliseconds
@@ -427,13 +453,13 @@ namespace Singular.ClassSpecific.Warlock
                     if (target != null)
                     {
                         sMsg += string.Format(
-                            ", {0}, {1:F1}%, dies {2}, {3:F1} yds, loss={4}, face={5}, agony={6}, corr={7}, ua={8}, haunt={9}, seed={10}, aoe={11}",
+                            ", {0}, {1:F1}%, dies={2} secs, {3:F1} yds, loss={4}, face={5}, agony={6}, corr={7}, ua={8}, haunt={9}, seed={10}, aoe={11}",
                             target.SafeName(),
                             target.HealthPercent,
                             target.TimeToDeath(),
                             target.Distance,
-                            target.InLineOfSpellSight,
-                            Me.IsSafelyFacing(target),
+                            target.InLineOfSpellSight.ToYN(),
+                            Me.IsSafelyFacing(target).ToYN(),
                             (long)target.GetAuraTimeLeft("Agony", true).TotalMilliseconds,
                             (long)target.GetAuraTimeLeft("Corruption", true).TotalMilliseconds,
                             (long)target.GetAuraTimeLeft("Unstable Affliction", true).TotalMilliseconds,

@@ -70,19 +70,15 @@ namespace Singular.ClassSpecific.Shaman
 
             if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
             {
-                return new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                    new PrioritySelector(
+                return new PrioritySelector(
+                    new Throttle(10,
+                        new PrioritySelector(
+                            Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()),
+                            Spell.BuffSelf("Water Shield", ret => !Me.HasAura("Earth Shield"))
+                            )
+                        ),
 
-                        new Throttle(10,
-                            new PrioritySelector(
-                                Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()),
-                                Spell.BuffSelf("Water Shield", ret => !Me.HasAura("Earth Shield"))
-                                )
-                            ),
-
-                        Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
-                        )
+                    Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
                     );
             }
 
@@ -193,6 +189,7 @@ namespace Singular.ClassSpecific.Shaman
                         CreateRestoDiagnosticOutputBehavior( on => null ),
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         Totems.CreateTotemsBehavior(),
 
@@ -241,6 +238,7 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
 
                                 Helpers.Common.CreateInterruptBehavior(),
+                                Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                                 Totems.CreateTotemsBehavior(),
 
@@ -285,6 +283,7 @@ namespace Singular.ClassSpecific.Shaman
                                 HealerManager.CreateStayNearTankBehavior(),
                                 CreateRestoShamanHealingOnlyBehavior( selfOnly:false),
                                 Helpers.Common.CreateInterruptBehavior(),
+                                Dispelling.CreatePurgeEnemyBehavior("Purge"),
                                 Totems.CreateTotemsBehavior(),
                                 Spell.Cast("Lightning Bolt", ret => TalentManager.HasGlyph("Telluric Currents"))
                                 )
@@ -340,8 +339,8 @@ namespace Singular.ClassSpecific.Shaman
             if ( SingularRoutine.CurrentWoWContext == WoWContext.Instances )
                 behavs.AddBehavior( 9999, "Earth Shield", "Earth Shield", Spell.Buff("Earth Shield", on => GetBestEarthShieldTargetInstance()));
 
-            int dispelPriority = (SingularSettings.Instance.DispelDebuffs == DispelStyle.HighPriority) ? 999 : -999;
-            if ( SingularSettings.Instance.DispelDebuffs != DispelStyle.None)
+            int dispelPriority = (SingularSettings.Instance.DispelDebuffs == RelativePriority.HighPriority) ? 999 : -999;
+            if ( SingularSettings.Instance.DispelDebuffs != RelativePriority.None)
                 behavs.AddBehavior( dispelPriority, "Purify Spirit", null, Dispelling.CreateDispelBehavior());
 
             #region Save the Group

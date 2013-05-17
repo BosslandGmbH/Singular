@@ -188,6 +188,15 @@ namespace Singular.GUI
 
         private void btnSaveAndClose_Click(object sender, EventArgs e)
         { // prevent an exception from closing HB.
+            if (((SingularSettings)pgGeneral.SelectedObject).EnableDebugTrace)
+            { 
+                DialogResult rslt = MessageBox.Show("Debug Trace=true will impact performance and create very large log files quickly. Continue?", "Warning! Trace is ON", MessageBoxButtons.OKCancel);
+                if (rslt != System.Windows.Forms.DialogResult.OK)
+                {
+                    return;
+                }
+            }
+
             try
             {
                 SingularSettings.Instance.FormHeight = this.Height;
@@ -208,11 +217,15 @@ namespace Singular.GUI
                     ctx.Settings.Save();
                 }
 
+                // CleanseBlacklist.Instance.SpellList.Save();
+                // PurgeWhitelist.Instance.SpellList.Save();
+                // MageSteallist.Instance.SpellList.Save();
+
                 Close();
             }
             catch (Exception ex)
             {
-                Logger.Write("ERROR saving settings: {0}", e);
+                Logger.Write("ERROR saving settings: {0}", ex.ToString());
             }
         }
 
@@ -232,7 +245,7 @@ namespace Singular.GUI
             {
                 try
                 {
-                    sb.AppendLine(u.SafeName().AlignLeft(18) + " " + u.HealthPercent.ToString("F1").AlignRight(5) + "%  " + u.Distance.ToString("F1").AlignRight(5) + " yds");
+                    sb.AppendLine(u.SafeName().AlignLeft(20) + " " + u.HealthPercent.ToString("F1").AlignRight(5) + "%  " + u.Distance.ToString("F1").AlignRight(5) + " yds");
                     if (++i == 5)
                         break;
                 }
@@ -255,7 +268,7 @@ namespace Singular.GUI
             {
                 try
                 {
-                    sb.AppendLine(u.SafeName().AlignLeft(15) + "- " + u.HealthPercent.ToString("F1").AlignRight(5) + "% @ " + u.Distance.ToString("F1").AlignRight(5) + " yds");
+                    sb.AppendLine(u.SafeName().AlignLeft(22) + "- " + u.HealthPercent.ToString("F1").AlignRight(5) + "% @ " + u.Distance.ToString("F1").AlignRight(5) + " yds");
                     if (++i == 5)
                         break;
                 }

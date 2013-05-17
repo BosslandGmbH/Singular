@@ -162,11 +162,11 @@ namespace Singular.Helpers
         /// </summary>
         public static Composite CreateInterruptBehavior()
         {
-            if ( SingularSettings.Instance.InterruptTarget == InterruptType.None )
+            if ( SingularSettings.Instance.InterruptTarget == CheckTargets.None )
                 return new ActionAlwaysFail();
 
             Composite actionSelectTarget;
-            if (SingularSettings.Instance.InterruptTarget == InterruptType.Target)
+            if (SingularSettings.Instance.InterruptTarget == CheckTargets.Current)
                 actionSelectTarget = new Action( 
                     ret => {
                         WoWUnit u = Me.CurrentTarget;
@@ -434,19 +434,6 @@ namespace Singular.Helpers
         }
 
         #endregion
-
-        private static readonly WaitTimer InterruptTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
-
-        private static bool PreventDoubleInterrupt
-        {
-            get
-            {               
-                var tmp = InterruptTimer.IsFinished;
-                if (tmp)
-                    InterruptTimer.Reset();
-                return tmp;
-            }
-        }
 
         public static Composite EnsureReadyToAttackFromMelee()
         {

@@ -35,7 +35,7 @@ namespace Singular.Settings
     {
 
         public WarlockSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "Warlock.xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "Warlock.xml"))
         {
         }
 

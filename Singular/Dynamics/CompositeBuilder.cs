@@ -75,7 +75,15 @@ namespace Singular.Dynamics
                         CurrentBehaviorType = behavior;
 
                         // if it blows up here, you defined a method with the exact same attribute and priority as one already found
-                        matchedMethods.Add(attribute, mi.Invoke(null, null) as Composite);
+
+                        // wrap in trace class
+                        Composite comp = mi.Invoke(null, null) as Composite;
+                        string name = behavior.ToString() + "." + mi.Name + "." + attribute.PriorityLevel.ToString();
+
+                        if (SingularSettings.Trace)
+                            comp = new CallTrace( name, comp);
+
+                        matchedMethods.Add(attribute, comp);
 
                         CurrentBehaviorType = 0;
                     }

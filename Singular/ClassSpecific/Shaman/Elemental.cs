@@ -35,8 +35,6 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateElementalPreCombatBuffsNormal()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
-
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
                 Common.CreateShamanDpsShieldBehavior(),
@@ -48,8 +46,6 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateElementalPreCombatBuffsPvp()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
-
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 
                 Common.CreateShamanDpsShieldBehavior(),
@@ -163,6 +159,7 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         new Decorator( 
                             ret => Common.GetImbue( StyxWoW.Me.Inventory.Equipped.MainHand) == Imbue.None,
@@ -231,6 +228,7 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         new Decorator(
                             ret => Common.GetImbue(StyxWoW.Me.Inventory.Equipped.MainHand) == Imbue.None,
@@ -308,6 +306,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Flametongue),
 

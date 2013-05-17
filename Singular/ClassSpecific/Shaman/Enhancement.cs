@@ -34,8 +34,6 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Spell.WaitForCastOrChannel(),
-
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                 Common.CreateShamanImbueOffHandBehavior( Imbue.Flametongue ),
 
@@ -49,8 +47,6 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementPvpPreCombatBuffs()
         {
             return new PrioritySelector(
-
-                Spell.WaitForCastOrChannel(),
 
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                 Common.CreateShamanImbueOffHandBehavior(Imbue.Frostbrand, Imbue.Flametongue),
@@ -168,6 +164,7 @@ namespace Singular.ClassSpecific.Shaman
                         CreateEnhanceDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                         Common.CreateShamanImbueOffHandBehavior(Imbue.Flametongue),
@@ -233,6 +230,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                         Common.CreateShamanImbueOffHandBehavior(Imbue.Frostbrand, Imbue.Flametongue),
@@ -289,6 +287,7 @@ namespace Singular.ClassSpecific.Shaman
                         CreateEnhanceDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
 
                         Common.CreateShamanDpsShieldBehavior(),
 

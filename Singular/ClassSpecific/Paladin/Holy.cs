@@ -17,7 +17,8 @@ namespace Singular.ClassSpecific.Paladin
     public static class Holy
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
-        private static PaladinSettings Settings { get { return SingularSettings.Instance.Paladin(); } }
+        private static PaladinSettings PaladinSettings { get { return SingularSettings.Instance.Paladin(); } }
+        public static bool HasTalent(PaladinTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         [Behavior(BehaviorType.Rest, WoWClass.Paladin, WoWSpec.PaladinHoly)]
         public static Composite CreatePaladinHolyRest()
@@ -70,7 +71,7 @@ namespace Singular.ClassSpecific.Paladin
                             new PrioritySelector(
                                 Helpers.Common.CreateAutoAttack(true),
                                 Helpers.Common.CreateInterruptBehavior(),
-                                Spell.Cast("Hammer of Justice", ret => Settings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),
+                                Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),
                                 Spell.Buff("Judgment"),
                                 Spell.Cast("Hammer of Wrath"),
                                 Spell.Cast("Holy Shock"),
@@ -131,17 +132,6 @@ namespace Singular.ClassSpecific.Paladin
                                 ret => (WoWUnit)ret,
                                 ret => ret is WoWPlayer && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Beacon of Light"))),
 
-                                //Try and keep it up if requested
-                             Spell.Cast(
-                                "Eternal Flame",
-                                ret => (WoWUnit)ret,
-                               ret => ret is WoWPlayer && SingularSettings.Instance.Paladin().KeepEternalFlameUp && Group.Tanks.Contains((WoWPlayer)ret) && Group.Tanks.All(t => !t.HasMyAura("Eternal Flame"))),
-
-                            Spell.Cast(
-                                "Eternal Flame",
-                                ret => (WoWUnit)ret,
-                               ret => StyxWoW.Me.CurrentHolyPower >= 3 && (((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().WordOfGloryHealth)),
-
                            Spell.Cast(
                                 "Lay on Hands",
                                 ret => (WoWUnit)ret,
@@ -154,10 +144,9 @@ namespace Singular.ClassSpecific.Paladin
                                        Unit.NearbyFriendlyPlayers.Count(p =>
                                            p.HealthPercent <= SingularSettings.Instance.Paladin().LightOfDawnHealth && p != StyxWoW.Me &&
                                            p.DistanceSqr < 30 * 30 && StyxWoW.Me.IsSafelyFacing(p.Location)) >= SingularSettings.Instance.Paladin().LightOfDawnCount),
-                            Spell.Cast(
-                                "Word of Glory",
-                                ret => (WoWUnit)ret,
-                                ret => StyxWoW.Me.CurrentHolyPower >= 3 && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().WordOfGloryHealth),
+
+                            Common.CreateWordOfGloryBehavior( on => (WoWUnit) on ),
+
                             Spell.Cast(
                                 "Holy Shock",
                                 ret => (WoWUnit)ret,
@@ -201,7 +190,7 @@ namespace Singular.ClassSpecific.Paladin
 
         public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
         {
-            if (!Settings.UseRebirth)
+            if (!PaladinSettings.UseRebirth)
                 return new PrioritySelector();
 
             if (onUnit == null)

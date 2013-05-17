@@ -117,7 +117,7 @@ namespace Singular
             {
                 // store values that require scanning lists
                 IsQuestBotActive = IsBotInUse("Quest");
-                IsBgBotActive = IsBotInUse("BGBuddy");
+                IsBgBotActive = IsBotInUse("BGBuddy") || IsBotInUse("BG Bot");
                 IsDungeonBuddyActive = IsBotInUse("DungeonBuddy");
                 IsPokeBuddyActive = IsPluginActive("Pokébuddy");
 

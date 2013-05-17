@@ -201,7 +201,6 @@ namespace Singular.ClassSpecific.Paladin
                 return new Action(ret => { return RunStatus.Failure; });
 
             return new Sequence(
-                new Action(r => SingularRoutine.UpdateDiagnosticCastingState()),
                 new ThrottlePasses(1, 1,
                     new Action(ret =>
                     {

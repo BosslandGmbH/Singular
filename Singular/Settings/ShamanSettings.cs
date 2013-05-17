@@ -13,7 +13,7 @@ namespace Singular.Settings
     internal class ShamanSettings : Styx.Helpers.Settings
     {
         public ShamanSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "Shaman.xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "Shaman.xml"))
         {
         }
 

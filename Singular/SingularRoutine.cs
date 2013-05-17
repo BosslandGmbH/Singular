@@ -103,6 +103,10 @@ namespace Singular
             if (!StyxWoW.IsInGame || !StyxWoW.IsInWorld)
                 return;
 
+            // talentmanager.Pulse() intense if does work, so return if true
+            if (TalentManager.Pulse())
+                return;
+
             // check and output casting state information
             UpdateDiagnosticCastingState();
 

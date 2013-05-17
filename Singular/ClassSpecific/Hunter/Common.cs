@@ -74,7 +74,53 @@ namespace Singular.ClassSpecific.Hunter
                                 new Action(ctx => SpellManager.Cast("Dismiss Pet")),
                                 new WaitContinue(1, ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )
-                            )
+                            ),
+
+                        CreateGlyphOfFetchBehavior()
+                        )
+                    )
+                );
+        }
+
+        private static Composite CreateGlyphOfFetchBehavior()
+        {
+            if (!HunterSettings.UseFetch || !TalentManager.HasGlyph("Fetch"))
+                return new ActionAlwaysFail();
+
+            return new PrioritySelector(
+                ctx => ObjectManager.GetObjectsOfType<WoWUnit>(true,false)
+                    .Where( u => u.IsDead && u.Lootable && u.CanLoot && u.Distance < 50 && !Blacklist.Contains(u.Guid, BlacklistFlags.Loot))
+                    .OrderBy( u => u.Distance)
+                    .ToList(),
+                new Decorator(
+                    req => Me.GotAlivePet && ((List<WoWUnit>)req).Any() && ((List<WoWUnit>)req).First().Distance > 10,
+                    new Sequence(
+                        new PrioritySelector(
+                            Movement.CreateMoveToUnitBehavior( to => ((List<WoWUnit>)to).FirstOrDefault(), 5f),
+                            new ActionAlwaysSucceed()
+                            ),
+                        Spell.Cast("Fetch", on => ((List<WoWUnit>)on).FirstOrDefault(), req => true ),
+                        new Action( r => Logger.WriteDebug( "first wait")),
+                        new Wait(TimeSpan.FromMilliseconds(1500), until => Me.Pet.IsMoving, new ActionAlwaysSucceed()),
+                        new Action(r => Logger.WriteDebug("second wait")),
+                        new Wait(TimeSpan.FromMilliseconds(3500), until => Me.Pet.IsCasting && Me.Pet.CastingSpell.Name == "Fetch", new ActionAlwaysSucceed()),
+                        new PrioritySelector(
+                            Movement.CreateEnsureMovementStoppedBehavior(reason: "to Fetch"),
+                            new ActionAlwaysSucceed()
+                            ),
+                        new Action(r => Logger.WriteDebug("third wait")),
+                        new Wait(1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
+                        new Action(r => Logger.WriteDebug("fourth wait")),
+                        new WaitContinue(TimeSpan.FromMilliseconds(2000), until => !Me.Pet.IsCasting && !((List<WoWUnit>)until).FirstOrDefault().CanLoot, new ActionAlwaysSucceed()),
+                        new Action(r => Logger.WriteDebug("done waiting")),
+
+                        new Action( r => {
+                            WoWUnit looted = ((List<WoWUnit>)r).FirstOrDefault();
+                            if (looted != null && looted.IsValid)
+                                Blacklist.Add(looted.Guid, BlacklistFlags.Loot, TimeSpan.FromSeconds(5));
+                            if (BotPoi.Current.Type == PoiType.Loot && BotPoi.Current.Guid == looted.Guid)
+                                BotPoi.Clear();
+                        })
                         )
                     )
                 );
@@ -147,18 +193,20 @@ namespace Singular.ClassSpecific.Hunter
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Hunter)]
         public static Composite CreateHunterCombatBuffs()
         {
-            return new PrioritySelector(
-                // Normal context, use FD at low-health
-                new Decorator(
-                    ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal,
-                    CreateFeignDeath(() => TimeSpan.FromSeconds(10), cancel => !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 25))
-                    ),
+            Composite feignDeathBehavior = new ActionAlwaysFail();
 
-                // in battlegrounds, only FD when we have 2 or more player pets attacking us
-                new Decorator(
-                    ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds,
-                    CreateFeignDeath(() => TimeSpan.FromSeconds((new Random()).Next(3)), ret => false)
-                    ),
+            if ( SingularRoutine.CurrentWoWContext == WoWContext.Normal )
+                feignDeathBehavior = CreateFeignDeath( req => NeedFeignDeath, () => TimeSpan.FromSeconds(8), cancel => !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 25));
+
+            if ( SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds )
+                feignDeathBehavior = CreateFeignDeath(req => NeedFeignDeath, () => TimeSpan.FromSeconds((new Random()).Next(3)), ret => false);
+
+            if ( SingularRoutine.CurrentWoWContext == WoWContext.Instances && HunterSettings.FeignDeathInInstances )
+                feignDeathBehavior = CreateFeignDeath(req => Unit.NearbyUnitsInCombatWithMe.Any( u=> u.Aggro && u.CurrentTargetGuid == Me.Guid), () => TimeSpan.FromMilliseconds(1500), ret => false);
+
+            return new PrioritySelector(
+
+                feignDeathBehavior,
 
                 // cast Pet survival abilities
                 new Decorator(
@@ -173,9 +221,13 @@ namespace Singular.ClassSpecific.Hunter
 
                 Common.CreateHunterCallPetBehavior(true),
 
+                new Decorator(
+                    req => Me.GotAlivePet && PetManager.CanCastPetAction("Reflective Armor Plating") && Unit.NearbyUnfriendlyUnits.Any( u => u.CurrentTargetGuid == Me.Pet.Guid && Me.Pet.IsSafelyFacing(u)),
+                    new Action(r => PetManager.CastPetAction("Reflective Armor Plating"))
+                    ),
+
                 Spell.Buff("Deterrence",
-                    ret => (Me.HealthPercent < 30 || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Combat && u.CurrentTargetGuid == Me.Guid))
-                        && TalentManager.HasGlyph("Mirrored Blades")),
+                    ret => (Me.HealthPercent <= HunterSettings.DeterrenceHealth || HunterSettings.DeterrenceCount <= Unit.NearbyUnfriendlyUnits.Count(u => u.Combat && u.CurrentTargetGuid == Me.Guid && !u.IsPet))),
 
                 Spell.BuffSelf("Aspect of the Hawk", ret => !Me.IsMoving && !Me.HasAnyAura("Aspect of the Hawk", "Aspect of the Iron Hawk")),
 
@@ -238,6 +290,19 @@ namespace Singular.ClassSpecific.Hunter
                 );
         }
 
+        private static bool NeedFeignDeath
+        {
+            get
+            {
+                if ( Me.HealthPercent <= HunterSettings.FeignDeathHealth )
+                    return true;
+
+                if ( HunterSettings.FeignDeathPvpEnemyPets && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsPet && u.OwnedByRoot != null && u.OwnedByRoot.IsPlayer))
+                    return true;
+
+                return false;
+            }
+        }
 
         #region Traps
 
@@ -432,20 +497,23 @@ namespace Singular.ClassSpecific.Hunter
         /// <returns></returns>
         public static Composite CreateHunterAvoidanceBehavior(Composite nonfacingAttack, Composite jumpturnAttack)
         {
-            Kite.CreateKitingBehavior(null, nonfacingAttack, jumpturnAttack);
+            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jumpturnAttack);
 
             return new Decorator(
-                ret => MovementManager.IsClassMovementAllowed,
+                req => MovementManager.IsClassMovementAllowed,
                 new PrioritySelector(
+                    ctx => Unit.NearbyUnitsInCombatWithMe.Count(),
                     new Decorator(
-                        ret => HunterSettings.UseDisengage, 
+                        ret => SingularSettings.Instance.DisengageAllowed
+                            && (Me.HealthPercent <= SingularSettings.Instance.DisengageHealth || ((int)ret) >= SingularSettings.Instance.DisengageMobCount),
                         new PrioritySelector(
                             Disengage.CreateDisengageBehavior("Disengage", Disengage.Direction.Backwards, 20, CreateSlowMeleeBehaviorForDisengage()),
                             Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
                             )
                         ),
                     new Decorator(
-                        ret => Common.NextDisengageAllowed <= DateTime.Now && HunterSettings.AllowKiting,
+                        ret => SingularSettings.Instance.KiteAllow
+                            && (Me.HealthPercent <= SingularSettings.Instance.KiteHealth || ((int)ret) >= SingularSettings.Instance.KiteMobCount),
                         Kite.BeginKitingBehavior()
                         )
                     )
@@ -611,31 +679,6 @@ namespace Singular.ClassSpecific.Hunter
             return true;
         }
 
-        public static Composite CreateHunterBackPedal()
-        {
-            return
-                new Decorator(
-                    ret => MovementManager.IsClassMovementAllowed && Target.Distance <= Spell.MeleeRange + 5f &&
-                           Target.IsAlive &&
-                           (Target.CurrentTarget == null ||
-                            Target.CurrentTarget != Me ||
-                            Target.IsStunned()),
-                    new Action(
-                        ret =>
-                        {
-                            var moveTo = WoWMathHelper.CalculatePointFrom(Me.Location, Target.Location, Spell.MeleeRange + 10f);
-
-                            if (Navigator.CanNavigateFully(Me.Location, moveTo))
-                            {
-                                Navigator.MoveTo(moveTo);
-                                StopMoving.AtLocation(moveTo);
-                                return RunStatus.Success;
-                            }
-
-                            return RunStatus.Failure;
-                        }));
-        }
-
         #endregion
 
         /// <summary>
@@ -717,26 +760,23 @@ namespace Singular.ClassSpecific.Hunter
                 );
         }
 
-        private static Composite CreateFeignDeath(WaitGetTimeSpanTimeoutDelegate timeOut, SimpleBooleanDelegate cancel)
+        private static Composite CreateFeignDeath(SimpleBooleanDelegate req, WaitGetTimeSpanTimeoutDelegate timeOut, SimpleBooleanDelegate cancel)
         {
-            return new Decorator(
-                ret => HunterSettings.UseFeignDeath,
-                new Sequence(
-                    Spell.BuffSelf("Feign Death", ret => 2 <= Unit.NearbyUnfriendlyUnits.Count(u => u.GotAlivePet && u.Pet.CurrentTargetGuid == Me.Guid)),
-                    new Action(ret => waitToCancelFeignDeath = new WaitTimer(timeOut())),
-                    new Action(ret => Logger.Write("... wait at most {0} seconds before cancelling Feign Death", (waitToCancelFeignDeath.EndTime - waitToCancelFeignDeath.StartTime).TotalSeconds)),
-                    new Action(ret => waitToCancelFeignDeath.Reset()),
-                    new WaitContinue(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Feign Death"), new ActionAlwaysSucceed()),
-                    new WaitContinue(360, ret => cancel(ret) || waitToCancelFeignDeath.IsFinished || !Me.HasAura("Feign Death"), new ActionAlwaysSucceed()),
-                    new DecoratorContinue( 
-                        ret => Me.HasAura( "Feign Death"),
-                        new Sequence(
-                            new Action(ret => Logger.Write("/cancel Feign Death after {0} seconds", (DateTime.Now - waitToCancelFeignDeath.StartTime).TotalSeconds)),
-                            new Action(ret => Me.CancelAura("Feign Death"))
-                            )
-                        ),
-                    new Action(ret => waitToCancelFeignDeath = null)
-                    )
+            return new Sequence(
+                Spell.BuffSelf("Feign Death", req),
+                new Action(ret => waitToCancelFeignDeath = new WaitTimer(timeOut())),
+                new Action(ret => Logger.Write("... wait at most {0} seconds before cancelling Feign Death", (waitToCancelFeignDeath.EndTime - waitToCancelFeignDeath.StartTime).TotalSeconds)),
+                new Action(ret => waitToCancelFeignDeath.Reset()),
+                new WaitContinue(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Feign Death"), new ActionAlwaysSucceed()),
+                new WaitContinue(360, ret => cancel(ret) || waitToCancelFeignDeath.IsFinished || !Me.HasAura("Feign Death"), new ActionAlwaysSucceed()),
+                new DecoratorContinue( 
+                    ret => Me.HasAura( "Feign Death"),
+                    new Sequence(
+                        new Action(ret => Logger.Write("/cancel Feign Death after {0} seconds", (DateTime.Now - waitToCancelFeignDeath.StartTime).TotalSeconds)),
+                        new Action(ret => Me.CancelAura("Feign Death"))
+                        )
+                    ),
+                new Action(ret => waitToCancelFeignDeath = null)
                 );
         }
 

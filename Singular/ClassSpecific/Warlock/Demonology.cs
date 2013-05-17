@@ -29,9 +29,10 @@ namespace Singular.ClassSpecific.Warlock
         private static int _mobCount;
         public static readonly WaitTimer demonFormRestTimer = new WaitTimer(TimeSpan.FromSeconds(3));
 
+
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull|BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.All)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDemonology, WoWContext.All)]
         public static Composite CreateWarlockDemonologyNormalCombat()
         {
             Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), null, null);
@@ -51,7 +52,7 @@ namespace Singular.ClassSpecific.Warlock
                             return RunStatus.Failure;
                             }),
 
-                        CreateWarlockDiagnosticOutputBehavior(),
+                        CreateWarlockDiagnosticOutputBehavior(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),
 
                         Helpers.Common.CreateAutoAttack(true),
                         new Decorator(
@@ -70,7 +71,7 @@ namespace Singular.ClassSpecific.Warlock
                             new Sequence(
                                 new PrioritySelector(
                                     Pet.CreateCastPetAction("Felstorm", ret => !Common.HasTalent( WarlockTalents.GrimoireOfSupremacy )),
-                                    Pet.CreateCastPetAction("Wrathtorm", ret => Common.HasTalent( WarlockTalents.GrimoireOfSupremacy ))
+                                    Pet.CreateCastPetAction("Wrathstorm", ret => Common.HasTalent( WarlockTalents.GrimoireOfSupremacy ))
                                     ),
                                 new ActionAlwaysFail()  // no GCD on Felstorm, allow to fall through
                                 )
@@ -144,7 +145,8 @@ namespace Singular.ClassSpecific.Warlock
                                     ),
                                 Spell.Cast("Soul Fire", ret => Me.HasAura("Molten Core")),
                                 Spell.CastHack("Metamorphosis: Touch of Chaos", "Touch of Chaos", on => Me.CurrentTarget, req => true),
-                                Spell.Cast("Soul Fire", ret => !SpellManager.HasSpell("Metamorphosis: Touch of Chaos"))
+                                Spell.Cast("Soul Fire", ret => !SpellManager.HasSpell("Metamorphosis: Touch of Chaos")),
+                                Spell.Cast("Shadow Bolt")
                                 )
                             ),
 
@@ -290,7 +292,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #endregion
 
-        private static Composite CreateWarlockDiagnosticOutputBehavior()
+        private static Composite CreateWarlockDiagnosticOutputBehavior(string s)
         {
             return new Throttle(1,
                 new Decorator(
@@ -302,23 +304,24 @@ namespace Singular.ClassSpecific.Warlock
 
                         string msg;
                         
-                        msg = string.Format(".... h={0:F1}%/m={1:F1}%, fury={2}, metamor={3}, mcore={4}, darksoul={5}, aoecnt={6}, isgcd={7}, gcd={8}",
+                        msg = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, fury={3}, metamor={4}, mcore={5}, darksoul={6}, aoecnt={7}",
+                            s,
                              Me.HealthPercent,
                              Me.ManaPercent,
                              CurrentDemonicFury,
                              Me.HasAura("Metamorphosis"),
                              lstks,
                              Me.HasAura("Dark Soul: Knowledge"),
-                             _mobCount, 
-                             Spell.IsGlobalCooldown(),
-                             Spell.GcdActive 
+                             _mobCount
                              );
 
                         if (target != null)
                         {
-                            msg += string.Format(", enemy={0}% @ {1:F1} yds, corrupt={2}, doom={3}, shdwflm={4}",
+                            msg += string.Format(", enemy={0}% @ {1:F1} yds, face={2}, loss={3}, corrupt={4}, doom={5}, shdwflm={6}",
                                 (int)target.HealthPercent,
                                 target.Distance,
+                                Me.IsSafelyFacing(target).ToYN(),
+                                target.InLineOfSpellSight.ToYN(),
                                 (long)target.GetAuraTimeLeft("Corruption", true).TotalMilliseconds,
                                 (long)target.GetAuraTimeLeft("Doom", true).TotalMilliseconds,
                                 (long)target.GetAuraTimeLeft("Shadowflame", true).TotalMilliseconds

@@ -182,7 +182,8 @@ namespace Singular.ClassSpecific.Mage
 
                 Spell.BuffSelf("Incanter's Ward", req => Unit.NearbyUnitsInCombatWithMe.Any()),
 
-                CreateMageSpellstealBehavior(),
+                Dispelling.CreatePurgeEnemyBehavior("Spellsteal"),
+                // CreateMageSpellstealBehavior(),
 
                 Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
@@ -205,23 +206,6 @@ namespace Singular.ClassSpecific.Mage
                 
                 // , Spell.BuffSelf( "Ice Floes", req => Me.IsMoving)
 
-                );
-        }
-
-        private static Composite CreateSlowMeleeBehavior()
-        {
-            return new Decorator(
-                ret => Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() <= 8 && !u.Stunned && !u.Rooted && !u.IsSlowed()),
-                new PrioritySelector(
-                    new Decorator(
-                        ret => Me.Specialization == WoWSpec.MageFrost,
-                        Mage.Frost.CastFreeze( on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u=>u.SpellDistance() < 8), ClusterType.Radius, 8))
-                        ),
-                    Spell.Buff("Frost Nova"),
-                    Spell.Buff("Frostjaw"),
-                    Spell.CastOnGround("Ring of Frost", loc => Me.Location, req => true, false),
-                    Spell.Buff("Cone of Cold")
-                    )
                 );
         }
 
@@ -305,44 +289,42 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateStayAwayFromFrozenTargetsBehavior()
         {
+#if NOPE
             return new PrioritySelector(
                 ctx => Unit.NearbyUnfriendlyUnits
-                           .Where( u => u.IsFrozen() && u.Distance < Spell.MeleeRange + 3f)
+                           .Where( u => u.IsFrozen() && Me.SpellDistance(u) < 8)
                            .OrderBy(u => u.DistanceSqr).FirstOrDefault(),
                 new Decorator(
                     ret => ret != null && MovementManager.IsClassMovementAllowed,
                     new PrioritySelector(
                         new Decorator(
-                            ret => Spell.GetSpellCooldown("Blink").TotalSeconds > 1 
-                                && Spell.GetSpellCooldown("Rocket Jump").TotalSeconds > 1,
+                            ret => Spell.GetSpellCooldown("Blink").TotalSeconds > 0
+                                && Spell.GetSpellCooldown("Rocket Jump").TotalSeconds > 0,
                             new Action(
                                 ret =>
                                 {
                                     if (Me.IsMoving && StopMoving.Type == StopMoving.StopType.Location)
                                     {
-                                        Logger.WriteDebug("StayAwayFromFrozne:  looks like we are moving away");
+                                        Logger.WriteDebug(Color.LightBlue, "StayAwayFromFrozen:  looks like we are already moving away");
                                         return RunStatus.Success;
                                     }
 
-                                    WoWPoint moveTo =
-                                        WoWMathHelper.CalculatePointBehind(
-                                            ((WoWUnit)ret).Location,
-                                            ((WoWUnit)ret).Rotation,
-                                            -(Spell.MeleeRange + 5f));
+                                    WoWPoint moveTo = WoWMathHelper.CalculatePointBehind(
+                                        ((WoWUnit)ret).Location,
+                                        ((WoWUnit)ret).Rotation,
+                                        -Me.SpellRange(12f, (WoWUnit) ret)
+                                        );
 
                                     if (!Navigator.CanNavigateFully(StyxWoW.Me.Location, moveTo))
                                     {
-                                        Logger.WriteDebug("StayAwayFromFrozne:  unable to navigate to point behind me {0:F1} yds away", StyxWoW.Me.Location.Distance(moveTo));
-                                    }
-                                    else
-                                    {
-                                        Logger.Write("Getting away from frozen target");
-                                        Navigator.MoveTo(moveTo);
-                                        StopMoving.AtLocation(moveTo);
-                                        return RunStatus.Success;
+                                        Logger.WriteDebug(Color.LightBlue, "StayAwayFromFrozen:  unable to navigate to point behind me {0:F1} yds away", StyxWoW.Me.Location.Distance(moveTo));
+                                        return RunStatus.Failure;
                                     }
 
-                                    return RunStatus.Failure;
+                                    Logger.Write( Color.LightBlue, "Getting away from frozen target {0}", ((WoWUnit)ret).SafeName());
+                                    Navigator.MoveTo(moveTo);
+                                    StopMoving.AtLocation(moveTo);
+                                    return RunStatus.Success;
                                 })
                             ),
 
@@ -356,8 +338,24 @@ namespace Singular.ClassSpecific.Mage
                         )
                     )
                 );
+             */
+#else
+            return new PrioritySelector(
+                ctx => Unit.NearbyUnfriendlyUnits
+                           .Where(u => u.IsFrozen() && Me.SpellDistance(u) < 8)
+                           .OrderBy(u => u.DistanceSqr).FirstOrDefault(),
+                new Decorator(
+                    req => req != null,
+                    new Sequence(
+                        new Action(r => Logger.WriteDebug("MageAvoidance: move away from frozen targets! requesting KITING!!!")),
+                        Kite.BeginKitingBehavior()
+                        )
+                    )
+                );
+#endif
         }
 
+        /*
         public static Composite CreateMageSpellstealBehavior()
         {
             return Spell.Cast("Spellsteal", 
@@ -367,21 +365,21 @@ namespace Singular.ClassSpecific.Mage
                     if (unit != null)
                         Logger.WriteDebug("Spellsteal:  found {0} with a triggering aura, cancast={1}", unit.SafeName(), SpellManager.CanCast("Spellsteal", unit));
                     return unit;
-                    }, 
-                ret => MageSettings.SpellStealTarget != WatchTargetForCast.None 
+                    },
+                ret => SingularSettings.Instance.DispelTargets != CheckTargets.None 
                 );                   
         }
 
         public static WoWUnit GetSpellstealTarget()
         {
-            if (MageSettings.SpellStealTarget == WatchTargetForCast.Current)
+            if (SingularSettings.Instance.DispelTargets == CheckTargets.Current)
             {
                 if ( Me.GotTarget && null != GetSpellstealAura( Me.CurrentTarget))
                 {
                     return Me.CurrentTarget;
                 }
             }
-            else if (MageSettings.SpellStealTarget != WatchTargetForCast.None)
+            else if (SingularSettings.Instance.DispelTargets != CheckTargets.None)
             {
                 WoWUnit target = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && null != GetSpellstealAura(u));
                 return target;
@@ -392,8 +390,9 @@ namespace Singular.ClassSpecific.Mage
 
         public static WoWAura GetSpellstealAura(WoWUnit target)
         {
-            return target.GetAllAuras().FirstOrDefault(a => a.TimeLeft.TotalSeconds > 5 && MageSettings.SpellStealList.Contains((uint)a.SpellId) && !Me.HasAura(a.SpellId));
+            return target.GetAllAuras().FirstOrDefault(a => a.TimeLeft.TotalSeconds > 5 && a.Spell.DispelType == WoWDispelType.Magic && PurgeWhitelist.Instance.SpellList.Contains(a.SpellId) && !Me.HasAura(a.SpellId));
         }
+        */
 
         public static Composite CreateMagePolymorphOnAddBehavior()
         {
@@ -547,6 +546,103 @@ namespace Singular.ClassSpecific.Mage
 
             return bestArmor;
         }
+
+        public static Composite CreateSpellstealEnemyBehavior()
+        {
+            return Dispelling.CreatePurgeEnemyBehavior("Spellsteal");
+        }
+
+        #region Avoidance and Disengage
+
+        /// <summary>
+        /// creates a Druid specific avoidance behavior based upon settings.  will check for safe landing
+        /// zones before using WildCharge or rocket jump.  will additionally do a running away or jump turn
+        /// attack while moving away from attacking mob if behaviors provided
+        /// </summary>
+        /// <param name="nonfacingAttack">behavior while running away (back to target - instants only)</param>
+        /// <param name="jumpturnAttack">behavior while facing target during jump turn (instants only)</param>
+        /// <returns></returns>
+        public static Composite CreateMageAvoidanceBehavior(Composite nonfacingAttack = null, Composite jumpturnAttack = null)
+        {
+            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jumpturnAttack);
+
+            return new Decorator(
+                req => MovementManager.IsClassMovementAllowed,
+                new PrioritySelector(
+                    ctx => Unit.NearbyUnitsInCombatWithMe.Where(u=>u.SpellDistance() <= 8).Count(),
+                    new Decorator(
+                        ret => SingularSettings.Instance.DisengageAllowed 
+                            && ((((int)ret) > 0 && Me.HealthPercent <= SingularSettings.Instance.DisengageHealth) || ((int)ret) >= SingularSettings.Instance.DisengageMobCount),
+                        new PrioritySelector(
+                            Disengage.CreateDisengageBehavior("Blink", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior()),
+                            Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
+                            )
+                        ),
+                    new Decorator(
+                        ret => SingularSettings.Instance.KiteAllow 
+                            && ((((int)ret) > 0 && Me.HealthPercent <= SingularSettings.Instance.KiteHealth) || ((int)ret) >= SingularSettings.Instance.KiteMobCount),
+                        new Sequence(
+                            new Action( r => Logger.WriteDebug("MageAvoidance: requesting KITING!!!")),
+                            Kite.BeginKitingBehavior()
+                            )
+                        )
+                    )
+                );
+        }
+
+        /*
+        private static Composite CreateSlowMeleeBehavior()
+        {
+            return new Decorator(
+                ret => Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() <= 8 && !u.Stunned && !u.Rooted && !u.IsSlowed()),
+                new PrioritySelector(
+                    new Decorator(
+                        ret => Me.Specialization == WoWSpec.MageFrost,
+                        Mage.Frost.CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8), ClusterType.Radius, 8))
+                        ),
+                    Spell.Buff("Frost Nova"),
+                    Spell.Buff("Frostjaw"),
+                    // Spell.CastOnGround("Ring of Frost", loc => Me.Location, req => true, false),
+                    Spell.Buff("Cone of Cold")
+                    )
+                );
+        }
+        */
+
+        private static Composite CreateSlowMeleeBehavior()
+        {
+            return new PrioritySelector(
+                ctx => SafeArea.NearestEnemyMobAttackingMe,
+                new Action( ret => {
+                    if (ret == null)
+                        Logger.WriteDebug("SlowMelee: no nearest mob found");
+                    else
+                        Logger.WriteDebug("SlowMelee: crowdcontrolled: {0}, slowed: {1}", ((WoWUnit)ret).IsCrowdControlled(), ((WoWUnit)ret).IsSlowed());
+                    return RunStatus.Failure;
+                    }),
+                new Decorator(
+                    // ret => ret != null && !((WoWUnit)ret).Stunned && !((WoWUnit)ret).Rooted && !((WoWUnit)ret).IsSlowed(),
+                    ret => ret != null && !((WoWUnit)ret).IsCrowdControlled() && !((WoWUnit)ret).IsSlowed(),
+                    new PrioritySelector(
+                        new Throttle(2,
+                            new PrioritySelector(
+                                new Decorator(
+                                    ret => Me.Specialization == WoWSpec.MageFrost,
+                                    Mage.Frost.CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8), ClusterType.Radius, 8))
+                                    ),
+                                Spell.Cast("Frost Nova", mov => true, onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 12, cancel => false),
+                                Spell.Cast("Frostjaw", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false),
+                                Spell.Cast("Cone of Cold", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false),
+                                Spell.Cast("Frost Bolt", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false),
+                                Spell.Cast("Frostfire Bolt", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false)
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+        #endregion
 
     }
 

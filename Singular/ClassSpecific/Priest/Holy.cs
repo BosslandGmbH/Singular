@@ -152,9 +152,9 @@ namespace Singular.ClassSpecific.Priest
 
             Logger.WriteFile("Priest Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
 
-            if (SingularSettings.Instance.DispelDebuffs != DispelStyle.None)
+            if (SingularSettings.Instance.DispelDebuffs != RelativePriority.None)
             {
-                int dispelPriority = (SingularSettings.Instance.DispelDebuffs == DispelStyle.HighPriority) ? 999 : -999;
+                int dispelPriority = (SingularSettings.Instance.DispelDebuffs == RelativePriority.HighPriority) ? 999 : -999;
                 behavs.AddBehavior(dispelPriority, "Dispel", null, Common.CreatePriestDispelBehavior());
             }
 
@@ -611,6 +611,7 @@ VoidShift               Void Shift
 
                                 Helpers.Common.CreateDismount("Pulling"),
                                 Helpers.Common.CreateInterruptBehavior(),
+                                Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Buff("Holy Word: Chastise", ret => StyxWoW.Me.HasAura( "Chakra: Chastise")),

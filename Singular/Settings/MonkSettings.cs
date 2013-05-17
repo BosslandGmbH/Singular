@@ -9,7 +9,7 @@ namespace Singular.Settings
     internal class MonkSettings : Styx.Helpers.Settings
     {
         public MonkSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "Monk.xml")) { }
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "Monk.xml")) { }
 
         #region Spheres
 

@@ -211,6 +211,16 @@
     <Compile Include="Managers\PetManager.cs" />
     <Compile Include="Managers\SoulstoneManager.cs" />
     <Compile Include="Managers\SpellImmunityManager.cs" />
+    <Compile Include="Settings\SpellList.cs" />
+    <Compile Include="Settings\SpellList.MageSteallist.cs">
+      <DependentUpon>SpellList.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Settings\SpellList.PurgeWhitelist.cs">
+      <DependentUpon>SpellList.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Settings\SpellList.CleanseBlacklist.cs">
+      <DependentUpon>SpellList.cs</DependentUpon>
+    </Compile>
     <Compile Include="Settings\DeathKnightSettings.cs" />
     <Compile Include="Settings\DruidSettings.cs" />
     <Compile Include="Settings\HealerSettings.cs" />
@@ -276,10 +286,13 @@ if $(ConfigurationName) == Raphus (
 )
 
 if $(ConfigurationName) == Bobby53 (
+rd /s /q "D:\HB\Routines\Singular"
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HB\Routines\Singular\" /i /f /s /v /y
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HB\Routines\Singular\" /i /f /v /y
+rd /s /q "D:\HBB\Routines\Singular"
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HBB\Routines\Singular\" /i /f /s /v /y
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HBB\Routines\Singular\" /i /f /v /y
+rd /s /q "D:\HB-BRODIE\Routines\Singular"
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\HB-BRODIE\Routines\Singular\" /i /f /s /v /y
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "D:\HB-BRODIE\Routines\Singular\" /i /f /v /y
 )

@@ -111,7 +111,7 @@
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(332, 437);
+            this.tabPage2.Size = new System.Drawing.Size(332, 342);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Class Specific";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -121,7 +121,7 @@
             this.pgClass.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pgClass.Location = new System.Drawing.Point(3, 3);
             this.pgClass.Name = "pgClass";
-            this.pgClass.Size = new System.Drawing.Size(326, 431);
+            this.pgClass.Size = new System.Drawing.Size(326, 336);
             this.pgClass.TabIndex = 0;
             // 
             // tabPage4
@@ -130,7 +130,7 @@
             this.tabPage4.Controls.Add(this.grpHealHeader);
             this.tabPage4.Location = new System.Drawing.Point(4, 22);
             this.tabPage4.Name = "tabPage4";
-            this.tabPage4.Size = new System.Drawing.Size(332, 437);
+            this.tabPage4.Size = new System.Drawing.Size(332, 342);
             this.tabPage4.TabIndex = 3;
             this.tabPage4.Text = "Group Healing";
             this.tabPage4.UseVisualStyleBackColor = true;
@@ -187,7 +187,7 @@
             this.tabPage5.Location = new System.Drawing.Point(4, 22);
             this.tabPage5.Name = "tabPage5";
             this.tabPage5.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage5.Size = new System.Drawing.Size(332, 437);
+            this.tabPage5.Size = new System.Drawing.Size(332, 342);
             this.tabPage5.TabIndex = 4;
             this.tabPage5.Text = "Hotkeys";
             this.tabPage5.UseVisualStyleBackColor = true;
@@ -198,7 +198,7 @@
             this.pgHotkeys.Location = new System.Drawing.Point(3, 3);
             this.pgHotkeys.Name = "pgHotkeys";
             this.pgHotkeys.PropertySort = System.Windows.Forms.PropertySort.NoSort;
-            this.pgHotkeys.Size = new System.Drawing.Size(326, 431);
+            this.pgHotkeys.Size = new System.Drawing.Size(326, 336);
             this.pgHotkeys.TabIndex = 1;
             // 
             // tabPage3
@@ -211,7 +211,7 @@
             this.tabPage3.Location = new System.Drawing.Point(4, 22);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage3.Size = new System.Drawing.Size(332, 437);
+            this.tabPage3.Size = new System.Drawing.Size(332, 342);
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "Debugging";
             this.tabPage3.UseVisualStyleBackColor = true;

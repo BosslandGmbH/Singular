@@ -56,23 +56,16 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
-
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        Spell.Cast("Repentance", 
-                            onUnit => 
-                            Unit.NearbyUnfriendlyUnits
-                            .Where(u => (u.IsPlayer || u.IsDemon || u.IsHumanoid || u.IsDragon || u.IsGiant || u.IsUndead)
-                                    && Me.CurrentTargetGuid != u.Guid
-                                    && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                                    && !u.IsCrowdControlled()
-                                    && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
-                            .OrderByDescending(u => u.Distance)
-                            .FirstOrDefault())
-                        )
-                    )
+                Spell.Cast("Repentance", 
+                    onUnit => 
+                    Unit.NearbyUnfriendlyUnits
+                    .Where(u => (u.IsPlayer || u.IsDemon || u.IsHumanoid || u.IsDragon || u.IsGiant || u.IsUndead)
+                            && Me.CurrentTargetGuid != u.Guid
+                            && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                            && !u.IsCrowdControlled()
+                            && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                    .OrderByDescending(u => u.Distance)
+                    .FirstOrDefault())
                 );
         }
 
@@ -175,6 +168,40 @@ namespace Singular.ClassSpecific.Paladin
                 bestSeal = Settings.PaladinSeal.Truth;
 
             return bestSeal;
+        }
+
+        public static Composite CreateWordOfGloryBehavior(UnitSelectionDelegate onUnit )
+        {
+            if ( HasTalent( PaladinTalents.EternalFlame ))
+            {
+                return new PrioritySelector(
+                    Spell.Cast(
+                        "Eternal Flame",
+                        onUnit,
+                        ret => onUnit(ret) is WoWPlayer && PaladinSettings.KeepEternalFlameUp && Group.Tanks.Contains((WoWPlayer)onUnit(ret)) && !Group.Tanks.Any(t => t.HasMyAura("Eternal Flame"))),
+
+                    Spell.Cast(
+                        "Eternal Flame",
+                        ret => (WoWUnit)ret,
+                        ret => StyxWoW.Me.CurrentHolyPower >= 3 && (((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().EternalFlameHealth ))
+
+                    );
+            }
+
+            return new PrioritySelector(
+                new Decorator(
+                    req => Me.CurrentHolyPower >= 1 && Me.HealthPercent <= PaladinSettings.WordOfGloryHealth1 || Me.ActiveAuras.ContainsKey("Divine Purpose"),
+                    Spell.Cast("Word of Glory", onUnit)
+                    ),
+                new Decorator(
+                    req => Me.CurrentHolyPower >= 2 && Me.HealthPercent <= PaladinSettings.WordOfGloryHealth2,
+                    Spell.Cast("Word of Glory", onUnit)
+                    ),
+                new Decorator(
+                    req => Me.CurrentHolyPower >= 3 && Me.HealthPercent <= PaladinSettings.WordOfGloryHealth3,
+                    Spell.Cast("Word of Glory", onUnit)
+                    )
+                );
         }
 
         public static bool HasTalent(PaladinTalents tal)

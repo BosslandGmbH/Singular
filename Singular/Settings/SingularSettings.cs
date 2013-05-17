@@ -21,14 +21,21 @@ namespace Singular.Settings
         Auto       
     }
 
-    enum InterruptType
+    enum CheckTargets
     {
         None = 0,
-        Target,
+        Current,
         All
     }
 
-    enum DispelStyle
+    enum PurgeAuraFilter
+    {
+        None = 0,
+        Whitelist,
+        All
+    }
+
+    enum RelativePriority
     {
         None = 0,
         LowPriority,
@@ -49,21 +56,16 @@ namespace Singular.Settings
         public SingularSettings()
             : base(Path.Combine(CharacterSettingsPath, "SingularSettings.xml"))
         {
-            CleanseBlacklist = new Dictionary<int,string>() {
-                { 96328, "Toxic Torment (Green Cauldron)" },
-                { 96325, "Frostburn Formula (Blue Cauldron)" },
-                { 96326, "Burning Blood (Red Cauldron)" },
-                { 92876, "Blackout (10man)" },
-                { 92878, "Blackout (25man)" },
-                { 30108, "(Warlock) Unstable Affliction" },
-                { 8050,  "(Shaman) Flame Shock" },
-                { 3600,  "(Shaman) Earthbind" },
-                { 34914, "(Priest) Vampiric Touch" },
-                { 104050, "Torrent of Frost" },
-                { 103962, "Torrent of Frost" },
-                { 103904, "Torrent of Frost" }
-            };
         }
+
+        public static string GlobalSettingsPath
+        {
+            get
+            {
+                return Path.Combine(Styx.Common.Utilities.AssemblyDirectory, "Settings");
+            }
+        }
+
 
         public static string CharacterSettingsPath
         {
@@ -75,7 +77,7 @@ namespace Singular.Settings
         }
 
 
-        public static string SettingsPath
+        public static string SingularSettingsPath
         {
             get
             {
@@ -181,6 +183,15 @@ namespace Singular.Settings
         }
 
         [Browsable(false)]
+        public static bool Trace
+        {
+            get
+            {
+                return Debug && SingularSettings.Instance.EnableDebugTrace;
+            }
+        }
+
+        [Browsable(false)]
         public static bool DisableAllTargeting
         {
             get
@@ -191,9 +202,6 @@ namespace Singular.Settings
                 return MovementManager.IsManualMovementBotActive || SingularRoutine.IsDungeonBuddyActive;
             }
         }
-
-        [Browsable(false)]
-        internal static Dictionary<int, string> CleanseBlacklist = new Dictionary<int, string>();
 
         #region Category: Debug
 
@@ -215,8 +223,15 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Debug")]
         [DisplayName("Debug Logging Spell.CanCast")]
-        [Description("EXTREMELY VERBOSE!! Enables logging of reason each spell in priority cannot be cast")]
+        [Description("VERBOSE!! Enables logging of reason each spell in priority cannot be cast")]
         public bool EnableDebugLoggingCanCast { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Debug")]
+        [DisplayName("Debug Trace")]
+        [Description("EXTREMELY VERBOSE!! Enables logging of entry/exit into each behavior. Only use if instructed or you prefer slower response times!")]
+        public bool EnableDebugTrace { get; set; }
 
         #endregion
 
@@ -311,7 +326,53 @@ namespace Singular.Settings
 
         #endregion
 
-        #region Category: Misc
+        #region Category: Avoidance
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Avoidance")]
+        [DisplayName("Disengage Allowed")]
+        [Description("Allow use of Disengage (or equiv)")]
+        public bool DisengageAllowed { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Avoidance")]
+        [DisplayName("Disengage at Health %")]
+        [Description("Disengage (or equiv) if health below this % and mob in melee range")]
+        public int DisengageHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Avoidance")]
+        [DisplayName("Disengage at mob count")]
+        [Description("Disengage (or equiv) if this many mobs in melee range")]
+        public int DisengageMobCount { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Avoidance")]
+        [DisplayName("Kiting Allowed")]
+        [Description("Allow kiting of mobs.")]
+        public bool KiteAllow { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Avoidance")]
+        [DisplayName("Kite below Health %")]
+        [Description("Kite if health below this % and mob in melee range")]
+        public int KiteHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Avoidance")]
+        [DisplayName("Kite at mob count")]
+        [Description("Kite if this many mobs in melee range")]
+        public int KiteMobCount { get; set; }
+
+        #endregion
+
+        #region Category: General
 
         [Setting]
         [DefaultValue(true)]
@@ -322,10 +383,17 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(false)]
-        [Category("Misc")]
+        [Category("General")]
         [DisplayName("Disable Non Combat Behaviors")]
         [Description("Enabling that will disable non combat behaviors. (Rest, PreCombat buffs)")]
         public bool DisableNonCombatBehaviors { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("General")]
+        [DisplayName("Disable in Quest Vehicle")]
+        [Description("True: Singular ignore calls from Questing Bot if in a Quest Vehicle; False: Singular tries to fight/heal when Questing Bot asks it to.")]
+        public bool DisableInQuestVehicle { get; set; }
 
         #endregion
 
@@ -341,8 +409,8 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Pets")]
-        [DisplayName("Solo: Pet Tank Adds")]
-        [Description("True: when Solo, switch to pickup targets attacking player")]
+        [DisplayName("Solo: Pet will Tanks Adds")]
+        [Description("True: when Solo, switch Pet target to pickup those attacking player")]
         public bool PetTankAdds { get; set; }
 
         #endregion 
@@ -378,11 +446,11 @@ namespace Singular.Settings
         public bool IncludePetsAsHealTargets { get; set; }
 
         [Setting]
-        [DefaultValue(DispelStyle.HighPriority)]
+        [DefaultValue(RelativePriority.HighPriority)]
         [Category("Group Healing/Support")]
         [DisplayName("Dispel Debufs")]
         [Description("Dispel harmful debuffs")]
-        public DispelStyle DispelDebuffs { get; set; }
+        public RelativePriority DispelDebuffs { get; set; }
 
         #endregion
 
@@ -469,12 +537,30 @@ namespace Singular.Settings
         [Description("None: disabled, Enable: intelligent switching; Auto: disable for DungeonBuddy/manual Assist Bots, otherwise intelligent switching.")]
         public TargetingStyle TypeOfTargeting { get; set; }
 
+        #endregion
+
+        #region Category: Enemy Control
+
         [Setting]
-        [DefaultValue(InterruptType.All)]
-        [Category("Targeting")]
-        [DisplayName("Interrupt Target")]
-        [Description("Select which targets should we interrupt.")]
-        public InterruptType InterruptTarget { get; set; }
+        [DefaultValue(CheckTargets.Current)]
+        [Category("Enemy Control")]
+        [DisplayName("Purge Targets")]
+        [Description("None: disabled, Current: our target only, All: enemies in range we are facing")]
+        public CheckTargets PurgeTargets { get; set; }
+
+        [Setting]
+        [DefaultValue(PurgeAuraFilter.Whitelist)]
+        [Category("Enemy Control")]
+        [DisplayName("Purge Buffs")]
+        [Description("False: disabled, Current: our target only, Other: enemies in range we are facing")]
+        public PurgeAuraFilter PurgeBuffs { get; set; }
+
+        [Setting]
+        [DefaultValue(CheckTargets.All)]
+        [Category("Enemy Control")]
+        [DisplayName("Interrupt Targets")]
+        [Description("None: disabled, Current: our target only, All: any enemy in range.")]
+        public CheckTargets InterruptTarget { get; set; }
 
         #endregion
 

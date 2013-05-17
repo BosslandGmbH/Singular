@@ -56,27 +56,24 @@ namespace Singular.ClassSpecific.Monk
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster, priority: 1)]
         public static Composite CreateBrewmasterMonkCombatBuffs()
         {
-            return new Decorator(
-                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                new PrioritySelector(
-                    Spell.BuffSelf("Stance of the Sturdy Ox"),
-                    Spell.BuffSelf(
-                        "Avert Harm",
-                        ctx =>
-                        {
-                            if (!MonkSettings.UseAvertHarm || !Me.GroupInfo.IsInParty)
-                                return false;
-                            var nearbyGroupMembers = Me.RaidMembers.Where(r => !r.IsMe && r.Distance <= 10).ToList();
-                            return nearbyGroupMembers.Any() && nearbyGroupMembers.Average(u => u.HealthPercent) <= MonkSettings.AvertHarmGroupHealthPct;
-                        }),
-                    Spell.BuffSelf("Zen Meditation", ctx => Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.IsCasting),
+            return new PrioritySelector(
+                Spell.BuffSelf("Stance of the Sturdy Ox"),
+                Spell.BuffSelf(
+                    "Avert Harm",
+                    ctx =>
+                    {
+                        if (!MonkSettings.UseAvertHarm || !Me.GroupInfo.IsInParty)
+                            return false;
+                        var nearbyGroupMembers = Me.RaidMembers.Where(r => !r.IsMe && r.Distance <= 10).ToList();
+                        return nearbyGroupMembers.Any() && nearbyGroupMembers.Average(u => u.HealthPercent) <= MonkSettings.AvertHarmGroupHealthPct;
+                    }),
+                Spell.BuffSelf("Zen Meditation", ctx => Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.IsCasting),
 
-                    Spell.BuffSelf("Fortifying Brew", ctx => Me.HealthPercent <= MonkSettings.FortifyingBrewPercent),
-                    Spell.BuffSelf("Guard", ctx => Me.HasAura("Power Guard")),
-                    Spell.BuffSelf("Elusive Brew", ctx => MonkSettings.UseElusiveBrew && Me.HasAura("Elusive Brew", MonkSettings.ElusiveBrewMinumumCount)),
-                    Spell.Cast("Chi Brew", ctx => UseChiBrew),
-                    Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4)
-                    )
+                Spell.BuffSelf("Fortifying Brew", ctx => Me.HealthPercent <= MonkSettings.FortifyingBrewPercent),
+                Spell.BuffSelf("Guard", ctx => Me.HasAura("Power Guard")),
+                Spell.BuffSelf("Elusive Brew", ctx => MonkSettings.UseElusiveBrew && Me.HasAura("Elusive Brew", MonkSettings.ElusiveBrewMinumumCount)),
+                Spell.Cast("Chi Brew", ctx => UseChiBrew),
+                Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4)
                 );
         }
 

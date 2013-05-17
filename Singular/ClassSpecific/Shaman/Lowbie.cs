@@ -31,11 +31,8 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.PreCombatBuffs | BehaviorType.CombatBuffs, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbiePreCombatBuffs()
         {
-            return new Decorator(
-                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                new PrioritySelector(
-                    Spell.BuffSelf("Lightning Shield")
-                    )
+            return new PrioritySelector(
+                Spell.BuffSelf("Lightning Shield")
                 );
         }
         [Behavior(BehaviorType.Pull, WoWClass.Shaman, 0)]

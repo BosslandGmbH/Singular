@@ -11,7 +11,7 @@ namespace Singular.Settings
     internal class RogueSettings : Styx.Helpers.Settings
     {
         public RogueSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "Rogue.xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "Rogue.xml"))
         {
         }
 

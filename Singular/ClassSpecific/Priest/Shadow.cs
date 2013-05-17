@@ -118,6 +118,8 @@ namespace Singular.ClassSpecific.Priest
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
+
                         Spell.BuffSelf("Shadowform"),
 
                         // Mana Management stuff - send in the fiends
@@ -232,6 +234,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Shadow Word: Death", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.InLineOfSpellSight)),
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
 
                         // Defensive stuff
                         Spell.BuffSelf("Fade", ret => Common.HasTalent(PriestTalents.Phantasm) && (Me.HasAuraWithMechanic(WoWSpellMechanic.Snared) || Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid && (u.Class == WoWClass.Hunter || u.Class == WoWClass.Mage || u.Class == WoWClass.Warlock || u.Class == WoWClass.Priest || u.Class == WoWClass.Shaman || u.Class == WoWClass.Druid)))),
@@ -338,6 +341,7 @@ namespace Singular.ClassSpecific.Priest
                     new PrioritySelector(
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
 
                         Spell.BuffSelf("Shadowform"),
 

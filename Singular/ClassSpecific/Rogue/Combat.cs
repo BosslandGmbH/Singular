@@ -75,8 +75,6 @@ namespace Singular.ClassSpecific.Rogue
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
-                        CreateCombatDiagnosticOutputBehavior("Combat"),
-
                         new Throttle( Helpers.Common.CreateInterruptBehavior()),
 
                         Movement.CreateMoveBehindTargetBehavior(),
@@ -143,8 +141,6 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
-                        CreateCombatDiagnosticOutputBehavior("Combat"),
-
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // Instance Specific Behavior
@@ -207,6 +203,12 @@ namespace Singular.ClassSpecific.Rogue
                         )
                     )
                 );
+        }
+
+        [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueAssassination, priority: 99)]
+        public static Composite CreateRogueHeal()
+        {
+            return CreateCombatDiagnosticOutputBehavior("Combat");
         }
 
         private static Composite CreateCombatDiagnosticOutputBehavior(string sState = "")

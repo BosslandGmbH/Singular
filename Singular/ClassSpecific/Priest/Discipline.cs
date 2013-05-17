@@ -161,6 +161,7 @@ namespace Singular.ClassSpecific.Priest
                             new PrioritySelector(
                                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
                                 Helpers.Common.CreateInterruptBehavior(),
+                                Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                                 Common.CreateShadowfiendBehavior(),
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 Spell.Buff("Shadow Word: Pain", true),
@@ -229,6 +230,8 @@ namespace Singular.ClassSpecific.Priest
                 new PrioritySelector(
                     Helpers.Common.EnsureReadyToAttackFromMediumRange(),
                     Helpers.Common.CreateInterruptBehavior(),
+                    Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
+
                     Common.CreateShadowfiendBehavior(),
                     //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
                     Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),

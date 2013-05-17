@@ -101,7 +101,7 @@ namespace Singular.ClassSpecific.Warlock
                         //new ThrottlePasses(5, new Action(r => { Logger.Write("in PreCombatBuff()"); return RunStatus.Failure; })),
                         CreateWarlockSummonPet(),
                         Spell.BuffSelf("Soul Link", ret => !Me.HasAura("Soul Link") && Me.GotAlivePet && PetManager.PetSummonAfterDismountTimer.IsFinished ),
-                        new Throttle(5, Spell.Cast("Create Healthstone", ret => !HaveHealthStone && !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 25))),
+                        new Throttle(5, Spell.Cast("Create Healthstone", mov => true, on => Me, ret => !HaveHealthStone && !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 25), cancel => false )),
                         Spell.BuffSelf("Soulstone", ret => NeedToSoulstoneMyself()),
                         PartyBuff.BuffGroup("Dark Intent"),
                         Spell.BuffSelf( "Grimoire of Sacrifice", ret => GetCurrentPet() != WarlockPet.None ),
@@ -619,7 +619,8 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new Decorator(
                 ret => GetCurrentPet() != WarlockPet.None
-                    && Me.Pet.HealthPercent < petMinHealth 
+                    && Me.Pet.HealthPercent < petMinHealth
+                    && !Spell.IsSpellOnCooldown("Health Funnel")
                     && Me.Pet.Distance < 45
                     && Me.Pet.InLineOfSpellSight
                     && !HasTalent(WarlockTalents.SoulLink),

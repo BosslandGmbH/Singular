@@ -40,14 +40,23 @@ namespace Singular.ClassSpecific.Warlock
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCast(true),
-                Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+                        CreateWarlockDiagnosticOutputBehavior( "Pull" ),
+                        Helpers.Common.CreateAutoAttack(true),
                         Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
                         Spell.Cast("Incinerate")
                         )
                     )
+                );
+        }
+
+        [Behavior(BehaviorType.Heal, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.All, priority: 999)]
+        public static Composite CreateAfflictionHeal()
+        {
+            return new PrioritySelector(
+                CreateWarlockDiagnosticOutputBehavior("Combat")
                 );
         }
 
@@ -58,11 +67,12 @@ namespace Singular.ClassSpecific.Warlock
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCast(true),
-                Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator(ret => !Spell.IsGlobalCooldown(),
 
                     new PrioritySelector(
+
+                        Helpers.Common.CreateAutoAttack(true),
 
                         Spell.BuffSelf("Flames of Xoroth", ret => !Me.GotAlivePet && !Me.HasAura("Grimoire of Sacrifice") && CurrentBurningEmbers >= 10),
 
@@ -73,8 +83,6 @@ namespace Singular.ClassSpecific.Warlock
                             _mobCount = TargetsInCombat.Count();
                             return RunStatus.Failure;
                         }),
-
-                        CreateWarlockDiagnosticOutputBehavior(),
 
                         CreateAoeBehavior(),
 
@@ -162,7 +170,7 @@ namespace Singular.ClassSpecific.Warlock
             }
         }
 
-        private static Composite CreateWarlockDiagnosticOutputBehavior()
+        private static Composite CreateWarlockDiagnosticOutputBehavior(string s)
         {
             return new Throttle(1,
                 new Decorator(
@@ -170,7 +178,8 @@ namespace Singular.ClassSpecific.Warlock
                     new Action(ret =>
                     {
                         WoWUnit target = Me.CurrentTarget ?? Me;
-                        Logger.WriteFile(LogLevel.Diagnostic, ".... h={0:F1}%/m={1:F1}%, embers={2}, backdraft={3}, immolate={4}, enemy={5}% @ {6:F1} yds, mobcnt={7}",
+                        Logger.WriteFile(LogLevel.Diagnostic, ".... [{0}] h={1:F1}%/m={2:F1}%, embers={3}, backdraft={4}, immolate={5}, enemy={6}% @ {7:F1} yds, mobcnt={8}",
+                            s,
                             Me.HealthPercent,
                             Me.ManaPercent,
                             CurrentBurningEmbers,

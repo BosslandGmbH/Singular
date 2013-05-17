@@ -73,7 +73,9 @@ namespace Singular.ClassSpecific.Mage
                      ret => !Spell.IsGlobalCooldown(),
                      new PrioritySelector(
 
-                        CreateFrostDiagnosticOutputBehavior(), 
+                        CreateFrostDiagnosticOutputBehavior(),
+
+                        Common.CreateMageAvoidanceBehavior(null, null),
 
                         CreateSummonWaterElemental(),
 
@@ -171,6 +173,8 @@ namespace Singular.ClassSpecific.Mage
                      new PrioritySelector(
 
                          CreateFrostDiagnosticOutputBehavior(),
+
+                        Common.CreateMageAvoidanceBehavior(null, null),
 
                          CreateSummonWaterElemental(),
 

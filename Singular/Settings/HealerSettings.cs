@@ -15,7 +15,7 @@ namespace Singular.Settings
 
         // reqd ctor
         public HealerSettings(string className, HealingContext ctx)
-            : base(Path.Combine(SingularSettings.SettingsPath, className + "-Heal-" + ctx.ToString() + ".xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, className + "-Heal-" + ctx.ToString() + ".xml"))
         {
             Context = ctx;
         }

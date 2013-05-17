@@ -183,63 +183,6 @@ namespace Singular.Helpers
         }
 
 
-        public static bool UseTrinket(bool firstSlot)
-        {
-            TrinketUsage usage = firstSlot ? SingularSettings.Instance.Trinket1Usage : SingularSettings.Instance.Trinket2Usage;
-
-            // If we're not going to use it, don't bother going any further. Save some performance here.
-            if (usage == TrinketUsage.Never)
-            {
-                return false;
-            }
-
-            WoWItem item = firstSlot ? StyxWoW.Me.Inventory.Equipped.Trinket1 : StyxWoW.Me.Inventory.Equipped.Trinket2;
-            //int percent = firstSlot ? SingularSettings.Instance.FirstTrinketUseAtPercent : SingularSettings.Instance.SecondTrinketUseAtPercent;
-
-            if (item == null)
-            {
-                return false;
-            }
-
-            if (!CanUseEquippedItem(item))
-                return false;
-
-            bool useIt = false;
-            switch (usage)
-            {
-                case TrinketUsage.OnCooldown:
-                    // We know its off cooldown... so just use it :P
-                    useIt = true;
-                    break;
-                case TrinketUsage.OnCooldownInCombat:
-                    if (StyxWoW.Me.Combat)
-                    {
-                        useIt = true;
-                    }
-                    break;
-                case TrinketUsage.LowPower:
-                    // We use the PowerPercent here, since it applies to ALL types of power. (Runic, Mana, Rage, Energy, Focus)
-                    if (StyxWoW.Me.PowerPercent < SingularSettings.Instance.PotionMana )
-                    {
-                        useIt = true;
-                    }
-                    break;
-                case TrinketUsage.LowHealth:
-                    if (StyxWoW.Me.HealthPercent < SingularSettings.Instance.PotionHealth )
-                    {
-                        useIt = true;
-                    }
-                    break;
-            }
-
-            if (useIt)
-            {
-                Logger.Write("Popping trinket " + item.Name);
-                item.Use();
-                return true;
-            }
-            return false;
-        }
         public static Composite CreateUseAlchemyBuffsBehavior()
         {
             return new PrioritySelector(

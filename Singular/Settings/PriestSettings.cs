@@ -13,7 +13,7 @@ namespace Singular.Settings
     internal class PriestSettings : Styx.Helpers.Settings
     {
         public PriestSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "Priest.xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "Priest.xml"))
         {
         }
 

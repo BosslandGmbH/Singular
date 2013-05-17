@@ -21,7 +21,7 @@ namespace Singular.Settings
     internal class DeathKnightSettings : Styx.Helpers.Settings
     {
         public DeathKnightSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "DeathKnight.xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "DeathKnight.xml"))
         {
         }
 
@@ -116,6 +116,7 @@ namespace Singular.Settings
         [DefaultValue(60)]
         [Category("Blood")]
         [DisplayName("Army Of The Dead Percent")]
+        [Description("Cast when our Health % falls below this setting")]
         public int ArmyOfTheDeadPercent { get; set; }
 
         [Setting]
@@ -129,63 +130,70 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Blood")]
         [DisplayName("BoneShield Exclusive")]
+        [Description("False: cast on Cooldown, True: cast if no active Bone Shield, Vampiric Blood, Dancing Rune Weapon, Lichborne, Icebound Fortitude")]
         public bool BoneShieldExclusive { get; set; }
 
         [Setting]
         [DefaultValue(false)]
         [Category("Blood")]
         [DisplayName("Death Pact Exclusive")]
+        [Description("False: Raise Ally as needed for Death Pact, True: Raise Ally for Death Pact only if no active Bone Shield, Vampiric Blood, Dancing Rune Weapon, Lichborne, Icebound Fortitude")]
         public bool DeathPactExclusive { get; set; }
 
         [Setting]
         [DefaultValue(60)]
         [Category("Blood")]
         [DisplayName("Empower Rune Weapon Percent")]
+        [Description("Cast when our Health % falls below this setting")]
         public int EmpowerRuneWeaponPercent { get; set; }
 
         [Setting]
         [DefaultValue(false)]
         [Category("Blood")]
         [DisplayName("Icebound Fortitude Exclusive")]
+        [Description("False: cast if needed, True: cast if needed and no active Bone Shield, Vampiric Blood, Dancing Rune Weapon, Lichborne, Icebound Fortitude")]
         public bool IceboundFortitudeExclusive { get; set; }
 
         [Setting]
         [DefaultValue(false)]
         [Category("Blood")]
         [DisplayName("Lichborne Exclusive")]
-        [Description("Use Lichborne only if these not active: Bone Shield, Vampiric Blood, Dancing Rune Weapon, Icebound Fortitude")]
+        [Description("False: cast if needed, True: cast if needed and no active Bone Shield, Vampiric Blood, Dancing Rune Weapon, Lichborne, Icebound Fortitude")]
         public bool LichborneExclusive { get; set; }
 
         [Setting]
         [DefaultValue(60)]
         [Category("Blood")]
         [DisplayName("Rune Tap Percent")]
-        [Description("Health percent when to use Rune Tap for healing.")]
+        [Description("Cast when our Health % falls below this")]
         public int RuneTapPercent { get; set; }
 
         [Setting]
         [DefaultValue(70)]
         [Category("Blood")]
         [DisplayName("Summon Ghoul Percent")]
+        [Description("Blood Spec: Cast Raise Dead when Blood Spec Health falls below this Health %")]
         public int SummonGhoulPercentBlood { get; set; }
 
         [Setting]
         [DefaultValue(false)]
         [Category("Blood")]
         [DisplayName("Use Ghoul As Dps CoolDown")]
-        [Description("Use Ghoul As Dps CoolDown ")]
+        [Description("Blood Spec: Ghoul is used for DPS rather than saved for Death Pact")]
         public bool UseGhoulAsDpsCdBlood { get; set; }
 
         [Setting]
         [DefaultValue(60)]
         [Category("Blood")]
         [DisplayName("Vampiric Blood Percent")]
+        [Description("Cast when our Health % falls below this")]
         public int VampiricBloodPercent { get; set; }
 
         [Setting]
         [DefaultValue(false)]
         [Category("Blood")]
         [DisplayName("Vampiric Blood Exclusive")]
+        [Description("False: cast if needed, True: cast if needed and no active Bone Shield, Vampiric Blood, Dancing Rune Weapon, Lichborne, Icebound Fortitude")]
         public bool VampiricBloodExclusive { get; set; } 
         #endregion
 
@@ -194,13 +202,14 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Frost")]
         [DisplayName("Use Ghoul As Dps CoolDown")]
-        [Description("Use Ghoul As Dps CoolDown ")]
+        [Description("Frost Spec: Ghoul is used for DPS rather than saved for Death Pact")]
         public bool UseGhoulAsDpsCdFrost { get; set; }
 
         [Setting]
         [DefaultValue(70)]
         [Category("Frost")]
         [DisplayName("Summon Ghoul Percent")]
+        [Description("Frost Spec: Cast Raise Dead when Blood Spec Health falls below this Health %")]
         public int SummonGhoulPercentFrost { get; set; }
         
         #endregion
@@ -211,6 +220,7 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Unholy")]
         [DisplayName("Summon Gargoyle")]
+        [Description("False: do not cast, True: cast when a long cooldown is appropriate (Boss, PVP, stressful solo fight)")]
         public bool UseSummonGargoyle { get; set; }
 
         #endregion

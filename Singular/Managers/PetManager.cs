@@ -57,11 +57,28 @@ namespace Singular.Managers
 
             if (StyxWoW.Me.Pet != null && _petGuid != StyxWoW.Me.Pet.Guid)
             {
-                _petGuid = StyxWoW.Me.Pet.Guid;
+                // clear any existing spells
                 PetSpells.Clear();
-                // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
-                PetSpells.AddRange(StyxWoW.Me.PetSpells);
-                PetSummonAfterDismountTimer.Reset();
+
+                // only load spells if we have one that is non-null
+                // .. as initial load happens before Me.PetSpells is initialized and we were saving 'null' spells
+                if (StyxWoW.Me.PetSpells.Any(s => s.Spell != null))
+                {
+                    // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
+                    PetSpells.AddRange(StyxWoW.Me.PetSpells);
+                    PetSummonAfterDismountTimer.Reset();
+                    _petGuid = StyxWoW.Me.Pet.Guid;
+
+                    Logger.WriteDebug("---PetSpells Loaded---");
+                    foreach (var sp in PetSpells)
+                    {
+                        if (sp.Spell == null)
+                            Logger.WriteDebug("   {0} spell={1}  Action={0}", sp.ActionBarIndex, sp.ToString(), sp.Action.ToString());
+                        else
+                            Logger.WriteDebug("   {0} spell={1} #{2}", sp.ActionBarIndex, sp.ToString(), sp.Spell.Id);
+                    }
+                    Logger.WriteDebug(" ");
+                }
             }
 
             if (!StyxWoW.Me.GotAlivePet)

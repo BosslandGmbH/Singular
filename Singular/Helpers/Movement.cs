@@ -130,7 +130,7 @@ namespace Singular.Helpers
                     && StyxWoW.Me.IsMoving
                     && InMoveToMeleeStopRange(StyxWoW.Me.CurrentTarget),
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStoppedWithinMelee: stopping because ", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("{0:F1} yds target distance is within melee", StyxWoW.Me.CurrentTarget.Distance))),
+                    new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStoppedWithinMelee: stopping because {0}", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("target at {0:F1} yds", StyxWoW.Me.CurrentTarget.Distance))),
                     new Action(ret => StopMoving.Now())
                     )
                 );
@@ -143,23 +143,25 @@ namespace Singular.Helpers
         ///   Created 5/1/2011.
         /// </remarks>
         /// <returns>.</returns>
-        public static Composite CreateFaceTargetBehavior(float viewDegrees = 70f)
+        public static Composite CreateFaceTargetBehavior(float viewDegrees = 70f, bool waitForFacing = true)
         {
-            return CreateFaceTargetBehavior(ret => StyxWoW.Me.CurrentTarget, viewDegrees);
+            return CreateFaceTargetBehavior(ret => StyxWoW.Me.CurrentTarget, viewDegrees, waitForFacing );
         }
 
-        public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 70f)
+        public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 70f, bool waitForFacing = true)
         {
             return new Decorator(
-                ret =>
-                !MovementManager.IsMovementDisabled && toUnit != null && toUnit(ret) != null &&
-                !StyxWoW.Me.IsMoving && !toUnit(ret).IsMe &&
-                !StyxWoW.Me.IsSafelyFacing(toUnit(ret), viewDegrees),
-                new Action(ret =>
-                               {
-                                   toUnit(ret).Face();
-                                   return RunStatus.Failure;
-                               }));
+                ret => !MovementManager.IsMovementDisabled 
+                    && toUnit != null && toUnit(ret) != null 
+                    && !StyxWoW.Me.IsMoving 
+                    && !toUnit(ret).IsMe 
+                    && !StyxWoW.Me.IsSafelyFacing(toUnit(ret), viewDegrees),
+                new Action( ret => 
+                {
+                    toUnit(ret).Face();
+                    return waitForFacing && !StyxWoW.Me.IsSafelyFacing(toUnit(ret)) ? RunStatus.Success : RunStatus.Failure;
+                })
+                );
         }
 
         /// <summary>
@@ -278,16 +280,19 @@ namespace Singular.Helpers
                 return true;
 
             if (unit.IsPlayer)
-                return unit.DistanceSqr < (2 * 2);
+            {
+                if (unit.DistanceSqr < (2 * 2))
+                    return true;
 
-            if ( !unit.IsWithinMeleeRange)
-                return false;
+            }
+            else
+            {
+                float preferredDistance = Spell.MeleeDistance(unit) - 1f;
+                if (unit.Distance <= preferredDistance)
+                    return true;
+            }
 
-            float preferredDistance = Spell.MeleeDistance(unit) - 1;
-            if (unit.Distance > preferredDistance)
-                return false;
-
-            return true;
+            return !unit.IsMoving && unit.IsWithinMeleeRange;
         }
 #endif
 
@@ -330,10 +335,11 @@ namespace Singular.Helpers
                     ctx => CalculatePointBehindTarget(),
                     new Decorator(
                         req => Navigator.CanNavigateFully(StyxWoW.Me.Location, (WoWPoint)req, 4),
-                        new Action(behindPoint => {
-                            Navigator.MoveTo((WoWPoint)behindPoint);
-                            StopMoving.AtLocation((WoWPoint)behindPoint);
-                            })
+                        new Sequence(
+                            new Action(ret => Logger.WriteDebug(Color.White, "MoveBehind: behind {0} @ {1:F1} yds", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance)),
+                            new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint)),
+                            new Action(behindPoint => StopMoving.AtLocation((WoWPoint)behindPoint))
+                            )
                         )
                     )
                 );
@@ -487,7 +493,7 @@ namespace Singular.Helpers
             if (stopMovingNow )
             {
                 if (!StyxWoW.Me.IsMoving)
-                    Logger.Write(Color.White, "StopMoving: character already stopped, clearing stop {0} request", Type);
+                    Logger.WriteDebug(Color.White, "StopMoving: character already stopped, clearing stop {0} request", Type);
                 else
                 {
                     Navigator.PlayerMover.MoveStop();
@@ -557,7 +563,11 @@ namespace Singular.Helpers
         public static void Now()
         {
             Clear();
-            Navigator.PlayerMover.MoveStop();
+            if (StyxWoW.Me.IsMoving)
+            {
+                Logger.WriteDebug(Color.White, "StopMoving.Now: character already stopped, clearing stop {0} request", Type);
+                Navigator.PlayerMover.MoveStop();
+            }
         }
 
         public static void AsSoonAsPossible( SimpleBooleanDelegate and = null)

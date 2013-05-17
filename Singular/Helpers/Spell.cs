@@ -194,17 +194,17 @@ namespace Singular.Helpers
                 return true;
 
             WoWSpell spell = sfr.Override ?? sfr.Original;
-            if (Me.ChanneledCastingSpellId == 0)
-            {
-                uint num = StyxWoW.WoWClient.Latency * 2u;
-                if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
-                    return false;
+            if (Me.ChanneledCastingSpellId != 0)
+                return true;
 
-                if (spell.CooldownTimeLeft.TotalMilliseconds > num)
-                    return false;
-            }
+            uint num = StyxWoW.WoWClient.Latency * 2u;
+            if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
+                return true;
 
-            return true;
+            if (spell.CooldownTimeLeft.TotalMilliseconds > num)
+                return true;
+
+            return false;
         }
 
         /// <summary>
@@ -340,15 +340,18 @@ namespace Singular.Helpers
                     if (_gcdCheck != null)
                         return _gcdCheck.CooldownTimeLeft;
                 }
-                catch (System.AccessViolationException e)
+                catch (System.AccessViolationException)
                 {
-                    Logger.WriteFile("GcdTimeLeft:  exception=", e.Message );
+                    Logger.WriteFile("GcdTimeLeft: handled access exception, reinitializing gcd spell");
+                    GcdInitialize();
                 }
-                catch (Styx.InvalidObjectPointerException e)
+                catch (Styx.InvalidObjectPointerException)
                 {
-                    Logger.WriteFile("GcdTimeLeft:  exception=", e.Message);
+                    Logger.WriteFile("GcdTimeLeft: handled invobj exception, reinitializing gcd spell");
+                    GcdInitialize();
                 }
 
+                // use default value here (reinit should fix _gcdCheck for next call)
                 return SpellManager.GlobalCooldownLeft;
 #endif
             }
@@ -1332,7 +1335,7 @@ namespace Singular.Helpers
                                 SingularRoutine.UpdateDiagnosticCastingState();
                                 return RunStatus.Success;
                             }),
-
+#if OLD_WAY_OF_ENSURING
                             // when accountForLag = true, wait for in progress spell (if any) to complete
                             new WaitContinue(
                                 TimeSpan.FromMilliseconds(500),
@@ -1369,6 +1372,20 @@ namespace Singular.Helpers
                                 ),
 
                             /// new Action(r => Logger.WriteDebug("Spell.Cast(\"{0}\"): assume we are casting (actual={1}, gcd={2})", name(r), StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling, Spell.GlobalCooldown )),
+#else
+                // now for non-instant spell, wait for .IsCasting to be true
+                            new WaitContinue(
+                                TimeSpan.FromMilliseconds(350),
+                                ret =>
+                                {
+                                    if (Spell.GcdTimeLeft.Milliseconds > 750 || Me.CurrentCastTimeLeft.Milliseconds > 750)
+                                        return true;
+
+                                    return false;
+                                },
+                                new ActionAlwaysSucceed()
+                                ),
+#endif
 
                             new PrioritySelector(
 

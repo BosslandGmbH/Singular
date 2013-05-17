@@ -12,7 +12,7 @@ namespace Singular.Settings
     internal class HunterSettings : Styx.Helpers.Settings
     {
         public HunterSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "Hunter.xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "Hunter.xml"))
         {
         }
 
@@ -56,16 +56,16 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
+        [DisplayName("Use Fetch")]
+        [Description("Will loot mobs further than 10 yds away via Fetch")]
+        public bool UseFetch { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
         [DisplayName("Use Misdirection in Instances")]
         [Description("Cast Misdirection on Tank during Pull in Instances, and on Pet if all Tanks dead and Hunter gets aggro")]
         public bool UseMisdirectionInInstances { get; set; }
-
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Movement")]
-        [DisplayName("Allow Kiting")]
-        [Description("Controls if movement to evade an enemy during combat is allowed.")]
-        public bool AllowKiting { get; set; }
 
         [Setting]
         [DefaultValue(false)]
@@ -75,20 +75,48 @@ namespace Singular.Settings
         public bool UseWidowVenom { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Feign Death")]
-        [Description("True: use Feign Death if needed; False: don't cast.")]
-        public bool UseFeignDeath { get; set; }
-
-        [Setting]
         [DefaultValue(false)]
         [Category("Crowd Control")]
         [DisplayName("Crowd Ctrl Focus Unit")]
         [Description("True: Crowd Control used only for Focus Unit; False: used on any add.")]
         public bool CrowdControlFocus { get; set; }
 
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Common")]
+        [DisplayName("Deterrence Health %")]
+        [Description("Health % to cast Deterrence if in Combat")]
+        public int DeterrenceHealth { get; set; }
 
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Common")]
+        [DisplayName("Deterrence Count")]
+        [Description("Number of enemies attacking Hunter (pets not included)")]
+        public int DeterrenceCount { get; set; }
+
+        [Setting]
+        [DefaultValue(10)]
+        [Category("Common")]
+        [DisplayName("Feign Death Health %")]
+        [Description("Health % where we cast Feign Death")]
+        public int FeignDeathHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Feign Death for Enemy Pets")]
+        [Description("Cast FD on cooldown if being attacked by a Player Pet")]
+        public bool FeignDeathPvpEnemyPets { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Feign Death in Instances")]
+        [Description("Cast FD to drop agro if targeted during fight; does not attempt to survive wipes")]
+        public bool FeignDeathInInstances { get; set; }
+
+       
         #endregion
     }
 }

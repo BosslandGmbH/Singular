@@ -281,19 +281,29 @@ namespace Singular
 
         private static bool AllowBehaviorUsage()
         {
-#if TESTING_WHILE_IN_VEHICLE_COMPLETED
-            return (!IsQuestBotActive || !Me.InVehicle) && (!Me.IsOnTransport || Me.Transport.Entry == 56171);
-#else
-            // The boss 'Elegon' sits on a transport, this is just one of several examples why bot needs to fight back when on a transport while in an dungeon.
-            // return (IsDungeonBuddyActive || !Me.IsOnTransport || Me.Transport.Entry == 56171 || Me.IsInInstance);
-            
-            return !IsQuestBotActive || (!Me.InVehicle && !PetBattleInProgress());
-            // return true; 
-#endif
+            // Opportunity alert -- the decision whether a Combat Routine should fight or not
+            // .. should be made by the caller (BotBase, Quest Behavior, Plugin, etc.) 
+            // .. The only reason for calling a Combat Routine is combat.  Anytime we have to
+            // .. add this conditional check in the Combat Routine it should be a singlar that
+            // .. role/responsibility boundaries are being violated
+
+            // disable if Questing and in a Quest Vehicle (now requires setting as well)
+            if (IsQuestBotActive && SingularSettings.Instance.DisableInQuestVehicle && Me.InVehicle)
+                return false;
+
+            // disable for Pet Battles (hopefully a temporary test)
+            if (PetBattleInProgress())
+                return false;
+
+            return true;
         }
 
         private static bool AllowNonCombatBuffing()
         {
+            // Opportunity alert -- bots that sit still waiting for a queue to pop
+            // .. should avoid calling PreCombatbuff, since it looks odd for long queue times
+            // .. for a toon to stay stationary but renew a buff immediately as it expires.
+
             if (IsBgBotActive && !Battlegrounds.IsInsideBattleground)
                 return false;
 
@@ -306,25 +316,9 @@ namespace Singular
             return true;
         }
 
-        private static bool _lastPetBattleCheck = false;
-        private static WaitTimer _timerLastPetBattleCheck = new WaitTimer(TimeSpan.FromSeconds(1));
-
         private static bool PetBattleInProgress()
         {
-            if (!_timerLastPetBattleCheck.IsFinished)
-                return _lastPetBattleCheck;
-
-            _timerLastPetBattleCheck.Reset();
-            List<string> results = Lua.GetReturnValues("return C_PetBattles.IsTrapAvailable()");
-            try
-            {
-                _lastPetBattleCheck = (results[1] != "0");
-            }
-            catch
-            {
-                _lastPetBattleCheck = false;
-            }
-            return false;
+            return 1 == Lua.GetReturnVal<int>("return C_PetBattles.IsInBattle()", 0);
         }
 
         /// <summary>
@@ -508,7 +502,7 @@ namespace Singular
                         DateTime rightNow = DateTime.Now;
                         if ((rightNow - LastCall).TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
                         {
-                            if ( SingularSettings.Debug)
+                            if (SingularSettings.Debug)
                                 Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", (rightNow - LastCall).TotalSeconds);
                             else
                                 Logger.WriteFile("warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", (rightNow - LastCall).TotalSeconds);
@@ -529,22 +523,109 @@ namespace Singular
             Name = name;
             LastCall = DateTime.MinValue;
         }
-
+        /*
         protected override IEnumerable<RunStatus> Execute(object context)
         {
+            IEnumerable<RunStatus> ret;
             CountCall++;
 
             if (SingularSettings.Debug)
             {
-                DateTime rightNow = DateTime.Now;
-                if ((rightNow - LastCall).TotalSeconds > WarnTime && LastCall != DateTime.MinValue )
-                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", (rightNow - LastCall).TotalSeconds, Name);
+                if ((DateTime.Now - LastCall).TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
+                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", (DateTime.Now - LastCall).TotalSeconds, Name);
             }
 
-            IEnumerable<RunStatus> ret = base.Execute(context);
+            if (!CallTrace)
+            {
+                ret = base.Execute(context);
+            }
+            else
+            {
+                DateTime started = DateTime.Now;
+                Logger.Write(Color.DodgerBlue, "enter: {0}", Name);
+                ret = base.Execute(context);
+                Logger.Write(Color.DodgerBlue, "leave: {0}, took {1} ms", Name, (ulong)(DateTime.Now - started).TotalMilliseconds);
+            }
 
             LastCall = DateTime.Now;
             return ret;
         }
+        */
+        public override RunStatus Tick(object context)
+        {
+            RunStatus ret;
+            CountCall++;
+
+            if (SingularSettings.Debug)
+            {
+                if ((DateTime.Now - LastCall).TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
+                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", (DateTime.Now - LastCall).TotalSeconds, Name);
+            }
+
+            if (!SingularSettings.Trace )
+            {
+                ret = base.Tick(context);
+            }
+            else
+            {
+                DateTime started = DateTime.Now;
+                Logger.WriteDebug(Color.DodgerBlue, "enter: {0}", Name);
+                ret = base.Tick(context);
+                Logger.WriteDebug(Color.DodgerBlue, "leave: {0}, took {1} ms", Name, (ulong)(DateTime.Now - started).TotalMilliseconds);
+            }
+
+            LastCall = DateTime.Now;
+            return ret;
+        }
+
+    }
+
+    public class CallTrace : PrioritySelector
+    {
+        public static DateTime LastCall { get; set; }
+        public static ulong CountCall { get; set; }
+        public static bool TraceActive { get { return SingularSettings.Trace; } }
+
+        public string Name { get; set; }
+
+        private static bool _init = false;
+
+        private static void Initialize()
+        {
+            if (_init)
+                return;
+
+            _init = true;
+        }
+
+        public CallTrace(string name, params Composite[] children)
+            : base(children)
+        {
+            Initialize();
+
+            Name = name;
+            LastCall = DateTime.MinValue;
+        }
+
+        public override RunStatus Tick(object context)
+        {
+            RunStatus ret;
+            CountCall++;
+
+            if (!TraceActive )
+            {
+                ret = base.Tick(context);
+            }
+            else
+            {
+                DateTime started = DateTime.Now;
+                Logger.WriteDebug(Color.LightBlue, "... enter: {0}", Name);
+                ret = base.Tick(context);
+                Logger.WriteDebug(Color.LightBlue, "... leave: {0}, took {1} ms", Name, (ulong)(DateTime.Now - started).TotalMilliseconds);
+            }
+
+            return ret;
+        }
+
     }
 }

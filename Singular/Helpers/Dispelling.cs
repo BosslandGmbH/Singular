@@ -158,7 +158,8 @@ namespace Singular.Helpers
             DispelCapabilities ret = DispelCapabilities.None;
             foreach(var debuff in unit.Debuffs.Values)
             {
-                if (SingularSettings.CleanseBlacklist.ContainsKey(debuff.SpellId))
+                // abort if target has one of the auras we should be sure to leave alone
+                if (CleanseBlacklist.Instance.SpellList.Contains(debuff.SpellId))
                     return DispelCapabilities.None;
 
                 switch (debuff.Spell.DispelType)
@@ -202,7 +203,7 @@ namespace Singular.Helpers
 
         public static Composite CreateDispelBehavior()
         {
-            if (SingularSettings.Instance.DispelDebuffs == DispelStyle.None)
+            if (SingularSettings.Instance.DispelDebuffs == RelativePriority.None)
                 return new ActionAlwaysFail();
 
             PrioritySelector prio = new PrioritySelector();
@@ -240,5 +241,72 @@ namespace Singular.Helpers
                 prio
                 );
         }
+
+
+        public static Composite CreatePurgeEnemyBehavior(string spellName)
+        {
+            if (SingularSettings.Instance.PurgeTargets == CheckTargets.None || SingularSettings.Instance.PurgeBuffs == PurgeAuraFilter.None )
+                return new ActionAlwaysFail();
+
+            return Spell.Cast(spellName,
+                mov => false,
+                on =>
+                {
+                    WoWUnit unit = GetPurgeEnemyTarget(spellName);
+                    if (unit != null)
+                        Logger.WriteDebug("PurgeEnemy[{0}]:  found {1} has triggering aura, cancast={2}", spellName, unit.SafeName(), SpellManager.CanCast(spellName, unit));
+                    return unit;
+                },
+                ret => SingularSettings.Instance.PurgeTargets != CheckTargets.None
+                );
+        }
+
+        private static WoWUnit GetPurgeEnemyTarget(string spellName)
+        {
+            if (SingularSettings.Instance.PurgeTargets == CheckTargets.Current)
+            {
+                if (StyxWoW.Me.GotTarget)
+                {
+                    WoWAura aura = GetPurgeEnemyAura(StyxWoW.Me.CurrentTarget);
+                    if (aura != null)
+                    {
+                        Logger.WriteDebug("PurgeEnemyTarget: want to {0} {1} with '{2}' #{3}", spellName, StyxWoW.Me.CurrentTarget.SafeName(), aura.Name, aura.SpellId);
+                        return StyxWoW.Me.CurrentTarget;
+                    }
+                }
+            }
+            else if (SingularSettings.Instance.PurgeTargets == CheckTargets.All)
+            {
+                // WoWUnit target = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => StyxWoW.Me.IsSafelyFacing(u) && null != GetPurgeEnemyAura(u));
+                WoWUnit target = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => {
+                    if (StyxWoW.Me.SpellDistance(u) > 30)
+                        return false;
+                    if (!StyxWoW.Me.IsSafelyFacing(u))
+                        return false;
+                    WoWAura aura = GetPurgeEnemyAura(u);
+                    if (aura == null)
+                        return false;
+
+                    Logger.WriteDebug("PurgeEnemyTarget: want to {0} on {1} with '{2}' #{3}", spellName, u.SafeName(), aura.Name, aura.SpellId);
+                    return true;
+                    });
+
+                return target;
+            }
+
+            return null;
+        }
+
+        private static WoWAura GetPurgeEnemyAura(WoWUnit target)
+        {
+            if (SingularSettings.Instance.PurgeBuffs == PurgeAuraFilter.All)
+                return target.GetAllAuras().FirstOrDefault(a => a.TimeLeft.TotalSeconds > 1 && a.Spell.DispelType == WoWDispelType.Magic);
+
+            SpellList sl = StyxWoW.Me.Class == WoWClass.Mage ? MageSteallist.Instance.SpellList : PurgeWhitelist.Instance.SpellList;
+            return target.GetAllAuras().FirstOrDefault(a => a.TimeLeft.TotalSeconds > 1 && a.Spell.DispelType == WoWDispelType.Magic && sl.Contains(a.SpellId));
+        }
+
     }
+
+
 }

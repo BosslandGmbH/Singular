@@ -342,6 +342,8 @@ namespace Singular.Utilities
 
         private static void HandleErrorMessage(object sender, LuaEventArgs args)
         {
+            bool handled = false;
+
             if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket && args.Args[0].ToString() == LocalizedAlreadyPickPocketedError)
             {
                 if (StyxWoW.Me.GotTarget)
@@ -349,8 +351,9 @@ namespace Singular.Utilities
                     WoWUnit unit = StyxWoW.Me.CurrentTarget;
                     Logger.WriteDebug("[WowErrorMessage] already pick pocketed {0}, blacklisting from pick pocket for 2 minutes", unit.SafeName());
                     Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2));
+                    handled = true;
                 }
-           }
+            }
 
             if (StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuestBotActive)
             {
@@ -359,7 +362,13 @@ namespace Singular.Utilities
                     string symbolicName = LocalizedShapeshiftMessages[args.Args[0].ToString()];
                     LastShapeshiftFailure = DateTime.Now;
                     Logger.WriteFile("[WowErrorMessage] cast fail due to shapeshift error '{0}' while questing reported at {1}", symbolicName, LastShapeshiftFailure.ToString("HH:mm:ss.fff"));
+                    handled = true;
                 }
+            }
+
+            if (!handled && SingularSettings.Debug)
+            {
+                Logger.WriteFile("[WoWRedError] {0}", args.Args[0].ToString());
             }
         }
 

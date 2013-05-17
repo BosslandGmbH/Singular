@@ -403,6 +403,17 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateShamanDpsHealBehavior()
         {
+            Composite offheal;
+            if (!ShamanSettings.AllowOffHealHeal)
+                offheal = new ActionAlwaysFail();
+            else
+            {
+                offheal = new Decorator(
+                    ret => NeedToOffHealSomeone,
+                    Restoration.CreateRestoShamanHealingOnlyBehavior(selfOnly: false)
+                    );
+            }
+
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
@@ -436,11 +447,8 @@ namespace Singular.ClassSpecific.Shaman
                                     )
                                 ),
 
-                            // use non-predicted health as we only off-heal when its already an emergency
-                            new Decorator(
-                                ret => NeedToOffHealSomeone,
-                                Restoration.CreateRestoShamanHealingOnlyBehavior(selfOnly:false)
-                                ),
+                            // include optional offheal behavior
+                            offheal,
 
                             // use non-predicted health as a trigger for totems
                             new Decorator(
@@ -507,6 +515,7 @@ namespace Singular.ClassSpecific.Shaman
         }
 
         #endregion
+
 
     }
 

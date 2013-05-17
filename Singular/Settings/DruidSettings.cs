@@ -18,7 +18,7 @@ namespace Singular.Settings
     internal class DruidSettings : Styx.Helpers.Settings
     {
         public DruidSettings()
-            : base(Path.Combine(SingularSettings.SettingsPath, "Druid.xml"))
+            : base(Path.Combine(SingularSettings.SingularSettingsPath, "Druid.xml"))
         {
         }
         // Pvp By IloveAnimals

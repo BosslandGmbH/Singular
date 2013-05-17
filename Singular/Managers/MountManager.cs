@@ -4,6 +4,7 @@ using Styx.WoWInternals;
 using System;
 using Singular.Settings;
 using Singular.Helpers;
+using System.Drawing;
 
 namespace Singular.Managers
 {
@@ -50,6 +51,13 @@ namespace Singular.Managers
                         SpellManager.Cast("Travel Form");
                     }
                 }
+            }
+
+            // help HB out and stop immediately if we allow mount to proceed
+            if (e.Cancel == false && StyxWoW.Me.IsMoving )
+            {
+                Logger.WriteDebug( Color.White, "OnMountUp: stopping to help HB mount quicker");
+                StopMoving.Now();
             }
         }
     }

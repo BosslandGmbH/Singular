@@ -1,3 +1,15 @@
+--- Release 3.0.0.2483 ---
+
+Druid 
+
+fixed - Balance - was not casting Wrath or Starfire at low-levels until first eclipse encountered
+
+
+Rogue
+
+fixed - Assassination - exception occurring at load due to bug in Subtlety change
+
+
 --- Release 3.0.0.2472 ---
 
 General

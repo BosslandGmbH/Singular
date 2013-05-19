@@ -199,7 +199,7 @@ namespace Singular.Settings
         [Category("Common")]
         [DisplayName("Use Combat Rez")]
         [Description("If set to true, it will rez while in combat.")]
-        public bool UseRebirthHealth { get; set; }
+        public bool UseRebirth { get; set; }
 
         #endregion
 

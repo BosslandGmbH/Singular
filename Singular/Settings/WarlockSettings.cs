@@ -85,7 +85,7 @@ namespace Singular.Settings
         [DefaultValue(Soulstone.Auto)]
         [Category("Common")]
         [DisplayName("Use Soulstone")]
-        [Description("Controls usage -- Auto: Instances=Ressurect, Normal/Battleground=Self, Disabled Movement=None")]
+        [Description("Auto: Instances=Ressurect, Normal/Battleground=Self, Disabled Movement=None")]
         public Soulstone UseSoulstone { get; set; }
 
         [Setting]

@@ -183,7 +183,7 @@ namespace Singular.ClassSpecific.Rogue
 
         #endregion
 
-        [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueAssassination, priority: 99)]
+        [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueSubtlety, priority: 99)]
         public static Composite CreateRogueHeal()
         {
             return CreateSubteltyDiagnosticOutputBehavior("Combat");

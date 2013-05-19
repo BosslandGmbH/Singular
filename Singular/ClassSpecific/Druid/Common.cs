@@ -294,7 +294,7 @@ namespace Singular.ClassSpecific.Druid
 
         public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
         {
-            if (!DruidSettings.UseRebirthHealth)
+            if (!DruidSettings.UseRebirth)
                 return new PrioritySelector();
 
             if (onUnit == null)
@@ -308,12 +308,8 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => onUnit(ret) != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
                     new PrioritySelector(
-                        Spell.WaitForCast(true),
                         Movement.CreateMoveToUnitBehavior( onUnit, 40f, 40f),
-                        new Decorator(
-                            ret => !Spell.IsGlobalCooldown(),
-                            Spell.Cast("Rebirth", ret => (WoWUnit)ret)
-                            )
+                        Spell.Cast("Rebirth", ret => (WoWUnit)ret)
                         )
                     )
                 );

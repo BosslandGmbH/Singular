@@ -74,6 +74,8 @@ namespace Singular.ClassSpecific.Druid
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
 
+                    CreateBalanceDiagnosticOutputBehavior(),
+
             #region Avoidance 
 
                     Spell.Cast("Typhoon",
@@ -214,8 +216,6 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        CreateBalanceDiagnosticOutputBehavior(),
-
                         new Decorator( 
                             ret => Me.HealthPercent < 40 && Unit.NearbyUnitsInCombatWithMe.Any( u => u.IsWithinMeleeRange),
                             CreateDruidAvoidanceBehavior( CreateSlowMeleeBehavior(), null, null)
@@ -284,12 +284,11 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Starsurge"),
                         Spell.Cast("Starfall", ret => Me.CurrentTarget.IsPlayer || (Me.CurrentTarget.Elite && (Me.CurrentTarget.Level + 10) >= Me.Level)),
 
-                        Spell.Cast("Wrath",
-                            ret => GetEclipseDirection() == EclipseType.Lunar ),
-
-                        Spell.Cast("Starfire",
-                            ret => GetEclipseDirection() == EclipseType.Solar )
-
+                        new PrioritySelector(
+                            ctx => GetEclipseDirection() == EclipseType.Lunar,
+                            Spell.Cast("Starfire", ret => !(bool) ret ),
+                            Spell.Cast("Wrath", ret => (bool) ret)
+                            )
                         )
                     )
                 );
@@ -317,8 +316,6 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
-
-                        CreateBalanceDiagnosticOutputBehavior(),
 
                         Spell.BuffSelf("Moonkin Form"),
 
@@ -366,8 +363,9 @@ namespace Singular.ClassSpecific.Druid
                         new Decorator(
                             ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid),
                             new PrioritySelector(
-                                Spell.Cast("Wrath", ret => GetEclipseDirection() == EclipseType.Lunar),
-                                Spell.Cast("Starfire", ret => GetEclipseDirection() == EclipseType.Solar)
+                                ctx => GetEclipseDirection() == EclipseType.Lunar,
+                                Spell.Cast("Starfire", ret => !(bool) ret ),
+                                Spell.Cast("Wrath", ret => (bool) ret)
                                 )
                             ),
 #if SPAM_INSTANT_TO_AVOID_SPELLLOCK
@@ -412,8 +410,6 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-
-                        CreateBalanceDiagnosticOutputBehavior(),
 
                         Spell.Buff("Innervate",
                             ret => (from healer in Group.Healers 
@@ -484,12 +480,11 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Starsurge"),
                         Spell.Cast("Starfall"),
 
-                        Spell.Cast("Wrath",
-                            ret => GetEclipseDirection() == EclipseType.Lunar ),
-
-                        Spell.Cast("Starfire",
-                            ret => GetEclipseDirection() == EclipseType.Solar )
-
+                        new PrioritySelector(
+                            ctx => GetEclipseDirection() == EclipseType.Lunar,
+                            Spell.Cast("Starfire", ret => !(bool) ret ),
+                            Spell.Cast("Wrath", ret => (bool) ret)
+                            )
                         )
                     )
                 );
@@ -570,42 +565,43 @@ namespace Singular.ClassSpecific.Druid
 
         private static Composite CreateBalanceDiagnosticOutputBehavior()
         {
-            return new Decorator(
-                ret => SingularSettings.Debug,
-                new Throttle(1,
-                    new Action(ret =>
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
+
+            return new ThrottlePasses(1, 1,
+                new Action(ret =>
+                {
+                    string log;
+                    WoWAura eclips = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Eclipse (Solar)" || a.Name == "Eclipse (Lunar)");
+                    string eclipsString = eclips == null ? "None" : (eclips.Name == "Eclipse (Solar)" ? "Solar" : "Lunar");
+
+                    log = string.Format(".... h={0:F1}%/m={1:F1}%, form:{2}, eclps={3}, towards={4}, eclps#={5}, mushcnt={6}",
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        Me.Shapeshift.ToString(),
+                        eclipsString,
+                        GetEclipseDirection().ToString(),
+                        Me.CurrentEclipse,
+                        MushroomCount
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
                     {
-                        string log;
-                        WoWAura eclips = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Eclipse (Solar)" || a.Name == "Eclipse (Lunar)");
-                        string eclipsString = eclips == null ? "None" : (eclips.Name == "Eclipse (Solar)" ? "Solar" : "Lunar");
-
-                        log = string.Format(".... h={0:F1}%/m={1:F1}%, form:{2}, eclps={3}, towards={4}, eclps#={5}, mushcnt={6}",
-                            Me.HealthPercent,
-                            Me.ManaPercent,
-                            Me.Shapeshift.ToString(),
-                            eclipsString,
-                            GetEclipseDirection().ToString(),
-                            Me.CurrentEclipse,
-                            MushroomCount
+                        log += string.Format(", th={0:F1}%/tm={1:F1}%, dist={2:F1}, face={3}, loss={4}, sfire={5}, mfire={6}",
+                            target.HealthPercent,
+                            target.ManaPercent,
+                            target.Distance,
+                            Me.IsSafelyFacing(target),
+                            target.InLineOfSpellSight,
+                            (long)target.GetAuraTimeLeft("Sunfire", true).TotalMilliseconds,
+                            (long)target.GetAuraTimeLeft("Moonfire", true).TotalMilliseconds
                             );
+                    }
 
-                        WoWUnit target = Me.CurrentTarget;
-                        if (target != null)
-                        {
-                            log += string.Format(", th={0:F1}%/tm={1:F1}%, dist={2:F1}, face={3}, loss={4}, sfire={5}, mfire={6}",
-                                target.HealthPercent,
-                                target.ManaPercent,
-                                target.Distance,
-                                Me.IsSafelyFacing(target),
-                                target.InLineOfSpellSight,
-                                (long)target.GetAuraTimeLeft("Sunfire", true).TotalMilliseconds,
-                                (long)target.GetAuraTimeLeft("Moonfire", true).TotalMilliseconds
-                                );
-                        }
-
-                        Logger.WriteDebug(Color.AntiqueWhite, log);
-                    })
-                    )
+                    Logger.WriteDebug(Color.AntiqueWhite, log);
+                    return RunStatus.Failure;
+                })
                 );
         }
 
@@ -630,6 +626,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalancePullBuff()
         {
             return new PrioritySelector(
+                CreateBalanceDiagnosticOutputBehavior(),
                 Spell.BuffSelf("Moonkin Form")
                 );
         }

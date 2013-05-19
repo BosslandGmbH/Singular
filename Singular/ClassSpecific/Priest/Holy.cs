@@ -165,7 +165,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
-                        context => GetBestCoverageTarget("Divine Hymn", PriestSettings.HolyHeal.DivineHymn, 0, 40, PriestSettings.HolyHeal.CountDivineHymn),
+                        context => HealerManager.GetBestCoverageTarget("Divine Hymn", PriestSettings.HolyHeal.DivineHymn, 0, 40, PriestSettings.HolyHeal.CountDivineHymn),
                         new Decorator(
                             ret => ret != null,
                             Spell.Cast("Divine Hymn", mov => false, on => (WoWUnit)on, req => true, cancel => false)
@@ -222,7 +222,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid) && Me.HasAura("Divine Insight"),
                     new PrioritySelector(
-                        context => GetBestCoverageTarget("Prayer of Mending", maxDirectHeal, 40, 20, 2),
+                        context => HealerManager.GetBestCoverageTarget("Prayer of Mending", maxDirectHeal, 40, 20, 2),
                         new Decorator(
                             ret => ret != null,
                             Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
@@ -237,7 +237,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => Me.HasAura("Chakra: Sanctuary"),
                     new PrioritySelector(
-                        context => GetBestCoverageTarget("Holy Word: Sanctuary", PriestSettings.HolyHeal.HolyWordSanctuary, 40, 8, PriestSettings.HolyHeal.CountHolyWordSanctuary),
+                        context => HealerManager.GetBestCoverageTarget("Holy Word: Sanctuary", PriestSettings.HolyHeal.HolyWordSanctuary, 40, 8, PriestSettings.HolyHeal.CountHolyWordSanctuary),
                         new Decorator(
                             ret => ret != null,
                             Spell.CastOnGround("Holy Word: Sanctuary", on => (WoWUnit)on, req => true, false)
@@ -273,7 +273,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
-                        context => GetBestCoverageTarget("Cascade", PriestSettings.HolyHeal.HolyLevel90Talent, 40, 30, PriestSettings.HolyHeal.CountLevel90Talent),
+                        context => HealerManager.GetBestCoverageTarget("Cascade", PriestSettings.HolyHeal.HolyLevel90Talent, 40, 30, PriestSettings.HolyHeal.CountLevel90Talent),
                         new Decorator(
                             ret => ret != null,
                             Spell.Cast("Cascade", on => (WoWUnit)on, req => true)
@@ -287,7 +287,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
-                        context => GetBestCoverageTarget("Prayer of Mending", PriestSettings.HolyHeal.PrayerOfMending, 40, 20, PriestSettings.HolyHeal.CountPrayerOfMending),
+                        context => HealerManager.GetBestCoverageTarget("Prayer of Mending", PriestSettings.HolyHeal.PrayerOfMending, 40, 20, PriestSettings.HolyHeal.CountPrayerOfMending),
                         new Decorator(
                             ret => ret != null,
                             Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
@@ -330,7 +330,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
-                        context => GetBestCoverageTarget("Circle of Healing", PriestSettings.HolyHeal.CircleOfHealing, 40, 30, PriestSettings.HolyHeal.CountCircleOfHealing),
+                        context => HealerManager.GetBestCoverageTarget("Circle of Healing", PriestSettings.HolyHeal.CircleOfHealing, 40, 30, PriestSettings.HolyHeal.CountCircleOfHealing),
                         Spell.Cast("Circle of Healing", on => (WoWUnit)on)
                         )
                     )
@@ -341,7 +341,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(
-                        context => GetBestCoverageTarget("Prayer of Healing", PriestSettings.HolyHeal.PrayerOfHealing, 40, 30, PriestSettings.HolyHeal.CountPrayerOfHealing),
+                        context => HealerManager.GetBestCoverageTarget("Prayer of Healing", PriestSettings.HolyHeal.PrayerOfHealing, 40, 30, PriestSettings.HolyHeal.CountPrayerOfHealing),
                         Spell.Cast("Prayer of Healing", on => (WoWUnit)on)
                         )
                     )
@@ -359,7 +359,7 @@ GuardianSpirit          Guardian Spirit
 VoidShift               Void Shift 
 */
 
-#region Direct Heals
+            #region Direct Heals
 
             if (PriestSettings.HolyHeal.HolyWordSerenity != 0)
             behavs.AddBehavior(HealthToPriority(1) + 4, "Holy Word: Serenity @ " + PriestSettings.HolyHeal.HolyWordSerenity + "%", "Chakra: Serenity",
@@ -408,9 +408,9 @@ VoidShift               Void Shift
                     )
                 );
 
-#endregion
+            #endregion
 
-#region Tank - Low Priority Buffs
+            #region Tank - Low Priority Buffs
 
             behavs.AddBehavior(HealthToPriority(101), "Tank - Refresh Renew w/ Serenity", "Chakra: Serenity",
                 Spell.CastHack("Holy Word: Serenity", on =>
@@ -447,10 +447,10 @@ VoidShift               Void Shift
                         return null;
                     })
                 );
-#endregion
+            #endregion
 
 
-#region Lowest Priority Healer Tasks
+            #region Lowest Priority Healer Tasks
 
             if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
             {
@@ -481,7 +481,7 @@ VoidShift               Void Shift
                         )
                     );
             }
-#endregion
+            #endregion
 
             behavs.OrderBehaviors();
 
@@ -623,61 +623,6 @@ VoidShift               Void Shift
                         )
                     )
                 );
-        }
-
-        private static WoWUnit GetBestCoverageTarget(string spell, int health, int range, int radius, int minCount)
-        {
-            if (!Me.IsInGroup() || !Me.Combat)
-                return null;
-
-            if (!Spell.CanCastHack(spell, Me, skipWowCheck: true))
-            {
-                if ( !SingularSettings.Instance.EnableDebugLoggingCanCast )
-                    Logger.WriteDebug("GetBestCoverageTarget: CanCastHack says NO to [{0}]", spell);
-                return null;
-            }
-
-            // build temp list of targets that could use heal and are in range + radius
-            List<WoWUnit> coveredTargets = HealerManager.Instance.TargetList
-                .Where(u => u.IsAlive && u.Distance < (range+radius) && u.HealthPercent < health)
-                .ToList();
-
-
-            // create a iEnumerable of the possible heal targets wtihin range
-            IEnumerable<WoWUnit> listOf;
-            if (range == 0)
-                listOf = new List<WoWUnit>() { Me };
-            else
-                listOf = Unit.NearbyGroupMembersAndPets.Where(p => p.Distance <= range && p.IsAlive);
-
-            // now search list finding target with greatest number of heal targets in radius
-            var t = listOf
-                .Select(p => new
-                {
-                    Player = p,
-                    Count = coveredTargets
-                        .Where(pp => pp.IsAlive && pp.Location.Distance(p.Location) < radius)
-                        .Count()
-                })
-                .OrderByDescending(v => v.Count)
-                .DefaultIfEmpty(null)
-                .FirstOrDefault();
-
-            if (t != null)
-            {
-                if (t.Count >= minCount)
-                {
-                    Logger.WriteDebug("GetBestCoverageTarget('{0}'): found {1} with {2} nearby under {3}%", spell, t.Player.SafeName(), t.Count, health);
-                    return t.Player;
-                }
-
-                if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                {
-                    Logger.WriteDebug("GetBestCoverageTarget('{0}'): not enough found - {1} with {2} nearby under {3}%", spell, t.Player.SafeName(), t.Count, health);
-                }
-            }
-
-            return null;
         }
 
         #region Diagnostics

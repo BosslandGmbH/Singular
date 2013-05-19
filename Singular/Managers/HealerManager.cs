@@ -31,6 +31,8 @@ namespace Singular.Managers
 
     internal class HealerManager : Targeting
     {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
         private static readonly WaitTimer _tankReset = WaitTimer.ThirtySeconds;
 
         // private static ulong _tankGuid;
@@ -279,6 +281,61 @@ namespace Singular.Managers
 #endif
         }
 
+
+        public static WoWUnit GetBestCoverageTarget(string spell, int health, int range, int radius, int minCount)
+        {
+            if (!Me.IsInGroup() || !Me.Combat)
+                return null;
+
+            if (!Spell.CanCastHack(spell, Me, skipWowCheck: true))
+            {
+                if (!SingularSettings.Instance.EnableDebugLoggingCanCast)
+                    Logger.WriteDebug("GetBestCoverageTarget: CanCastHack says NO to [{0}]", spell);
+                return null;
+            }
+
+            // build temp list of targets that could use heal and are in range + radius
+            List<WoWUnit> coveredTargets = HealerManager.Instance.TargetList
+                .Where(u => u.IsAlive && u.Distance < (range + radius) && u.HealthPercent < health)
+                .ToList();
+
+
+            // create a iEnumerable of the possible heal targets wtihin range
+            IEnumerable<WoWUnit> listOf;
+            if (range == 0)
+                listOf = new List<WoWUnit>() { Me };
+            else
+                listOf = Unit.NearbyGroupMembersAndPets.Where(p => p.Distance <= range && p.IsAlive);
+
+            // now search list finding target with greatest number of heal targets in radius
+            var t = listOf
+                .Select(p => new
+                {
+                    Player = p,
+                    Count = coveredTargets
+                        .Where(pp => pp.IsAlive && pp.Location.Distance(p.Location) < radius)
+                        .Count()
+                })
+                .OrderByDescending(v => v.Count)
+                .DefaultIfEmpty(null)
+                .FirstOrDefault();
+
+            if (t != null)
+            {
+                if (t.Count >= minCount)
+                {
+                    Logger.WriteDebug("GetBestCoverageTarget('{0}'): found {1} with {2} nearby under {3}%", spell, t.Player.SafeName(), t.Count, health);
+                    return t.Player;
+                }
+
+                if (SingularSettings.Instance.EnableDebugLoggingCanCast)
+                {
+                    Logger.WriteDebug("GetBestCoverageTarget('{0}'): not enough found - {1} with {2} nearby under {3}%", spell, t.Player.SafeName(), t.Count, health);
+                }
+            }
+
+            return null;
+        }
 
         /// <summary>
         /// find best Tank target that is missing Heal Over Time passed

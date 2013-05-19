@@ -205,7 +205,7 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueAssassination, priority: 99)]
+        [Behavior(BehaviorType.Heal, WoWClass.Rogue, WoWSpec.RogueCombat, priority: 99)]
         public static Composite CreateRogueHeal()
         {
             return CreateCombatDiagnosticOutputBehavior("Combat");

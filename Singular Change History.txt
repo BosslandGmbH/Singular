@@ -1,3 +1,29 @@
+--- Release 3.0.0.2511 ---
+
+fixed - Targeting issue occurring to some users in PVP causing spam of target selected message
+
+
+Death Knight
+
+fixed - Blood - PVP spell priority fixed exception experienced by some users in multi-target scenarios
+
+
+Druid
+
+*new* - All Specs - improved use of Travel Form / Cat Form for increased speed while running for all specs.  New setting 'Use Travel Form' added which defaults to false.  Will speed up sessions where you spend a lot of time on foot moving from point to point, but if you don't like your Boomkin or Bear switching out of form leave it as false.
+
+
+Hunter
+
+fixed - All Specs - error occurring in some multi-target situations if no current target set at the moment
+
+fixed - All Specs - facing checks on Level 90 Talent abilities
+
+*new* - All Specs - additional Pet special abilities cast
+
+
+
+
 --- Release 3.0.0.2487 ---
 
 Druid 

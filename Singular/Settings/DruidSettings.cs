@@ -122,6 +122,13 @@ namespace Singular.Settings
         #region Common
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Use Travel Form")]
+        [Description("Cast Travel Form (or Cat Form) for faster movement while running on foot")]
+        public bool UseTravelForm { get; set; }
+
+        [Setting]
         [DefaultValue(40)]
         [Category("Common")]
         [DisplayName("Innervate Mana")]

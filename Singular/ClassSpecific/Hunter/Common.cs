@@ -221,11 +221,6 @@ namespace Singular.ClassSpecific.Hunter
 
                 Common.CreateHunterCallPetBehavior(true),
 
-                new Decorator(
-                    req => Me.GotAlivePet && PetManager.CanCastPetAction("Reflective Armor Plating") && Unit.NearbyUnfriendlyUnits.Any( u => u.CurrentTargetGuid == Me.Pet.Guid && Me.Pet.IsSafelyFacing(u)),
-                    new Action(r => PetManager.CastPetAction("Reflective Armor Plating"))
-                    ),
-
                 Spell.Buff("Deterrence",
                     ret => (Me.HealthPercent <= HunterSettings.DeterrenceHealth || HunterSettings.DeterrenceCount <= Unit.NearbyUnfriendlyUnits.Count(u => u.Combat && u.CurrentTargetGuid == Me.Guid && !u.IsPet))),
 
@@ -265,9 +260,9 @@ namespace Singular.ClassSpecific.Hunter
                 Spell.Cast("Fervor", ctx => Me.CurrentFocus < 50),
 
                 // Level 90 Talents
-                Spell.Cast("Glaive Toss"),
-                Spell.Cast("Powershot"),
-                Spell.Cast("Barrage"),
+                Spell.Cast("Glaive Toss", req => Me.IsSafelyFacing(Me.CurrentTarget)),
+                Spell.Cast("Powershot", req => Me.IsSafelyFacing(Me.CurrentTarget)),
+                Spell.Cast("Barrage", req => Me.IsSafelyFacing(Me.CurrentTarget)),
 
                 // for long cooldowns, spend only when worthwhile                      
                 new Decorator(
@@ -286,7 +281,56 @@ namespace Singular.ClassSpecific.Hunter
                             return readyForReadiness;
                         })
                         )
+                    ),
+
+
+                new Decorator(
+                    req => Me.GotAlivePet && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Pet.Guid && Me.Pet.IsSafelyFacing(u)),
+                    PetManager.CastAction("Reflective Armor Plating", on => Me.Pet)
+                    ),
+
+                new PrioritySelector(
+                    ctx => (!Me.GotAlivePet ? null : 
+                        Unit.NearbyUnfriendlyUnits
+                            .Where(u => u.SpellDistance(Me.Pet) < 30 && Me.Pet.IsSafelyFacing(u))
+                            .OrderBy( u => u.SpellDistance(Me.Pet))
+                            .FirstOrDefault()),
+
+                    new Decorator(
+                        req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 5,
+                        new PrioritySelector(                           
+                            PetManager.CastAction("Sting", on => (WoWUnit) on),
+                            PetManager.CastAction("Paralyzing Quill", on => (WoWUnit) on),
+                            PetManager.CastAction("Lullaby", on => (WoWUnit) on),
+                            PetManager.CastAction("Pummel", on => (WoWUnit) on),
+                            PetManager.CastAction("Spore Cloud", on => (WoWUnit) on),
+                            PetManager.CastAction("Trample", on => (WoWUnit) on),
+                            PetManager.CastAction("Horn Toss", on => (WoWUnit) on)
+                            )
+                        ),
+
+                    new Decorator(
+                        req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 20,
+                        new PrioritySelector(
+                            PetManager.CastAction("Sonic Blast", on => (WoWUnit) on),
+                            PetManager.CastAction("Petrifying Gaze", on => (WoWUnit) on),
+                            PetManager.CastAction("Lullaby", on => (WoWUnit) on),
+                            PetManager.CastAction("Bad Manner", on => (WoWUnit) on),
+                            PetManager.CastAction("Nether Shock", on => (WoWUnit) on),
+                            PetManager.CastAction("Serenity Dust", on => (WoWUnit) on)
+                            )
+                        ),
+
+                    new Decorator(
+                        req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 30,
+                        new PrioritySelector(
+                            PetManager.CastAction("Web", on => (WoWUnit)on),
+                            PetManager.CastAction("Web Wrap", on => (WoWUnit)on),
+                            PetManager.CastAction("Lava Breath", on => (WoWUnit)on)
+                            )
+                        )
                     )
+
                 );
         }
 
@@ -903,7 +947,7 @@ namespace Singular.ClassSpecific.Hunter
         CrouchingTiger,
         SilencingShot,
         WyvernSting,
-        BlindingShot,
+        Intimidation,
         Exhiliration,
         AspectOfTheIronHawk,
         SpiritBond,

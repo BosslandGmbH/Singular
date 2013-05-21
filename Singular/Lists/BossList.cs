@@ -36,7 +36,7 @@ namespace Singular.Lists
             CurrentMapBosses = new HashSet<string>(StyxWoW.Db[ClientDb.DungeonEncounter].Where(r => r.GetField<int>(1) == StyxWoW.Me.MapId).Select(r => r.GetStringField(5)));
 
             // output list of bosses
-            Logger.WriteFile("BossList: for {0}", StyxWoW.Me.CurrentMap.Name + " - " + StyxWoW.Me.CurrentMap.MapDescription);
+            Logger.WriteFile("BossList: for {0}", StyxWoW.Me.CurrentMap.Name); // + " - " + StyxWoW.Me.CurrentMap.MapDescription);
             foreach (var s in Singular.Lists.BossList.CurrentMapBosses)
             {
                 Logger.WriteFile("- boss {0}", s);

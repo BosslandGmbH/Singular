@@ -223,19 +223,10 @@ namespace Singular.Helpers
                 return true;
 
             // If it is a pet/minion/totem, lets find the root of ownership chain
-            WoWUnit pOwner = p;
-            while (true)
-            {
-                if (pOwner.OwnedByUnit != null)
-                    pOwner = pOwner.OwnedByRoot;
-                else if (pOwner.SummonedByUnit != null)
-                    pOwner = pOwner.SummonedByUnit;
-                else 
-                    break;
-            }
+            WoWUnit pOwner = GetPlayerParent(p);
 
             // ignore if owner is player, alive, and not blacklisted then ignore (since killing owner kills it)
-            if (p != pOwner && pOwner.IsPlayer && pOwner.IsAlive && !Blacklist.Contains(pOwner, BlacklistFlags.Combat))
+            if (pOwner != null && pOwner.IsAlive && !Blacklist.Contains(pOwner, BlacklistFlags.Combat))
                 return false;
 
             // And ignore critters (except for those ferocious ones) /non-combat pets
@@ -246,6 +237,28 @@ namespace Singular.Helpers
                 return false;
 */
             return true;
+        }
+
+        public static WoWUnit GetPlayerParent(WoWUnit unit)
+        {
+            // If it is a pet/minion/totem, lets find the root of ownership chain
+            WoWUnit pOwner = unit;
+            while (true)
+            {
+                if (pOwner.OwnedByUnit != null)
+                    pOwner = pOwner.OwnedByRoot;
+                else if (pOwner.CreatedByUnit != null)
+                    pOwner = pOwner.CreatedByUnit;
+                else if (pOwner.SummonedByUnit != null)
+                    pOwner = pOwner.SummonedByUnit;
+                else
+                    break;
+            }
+
+            if (unit != pOwner && pOwner.IsPlayer)
+                return pOwner;
+
+            return null;
         }
 
         /// <summary>

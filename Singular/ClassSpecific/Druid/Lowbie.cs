@@ -9,12 +9,38 @@ using Singular.Settings;
 using Styx.WoWInternals.WoWObjects;
 using CommonBehaviors.Actions;
 
+using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
+
 namespace Singular.ClassSpecific.Druid
 {
     public class Lowbie
     {
         private static DruidSettings DruidSettings { get { return SingularSettings.Instance.Druid(); } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
+        #region Rest
+
+        [Behavior(BehaviorType.Rest, WoWClass.Druid, 0)]
+        public static Composite CreateLowbieDruidRest()
+        {
+            return new PrioritySelector(
+                new Decorator(
+                    ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
+                        && (Me.GetPredictedHealthPercent(true) < SingularSettings.Instance.MinHealth || (Me.Shapeshift == ShapeshiftForm.Normal && Me.GetPredictedHealthPercent(true) < 85))
+                        && ((Me.HasAuraExpired("Rejuvenation", 1) && SpellManager.CanCast("Rejuvenation", Me, false, false))),
+                    new PrioritySelector(
+                        new Action(r => { Logger.WriteDebug("Lowbie Druid Rest Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift); return RunStatus.Failure; }),
+                        Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HasAuraExpired("Rejuvenation", 1))
+                        )
+                    ),
+
+                Rest.CreateDefaultRestBehaviour(null, null),
+                Common.CreateDruidMovementBuff()
+                );
+        }
+
+        #endregion
 
         [Behavior(BehaviorType.Pull, WoWClass.Druid, 0)]
         public static Composite CreateLowbieDruidPull()
@@ -25,6 +51,8 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+                        new Action(r => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
+
                         Spell.Buff("Entangling Roots", ret => !SpellManager.HasSpell("Cat Form")),
                         Spell.Buff("Moonfire", ret => SpellManager.HasSpell("Cat Form")),
                         Spell.Cast("Wrath")
@@ -37,6 +65,9 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateLowbieDruidCombat()
         {
             return new PrioritySelector(
+
+                new Action(r => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
+
                 new Decorator(
                     req => !SpellManager.HasSpell("Cat Form"),
                     new PrioritySelector(
@@ -80,10 +111,15 @@ namespace Singular.ClassSpecific.Druid
                         new Decorator(
                             ret => StyxWoW.Me.HasAura("Cat Form"),
                             new PrioritySelector(
+
                                 Spell.Buff("Rake", true),
-                                Spell.Cast("Ferocious Bite", 
-                                    ret => StyxWoW.Me.ComboPoints > 4 || 
-                                           StyxWoW.Me.ComboPoints > 1 && StyxWoW.Me.CurrentTarget.HealthPercent < 40),
+                /*
+                Spell.Cast("Ferocious Bite", 
+                    ret => StyxWoW.Me.ComboPoints > 4 || 
+                           StyxWoW.Me.ComboPoints > 1 && StyxWoW.Me.CurrentTarget.HealthPercent < 40),
+                */
+                                Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints >= 5 || Me.ComboPoints >= Me.CurrentTarget.TimeToDeath(99)),
+
                                 Spell.Cast("Mangle"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )

@@ -9,6 +9,11 @@ using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWCache;
 using Styx.WoWInternals.WoWObjects;
+using Singular.Helpers;
+using Styx.TreeSharp;
+
+using Action = Styx.TreeSharp.Action;
+using Rest = Singular.Helpers.Rest;
 
 namespace Singular.Managers
 {
@@ -125,8 +130,42 @@ namespace Singular.Managers
             WoWUnit save = StyxWoW.Me.FocusedUnit;
             StyxWoW.Me.SetFocus(on);
             Lua.DoString("CastPetAction({0}, 'focus')", spell.ActionBarIndex + 1);
-            StyxWoW.Me.SetFocus( save == null ? 0 : save.Guid );
-            
+            StyxWoW.Me.SetFocus( save == null ? 0 : save.Guid );           
+        }
+
+        /// <summary>
+        /// behavior form of CastPetAction().  note that this Composite will return RunStatus.Success
+        /// if it appears the ability was cast.  this is to trip the Throttle wrapping it internally
+        /// -and- to allow cascaded sequences of Pet Abilities.  Note: Pet Abilities are not on the
+        /// GCD, so you can safely allow execution to continue even on Success
+        /// </summary>
+        /// <param name="action">pet ability</param>
+        /// <param name="onUnit">unit deleg to cast on (null if current target)</param>
+        /// <returns></returns>
+        public static Composite CastAction(string action, UnitSelectionDelegate onUnit = null)
+        {
+            return new Throttle( TimeSpan.FromMilliseconds(750), 
+                new Action(ret =>
+                {
+                    if ( !CanCastPetAction(action))
+                        return RunStatus.Failure;
+
+                    WoWUnit target;
+                    if (onUnit == null)
+                        target = StyxWoW.Me.CurrentTarget;
+                    else
+                        target = onUnit(ret);
+
+                    if (target == null)
+                        return RunStatus.Failure;
+
+                    if (target.Guid == StyxWoW.Me.CurrentTargetGuid)
+                        CastPetAction(action);
+                    else
+                        CastPetAction(action, target);
+
+                    return RunStatus.Success;
+                }));
         }
 
         //public static void EnableActionAutocast(string action)

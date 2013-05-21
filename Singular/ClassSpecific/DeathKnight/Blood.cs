@@ -241,8 +241,6 @@ namespace Singular.ClassSpecific.DeathKnight
                             // apply / refresh disease if needed 
                             Common.CreateApplyDiseases(),
 
-                            Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
-
                             // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                             Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
                             Spell.Cast("Rune Strike"),
@@ -250,7 +248,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange ),
                             Spell.Buff("Necrotic Strike"),
                             Spell.Cast("Death Strike"),
-                            Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
+                            Spell.Cast("Heart Strike"),
                             Spell.Cast("Icy Touch"),
                             Spell.Cast("Horn of Winter")
                             )

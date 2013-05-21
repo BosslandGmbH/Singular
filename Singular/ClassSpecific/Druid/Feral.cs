@@ -164,16 +164,16 @@ namespace Singular.ClassSpecific.Druid
                     // since this check comes while not in combat (so will be doing other things like Questing) need to add some checks:
                     // - only if Moving
                     // - only if No Recent Shapefhift Error (since form may have resulted from error in picking up Quest, completing Quest objectives, or turning in Quest)
-                    new Throttle( 10, Spell.BuffSelf( "Cat Form", ret => Me.IsMoving && !RecentShapeshiftErrorOccurred && !Me.IsSwimming && !Me.HasAura("Aquatic Form") )),
+                    new Throttle(10, Spell.BuffSelf("Cat Form", ret => Me.IsMoving && !Common.RecentShapeshiftErrorOccurred && !Me.IsSwimming && !Me.HasAnyAura("Travel Form", "Aquatic Form"))),
 
                     // cancel form if we get a shapeshift error 
                     new Throttle( 5,
                         new Decorator(
-                            ret => !Me.IsMoving && Me.Shapeshift != ShapeshiftForm.Normal && SingularRoutine.IsQuestBotActive && RecentShapeshiftErrorOccurred,
+                            ret => !Me.IsMoving && Me.Shapeshift != ShapeshiftForm.Normal && SingularRoutine.IsQuestBotActive && Common.RecentShapeshiftErrorOccurred,
                             new Action(ret =>
                             {
                                 string formName = Me.Shapeshift.ToString() + " Form";
-                                Logger.Write("/cancel [{0}] due to shapeshift error in Questing; disabling form for {1:F0} secs while not in combat", formName, (SuppressShapeshiftUntil - DateTime.Now).TotalSeconds );
+                                Logger.Write("/cancel [{0}] due to shapeshift error in Questing; disabling form for {1:F0} secs while not in combat", formName, (Common.SuppressShapeshiftUntil - DateTime.Now).TotalSeconds );
                                 Me.CancelAura(formName);
                             })
                             )
@@ -187,22 +187,6 @@ namespace Singular.ClassSpecific.Druid
                         )
                     )
                 );
-        }
-
-        private static DateTime SuppressShapeshiftUntil
-        {
-            get
-            {
-                return Utilities.EventHandlers.LastShapeshiftFailure.AddSeconds(60);
-            }
-        }
-
-        private static bool RecentShapeshiftErrorOccurred
-        {
-            get
-            {
-                return SuppressShapeshiftUntil > DateTime.Now;
-            }
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All, 999)]

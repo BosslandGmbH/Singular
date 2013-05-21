@@ -80,14 +80,14 @@ namespace Singular.Helpers
                                 new DecoratorContinue(
                                     ret => StyxWoW.Me.CurrentPendingCursorSpell != null,
                                     new Sequence(
-                                        new Action(r => Logger.WriteDebug("EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
+                                        new Action(r => Logger.WriteDebug( targetColor, "EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
                                         new Action(ctx => Lua.DoString("SpellStopTargeting()"))
                                         )
                                     ),
                                 new Action(
                                     ret =>
                                     {
-                                        Logger.WriteDebug("EnsureTarget: Targeting first unit of TankTargeting");
+                                        Logger.WriteDebug( targetColor, "EnsureTarget: Targeting first unit of TankTargeting");
                                         TankManager.Instance.FirstUnit.Target();
                                     }),
                                 Helpers.Common.CreateWaitForLagDuration(),
@@ -136,38 +136,15 @@ namespace Singular.Helpers
                                     }
                                 }
 
-
-
                                 // check if current target is owned by a player
-                                if (StyxWoW.Me.CurrentTarget.OwnedByRoot != null )
+                                WoWUnit pOwner = Unit.GetPlayerParent(Me.CurrentTarget);
+                                if (pOwner != null && Unit.ValidUnit(pOwner) && !Blacklist.Contains(pOwner, BlacklistFlags.Combat))
                                 {
-                                    WoWUnit newTarget = Me.CurrentTarget.OwnedByRoot;
-                                    if (newTarget.IsPlayer && Unit.ValidUnit(newTarget) && !Blacklist.Contains(newTarget, BlacklistFlags.Combat))
-                                    {
-                                        Logger.Write(targetColor, "Current target owned by a player.  Switching to " + newTarget.SafeName() + "!");
-                                        if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.Guid == Me.CurrentTarget.Guid)
-                                            BotPoi.Clear("Singular detected as Player Owned Pet");
+                                    Logger.Write(targetColor, "Current target owned by a player.  Switching to " + pOwner.SafeName() + "!");
+                                    if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.Guid == Me.CurrentTarget.Guid)
+                                        BotPoi.Clear(string.Format("Singular detected {0} as Player Owned Pet", Me.CurrentTarget.SafeName()));
 
-                                        return newTarget;
-                                    }
-                                }
-
-                                // check if current target is summoned by a player
-                                if (StyxWoW.Me.CurrentTarget.SummonedByUnit != null)
-                                {
-                                    WoWUnit newTarget = StyxWoW.Me.CurrentTarget;
-                                    do {
-                                        newTarget = newTarget.SummonedByUnit;
-                                    } while (newTarget.SummonedByUnit != null);
-
-                                    if (newTarget.IsPlayer && Unit.ValidUnit(newTarget) && !Blacklist.Contains(newTarget, BlacklistFlags.Combat))
-                                    {
-                                        Logger.Write(targetColor, "Current target summoned by a player.  Switching to " + newTarget.SafeName() + "!");
-                                        if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.Guid == Me.CurrentTarget.Guid)
-                                            BotPoi.Clear("Singular detected as Player Summoned Pet");
-
-                                        return newTarget;
-                                    }
+                                    return pOwner;
                                 }
 
 #if ALWAYS_SWITCH_TO_BOTPOI
@@ -240,7 +217,7 @@ namespace Singular.Helpers
                                         return Me.CurrentTarget;
                                     }
 
-                                    Logger.Write(targetColor, "CurrentTarget blacklisted and not in combat with " + Me.CurrentTarget.SafeName() + " so clearing target!");
+                                    Logger.Write(targetColor, "CurrentTarget " + Me.CurrentTarget.SafeName() + " blacklisted and not in combat with so clearing target!");
                                     Me.ClearTarget();
                                     return null;
                                 }
@@ -252,32 +229,40 @@ namespace Singular.Helpers
                                 // at this point, stick with it if in Targetlist
                                 if (Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
                                 {
-                                    Logger.WriteDebug("EnsureTarget: target is in TargetList, continuing...");
+                                    Logger.WriteDebug( targetColor, "EnsureTarget: failed validation but is in TargetList, continuing...");
                                     return Me.CurrentTarget;
                                 }
 
                                 // otherwise, let's get a new one
-                                Logger.WriteDebug("EnsureTarget: invalid target, so forcing selection of a new one");
+                                Logger.WriteDebug( targetColor, "EnsureTarget: invalid target, so forcing selection of a new one");
                                 return null;
                             },
 
 #endregion
 
-#region Change targets if better target was found
+#region Target was selected -- change target if needed, or do nothing if already current target
 
                             new Decorator(
-                                ret => ret != null && ((WoWUnit)ret).Guid != StyxWoW.Me.CurrentTargetGuid,
+                                ret => ret != null,
                                 new Sequence(
-                                    new Action( r=> Logger.Write( "EnsureTarget: switching to better target {0}", ((WoWUnit)r).SafeName())),
                                     new DecoratorContinue(
                                         ret => StyxWoW.Me.CurrentPendingCursorSpell != null,
                                         new Sequence(
-                                            new Action(r => Logger.WriteDebug("EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
+                                            new Action(r => Logger.WriteDebug( targetColor, "EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
                                             new Action(ctx => Lua.DoString("SpellStopTargeting()"))
                                             )
                                         ),
-                                    new Action(ret => ((WoWUnit)ret).Target()),
-                                    new WaitContinue( 2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == (WoWUnit)ret, new ActionAlwaysSucceed())
+                                    new Decorator(
+                                        req => ((WoWUnit)req).Guid != StyxWoW.Me.CurrentTargetGuid,
+                                        new Sequence(
+                                            new Action(ret => Logger.Write( targetColor, "EnsureTarget: switching to better target {0}", ((WoWUnit)ret).SafeName())),
+                                            new Action(ret => ((WoWUnit)ret).Target()),
+                                            new WaitContinue( 2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == (WoWUnit)ret, new ActionAlwaysSucceed())
+                                            )
+                                        ),
+
+                                    // fall through at this point as we have our target and its valid
+                                    new ActionAlwaysFail()
                                     )
                                 ),
 
@@ -288,7 +273,6 @@ namespace Singular.Helpers
 #region Target Invalid (none or dead) - Find a New one if possible
 
                             new Decorator(
-                                // ret => StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.IsDead || !Unit.ValidUnit(Me.CurrentTarget),
                                 ret => ret == null,
                                 new PrioritySelector(
                                     ctx =>
@@ -426,11 +410,6 @@ namespace Singular.Helpers
                                         return null;
                                     },
 
-                                    new Decorator(
-                                        ret => ret != null && ((WoWUnit)ret).Guid == StyxWoW.Me.CurrentTargetGuid,
-                                        new Action( r => Logger.WriteDebug( "EnsureTarget: target already set? shouldn't be.... calc={0} curr={1}", ((WoWUnit)r).SafeName(), Me.CurrentTarget.SafeName()))
-                                        ),
-
                                     // Make sure the target is VALID. If not, then ignore this next part. (Resolves some silly issues!)
                                     new Decorator(
                                         ret => ret != null && ((WoWUnit)ret).Guid != StyxWoW.Me.CurrentTargetGuid,
@@ -438,17 +417,24 @@ namespace Singular.Helpers
                                             new DecoratorContinue(
                                                 ret => StyxWoW.Me.CurrentPendingCursorSpell != null,
                                                 new Sequence(
-                                                    new Action( r => Logger.WriteDebug( "EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
+                                                    new Action( r => Logger.WriteDebug( targetColor, "EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
                                                     new Action(ctx => Lua.DoString("SpellStopTargeting()"))
                                                     )
                                                 ),
-                                            new Action(ret => Logger.WriteDebug("EnsureTarget: set target to chosen target {0}", ((WoWUnit)ret).SafeName())),
+                                            new Action(ret => Logger.WriteDebug( targetColor, "EnsureTarget: set target to chosen target {0}", ((WoWUnit)ret).SafeName())),
                                             new Action(ret => ((WoWUnit)ret).Target()),
                                             new WaitContinue( 2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTargetGuid == ((WoWUnit)ret).Guid, new ActionAlwaysSucceed())
                                             )
                                         ),
 
-                                    new ActionAlwaysSucceed()
+                                    // looks like no success, so don't continue to spell priorities
+                                    new Decorator( 
+                                        ret => !Me.GotTarget || Me.CurrentTarget.IsDead,
+                                        new ActionAlwaysSucceed()
+                                        ),
+
+                                    // otherwise, we are here if current target is valid or we set a good one, either way... fall through
+                                    new ActionAlwaysFail()
                                     )
                                 )
                             )

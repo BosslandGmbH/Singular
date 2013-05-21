@@ -41,7 +41,7 @@ namespace Singular.Managers
                         SpellManager.Cast("Ghost Wolf");
                     }
                 }
-                else if (StyxWoW.Me.Class == WoWClass.Druid && SpellManager.HasSpell("Travel Form"))
+                else if (StyxWoW.Me.Class == WoWClass.Druid && SpellManager.HasSpell("Travel Form") && SingularSettings.Instance.Druid().UseTravelForm && StyxWoW.Me.IsOutdoors)
                 {
                     e.Cancel = true;
 

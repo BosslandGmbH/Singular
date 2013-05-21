@@ -115,7 +115,6 @@ namespace Singular.Managers
             using (StyxWoW.Memory.AcquireFrame())
             {
                 CurrentSpec = StyxWoW.Me.Specialization;
-                Logger.Write("TalentManager - looks like a {0}", CurrentSpec.ToString());
 
                 Talents.Clear();
                 TalentId = new int[6];

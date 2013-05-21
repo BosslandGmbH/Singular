@@ -16,6 +16,7 @@ using Styx.CommonBot;
 using Singular.Managers;
 using CommonBehaviors.Actions;
 using System.Drawing;
+using Styx.CommonBot.POI;
 
 #endregion
 
@@ -29,6 +30,22 @@ namespace Singular.ClassSpecific.Druid
         public static bool HasTalent(DruidTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         public const WoWSpec DruidAllSpecs = (WoWSpec)int.MaxValue;
+
+        public static DateTime SuppressShapeshiftUntil
+        {
+            get
+            {
+                return Utilities.EventHandlers.LastShapeshiftFailure.AddSeconds(60);
+            }
+        }
+
+        public static bool RecentShapeshiftErrorOccurred
+        {
+            get
+            {
+                return SuppressShapeshiftUntil > DateTime.Now;
+            }
+        }
 
         #region PreCombat Buffs
 
@@ -278,7 +295,8 @@ namespace Singular.ClassSpecific.Druid
                         )
                     ),
 
-                Rest.CreateDefaultRestBehaviour(null, "Revive")
+                Rest.CreateDefaultRestBehaviour(null, "Revive"),
+                CreateDruidMovementBuff()
                 );
         }
 
@@ -328,6 +346,44 @@ namespace Singular.ClassSpecific.Druid
                     )
                 );
         }
+
+        public static Decorator CreateDruidMovementBuff()
+        {
+            return new Throttle( 5,
+                new Decorator(
+                    ret => DruidSettings.UseTravelForm
+                        && !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown()
+                        && MovementManager.IsClassMovementAllowed
+                        && SingularRoutine.CurrentWoWContext != WoWContext.Instances
+                        && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
+                        && Me.IsAlive
+                        && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport && !Me.IsSwimming && !Me.HasAnyAura("Travel Form", "Flight Form")
+                        && !RecentShapeshiftErrorOccurred 
+                        && SpellManager.HasSpell("Cat Form")
+                        && BotPoi.Current != null
+                        && BotPoi.Current.Type != PoiType.None
+                        && BotPoi.Current.Type != PoiType.Hotspot
+                        && BotPoi.Current.Location.Distance(Me.Location) > 10
+                        && (BotPoi.Current.Location.Distance(Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance || (Me.IsIndoors && !Mount.CanMount()) || (Me.GetSkill(SkillLine.Riding).CurrentValue == 0))
+                        && !Me.IsAboveTheGround(),
+                    new Sequence(
+                        new Action(r => Logger.WriteDebug("DruidMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount={3} riding={4}",
+                            BotPoi.Current.Type,
+                            BotPoi.Current.Location.Distance(Me.Location),
+                            Me.IsIndoors.ToYN(),
+                            Mount.CanMount().ToYN(),
+                            Me.GetSkill(SkillLine.Riding).CurrentValue
+                            )),
+                        new PrioritySelector(
+                            new Decorator( req => Spell.CanCastHack("Travel Form", Me, false) && Me.IsOutdoors, Spell.BuffSelf( "Travel Form")),
+                            Spell.BuffSelf("Cat Form")
+                            ),
+                        Helpers.Common.CreateWaitForLagDuration()
+                        )
+                    )
+                );
+        }
+
 
         #region Symbiosis Support
 

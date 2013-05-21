@@ -265,9 +265,12 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug(Color.White, "MoveToMelee: towards {0} @ {1:F1} yds", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance)),
-                    new Action(ret => Navigator.MoveTo(StyxWoW.Me.CurrentTarget.Location)),
-                    new Action(ret => StopMoving.InMeleeRangeOfUnit( StyxWoW.Me.CurrentTarget)),
+                    new Action(ret =>
+                    {
+                        MoveResult res = Navigator.MoveTo(StyxWoW.Me.CurrentTarget.Location);
+                        Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", res.ToString(), StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance);
+                    }),
+                    new Action(ret => StopMoving.InMeleeRangeOfUnit(StyxWoW.Me.CurrentTarget)),
                     new ActionAlwaysFail()
                     )
                 );

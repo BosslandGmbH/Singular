@@ -676,21 +676,21 @@ namespace Singular.Helpers
 
         public static uint GetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
         {
-            // Reversing note: CGUnit_C::GetPredictedHeals
-            const int PredictedHealsCount = 0x1340;
-            const int PredictedHealsArray = 0x1344;
+            //Reversing note: CGUnit_C::GetPredictedHeals
+			const int PredictedHealsCount = 0x1374;
+			const int PredictedHealsArray = 0x1378;
 
-            Debug.Assert(unit != null);
-            uint health = unit.CurrentHealth;
-            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
-            if (incomingHealsCnt == 0)
-                return health;
+			Debug.Assert(unit != null);
+			uint health = unit.CurrentHealth;
+			var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
+			if (incomingHealsCnt == 0)
+				return health;
 
-            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
+			var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
 
-            var heals = StyxWoW.Memory.Read<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
-            return heals.Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
-                .Aggregate(health, (current, heal) => current + heal.HealAmount);
+			var heals = StyxWoW.Memory.Read<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
+			return heals.Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
+				.Aggregate(health, (current, heal) => current + heal.HealAmount);
         }
 
         public static float GetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)

@@ -563,7 +563,7 @@ namespace Singular.Settings
         public CheckTargets InterruptTarget { get; set; }
 
         [Setting]
-        [DefaultValue(50)]
+        [DefaultValue(50u)]
         [Category("Enemy Control")]
         [DisplayName("Trivial Mob Max Health %")]
         [Description("Mob with Max Health less than % of your Max Health considered trivial")]

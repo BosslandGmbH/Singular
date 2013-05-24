@@ -133,7 +133,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         // otherwise, start with Lightning Bolt so we can follow with an instant
                         // to maximize damage at initial aggro
-                        Spell.Cast("Lightning Bolt", ret => !StyxWoW.Me.IsMoving || Spell.HaveAllowMovingWhileCastingAura() || TalentManager.HasGlyph("Unleashed Lightning")),
+                        Spell.Cast("Lightning Bolt"),
 
                         // we are moving so throw an instant of some type
                         Spell.Cast("Flame Shock"),
@@ -360,20 +360,35 @@ namespace Singular.ClassSpecific.Shaman
             return new ThrottlePasses(1, 1,
                 new Action(ret =>
                 {
-                    uint lstks = 0;
+                    uint stks = 0;
+                    string shield;
+
                     WoWAura aura = Me.GetAuraByName("Lightning Shield");
                     if (aura != null)
                     {
-                        lstks = aura.StackCount;
-                        if (!Me.HasAura("Lightning Shield", (int)lstks))
-                            Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  have {0} stacks but Me.HasAura('Lightning Shield', {0}) was False!!!!", lstks, lstks);
+                        stks = aura.StackCount;
+                        if (!Me.HasAura("Lightning Shield", (int)stks))
+                            Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  have {0} stacks but Me.HasAura('Lightning Shield', {0}) was False!!!!", stks, stks);
+                    }
+                    else
+                    {
+                        aura = Me.GetAuraByName("Water Shield");
+                        if (aura == null ) 
+                        {
+                            aura = Me.GetAuraByName("Earth Shield");
+                            if (aura != null)
+                                stks = aura.StackCount;
+                        }
                     }
 
-                    string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, lstks={3} moving={4}",
+                    shield = aura == null ? "(null)" : aura.Name;
+                        
+                    string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, shield={3}, stks={4}, moving={5}",
                         CompositeBuilder.CurrentBehaviorType.ToString(),
                         Me.HealthPercent,
                         Me.ManaPercent,
-                        lstks,
+                        shield,
+                        stks,
                         Me.IsMoving.ToYN()
                         );
 

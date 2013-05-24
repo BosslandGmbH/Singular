@@ -7,6 +7,7 @@ using Styx.WoWInternals.WoWObjects;
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
 using Styx;
 using System.Drawing;
+using System;
 
 namespace Singular.Settings
 {
@@ -80,6 +81,27 @@ namespace Singular.Settings
         [DisplayName("Use Weapon Imbues")]
         [Description("True: Automatically select and apply weapon imbues, False: automatic cast of imbues prevented")]
         public bool UseWeaponImbues { get; set; }
+
+        [Setting]
+        [DefaultValue(15)]
+        [Category("Common")]
+        [DisplayName("Twist Water Shield Mana %")]
+        [Description("Water Shield if below this Mana %")]
+        public int TwistWaterShield { get; set; }
+
+
+        private int _TwistDamageShield;
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Common")]
+        [DisplayName("Twist Lghtng/Earth Shield % Mana")]
+        [Description("Lightning (DPS) or Earth (Resto) Shield above this % Mana.  Note: muat be minimum of Water Shield % + 10")]
+        public int TwistDamageShield 
+        { 
+            get { return Math.Max( _TwistDamageShield, TwistWaterShield + 10); }
+            set { _TwistDamageShield = value; }
+        }
 
         #endregion
 

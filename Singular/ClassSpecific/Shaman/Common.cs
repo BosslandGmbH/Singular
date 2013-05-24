@@ -139,68 +139,70 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Normal | WoWContext.Instances, 1)]
         public static Composite CreateShamanCombatBuffs()
         {
-            return new PrioritySelector(
+            return new Decorator(
+                req => !Unit.IsTrivial( Me.CurrentTarget),
+                new PrioritySelector(
 
-                Totems.CreateTotemsBehavior(),
+                    Totems.CreateTotemsBehavior(),
 
-                Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < ShamanSettings.AstralShiftPercent || Common.StressfulSituation),
-                Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(), ret => !Me.IsMoving && (Common.StressfulSituation || Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Totems.Exist(WoWTotem.EarthElemental))),
-                Spell.BuffSelf("Shamanistic Rage", ret => Me.HealthPercent < 70 || Me.ManaPercent < 70 || Common.StressfulSituation),
+                    Spell.BuffSelf("Astral Shift", ret => Me.HealthPercent < ShamanSettings.AstralShiftPercent || Common.StressfulSituation),
+                    Spell.BuffSelf(WoWTotem.StoneBulwark.ToSpellId(), ret => !Me.IsMoving && (Common.StressfulSituation || Me.HealthPercent < ShamanSettings.StoneBulwarkTotemPercent && !Totems.Exist(WoWTotem.EarthElemental))),
+                    Spell.BuffSelf("Shamanistic Rage", ret => Me.HealthPercent < 70 || Me.ManaPercent < 70 || Common.StressfulSituation),
 
-                // hex someone if they are not current target, attacking us, and 12 yds or more away
-                new Decorator(
-                    req => Me.Specialization != WoWSpec.ShamanEnhancement || !ShamanSettings.AvoidMaelstromDamage,
-                    new PrioritySelector(
+                    // hex someone if they are not current target, attacking us, and 12 yds or more away
+                    new Decorator(
+                        req => Me.Specialization != WoWSpec.ShamanEnhancement || !ShamanSettings.AvoidMaelstromDamage,
                         new PrioritySelector(
-                            ctx => Unit.NearbyUnfriendlyUnits
-                                .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
-                                        && Me.CurrentTargetGuid != u.Guid
-                                        && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                                        && !u.IsCrowdControlled()
-                                        && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
-                                .OrderByDescending(u => u.Distance)
-                                .FirstOrDefault(),
-                            Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
-                            ),
+                            new PrioritySelector(
+                                ctx => Unit.NearbyUnfriendlyUnits
+                                    .Where(u => (u.CreatureType == WoWCreatureType.Beast || u.CreatureType == WoWCreatureType.Humanoid)
+                                            && Me.CurrentTargetGuid != u.Guid
+                                            && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                            && !u.IsCrowdControlled()
+                                            && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                    .OrderByDescending(u => u.Distance)
+                                    .FirstOrDefault(),
+                                Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
+                                ),
 
-                        // bind someone if we can
-                        new PrioritySelector(
-                            ctx => Unit.NearbyUnfriendlyUnits
-                                .Where(u => u.CreatureType == WoWCreatureType.Elemental
-                                        && Me.CurrentTargetGuid != u.Guid
-                                        && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                                        && !u.IsCrowdControlled()
-                                        && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
-                                .OrderByDescending(u => u.Distance)
-                                .FirstOrDefault(),
-                            Spell.Cast("Bind Elemental", onUnit => (WoWUnit)onUnit)
+                            // bind someone if we can
+                            new PrioritySelector(
+                                ctx => Unit.NearbyUnfriendlyUnits
+                                    .Where(u => u.CreatureType == WoWCreatureType.Elemental
+                                            && Me.CurrentTargetGuid != u.Guid
+                                            && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                            && !u.IsCrowdControlled()
+                                            && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                    .OrderByDescending(u => u.Distance)
+                                    .FirstOrDefault(),
+                                Spell.Cast("Bind Elemental", onUnit => (WoWUnit)onUnit)
+                                )
                             )
-                        )
-                    ),
+                        ),
 
-                new Decorator(
-                    ret => ShamanSettings.UseBloodlust
-                        && MovementManager.IsClassMovementAllowed,
+                    new Decorator(
+                        ret => ShamanSettings.UseBloodlust
+                            && MovementManager.IsClassMovementAllowed,
 
-                    new PrioritySelector(
-                        Spell.BuffSelf(Common.BloodlustName,
-                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
-                                && !Unit.GroupMembers.Any(m => m.IsAlive && m.Distance < 100)
-                                && Common.StressfulSituation),
+                        new PrioritySelector(
+                            Spell.BuffSelf(Common.BloodlustName,
+                                ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
+                                    && !Unit.GroupMembers.Any(m => m.IsAlive && m.Distance < 100)
+                                    && Common.StressfulSituation),
 
-                        Spell.BuffSelf(Common.BloodlustName,
-                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances
-                                && !Me.GroupInfo.IsInRaid
-                                && Me.CurrentTarget.IsBoss())
-                        )
-                    ),
+                            Spell.BuffSelf(Common.BloodlustName,
+                                ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances
+                                    && !Me.GroupInfo.IsInRaid
+                                    && Me.CurrentTarget.IsBoss())
+                            )
+                        ),
 
-                Spell.BuffSelf("Ascendance", ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal && Common.StressfulSituation),
+                    Spell.BuffSelf("Ascendance", ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal && Common.StressfulSituation),
 
-                Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust)
+                    Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust)
 
-                // , Spell.BuffSelf("Spiritwalker's Grace", ret => Me.IsMoving && Me.Combat)
-
+                    // , Spell.BuffSelf("Spiritwalker's Grace", ret => Me.IsMoving && Me.Combat)
+                    )
                 );
         }
 
@@ -396,8 +398,8 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 ctx => ActingAsHealer,
-                Spell.BuffSelf("Water Shield", ret => (bool)ret),
-                Spell.BuffSelf("Lightning Shield", ret => !(bool)ret)
+                Spell.BuffSelf("Water Shield", ret => (bool)ret || Me.ManaPercent <= ShamanSettings.TwistWaterShield ),
+                Spell.BuffSelf("Lightning Shield", ret => !(bool)ret && Me.ManaPercent >= ShamanSettings.TwistDamageShield )
                 );
         }
 

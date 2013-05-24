@@ -40,7 +40,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMediumRange(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -64,7 +64,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMediumRange(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(

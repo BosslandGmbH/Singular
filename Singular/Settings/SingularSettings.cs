@@ -562,6 +562,13 @@ namespace Singular.Settings
         [Description("None: disabled, Current: our target only, All: any enemy in range.")]
         public CheckTargets InterruptTarget { get; set; }
 
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Enemy Control")]
+        [DisplayName("Trivial Mob Max Health %")]
+        [Description("Mob with Max Health less than % of your Max Health considered trivial")]
+        public uint TrivialMaxHealthPercent { get; set; }
+
         #endregion
 
         #region Class Late-Loading Wrappers

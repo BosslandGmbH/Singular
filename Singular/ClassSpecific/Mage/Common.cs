@@ -141,71 +141,73 @@ namespace Singular.ClassSpecific.Mage
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Mage)]
         public static Composite CreateMageCombatBuffs()
         {
-            return new PrioritySelector(
-                // Defensive 
+            return new Decorator(
+                req => !Unit.IsTrivial(Me.CurrentTarget),
+                new PrioritySelector(
+                    // Defensive 
 
-                // handle Cauterize debuff if we took talent and get it
-                new Decorator(
-                    ret => Me.ActiveAuras.ContainsKey("Cauterize"),
-                    new PrioritySelector(
-                        Spell.BuffSelf("Ice Block",
-                            ret => {
-                                _cancelIceBlockForCauterize = DateTime.Now.AddSeconds(10);
-                                return true;
-                            }),
+                    // handle Cauterize debuff if we took talent and get it
+                    new Decorator(
+                        ret => Me.ActiveAuras.ContainsKey("Cauterize"),
+                        new PrioritySelector(
+                            Spell.BuffSelf("Ice Block",
+                                ret => {
+                                    _cancelIceBlockForCauterize = DateTime.Now.AddSeconds(10);
+                                    return true;
+                                }),
 
-                        Spell.BuffSelf("Temporal Shield"),
-                        Spell.BuffSelf("Ice Barrier"),
-                        Spell.BuffSelf("Incanter's Ward"),
-                        Spell.BuffSelf("Evocation"),
-                        new Decorator(
-                            req => !Me.HasAnyAura( "Invoker's Energy", "Incanter's Ward"),
-                            new Throttle( 8, Item.CreateUsePotionAndHealthstone(100, 0))
+                            Spell.BuffSelf("Temporal Shield"),
+                            Spell.BuffSelf("Ice Barrier"),
+                            Spell.BuffSelf("Incanter's Ward"),
+                            Spell.BuffSelf("Evocation"),
+                            new Decorator(
+                                req => !Me.HasAnyAura( "Invoker's Energy", "Incanter's Ward"),
+                                new Throttle( 8, Item.CreateUsePotionAndHealthstone(100, 0))
+                                )
                             )
-                        )
-                    ),
+                        ),
 
-                // Ice Block cast if we didn't take Cauterize
-                Spell.BuffSelf("Ice Block",
-                    ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances
-                        && !SpellManager.HasSpell("Cauterize")
-                        && StyxWoW.Me.HealthPercent < 20
-                        && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
+                    // Ice Block cast if we didn't take Cauterize
+                    Spell.BuffSelf("Ice Block",
+                        ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances
+                            && !SpellManager.HasSpell("Cauterize")
+                            && StyxWoW.Me.HealthPercent < 20
+                            && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
 
-                 Spell.Buff(
-                    "Evocation", true, on => Me, 
-                    ret => Me.ManaPercent < 30 
-                        || Me.HealthPercent < 30  
-                        || (Me.HealthPercent < 60 && 2 <= Unit.NearbyUnfriendlyUnits.Count( u => u.Combat && u.IsTargetingMeOrPet )),
-                    "Invoker's Energy"
-                    ),
+                     Spell.Buff(
+                        "Evocation", true, on => Me, 
+                        ret => Me.ManaPercent < 30 
+                            || Me.HealthPercent < 30  
+                            || (Me.HealthPercent < 60 && 2 <= Unit.NearbyUnfriendlyUnits.Count( u => u.Combat && u.IsTargetingMeOrPet )),
+                        "Invoker's Energy"
+                        ),
 
-                Spell.BuffSelf("Incanter's Ward", req => Unit.NearbyUnitsInCombatWithMe.Any()),
+                    Spell.BuffSelf("Incanter's Ward", req => Unit.NearbyUnitsInCombatWithMe.Any()),
 
-                Dispelling.CreatePurgeEnemyBehavior("Spellsteal"),
-                // CreateMageSpellstealBehavior(),
+                    Dispelling.CreatePurgeEnemyBehavior("Spellsteal"),
+                    // CreateMageSpellstealBehavior(),
 
-                Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
+                    Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
-                new Throttle( TimeSpan.FromMilliseconds(10000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => !Me.HasAura("Rune of Power"), false) ),
+                    new Throttle( TimeSpan.FromMilliseconds(10000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => !Me.HasAura("Rune of Power"), false) ),
 
-                //  Spell.CastOnGround("Rune of Power", loc => Me.Location.RayCast(Me.RenderFacing, 1.25f), ret => !Me.IsMoving),
+                    //  Spell.CastOnGround("Rune of Power", loc => Me.Location.RayCast(Me.RenderFacing, 1.25f), ret => !Me.IsMoving),
 
-                Spell.Cast("Nether Tempest", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Nether Tempest", 3)),
-                Spell.Cast("Living Bomb", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Living Bomb", 2)),
-                Spell.Cast("Frost Bomb", ret => Me.GotTarget && !Me.CurrentTarget.HasMyAura("Frost Bomb")),
+                    Spell.Cast("Nether Tempest", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Nether Tempest", 3)),
+                    Spell.Cast("Living Bomb", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Living Bomb", 2)),
+                    Spell.Cast("Frost Bomb", ret => Me.GotTarget && !Me.CurrentTarget.HasMyAura("Frost Bomb")),
 
-                // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invoker's Energy")),
+                    // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invoker's Energy")),
 
-                Spell.Cast("Mirror Image", 
-                    req => Me.GotTarget &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() >= 3)),
+                    Spell.Cast("Mirror Image", 
+                        req => Me.GotTarget &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() >= 3)),
 
-                Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp),
+                    Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp),
 
-                Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80))
+                    Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80))
                 
-                // , Spell.BuffSelf( "Ice Floes", req => Me.IsMoving)
-
+                    // , Spell.BuffSelf( "Ice Floes", req => Me.IsMoving)
+                    )
                 );
         }
 

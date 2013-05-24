@@ -26,6 +26,13 @@ namespace Singular.Helpers
         Yes
     };
 
+    enum FaceDuring
+    {
+        No = 0,
+        Yes
+    };
+
+
     public delegate WoWUnit UnitSelectionDelegate(object context);
 
     public delegate bool SimpleBooleanDelegate(object context);
@@ -446,9 +453,13 @@ namespace Singular.Helpers
 
         #region Wait
 
-        public static Composite WaitForGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForGlobalCooldown(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
+                new Decorator(
+                    ret => faceDuring == FaceDuring.Yes,
+                    Movement.CreateFaceTargetBehavior()
+                    ),
                 new Action(ret =>
                 {
                     if (IsGlobalCooldown(allow))
@@ -480,11 +491,11 @@ namespace Singular.Helpers
         /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <param name = "allow">Whether or not to allow lag tollerance for spell queueing</param>
         /// <returns></returns>
-        public static Composite WaitForCast(bool faceDuring = false, LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForCast(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => faceDuring,
+                    ret => faceDuring == FaceDuring.Yes,
                     Movement.CreateFaceTargetBehavior()
                     ),
                 new Action(ret =>
@@ -534,11 +545,11 @@ namespace Singular.Helpers
         /// <param name = "faceDuring">Whether or not to face during casting</param>
         /// <param name = "allow">Whether or not to allow lag tollerance for spell queueing</param>
         /// <returns></returns>
-        public static Composite WaitForChannel(bool faceDuring = false, LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => faceDuring,
+                    ret => faceDuring == FaceDuring.Yes,
                     Movement.CreateFaceTargetBehavior()
                     ),
                 new Action(ret =>
@@ -569,20 +580,20 @@ namespace Singular.Helpers
             return IsCasting(allow) || IsChannelling();
         }
 
-        public static Composite WaitForCastOrChannel(LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForCastOrChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
-                WaitForCast(false, allow),
-                WaitForChannel(false, allow)
+                WaitForCast(faceDuring, allow),
+                WaitForChannel(faceDuring, allow)
                 );
         }
 
-        public static Composite WaitForGcdOrCastOrChannel(LagTolerance allow = LagTolerance.Yes)
+        public static Composite WaitForGcdOrCastOrChannel(FaceDuring faceDuring = FaceDuring.No, LagTolerance allow = LagTolerance.Yes)
         {
             return new PrioritySelector(
-                WaitForGlobalCooldown(allow),
-                WaitForCast(false, allow),
-                WaitForChannel(false, allow)
+                WaitForGlobalCooldown(faceDuring,allow),
+                WaitForCast(faceDuring, allow),
+                WaitForChannel(faceDuring, allow)
                 );
         }
 
@@ -1471,7 +1482,7 @@ namespace Singular.Helpers
             // assume we cant do that, but then check for class specific buffs which allow movement while casting
             bool allowMovingWhileCasting = false;
             if (Me.Class == WoWClass.Shaman)
-                allowMovingWhileCasting = (_spell.Name == "Lightning Bolt" && TalentManager.HasGlyph("Unleashed Lightning"));
+                allowMovingWhileCasting = _spell.Name == "Lightning Bolt";
             else if (Me.Specialization == WoWSpec.MageFire)
                 allowMovingWhileCasting = _spell.Name == "Scorch";
             else if (Me.Class == WoWClass.Hunter)
@@ -1880,12 +1891,7 @@ namespace Singular.Helpers
 
         public static bool IsFunnel(WoWSpell spell)
         {
-#if IS_FUNNEL_IS_FIXED
-            return spell.IsFunnel;
-#elif LUA_CALL_ACTUALLY_WORKED
-            bool channeled = Lua.GetReturnVal<bool>( "return GetSpellInfo("+ spell.Id.ToString() + ")", 4 );
-            return channeled;
-#else   // HV has the answers... ty m8
+            // HV has the answer... ty m8
             bool IsChanneled = false;
             var row = StyxWoW.Db[Styx.Patchables.ClientDb.Spell].GetRow((uint)spell.Id);
             if (row.IsValid)
@@ -1897,7 +1903,6 @@ namespace Singular.Helpers
             }
 
             return IsChanneled;
-#endif
         }
 
         public static int PendingSpell()

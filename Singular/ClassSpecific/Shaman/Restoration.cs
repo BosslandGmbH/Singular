@@ -61,8 +61,8 @@ namespace Singular.ClassSpecific.Shaman
             if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
             {
                 return new PrioritySelector(
-                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent > 25),
-                    Spell.BuffSelf("Water Shield", ret => Me.ManaPercent < 15),
+                    Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent >= ShamanSettings.TwistDamageShield ),
+                    Spell.BuffSelf("Water Shield", ret => Me.ManaPercent <= ShamanSettings.TwistWaterShield ),
 
                     Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
                     );
@@ -85,8 +85,8 @@ namespace Singular.ClassSpecific.Shaman
             // Normal
             return new PrioritySelector(
 
-                Spell.BuffSelf("Water Shield", ret => Me.ManaPercent < 20),
-                Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent > 35),
+                Spell.BuffSelf("Earth Shield", ret => Me.ManaPercent >= ShamanSettings.TwistDamageShield),
+                Spell.BuffSelf("Water Shield", ret => Me.ManaPercent <= ShamanSettings.TwistWaterShield),
 
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Earthliving, Imbue.Flametongue)
                 );
@@ -896,17 +896,15 @@ namespace Singular.ClassSpecific.Shaman
                             Logger.WriteDebug(Color.Beige, "Inconsistancy Error:  Auras['Tidal Waves'] at {0} stacks != Me.GetAuraStacks('Tidal Waves') at {1} stacks", actvstks, getaurastks);
 
                         string shield;
-                        uint shstacks;
 
-                        shstacks = Me.GetAuraStacks("Earth Shield");
-                        if (shstacks > 0)
-                            shield = string.Format( "EARTH[{0}]", shstacks);
+                        if (Me.HasAura("Earth Shield"))
+                            shield = string.Format( "EARTH[{0}]", Me.GetAuraStacks("Earth Shield"));
                         else if ( Me.HasAura("Water Shield"))
                             shield = string.Format( "WATER[{0}]", (long) Me.GetAuraTimeLeft("Water Shield").TotalMinutes);
                         else if ( Me.HasAura("Lightning Shield"))
-                            shield = string.Format( "LHTNG[{0}]", (long) Me.GetAuraTimeLeft("Water Shield").TotalMinutes );
+                            shield = string.Format("LHTNG[{0}]", Me.GetAuraStacks("Lightning Shield"));
                         else 
-                            shield = "NONE";
+                            shield = "-none-";
 
                         string line = string.Format(".... h={0:F1}%/m={1:F1}%, combat={2}, twaves={3}, shield={4}",
                             Me.HealthPercent,

@@ -26,9 +26,10 @@ namespace Singular.ClassSpecific.Rogue
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
-        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); } 
+        private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         public static bool IsStealthed { get { return Me.HasAnyAura("Stealth", "Shadow Dance", "Vanish"); } }
+        public static bool IsActuallyStealthed { get { return Me.HasAnyAura("Stealth", "Vanish"); } }
 
         [Behavior(BehaviorType.Rest, WoWClass.Rogue)]
         public static Composite CreateRogueRest()
@@ -131,7 +132,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
-                CreateStealthBehavior( ret => Me.GotTarget && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 99 )),
+                CreateStealthBehavior( ret => Me.GotTarget && !Unit.IsTrivial(Me.CurrentTarget) && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 99 )),
                 Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0 && Me.ComboPointsTarget != Me.CurrentTargetGuid ),
                 Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
                 // Throttle Shadowstep because cast can fail with no message
@@ -150,81 +151,86 @@ namespace Singular.ClassSpecific.Rogue
 
                 CreateActionCalcAoeCount(),
 
-                // Defensive
-                // Spell.BuffSelf("Combat Readiness", ret => AoeCount > 2 && !Me.HasAura("Feint")),
+                new Decorator(
+                    req => !Unit.IsTrivial( Me.CurrentTarget),
+                    new PrioritySelector(
+                        // Defensive
+                        // Spell.BuffSelf("Combat Readiness", ret => AoeCount > 2 && !Me.HasAura("Feint")),
 
-                // Symbiosis
-                new Throttle(179, Spell.BuffSelf("Growl", ret => Me.HealthPercent < 65 && SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
+                        // Symbiosis
+                        new Throttle(179, Spell.BuffSelf("Growl", ret => Me.HealthPercent < 65 && SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
 
-                // Spell.BuffSelf("Feint", ret => AoeCount > 2 && !Me.HasAura("Combat Readiness") && HaveTalent(RogueTalents.Elusivenss)),
-                Spell.BuffSelf("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),
-                Spell.BuffSelf("Cloak of Shadows", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
-                Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 40 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr > 4 * 4 && u.IsAlive && u.Combat && u.IsTargetingMeOrPet) >= 1),
-                Spell.BuffSelf("Vanish", ret => StyxWoW.Me.HealthPercent < 20 && !SingularRoutine.IsQuestBotActive),
+                        // Spell.BuffSelf("Feint", ret => AoeCount > 2 && !Me.HasAura("Combat Readiness") && HaveTalent(RogueTalents.Elusivenss)),
+                        Spell.BuffSelf("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),
+                        Spell.BuffSelf("Cloak of Shadows", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
+                        Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 40 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr > 4 * 4 && u.IsAlive && u.Combat && u.IsTargetingMeOrPet) >= 1),
+                        Spell.BuffSelf("Vanish", ret => StyxWoW.Me.HealthPercent < 20 && !SingularRoutine.IsQuestBotActive),
 
-                Spell.BuffSelf("Preparation",
-                    ret => Spell.GetSpellCooldown("Vanish").TotalSeconds > 10
-                        && Spell.GetSpellCooldown("Evasion").TotalSeconds > 10),
+                        Spell.BuffSelf("Preparation",
+                            ret => Spell.GetSpellCooldown("Vanish").TotalSeconds > 10
+                                && Spell.GetSpellCooldown("Evasion").TotalSeconds > 10),
 
-                Spell.Cast("Shiv", ret => Me.CurrentTarget.HasAura("Enraged")),
+                        Spell.Cast("Shiv", ret => Me.CurrentTarget.HasAura("Enraged")),
 
-                Common.CreateRogueBlindOnAddBehavior(),
+                        Common.CreateRogueBlindOnAddBehavior(),
 
-                // Redirect if we have CP left
-                Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
+                        // Redirect if we have CP left
+                        Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
 
-                Spell.Cast("Marked for Death", ret => StyxWoW.Me.RawComboPoints == 0),
+                        Spell.Cast("Marked for Death", ret => StyxWoW.Me.RawComboPoints == 0),
 
-                Spell.Cast("Deadly Throw",
-                    ret => Me.ComboPoints >= 3
-                        && Me.IsSafelyFacing(Me.CurrentTarget)
-                        && Me.CurrentTarget.IsCasting
-                        && Me.CurrentTarget.CanInterruptCurrentSpellCast),
+                        Spell.Cast("Deadly Throw",
+                            ret => Me.ComboPoints >= 3
+                                && Me.IsSafelyFacing(Me.CurrentTarget)
+                                && Me.CurrentTarget.IsCasting
+                                && Me.CurrentTarget.CanInterruptCurrentSpellCast),
 
-                // Pursuit
-                Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12 && Unit.CurrentTargetIsMovingAwayFromMe),
-                Spell.Cast("Burst of Speed", ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > 10 && Unit.CurrentTargetIsMovingAwayFromMe),
-                Spell.Cast("Shuriken Toss", ret => Me.IsSafelyFacing(Me.CurrentTarget) && Me.CurrentTarget.SpellDistance().Between(10, 30)),
+                        // Pursuit
+                        Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12 && Unit.CurrentTargetIsMovingAwayFromMe),
+                        Spell.Cast("Burst of Speed", ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > 10 && Unit.CurrentTargetIsMovingAwayFromMe),
+                        Spell.Cast("Shuriken Toss", ret => Me.IsSafelyFacing(Me.CurrentTarget)),
 
-                // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
-                new Sequence(
-                    Spell.BuffSelf("Vanish",
-                        ret => Me.GotTarget
-                            && !SingularRoutine.IsQuestBotActive
-                            && !IsStealthed
-                            && !Me.HasAuraExpired("Slice and Dice", 4)
-                            && Me.ComboPoints < 2
-                            && Me.IsSafelyBehind(Me.CurrentTarget)),
-                    new Wait(TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed()),
-                    CreateRogueOpenerBehavior()
-                    ),
+                        // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
+                        new Sequence(
+                            Spell.BuffSelf("Vanish",
+                                ret => Me.GotTarget
+                                    && !SingularRoutine.IsQuestBotActive
+                                    && !IsStealthed
+                                    && !Me.HasAuraExpired("Slice and Dice", 4)
+                                    && Me.ComboPoints < 2
+                                    && Me.IsSafelyBehind(Me.CurrentTarget)),
+                            new Wait(TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed()),
+                            CreateRogueOpenerBehavior()
+                            ),
 
-                // Pick Pocket? for those that favor coin over combat, try here in case we restealth
-                CreateRoguePickPocket(),
+                        // Pick Pocket? for those that favor coin over combat, try here in case we restealth
+                        CreateRoguePickPocket(),
 
-                // DPS Boost               
-                new Sequence(
-                    new Throttle(TimeSpan.FromSeconds(2),
-                        new Decorator(
-                            req => UseLongCoolDownAbility,
-                            Spell.BuffSelf("Shadow Blades", req =>
-                            {
-                                switch (Me.Specialization)
-                                {
-                                    default:
-                                    case WoWSpec.RogueAssassination:
-                                        return Me.ComboPoints <= 2;
+                        // DPS Boost               
+                        new Sequence(
+                            new Throttle(TimeSpan.FromSeconds(2),
+                                new Decorator(
+                                    req => UseLongCoolDownAbility,
+                                    Spell.BuffSelf("Shadow Blades", req =>
+                                    {
+                                        switch (Me.Specialization)
+                                        {
+                                            default:
+                                            case WoWSpec.RogueAssassination:
+                                                return Me.ComboPoints <= 2;
 
-                                    case WoWSpec.RogueCombat:
-                                        return Me.HasAura("Adrenaline Rush");
+                                            case WoWSpec.RogueCombat:
+                                                return Me.HasAura("Adrenaline Rush");
 
-                                    case WoWSpec.RogueSubtlety:
-                                        return Me.ComboPoints <= 2 && !Me.HasAura("Find Weakness");
-                                }
-                            }))
-                        ),
+                                            case WoWSpec.RogueSubtlety:
+                                                return Me.ComboPoints <= 2 && !Me.HasAura("Find Weakness");
+                                        }
+                                    }))
+                                ),
 
-                    new ActionAlwaysFail()
+                            new ActionAlwaysFail()
+                            )
+                        )
                     )
                 );
 
@@ -276,9 +282,9 @@ namespace Singular.ClassSpecific.Rogue
                 ret => Common.IsStealthed,
                 new PrioritySelector(
                     CreateRoguePickPocket(),
-                    Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) || Common.HasTalent( RogueTalents.CloakAndDagger)),
-                    Spell.Cast("Garrote", ret => (!Me.IsMoving && !Me.IsSafelyBehind(Me.CurrentTarget)) || Common.HasTalent(RogueTalents.CloakAndDagger)),
-                    Spell.Cast("Cheap Shot", ret => !Me.IsMoving || Common.HasTalent(RogueTalents.CloakAndDagger))
+                    Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) || (Common.HasTalent( RogueTalents.CloakAndDagger) && IsActuallyStealthed)),
+                    Spell.Cast("Garrote", ret => (!Me.IsMoving && !Me.IsSafelyBehind(Me.CurrentTarget)) || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed)),
+                    Spell.Cast("Cheap Shot", ret => !Me.IsMoving || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed))
                     )
                 );
         }
@@ -404,7 +410,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 new Sequence(
-                    Spell.BuffSelf("Stealth", ret => !IsStealthed && req == null || req(ret)),
+                    Spell.BuffSelf("Stealth", ret => !IsStealthed && (req == null || req(ret))),
                     new Wait( TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed())
                     )                
                 );

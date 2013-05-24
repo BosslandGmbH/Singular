@@ -56,16 +56,23 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.Cast("Repentance", 
-                    onUnit => 
-                    Unit.NearbyUnfriendlyUnits
-                    .Where(u => (u.IsPlayer || u.IsDemon || u.IsHumanoid || u.IsDragon || u.IsGiant || u.IsUndead)
-                            && Me.CurrentTargetGuid != u.Guid
-                            && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
-                            && !u.IsCrowdControlled()
-                            && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
-                    .OrderByDescending(u => u.Distance)
-                    .FirstOrDefault())
+                Spell.BuffSelf("Devotion Aura", req => Me.Silenced),
+                new Decorator(
+                    req => !Unit.IsTrivial(Me.CurrentTarget),
+                    new PrioritySelector(
+                        Spell.Cast("Repentance", 
+                            onUnit => 
+                            Unit.NearbyUnfriendlyUnits
+                            .Where(u => (u.IsPlayer || u.IsDemon || u.IsHumanoid || u.IsDragon || u.IsGiant || u.IsUndead)
+                                    && Me.CurrentTargetGuid != u.Guid
+                                    && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
+                                    && !u.IsCrowdControlled()
+                                    && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                            .OrderByDescending(u => u.Distance)
+                            .FirstOrDefault()
+                            )
+                        )
+                    )
                 );
         }
 

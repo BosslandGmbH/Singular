@@ -239,6 +239,18 @@ namespace Singular.Helpers
             return true;
         }
 
+        public static bool IsTrivial(this WoWUnit unit)
+        {
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+                return false;
+
+            if (unit == null)
+                return false;
+
+            uint trivialHealth = (StyxWoW.Me.MaxHealth * SingularSettings.Instance.TrivialMaxHealthPercent) / 100;
+            return unit.MaxHealth <= trivialHealth;
+        }
+
         public static WoWUnit GetPlayerParent(WoWUnit unit)
         {
             // If it is a pet/minion/totem, lets find the root of ownership chain
@@ -676,21 +688,21 @@ namespace Singular.Helpers
 
         public static uint GetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
         {
-            //Reversing note: CGUnit_C::GetPredictedHeals
-			const int PredictedHealsCount = 0x1374;
-			const int PredictedHealsArray = 0x1378;
+            // Reversing note: CGUnit_C::GetPredictedHeals
+            const int PredictedHealsCount = 0x1374;
+            const int PredictedHealsArray = 0x1378;
 
-			Debug.Assert(unit != null);
-			uint health = unit.CurrentHealth;
-			var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
-			if (incomingHealsCnt == 0)
-				return health;
+            Debug.Assert(unit != null);
+            uint health = unit.CurrentHealth;
+            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
+            if (incomingHealsCnt == 0)
+                return health;
 
-			var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
+            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
 
-			var heals = StyxWoW.Memory.Read<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
-			return heals.Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
-				.Aggregate(health, (current, heal) => current + heal.HealAmount);
+            var heals = StyxWoW.Memory.Read<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
+            return heals.Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
+                .Aggregate(health, (current, heal) => current + heal.HealAmount);
         }
 
         public static float GetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)

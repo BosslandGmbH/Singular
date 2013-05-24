@@ -56,7 +56,7 @@ namespace Singular.ClassSpecific.Monk
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
                     Spell.BuffSelf("Dematerialize"),
-                    Spell.BuffSelf("Nimble Brew", ret => Me.Stunned || Me.Fleeing ),
+                    Spell.BuffSelf("Nimble Brew", ret => Me.Stunned || Me.Fleeing || Me.HasAuraWithMechanic( WoWSpellMechanic.Horrified )),
                     Spell.BuffSelf("Dampen Harm", ret => Me.Stunned && Unit.NearbyUnitsInCombatWithMe.Any()),
                     Spell.BuffSelf("Tiger's Lust", ret => Me.Rooted && !Me.HasAuraWithEffect( WoWApplyAuraType.ModIncreaseSpeed))
                     )
@@ -66,16 +66,23 @@ namespace Singular.ClassSpecific.Monk
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, (WoWSpec)int.MaxValue, WoWContext.All, 2)]
         public static Composite CreateMonkCombatBuffs()
         {
-            return new PrioritySelector(               
-                // check our individual buffs here
+            return new PrioritySelector(
+                
                 Spell.BuffSelf( "Legacy of the White Tiger"),
                 Spell.BuffSelf( "Legacy of the Emperor"),
-                Spell.Buff("Disable", ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect( WoWApplyAuraType.ModDecreaseSpeed)),
 
-                Spell.BuffSelf( "Ring of Peace", 
-                    ret => Me.GotTarget 
-                        && Me.CurrentTarget.SpellDistance() < 8
-                        && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() > 1))
+                new Decorator(
+                    req => !Unit.IsTrivial(Me.CurrentTarget),
+                    new PrioritySelector(               
+                        // check our individual buffs here
+                        Spell.Buff("Disable", ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect( WoWApplyAuraType.ModDecreaseSpeed)),
+
+                        Spell.BuffSelf( "Ring of Peace", 
+                            ret => Me.GotTarget 
+                                && Me.CurrentTarget.SpellDistance() < 8
+                                && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() > 1))
+                        )
+                    )
                 );
         }
 

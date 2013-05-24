@@ -85,7 +85,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -108,7 +108,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -117,27 +117,33 @@ namespace Singular.ClassSpecific.Priest
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
-                        Helpers.Common.CreateInterruptBehavior(),
-                        Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
-
                         Spell.BuffSelf("Shadowform"),
 
-                        // Mana Management stuff - send in the fiends
-                        Common.CreateShadowfiendBehavior(),
+                        new Decorator(
+                            req => !Unit.IsTrivial( Me.CurrentTarget),
+                            new PrioritySelector(
 
-                        // Defensive stuff
-                        Spell.BuffSelf("Dispersion",
-                            ret => Me.ManaPercent < PriestSettings.DispersionMana
-                                || Me.HealthPercent < 40 
-                                || (Me.ManaPercent < SingularSettings.Instance.MinMana && Me.IsSwimming)
-                                || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
 
-                        Spell.Cast("Psychic Scream",  ret => (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.CurrentTargetGuid == Me.Guid) || PriestSettings.UsePsychicScream && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= PriestSettings.PsychicScreamAddCount),
+                                // Mana Management stuff - send in the fiends
+                                Common.CreateShadowfiendBehavior(),
 
-                        Spell.Cast("Power Infusion", ret => Me.CurrentTarget.TimeToDeath() > 20 || AoeTargets.Count() > 2),
+                                // Defensive stuff
+                                Spell.BuffSelf("Dispersion",
+                                    ret => Me.ManaPercent < PriestSettings.DispersionMana
+                                        || Me.HealthPercent < 40 
+                                        || (Me.ManaPercent < SingularSettings.Instance.MinMana && Me.IsSwimming)
+                                        || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
+
+                                Spell.Cast("Psychic Scream",  ret => (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.CurrentTargetGuid == Me.Guid) || PriestSettings.UsePsychicScream && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= PriestSettings.PsychicScreamAddCount),
+
+                                Spell.Cast("Power Infusion", ret => Me.CurrentTarget.TimeToDeath() > 20 || AoeTargets.Count() > 2),
                 
-                        // don't attempt to heal unless below a certain percentage health
-                        Spell.Cast("Vampiric Embrace", ret => Me, ret => Me.HealthPercent < 65 && Me.CurrentTarget.TimeToDeath() > 10),
+                                // don't attempt to heal unless below a certain percentage health
+                                Spell.Cast("Vampiric Embrace", ret => Me, ret => Me.HealthPercent < 65 && Me.CurrentTarget.TimeToDeath() > 10)
+                                )
+                            ),
 
                         // Shadow immune npcs.
                         // Spell.Cast("Holy Fire", req => Me.CurrentTarget.IsImmune(WoWSpellSchool.Shadow)),
@@ -188,11 +194,11 @@ namespace Singular.ClassSpecific.Priest
                         // for targets that die quickly
                         new PrioritySelector(
                             Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20),
-                            Spell.Buff("Devouring Plague", true, ret => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= PriestSettings.NormalContextOrbs ),
+                            Spell.Buff("Devouring Plague", true, ret => !Unit.IsTrivial(Me.CurrentTarget) && Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= PriestSettings.NormalContextOrbs ),
                             Spell.Cast("Mind Blast", ret => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3),
 
                             new Decorator(
-                                ret => Me.CurrentTarget.TimeToDeath() > 8,
+                                ret => Me.CurrentTarget.TimeToDeath() > 8 && !Unit.IsTrivial(Me.CurrentTarget),
                                 new PrioritySelector(
                                     Spell.Buff("Shadow Word: Pain", true),
                                     Spell.Buff("Vampiric Touch", true)
@@ -221,7 +227,7 @@ namespace Singular.ClassSpecific.Priest
 
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -334,7 +340,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

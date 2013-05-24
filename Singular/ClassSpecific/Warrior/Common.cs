@@ -40,10 +40,24 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Berserker Rage", ret => Me.Fleeing || (Me.Stunned && Me.HasAuraWithMechanic(Styx.WoWInternals.WoWSpellMechanic.Sapped))),
-                Spell.BuffSelf("Enraged Regeneration", ret => Me.Stunned && StyxWoW.Me.HealthPercent < 60)
+                CreateWarriorEnragedRegeneration()
                 );
         }
-        
+
+
+        public static Composite CreateWarriorEnragedRegeneration()
+        {
+            return new Decorator(
+                req => Me.HealthPercent < WarriorSettings.WarriorEnragedRegenerationHealth && !Spell.IsSpellOnCooldown("Enraged Regeneration"),
+                new Sequence(
+                    new PrioritySelector(
+                        Spell.BuffSelf("Berserker Rage"),
+                        new ActionAlwaysSucceed()
+                        ),
+                    Spell.BuffSelf("Enraged Regeneration")
+                    )
+                );
+        }
 
         public static string SelectedShout
         {

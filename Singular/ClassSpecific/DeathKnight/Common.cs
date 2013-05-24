@@ -239,59 +239,62 @@ namespace Singular.ClassSpecific.DeathKnight
         [Behavior(BehaviorType.CombatBuffs, WoWClass.DeathKnight, WoWSpec.DeathKnightFrost)]
         public static Composite CreateDeathKnightCombatBuffs()
         {
-            return new PrioritySelector(
-                // *** Defensive Cooldowns ***
-                // Anti-magic shell - no cost and doesnt trigger GCD 
-                    Spell.BuffSelf("Anti-Magic Shell",
-                                   ret => Unit.NearbyUnfriendlyUnits.Any(u =>
-                                                                         (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
-                                                                         u.CurrentTargetGuid == Me.Guid)),
-                // we want to make sure our primary target is within melee range so we don't run outside of anti-magic zone.
-                    Spell.CastOnGround("Anti-Magic Zone", ctx => Me.Location,
-                                       ret => Common.HasTalent( DeathKnightTalents.AntiMagicZone) &&
-                                              !Me.HasAura("Anti-Magic Shell") &&
-                                              Unit.NearbyUnfriendlyUnits.Any(u =>
-                                                                             (u.IsCasting ||
-                                                                              u.ChanneledCastingSpellId != 0) &&
-                                                                             u.CurrentTargetGuid == Me.Guid) &&
-                                              Targeting.Instance.FirstUnit != null &&
-                                              Targeting.Instance.FirstUnit.IsWithinMeleeRange),
+            return new Decorator(
+                req => !Me.GotTarget || !Me.CurrentTarget.IsTrivial(),
+                new PrioritySelector(
+                    // *** Defensive Cooldowns ***
+                    // Anti-magic shell - no cost and doesnt trigger GCD 
+                        Spell.BuffSelf("Anti-Magic Shell",
+                                       ret => Unit.NearbyUnfriendlyUnits.Any(u =>
+                                                                             (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
+                                                                             u.CurrentTargetGuid == Me.Guid)),
+                    // we want to make sure our primary target is within melee range so we don't run outside of anti-magic zone.
+                        Spell.CastOnGround("Anti-Magic Zone", ctx => Me.Location,
+                                           ret => Common.HasTalent( DeathKnightTalents.AntiMagicZone) &&
+                                                  !Me.HasAura("Anti-Magic Shell") &&
+                                                  Unit.NearbyUnfriendlyUnits.Any(u =>
+                                                                                 (u.IsCasting ||
+                                                                                  u.ChanneledCastingSpellId != 0) &&
+                                                                                 u.CurrentTargetGuid == Me.Guid) &&
+                                                  Targeting.Instance.FirstUnit != null &&
+                                                  Targeting.Instance.FirstUnit.IsWithinMeleeRange),
 
-                    Spell.BuffSelf("Icebound Fortitude", ret => Me.HealthPercent < Settings.IceboundFortitudePercent),
+                        Spell.BuffSelf("Icebound Fortitude", ret => Me.HealthPercent < Settings.IceboundFortitudePercent),
 
-                    Spell.BuffSelf("Lichborne", ret => Me.IsCrowdControlled()),
+                        Spell.BuffSelf("Lichborne", ret => Me.IsCrowdControlled()),
 
-                    Spell.BuffSelf("Desecrated Ground", ret => Common.HasTalent( DeathKnightTalents.DesecratedGround) && Me.IsCrowdControlled()),
+                        Spell.BuffSelf("Desecrated Ground", ret => Common.HasTalent( DeathKnightTalents.DesecratedGround) && Me.IsCrowdControlled()),
                     
-                    CreateRaiseAllyBehavior( on => Unit.NearbyGroupMembers.FirstOrDefault( u=> u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight)),
+                        CreateRaiseAllyBehavior( on => Unit.NearbyGroupMembers.FirstOrDefault( u=> u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight)),
 
-                    // *** Offensive Cooldowns ***
+                        // *** Offensive Cooldowns ***
 
-                    // I'm unholy and I don't have a pet or I am blood/frost and I am using pet as dps bonus
-                    Spell.BuffSelf("Raise Dead",
-                        ret => (TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy && !Me.GotAlivePet) 
-                            || (TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost && Settings.UseGhoulAsDpsCdFrost && !GhoulMinionIsActive)),
+                        // I'm unholy and I don't have a pet or I am blood/frost and I am using pet as dps bonus
+                        Spell.BuffSelf("Raise Dead",
+                            ret => (TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy && !Me.GotAlivePet) 
+                                || (TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost && Settings.UseGhoulAsDpsCdFrost && !GhoulMinionIsActive)),
 
-                    // never use army of the dead in instances if not blood specced unless you have the army of the dead glyph to take away the taunting
-                    Spell.BuffSelf("Army of the Dead", 
-                        ret => Settings.UseArmyOfTheDead 
-                            && Helpers.Common.UseLongCoolDownAbility
-                            && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || TalentManager.HasGlyph("Army of the Dead"))),
+                        // never use army of the dead in instances if not blood specced unless you have the army of the dead glyph to take away the taunting
+                        Spell.BuffSelf("Army of the Dead", 
+                            ret => Settings.UseArmyOfTheDead 
+                                && Helpers.Common.UseLongCoolDownAbility
+                                && (SingularRoutine.CurrentWoWContext != WoWContext.Instances || TalentManager.HasGlyph("Army of the Dead"))),
 
-                    Spell.BuffSelf("Empower Rune Weapon",
-                            ret => Helpers.Common.UseLongCoolDownAbility && Me.RunicPowerPercent < 70 && ActiveRuneCount == 0),
+                        Spell.BuffSelf("Empower Rune Weapon",
+                                ret => Helpers.Common.UseLongCoolDownAbility && Me.RunicPowerPercent < 70 && ActiveRuneCount == 0),
 
-                    Spell.BuffSelf("Death's Advance",
-                        ret => Common.HasTalent( DeathKnightTalents.DeathsAdvance) 
-                            && Me.GotTarget 
-                            && (!SpellManager.CanCast("Death Grip", false) || SingularRoutine.CurrentWoWContext == WoWContext.Instances) 
-                            && Me.CurrentTarget.DistanceSqr > 10 * 10),
+                        Spell.BuffSelf("Death's Advance",
+                            ret => Common.HasTalent( DeathKnightTalents.DeathsAdvance) 
+                                && Me.GotTarget 
+                                && (!SpellManager.CanCast("Death Grip", false) || SingularRoutine.CurrentWoWContext == WoWContext.Instances) 
+                                && Me.CurrentTarget.DistanceSqr > 10 * 10),
 
-                    Spell.BuffSelf("Blood Tap",
-                        ret => Me.HasAura( "Blood Charge", 5) 
-                            && (BloodRuneSlotsActive == 0 || FrostRuneSlotsActive == 0 || UnholyRuneSlotsActive == 0)),
+                        Spell.BuffSelf("Blood Tap",
+                            ret => Me.HasAura( "Blood Charge", 5) 
+                                && (BloodRuneSlotsActive == 0 || FrostRuneSlotsActive == 0 || UnholyRuneSlotsActive == 0)),
 
-                    Spell.Cast("Plague Leech", ret => CanCastPlagueLeech)
+                        Spell.Cast("Plague Leech", ret => CanCastPlagueLeech)
+                    )
                 );
         }
 
@@ -447,7 +450,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Decorator(
                     ret => onUnit(ret) != null && Spell.GetSpellCooldown("Raise Ally") == TimeSpan.Zero,
                     new PrioritySelector(
-                        Spell.WaitForCast(true),
+                        Spell.WaitForCast(FaceDuring.Yes),
                         Movement.CreateMoveToUnitBehavior(ret => (WoWUnit)ret, 40f),
                         new Decorator(
                             ret => !Spell.IsGlobalCooldown(),

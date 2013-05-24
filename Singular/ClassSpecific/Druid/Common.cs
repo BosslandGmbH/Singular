@@ -96,47 +96,55 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, DruidAllSpecs, WoWContext.Normal)]
         public static Composite CreateDruidCombatBuffsNormal()
         {
-            return new PrioritySelector(
-                Spell.BuffSelf("Innervate", ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
-                Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < DruidSettings.Barkskin || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
-                Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+            return new Decorator(
+                req => !Unit.IsTrivial(Me.CurrentTarget),
+                new PrioritySelector(
+                    Spell.BuffSelf("Innervate", ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
+                    Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < DruidSettings.Barkskin || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
+                    Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMe.Count() >= 3),
 
-                // will hibernate only if can cast in form, or already left form for some other reason
-                Spell.Buff("Hibernate",
-                    ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
-                        u => (u.IsBeast || u.IsDragon)
-                            && (Me.HasAura("Predatory Swiftness") || (!u.IsMoving && Me.Shapeshift == ShapeshiftForm.Normal))
-                            && (!Me.GotTarget || Me.CurrentTarget.Location.Distance(u.Location) > 10)
-                            && Me.CurrentTargetGuid != u.Guid
-                            && !u.HasAnyAura("Hibernate", "Cyclone", "Entangling Roots")
-                            )
+                    // will hibernate only if can cast in form, or already left form for some other reason
+                    Spell.Buff("Hibernate",
+                        ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                            u => (u.IsBeast || u.IsDragon)
+                                && (Me.HasAura("Predatory Swiftness") || (!u.IsMoving && Me.Shapeshift == ShapeshiftForm.Normal))
+                                && (!Me.GotTarget || Me.CurrentTarget.Location.Distance(u.Location) > 10)
+                                && Me.CurrentTargetGuid != u.Guid
+                                && !u.HasAnyAura("Hibernate", "Cyclone", "Entangling Roots")
+                                )
+                            ),
+
+                    // will root only if can cast in form, or already left form for some other reason
+                    Spell.Buff("Entangling Roots",
+                        ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                                u => (Me.HasAura("Predatory Swiftness") || Me.Shapeshift == ShapeshiftForm.Normal || Me.Shapeshift == ShapeshiftForm.Moonkin)
+                                    && Me.CurrentTargetGuid != u.Guid
+                                    && u.SpellDistance() > 15
+                                    && !u.HasAnyAura("Hibernate", "Cyclone", "Entangling Roots", "Sunfire", "Moonfire")
+                                ),
+                        req => !Me.HasAura("Starfall")
                         ),
 
-                // will root only if can cast in form, or already left form for some other reason
-                Spell.Buff("Entangling Roots",
-                    ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
-                            u => (Me.HasAura("Predatory Swiftness") || Me.Shapeshift == ShapeshiftForm.Normal || Me.Shapeshift == ShapeshiftForm.Moonkin)
-                                && Me.CurrentTargetGuid != u.Guid
-                                && u.SpellDistance() > 15
-                                && !u.HasAnyAura("Hibernate", "Cyclone", "Entangling Roots", "Sunfire", "Moonfire")
-                            ),
-                    req => !Me.HasAura("Starfall")
-                    ),
+                    // combat buffs - make sure we have target and in range and other checks
+                    // ... to avoid wastine cooldowns
+                    new Decorator(
+                        ret => Me.GotTarget
+                            && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() >= 3)
+                            && Me.SpellDistance(Me.CurrentTarget) < ((Me.Specialization == WoWSpec.DruidFeral || Me.Specialization == WoWSpec.DruidGuardian) ? 8 : 40)
+                            && Me.CurrentTarget.InLineOfSight
+                            && Me.IsSafelyFacing(Me.CurrentTarget),
+                        new PrioritySelector(
+                            Spell.BuffSelf("Celestial Alignment", ret => Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
 
-                // combat buffs - make sure we have target and in range and other checks
-                // ... to avoid wastine cooldowns
-                new Decorator(
-                    ret => Me.GotTarget
-                        && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() >= 3)
-                        && Me.SpellDistance(Me.CurrentTarget) < ((Me.Specialization == WoWSpec.DruidFeral || Me.Specialization == WoWSpec.DruidGuardian) ? 8 : 40)
-                        && Me.CurrentTarget.InLineOfSight
-                        && Me.IsSafelyFacing(Me.CurrentTarget),
-                    new PrioritySelector(
-                        Spell.BuffSelf("Celestial Alignment", ret => Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
-                        Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => true),
-                // to do:  time ICoE at start of eclipse
-                        Spell.BuffSelf("Incarnation: Chosen of Elune"),
-                        Spell.BuffSelf("Nature's Vigil")
+                            new Sequence( 
+                                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => true),
+                                new ActionAlwaysFail()
+                                ),
+
+                    // to do:  time ICoE at start of eclipse
+                            Spell.BuffSelf("Incarnation: Chosen of Elune"),
+                            Spell.BuffSelf("Nature's Vigil")
+                            )
                         )
                     )
                 );
@@ -166,7 +174,10 @@ namespace Singular.ClassSpecific.Druid
                         && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
                         Spell.BuffSelf("Celestial Alignment", ret => Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
-                        Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => true),
+                        new Sequence(
+                            Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => true),
+                            new ActionAlwaysFail()
+                            ),
                         // to do:  time ICoE at start of eclipse
                         Spell.BuffSelf("Incarnation: Chosen of Elune"),
                         Spell.BuffSelf("Nature's Vigil")

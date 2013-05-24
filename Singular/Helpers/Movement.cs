@@ -159,7 +159,15 @@ namespace Singular.Helpers
                 new Action( ret => 
                 {
                     toUnit(ret).Face();
-                    return waitForFacing && !StyxWoW.Me.IsSafelyFacing(toUnit(ret)) ? RunStatus.Success : RunStatus.Failure;
+
+                    // check only if standard facing for wait, not value given by viewDegrees
+                    // .. this optimizes for combat... cases where facing within viewDegrees
+                    // .. must be enforced should use a different behavior
+
+                    if (waitForFacing && !StyxWoW.Me.IsSafelyFacing(toUnit(ret)))
+                        return RunStatus.Success;
+                    
+                    return RunStatus.Failure;
                 })
                 );
         }

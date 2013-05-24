@@ -229,18 +229,25 @@ namespace Singular.ClassSpecific.Priest
                 ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                 new PrioritySelector(
                     Helpers.Common.EnsureReadyToAttackFromMediumRange(),
-                    Helpers.Common.CreateInterruptBehavior(),
-                    Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
 
-                    Common.CreateShadowfiendBehavior(),
-                    //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
-                    Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
-                    Spell.Buff("Shadow Word: Pain", true),
-                    Spell.Cast("Penance"),
-                    Spell.Cast("Holy Fire"),
-                    // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
-                    Spell.Cast("Smite")
-                    //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace"))
+                    Spell.WaitForCast( FaceDuring.Yes),
+                    new Decorator(
+                        req => !Spell.IsGlobalCooldown(),
+                        new PrioritySelector(
+                            Helpers.Common.CreateInterruptBehavior(),
+                            Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
+
+                            Common.CreateShadowfiendBehavior(),
+                            //Spell.BuffSelf("Archangel", ret => StyxWoW.Me.HasAura("Evangelism", 5)),
+                            Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
+                            Spell.Buff("Shadow Word: Pain", true),
+                            Spell.Cast("Penance"),
+                            Spell.Cast("Holy Fire"),
+                            // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
+                            Spell.Cast("Smite")
+                            //Spell.Cast("Mind Spike", ret => !SpellManager.HasSpell("Power Word: Solace"))
+                            )
+                        )
                     )
                 );
         }

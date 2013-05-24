@@ -43,22 +43,17 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinRetributionHeal()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(                       
-                        Spell.Cast("Lay on Hands",
-                            mov => false,
-                            on => Me,
-                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.LayOnHandsHealth),
-                        Common.CreateWordOfGloryBehavior(on => Me),
-                        Spell.Cast("Flash of Light",
-                            mov => false,
-                            on => Me,
-                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.RetributionHealHealth,
-                            cancel => Me.HealthPercent > PaladinSettings.RetributionHealHealth)
-                        )
-                    )
+                Spell.BuffSelf("Devotion Aura", req => Me.Silenced),
+                Spell.Cast("Lay on Hands",
+                    mov => false,
+                    on => Me,
+                    req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.LayOnHandsHealth),
+                Common.CreateWordOfGloryBehavior(on => Me),
+                Spell.Cast("Flash of Light",
+                    mov => false,
+                    on => Me,
+                    req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.RetributionHealHealth,
+                    cancel => Me.HealthPercent > PaladinSettings.RetributionHealHealth)
                 );
         }
 
@@ -177,7 +172,7 @@ namespace Singular.ClassSpecific.Paladin
 
         #region Instance Rotation
 
-        [Behavior(BehaviorType.Heal | BehaviorType.Pull | BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Instances)]
+        [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinRetribution, WoWContext.Instances)]
         public static Composite CreatePaladinRetributionInstancePullAndCombat()
         {
             return new PrioritySelector(

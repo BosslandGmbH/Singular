@@ -210,7 +210,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -247,9 +247,12 @@ namespace Singular.ClassSpecific.Druid
                                     new Action(ctx => Lua.DoString("SpellStopTargeting()"))
                                     ),
 
-                                Spell.CastOnGround("Force of Nature",
-                                    ret => StyxWoW.Me.CurrentTarget.Location,
-                                    ret => true),
+                                new Sequence(
+                                    Spell.CastOnGround("Force of Nature",
+                                        ret => StyxWoW.Me.CurrentTarget.Location,
+                                        ret => true),
+                                    new ActionAlwaysFail()
+                                    ),
 
                                 Spell.Cast("Starfall"),
 
@@ -311,7 +314,7 @@ namespace Singular.ClassSpecific.Druid
                 // Ensure we do /petattack if we have treants up.
                 Helpers.Common.CreateAutoAttack(true),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(), 
@@ -405,7 +408,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -437,9 +440,12 @@ namespace Singular.ClassSpecific.Druid
                                     new Action(ctx => Lua.DoString("SpellStopTargeting()"))
                                     ),
 
-                                Spell.CastOnGround("Force of Nature",
-                                    ret => StyxWoW.Me.CurrentTarget.Location,
-                                    ret => true ),
+                                new Sequence(
+                                    Spell.CastOnGround("Force of Nature",
+                                        ret => StyxWoW.Me.CurrentTarget.Location,
+                                        ret => true ),
+                                    new ActionAlwaysFail()
+                                    ),
 
                                 Spell.Cast("Starfall", ret => StyxWoW.Me),
 

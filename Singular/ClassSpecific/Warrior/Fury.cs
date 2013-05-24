@@ -67,10 +67,10 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new Throttle(
                 new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                    ret => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && !Unit.IsTrivial(Me.CurrentTarget),
 
                     new PrioritySelector(
-                        Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60),
+                        Common.CreateWarriorEnragedRegeneration(),
 
                         new Decorator(
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal 

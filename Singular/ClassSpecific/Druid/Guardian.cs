@@ -41,7 +41,7 @@ namespace Singular.ClassSpecific.Druid
                 // Auto Attack
                 Helpers.Common.CreateAutoAttack(false),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -76,27 +76,29 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All, 1)]
         public static Composite CreateGuardianNormalCombatBuffs()
         {
-            return new PrioritySelector(
-                Spell.BuffSelf("Bear Form"),
+            return new Decorator(
+                req => !Unit.IsTrivial(Me.CurrentTarget),
+                new PrioritySelector(
+                    Spell.BuffSelf("Bear Form"),
 
-                // Enrage ourselves back up to 60 rage for SD/FR usage.
-                Spell.BuffSelf("Enrage", ret=>StyxWoW.Me.RagePercent <= 40),
+                    // Enrage ourselves back up to 60 rage for SD/FR usage.
+                    Spell.BuffSelf("Enrage", ret=>StyxWoW.Me.RagePercent <= 40),
 
-                // Symbiosis
-                Common.SymbCast(Symbiosis.BoneShield, on => Me, ret => !Me.HasAura("Bone Shield")),
-                Common.SymbCast(Symbiosis.ElusiveBrew, on => Me, ret => StyxWoW.Me.HealthPercent <= 60 && !Me.HasAura("Elusive Brew")),
-                Common.SymbCast(Symbiosis.SpellReflection, on => Me, ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsCasting && u.CurrentTargetGuid == Me.Guid && u.CurrentCastTimeLeft.TotalMilliseconds.Between(200,2000))),
-                // Common.SymbCast(Symbiosis.LightningShield, on => Me, ret => !Me.HasAura("Lightning Shield")),
-                Common.SymbCast(Symbiosis.FrostArmor, on => Me, ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && !Me.HasAura("Frost Armor")),
+                    // Symbiosis
+                    Common.SymbCast(Symbiosis.BoneShield, on => Me, ret => !Me.HasAura("Bone Shield")),
+                    Common.SymbCast(Symbiosis.ElusiveBrew, on => Me, ret => StyxWoW.Me.HealthPercent <= 60 && !Me.HasAura("Elusive Brew")),
+                    Common.SymbCast(Symbiosis.SpellReflection, on => Me, ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsCasting && u.CurrentTargetGuid == Me.Guid && u.CurrentCastTimeLeft.TotalMilliseconds.Between(200,2000))),
+                    // Common.SymbCast(Symbiosis.LightningShield, on => Me, ret => !Me.HasAura("Lightning Shield")),
+                    Common.SymbCast(Symbiosis.FrostArmor, on => Me, ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && !Me.HasAura("Frost Armor")),
 
-                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
-                Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
-                Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent <= Settings.TankSavageDefense),
-                Spell.BuffSelf("Might of Ursoc", ret => Me.HealthPercent <= Settings.TankMightOfUrsoc),
-                Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent <= Settings.TankSurvivalInstinctsHealth),
-                Spell.BuffSelf("Barkskin", ret => Me.HealthPercent <= Settings.TankFeralBarkskin),
-                Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent <= Settings.SelfRenewalHealth)
-
+                    Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
+                    Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
+                    Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent <= Settings.TankSavageDefense),
+                    Spell.BuffSelf("Might of Ursoc", ret => Me.HealthPercent <= Settings.TankMightOfUrsoc),
+                    Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent <= Settings.TankSurvivalInstinctsHealth),
+                    Spell.BuffSelf("Barkskin", ret => Me.HealthPercent <= Settings.TankFeralBarkskin),
+                    Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent <= Settings.SelfRenewalHealth)
+                    )
                 );
         }
 
@@ -109,7 +111,7 @@ namespace Singular.ClassSpecific.Druid
                 CreateGuardianWildChargeBehavior(),
                 Helpers.Common.CreateAutoAttack(false),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(

@@ -228,7 +228,7 @@ namespace Singular.ClassSpecific.Druid
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(), 
@@ -299,11 +299,14 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.Cast("Mangle"),
 
-                        Spell.CastOnGround("Force of Nature", 
-                            u => (Me.CurrentTarget ?? Me) .Location,
-                            ret => StyxWoW.Me.CurrentTarget != null 
-                                && StyxWoW.Me.CurrentTarget.Distance < 40
-                                && SpellManager.HasSpell("Force of Nature")),
+                        new Sequence(
+                            Spell.CastOnGround("Force of Nature", 
+                                u => (Me.CurrentTarget ?? Me) .Location,
+                                ret => StyxWoW.Me.CurrentTarget != null 
+                                    && StyxWoW.Me.CurrentTarget.Distance < 40
+                                    && SpellManager.HasSpell("Force of Nature")),
+                            new ActionAlwaysFail()
+                            ),
 
                         new Decorator(
                             ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > (Me.CurrentTarget.IsPlayer ? 10 : 15),
@@ -328,7 +331,7 @@ namespace Singular.ClassSpecific.Druid
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -383,18 +386,22 @@ namespace Singular.ClassSpecific.Druid
                                 new Throttle(Spell.Cast("Nature's Vigil", ret => Me.HasAura("Berserk"))),
                                 Spell.Cast("Incarnation", ret => Me.HasAura("Berserk")),
 
-                                Spell.CastOnGround("Force of Nature",
-                                    u => (Me.CurrentTarget ?? Me).Location,
-                                    ret => StyxWoW.Me.CurrentTarget != null
-                                        && StyxWoW.Me.CurrentTarget.Distance < 40
-                                        && SpellManager.HasSpell("Force of Nature")),
+                                new Sequence(
+                                    Spell.CastOnGround("Force of Nature",
+                                        u => (Me.CurrentTarget ?? Me).Location,
+                                        ret => StyxWoW.Me.CurrentTarget != null
+                                            && StyxWoW.Me.CurrentTarget.Distance < 40
+                                            && SpellManager.HasSpell("Force of Nature")),
+                                    new ActionAlwaysFail()
+                                    ),
 
                                 // 4. Use Nature’s Swiftness/Healing touch to generate Wrath of Cenarius procs when GCD will not cause energy cap*
                                 // 5. Use Predatory Swiftness to generate Dream of Cenarius procs when GCD will not cause energy cap, preferably at 4CP.**
                                 new Decorator(
                                     ret => Me.EnergyPercent < 80 
                                         && Common.HasTalent( DruidTalents.DreamOfCenarius) 
-                                        && !Me.HasAura("Wrath of Cenarius"),
+                                        && !Me.HasAura("Wrath of Cenarius")
+                                        && Me.ComboPoints >= 4,
                                     new Sequence(
                                         new PrioritySelector(
                                             new Decorator(  ret => Me.HasAura("Predatory Swiftness"), new ActionAlwaysSucceed()),
@@ -455,10 +462,6 @@ namespace Singular.ClassSpecific.Druid
                                     ret => DruidSettings.FeralSpellPriority == 1,
                                     new PrioritySelector(
 
-                                        // note:  id used to fix Thrash Spell Override bug (similar to Savage Roar)
-                                        // Spell.Buff("Thrash", true, on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity"), 3),
-                                        Spell.Buff(106832, on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity") && Me.CurrentTarget.HasAuraExpired("Thrash",3)),
-
                                         new Decorator(
                                             req => Me.ComboPoints >= 5,
                                             new PrioritySelector(
@@ -474,10 +477,14 @@ namespace Singular.ClassSpecific.Druid
                                         new Decorator(
                                             req => Me.ComboPoints < 5,
                                             new PrioritySelector(
+                                                // note:  id used to fix Thrash Spell Override bug (similar to Savage Roar)
+                                                Spell.Buff("Thrash", true, on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity"), 3),
+                                                // Spell.Buff(106832, on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity") && Me.CurrentTarget.HasAuraExpired("Thrash", 3)),
+
                                                 Spell.Buff("Rake", true, on => Me.CurrentTarget, req => true, 3),
-                                                Spell.Cast("Ravage", req => Me.ComboPoints < 5 && (Me.IsSafelyBehind(Me.CurrentTarget) || Me.HasAnyAura("Incarnation", "Stampede"))),
-                                                Spell.Cast("Shred", req => Me.ComboPoints < 5 && (Me.IsSafelyBehind(Me.CurrentTarget) || (TalentManager.HasGlyph("Shred") && Me.HasAnyAura("Tiger's Fury", "Berserk")))),
-                                                Spell.Cast("Mangle", req => Me.ComboPoints < 5 )
+                                                Spell.Cast("Ravage", req => (Me.IsSafelyBehind(Me.CurrentTarget) || Me.HasAnyAura("Incarnation", "Stampede"))),
+                                                Spell.Cast("Shred", req => (Me.IsSafelyBehind(Me.CurrentTarget) || (TalentManager.HasGlyph("Shred") && Me.HasAnyAura("Tiger's Fury", "Berserk")))),
+                                                Spell.Cast("Mangle")
                                                 )
                                             )
                                         )
@@ -515,7 +522,7 @@ namespace Singular.ClassSpecific.Druid
                     return RunStatus.Failure;
                     }),
 
-                new Decorator(ret => Spell.UseAOE && _aoeColl.Count() >= 3 && !_aoeColl.Any(m => m.IsCrowdControlled()) && Me.Level >= 22,
+                new Decorator(ret => Spell.UseAOE && _aoeColl.Count() >= 5 && !_aoeColl.Any(m => m.IsCrowdControlled()) && Me.Level >= 22,
 
                     new PrioritySelector(
 
@@ -523,7 +530,7 @@ namespace Singular.ClassSpecific.Druid
                         // Spell.Cast("Savage Roar", ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
                         Spell.Cast(52610, ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
 
-                        Spell.Cast("Thrash", ret => _aoeColl.Any(m => !m.HasMyAura("Thrash"))),
+                        Spell.Cast("Thrash", ret => _aoeColl.Any(m => !m.HasMyAura("Thrash")) || Me.HasAura("Omen of Clarity")),
 
                         Spell.BuffSelf("Tiger's Fury",
                             ret => Me.EnergyPercent <= 35

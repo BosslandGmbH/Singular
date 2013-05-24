@@ -42,6 +42,7 @@ namespace Singular.ClassSpecific.Paladin
         public static Composite CreatePaladinHolyHealBehavior()
         {
             return new PrioritySelector(
+                Spell.BuffSelf( "Devotion Aura", req => Me.Silenced ),
                 CreateRebirthBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead)),
                 CreatePaladinHealBehavior()
                 );
@@ -206,7 +207,7 @@ namespace Singular.ClassSpecific.Paladin
                     new Decorator(
                         ret => _rebirthTarget != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
                         new PrioritySelector(
-                            Spell.WaitForCast(true),
+                            Spell.WaitForCast(FaceDuring.Yes),
                             Movement.CreateMoveToUnitBehavior( ret => _rebirthTarget , 40f),
                             new Decorator(
                                 ret => !Spell.IsGlobalCooldown(),

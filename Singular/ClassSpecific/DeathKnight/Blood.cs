@@ -29,76 +29,79 @@ namespace Singular.ClassSpecific.DeathKnight
         [Behavior(BehaviorType.CombatBuffs, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood)]
         public static Composite CreateDeathKnightBloodCombatBuffs()
         {
-            return new PrioritySelector(
-
-                // *** Defensive Cooldowns ***
-                // Anti-magic shell - no cost and doesnt trigger GCD 
-                Spell.BuffSelf("Anti-Magic Shell",
-                    ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == StyxWoW.Me.Guid)),
-
-                // we want to make sure our primary target is within melee range so we don't run outside of anti-magic zone.
-                Spell.CastOnGround("Anti-Magic Zone", 
-                    loc => StyxWoW.Me.Location,
-                    ret => Common.HasTalent( DeathKnightTalents.AntiMagicZone) 
-                        && !StyxWoW.Me.HasAura("Anti-Magic Shell") 
-                        && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == StyxWoW.Me.Guid) 
-                        && Targeting.Instance.FirstUnit != null 
-                        && Targeting.Instance.FirstUnit.IsWithinMeleeRange),
-
-                Spell.Cast("Dancing Rune Weapon",
-                    ret => Unit.NearbyUnfriendlyUnits.Count() > 2),
-
-                Spell.BuffSelf("Bone Shield",
-                    ret => !Settings.BoneShieldExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude")),
-
-                Spell.BuffSelf("Vampiric Blood",
-                    ret => Me.HealthPercent < Settings.VampiricBloodPercent
-                        && (!Settings.VampiricBloodExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude"))),
-
-                Spell.BuffSelf("Icebound Fortitude",
-                    ret => StyxWoW.Me.HealthPercent < Settings.IceboundFortitudePercent
-                        && (!Settings.IceboundFortitudeExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude"))),
-
-                Spell.BuffSelf("Lichborne",ret => StyxWoW.Me.IsCrowdControlled()),
-
-                Spell.BuffSelf("Desecrated Ground", ret => Common.HasTalent( DeathKnightTalents.DesecratedGround) && StyxWoW.Me.IsCrowdControlled()),
-
-                // Symbiosis
-                Spell.Cast("Might of Ursoc", ret => Me.HealthPercent < Settings.VampiricBloodPercent),
-
-                // use army of the dead defensively
-                Spell.BuffSelf("Army of the Dead",
-                    ret => Settings.UseArmyOfTheDead 
-                        && SingularRoutine.CurrentWoWContext == WoWContext.Instances 
-                        && StyxWoW.Me.HealthPercent < Settings.ArmyOfTheDeadPercent),
-
-                // I need to use Empower Rune Weapon to use Death Strike
-                Spell.BuffSelf("Empower Rune Weapon",
-                    ret => StyxWoW.Me.HealthPercent < Settings.EmpowerRuneWeaponPercent
-                        && !SpellManager.CanCast("Death Strike")),
-
+            return new Decorator(
+                req => !Me.GotTarget || !Me.CurrentTarget.IsTrivial(),
                 new PrioritySelector(
-                    ctx => StyxWoW.Me.PartyMembers.FirstOrDefault(u => u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight),
-                    Spell.Cast("Raise Ally", ctx => ctx as WoWUnit, req => Settings.UseRaiseAlly)
-                    ),
 
-                // *** Offensive Cooldowns ***
-                // I am using pet as dps bonus
-                Spell.BuffSelf("Raise Dead",
-                    ret => Helpers.Common.UseLongCoolDownAbility
-                        && Settings.UseGhoulAsDpsCdBlood 
-                        && !Common.GhoulMinionIsActive),
+                    // *** Defensive Cooldowns ***
+                    // Anti-magic shell - no cost and doesnt trigger GCD 
+                    Spell.BuffSelf("Anti-Magic Shell",
+                        ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == StyxWoW.Me.Guid)),
 
-                Spell.BuffSelf("Death's Advance",
-                    ret => Common.HasTalent( DeathKnightTalents.DeathsAdvance) 
-                        && StyxWoW.Me.GotTarget && !SpellManager.CanCast("Death Grip", false) 
-                        && StyxWoW.Me.CurrentTarget.DistanceSqr > 10*10),
+                    // we want to make sure our primary target is within melee range so we don't run outside of anti-magic zone.
+                    Spell.CastOnGround("Anti-Magic Zone", 
+                        loc => StyxWoW.Me.Location,
+                        ret => Common.HasTalent( DeathKnightTalents.AntiMagicZone) 
+                            && !StyxWoW.Me.HasAura("Anti-Magic Shell") 
+                            && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == StyxWoW.Me.Guid) 
+                            && Targeting.Instance.FirstUnit != null 
+                            && Targeting.Instance.FirstUnit.IsWithinMeleeRange),
 
-                Spell.BuffSelf("Blood Tap",
-                    ret => StyxWoW.Me.HasAura("Blood Charge", 5)
-                        && (Common.BloodRuneSlotsActive == 0 || Common.FrostRuneSlotsActive == 0 || Common.UnholyRuneSlotsActive == 0)),
+                    Spell.Cast("Dancing Rune Weapon",
+                        ret => Unit.NearbyUnfriendlyUnits.Count() > 2),
 
-                Spell.Cast("Plague Leech", ret => Common.CanCastPlagueLeech)
+                    Spell.BuffSelf("Bone Shield",
+                        ret => !Settings.BoneShieldExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude")),
+
+                    Spell.BuffSelf("Vampiric Blood",
+                        ret => Me.HealthPercent < Settings.VampiricBloodPercent
+                            && (!Settings.VampiricBloodExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude"))),
+
+                    Spell.BuffSelf("Icebound Fortitude",
+                        ret => StyxWoW.Me.HealthPercent < Settings.IceboundFortitudePercent
+                            && (!Settings.IceboundFortitudeExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude"))),
+
+                    Spell.BuffSelf("Lichborne",ret => StyxWoW.Me.IsCrowdControlled()),
+
+                    Spell.BuffSelf("Desecrated Ground", ret => Common.HasTalent( DeathKnightTalents.DesecratedGround) && StyxWoW.Me.IsCrowdControlled()),
+
+                    // Symbiosis
+                    Spell.Cast("Might of Ursoc", ret => Me.HealthPercent < Settings.VampiricBloodPercent),
+
+                    // use army of the dead defensively
+                    Spell.BuffSelf("Army of the Dead",
+                        ret => Settings.UseArmyOfTheDead 
+                            && SingularRoutine.CurrentWoWContext == WoWContext.Instances 
+                            && StyxWoW.Me.HealthPercent < Settings.ArmyOfTheDeadPercent),
+
+                    // I need to use Empower Rune Weapon to use Death Strike
+                    Spell.BuffSelf("Empower Rune Weapon",
+                        ret => StyxWoW.Me.HealthPercent < Settings.EmpowerRuneWeaponPercent
+                            && !SpellManager.CanCast("Death Strike")),
+
+                    new PrioritySelector(
+                        ctx => StyxWoW.Me.PartyMembers.FirstOrDefault(u => u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight),
+                        Spell.Cast("Raise Ally", ctx => ctx as WoWUnit, req => Settings.UseRaiseAlly)
+                        ),
+
+                    // *** Offensive Cooldowns ***
+                    // I am using pet as dps bonus
+                    Spell.BuffSelf("Raise Dead",
+                        ret => Helpers.Common.UseLongCoolDownAbility
+                            && Settings.UseGhoulAsDpsCdBlood 
+                            && !Common.GhoulMinionIsActive),
+
+                    Spell.BuffSelf("Death's Advance",
+                        ret => Common.HasTalent( DeathKnightTalents.DeathsAdvance) 
+                            && StyxWoW.Me.GotTarget && !SpellManager.CanCast("Death Grip", false) 
+                            && StyxWoW.Me.CurrentTarget.DistanceSqr > 10*10),
+
+                    Spell.BuffSelf("Blood Tap",
+                        ret => StyxWoW.Me.HasAura("Blood Charge", 5)
+                            && (Common.BloodRuneSlotsActive == 0 || Common.FrostRuneSlotsActive == 0 || Common.UnholyRuneSlotsActive == 0)),
+
+                    Spell.Cast("Plague Leech", ret => Common.CanCastPlagueLeech)
+                    )
                 );
         }
 
@@ -116,7 +119,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
-                Spell.WaitForCast(),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

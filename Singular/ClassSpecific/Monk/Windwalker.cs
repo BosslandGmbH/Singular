@@ -32,7 +32,7 @@ namespace Singular.ClassSpecific.Monk
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 // close distance if at range
                 new Decorator(
@@ -98,19 +98,27 @@ namespace Singular.ClassSpecific.Monk
             return new PrioritySelector(
                 Spell.BuffSelf("Stance of the Fierce Tiger"),
 
-                Spell.Buff("Touch of Karma",
-                    ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(
-                        u => u.IsTargetingMeOrPet
-                            && (u.IsPlayer || SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds)
-                            && (u.IsWithinMeleeRange || (u.Distance < 20 && TalentManager.HasGlyph("Touch of Karma")))),
-                    ret => Me.HealthPercent < 70),
+                Spell.BuffSelf("Legacy of the White Tiger"),
+                Spell.BuffSelf("Legacy of the Emperor"),
 
-                Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
-                Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
-                Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
-                Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
-                Spell.BuffSelf("Zen Sphere", ctx => Me.HealthPercent < 90 && Me.CurrentChi >= 4),
-                Spell.Cast("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) >= 2)
+                new Decorator(
+                    req => !Unit.IsTrivial( Me.CurrentTarget),
+                    new PrioritySelector(
+                        Spell.Buff("Touch of Karma",
+                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(
+                                u => u.IsTargetingMeOrPet
+                                    && (u.IsPlayer || SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds)
+                                    && (u.IsWithinMeleeRange || (u.Distance < 20 && TalentManager.HasGlyph("Touch of Karma")))),
+                            ret => Me.HealthPercent < 70),
+
+                        Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
+                        Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
+                        Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
+                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
+                        Spell.BuffSelf("Zen Sphere", ctx => Me.HealthPercent < 90 && Me.CurrentChi >= 4),
+                        Spell.Cast("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) >= 2)
+                        )
+                    )
                 );
         }
 
@@ -131,7 +139,7 @@ namespace Singular.ClassSpecific.Monk
                         })
                     ),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -205,7 +213,7 @@ namespace Singular.ClassSpecific.Monk
                     })
                     ),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -279,7 +287,7 @@ namespace Singular.ClassSpecific.Monk
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(true),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

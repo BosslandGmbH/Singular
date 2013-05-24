@@ -45,7 +45,7 @@ namespace Singular.ClassSpecific.Mage
                 Safers.EnsureTarget(),
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -67,7 +67,7 @@ namespace Singular.ClassSpecific.Mage
                  Safers.EnsureTarget(),
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
                  Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                 Spell.WaitForCast(true),
+                 Spell.WaitForCast(FaceDuring.Yes),
 
                  new Decorator(
                      ret => !Spell.IsGlobalCooldown(),
@@ -166,7 +166,7 @@ namespace Singular.ClassSpecific.Mage
                  Safers.EnsureTarget(),
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
                  Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                 Spell.WaitForCast(true),
+                 Spell.WaitForCast(FaceDuring.Yes),
 
                  new Decorator(
                      ret => !Spell.IsGlobalCooldown(),
@@ -226,7 +226,7 @@ namespace Singular.ClassSpecific.Mage
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

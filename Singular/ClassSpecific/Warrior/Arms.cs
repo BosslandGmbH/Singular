@@ -80,10 +80,11 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new Throttle(
                 new Decorator(
-                    ret => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                    ret => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && !Unit.IsTrivial(Me.CurrentTarget),
 
                     new PrioritySelector(
-                        Spell.Buff("Enraged Regeneration", ret => StyxWoW.Me.HealthPercent < 60),
+
+                        Common.CreateWarriorEnragedRegeneration(),
 
                         new Decorator(
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
@@ -135,7 +136,7 @@ namespace Singular.ClassSpecific.Warrior
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && !StyxWoW.Me.HasAura( "Bladestorm"),
@@ -395,7 +396,7 @@ namespace Singular.ClassSpecific.Warrior
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
-                Spell.WaitForCast(true),
+                Spell.WaitForCast(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && !StyxWoW.Me.HasAura("Bladestorm"),

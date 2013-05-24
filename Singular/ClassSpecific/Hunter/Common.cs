@@ -204,133 +204,135 @@ namespace Singular.ClassSpecific.Hunter
             if ( SingularRoutine.CurrentWoWContext == WoWContext.Instances && HunterSettings.FeignDeathInInstances )
                 feignDeathBehavior = CreateFeignDeath(req => Unit.NearbyUnitsInCombatWithMe.Any( u=> u.Aggro && u.CurrentTargetGuid == Me.Guid), () => TimeSpan.FromMilliseconds(1500), ret => false);
 
-            return new PrioritySelector(
-
-                feignDeathBehavior,
-
-                // cast Pet survival abilities
-                new Decorator(
-                    ret => Me.GotAlivePet && (Pet.HealthPercent < 35 || Pet.HealthPercent < 60 && Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == Pet.Guid) >= 2),
-                    new PrioritySelector(
-                        new Decorator(ret => PetManager.CanCastPetAction("Bullheaded"), new Action(ret => PetManager.CastPetAction("Bullheaded"))),
-                        new Decorator(ret => PetManager.CanCastPetAction("Last Stand"), new Action(ret => PetManager.CastPetAction("Last Stand")))
-                        )
-                    ),
-
-                new Throttle(2, Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPercent)),
-
-                Common.CreateHunterCallPetBehavior(true),
-
-                Spell.Buff("Deterrence",
-                    ret => (Me.HealthPercent <= HunterSettings.DeterrenceHealth || HunterSettings.DeterrenceCount <= Unit.NearbyUnfriendlyUnits.Count(u => u.Combat && u.CurrentTargetGuid == Me.Guid && !u.IsPet))),
-
-                Spell.BuffSelf("Aspect of the Hawk", ret => !Me.IsMoving && !Me.HasAnyAura("Aspect of the Hawk", "Aspect of the Iron Hawk")),
-
-                new Decorator(
-                    ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
-                    CreateMisdirectionBehavior()
-                    ),
-
-                // don't use Hunter's Mark in Battlegrounds unless soloing someone
-                /*                        Spell.Buff("Hunter's Mark",
-                                    ret => Unit.ValidUnit(Target)
-                                        && !TalentManager.HasGlyph("Marked for Death")
-                                        && (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Target.Guid))
-                                        && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
-                */
-                Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
-
-                Spell.Buff("Widow Venom", ret => HunterSettings.UseWidowVenom && Target.IsPlayer && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight),
-
-                // Buffs - don't stack Bestial Wrath and Rapid Fire
-                Spell.Buff("Bestial Wrath", true, ret => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasAura("Rapid Fire"), "The Beast Within"),
-
-                Spell.Cast("Stampede",
-                    ret => PartyBuff.WeHaveBloodlust
-                        || (!Me.IsInGroup() && SafeArea.AllEnemyMobsAttackingMe.Count() > 2)
-                        || (Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile)),
-
-                // Level 75 Talents
-                Spell.Cast("A Murder of Crows"),
-                Spell.Cast("Blink Strike", on => Me.CurrentTarget, ret => Me.GotAlivePet && Me.Pet.SpellDistance(Me.CurrentTarget) < 40),
-                Spell.Cast("Lynx Rush", ret => Pet != null && Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
-
-                // Level 60 Talents
-                Spell.Cast("Dire Beast"),
-                Spell.Cast("Fervor", ctx => Me.CurrentFocus < 50),
-
-                // Level 90 Talents
-                Spell.Cast("Glaive Toss", req => Me.IsSafelyFacing(Me.CurrentTarget)),
-                Spell.Cast("Powershot", req => Me.IsSafelyFacing(Me.CurrentTarget)),
-                Spell.Cast("Barrage", req => Me.IsSafelyFacing(Me.CurrentTarget)),
-
-                // for long cooldowns, spend only when worthwhile                      
-                new Decorator(
-                    ret => Pet != null && Target != null && Target.IsAlive
-                        && (Target.IsBoss() || Target.IsPlayer || ScaryNPC || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet)),
-                    new PrioritySelector(
-                        Spell.Buff("Rapid Fire", ret => !Me.HasAura("The Beast Within")),
-                        Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within")),
-                        Spell.Cast("Readiness", ret =>
-                        {
-                            bool readyForReadiness = true;
-                            if (SpellManager.HasSpell("Bestial Wrath"))
-                                readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds.Between(5, 50);
-                            if (SpellManager.HasSpell("Rapid Fire"))
-                                readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Rapid Fire").TotalSeconds.Between(30, 165);
-                            return readyForReadiness;
-                        })
-                        )
-                    ),
-
-
-                new Decorator(
-                    req => Me.GotAlivePet && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Pet.Guid && Me.Pet.IsSafelyFacing(u)),
-                    PetManager.CastAction("Reflective Armor Plating", on => Me.Pet)
-                    ),
-
+            return new Decorator(
+                req => !Unit.IsTrivial(Me.CurrentTarget),
                 new PrioritySelector(
-                    ctx => (!Me.GotAlivePet ? null : 
-                        Unit.NearbyUnfriendlyUnits
-                            .Where(u => u.SpellDistance(Me.Pet) < 30 && Me.Pet.IsSafelyFacing(u))
-                            .OrderBy( u => u.SpellDistance(Me.Pet))
-                            .FirstOrDefault()),
 
+                    feignDeathBehavior,
+
+                    // cast Pet survival abilities
                     new Decorator(
-                        req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 5,
-                        new PrioritySelector(                           
-                            PetManager.CastAction("Sting", on => (WoWUnit) on),
-                            PetManager.CastAction("Paralyzing Quill", on => (WoWUnit) on),
-                            PetManager.CastAction("Lullaby", on => (WoWUnit) on),
-                            PetManager.CastAction("Pummel", on => (WoWUnit) on),
-                            PetManager.CastAction("Spore Cloud", on => (WoWUnit) on),
-                            PetManager.CastAction("Trample", on => (WoWUnit) on),
-                            PetManager.CastAction("Horn Toss", on => (WoWUnit) on)
+                        ret => Me.GotAlivePet && (Pet.HealthPercent < 35 || Pet.HealthPercent < 60 && Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == Pet.Guid) >= 2),
+                        new PrioritySelector(
+                            new Decorator(ret => PetManager.CanCastPetAction("Bullheaded"), new Action(ret => PetManager.CastPetAction("Bullheaded"))),
+                            new Decorator(ret => PetManager.CanCastPetAction("Last Stand"), new Action(ret => PetManager.CastPetAction("Last Stand")))
                             )
                         ),
 
+                    new Throttle(2, Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPercent)),
+
+                    Common.CreateHunterCallPetBehavior(true),
+
+                    Spell.Buff("Deterrence",
+                        ret => (Me.HealthPercent <= HunterSettings.DeterrenceHealth || HunterSettings.DeterrenceCount <= Unit.NearbyUnfriendlyUnits.Count(u => u.Combat && u.CurrentTargetGuid == Me.Guid && !u.IsPet))),
+
+                    Spell.BuffSelf("Aspect of the Hawk", ret => !Me.IsMoving && !Me.HasAnyAura("Aspect of the Hawk", "Aspect of the Iron Hawk")),
+
                     new Decorator(
-                        req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 20,
+                        ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
+                        CreateMisdirectionBehavior()
+                        ),
+
+                    // don't use Hunter's Mark in Battlegrounds unless soloing someone
+                    /*                        Spell.Buff("Hunter's Mark",
+                                        ret => Unit.ValidUnit(Target)
+                                            && !TalentManager.HasGlyph("Marked for Death")
+                                            && (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Target.Guid))
+                                            && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
+                    */
+                    Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
+
+                    Spell.Buff("Widow Venom", ret => HunterSettings.UseWidowVenom && Target.IsPlayer && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight),
+
+                    // Buffs - don't stack Bestial Wrath and Rapid Fire
+                    Spell.Buff("Bestial Wrath", true, ret => Spell.GetSpellCooldown("Kill Command") == TimeSpan.Zero && !Me.HasAura("Rapid Fire"), "The Beast Within"),
+
+                    Spell.Cast("Stampede",
+                        ret => PartyBuff.WeHaveBloodlust
+                            || (!Me.IsInGroup() && SafeArea.AllEnemyMobsAttackingMe.Count() > 2)
+                            || (Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile)),
+
+                    // Level 75 Talents
+                    Spell.Cast("A Murder of Crows"),
+                    Spell.Cast("Blink Strike", on => Me.CurrentTarget, ret => Me.GotAlivePet && Me.Pet.SpellDistance(Me.CurrentTarget) < 40),
+                    Spell.Cast("Lynx Rush", ret => Pet != null && Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
+
+                    // Level 60 Talents
+                    Spell.Cast("Dire Beast"),
+                    Spell.Cast("Fervor", ctx => Me.CurrentFocus < 50),
+
+                    // Level 90 Talents
+                    Spell.Cast("Glaive Toss", req => Me.IsSafelyFacing(Me.CurrentTarget)),
+                    Spell.Cast("Powershot", req => Me.IsSafelyFacing(Me.CurrentTarget)),
+                    Spell.Cast("Barrage", req => Me.IsSafelyFacing(Me.CurrentTarget)),
+
+                    // for long cooldowns, spend only when worthwhile                      
+                    new Decorator(
+                        ret => Pet != null && Target != null && Target.IsAlive
+                            && (Target.IsBoss() || Target.IsPlayer || ScaryNPC || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet)),
                         new PrioritySelector(
-                            PetManager.CastAction("Sonic Blast", on => (WoWUnit) on),
-                            PetManager.CastAction("Petrifying Gaze", on => (WoWUnit) on),
-                            PetManager.CastAction("Lullaby", on => (WoWUnit) on),
-                            PetManager.CastAction("Bad Manner", on => (WoWUnit) on),
-                            PetManager.CastAction("Nether Shock", on => (WoWUnit) on),
-                            PetManager.CastAction("Serenity Dust", on => (WoWUnit) on)
+                            Spell.Buff("Rapid Fire", ret => !Me.HasAura("The Beast Within")),
+                            Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within")),
+                            Spell.Cast("Readiness", ret =>
+                            {
+                                bool readyForReadiness = true;
+                                if (SpellManager.HasSpell("Bestial Wrath"))
+                                    readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds.Between(5, 50);
+                                if (SpellManager.HasSpell("Rapid Fire"))
+                                    readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Rapid Fire").TotalSeconds.Between(30, 165);
+                                return readyForReadiness;
+                            })
                             )
                         ),
 
+
                     new Decorator(
-                        req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 30,
-                        new PrioritySelector(
-                            PetManager.CastAction("Web", on => (WoWUnit)on),
-                            PetManager.CastAction("Web Wrap", on => (WoWUnit)on),
-                            PetManager.CastAction("Lava Breath", on => (WoWUnit)on)
+                        req => Me.GotAlivePet && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Pet.Guid && Me.Pet.IsSafelyFacing(u)),
+                        PetManager.CastAction("Reflective Armor Plating", on => Me.Pet)
+                        ),
+
+                    new PrioritySelector(
+                        ctx => (!Me.GotAlivePet ? null : 
+                            Unit.NearbyUnfriendlyUnits
+                                .Where(u => u.SpellDistance(Me.Pet) < 30 && Me.Pet.IsSafelyFacing(u))
+                                .OrderBy( u => u.SpellDistance(Me.Pet))
+                                .FirstOrDefault()),
+
+                        new Decorator(
+                            req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 5,
+                            new PrioritySelector(                           
+                                PetManager.CastAction("Sting", on => (WoWUnit) on),
+                                PetManager.CastAction("Paralyzing Quill", on => (WoWUnit) on),
+                                PetManager.CastAction("Lullaby", on => (WoWUnit) on),
+                                PetManager.CastAction("Pummel", on => (WoWUnit) on),
+                                PetManager.CastAction("Spore Cloud", on => (WoWUnit) on),
+                                PetManager.CastAction("Trample", on => (WoWUnit) on),
+                                PetManager.CastAction("Horn Toss", on => (WoWUnit) on)
+                                )
+                            ),
+
+                        new Decorator(
+                            req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 20,
+                            new PrioritySelector(
+                                PetManager.CastAction("Sonic Blast", on => (WoWUnit) on),
+                                PetManager.CastAction("Petrifying Gaze", on => (WoWUnit) on),
+                                PetManager.CastAction("Lullaby", on => (WoWUnit) on),
+                                PetManager.CastAction("Bad Manner", on => (WoWUnit) on),
+                                PetManager.CastAction("Nether Shock", on => (WoWUnit) on),
+                                PetManager.CastAction("Serenity Dust", on => (WoWUnit) on)
+                                )
+                            ),
+
+                        new Decorator(
+                            req => ((WoWUnit)req) != null && ((WoWUnit)req).SpellDistance(Me.Pet) < 30,
+                            new PrioritySelector(
+                                PetManager.CastAction("Web", on => (WoWUnit)on),
+                                PetManager.CastAction("Web Wrap", on => (WoWUnit)on),
+                                PetManager.CastAction("Lava Breath", on => (WoWUnit)on)
+                                )
                             )
                         )
                     )
-
                 );
         }
 

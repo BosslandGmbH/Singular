@@ -1,3 +1,58 @@
+--- Release 3.0.0.2533 ---
+
+*new* - Support for all 5.3 changes which impact Singular.  Those changes will be marked as 5.3 in these notes
+
+*new* - Support for identifying "trivial" mobs, which when targeted should result in skipping buffs, totems, and other abilities not required for farming low level characters.  Note, this is not a lowbie farming optimal spell priority at this time, just eliminates abilities that clearly should not be needed.  Setting in Class Config allows expressing the maximum health value of a trivial mob as a percentage of your maxiumum health.  Default is 50%
+
+
+Druid
+
+*5.3* - All Specs - Force of Nature is no longer on the GCD
+
+
+Hunter
+
+*5.3* - All Specs - Blink Strike is no longer a talent; Blink Strikes is now a passive ability
+
+*5.3* - All Specs - Binding Shot is no longer a talent
+
+*5.3* - Marksmanship - learned by Marksmanship Hunters at level 30.
+
+*5.3* - All Specs - Intimidation is now a level-30 talent available to all Hunter specializations and no longer learned by Beast Mastery Hunters at level 20.
+
+
+Monk
+
+*5.3* - All Specs - Nimble Brew now removes Horrify effects
+
+
+Paladin
+
+*5.3* - All Specs - Devotion Aura will remove Silence 
+
+change- Protection- uses the Word of Glory settings in Class Config
+
+
+Rogue
+
+*5.3* - All Specs - Shuriken Toss no longer doubles damage on targets greater than 10 yds, so will cast if appropriate regardless of range
+
+*5.3* - All Specs - Cloak and Dagger requires stealth (Shadow Dance does not apply)
+
+
+Shaman
+
+*new* - All Specs - added values in Class Config - Class Specific settings to control Shield Twisting
+
+*5.3* - All Specs - Lightning Bolt can be cast while moving
+
+
+Warrior
+
+*5.3* - All Specs - cast Berserker Rage prior to Enraged Regenertation if not Enraged already
+
+
+
 --- Release 3.0.0.2511 ---
 
 fixed - Targeting issue occurring to some users in PVP causing spam of target selected message

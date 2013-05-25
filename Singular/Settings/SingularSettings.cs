@@ -10,6 +10,7 @@ using Singular.Managers;
 using System.Reflection;
 using System;
 using System.Collections.Generic;
+using Singular.Helpers;
 
 namespace Singular.Settings
 {
@@ -139,6 +140,7 @@ namespace Singular.Settings
             Logger.WriteFile("  {0}: {1}", "Debug", SingularSettings.Debug.ToYN());
             Logger.WriteFile("  {0}: {1}", "DisableAllMovement", SingularSettings.Instance.DisableAllMovement.ToYN());
             Logger.WriteFile("  {0}: {1}", "DisableAllTargeting", SingularSettings.DisableAllTargeting.ToYN());
+            Logger.WriteFile("  {0}: {1}", "TrivialHealth", Unit.TrivialHealth());
             Logger.WriteFile("");
         }
 
@@ -563,11 +565,11 @@ namespace Singular.Settings
         public CheckTargets InterruptTarget { get; set; }
 
         [Setting]
-        [DefaultValue(50u)]
+        [DefaultValue(50)]
         [Category("Enemy Control")]
         [DisplayName("Trivial Mob Max Health %")]
         [Description("Mob with Max Health less than % of your Max Health considered trivial")]
-        public uint TrivialMaxHealthPercent { get; set; }
+        public int TrivialMaxHealthPcnt { get; set; }
 
         #endregion
 

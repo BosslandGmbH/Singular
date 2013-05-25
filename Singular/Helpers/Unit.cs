@@ -239,6 +239,12 @@ namespace Singular.Helpers
             return true;
         }
 
+        public static uint TrivialHealth()
+        {
+            float trivialHealth = (0.01f * SingularSettings.Instance.TrivialMaxHealthPcnt) * StyxWoW.Me.MaxHealth;
+            return (uint)trivialHealth;
+        }
+
         public static bool IsTrivial(this WoWUnit unit)
         {
             if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
@@ -247,8 +253,7 @@ namespace Singular.Helpers
             if (unit == null)
                 return false;
 
-            uint trivialHealth = (StyxWoW.Me.MaxHealth * SingularSettings.Instance.TrivialMaxHealthPercent) / 100;
-            return unit.MaxHealth <= trivialHealth;
+            return unit.MaxHealth <= TrivialHealth();
         }
 
         public static WoWUnit GetPlayerParent(WoWUnit unit)

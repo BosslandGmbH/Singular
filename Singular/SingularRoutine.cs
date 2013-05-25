@@ -184,12 +184,13 @@ namespace Singular
                     playerInfo = string.Format("Y, Friend={0}, IsPvp={1}, CtstPvp={2}, FfaPvp={3}", Me.IsHorde == p.IsHorde, p.IsPvPFlagged, p.ContestedPvPFlagged, p.IsFFAPvPFlagged);
                 }
 
-                Logger.WriteDebug("YourCurrentTarget: changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, attackable={6}, hostile={7}, entry={8}, faction={9}, loss={10}, facing={11}, blacklist={12}" + info,
+                Logger.WriteDebug("YourCurrentTarget: changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, trivial={5}, player={6}, attackable={7}, hostile={8}, entry={9}, faction={10}, loss={11}, facing={12}, blacklist={13}" + info,
                     target.SafeName(),
                     target.HealthPercent,
                     target.MaxHealth,
                     target.Distance,
                     target.CombatReach,
+                    target.IsTrivial(),
                     playerInfo,
                     target.Attackable.ToYN(),
                     target.IsHostile.ToYN(),

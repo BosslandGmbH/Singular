@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>05/24/2013 08:33:46</ScanTime>
+  <ScanTime>05/25/2013 13:58:17</ScanTime>
   <FileList>
     <File Hash="25576" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="22598" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -81,7 +81,7 @@
     <File Hash="28557" Name="Helpers\Safers.cs" />
     <File Hash="84969" Name="Helpers\Spell.cs" />
     <File Hash="11855" Name="Helpers\Throttle.cs" />
-    <File Hash="39279" Name="Helpers\Unit.cs" />
+    <File Hash="39390" Name="Helpers\Unit.cs" />
     <File Hash="53493" Name="Lists\BossList.cs" />
     <File Hash="1407" Name="Lists\CataHeroicDpsList.cs" />
     <File Hash="18584" Name="Managers\HealerManager.cs" />
@@ -104,7 +104,7 @@
     <File Hash="32766" Name="Settings\PriestSettings.cs" />
     <File Hash="4757" Name="Settings\RogueSettings.cs" />
     <File Hash="14933" Name="Settings\ShamanSettings.cs" />
-    <File Hash="22625" Name="Settings\SingularSettings.cs" />
+    <File Hash="22730" Name="Settings\SingularSettings.cs" />
     <File Hash="1771" Name="Settings\SpellList.CleanseBlacklist.cs" />
     <File Hash="4546" Name="Settings\SpellList.cs" />
     <File Hash="1926" Name="Settings\SpellList.MageSteallist.cs" />
@@ -114,7 +114,7 @@
     <File Hash="27213" Name="SingularRoutine.Behaviors.cs" />
     <File Hash="2036" Name="SingularRoutine.BotEvents.cs" />
     <File Hash="12104" Name="SingularRoutine.Context.cs" />
-    <File Hash="15641" Name="SingularRoutine.cs" />
+    <File Hash="15696" Name="SingularRoutine.cs" />
     <File Hash="2587" Name="SingularRoutine.Version.cs" />
     <File Hash="2800" Name="Utilities\CombatLog.cs" />
     <File Hash="1919" Name="Utilities\Enumeration.cs" />

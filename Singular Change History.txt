@@ -1,4 +1,5 @@
---- Release 3.0.0.2577 ---
+
+--- Release 3.0.0.2581 ---
 
 General
 
@@ -12,6 +13,10 @@ Druid
 
 fixed - Balance - Wild Mushroom and Detonate revised.  Will now output message as to target being cast upon.  Will detonate when 3 mushrooms exist or existing mushrooms have aged more than 4 seconds.
 
+
+Hunter
+
+fixed - All Specs - exception occurring when the Disable Pet Usage option is set
 
 
 --- Release 3.0.0.2571 ---

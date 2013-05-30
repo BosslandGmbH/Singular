@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>05/29/2013 20:58:11</ScanTime>
+  <ScanTime>05/30/2013 19:30:58</ScanTime>
   <FileList>
     <File Hash="25576" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="22598" Name="ClassSpecific\DeathKnight\Common.cs" />
     <File Hash="23973" Name="ClassSpecific\DeathKnight\Frost.cs" />
     <File Hash="2632" Name="ClassSpecific\DeathKnight\Lowbie.cs" />
     <File Hash="17522" Name="ClassSpecific\DeathKnight\Unholy.cs" />
-    <File Hash="38836" Name="ClassSpecific\Druid\Balance.cs" />
+    <File Hash="39209" Name="ClassSpecific\Druid\Balance.cs" />
     <File Hash="37089" Name="ClassSpecific\Druid\Common.cs" />
     <File Hash="35266" Name="ClassSpecific\Druid\Feral.cs" />
     <File Hash="13751" Name="ClassSpecific\Druid\Guardian.cs" />
@@ -79,7 +79,7 @@
     <File Hash="4484" Name="Helpers\PVP.cs" />
     <File Hash="11754" Name="Helpers\Rest.cs" />
     <File Hash="28298" Name="Helpers\Safers.cs" />
-    <File Hash="85059" Name="Helpers\Spell.cs" />
+    <File Hash="85041" Name="Helpers\Spell.cs" />
     <File Hash="11855" Name="Helpers\Throttle.cs" />
     <File Hash="39390" Name="Helpers\Unit.cs" />
     <File Hash="53493" Name="Lists\BossList.cs" />

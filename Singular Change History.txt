@@ -1,6 +1,48 @@
+--- Release 3.0.0.2571 ---
+
+fixed - will now always update bot detected when bot starts.  corrects infrequent but repeatable issue when switching bots
+
+fixed - uses a local function for checking cursor for a pending target spell cast while awaiting change to API in HonorBuddy.  Should no longer spam message about /cancel spell cast Guild Tabard, etc. on every spell cast
+
+change- resized columns on General tab so setting names are less likely to be clipped
+
+fixed - infrequent exception occurring when casting spell and checking certain classes for ability to cast while moving
+
+
+Hunter
+
+change- All Specs - will output message indicating status of Growl auto-cast when changing contexts (entering / exiting an instance for example.)
+
+fixed - All Specs - modified AoE priorites. added Explosive Trap to Beast Master and Marksman
+
+fixed - All Specs - Blink Strike was still found by HonorBuddy SpellManager so at times Singular was attempting to cast.  reference within Singular removed
+
+
+Monk
+
+change- Mistweaver - Pull behavior (when solo) now has Crackling Jade Lightning at the highest priority (previously was Provoke) so some ranged damage can be achieved.  Continues to use Jab as Chi generator during Combat due to higher DPS (in general.)
+
+
+Shaman
+
+fixed - Restoration - was previously setup for long range Pull behavior ( 35 - 40 yds ) which is out of range of spells.  Corrected to medium range Pull ( 25 - 30 yds ).  The reference to Pull here is regarding internal logic and has no relation to the Pull Distance setting in HonorBuddy
+
+fixed - Elem/Resto - issue with setting/refreshing totems in some circumstances (like solo testing on training dummy with instance behaviors....)
+
+
+Warlock
+
+fixed - Destruction - bug in retrieving the number of stacks of Backdraft
+
+fixed - Destruction - added Rain of Fire to single target spell priority
+
+*new* - Destruction - implemented two spell priorities (Noxxic and Icy Veins) which can be selected by COnfig Setting
+
+
+
 --- Release 3.0.0.2544 ---
 
-fixed- fix default value for TrivialMaxHealthPcnt setting
+fixed - fix default value for TrivialMaxHealthPcnt setting
 
 
 

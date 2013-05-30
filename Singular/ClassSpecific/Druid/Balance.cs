@@ -18,6 +18,7 @@ using System.Drawing;
 using System.Collections.Generic;
 using CommonBehaviors.Actions;
 using Styx.Pathing;
+using Styx.Common.Helpers;
 
 namespace Singular.ClassSpecific.Druid
 {
@@ -237,15 +238,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
 
-                                Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount >= 3),
-
-                                // If Detonate is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
-                                new Sequence(
-                                    Spell.CastOnGround("Wild Mushroom",
-                                        ret => BestAoeTarget.Location,
-                                        ret => BestAoeTarget != null && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds <= 4),
-                                    new Action(ctx => Lua.DoString("SpellStopTargeting()"))
-                                    ),
+                                CreateMushroomSetAndDetonateBehavior(),
 
                                 new Sequence(
                                     Spell.CastOnGround("Force of Nature",
@@ -430,15 +423,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
 
-                                Spell.Cast("Wild Mushroom: Detonate", ret => MushroomCount >= 3),
-
-                                // If Detonate is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
-                                new Sequence(
-                                    Spell.CastOnGround("Wild Mushroom",
-                                        ret => BestAoeTarget.Location,
-                                        ret => Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds <= 2 && BestAoeTarget != null && MushroomCount < 3 ),
-                                    new Action(ctx => Lua.DoString("SpellStopTargeting()"))
-                                    ),
+                                CreateMushroomSetAndDetonateBehavior(),
 
                                 new Sequence(
                                     Spell.CastOnGround("Force of Nature",
@@ -733,7 +718,7 @@ namespace Singular.ClassSpecific.Druid
                                 new Throttle( 1, Spell.Buff("Faerie Swarm", onUnit => (WoWUnit)onUnit, req => true)),
                                 new Sequence(
                                     Spell.CastOnGround("Wild Mushroom",
-                                        loc => ((WoWUnit)loc).Location,
+                                        on => (WoWUnit) on,
                                         req => req != null && !Spell.IsSpellOnCooldown("Wild Mushroom: Detonate")
                                         ),
                                     new Action( r => Logger.WriteDebug( "SlowMelee: waiting for Mushroom to appear")),
@@ -750,6 +735,36 @@ namespace Singular.ClassSpecific.Druid
 
         #endregion
 
+
+        private static WaitTimer detonateTimer = new WaitTimer(TimeSpan.FromSeconds(4));
+        private static int checkMushroomCount { get; set; }
+
+        private static Composite CreateMushroomSetAndDetonateBehavior()
+        {
+            return new Decorator( 
+                req => Spell.UseAOE, 
+                new PrioritySelector(
+
+                    new Action( r => { 
+                        checkMushroomCount = MushroomCount; 
+                        return RunStatus.Failure; 
+                        }),
+
+                    // detonate if we have 3 shrooms -or- or timer since last shroom cast has expired
+                    Spell.Cast("Wild Mushroom: Detonate", ret => checkMushroomCount >= 3 || (checkMushroomCount > 0 && detonateTimer.IsFinished )),
+
+                    // Make sure we arenIf Detonate is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
+                    // .. also, waitForSpell must be false since Wild Mushroom does not stop targeting after click like other click on ground spells
+                    // .. will wait locally and fall through to cancel targeting regardless
+                    new Sequence(
+                        Spell.CastOnGround("Wild Mushroom", on => BestAoeTarget, req => checkMushroomCount < 3 && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds < 3f, false),
+                        new Action( ctx => detonateTimer.Reset() ), 
+                        new Action( ctx => Lua.DoString("SpellStopTargeting()"))                       
+                        )
+                    )
+                );
+
+        }
     }
 
 }

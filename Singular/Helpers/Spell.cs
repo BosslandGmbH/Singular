@@ -1633,14 +1633,14 @@ namespace Singular.Helpers
                                 ),
 
                             new Wait(TimeSpan.FromMilliseconds(750),
-                                ret => !StyxWoW.Me.HasPendingSpell(spell) || Me.IsCasting || Me.IsChanneling,
+                                ret => Spell.GetPendingCursorSpell == null || Me.IsCasting || Me.IsChanneling,
                                 new ActionAlwaysSucceed()
                                 ),
 
                             // otherwise cancel
                             new Action(ret =>
                             {
-                                Logger.WriteDebug("/cancel {0} - click {1} failed -OR- Pending Cursor Spell API is still broken [{5}={6}] -- distance={2:F1} yds, loss={3}, face={4}",
+                                Logger.WriteDebug("/cancel {0} - click {1} failed -OR- Pending Cursor Spell API broken -- distance={2:F1} yds, loss={3}, face={4}",
                                     spell,
                                     onLocation(ret),
                                     StyxWoW.Me.Location.Distance(onLocation(ret)),

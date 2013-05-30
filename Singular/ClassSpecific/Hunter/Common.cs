@@ -87,7 +87,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
                             new Sequence(
-                                new Action( ctx => Logger.Write( "/dismiss Pet #{0}")),
+                                new Action( ctx => Logger.Write( "/dismiss Pet")),
                                 new Action(ctx => SpellManager.Cast("Dismiss Pet")),
                                 new WaitContinue(1, ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )

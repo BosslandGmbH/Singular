@@ -1,3 +1,19 @@
+--- Release 3.0.0.2577 ---
+
+General
+
+fixed - exception caused by log message from CastOnGround when Debug is enabled
+
+fixed - corrected test in CastOnGround to use local pending spell test. should no longer receive misleading /cancel message on every ground ability cast
+
+
+
+Druid
+
+fixed - Balance - Wild Mushroom and Detonate revised.  Will now output message as to target being cast upon.  Will detonate when 3 mushrooms exist or existing mushrooms have aged more than 4 seconds.
+
+
+
 --- Release 3.0.0.2571 ---
 
 fixed - will now always update bot detected when bot starts.  corrects infrequent but repeatable issue when switching bots

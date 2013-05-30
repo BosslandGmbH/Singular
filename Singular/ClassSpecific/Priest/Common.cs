@@ -123,7 +123,7 @@ namespace Singular.ClassSpecific.Priest
                                             ctx => StyxWoW.Me.Location,
                                             ret => true,
                                             false),
-                                        Helpers.Common.CreateWaitForLagDuration(orUntil => StyxWoW.Me.CurrentPendingCursorSpell != null),
+                                        Helpers.Common.CreateWaitForLagDuration(orUntil => Spell.GetPendingCursorSpell != null),
                                         new Action(ret => Lua.DoString("SpellStopTargeting()"))
                                         )
                                     )
@@ -169,7 +169,7 @@ namespace Singular.ClassSpecific.Priest
                                             ctx => StyxWoW.Me.Location,
                                             ret => true,
                                             false),
-                                        Helpers.Common.CreateWaitForLagDuration( orUntil => StyxWoW.Me.CurrentPendingCursorSpell != null ),
+                                        Helpers.Common.CreateWaitForLagDuration( orUntil => Spell.GetPendingCursorSpell != null ),
                                         new Action(ret => Lua.DoString("SpellStopTargeting()"))
                                         )
                                     )

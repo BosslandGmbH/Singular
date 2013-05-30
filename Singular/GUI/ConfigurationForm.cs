@@ -106,6 +106,27 @@ namespace Singular.GUI
                     this.Height = height;
                 }
             }
+
+            tabControl1_SelectedIndexChanged(this, new EventArgs());
+        }
+
+        public static void SetLabelColumnWidth(PropertyGrid grid, int width)
+        {
+            if (grid == null)
+                return;
+
+            FieldInfo fi = grid.GetType().GetField("gridView", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (fi == null)
+                return;
+
+            Control view = fi.GetValue(grid) as Control;
+            if (view == null)
+                return;
+
+            MethodInfo mi = view.GetType().GetMethod("MoveSplitterTo", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (mi == null)
+                return;
+            mi.Invoke(view, new object[] { width });
         }
 
         /// <summary>
@@ -321,6 +342,19 @@ namespace Singular.GUI
         {
             Logger.Write( Color.HotPink, " LOGMARK # {0} at {1}", LogMarkIndex++, DateTime.Now.ToString("HH:mm:ss.fff"));
             btnLogMark.Text = "LOGMARK! " + LogMarkIndex;
+        }
+
+        private void tabControl1_VisibleChanged(object sender, EventArgs e)
+        {
+            // if ( tabControl1.SelectedIndex
+        }
+
+        private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (tabControl1.SelectedIndex == 0)
+                SetLabelColumnWidth(pgGeneral, 205);
+            else if (tabControl1.SelectedIndex == 1)
+                SetLabelColumnWidth(pgClass, 205);
         }
     }
 

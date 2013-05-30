@@ -74,8 +74,6 @@ namespace Singular.ClassSpecific.Warlock
 
                         Helpers.Common.CreateAutoAttack(true),
 
-                        Spell.BuffSelf("Flames of Xoroth", ret => !Me.GotAlivePet && !Me.HasAura("Grimoire of Sacrifice") && CurrentBurningEmbers >= 10),
-
                         Helpers.Common.CreateInterruptBehavior(),
 
                         new Action(ret =>
@@ -86,16 +84,68 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateAoeBehavior(),
 
-                        Spell.Cast( "Shadowburn", ret => Me.CurrentTarget.HealthPercent <= 20),
-                        Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent > 20 && BackdraftStacks < 3),
+                        new Decorator(
+                            req => WarlockSettings.DestructionSpellPriority != 1,
+                            new PrioritySelector(
+                                // Icy Veins
+                                Spell.Cast("Shadowburn", ret =>
+                                {
+                                    if (Me.CurrentTarget.HealthPercent < 20)
+                                    {
+                                        if (CurrentBurningEmbers >= 35)
+                                            return true;
+                                        if (Me.HasAnyAura("Dark Soul: Instability", "Skull Banner"))
+                                            return true;
+                                        if (Me.CurrentTarget.TimeToDeath(99) < 3)
+                                            return true;
+                                        if (Me.ManaPercent < 5)
+                                            return true;
+                                    }
+                                    return false;
+                                }),
 
-                        Spell.Cast("Conflagrate"),
-                        Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
-                        Spell.Cast("Drain Life", ret => Me.HealthPercent < 40 && !Group.AnyHealerNearby),
-                        Spell.Cast("Incinerate"),
+                                Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
+                                Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") >= 2),
+                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => !Me.CurrentTarget.IsMoving && Me.CurrentTarget.HasAuraExpired("Rain of Fire", 1, true), false),
 
-                        Spell.Cast("Fel Flame", ret => Me.IsMoving),
+                                Spell.Cast("Chaos Bolt", ret =>
+                                {
+                                    if (BackdraftStacks >= 3)
+                                    {
+                                        if (CurrentBurningEmbers >= 35)
+                                            return true;
+                                        if (Me.HasAnyAura("Dark Soul: Instability", "Skull Banner"))
+                                            return true;
+                                    }
+                                    return false;
+                                }),
 
+                                Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") == 1),
+
+                                Spell.Cast("Incinerate"),
+
+                                Spell.Cast("Fel Flame", ret => Me.IsMoving && Me.CurrentTarget.GetAuraTimeLeft("Immolate").TotalMilliseconds.Between(300, 3000))
+                                )
+                            ),
+
+
+                        new Decorator(
+                            req => WarlockSettings.DestructionSpellPriority == 1,
+                            new PrioritySelector(
+                                // Noxxic
+                                Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
+                                Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
+                                Spell.Cast("Conflagrate"),
+                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire"), false),
+
+                                Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
+                                Spell.Cast("Incinerate"),
+
+                                Spell.Cast("Fel Flame", ret => Me.IsMoving && Me.CurrentTarget.GetAuraTimeLeft("Immolate").TotalMilliseconds.Between(300, 3000))
+                                )
+                            ),
+
+                        Spell.Cast("Drain Life", ret => Me.HealthPercent <= WarlockSettings.DrainLifePercentage && !Group.AnyHealerNearby),
                         Spell.Cast("Shadow Bolt")
                         )
                     )
@@ -110,7 +160,12 @@ namespace Singular.ClassSpecific.Warlock
                 new PrioritySelector(
 
                     new Decorator(
-                        ret => _mobCount >= 3,
+                        ret => _mobCount.Between( 2, 3),
+                        Spell.Buff("Immolate", true, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault( u => u.HasAuraExpired("Immolate", 3) && Spell.CanCastHack("Immolate", u) && Me.IsSafelyFacing(u, 150)), req => true)
+                        ),
+
+                    new Decorator(
+                        ret => _mobCount >= 4,
                         new PrioritySelector(
                             new PrioritySelector(
                                 ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where(u => Me.IsSafelyFacing(u)), ClusterType.Radius, 8f),
@@ -140,7 +195,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #endregion
 
-        static double CurrentBurningEmbers
+        public static double CurrentBurningEmbers
         {
             get
             {
@@ -165,8 +220,7 @@ namespace Singular.ClassSpecific.Warlock
         {
             get
             {
-                WoWAura bkdrft = Me.GetAuraByName("Backdraft");
-                return bkdrft == null ? 0 : (int) bkdrft.StackCount;
+                return (int) Me.GetAuraStacks("Backdraft");
             }
         }
 

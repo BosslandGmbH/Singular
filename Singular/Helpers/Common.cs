@@ -485,8 +485,8 @@ namespace Singular.Helpers
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 Helpers.Common.CreateDismount(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),   // should be Pull or Combat 99% of the time
-                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 25, 22),
-                Movement.CreateEnsureMovementStoppedBehavior(22f)
+                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 30, 25),
+                Movement.CreateEnsureMovementStoppedBehavior(25f)
                 );
         }
 

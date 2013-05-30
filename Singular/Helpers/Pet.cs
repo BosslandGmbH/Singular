@@ -127,7 +127,7 @@ namespace Singular.Helpers
                     new Action(ret => PetManager.CastPetAction(action)),
 
                     new WaitContinue(TimeSpan.FromMilliseconds(500),
-                        ret => StyxWoW.Me.CurrentPendingCursorSpell != null, // && StyxWoW.Me.CurrentPendingCursorSpell.Name == spell,
+                        ret => Spell.GetPendingCursorSpell != null, // && Spell.GetPendingOnCursor().Name == spell,
                         new ActionAlwaysSucceed()
                         ),
 
@@ -138,7 +138,7 @@ namespace Singular.Helpers
 
                         // wait and if cursor clears, then Success!!!!
                         new Wait(TimeSpan.FromMilliseconds(500),
-                            ret => StyxWoW.Me.CurrentPendingCursorSpell == null,
+                            ret => Spell.GetPendingCursorSpell == null,
                             new ActionAlwaysSucceed()
                             ),
 

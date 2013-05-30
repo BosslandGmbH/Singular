@@ -518,7 +518,7 @@ namespace Singular.ClassSpecific.Rogue
                             new Action( r => Logger.Write( "/pick lock on {0} #{1}", box.Name, box.Entry)),
                             new Action( r => { return SpellManager.Cast( "Pick Lock", Me) ? RunStatus.Success : RunStatus.Failure; }),
                             new Action( r => Logger.WriteDebug( "picklock: wait for spell on cursor")),
-                            new Wait( 1, ret => Me.CurrentPendingCursorSpell != null, new ActionAlwaysSucceed()),
+                            new Wait( 1, ret => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
                             new Action( r => Logger.WriteDebug( "picklock: use item")),
                             new Action( r => box.Use() ),
                             new Action(r => Blacklist.Add(box.Guid, BlacklistFlags.Node, TimeSpan.FromSeconds(30))),

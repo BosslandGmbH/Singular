@@ -37,11 +37,19 @@ namespace Singular.ClassSpecific.Shaman
                 if ( Me.Specialization == WoWSpec.ShamanEnhancement )
                     return Me.GotTarget && Me.CurrentTarget.Distance < Me.MeleeDistance(Me.CurrentTarget) + 10;
 
-                if ( Me.IsMoving )
-                    return false;
-
-                if ( SingularRoutine.CurrentWoWContext == WoWContext.Instances )
-                    return Group.Tanks.Any( t => t.Distance < 50 && t.GotTarget && t.Location.Distance(t.CurrentTarget.Location) <= t.MeleeDistance(t.CurrentTarget) + 5);
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                {
+                    if ( !Me.GotTarget )
+                        return false;
+                    
+                    if ( Me.CurrentTarget.IsMoving )
+                        return false;
+                    
+                    if (Me.SpellDistance(Me.CurrentTarget) > Totems.GetTotemRange(WoWTotem.Searing))
+                        return false;
+                    
+                    return true;
+                }
 
                 return !Me.GotTarget || Me.CurrentTarget.SpellDistance() < 40;
             }
@@ -70,7 +78,7 @@ namespace Singular.ClassSpecific.Shaman
 
                     Spell.BuffSelf("Searing Totem",
                         ret => Me.GotTarget 
-                            && Me.CurrentTarget.Distance < GetTotemRange(WoWTotem.Searing) - 2f 
+                            && Me.CurrentTarget.SpellDistance() < GetTotemRange(WoWTotem.Searing) - 2f 
                             && !Exist( WoWTotemType.Fire))
                     );
 
@@ -187,14 +195,18 @@ namespace Singular.ClassSpecific.Shaman
             // create Fire Totems behavior first, then wrap if needed
             Composite fireTotemBehavior =
                 new PrioritySelector(
+                    new Action( r => {
+                        return RunStatus.Failure;
+                        }),
+
                     Spell.BuffSelf("Fire Elemental", ret => Me.CurrentTarget.IsBoss()),
 
                     // Magma handled within each specs AoE support
 
                     Spell.BuffSelf("Searing Totem",
                         ret => Me.GotTarget
-                            && Me.CurrentTarget.Distance < GetTotemRange(WoWTotem.Searing) - 2f
-                            && !Exist(WoWTotemType.Fire))
+                            && Me.CurrentTarget.SpellDistance() < GetTotemRange(WoWTotem.Searing) - 2f
+                            && (!Exist(WoWTotemType.Fire) || (GetTotem( WoWTotem.Searing) != null && GetTotem(WoWTotem.Searing).Expires < DateTime.Now + TimeSpan.FromSeconds(3))))
                     );
 
             if (Me.Specialization == WoWSpec.ShamanRestoration)

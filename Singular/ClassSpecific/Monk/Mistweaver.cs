@@ -84,9 +84,9 @@ namespace Singular.ClassSpecific.Monk
 
                         new PrioritySelector(
                             Common.GrappleWeapon(),
-                            Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
+                            Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12),
                             Spell.Cast("Jab")
                             )
@@ -125,7 +125,7 @@ namespace Singular.ClassSpecific.Monk
                     Helpers.Common.EnsureReadyToAttackFromMelee(),
                     Helpers.Common.CreateAutoAttack(true),
 
-                    Spell.WaitForCast(),
+                    Spell.WaitForCastOrChannel(),
 
                     new Decorator(
                         ret => !Spell.IsGlobalCooldown(), 
@@ -150,7 +150,7 @@ namespace Singular.ClassSpecific.Monk
                             Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
 
                             Spell.Cast("Expel Harm", ret => Me.CurrentChi < (Me.MaxChi - 2) || Me.HealthPercent < 80),
-
+                            // Spell.Cast("Crackling Jade Lightning", req => !Me.IsMoving ),
                             Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
                             )
                         ),

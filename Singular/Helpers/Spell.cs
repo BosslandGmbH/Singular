@@ -1253,7 +1253,7 @@ namespace Singular.Helpers
 
         #region Heal - by name
 
-        private static WoWSpell _spell;
+        // private static WoWSpell _spell;
 
         // used by Spell.Cast() - save fact we are queueing this Heal spell if a spell cast/gcd is in progress already.  this could only occur during 
         // .. the period of latency at the end of a cast where Singular allows you to begin the next one
@@ -1323,9 +1323,9 @@ namespace Singular.Helpers
                                 if (!SpellManager.FindSpell(name(ret), out sfr))
                                     return RunStatus.Failure;
 
-                                _spell = sfr.Override ?? sfr.Original;
+                                WoWSpell spell = sfr.Override ?? sfr.Original;
 
-                                if (checkMovement(ret) && Me.IsMoving && !AllowMovingWhileCasting(_spell))
+                                if (checkMovement(ret) && Me.IsMoving && !AllowMovingWhileCasting(spell))
                                     return RunStatus.Failure;
 
                                 // check we can cast it on target without checking for movement
@@ -1336,10 +1336,10 @@ namespace Singular.Helpers
                                 // save status of queueing spell (lag tolerance - the prior spell still completing)
                                 _IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
-                                LogCast(_spell.Name, _castOnUnit);
-                                if (!SpellManager.Cast(_spell, _castOnUnit))
+                                LogCast(spell.Name, _castOnUnit);
+                                if (!SpellManager.Cast(spell, _castOnUnit))
                                 {
-                                    Logger.WriteDebug(Color.LightPink, "cast of {0} on {1} failed!", _spell.Name, _castOnUnit.SafeName());
+                                    Logger.WriteDebug(Color.LightPink, "cast of {0} on {1} failed!", spell.Name, _castOnUnit.SafeName());
                                     return RunStatus.Failure;
                                 }
 
@@ -1471,22 +1471,22 @@ namespace Singular.Helpers
         /// checked if the spell has an instant cast, the spell is one which can be cast while moving, or we have an aura active which allows moving without interrupting casting.  
         /// does not check whether you are presently moving, only whether you could cast if you are moving
         /// </summary>
-        /// <param name="_spell">spell to cast</param>
+        /// <param name="spell">spell to cast</param>
         /// <returns>true if spell can be cast while moving, false if it cannot</returns>
-        private static bool AllowMovingWhileCasting(WoWSpell _spell)
+        private static bool AllowMovingWhileCasting(WoWSpell spell)
         {
             // quick return for instant spells
-            if (_spell.CastTime == 0 && !IsFunnel(_spell))
+            if (spell.CastTime == 0 && !IsFunnel(spell))
                 return true;
 
             // assume we cant do that, but then check for class specific buffs which allow movement while casting
             bool allowMovingWhileCasting = false;
             if (Me.Class == WoWClass.Shaman)
-                allowMovingWhileCasting = _spell.Name == "Lightning Bolt";
+                allowMovingWhileCasting = spell.Name == "Lightning Bolt";
             else if (Me.Specialization == WoWSpec.MageFire)
-                allowMovingWhileCasting = _spell.Name == "Scorch";
+                allowMovingWhileCasting = spell.Name == "Scorch";
             else if (Me.Class == WoWClass.Hunter)
-                allowMovingWhileCasting = _spell.Name == "Steady Shot" || (_spell.Name == "Aimed Shot" && TalentManager.HasGlyph("Aimed Shot")) || _spell.Name == "Cobra Shot";
+                allowMovingWhileCasting = spell.Name == "Steady Shot" || (spell.Name == "Aimed Shot" && TalentManager.HasGlyph("Aimed Shot")) || spell.Name == "Cobra Shot";
             else if (Me.Class == WoWClass.Warlock)
                 allowMovingWhileCasting = ClassSpecific.Warlock.Common.HasTalent(ClassSpecific.Warlock.WarlockTalents.KiljadensCunning);
 
@@ -1494,7 +1494,7 @@ namespace Singular.Helpers
             //                allowMovingWhileCasting = Me.HasAura("Molten Feather");
 
             if (!allowMovingWhileCasting)
-                allowMovingWhileCasting = HaveAllowMovingWhileCastingAura();
+                allowMovingWhileCasting = HaveAllowMovingWhileCastingAura(spell);
 
             return allowMovingWhileCasting;
         }
@@ -1531,9 +1531,9 @@ namespace Singular.Helpers
         /// check for aura which allows moving without interrupting spell casting
         /// </summary>
         /// <returns></returns>
-        public static bool HaveAllowMovingWhileCastingAura()
+        public static bool HaveAllowMovingWhileCastingAura(WoWSpell spell = null)
         {
-            return Me.GetAllAuras().Any(a => a.ApplyAuraType == (WoWApplyAuraType)330 && _spell.CastTime < (uint)a.TimeLeft.TotalMilliseconds);
+            return Me.GetAllAuras().Any(a => a.ApplyAuraType == (WoWApplyAuraType)330 && (spell == null || spell.CastTime < (uint)a.TimeLeft.TotalMilliseconds));
         }
 
         #endregion
@@ -1611,7 +1611,7 @@ namespace Singular.Helpers
                             ctx => waitForSpell,
                             new PrioritySelector(
                                 new WaitContinue(1,
-                                    ret => StyxWoW.Me.HasPendingSpell(spell), // && StyxWoW.Me.CurrentPendingCursorSpell.Name == spell,
+                                    ret => GetPendingCursorSpell != null && GetPendingCursorSpell.Name == spell,
                                     new ActionAlwaysSucceed()
                                     ),
                                 new Action(r =>
@@ -1645,9 +1645,7 @@ namespace Singular.Helpers
                                     onLocation(ret),
                                     StyxWoW.Me.Location.Distance(onLocation(ret)),
                                     GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), onLocation(ret)),
-                                    StyxWoW.Me.IsSafelyFacing(onLocation(ret)),
-                                    Me.HasPendingSpell(spell),
-                                    PendingSpell()
+                                    StyxWoW.Me.IsSafelyFacing(onLocation(ret))
                                     );
 
                                 // Pending Spell Cursor API is broken... seems like we can't really check at this point, so assume it failed and worked... uggghhh
@@ -1781,10 +1779,10 @@ namespace Singular.Helpers
             }
 
             // override spell will sometimes always have cancast=false, so check original also
-            if (!skipWowCheck && !_spell.CanCast && (sfr.Override == null || !sfr.Original.CanCast))
+            if (!skipWowCheck && !spell.CanCast && (sfr.Override == null || !sfr.Original.CanCast))
             {
                 if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                    Logger.WriteDebug("CanCast[{0}]: spell specific CanCast failed (#{1})", castName, _spell.Id);
+                    Logger.WriteDebug("CanCast[{0}]: spell specific CanCast failed (#{1})", castName, spell.Id);
 
                 return false;
             }
@@ -1905,26 +1903,32 @@ namespace Singular.Helpers
             return IsChanneled;
         }
 
-        public static int PendingSpell()
+        public static WoWSpell GetPendingCursorSpell
         {
-            var pendingSpellPtr = StyxWoW.Memory.Read<IntPtr>((IntPtr)0xC124C4, true);
-            if (pendingSpellPtr != IntPtr.Zero)
+            get
             {
-                var pendingSpellId = StyxWoW.Memory.Read<int>(pendingSpellPtr + 32);
-                return pendingSpellId;
-            }
+#if WORKING
+                return Me.CurrentPendingCursorSpell;
+#else
+                int pendingSpellId = 0;
+                var pendingSpellPtr = StyxWoW.Memory.Read<IntPtr>((IntPtr)0xC237CC, true);
+                if (pendingSpellPtr != IntPtr.Zero)
+                    pendingSpellId = StyxWoW.Memory.Read<int>(pendingSpellPtr + 32);
 
-            return 0;
+                return pendingSpellId == 0 ? null : WoWSpell.FromId(pendingSpellId);
+#endif
+            }
         }
 
         public static int GetCharges(string name)
         {
             SpellFindResults sfr;
-            SpellManager.FindSpell(name, out sfr);
-            WoWSpell spell = sfr.Override ?? sfr.Original;
-            if (spell == null)
-                return 0;
-            return GetCharges(spell);
+            if ( SpellManager.FindSpell(name, out sfr))
+            {
+                WoWSpell spell = sfr.Override ?? sfr.Original;
+                return GetCharges(spell);
+            }
+            return 0;
         }
 
         public static int GetCharges(WoWSpell spell)

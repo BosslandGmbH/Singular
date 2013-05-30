@@ -96,6 +96,8 @@ namespace Singular.Utilities
         public static DateTime LastUnitNotInfrontFailure { get; set; }
         public static DateTime LastShapeshiftFailure { get; set; }
 
+        public static WoWUnit LastLineOfSightTarget { get; set; }
+
         public static Dictionary<ulong, int> MobsThatEvaded = new Dictionary<ulong, int>();
 
         /// <summary>
@@ -171,8 +173,20 @@ namespace Singular.Utilities
 
                     if ( e.Args[14].ToString() == LocalizedLineOfSightFailure )
                     {
+                        ulong guid;
+                        try
+                        {
+                            LastLineOfSightTarget = e.DestUnit;
+                            guid = LastLineOfSightTarget == null ? 0 : LastLineOfSightTarget.Guid;
+                        }
+                        catch
+                        {
+                            LastLineOfSightTarget = StyxWoW.Me.CurrentTarget;
+                            guid = StyxWoW.Me.CurrentTargetGuid;
+                        }
+
                         LastLineOfSightFailure = DateTime.Now;
-                        Logger.WriteFile("[CombatLog] cast fail due to los reported at {0}", LastLineOfSightFailure.ToString("HH:mm:ss.fff"));
+                        Logger.WriteFile("[CombatLog] cast fail due to los reported at {0} on target {1:X}", LastLineOfSightFailure.ToString("HH:mm:ss.fff"), e.DestGuid );
                     }
                     else if ( StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuestBotActive)
                     {

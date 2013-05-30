@@ -85,6 +85,8 @@
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(340, 368);
             this.tabControl1.TabIndex = 4;
+            this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
+            this.tabControl1.VisibleChanged += new System.EventHandler(this.tabControl1_VisibleChanged);
             // 
             // tabPage1
             // 
@@ -141,7 +143,7 @@
             this.pgHeal.Location = new System.Drawing.Point(0, 39);
             this.pgHeal.Name = "pgHeal";
             this.pgHeal.PropertySort = System.Windows.Forms.PropertySort.NoSort;
-            this.pgHeal.Size = new System.Drawing.Size(332, 398);
+            this.pgHeal.Size = new System.Drawing.Size(332, 303);
             this.pgHeal.TabIndex = 5;
             // 
             // grpHealHeader

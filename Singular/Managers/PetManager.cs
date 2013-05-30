@@ -228,5 +228,36 @@ namespace Singular.Managers
             }
             return false;
         }
+
+        public static bool IsAutoCast(int id)
+        {
+            WoWPetSpell ps = StyxWoW.Me.PetSpells.FirstOrDefault(s => s.Spell != null && s.Spell.Id == id);
+            return IsAutoCast(ps);
+        }
+
+        public static bool IsAutoCast(string action)
+        {
+            WoWPetSpell ps = StyxWoW.Me.PetSpells.FirstOrDefault(s => s.ToString() == action);
+            return IsAutoCast(ps);
+        }
+
+        public static bool IsAutoCast(WoWPetSpell ps)
+        {
+            if (ps != null)
+            {
+                List<string> svals = Lua.GetReturnValues("return GetPetActionInfo(" + ps.ActionBarIndex + ");");
+                if (svals != null && svals.Count >= 7)
+                {
+                    bool allowed = false;
+                    bool active = false;
+                    bool.TryParse(svals[5], out allowed);
+                    bool.TryParse(svals[6], out active);
+                    return allowed && active;
+                }
+            }
+
+            return false;
+        }
     }
+
 }

@@ -100,10 +100,15 @@ namespace Singular
         private void UpdateContext()
         {
             // Subscribe to the map change event, so we can automatically update the context.
-            if(!_contextEventSubscribed)
+            if (!_contextEventSubscribed)
             {
                 // Subscribe to OnBattlegroundEntered. Just 'cause.
                 BotEvents.Battleground.OnBattlegroundEntered += e => UpdateContext();
+                SingularRoutine.OnBotEvent += (src, arg) =>
+                {
+                    if (arg.Event == SingularBotEvent.BotStart || arg.Event == SingularBotEvent.BotChanged )
+                        UpdateContextStateValues();
+                };
                 _contextEventSubscribed = true;
             }
 
@@ -116,11 +121,7 @@ namespace Singular
             if(current != _lastContext && OnWoWContextChanged!=null)
             {
                 // store values that require scanning lists
-                IsQuestBotActive = IsBotInUse("Quest");
-                IsBgBotActive = IsBotInUse("BGBuddy") || IsBotInUse("BG Bot");
-                IsDungeonBuddyActive = IsBotInUse("DungeonBuddy");
-                IsPokeBuddyActive = IsPluginActive("Pokébuddy");
-
+                UpdateContextStateValues();
                 DescribeContext();
                 try
                 {
@@ -135,7 +136,15 @@ namespace Singular
             }               
         }
 
-        public static void DescribeContext()
+        private static void UpdateContextStateValues()
+        {
+            IsQuestBotActive = IsBotInUse("Quest");
+            IsBgBotActive = IsBotInUse("BGBuddy") || IsBotInUse("BG Bot");
+            IsDungeonBuddyActive = IsBotInUse("DungeonBuddy");
+            IsPokeBuddyActive = IsPluginActive("Pokébuddy") || IsPluginActive("Pokehbuddy");
+        } 
+
+        static void DescribeContext()
         {
             string sRace = Me.Race.ToString().CamelToSpaced();
             if (Me.Race == WoWRace.Pandaren)

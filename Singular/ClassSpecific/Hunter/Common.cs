@@ -45,9 +45,26 @@ namespace Singular.ClassSpecific.Hunter
         static void Hunter_OnWoWContextChanged(object sender, WoWContextEventArg e)
         {
             // Disable pet growl in instances but enable it outside.
-            Lua.DoString(e.CurrentContext == WoWContext.Instances
-                             ? "DisableSpellAutocast(GetSpellInfo(2649))"
-                             : "EnableSpellAutocast(GetSpellInfo(2649))");
+            if ( e.CurrentContext == WoWContext.Instances )
+            {
+                if (!PetManager.IsAutoCast(2649))
+                    Logger.Write(Color.White, "Pet: Growl Auto-Cast Already Disabled");
+                else
+                {
+                    Logger.Write(Color.White, "Pet: Disabling 'Growl' Auto-Cast");
+                    Lua.DoString("DisableSpellAutocast(GetSpellInfo(2649))");
+                }
+            }
+            else
+            {
+                if (PetManager.IsAutoCast(2649))
+                    Logger.Write(Color.White, "Pet: Growl Auto-Cast Already Enabled");
+                else
+                {
+                    Logger.Write(Color.White, "Pet: Enabling 'Growl' Auto-Cast");
+                    Lua.DoString("EnableSpellAutocast(GetSpellInfo(2649))");
+                }
+            }
         }
 
         #endregion
@@ -254,7 +271,6 @@ namespace Singular.ClassSpecific.Hunter
 
                     // Level 75 Talents
                     Spell.Cast("A Murder of Crows"),
-                    Spell.Cast("Blink Strike", on => Me.CurrentTarget, ret => Me.GotAlivePet && Me.Pet.SpellDistance(Me.CurrentTarget) < 40),
                     Spell.Cast("Lynx Rush", ret => Pet != null && Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
 
                     // Level 60 Talents

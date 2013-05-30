@@ -178,7 +178,7 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                Helpers.Common.EnsureReadyToAttackFromMediumRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -229,7 +229,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown() && !HealerManager.Instance.TargetList.Any( t => !t.IsMe && t.IsAlive ),
                     new PrioritySelector(
 
-                        Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                        Helpers.Common.EnsureReadyToAttackFromMediumRange(),
 
                         Spell.WaitForCastOrChannel(),
 

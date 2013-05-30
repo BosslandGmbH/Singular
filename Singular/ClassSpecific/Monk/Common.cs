@@ -347,7 +347,7 @@ namespace Singular.ClassSpecific.Monk
                         && (Me.PowerType != WoWPowerType.Mana)
                         && !Common.AnySpheres(SphereType.Healing, 1f),
                     false),
-                new WaitContinue( TimeSpan.FromMilliseconds(500), ret => Me.CurrentPendingCursorSpell != null, new ActionAlwaysSucceed()),
+                new WaitContinue( TimeSpan.FromMilliseconds(500), ret => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
                 new Action(ret => Lua.DoString("SpellStopTargeting()")),
                 new WaitContinue( 
                     TimeSpan.FromMilliseconds(750), 

@@ -554,7 +554,7 @@ namespace Singular.ClassSpecific.Druid
                     return false;
             }
 
-            if ((spell.CastTime != 0u || Spell.IsFunnel(spell)) && Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura())
+            if ((spell.CastTime != 0u || Spell.IsFunnel(spell)) && Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura(spell))
                 return false;
 
             if (Me.ChanneledCastingSpellId == 0)

@@ -77,13 +77,7 @@ namespace Singular.Helpers
                                    (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget != TankManager.Instance.FirstUnit),
                             new Sequence(
                                 // pending spells like mage blizard cause targeting to fail.
-                                new DecoratorContinue(
-                                    ret => StyxWoW.Me.CurrentPendingCursorSpell != null,
-                                    new Sequence(
-                                        new Action(r => Logger.WriteDebug( targetColor, "EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
-                                        new Action(ctx => Lua.DoString("SpellStopTargeting()"))
-                                        )
-                                    ),
+                                CreateClearPendingCursorSpell( RunStatus.Success),
                                 new Action(
                                     ret =>
                                     {
@@ -245,13 +239,7 @@ namespace Singular.Helpers
                             new Decorator(
                                 ret => ret != null,
                                 new Sequence(
-                                    new DecoratorContinue(
-                                        ret => StyxWoW.Me.CurrentPendingCursorSpell != null,
-                                        new Sequence(
-                                            new Action(r => Logger.WriteDebug( targetColor, "EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
-                                            new Action(ctx => Lua.DoString("SpellStopTargeting()"))
-                                            )
-                                        ),
+                                    CreateClearPendingCursorSpell(RunStatus.Success),
                                     new Decorator(
                                         req => ((WoWUnit)req).Guid != StyxWoW.Me.CurrentTargetGuid,
                                         new Sequence(
@@ -414,14 +402,8 @@ namespace Singular.Helpers
                                     new Decorator(
                                         ret => ret != null && ((WoWUnit)ret).Guid != StyxWoW.Me.CurrentTargetGuid,
                                         new Sequence(
-                                            new DecoratorContinue(
-                                                ret => StyxWoW.Me.CurrentPendingCursorSpell != null,
-                                                new Sequence(
-                                                    new Action( r => Logger.WriteDebug( targetColor, "EnsureTarget: /cancel Pending Spell {0}", StyxWoW.Me.CurrentPendingCursorSpell.Name)),
-                                                    new Action(ctx => Lua.DoString("SpellStopTargeting()"))
-                                                    )
-                                                ),
-                                            new Action(ret => Logger.WriteDebug( targetColor, "EnsureTarget: set target to chosen target {0}", ((WoWUnit)ret).SafeName())),
+                                            CreateClearPendingCursorSpell(RunStatus.Success),
+                                            new Action(ret => Logger.WriteDebug(targetColor, "EnsureTarget: set target to chosen target {0}", ((WoWUnit)ret).SafeName())),
                                             new Action(ret => ((WoWUnit)ret).Target()),
                                             new WaitContinue( 2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTargetGuid == ((WoWUnit)ret).Guid, new ActionAlwaysSucceed())
                                             )
@@ -445,11 +427,32 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        /// assignes
+        /// targeting is blocked if pending spell on cursor, so this routine checks if a spell is on cursor
+        /// awaiting target and if so clears
         /// </summary>
-        /// <param name="unit"></param>
-        /// <returns></returns>
-        private static int CalcDistancePriority(WoWUnit unit)
+        /// <param name="finalResult">what result should be regardless of clearing spell</param>
+        /// <returns>always finalResult</returns>
+        private static Composite CreateClearPendingCursorSpell(RunStatus finalResult)
+        {
+            Sequence seq = new Sequence(
+                new Action(r => Logger.WriteDebug(targetColor, "EnsureTarget: /cancel Pending Spell {0}", Spell.GetPendingCursorSpell.Name)),
+                new Action(ctx => Lua.DoString("SpellStopTargeting()"))
+                );
+
+            if (finalResult == RunStatus.Success )
+                return new DecoratorContinue(ret => Spell.GetPendingCursorSpell != null, seq);
+
+            seq.AddChild( new ActionAlwaysFail() );
+            return new Decorator(ret => Spell.GetPendingCursorSpell != null, seq);
+        }
+
+        /// <summary>
+        /// assigns a priority based upon bands of distance.  allows treating all mobs within melee range the same
+        /// rather than sorting purely by distance
+        /// </summary>
+        /// <param name="unit">unit</param>
+        /// <returns>relative distance priority, where 1 is closest. 2 further away, etc</returns>
+        private static int CalcDistancePriority(this WoWUnit unit)
         {
             int prio = (int) Me.SpellDistance(unit);
             if (prio <= 5)

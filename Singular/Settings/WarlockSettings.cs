@@ -109,6 +109,14 @@ namespace Singular.Settings
         [Description("Demonic Leap to disengage from melee")]
         public bool UseDemonicLeap { get; set; }
 
+        [Setting]
+        [DefaultValue(1)]
+        [Category("Destruction")]
+        [DisplayName("Spell Priority Selection")]
+        [Description("1:Noxxic, 2:IcyVeins")]
+        public int DestructionSpellPriority { get; set; }
+
+
 
 #region Setting Helpers
 

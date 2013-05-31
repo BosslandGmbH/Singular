@@ -1,4 +1,29 @@
 
+--- Release 3.0.0.2594 ---
+
+General
+
+fixed - issue impacting automatic cast of spells which allow casting while moving.  
+
+
+Hunter
+
+fixed - All Specs - resolved bug impacting handling of Growl when entering/exiting instances.
+
+*new* - All Specs - support for context specific pets now working.  Settings can be used to select pets specific for Solo, PVP, and Instances.  Defaults to Pet #1 if you don't have pet of number given.  Will dismiss Pets if needed.  NOTE: due to the information available at that moment, you may get a failed Ressurection cast on your Pet during pet changes.  This is expected presently.
+
+
+Mage
+
+fixed - All Specs - will now correctly cast Ice Floes if needed
+
+
+Shaman
+
+fixed - All Specs - will now correctly cast Spiritwalker's Grace if needed
+
+
+
 --- Release 3.0.0.2581 ---
 
 General

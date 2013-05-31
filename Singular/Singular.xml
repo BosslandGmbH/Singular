@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>05/30/2013 19:49:13</ScanTime>
+  <ScanTime>05/31/2013 14:09:30</ScanTime>
   <FileList>
     <File Hash="25576" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="22598" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -15,14 +15,14 @@
     <File Hash="12730" Name="ClassSpecific\Druid\Resto.cs" />
     <File Hash="7854" Name="ClassSpecific\Generic.cs" />
     <File Hash="9513" Name="ClassSpecific\Hunter\BeastMaster.cs" />
-    <File Hash="51426" Name="ClassSpecific\Hunter\Common.cs" />
+    <File Hash="52846" Name="ClassSpecific\Hunter\Common.cs" />
     <File Hash="1637" Name="ClassSpecific\Hunter\Lowbie.cs" />
     <File Hash="10234" Name="ClassSpecific\Hunter\Marksman.cs" />
     <File Hash="8624" Name="ClassSpecific\Hunter\Survival.cs" />
-    <File Hash="14823" Name="ClassSpecific\Mage\Arcane.cs" />
+    <File Hash="14849" Name="ClassSpecific\Mage\Arcane.cs" />
     <File Hash="31905" Name="ClassSpecific\Mage\Common.cs" />
-    <File Hash="17527" Name="ClassSpecific\Mage\Fire.cs" />
-    <File Hash="23148" Name="ClassSpecific\Mage\Frost.cs" />
+    <File Hash="17573" Name="ClassSpecific\Mage\Fire.cs" />
+    <File Hash="23286" Name="ClassSpecific\Mage\Frost.cs" />
     <File Hash="5246" Name="ClassSpecific\Mage\Lowbie.cs" />
     <File Hash="12499" Name="ClassSpecific\Monk\Brewmaster.cs" />
     <File Hash="18196" Name="ClassSpecific\Monk\Common.cs" />
@@ -79,7 +79,7 @@
     <File Hash="4484" Name="Helpers\PVP.cs" />
     <File Hash="11754" Name="Helpers\Rest.cs" />
     <File Hash="28298" Name="Helpers\Safers.cs" />
-    <File Hash="85041" Name="Helpers\Spell.cs" />
+    <File Hash="85433" Name="Helpers\Spell.cs" />
     <File Hash="11855" Name="Helpers\Throttle.cs" />
     <File Hash="39390" Name="Helpers\Unit.cs" />
     <File Hash="53493" Name="Lists\BossList.cs" />
@@ -88,7 +88,7 @@
     <File Hash="15025" Name="Managers\HotkeyManager.cs" />
     <File Hash="2423" Name="Managers\MountManager.cs" />
     <File Hash="7829" Name="Managers\MovementManager.cs" />
-    <File Hash="10117" Name="Managers\PetManager.cs" />
+    <File Hash="10219" Name="Managers\PetManager.cs" />
     <File Hash="2754" Name="Managers\SoulstoneManager.cs" />
     <File Hash="816" Name="Managers\SpellImmunityManager.cs" />
     <File Hash="5854" Name="Managers\TalentManager.cs" />

@@ -1494,7 +1494,17 @@ namespace Singular.Helpers
             //                allowMovingWhileCasting = Me.HasAura("Molten Feather");
 
             if (!allowMovingWhileCasting)
+            {
                 allowMovingWhileCasting = HaveAllowMovingWhileCastingAura(spell);
+
+                // we will atleast check spell cooldown... we may still end up wasting buff, but this reduces the chance
+                if (!allowMovingWhileCasting && spell.CooldownTimeLeft == TimeSpan.Zero )
+                {
+                    bool castSuccess = CastBuffToAllowCastingWhileMoving();
+                    if (castSuccess)
+                        allowMovingWhileCasting = HaveAllowMovingWhileCastingAura();
+                }
+            }
 
             return allowMovingWhileCasting;
         }
@@ -1508,14 +1518,14 @@ namespace Singular.Helpers
             string spell = null;
             bool allowMovingWhileCasting = false;
 
-            if (!allowMovingWhileCasting && SingularSettings.Instance.UseCastWhileMovingBuffs)
+            if (SingularSettings.Instance.UseCastWhileMovingBuffs)
             {
-                if (Me.Class == WoWClass.Shaman || Me.Specialization == WoWSpec.DruidRestoration)
+                if (Me.Class == WoWClass.Shaman)
                     spell = "Spiritwalker's Grace";
                 else if (Me.Class == WoWClass.Mage)
                     spell = "Ice Floes";
 
-                if (!string.IsNullOrEmpty(spell) && CanCastHack(spell, Me)) // SpellManager.CanCast(spell, Me))
+                if (spell != null && CanCastHack(spell, Me)) // SpellManager.CanCast(spell, Me))
                 {
                     LogCast(spell, Me);
                     allowMovingWhileCasting = SpellManager.Cast(spell, Me);

@@ -229,30 +229,30 @@ namespace Singular.Managers
             return false;
         }
 
-        public static bool IsAutoCast(int id)
+        public static bool IsAutoCast(int id, out bool allowed)
         {
             WoWPetSpell ps = StyxWoW.Me.PetSpells.FirstOrDefault(s => s.Spell != null && s.Spell.Id == id);
-            return IsAutoCast(ps);
+            return IsAutoCast(ps, out allowed);
         }
 
-        public static bool IsAutoCast(string action)
+        public static bool IsAutoCast(string action, out bool allowed)
         {
             WoWPetSpell ps = StyxWoW.Me.PetSpells.FirstOrDefault(s => s.ToString() == action);
-            return IsAutoCast(ps);
+            return IsAutoCast(ps, out allowed);
         }
 
-        public static bool IsAutoCast(WoWPetSpell ps)
+        public static bool IsAutoCast(WoWPetSpell ps, out bool allowed)
         {
+            allowed = false;
             if (ps != null)
             {
-                List<string> svals = Lua.GetReturnValues("return GetPetActionInfo(" + ps.ActionBarIndex + ");");
+                // action bar index base 0 in HB but base 1 in LUA, so adjust
+                List<string> svals = Lua.GetReturnValues("return GetPetActionInfo(" + (ps.ActionBarIndex+1) + ");");
                 if (svals != null && svals.Count >= 7)
-                {
-                    bool allowed = false;
-                    bool active = false;
-                    bool.TryParse(svals[5], out allowed);
-                    bool.TryParse(svals[6], out active);
-                    return allowed && active;
+                {                  
+                    allowed = ("1" == svals[5]);
+                    bool active = ("1" == svals[6]);
+                    return active;
                 }
             }
 

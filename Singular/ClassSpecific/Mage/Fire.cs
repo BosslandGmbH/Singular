@@ -157,7 +157,7 @@ namespace Singular.ClassSpecific.Mage
                             ),
 
                         // 
-                        Spell.Cast("Ice Lance", ret => (Me.IsMoving || Me.CurrentTarget.IsFrozen()) && Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
+                        Spell.Cast("Ice Lance", ret => ((Me.IsMoving && Spell.HaveAllowMovingWhileCastingAura() ) || Me.CurrentTarget.IsFrozen()) && Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
                         Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Fireball") || Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire))
                         )
                     ),

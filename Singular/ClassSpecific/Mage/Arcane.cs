@@ -252,9 +252,9 @@ namespace Singular.ClassSpecific.Mage
 
                         // Living Bomb in CombatBuffs()
                         Spell.Cast("Arcane Blast", 
-                            ret => !Me.IsMoving && (!Me.HasAura("Arcane Charge", 6) || Me.HasAuraExpired("Arcane Charge", 3))),
+                            ret => !Me.HasAura("Arcane Charge", 6) || Me.HasAuraExpired("Arcane Charge", 3)),
                         Spell.Cast("Arcane Barrage",  
-                            ret => Me.IsMoving && Me.HasAuraExpired("Arcane Charge", 2)),
+                            ret => Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura() && Me.HasAuraExpired("Arcane Charge", 2)),
                         Spell.Cast("Arcane Missiles", ret => Me.HasAura("Arcane Missiles!", 2)),
                         Spell.Cast("Arcane Blast", ret => Me.ManaPercent >= 90),
                         // Spell.Cast("Scorch", ret => Me.ManaPercent < 90),

@@ -26,11 +26,39 @@ namespace Singular.ClassSpecific.Hunter
     {
         #region Common
 
+        private static bool NeedToCheckPetGrowlAutoCast { get; set; }
+
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
         private static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
         private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter(); } }
         private static bool HasTalent(HunterTalents tal) { return TalentManager.IsSelected((int)tal); }
+
+        private static int ActivePetNumber
+        {
+            get
+            {
+                if (Me.Pet != null)
+                {
+                    // map Call Pet spells to the # for ease of reference
+                    switch (Me.Pet.CreatedBySpellId)
+                    {
+                        case 883:
+                            return 1;
+                        case 83242:
+                            return 2;
+                        case 83243:
+                            return 3;
+                        case 83244:
+                            return 4;
+                        case 83245:
+                            return 5;
+                    }
+                }
+
+                return 0;
+            }
+        }
 
         #endregion
 
@@ -44,28 +72,48 @@ namespace Singular.ClassSpecific.Hunter
 
         static void Hunter_OnWoWContextChanged(object sender, WoWContextEventArg e)
         {
-            // Disable pet growl in instances but enable it outside.
-            if ( e.CurrentContext == WoWContext.Instances )
-            {
-                if (!PetManager.IsAutoCast(2649))
-                    Logger.Write(Color.White, "Pet: Growl Auto-Cast Already Disabled");
-                else
-                {
-                    Logger.Write(Color.White, "Pet: Disabling 'Growl' Auto-Cast");
-                    Lua.DoString("DisableSpellAutocast(GetSpellInfo(2649))");
-                }
-            }
-            else
-            {
-                if (PetManager.IsAutoCast(2649))
-                    Logger.Write(Color.White, "Pet: Growl Auto-Cast Already Enabled");
-                else
-                {
-                    Logger.Write(Color.White, "Pet: Enabling 'Growl' Auto-Cast");
-                    Lua.DoString("EnableSpellAutocast(GetSpellInfo(2649))");
-                }
-            }
+            NeedToCheckPetGrowlAutoCast = true;
         }
+
+        static Composite CreatePetHandleGrowlAutoCast()
+        {
+            return new Decorator(
+                req => NeedToCheckPetGrowlAutoCast && Me.GotAlivePet,
+                new Action(ret =>
+                {
+                    bool allowed;
+                    bool active = PetManager.IsAutoCast(2649, out allowed);
+
+                    // Disable pet growl in instances but enable it outside.
+                    if (!allowed)
+                        Logger.Write(Color.White, "Pet: Growl is NOT an auto-cast ability for this Pet");
+                    else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                    {
+                        if (!active)
+                            Logger.Write(Color.White, "Pet: Growl Auto-Cast Already Disabled");
+                        else
+                        {
+                            Logger.Write(Color.White, "Pet: Disabling 'Growl' Auto-Cast");
+                            Lua.DoString("DisableSpellAutocast(GetSpellInfo(2649))");
+                        }
+                    }
+                    else
+                    {
+                        if (active)
+                            Logger.Write(Color.White, "Pet: Growl Auto-Cast Already Enabled");
+                        else
+                        {
+                            Logger.Write(Color.White, "Pet: Enabling 'Growl' Auto-Cast");
+                            Lua.DoString("EnableSpellAutocast(GetSpellInfo(2649))");
+                        }
+                    }
+
+                    NeedToCheckPetGrowlAutoCast = false;
+                })
+                );
+        }
+
+
 
         #endregion
 
@@ -435,95 +483,88 @@ namespace Singular.ClassSpecific.Hunter
 
         public static Composite CreateHunterCallPetBehavior(bool reviveInCombat)
         {
-            return new Decorator(
-                ret =>  !SingularSettings.Instance.DisablePetUsage 
-                    // && (!Me.GotAlivePet || Pet.PetNumber != PetWeWant)
-                    && !Me.GotAlivePet 
-                    && PetManager.PetSummonAfterDismountTimer.IsFinished 
-                    && !Me.Mounted 
-                    && !Me.OnTaxi,
+            return new PrioritySelector(
+                new Decorator(
+                    ret =>  !SingularSettings.Instance.DisablePetUsage 
+                        && (!Me.GotAlivePet || ActivePetNumber != PetWeWant)
+                        && PetManager.PetSummonAfterDismountTimer.IsFinished 
+                        && !Me.Mounted 
+                        && !Me.OnTaxi,
 
-                new PrioritySelector(
+                    new PrioritySelector(
 
-                    Spell.WaitForCast(),
+                        Spell.WaitForCastOrChannel(),
 
-                    new Action( r => {
-                        string line = string.Format("CreateHunterCallPetBehavior({0}):  ", reviveInCombat); 
-                        if ( Pet == null )
-                            line += "no pet currently";
-                        else if ( !Pet.IsAlive )
-                            line += "pet is dead";
-                        else 
-                            line += string.Format( "have pet {0} but want pet {1}", Pet.PetNumber, PetWeWant );
+                        new Action( r => {
+                            string line = string.Format("CreateHunterCallPetBehavior({0}):  ", reviveInCombat); 
+                            if ( Pet == null )
+                                line += "no pet currently";
+                            else if ( !Pet.IsAlive )
+                                line += "pet is dead";
+                            else 
+                                line += string.Format( "have pet {0} but want pet {1}", ActivePetNumber, PetWeWant );
 
-                        Logger.WriteDebug(line);
-                        return RunStatus.Failure;
-                        }),
+                            Logger.WriteDebug(line);
+                            return RunStatus.Failure;
+                            }),
 
-                    // try instant rez for tenacity pets
-                    new Decorator(
-                        ret => Pet != null && !Pet.IsAlive && Me.Combat && reviveInCombat && SpellManager.CanCast("Heart of the Phoenix"),
-                        new Sequence(
-                            new Action(ret => Logger.WriteDebug("CallPet: attempting Heart of the Phoenix")),
-                            Spell.Cast("Heart of the Phoenix", mov => true, on => Me, req => true, cancel => false),
-                            Helpers.Common.CreateWaitForLagDuration(),
-                            new Wait(TimeSpan.FromMilliseconds(350), ret => Me.GotAlivePet, new ActionAlwaysSucceed())
-                            )
-                        ),
-
-                    // try Revive always (since sometimes pet is dead and we don't get ptr to it)
-                    new Throttle(3, new Decorator(
-                        ret => (Pet == null || !Pet.IsAlive) && (!Me.Combat || reviveInCombat),
-                        new Sequence(
-                            new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to call pet"),
-                                new ActionAlwaysSucceed()
-                                ),
-                            new Action(ret => Logger.WriteDebug("CallPet: attempting Revive Pet - cancast={0}", SpellManager.CanCast("Revive Pet"))),
-                            Spell.Cast("Revive Pet", mov => true, on => Me, req => true, cancel => Me.GotAlivePet),
-                            Helpers.Common.CreateWaitForLagDuration(),
-                            new Wait(TimeSpan.FromMilliseconds(500), ret => Me.GotAlivePet, new ActionAlwaysSucceed())
-                            )
-                        )),
-#if HB_PET_NUMBER_FIXED
-                    // dismiss if we don't have correct Pet out
-                    new Decorator(
-                        ret => (Pet != null && Me.PetNumber != PetWeWant ),
-                        new Sequence(
-                            new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to dismiss pet"),
-                                new ActionAlwaysSucceed()
-                                ),
-                            new Action(ret => Logger.WriteDebug("CallPet: attempting Dismiss Pet - cancast={0}", SpellManager.CanCast("Dismiss Pet"))),
-                            Spell.Cast("Dismiss Pet", mov => true, on => Me, req => true, cancel => false),
-                            Helpers.Common.CreateWaitForLagDuration(),
-                            new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
-                            )
-                        ),
-#endif
-                    // lastly, we Call Pet
-                    new Decorator(
-                        ret => Pet == null,
-                        new Sequence(
-                            new Action(ret => Logger.WriteDebug("CallPet: attempting Call Pet {0} - cancast={1}", PetWeWant, SpellManager.CanCast("Call Pet " + PetWeWant.ToString(), Pet))),
-                            // new Action(ret => PetManager.CallPet(HunterSettings.PetNumber.ToString())),
-                            Spell.Cast(ret => "Call Pet " + PetWeWant.ToString(), on => Me),
-
-                            Helpers.Common.CreateWaitForLagDuration(),
-                            new WaitContinue(1, ret => Me.GotAlivePet, new ActionAlwaysSucceed())
-#if DONT_APPEAR_TO_NEED
-                            ,
-                            new Decorator(
-                                ret => !Me.GotAlivePet && (!Me.Combat || reviveInCombat),
-                                new Sequence(
-                                    new Action( ret => Logger.WriteDebug( "CallPet: attempting fall through Revive Pet - cancast={0}", SpellManager.CanCast("Revive Pet", Pet))),
-                                    Spell.BuffSelf("Revive Pet")
-                                    )
+                        // try instant rez for tenacity pets
+                        new Decorator(
+                            ret => Pet != null && !Pet.IsAlive && Me.Combat && reviveInCombat && SpellManager.CanCast("Heart of the Phoenix"),
+                            new Sequence(
+                                new Action(ret => Logger.WriteDebug("CallPet: attempting Heart of the Phoenix")),
+                                Spell.Cast("Heart of the Phoenix", mov => true, on => Me, req => true, cancel => false),
+                                Helpers.Common.CreateWaitForLagDuration(),
+                                new Wait(TimeSpan.FromMilliseconds(350), ret => Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )
-#endif
+                            ),
+
+                        // try Revive always (since sometimes pet is dead and we don't get ptr to it)
+                        new Throttle(3, new Decorator(
+                            ret => (Pet == null || !Pet.IsAlive) && (!Me.Combat || reviveInCombat),
+                            new Sequence(
+                                new PrioritySelector(
+                                    Movement.CreateEnsureMovementStoppedBehavior(reason: "to call pet"),
+                                    new ActionAlwaysSucceed()
+                                    ),
+                                new Action(ret => Logger.WriteDebug("CallPet: attempting Revive Pet - cancast={0}", SpellManager.CanCast("Revive Pet"))),
+                                Spell.Cast("Revive Pet", mov => true, on => Me, req => true, cancel => Me.GotAlivePet),
+                                Helpers.Common.CreateWaitForLagDuration(),
+                                new Wait(TimeSpan.FromMilliseconds(500), ret => Me.GotAlivePet, new ActionAlwaysSucceed())
+                                )
+                            )),
+
+                        // dismiss if we don't have correct Pet out
+                        new Decorator(
+                            ret => (Pet != null && ActivePetNumber != PetWeWant ),
+                            new Sequence(
+                                new PrioritySelector(
+                                    Movement.CreateEnsureMovementStoppedBehavior(reason: "to dismiss pet"),
+                                    new ActionAlwaysSucceed()
+                                    ),
+                                new Action(ret => Logger.WriteDebug("CallPet: attempting Dismiss Pet - cancast={0}", SpellManager.CanCast("Dismiss Pet"))),
+                                Spell.Cast("Dismiss Pet", mov => true, on => Me, req => true, cancel => false),
+                                Helpers.Common.CreateWaitForLagDuration(),
+                                new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
+                                )
+                            ),
+
+                        // lastly, we Call Pet
+                        new Decorator(
+                            ret => Pet == null,
+                            new Sequence(
+                                new Action(ret => Logger.WriteDebug("CallPet: attempting Call Pet {0} - cancast={1}", PetWeWant, SpellManager.CanCast("Call Pet " + PetWeWant.ToString(), Pet))),
+                                // new Action(ret => PetManager.CallPet(HunterSettings.PetNumber.ToString())),
+                                Spell.Cast(ret => "Call Pet " + PetWeWant.ToString(), on => Me),
+
+                                new WaitContinue(2, ret => Me.GotAlivePet, new ActionAlwaysSucceed()),
+                                new Action( r => NeedToCheckPetGrowlAutoCast = true )
+                                )
                             )
                         )
-                    )
+                    ),
+
+                    CreatePetHandleGrowlAutoCast()
                 );
         }
 

@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
                         Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Brain Freeze")),
-                        Spell.Cast("Ice Lance", ret => (Me.IsMoving || Me.ActiveAuras.ContainsKey("Fingers of Frost")) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                        Spell.Cast("Ice Lance", ret => ((Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura()) || Me.ActiveAuras.ContainsKey("Fingers of Frost")) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                         new Decorator(
@@ -208,7 +208,7 @@ namespace Singular.ClassSpecific.Mage
                                  Spell.Cast("Fireball")
                                  )),
                          Spell.Cast("Ice Lance",
-                             ret => Me.ActiveAuras.ContainsKey("Fingers of Frost") || Me.CurrentTarget.IsFrozen() || Me.IsMoving),
+                             ret => Me.ActiveAuras.ContainsKey("Fingers of Frost") || Me.CurrentTarget.IsFrozen() || (Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura())),
 
                          Spell.Cast("Frostbolt")
                          )
@@ -272,7 +272,7 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
                         Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Brain Freeze")),
-                        Spell.Cast("Ice Lance", ret => Me.IsMoving || Me.ActiveAuras.ContainsKey("Fingers of Frost")),
+                        Spell.Cast("Ice Lance", ret => (Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura()) || Me.ActiveAuras.ContainsKey("Fingers of Frost")),
                         Spell.Cast("Frostbolt")
                         )
                     ),

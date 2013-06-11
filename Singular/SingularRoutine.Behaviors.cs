@@ -279,6 +279,8 @@ namespace Singular
             return "Singular." + typ.ToString();
         }
 
+        static DateTime _allowQuietUntil = DateTime.MinValue;
+
         private static bool AllowBehaviorUsage()
         {
             // Opportunity alert -- the decision whether a Combat Routine should fight or not
@@ -289,11 +291,27 @@ namespace Singular
 
             // disable if Questing and in a Quest Vehicle (now requires setting as well)
             if (IsQuestBotActive && SingularSettings.Instance.DisableInQuestVehicle && Me.InVehicle)
+            {
+                if (DateTime.Now > _allowQuietUntil)
+                {
+                    _allowQuietUntil = DateTime.Now + TimeSpan.FromSeconds(1);
+                    Logger.Write(Color.White, "Behaviors disabled while in Quest Vehicle due to user settings");
+                }
+
                 return false;
+            }
 
             // disable for Pet Battles (hopefully a temporary test)
-            if (PetBattleInProgress())
+            if (!Me.CurrentMap.IsRaid && PetBattleInProgress())
+            {
+                if (DateTime.Now > _allowQuietUntil)
+                {
+                    _allowQuietUntil = DateTime.Now + TimeSpan.FromSeconds(1);
+                    Logger.Write(Color.White, "Behaviors disabled in Pet Fight - contact Pet Combat bot/plugin author to fix this");
+                }
+
                 return false;
+            }
 
             return true;
         }
@@ -318,7 +336,14 @@ namespace Singular
 
         private static bool PetBattleInProgress()
         {
-            return 1 == Lua.GetReturnVal<int>("return C_PetBattles.IsInBattle()", 0);
+            try
+            {
+                return 1 == Lua.GetReturnVal<int>("return C_PetBattles.IsInBattle()", 0);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>

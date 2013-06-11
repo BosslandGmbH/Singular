@@ -30,6 +30,7 @@ namespace Singular.ClassSpecific.Warlock
         private static WarlockSettings WarlockSettings { get { return SingularSettings.Instance.Warlock(); } }
 
         private static int _mobCount;
+        private static bool _InstantRoF;
 
         #region Normal Rotation
 
@@ -63,6 +64,8 @@ namespace Singular.ClassSpecific.Warlock
         [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.All)]
         public static Composite CreateWarlockDestructionNormalCombat()
         {
+            _InstantRoF = Me.HasAura("Aftermath");
+
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
@@ -84,10 +87,26 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateAoeBehavior(),
 
+                        // Noxxic
+                        new Decorator(
+                            req => WarlockSettings.DestructionSpellPriority == 1,
+                            new PrioritySelector(
+                                Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
+                                Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
+                                Spell.Cast("Conflagrate"),
+                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire"), false),
+
+                                Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
+                                Spell.Cast("Incinerate"),
+
+                                Spell.Cast("Fel Flame", ret => Me.IsMoving && Me.CurrentTarget.GetAuraTimeLeft("Immolate").TotalMilliseconds.Between(300, 3000))
+                                )
+                            ),
+
+                        // Icy Veins
                         new Decorator(
                             req => WarlockSettings.DestructionSpellPriority != 1,
                             new PrioritySelector(
-                                // Icy Veins
                                 Spell.Cast("Shadowburn", ret =>
                                 {
                                     if (Me.CurrentTarget.HealthPercent < 20)
@@ -106,11 +125,11 @@ namespace Singular.ClassSpecific.Warlock
 
                                 Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
                                 Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") >= 2),
-                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => !Me.CurrentTarget.IsMoving && Me.CurrentTarget.HasAuraExpired("Rain of Fire", 1, true), false),
+                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire"), false),
 
                                 Spell.Cast("Chaos Bolt", ret =>
                                 {
-                                    if (BackdraftStacks >= 3)
+                                    if (BackdraftStacks < 3)
                                     {
                                         if (CurrentBurningEmbers >= 35)
                                             return true;
@@ -128,23 +147,6 @@ namespace Singular.ClassSpecific.Warlock
                                 )
                             ),
 
-
-                        new Decorator(
-                            req => WarlockSettings.DestructionSpellPriority == 1,
-                            new PrioritySelector(
-                                // Noxxic
-                                Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
-                                Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
-                                Spell.Cast("Conflagrate"),
-                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire"), false),
-
-                                Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
-                                Spell.Cast("Incinerate"),
-
-                                Spell.Cast("Fel Flame", ret => Me.IsMoving && Me.CurrentTarget.GetAuraTimeLeft("Immolate").TotalMilliseconds.Between(300, 3000))
-                                )
-                            ),
-
                         Spell.Cast("Drain Life", ret => Me.HealthPercent <= WarlockSettings.DrainLifePercentage && !Group.AnyHealerNearby),
                         Spell.Cast("Shadow Bolt")
                         )
@@ -156,12 +158,17 @@ namespace Singular.ClassSpecific.Warlock
         public static Composite CreateAoeBehavior()
         {
             return new Decorator( 
-                ret => Spell.UseAOE,
+                ret => Spell.UseAOE && _mobCount > 1,
                 new PrioritySelector(
 
                     new Decorator(
-                        ret => _mobCount.Between( 2, 3),
-                        Spell.Buff("Immolate", true, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault( u => u.HasAuraExpired("Immolate", 3) && Spell.CanCastHack("Immolate", u) && Me.IsSafelyFacing(u, 150)), req => true)
+                        ret => _mobCount < 4,
+                        Spell.Buff("Immolate", true, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.HasAuraExpired("Immolate", 3) && Spell.CanCastHack("Immolate", u) && Me.IsSafelyFacing(u, 150)), req => true)
+                        ),
+
+                    new PrioritySelector(
+                        ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.HasMyAura("Havoc")),
+                        Spell.Buff("Havoc", on => ((WoWUnit)on) ?? Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid))
                         ),
 
                     new Decorator(
@@ -172,21 +179,11 @@ namespace Singular.ClassSpecific.Warlock
                                 Spell.CastOnGround( "Rain of Fire", 
                                     loc => ((WoWUnit)loc).Location, 
                                     req => req != null 
+                                        && _InstantRoF
                                         && !Me.HasAura( "Rain of Fire")
                                         && 3 <= Unit.NearbyUnfriendlyUnits.Count(u => ((WoWUnit)req).Location.Distance(u.Location) <= 8))
                                 ),
-                            new PrioritySelector(
-                                ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where(u => Me.IsSafelyFacing(u)), ClusterType.Radius, 15f),
-                                new Sequence(
-                                    Spell.BuffSelf( "Fire and Brimstone", req => req != null && 3 <= Unit.NearbyUnfriendlyUnits.Count(u => ((WoWUnit)req).Location.Distance(u.Location) <= 15f)),
-                                    new PrioritySelector(
-                                        Spell.BuffSelf("Havoc"),
-                                        Spell.Cast("Conflagarate", onUnit => (WoWUnit) onUnit),
-                                        Spell.Buff("Immolate", onUnit => (WoWUnit)onUnit),
-                                        Spell.Cast("Incinerate", onUnit => (WoWUnit) onUnit)
-                                        )
-                                    )
-                                )
+                                Spell.Buff("Fire and Brimstone", on => Me.CurrentTarget, req => Unit.NearbyUnfriendlyUnits.Count(u => Me.CurrentTarget.Location.Distance(u.Location) <= 10f) >= 4)
                             )
                         )
                     )
@@ -226,26 +223,42 @@ namespace Singular.ClassSpecific.Warlock
 
         private static Composite CreateWarlockDiagnosticOutputBehavior(string s)
         {
-            return new Throttle(1,
-                new Decorator(
-                    ret => SingularSettings.Debug,
-                    new Action(ret =>
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
+
+            return new ThrottlePasses(1, 1,
+                new Action(ret =>
+                {
+                    string msg;
+                    msg = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, embers={3}, backdraft={4}, conflag={5}, aoe={6}",
+                        s,
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        CurrentBurningEmbers,
+                        BackdraftStacks,
+                        Spell.GetCharges("Conflagrate"),
+                        _mobCount
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
                     {
-                        WoWUnit target = Me.CurrentTarget ?? Me;
-                        Logger.WriteFile(LogLevel.Diagnostic, ".... [{0}] h={1:F1}%/m={2:F1}%, embers={3}, backdraft={4}, immolate={5}, enemy={6}% @ {7:F1} yds, mobcnt={8}",
-                            s,
-                            Me.HealthPercent,
-                            Me.ManaPercent,
-                            CurrentBurningEmbers,
-                            BackdraftStacks,
-                            (long)target.GetAuraTimeLeft("Immolate", true).TotalMilliseconds,
-                            (int)target.HealthPercent,
+                        msg += string.Format(
+                            ", {0}, {1:F1}%, dies={2} secs, {3:F1} yds, loss={4}, face={5}, immolate={6}, rainfire={7}",
+                            target.SafeName(),
+                            target.HealthPercent,
+                            target.TimeToDeath(),
                             target.Distance,
-                            _mobCount
+                            target.InLineOfSpellSight.ToYN(),
+                            Me.IsSafelyFacing(target).ToYN(),
+                            (long)target.GetAuraTimeLeft("Immolate", true).TotalMilliseconds,
+                            target.HasMyAura("Rain of Fire").ToYN()
                             );
-                        return RunStatus.Failure;
-                    })
-                )
+                    }
+
+                    Logger.WriteDebug(Color.LightYellow, msg);
+                    return RunStatus.Failure;
+                })
             );
         }
     }

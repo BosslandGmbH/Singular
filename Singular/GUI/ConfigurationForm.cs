@@ -157,6 +157,9 @@ namespace Singular.GUI
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.PriestHoly, SingularSettings.Instance.Priest().HolyBattleground));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.PriestHoly, SingularSettings.Instance.Priest().HolyInstance));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.PriestHoly, SingularSettings.Instance.Priest().HolyRaid));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscBattleground));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscInstance));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscRaid));
             }
 
             cboHealContext.Enabled = cboHealContext.Items.Count > 0;
@@ -164,16 +167,30 @@ namespace Singular.GUI
             foreach (var obj in cboHealContext.Items)
             {
                 HealContextItem ctx = (HealContextItem)obj;
-                if (ctx.Spec == StyxWoW.Me.Specialization && ctx.Context == SingularRoutine.CurrentHealContext)
+                if (ctx.Spec == StyxWoW.Me.Specialization)
                 {
-                    cboHealContext.SelectedItem = ctx;
-                    break;
+                    if (ctx.Context == SingularRoutine.CurrentHealContext)
+                    {
+                        cboHealContext.SelectedItem = ctx;
+                        break;
+                    }
+                    if (SingularRoutine.CurrentHealContext == HealingContext.Normal && ctx.Spec == WoWSpec.PriestHoly && ctx.Context == HealingContext.Instances)
+                    {
+                        cboHealContext.SelectedItem = ctx;
+                        break;
+                    }
+                    if (SingularRoutine.CurrentHealContext == HealingContext.Normal && ctx.Spec == WoWSpec.PriestDiscipline && ctx.Context == HealingContext.Instances)
+                    {
+                        cboHealContext.SelectedItem = ctx;
+                        break;
+                    }
                 }
             }
 
             if (cboHealContext.SelectedItem == null && cboHealContext.Items.Count > 0)
-                cboHealContext.SelectedIndex = 0;
-
+            {
+                    cboHealContext.SelectedIndex = 0;
+            }
         }
 
         private void Instance_OnTargetListUpdateFinished(object context)

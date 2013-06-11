@@ -1389,7 +1389,7 @@ namespace Singular.Helpers
                                 TimeSpan.FromMilliseconds(350),
                                 ret =>
                                 {
-                                    if (Spell.GcdTimeLeft.Milliseconds > 750 || Me.CurrentCastTimeLeft.Milliseconds > 750)
+                                    if (Spell.GcdTimeLeft.TotalMilliseconds > 750 || Me.CurrentCastTimeLeft.TotalMilliseconds > 750 || Me.CurrentChannelTimeLeft.TotalMilliseconds > 750)
                                         return true;
 
                                     return false;
@@ -1411,7 +1411,7 @@ namespace Singular.Helpers
                                     ),
 
                                 // finally, wait at this point until Cast completes
-                // .. always return success here since based on flags we cast something
+                                // .. always return success here since based on flags we cast something
                                 new Wait(10,
                                     ret =>
                                     {

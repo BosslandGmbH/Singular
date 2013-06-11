@@ -201,7 +201,7 @@ namespace Singular.ClassSpecific.Priest
             behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.PowerWordShield) + 200, "Tank - Power Word: Shield @ " + PriestSettings.HolyHeal.PowerWordShield + "%", "Power Word: Shield",
                 Spell.Cast("Power Word: Shield", on =>
                     {
-                        WoWUnit unit = HealerManager.GetBestTankTargetForPWS(PriestSettings.HolyHeal.PowerWordShield);
+                        WoWUnit unit = Common.GetBestTankTargetForPWS(PriestSettings.HolyHeal.PowerWordShield);
                         if (unit != null && Spell.CanCastHack("Power Word: Shield", unit, skipWowCheck: true))
                         {
                             Logger.WriteDebug("Buffing Power Word: Shield ON TANK: {0}", unit.SafeName());
@@ -283,7 +283,7 @@ namespace Singular.ClassSpecific.Priest
                 );
 
             if (PriestSettings.HolyHeal.PrayerOfMending  != 0 )
-            behavs.AddBehavior(397, "Prayer of Mending @ " + PriestSettings.HolyHeal.PrayerOfMending + "% MinCount: " + PriestSettings.HolyHeal.CountPrayerOfMending, "Cascade",
+            behavs.AddBehavior(397, "Prayer of Mending @ " + PriestSettings.HolyHeal.PrayerOfMending + "% MinCount: " + PriestSettings.HolyHeal.CountPrayerOfMending, "Prayer of Mending",
                 new Decorator(
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     new PrioritySelector(

@@ -486,7 +486,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 new Decorator(
                     ret =>  !SingularSettings.Instance.DisablePetUsage 
-                        && (!Me.GotAlivePet || ActivePetNumber != PetWeWant)
+                        && (!Me.GotAlivePet || (ActivePetNumber != PetWeWant && ActivePetNumber != 0 ))
                         && PetManager.PetSummonAfterDismountTimer.IsFinished 
                         && !Me.Mounted 
                         && !Me.OnTaxi,

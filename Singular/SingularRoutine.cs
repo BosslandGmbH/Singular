@@ -148,27 +148,35 @@ namespace Singular
             HotkeyDirector.Pulse();
         }
 
-        private static ulong _lastCheckGuid = 0;
+        private static ulong _lastCheckCurrTargetGuid = 0;
+        private static ulong _lastCheckPetsTargetGuid = 0;
 
         private void CheckCurrentTarget()
         {
-            if ((!SingularSettings.Debug || Me.CurrentTargetGuid == _lastCheckGuid))
+            if (!SingularSettings.Debug)
                 return;
 
+            CheckTarget(Me.CurrentTarget, ref _lastCheckCurrTargetGuid, "YourCurrentTarget");
+            if ( Me.GotAlivePet )
+                CheckTarget(Me.Pet.CurrentTarget, ref _lastCheckPetsTargetGuid, "PetsCurrentTarget");
+        }
+
+
+        private void CheckTarget(WoWUnit unit, ref ulong prevGuid, string description)
+        {
             // there are moments where CurrentTargetGuid != 0 but CurrentTarget == null. following
             // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
-            if (Me.CurrentTarget == null)
+            if (unit == null)
             {
-                if (_lastCheckGuid != 0)
+                if (prevGuid != 0)
                 {
-                    _lastCheckGuid = 0;
-                    Logger.WriteDebug("YourCurrentTarget: changed to: (null)");
+                    prevGuid = 0;
+                    Logger.WriteDebug( description + ": changed to: (null)");
                 }
             }
-            else
+            else if (unit.Guid != prevGuid )
             {
-                WoWUnit target = Me.CurrentTarget;
-                _lastCheckGuid = Me.CurrentTarget.Guid;
+                prevGuid = unit.Guid;
 
                 string info = "";
                 if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
@@ -178,27 +186,27 @@ namespace Singular
                     info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
 
                 string playerInfo = "N";
-                if (target.IsPlayer)
+                if (unit.IsPlayer)
                 {
-                    WoWPlayer p = target.ToPlayer();
+                    WoWPlayer p = unit.ToPlayer();
                     playerInfo = string.Format("Y, Friend={0}, IsPvp={1}, CtstPvp={2}, FfaPvp={3}", Me.IsHorde == p.IsHorde, p.IsPvPFlagged, p.ContestedPvPFlagged, p.IsFFAPvPFlagged);
                 }
 
-                Logger.WriteDebug("YourCurrentTarget: changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, trivial={5}, player={6}, attackable={7}, hostile={8}, entry={9}, faction={10}, loss={11}, facing={12}, blacklist={13}" + info,
-                    target.SafeName(),
-                    target.HealthPercent,
-                    target.MaxHealth,
-                    target.Distance,
-                    target.CombatReach,
-                    target.IsTrivial(),
+                Logger.WriteDebug( description + ": changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, trivial={5}, player={6}, attackable={7}, hostile={8}, entry={9}, faction={10}, loss={11}, facing={12}, blacklist={13}" + info,
+                    unit.SafeName(),
+                    unit.HealthPercent,
+                    unit.MaxHealth,
+                    unit.Distance,
+                    unit.CombatReach,
+                    unit.IsTrivial(),
                     playerInfo,
-                    target.Attackable.ToYN(),
-                    target.IsHostile.ToYN(),
-                    target.Entry,
-                    target.FactionId,
-                    target.InLineOfSpellSight.ToYN(),
-                    Me.IsSafelyFacing(target).ToYN(),
-                    Blacklist.Contains(target.Guid, BlacklistFlags.Combat).ToYN()
+                    unit.Attackable.ToYN(),
+                    unit.IsHostile.ToYN(),
+                    unit.Entry,
+                    unit.FactionId,
+                    unit.InLineOfSpellSight.ToYN(),
+                    Me.IsSafelyFacing(unit).ToYN(),
+                    Blacklist.Contains(unit.Guid, BlacklistFlags.Combat).ToYN()
                     );
             }
         }

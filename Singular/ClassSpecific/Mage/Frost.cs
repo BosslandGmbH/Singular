@@ -60,6 +60,22 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
+        [Behavior(BehaviorType.Heal, WoWClass.Mage, WoWSpec.MageFrost)]
+        public static Composite CreateMageFrostHeal()
+        {
+            return new PrioritySelector(
+                CreateFrostDiagnosticOutputBehavior("Combat")
+                );
+        }
+
+        [Behavior(BehaviorType.PullBuffs, WoWClass.Mage, WoWSpec.MageFrost)]
+        public static Composite CreateMageFrostPullBuffs()
+        {
+            return new PrioritySelector(
+                CreateFrostDiagnosticOutputBehavior("Pull")
+                );
+        }
+
         [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageFrost, WoWContext.Normal)]
         public static Composite CreateMageFrostNormalCombat()
         {
@@ -72,8 +88,6 @@ namespace Singular.ClassSpecific.Mage
                  new Decorator(
                      ret => !Spell.IsGlobalCooldown(),
                      new PrioritySelector(
-
-                        CreateFrostDiagnosticOutputBehavior(),
 
                         Common.CreateMageAvoidanceBehavior(null, null),
 
@@ -172,8 +186,6 @@ namespace Singular.ClassSpecific.Mage
                      ret => !Spell.IsGlobalCooldown(),
                      new PrioritySelector(
 
-                         CreateFrostDiagnosticOutputBehavior(),
-
                         Common.CreateMageAvoidanceBehavior(null, null),
 
                          CreateSummonWaterElemental(),
@@ -231,8 +243,6 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-
-                         CreateFrostDiagnosticOutputBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
@@ -397,59 +407,62 @@ namespace Singular.ClassSpecific.Mage
 
         #region Diagnostics
 
-        private static Composite CreateFrostDiagnosticOutputBehavior()
+        private static Composite CreateFrostDiagnosticOutputBehavior(string state = null)
         {
-            return new Decorator(
-                ret => SingularSettings.Debug,
-                new Throttle(1,
-                    new Action(ret =>
-                    {
-                        string log;
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
 
-                        log = string.Format(".... h={0:F1}%/m={1:F1}%, pet={2:F1}%, fof={3}, brnfrz={4}",
-                            Me.HealthPercent,
-                            Me.ManaPercent,
-                            Me.GotAlivePet ? Me.Pet.HealthPercent : 0,
-                            Me.GetAuraStacks("Fingers of Frost"),
-                            (long)Me.GetAuraTimeLeft("Brain Freeze", true).TotalMilliseconds
+            return new ThrottlePasses(1, 1,
+                new Action(ret =>
+                {
+                    string log;
+
+                    log = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, pet={3:F1}%, fof={4}, brnfrz={5}",
+                        state ?? Dynamics.CompositeBuilder.CurrentBehaviorType.ToString(),
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        Me.GotAlivePet ? Me.Pet.HealthPercent : 0,
+                        Me.GetAuraStacks("Fingers of Frost"),
+                        (long)Me.GetAuraTimeLeft("Brain Freeze", true).TotalMilliseconds
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
+                    {
+                        log += string.Format(", ttd={0}, th={1:F1}%, dist={2:F1}, melee={3}, face={4}, loss={5}, fboltstks={6}",
+                            target.TimeToDeath(),
+                            target.HealthPercent,
+                            target.Distance,
+                            target.IsWithinMeleeRange,
+                            Me.IsSafelyFacing(target),
+                            target.InLineOfSpellSight,
+                            target.GetAuraStacks("Frostbolt", true)
                             );
 
-                        WoWUnit target = Me.CurrentTarget;
-                        if (target != null)
-                        {
-                            log += string.Format(", ttd={0}, th={1:F1}%, dist={2:F1}, face={3}, loss={4}, fboltstks={5}",
-                                target.TimeToDeath(),
-                                target.HealthPercent,
-                                target.Distance,
-                                Me.IsSafelyFacing(target),
-                                target.InLineOfSpellSight,
-                                target.GetAuraStacks("Frostbolt", true)
-                                );
+                        if (Common.HasTalent(MageTalents.NetherTempest))
+                            log += string.Format(", nethtmp={0}", (long)target.GetAuraTimeLeft("Nether Tempest", true).TotalMilliseconds);
+                        else if (Common.HasTalent(MageTalents.LivingBomb ))
+                            log += string.Format( ", livbomb={0}", (long)target.GetAuraTimeLeft("Living Bomb", true).TotalMilliseconds);
+                        else if (Common.HasTalent(MageTalents.FrostBomb))
+                            log += string.Format( ", frstbmb={0}", (long)target.GetAuraTimeLeft("Frost Bomb", true).TotalMilliseconds);
 
-                            if (Common.HasTalent(MageTalents.NetherTempest))
-                                log += string.Format(", nethtmp={0}", (long)target.GetAuraTimeLeft("Nether Tempest", true).TotalMilliseconds);
-                            else if (Common.HasTalent(MageTalents.LivingBomb ))
-                                log += string.Format( ", livbomb={0}", (long)target.GetAuraTimeLeft("Living Bomb", true).TotalMilliseconds);
-                            else if (Common.HasTalent(MageTalents.FrostBomb))
-                                log += string.Format( ", frstbmb={0}", (long)target.GetAuraTimeLeft("Frost Bomb", true).TotalMilliseconds);
+                        if (target.HasAura("Freeze"))
+                            log += string.Format(", freeze={0}", (long)target.GetAuraTimeLeft("Freeze", true).TotalMilliseconds);
+                        else if (target.HasAura("Frost Nova"))
+                            log += string.Format(", frostnova={0}", (long)target.GetAuraTimeLeft("Frost Nova", true).TotalMilliseconds);
+                        else if (target.HasAura("Ring of Frost"))
+                            log += string.Format(", ringfrost={0}", (long)target.GetAuraTimeLeft("Ring of Frost", true).TotalMilliseconds);
+                        else if (target.HasAura("Frostjaw"))
+                            log += string.Format(", frostjaw={0}", (long)target.GetAuraTimeLeft("Frostjaw", true).TotalMilliseconds);
+                        else if (target.HasAura("Ice Ward"))
+                            log += string.Format(", iceward={0}", (long)target.GetAuraTimeLeft("Ice Ward", true).TotalMilliseconds);
+                        else if (target.IsFrozen())
+                            log += string.Format(", isfrozen=Yes");
+                    }
 
-                            if (target.HasAura("Freeze"))
-                                log += string.Format(", freeze={0}", (long)target.GetAuraTimeLeft("Freeze", true).TotalMilliseconds);
-                            else if (target.HasAura("Frost Nova"))
-                                log += string.Format(", frostnova={0}", (long)target.GetAuraTimeLeft("Frost Nova", true).TotalMilliseconds);
-                            else if (target.HasAura("Ring of Frost"))
-                                log += string.Format(", ringfrost={0}", (long)target.GetAuraTimeLeft("Ring of Frost", true).TotalMilliseconds);
-                            else if (target.HasAura("Frostjaw"))
-                                log += string.Format(", frostjaw={0}", (long)target.GetAuraTimeLeft("Frostjaw", true).TotalMilliseconds);
-                            else if (target.HasAura("Ice Ward"))
-                                log += string.Format(", iceward={0}", (long)target.GetAuraTimeLeft("Ice Ward", true).TotalMilliseconds);
-                            else if (target.IsFrozen())
-                                log += string.Format(", isfrozen=Yes");
-                        }
-
-                        Logger.WriteDebug(Color.AntiqueWhite, log);
-                    })
-                    )
+                    Logger.WriteDebug(Color.AntiqueWhite, log);
+                    return RunStatus.Failure;
+                })
                 );
         }
 

@@ -199,6 +199,9 @@ namespace Singular.Helpers
 
         public static bool ValidUnit(WoWUnit p)
         {
+            if (p == null || !p.IsValid)
+                return false;
+
             if (StyxWoW.Me.IsInInstance && IgnoreMobs.Contains(p.Entry))
                 return false;
 
@@ -346,6 +349,34 @@ namespace Singular.Helpers
         private static bool HasAura(this WoWUnit unit, string aura, int stacks, WoWUnit creator)
         {           
             return unit.GetAllAuras().Any(a => a.Name == aura && a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid));
+        }
+
+        /// <summary>
+        ///  Check the aura count thats created by yourself by the name on specified unit
+        /// </summary>
+        /// <param name="aura"> The name of the aura in English. </param>
+        /// <param name="unit"> The unit to check auras for. </param>
+        /// <returns></returns>
+        public static bool HasMyAura(this WoWUnit unit, int id)
+        {
+            return HasMyAura(unit, id, 0);
+        }
+
+        /// <summary>
+        ///  Check the aura count thats created by yourself by the name on specified unit
+        /// </summary>
+        /// <param name="aura"> The name of the aura in English. </param>
+        /// <param name="unit"> The unit to check auras for. </param>
+        /// <param name="stacks"> The stack count of the aura to return true. </param>
+        /// <returns></returns>
+        public static bool HasMyAura(this WoWUnit unit, int id, int stacks)
+        {
+            return HasAura(unit, id, stacks, StyxWoW.Me);
+        }
+
+        private static bool HasAura(this WoWUnit unit, int id, int stacks, WoWUnit creator)
+        {
+            return unit.GetAllAuras().Any(a => a.SpellId == id && a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid));
         }
 
         /// <summary>
@@ -764,6 +795,20 @@ namespace Singular.Helpers
             }
         }
 
+        public static IEnumerable<WoWUnit> MobsAttackingTank()
+        {
+            return Unit.NearbyUnfriendlyUnits.Where(u => Group.Tanks.Any( t => t.IsAlive && t.Guid == u.CurrentTargetGuid));
+        }
+
+        public static WoWUnit LowestHealthMobAttackingTank()
+        {
+            return MobsAttackingTank().OrderBy(u => u.HealthPercent).FirstOrDefault();
+        }
+
+        public static WoWUnit HighestHealthMobAttackingTank()
+        {
+            return MobsAttackingTank().OrderByDescending(u => u.HealthPercent).FirstOrDefault();
+        }
     }
 
     // following class should probably be in Unit, but made a separate 

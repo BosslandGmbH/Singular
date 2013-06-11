@@ -92,7 +92,7 @@ namespace Singular.ClassSpecific.Paladin
                             ret => Me.HealthPercent <= PaladinSettings.LayOnHandsHealth && !Me.HasAura("Forbearance")),
 
                         Spell.BuffSelf("Avenging Wrath", 
-                            ret => Me.CurrentTarget.IsWithinMeleeRange && (Me.CurrentTarget.TimeToDeath() > 25 || _aoeCount > 1)),
+                            ret => (Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && (Me.CurrentTarget.TimeToDeath() > 25) || _aoeCount > 1)),
 
                         Spell.BuffSelf(
                             "Guardian of Ancient Kings",

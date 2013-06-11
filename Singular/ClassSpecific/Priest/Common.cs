@@ -57,10 +57,10 @@ namespace Singular.ClassSpecific.Priest
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         PartyBuff.BuffGroup("Power Word: Fortitude"),
-                        //Spell.BuffSelf("Shadow Protection", ret => SingularSettings.Instance.Priest().UseShadowProtection && Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && !Unit.HasAura(u, "Shadow Protection", 0))), // we no longer have Shadow resist
-                        Spell.BuffSelf("Inner Fire", ret => SingularSettings.Instance.Priest().UseInnerFire),
-                        Spell.BuffSelf("Inner Will", ret => !SingularSettings.Instance.Priest().UseInnerFire),
-                        Spell.BuffSelf("Fear Ward", ret => SingularSettings.Instance.Priest().UseFearWard),
+                        //Spell.BuffSelf("Shadow Protection", ret => PriestSettings.UseShadowProtection && Unit.NearbyFriendlyPlayers.Any(u => !u.Dead && !u.IsGhost && (u.IsInMyPartyOrRaid || u.IsMe) && !Unit.HasAura(u, "Shadow Protection", 0))), // we no longer have Shadow resist
+                        Spell.BuffSelf("Inner Fire", ret => PriestSettings.UseInnerFire),
+                        Spell.BuffSelf("Inner Will", ret => !PriestSettings.UseInnerFire),
+                        Spell.BuffSelf("Fear Ward", ret => PriestSettings.UseFearWard),
 
                         Spell.BuffSelf("Shadowform"),
 
@@ -132,6 +132,19 @@ namespace Singular.ClassSpecific.Priest
                         )
                     )
                 );
+        }
+
+        public static WoWUnit GetBestTankTargetForPWS(float health = 100f)
+        {
+            WoWUnit hotTarget = null;
+            string hotName = "Power Word: Shield";
+            string hotDebuff = "Weakened Soul";
+
+            hotTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.HealthPercent < health && u.DistanceSqr < 40 * 40 && !u.HasAura(hotName) && !u.HasAura(hotDebuff) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
+            if (hotTarget != null)
+                Logger.WriteDebug("GetBestTankTargetForPWS('{0}'): found tank {1} @ {2:F1}%", hotName, hotTarget.SafeName(), hotTarget.HealthPercent);
+
+            return hotTarget;
         }
 
         public static Decorator CreatePriestMovementBuff(string mode, bool checkMoving = true)

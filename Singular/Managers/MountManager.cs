@@ -54,9 +54,9 @@ namespace Singular.Managers
             }
 
             // help HB out and stop immediately if we allow mount to proceed
-            if (e.Cancel == false && StyxWoW.Me.IsMoving )
+            if (e.Cancel == false && StyxWoW.Me.IsMoving && Mount.CanMount())
             {
-                Logger.WriteDebug( Color.White, "OnMountUp: stopping to help HB mount quicker");
+                Logger.WriteDebug( Color.White, "OnMountUp: stopping to help HB mount quicker (fewer failed mount attempts)");
                 StopMoving.Now();
             }
         }

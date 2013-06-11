@@ -22,10 +22,12 @@ namespace Singular.Managers
             Glyphs = new HashSet<string>();
             GlyphId = new int[6];
 
+            Lua.Events.AttachEvent("PLAYER_LEVEL_UP", UpdateTalentManager);
             Lua.Events.AttachEvent("CHARACTER_POINTS_CHANGED", UpdateTalentManager);
             Lua.Events.AttachEvent("GLYPH_UPDATED", UpdateTalentManager);
             Lua.Events.AttachEvent("ACTIVE_TALENT_GROUP_CHANGED", UpdateTalentManager);
             Lua.Events.AttachEvent("PLAYER_SPECIALIZATION_CHANGED", UpdateTalentManager);
+            Lua.Events.AttachEvent("LEARNED_SPELL_IN_TAB", UpdateTalentManager);
         }
 
         public static WoWSpec CurrentSpec { get; private set; }
@@ -79,7 +81,15 @@ namespace Singular.Managers
             int[] oldTalent = TalentId;
             int[] oldGlyph = GlyphId;
 
+            Logger.WriteDebug("{0} Event Fired!", args.EventName);
+
             Update();
+
+            if (args.EventName == "PLAYER_LEVEL_UP")
+            {
+                RebuildNeeded = true;
+                Logger.Write(Color.White, "TalentManager: Your character has leveled up! Now level {0}", args.Args[0]);
+            }
 
             if (CurrentSpec != oldSpec)
             {
@@ -130,7 +140,8 @@ namespace Singular.Managers
                     var t = new Talent {Index = index, Selected = selected};
                     Talents.Add(t);
 
-                    TalentId[(index-1) / 3] = index;
+                    if (selected)
+                        TalentId[(index-1) / 3] = index;
                 }
 
                 Glyphs.Clear();
@@ -160,6 +171,7 @@ namespace Singular.Managers
             {
                 RebuildNeeded = false;
                 Logger.Write(Color.White, "TalentManager: Rebuilding behaviors due to changes detected.");
+                Update();   // reload talents just in case
                 SingularRoutine.Instance.RebuildBehaviors();
                 return true;
             }

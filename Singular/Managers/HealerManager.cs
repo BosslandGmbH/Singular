@@ -228,10 +228,19 @@ namespace Singular.Managers
                     prio.Score += 100f;
                 }
 
-                // Give flag carriers more weight in battlegrounds. We need to keep them alive!
-                if (inBg && u.IsPlayer && u.Auras.Keys.Any(a => a.ToLowerInvariant().Contains("flag")))
+                try
                 {
-                    prio.Score += 100f;
+                    // Give flag carriers more weight in battlegrounds. We need to keep them alive!
+                    if (inBg && u.IsPlayer && u.Auras.Keys.Any(a => a.ToLowerInvariant().Contains("flag")))
+                    {
+                        prio.Score += 100f;
+                    }
+                }
+                catch (System.AccessViolationException)
+                {
+                }
+                catch (Styx.InvalidObjectPointerException)
+                {
                 }
             }
         }
@@ -282,7 +291,7 @@ namespace Singular.Managers
         }
 
 
-        public static WoWUnit GetBestCoverageTarget(string spell, int health, int range, int radius, int minCount)
+        public static WoWUnit GetBestCoverageTarget(string spell, int health, int range, int radius, int minCount, SimpleBooleanDelegate requirements = null)
         {
             if (!Me.IsInGroup() || !Me.Combat)
                 return null;
@@ -294,9 +303,12 @@ namespace Singular.Managers
                 return null;
             }
 
+            if (requirements == null)
+                requirements = req => true;
+
             // build temp list of targets that could use heal and are in range + radius
             List<WoWUnit> coveredTargets = HealerManager.Instance.TargetList
-                .Where(u => u.IsAlive && u.Distance < (range + radius) && u.HealthPercent < health)
+                .Where(u => u.IsAlive && u.Distance < (range + radius) && u.HealthPercent < health && requirements(u))
                 .ToList();
 
 
@@ -351,19 +363,6 @@ namespace Singular.Managers
             return hotTarget;
         }
 
-        public static WoWUnit GetBestTankTargetForPWS(float health = 100f)
-        {
-            WoWUnit hotTarget = null;
-            string hotName = "Power Word: Shield";
-            string hotDebuff = "Weakened Soul";
-
-            hotTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.HealthPercent < health && u.DistanceSqr < 40 * 40 && !u.HasAura(hotName) && !u.HasAura(hotDebuff) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
-            if (hotTarget != null)
-                Logger.WriteDebug("GetBestTankTargetForPWS('{0}'): found tank {1} @ {2:F1}%, hasmyaura={3} with {4} ms left", hotName, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.HasMyAura(hotName), (int)hotTarget.GetAuraTimeLeft("Riptide").TotalMilliseconds);
-            return hotTarget;
-        }
-
-
         public static WoWUnit TankToMoveTowards
         {
             get
@@ -383,28 +382,21 @@ namespace Singular.Managers
             if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                 return new ActionAlwaysFail();
 
-            return
+            return new PrioritySelector(
+                ctx => HealerManager.TankToMoveTowards,
                 // no healing needed, then move within heal range of tank
                 new Decorator(
-                    ret => HealerManager.TankToMoveTowards != null,
-                    new PrioritySelector(
-                        new Decorator(
-                            ret => !HealerManager.TankToMoveTowards.InLineOfSpellSight,      
-                            new Sequence(
-                                Movement.CreateMoveToLosBehavior(on => HealerManager.TankToMoveTowards),
-                                new ActionAlwaysFail()
-                                )
+                    ret => ((WoWUnit)ret) != null,
+                    new Sequence(
+                        new PrioritySelector(
+                            Movement.CreateMoveToLosBehavior(unit => ((WoWUnit)unit)),
+                            Movement.CreateMoveToUnitBehavior(unit => ((WoWUnit)unit), 30, 25),
+                            Movement.CreateEnsureMovementStoppedBehavior( 25, unit => (WoWUnit)unit, "in range of tank")
                             ),
-                        new Decorator(
-                            ret => HealerManager.TankToMoveTowards.Distance > 38f,
-                            new Sequence(
-                                Movement.CreateMoveToUnitBehavior( 30f, ret => HealerManager.TankToMoveTowards),
-                                new ActionAlwaysFail()
-                                )
-                            )
+                        new ActionAlwaysFail()
                         )
-                    );
-
+                    )
+                );
         }
     }
 
@@ -443,14 +435,23 @@ namespace Singular.Managers
 
         public Composite GenerateBehaviorTree()
         {
-            return new PrioritySelector(blist.Select(b => b.behavior).ToArray());
+            if ( !SingularSettings.Debug )
+                return new PrioritySelector(blist.Select(b => b.behavior).ToArray());
+
+            PrioritySelector pri = new PrioritySelector();
+            foreach (PrioritizedBehavior pb in blist)
+            {
+                pri.AddChild(new CallTrace(pb.Name, pb.behavior));
+            }
+
+            return pri;
         }
 
         public void ListBehaviors()
         {
             foreach (PrioritizedBehavior hs in blist)
             {
-                Logger.WriteDebug(Color.GreenYellow, "   Priority {0} for Behavior [{1}]", hs.Priority, hs.Name);
+                Logger.WriteDebug(Color.GreenYellow, "   Priority {0} for Behavior [{1}]", hs.Priority.ToString().AlignRight(4), hs.Name);
             }
         }
     }

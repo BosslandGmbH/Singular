@@ -93,6 +93,14 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
+        [Behavior(BehaviorType.Heal, WoWClass.Mage, WoWSpec.MageArcane)]
+        public static Composite CreateMageArcaneHeal()
+        {
+            return new PrioritySelector(
+                CreateArcaneDiagnosticOutputBehavior("Combat")
+                );
+        }
+
         [Behavior(BehaviorType.Combat, WoWClass.Mage, WoWSpec.MageArcane, WoWContext.Normal )]
         public static Composite CreateMageArcaneNormalCombat()
         {
@@ -106,8 +114,6 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-
-                        CreateArcaneDiagnosticOutputBehavior(),
 
                         Common.CreateMageAvoidanceBehavior(null, null),
 
@@ -227,8 +233,6 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        CreateArcaneDiagnosticOutputBehavior(),
-
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
@@ -271,7 +275,7 @@ namespace Singular.ClassSpecific.Mage
 
         #region Diagnostics
 
-        private static Composite CreateArcaneDiagnosticOutputBehavior()
+        private static Composite CreateArcaneDiagnosticOutputBehavior(string state = null)
         {
             if (!SingularSettings.Debug)
                 return new ActionAlwaysFail();
@@ -280,7 +284,7 @@ namespace Singular.ClassSpecific.Mage
                 new Action(ret =>
                 {
                     string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, moving={3}, arcchg={4} {5:F0} ms, arcmiss={6} {7:F0} ms",
-                        Dynamics.CompositeBuilder.CurrentBehaviorType.ToString(),
+                        state ?? Dynamics.CompositeBuilder.CurrentBehaviorType.ToString(),
                         Me.HealthPercent,
                         Me.ManaPercent,
                         Me.IsMoving,

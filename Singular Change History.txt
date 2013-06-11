@@ -1,3 +1,54 @@
+--- Release 3.0.0.2619 ---
+
+General
+
+fixed - Infrequent exception occurring when checking if pet battle in progress
+
+change- Current target monitoring in debug also watches pets target
+
+change- suppress exceptions occurring when weighting heal targets for all healers
+
+fixed - infrequent bug where movement stopped when HonorBuddy wants to mount but cannot
+
+fixed - movement while in a quest vehicle disabled
+
+
+Hunter
+
+fixed - Lowbie - bug causing Hunters at Level 1 through 9 to attempt to Dismiss Pet before spell is learned.
+
+
+Mage
+
+change- Arcane - improved debug log output
+
+change- Frost - improved debug log output
+
+
+Paladin
+
+fixed - Protection - exception occurring when no current target selected
+
+
+Priest
+
+*new* - Discipline - rewrite of all Disc behaviors.  Now supports configuration for healing contexts in Group Healing tab of Class Config.  Now supports Atonement Healing and improved damage in all contexts
+
+fixed - Holy - fixed bug where Prayer of Mending spell was not available accept when Cascade talent was selected.
+
+
+Warlock
+
+fixed - Demonology - now applies DoT appropriate for current form prior to switching form
+
+fixed - Demonology - no longer casting Soul Fire without Molten Core aura active
+
+fixed - Destruction (Priority 2) - no longer consumes Backdraft with Chaos Bolt
+
+fixed - Destruction (Priority 2) - will now only cast Rain of Fire on single target if it is instant
+
+fixed - Destruction - cast of Havoc when > 1 target
+
 
 --- Release 3.0.0.2594 ---
 

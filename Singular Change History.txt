@@ -1,3 +1,35 @@
+--- Release 3.0.0.2638 ---
+
+General
+
+change- Singular will now output a message when ANY component changes the Pull Distance unless you are in a Raid. Previously this was done only while questing and with debug mode turned on. Since a number of issues have been reported due to running with a Pull Distance of 0 or 1, this will make sure the user is aware of the low value that will prevent the botbase from invoking the Combat Routine for Pulling mobs.
+
+fixed - Melee Characters - fixed exceptions occurring while in combat and no current target selected.  this happened primarily with manual assist bots
+
+change- Target: will now make the BotPoi (point of interest) the highest priority target.  
+
+change- Pull Override: this setting has been removed
+
+
+Hunter
+
+fixed - All Specs - Dismiss Pet was cast multiple times in succession. Now recognizes when pet has been dismissed
+
+
+Priest
+
+fixed - Discipline - bug which prevented movement in Battlegrounds
+
+
+Rogue
+
+*new* - All Specs - added Stealth If Eating setting (defaults to true)
+
+*new* - All Specs - added Burst of Speed during pull if target more than 10 yards and energy is nearly capped
+
+
+
+
 --- Release 3.0.0.2619 ---
 
 General

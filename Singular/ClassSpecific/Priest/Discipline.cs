@@ -217,27 +217,29 @@ namespace Singular.ClassSpecific.Priest
             #region Atonement Only
 
             // only Atonement healing if above Health %
-            behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.AtonementAbovePercent) + PriHighAtone, "Atonement Above " + PriestSettings.DiscHeal.AtonementAbovePercent + "%", "Atonement",
-                new Decorator(
-                    req => (Me.Combat || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds) && HealerManager.Instance.TargetList.Count(h => h.HealthPercent < PriestSettings.DiscHeal.AtonementAbovePercent) < PriestSettings.DiscHeal.AtonementAboveCount,
-                    new PrioritySelector(
-                        CreateDiscAtonmementEnsureTarget(),
-                        CreateDiscAtonementMovement(),
-                        new Decorator( 
-                            req => Unit.ValidUnit( Me.CurrentTarget),
-                            new PrioritySelector(
-                                new Action( r => { Logger.WriteDebug( "--- atonement only! ---"); return RunStatus.Failure; } ),
-                                Movement.CreateFaceTargetBehavior(),
-                                Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5)),
-                                Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
-                                Spell.Cast("Holy Fire", mov => false, on => Me.CurrentTarget, req => true, cancel => false),
-                                Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
+            if (AddAtonementBehavior() )
+            {
+                behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.AtonementAbovePercent) + PriHighAtone, "Atonement Above " + PriestSettings.DiscHeal.AtonementAbovePercent + "%", "Atonement",
+                    new Decorator(
+                        req => (Me.Combat || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds) && HealerManager.Instance.TargetList.Count(h => h.HealthPercent < PriestSettings.DiscHeal.AtonementAbovePercent) < PriestSettings.DiscHeal.AtonementAboveCount,
+                        new PrioritySelector(
+                            CreateDiscAtonmementEnsureTarget(),
+                            CreateDiscAtonementMovement(),
+                            new Decorator(
+                                req => Unit.ValidUnit(Me.CurrentTarget),
+                                new PrioritySelector(
+                                    new Action(r => { Logger.WriteDebug("--- atonement only! ---"); return RunStatus.Failure; }),
+                                    Movement.CreateFaceTargetBehavior(),
+                                    Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5)),
+                                    Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
+                                    Spell.Cast("Holy Fire", mov => false, on => Me.CurrentTarget, req => true, cancel => false),
+                                    Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
+                                    )
                                 )
                             )
                         )
-                    )
-                );
-
+                    );
+            }
             #endregion
 
             #region AoE Heals
@@ -381,7 +383,7 @@ namespace Singular.ClassSpecific.Priest
             #region Lowest Priority Healer Tasks
 
             // Atonement
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+            if (AddAtonementBehavior() && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || SingularRoutine.CurrentWoWContext == WoWContext.Instances))
             {
                 // check less than # below Atonement Health
                 behavs.AddBehavior(1, "Atonement when Idle = " + PriestSettings.DiscHeal.AtonementWhenIdle.ToString(), "Atonement",
@@ -440,6 +442,15 @@ namespace Singular.ClassSpecific.Priest
                         )
                     )
                 );
+        }
+
+        private static bool AddAtonementBehavior()
+        {
+            return Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Heal
+                || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.PullBuffs
+                || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull
+                || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.CombatBuffs
+                || Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat;
         }
 
         private static int HealthToPriority(int nHealth)

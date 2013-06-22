@@ -267,13 +267,6 @@ namespace Singular.Settings
         public AllowMovementType AllowMovement { get; set; }
 
         [Setting]
-        [DefaultValue(25)]
-        [Category("Movement")]
-        [DisplayName("Questing Ranged Pull Override")]
-        [Description("Pull Distance we force to 40 for Ranged characters when using Questing BotBase")]
-        public int PullDistanceOverride { get; set; }
-
-        [Setting]
         [DefaultValue(12)]
         [Category("Movement")]
         [DisplayName("Melee Dismount Range")]

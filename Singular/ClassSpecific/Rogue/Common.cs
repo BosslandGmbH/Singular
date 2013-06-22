@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueRest()
         {
             return new PrioritySelector(
-                CreateStealthBehavior( ret => StyxWoW.Me.HasAura("Food")),
+                CreateStealthBehavior( ret => RogueSettings.StealthIfEating && StyxWoW.Me.HasAura("Food")),
                 Rest.CreateDefaultRestBehaviour( ),
                 CreateRogueOpenBoxes(),
                 CreateRogueGeneralMovementBuff("Rest")
@@ -135,9 +135,19 @@ namespace Singular.ClassSpecific.Rogue
                 CreateStealthBehavior( ret => Me.GotTarget && !Unit.IsTrivial(Me.CurrentTarget) && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 99 )),
                 Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0 && Me.ComboPointsTarget != Me.CurrentTargetGuid ),
                 Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
-                // Throttle Shadowstep because cast can fail with no message
-                new Throttle( 2, Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 12)),
-                Spell.BuffSelf("Sprint", ret => MovementManager.IsClassMovementAllowed && RogueSettings.UseSprint && StyxWoW.Me.IsMoving && StyxWoW.Me.HasAura("Stealth") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.Distance > 15 && (!SpellManager.HasSpell("Shadowstep") || !SpellManager.CanCast("Shadowstep", true)))
+                new Throttle( 1,
+                    new Decorator(
+                        req => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.GotTarget,
+                        new PrioritySelector(
+                            // Throttle Shadowstep because cast can fail with no message
+                            new Throttle(2, Spell.Cast("Shadowstep", ret => StyxWoW.Me.CurrentTarget.Distance > 12)),
+                            // save 60 energy for opener if possible
+                            Spell.BuffSelf("Burst of Speed", req => !Me.HasAura("Sprint") && StyxWoW.Me.CurrentTarget.Distance > 10 && Me.CurrentEnergy >= 90),
+                            // last resort
+                            Spell.BuffSelf("Sprint", ret => RogueSettings.UseSprint && StyxWoW.Me.CurrentTarget.Distance > 15)
+                            )
+                        )
+                    )
                 );
 
         }

@@ -51,6 +51,13 @@ namespace Singular.Settings
         public bool StealthAlways { get; set; }
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Stealth When Eating")]
+        [Description("Stealth if eating food")]
+        public bool StealthIfEating { get; set; }
+
+        [Setting]
         [DefaultValue(2)]
         [Category("Common")]
         [DisplayName("Fan of Knives Count")]

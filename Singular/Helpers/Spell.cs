@@ -1750,7 +1750,7 @@ namespace Singular.Helpers
                 if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
                 {
                     if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                        Logger.WriteDebug("CanCast[{0}]: current cast of [1] has {2:F0} ms left", castName, Me.CurrentCastId, Me.CurrentCastTimeLeft.TotalMilliseconds - num);
+                        Logger.WriteDebug("CanCast[{0}]: current cast of {1} has {2:F0} ms left", castName, Me.CurrentCastId, Me.CurrentCastTimeLeft.TotalMilliseconds - num);
                     return false;
                 }
 

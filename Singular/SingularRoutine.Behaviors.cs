@@ -432,44 +432,12 @@ namespace Singular
 
         private static int _prevPullDistance = -1;
 
-        private static void MonitorQuestingPullDistance()
+        private static void MonitorPullDistance()
         {
-            if (SingularRoutine.IsQuestBotActive)
+            if (_prevPullDistance != CharacterSettings.Instance.PullDistance)
             {
-                if ( SingularSettings.Instance.PullDistanceOverride == CharacterSettings.Instance.PullDistance)
-                {
-                    int newPullDistance = 0;
-                    switch (Me.Class)
-                    {
-                        case WoWClass.DeathKnight:
-                        case WoWClass.Monk:
-                        case WoWClass.Paladin:
-                        case WoWClass.Rogue:
-                        case WoWClass.Warrior:
-                            break;
-
-                        default:
-                            if (Me.Specialization == WoWSpec.None || Me.Specialization == WoWSpec.DruidFeral || Me.Specialization == WoWSpec.DruidGuardian || Me.Specialization == WoWSpec.ShamanEnhancement)
-                                break;
-
-                            newPullDistance = 40;
-                            break;
-                    }
-
-                    if (newPullDistance != 0)
-                    {
-                        Logger.Write(Color.White, "Quest Profile set Pull Distance to {0}, forcing to {1} for next Pull", CharacterSettings.Instance.PullDistance, newPullDistance);
-                        CharacterSettings.Instance.PullDistance = newPullDistance;
-                        _prevPullDistance = newPullDistance;
-                    }
-                }
-
-                if (_prevPullDistance != CharacterSettings.Instance.PullDistance)
-                {
-                    _prevPullDistance = CharacterSettings.Instance.PullDistance;
-                    if ( _prevPullDistance != -1 )
-                        Logger.WriteDebug( Color.White, "warning: Pull Distance set to {0} yds by Questing Profile", _prevPullDistance );
-                }
+                _prevPullDistance = CharacterSettings.Instance.PullDistance;
+                Logger.Write(Color.White, "attention: Pull Distance set to {0} yds by {1}, Plug-in, Profile, or User", GetBotName(), _prevPullDistance);
             }
         }
 

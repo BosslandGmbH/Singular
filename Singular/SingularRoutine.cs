@@ -116,7 +116,7 @@ namespace Singular
             // Double cast shit
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow > t);
 
-            MonitorQuestingPullDistance();
+            MonitorPullDistance();
 
             // Output if Target changed 
             CheckCurrentTarget();

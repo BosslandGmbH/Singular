@@ -1,4 +1,5 @@
-﻿#define IGNORE_TARGETING_UNLESS_SEARCHING_FOR_NEW_TARGET
+﻿#define ALWAYS_SWITCH_TO_BOTPOI
+#define IGNORE_TARGETING_UNLESS_SEARCHING_FOR_NEW_TARGET
 #define BOT_FIRSTUNIT_GETS_PRIORITY
 
 using System.Drawing;
@@ -103,6 +104,26 @@ namespace Singular.Helpers
                                 if (Group.MeIsTank && !SingularSettings.Instance.DisableTankTargetSwitching)
                                     return null;
 
+#if ALWAYS_SWITCH_TO_BOTPOI
+                                // Check botpoi (our top priority.)  we switch to BotPoi if a kill type exists and not blacklisted
+                                // .. if blacklisted, clear the poi to give bot a chance to do something smarter
+                                // .. if we are already fighting it, we keep fighting it, end of story
+                                WoWUnit unit;
+                                if (BotPoi.Current.Type == PoiType.Kill)
+                                {
+                                    unit = BotPoi.Current.AsObject.ToUnit();
+                                    if (Unit.ValidUnit(unit, showReason: SingularSettings.Debug ))
+                                    {
+                                        if (StyxWoW.Me.CurrentTargetGuid != unit.Guid)
+                                            Logger.Write(targetColor, "Current target is not BotPOI.  Switching to " + unit.SafeName() + "!");
+
+                                        return unit;
+                                    }
+
+                                    Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " not valid --- clearing");
+                                    BotPoi.Clear("Singular detected invalid mob as BotPoi");
+                                }
+#endif
                                 // Go below if current target is null or dead. We have other checks to deal with that
                                 if (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget.IsDead)
                                     return null;
@@ -141,35 +162,6 @@ namespace Singular.Helpers
                                     return pOwner;
                                 }
 
-#if ALWAYS_SWITCH_TO_BOTPOI
-                                // Check botpoi (our top priority.)  we switch to BotPoi if a kill type exists and not blacklisted
-                                // .. if blacklisted, clear the poi to give bot a chance to do something smarter
-                                // .. if we are already fighting it, we keep fighting it, end of story
-                                WoWUnit unit;
-                                if (BotPoi.Current.Type == PoiType.Kill)
-                                {
-                                    unit = BotPoi.Current.AsObject.ToUnit();
-                                    if (unit != null && unit.IsAlive && !unit.IsMe)
-                                    {
-                                        if (Blacklist.Contains(unit.Guid, BlacklistFlags.Combat))
-                                        {
-                                            Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " is blacklisted -- clearing POI!");
-                                            BotPoi.Clear("Singular detected Blacklisted mob");
-
-                                            if (unit == Me.CurrentTarget && (Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet))
-                                                return unit;
-
-                                            Logger.Write(targetColor, "Not in combat with blacklisted BotPOI " + unit.SafeName() + " so picking new target!");
-                                            return null;
-                                        }
-
-                                        if (StyxWoW.Me.CurrentTargetGuid != unit.Guid )
-                                            Logger.Write(targetColor, "Current target is not BotPOI.  Switching to " + unit.SafeName() + "!");
-
-                                        return unit;
-                                    }
-                                }
-#endif
 
                                 // no valid BotPoi, so let's check Targeting.FirstUnit which is Bots #1 choice
 #if IGNORE_TARGETING_UNLESS_SEARCHING_FOR_NEW_TARGET
@@ -249,7 +241,7 @@ namespace Singular.Helpers
                                             )
                                         ),
 
-                                    // fall through at this point as we have our target and its valid
+                                    // fall through to spell priority at this point as we have our target and its valid
                                     new ActionAlwaysFail()
                                     )
                                 ),

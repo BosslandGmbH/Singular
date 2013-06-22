@@ -34,6 +34,8 @@ namespace Singular.ClassSpecific.Hunter
         private static HunterSettings HunterSettings { get { return SingularSettings.Instance.Hunter(); } }
         private static bool HasTalent(HunterTalents tal) { return TalentManager.IsSelected((int)tal); }
 
+        private static uint _lastUnknownPetSpell = 0xffff;
+
         private static int ActivePetNumber
         {
             get
@@ -49,10 +51,20 @@ namespace Singular.ClassSpecific.Hunter
                             return 2;
                         case 83243:
                             return 3;
-                        case 83244:
+                        case 83244: 
                             return 4;
                         case 83245:
                             return 5;
+                        default:
+                            if (_lastUnknownPetSpell != Me.Pet.CreatedBySpellId)
+                            {
+                                _lastUnknownPetSpell = Me.Pet.CreatedBySpellId;
+                                if (_lastUnknownPetSpell != 0)
+                                {
+                                    Logger.Write(Color.HotPink, "Active Pet created by unknown spell id: {0}", Me.Pet.CreatedBySpellId);
+                                }
+                            }
+                            break;
                     }
                 }
 
@@ -136,8 +148,9 @@ namespace Singular.ClassSpecific.Hunter
                         new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
                             new Sequence(
                                 new Action( ctx => Logger.Write( "/dismiss Pet")),
-                                new Action(ctx => SpellManager.Cast("Dismiss Pet")),
-                                new WaitContinue(1, ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
+                                Spell.Cast("Dismiss Pet", on => Me.Pet, req => true, cancel => false),
+                                // new Action(ctx => SpellManager.Cast("Dismiss Pet")),
+                                new WaitContinue(TimeSpan.FromMilliseconds(1500), ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )
                             ),
 
@@ -486,7 +499,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 new Decorator(
                     ret =>  !SingularSettings.Instance.DisablePetUsage 
-                        && (!Me.GotAlivePet || (ActivePetNumber != PetWeWant && ActivePetNumber != 0 ))
+                        && (!Me.GotAlivePet || (ActivePetNumber != PetWeWant && ActivePetNumber != 0))
                         && PetManager.PetSummonAfterDismountTimer.IsFinished 
                         && !Me.Mounted 
                         && !Me.OnTaxi,
@@ -536,7 +549,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         // dismiss if we don't have correct Pet out
                         new Decorator(
-                            ret => (Pet != null && ActivePetNumber != PetWeWant ),
+                            ret => (Pet != null && ActivePetNumber != PetWeWant && ActivePetNumber != 0 ),
                             new Sequence(
                                 new PrioritySelector(
                                     Movement.CreateEnsureMovementStoppedBehavior(reason: "to dismiss pet"),
@@ -544,8 +557,8 @@ namespace Singular.ClassSpecific.Hunter
                                     ),
                                 new Action(ret => Logger.WriteDebug("CallPet: attempting Dismiss Pet - cancast={0}", SpellManager.CanCast("Dismiss Pet"))),
                                 Spell.Cast("Dismiss Pet", mov => true, on => Me, req => true, cancel => false),
-                                Helpers.Common.CreateWaitForLagDuration(),
-                                new Wait(TimeSpan.FromMilliseconds(500), ret => !Me.GotAlivePet, new ActionAlwaysSucceed())
+                                new WaitContinue(1, ret => !Me.GotAlivePet, new ActionAlwaysSucceed()),
+                                new Action(ret => Logger.WriteDebug("CallPet: existing pet has been dismissed"))
                                 )
                             ),
 

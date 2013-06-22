@@ -13,6 +13,7 @@ using Singular.Settings;
 using Styx.Common;
 using System.Diagnostics;
 using Styx.Common.Helpers;
+using System.Drawing;
 
 namespace Singular.Helpers
 {
@@ -197,21 +198,39 @@ namespace Singular.Helpers
         }
 
 
-        public static bool ValidUnit(WoWUnit p)
+        private static Color invalidColor = Color.LightCoral;
+
+        public static bool ValidUnit(WoWUnit p, bool showReason = false)
         {
             if (p == null || !p.IsValid)
                 return false;
 
             if (StyxWoW.Me.IsInInstance && IgnoreMobs.Contains(p.Entry))
+            {
+                if (showReason) Logger.Write(invalidColor, "invalid attack unit {0} is an Instance Ignore Mob", p.SafeName());
                 return false;
+            }
 
-            // Ignore shit we can't select/attack
-            if (!p.CanSelect || !p.Attackable)
+            // Ignore shit we can't select
+            if (!p.CanSelect )
+            {
+                if (showReason) Logger.Write(invalidColor, "invalid attack unit {0} cannot be Selected", p.SafeName());
                 return false;
+            }
+
+            // Ignore shit we can't attack
+            if (!p.Attackable)
+            {
+                if (showReason) Logger.Write(invalidColor, "invalid attack unit {0} cannot be Attacked", p.SafeName());
+                return false;
+            }
 
             // Duh
             if (p.IsDead)
+            {
+                if (showReason) Logger.Write(invalidColor, "invalid attack unit {0} is Dead", p.SafeName());
                 return false;
+            }
 
             // check for enemy players here as friendly only seems to work on npc's
             if (p.IsPlayer)
@@ -219,7 +238,10 @@ namespace Singular.Helpers
 
             // Ignore friendlies!
             if (p.IsFriendly)
+            {
+                if (showReason) Logger.Write(invalidColor, "invalid attack unit {0} is Friendly", p.SafeName());
                 return false;
+            }
 
             // Dummies/bosses are valid by default. Period.
             if (p.IsTrainingDummy() || p.IsBoss())
@@ -230,15 +252,28 @@ namespace Singular.Helpers
 
             // ignore if owner is player, alive, and not blacklisted then ignore (since killing owner kills it)
             if (pOwner != null && pOwner.IsAlive && !Blacklist.Contains(pOwner, BlacklistFlags.Combat))
+            {
+                if (showReason) Logger.Write(invalidColor, "invalid attack unit {0} has a Player as Parent", p.SafeName());
                 return false;
+            }
 
             // And ignore critters (except for those ferocious ones) /non-combat pets
-            if (p.IsNonCombatPet || (p.IsCritter && p.ThreatInfo.ThreatValue == 0 && !p.IsTargetingMyRaidMember))
+            if (p.IsNonCombatPet)
+            {
+                if (showReason) Logger.Write(invalidColor, "{0} is a Noncombat Pet", p.SafeName());
                 return false;
-/*
-            if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
+            }
+
+            // And ignore critters (except for those ferocious ones) /non-combat pets
+            if (p.IsCritter && p.ThreatInfo.ThreatValue == 0 && !p.IsTargetingMyRaidMember)
+            {
+                if (showReason) Logger.Write(invalidColor, "{0} is a Critter", p.SafeName());
                 return false;
-*/
+            }
+            /*
+                        if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
+                            return false;
+            */
             return true;
         }
 

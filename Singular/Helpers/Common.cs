@@ -442,7 +442,7 @@ namespace Singular.Helpers
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 new Decorator(
-                    req => Me.CurrentTarget.Distance < SingularSettings.Instance.MeleeDismountRange,
+                    req => Me.GotTarget && Me.CurrentTarget.Distance < SingularSettings.Instance.MeleeDismountRange,
                     Helpers.Common.CreateDismount( Dynamics.CompositeBuilder.CurrentBehaviorType.ToString())   // should be Pull or Combat 99% of the time
                     )
                 );
@@ -451,7 +451,7 @@ namespace Singular.Helpers
             {
                 prio.AddChild(
                     new PrioritySelector(
-                        ctx => Me.CurrentTarget.IsAboveTheGround(),
+                        ctx => Me.GotTarget && Me.CurrentTarget.IsAboveTheGround(),
                         new Decorator(
                             req => (bool)req,
                             new PrioritySelector(

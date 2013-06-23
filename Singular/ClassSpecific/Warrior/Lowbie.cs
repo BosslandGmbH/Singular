@@ -29,6 +29,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Thunder Clap"),
                         Spell.Cast("Heroic Strike"))),
                 // DPS
+                Spell.Cast("Execute"),
                 Spell.Cast("Heroic Strike"),
                 Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50),
                 //move to melee

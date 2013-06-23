@@ -133,7 +133,6 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterRest()
         {
             return new PrioritySelector(
-                Movement.CreateFaceTargetBehavior(),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator( 

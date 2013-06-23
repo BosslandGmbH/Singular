@@ -158,6 +158,9 @@ namespace Singular.Helpers
                     && !StyxWoW.Me.IsSafelyFacing(toUnit(ret), viewDegrees),
                 new Action( ret => 
                 {
+                    if (SingularSettings.Debug)
+                        Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
+
                     toUnit(ret).Face();
 
                     // check only if standard facing for wait, not value given by viewDegrees

@@ -257,6 +257,7 @@ namespace Singular.ClassSpecific.Monk
                         new Decorator(
                             ret => !Me.IsSafelyFacing( Me.CurrentTarget, 10f),
                             new Action( ret => {
+                                // Logger.WriteDebug("WindWalkerMonk: Facing because turned more than 10 degrees");
                                 StyxWoW.Me.CurrentTarget.Face();
                                 return RunStatus.Failure;
                                 }) 

@@ -132,7 +132,7 @@ namespace Singular
 
             // loss of control behavior must be defined prior to any embedded references by other behaviors
             _lostControlBehavior = new Decorator(
-                ret => Me.Fleeing || Me.Stunned,
+                ret => HaveWeLostControl,
                 new PrioritySelector(
                     new Action( r => { 
                         if ( !StyxWoW.IsInGame )
@@ -172,8 +172,18 @@ namespace Singular
                         new PrioritySelector(
                             // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
                             Spell.WaitForGcdOrCastOrChannel(),
-                            _lostControlBehavior,
-                            new HookExecutor(HookName(BehaviorType.Rest))
+
+                            // lost control in Rest -- force a RunStatus.Failure so we don't loop in Rest
+                            new Sequence(
+                                _lostControlBehavior,
+                                new ActionAlwaysFail()
+                                ),
+
+                            // skip Rest logic if we lost control (since we had to return Fail to prevent Rest loop)
+                            new Decorator(
+                                req => !HaveWeLostControl,
+                                new HookExecutor(HookName(BehaviorType.Rest))
+                                )
                             )
                         )
                     )
@@ -267,6 +277,14 @@ namespace Singular
                         )
                     )
                 );
+        }
+
+        private static bool HaveWeLostControl
+        { 
+            get
+            {
+                return Me.Fleeing || Me.Stunned;
+            } 
         }
 
         internal static string HookName(string name)
@@ -437,7 +455,7 @@ namespace Singular
             if (_prevPullDistance != CharacterSettings.Instance.PullDistance)
             {
                 _prevPullDistance = CharacterSettings.Instance.PullDistance;
-                Logger.Write(Color.White, "attention: Pull Distance set to {0} yds by {1}, Plug-in, Profile, or User", GetBotName(), _prevPullDistance);
+                Logger.Write(Color.White, "attention: Pull Distance set to {0} yds by {1}, Plug-in, Profile, or User", _prevPullDistance, GetBotName());
             }
         }
 

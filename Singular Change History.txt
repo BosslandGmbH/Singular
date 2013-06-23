@@ -1,3 +1,25 @@
+--- Release 3.0.0.2648 ---
+
+General
+
+fixed - stun detection interfering with initial quest for Undead start area
+
+fixed - typo in Pull Distance monitoring message
+
+change- will output log message when facing
+
+
+Hunter
+
+fixed - All Specs - no longer faces out of combat
+
+
+Warrior
+
+fixed - Lowbie - added missing cast of Execute
+
+
+
 --- Release 3.0.0.2638 ---
 
 General

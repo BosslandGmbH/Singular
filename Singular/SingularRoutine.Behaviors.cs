@@ -467,18 +467,37 @@ namespace Singular
         /// </summary>
         private class LockSelector : PrioritySelector
         {
+            delegate RunStatus TickDelegate(object context);
+
+            TickDelegate _TickSelectedByUser;
+
             public LockSelector(params Composite[] children)
                 : base(children)
             {
+                if (SingularSettings.Instance.UseFrameLock)
+                    _TickSelectedByUser = TickWithFrameLock;
+                else
+                    _TickSelectedByUser = TickNoFrameLock;
             }
 
             public override RunStatus Tick(object context)
+            {
+                return _TickSelectedByUser(context);
+            }
+
+            private RunStatus TickWithFrameLock(object context)
             {
                 using (StyxWoW.Memory.AcquireFrame())
                 {
                     return base.Tick(context);
                 }
             }
+
+            private RunStatus TickNoFrameLock(object context)
+            {
+                return base.Tick(context);
+            }
+
         }
 
         #endregion
@@ -490,6 +509,18 @@ namespace Singular
         public static DateTime LastCall { get; set; }
         public static ulong CountCall { get; set; }
         public static double WarnTime { get; set; }
+        public static TimeSpan SinceLast
+        {
+            get
+            {
+                TimeSpan since;
+                if (LastCall == DateTime.MinValue)
+                    since = TimeSpan.Zero;
+                else
+                    since = DateTime.Now - LastCall;
+                return since;
+            }
+        }
 
         public string Name { get; set; }
 
@@ -501,6 +532,8 @@ namespace Singular
                 return;
 
             _init = true;
+            LastCall = DateTime.MinValue;
+
             SingularRoutine.OnBotEvent += (src, arg) =>
             {
                 // reset time on Start
@@ -508,16 +541,13 @@ namespace Singular
                     LastCall = DateTime.Now;
                 else if (arg.Event == SingularBotEvent.BotStop)
                 {
-                    if (SingularSettings.Debug)
+                    TimeSpan since = SinceLast;
+                    if (since.TotalSeconds >= WarnTime)
                     {
-                        DateTime rightNow = DateTime.Now;
-                        if ((rightNow - LastCall).TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
-                        {
-                            if (SingularSettings.Debug)
-                                Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", (rightNow - LastCall).TotalSeconds);
-                            else
-                                Logger.WriteFile("warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", (rightNow - LastCall).TotalSeconds);
-                        }
+                        if (SingularSettings.Debug)
+                            Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
+                        else
+                            Logger.WriteFile("warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
                     }
                 }
             };
@@ -532,7 +562,6 @@ namespace Singular
                 WarnTime = 5;
 
             Name = name;
-            LastCall = DateTime.MinValue;
         }
         /*
         protected override IEnumerable<RunStatus> Execute(object context)
@@ -569,8 +598,9 @@ namespace Singular
 
             if (SingularSettings.Debug)
             {
-                if ((DateTime.Now - LastCall).TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
-                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", (DateTime.Now - LastCall).TotalSeconds, Name);
+                TimeSpan since = SinceLast;
+                if (since.TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
+                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", since.TotalSeconds, Name);
             }
 
             if (!SingularSettings.Trace )

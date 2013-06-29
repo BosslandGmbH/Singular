@@ -370,6 +370,13 @@ namespace Singular.Settings
         #region Category: General
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("General")]
+        [DisplayName("Use Framlock in Singular")]
+        [Description("Force use of Framelock in Singular.  Primarily for use with Botbases that do not support Framelock")]
+        public bool UseFrameLock { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("General")]
         [DisplayName("Wait For Res Sickness")]

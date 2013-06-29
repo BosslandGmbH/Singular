@@ -179,7 +179,7 @@ namespace Singular.Helpers
             {
                 actionSelectTarget = new Action( 
                     ret => { 
-                        _unitInterrupt = Unit.NearbyUnfriendlyUnits.Where(u => IsInterruptTarget(u)).OrderBy( u => u.Distance ).FirstOrDefault();
+                        _unitInterrupt = Unit.NearbyUnitsInCombatWithMe.Where(u => IsInterruptTarget(u)).OrderBy( u => u.Distance ).FirstOrDefault();
                         if (_unitInterrupt != null && SingularSettings.Debug)
                             Logger.WriteDebug("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds);
                         }

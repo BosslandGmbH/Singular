@@ -182,7 +182,7 @@ namespace Singular.Helpers
                     if (type == typeWoWUnit || type == typeWoWPlayer)
                     {
                         WoWUnit t = objectList[i] as WoWUnit;
-                        if (t != null && ValidUnit(t) && t.Distance < 40)
+                        if (t != null && ValidUnit(t) && t.SpellDistance() < 40)
                         {
                             list.Add(t);
                         }
@@ -194,7 +194,7 @@ namespace Singular.Helpers
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMe
         {
-            get { return NearbyUnfriendlyUnits.Where(p => ValidUnit(p) && p.DistanceSqr <= 40 * 40 && p.Combat && (p.TaggedByMe || p.IsTargetingMeOrPet)); }
+            get { return NearbyUnfriendlyUnits.Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingUs()))); }
         }
 
 

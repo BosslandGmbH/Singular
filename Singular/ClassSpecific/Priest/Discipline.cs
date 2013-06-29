@@ -721,7 +721,7 @@ namespace Singular.ClassSpecific.Priest
 
         private static Composite CreateDiscAtonmementEnsureTarget()
         {
-            if ( SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+            if ( SingularSettings.DisableAllTargeting || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                 return new ActionAlwaysFail();
 
             return new Decorator(

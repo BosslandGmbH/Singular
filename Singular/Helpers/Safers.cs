@@ -293,7 +293,7 @@ namespace Singular.Helpers
                                         }
 
                                         // Look for agrroed mobs next. prioritize by IsPlayer, Relative Distance, then Health
-                                        var target = ObjectManager.GetObjectsOfType<WoWUnit>(false, false)
+                                        var target = Targeting.Instance.TargetList
                                             .Where(
                                                 p => !Blacklist.Contains(p, BlacklistFlags.Combat)
                                                 && Unit.ValidUnit(p)

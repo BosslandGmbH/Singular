@@ -97,11 +97,27 @@ namespace Singular
             _configForm.Show();
         }
 
+        static DateTime _nextNoCallMsgAllowed = DateTime.MinValue;
+
         public override void Pulse()
         {
             // No pulsing if we're loading or out of the game.
             if (!StyxWoW.IsInGame || !StyxWoW.IsInWorld)
                 return;
+
+            // check time since last call and be sure user knows if Singular isn't being called
+            if (SingularSettings.Debug)
+            {
+                TimeSpan since = CallWatch.SinceLast;
+                if (since.TotalSeconds > (4 * CallWatch.WarnTime))
+                {
+                    if (!Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
+                    {
+                        Logger.WriteDebug(Color.HotPink, "warning: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
+                        _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.WarnTime);
+                    }
+                }
+            }
 
             // talentmanager.Pulse() intense if does work, so return if true
             if (TalentManager.Pulse())

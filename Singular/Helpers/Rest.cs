@@ -172,8 +172,15 @@ namespace Singular.Helpers
                                         new ActionAlwaysSucceed()
                                         )
                                     ),
+                                new Decorator(
+                                    req => Me.IsSwimming,
+                                    new PrioritySelector(
+                                        new Throttle(15, new Action(ret => Logger.Write("Swimming. Waiting to recover our health/mana back"))),
+                                        new ActionAlwaysSucceed()
+                                        )
+                                    ),
                                 new PrioritySelector(
-                                    new Throttle(5, new Action(ret => Logger.Write("We have no food/drink. Waiting to recover our health/mana back"))),
+                                    new Throttle(15, new Action(ret => Logger.Write("We have no food/drink. Waiting to recover our health/mana back"))),
                                     new ActionAlwaysSucceed()
                                     )
                                 )

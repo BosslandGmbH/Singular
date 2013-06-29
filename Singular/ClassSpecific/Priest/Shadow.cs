@@ -108,7 +108,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

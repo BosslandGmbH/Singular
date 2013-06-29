@@ -1,3 +1,37 @@
+--- Release 3.0.0.2659 ---
+
+General
+
+*new* - Singular will now warn how long since it has been called by the BotBase when you press Stop if more than 5 seconds and character not mounted, flying, etc.
+
+*new* - When Debug Logging is true, Singular will now warn periodically if BotBase has not called Singular in 20 seconds.  This helps in identifying when nothing happens whether it is a Combat Routine issue or something occurring elsewhere.
+
+fixed - Interrupt All: was targeting mobs nearby mobs which were casting spells but were not in combat with you
+
+fixed - when resting while in water, will no longer issue a message about having no food/water.
+
+fixed - targeting of aggroed mobs changed to work from TargetList rather than any nearby mob
+
+fixed - Pending GetPendingCursorSpell api fixed and now returns correct value
+
+change- Singular previously used framelocks wrapping each behavior.  It now defaults to using no behavior-wide framelocks and leaves this primarily for the botbase to determine when it should be used/avoided.
+
+*new* - Use FrameLock setting in Class Config which allows you to force prior Singular behavior.  Defaults to false
+
+
+Priest
+
+fixed - Discipline - was switching targets for Atonement Healing when Disable Targeting was on 
+
+fixed - Shadow - was not waiting for channelled casts to complete, so would recast Mind Flay after GCD when a Mind Flay was already in progress
+
+
+Rogue
+
+fixed - All Specs - lock picking fixed by virtue of GetPendingSpellCursor now working
+
+
+
 --- Release 3.0.0.2648 ---
 
 General

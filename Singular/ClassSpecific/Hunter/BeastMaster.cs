@@ -82,8 +82,8 @@ namespace Singular.ClassSpecific.Hunter
 
                         // Single Target Rotation
                         Spell.Buff("Serpent Sting"),
-                        Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < 25f),
                         Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
+                        Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < 25f),
                         Spell.BuffSelf("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
 
                         Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 50 || Me.HasAnyAura("Thrill of the Hunt", "The Beast Within")),
@@ -136,6 +136,9 @@ namespace Singular.ClassSpecific.Hunter
                                 && Me.CurrentTarget.IsAlive
                                 && Me.GotAlivePet
                                 && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
+
+                        // snipe kills if possible
+                        Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 5 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
 
                         Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
 

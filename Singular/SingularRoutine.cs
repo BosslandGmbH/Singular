@@ -111,7 +111,7 @@ namespace Singular
                 TimeSpan since = CallWatch.SinceLast;
                 if (since.TotalSeconds > (4 * CallWatch.WarnTime))
                 {
-                    if (!Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
+                    if (!Me.IsGhost && !Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
                     {
                         Logger.WriteDebug(Color.HotPink, "warning: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
                         _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.WarnTime);

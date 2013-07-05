@@ -258,7 +258,14 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(r => Logger.WriteDebug("MovingAwayFromMe: Target ({0:F2}) faster than Me ({1:F2}) -- trying Sprint or Ranged Attack", Me.CurrentTarget.MovementInfo.CurrentSpeed, Me.MovementInfo.CurrentSpeed)),
                         new PrioritySelector(
                             Spell.Cast("Sap", req => Me.IsStealthed && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon)),
-                            Spell.BuffSelf("Sprint", req => RogueSettings.UseSprint),
+                            new Decorator(
+                                req => !Me.HasAnyAura("Sprint","Burst of Speed","Shadowstep"),
+                                new PrioritySelector(
+                                    Spell.BuffSelf("Shadowstep"),
+                                    Spell.BuffSelf("Burst of Speed"),
+                                    Spell.BuffSelf("Sprint")
+                                    )
+                                ),
                             new Decorator(
                                 req => !Me.CurrentTarget.IsPlayer,
                                 new PrioritySelector(

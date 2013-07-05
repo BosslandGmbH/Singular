@@ -297,7 +297,9 @@ namespace Singular
             return "Singular." + typ.ToString();
         }
 
-        static DateTime _allowQuietUntil = DateTime.MinValue;
+        static bool _inQuestVehicle = false;
+
+        static bool _inPetCombat = false;
 
         private static bool AllowBehaviorUsage()
         {
@@ -308,27 +310,41 @@ namespace Singular
             // .. role/responsibility boundaries are being violated
 
             // disable if Questing and in a Quest Vehicle (now requires setting as well)
-            if (IsQuestBotActive && SingularSettings.Instance.DisableInQuestVehicle && Me.InVehicle)
+            if (IsQuestBotActive)
             {
-                if (DateTime.Now > _allowQuietUntil)
+                if (_inQuestVehicle != Me.InVehicle)
                 {
-                    _allowQuietUntil = DateTime.Now + TimeSpan.FromSeconds(1);
-                    Logger.Write(Color.White, "Behaviors disabled while in Quest Vehicle due to user settings");
+                    _inQuestVehicle = Me.InVehicle; 
+                    if (_inQuestVehicle )
+                    {
+                        Logger.Write(Color.White, "Singular is {0} while in a Quest Vehicle", SingularSettings.Instance.DisableInQuestVehicle ? "Disabled" : "Enabled");
+                        Logger.Write(Color.White, "See the [Disable in Quest Vehicle]={0} setting to change", SingularSettings.Instance.DisableInQuestVehicle);
+                    }
                 }
 
-                return false;
+                if (_inQuestVehicle && SingularSettings.Instance.DisableInQuestVehicle)
+                    return false;
             }
 
-            // disable for Pet Battles (hopefully a temporary test)
-            if (!Me.CurrentMap.IsRaid && PetBattleInProgress())
+            // disable if in pet battle and using a plugin/botbase 
+            //  ..  that doesn't prevent combat routine from being called
+            //  ..  note: this won't allow pet combat to work correclty, it 
+            //  ..  only prevents failed movement/spell cast messages from Singular
+            //  ..  Pet Combat component to prevent calls to combat routine  as it
+            //  ..  has no role in pet combat
+            if (!Me.CurrentMap.IsRaid)
             {
-                if (DateTime.Now > _allowQuietUntil)
+                if (_inPetCombat != PetBattleInProgress())
                 {
-                    _allowQuietUntil = DateTime.Now + TimeSpan.FromSeconds(1);
-                    Logger.Write(Color.White, "Behaviors disabled in Pet Fight - contact Pet Combat bot/plugin author to fix this");
+                    _inPetCombat = PetBattleInProgress();
+                    if (_inPetCombat)
+                    {
+                        Logger.Write(Color.White, "Behaviors disabled in Pet Fight - contact Pet Combat bot/plugin author to fix this");
+                    }
                 }
 
-                return false;
+                if (_inPetCombat)
+                    return false;
             }
 
             return true;

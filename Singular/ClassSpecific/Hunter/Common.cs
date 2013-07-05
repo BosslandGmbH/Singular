@@ -36,14 +36,15 @@ namespace Singular.ClassSpecific.Hunter
 
         private static uint _lastUnknownPetSpell = 0xffff;
 
-        private static int ActivePetNumber
+        private static uint ActivePetNumber
         {
             get
             {
                 if (Me.Pet != null)
                 {
                     // map Call Pet spells to the # for ease of reference
-                    switch (Me.Pet.CreatedBySpellId)
+                    uint createdBySpellId = Me.Pet.CreatedBySpellId;
+                    switch (createdBySpellId)
                     {
                         case 883:
                             return 1;
@@ -56,15 +57,15 @@ namespace Singular.ClassSpecific.Hunter
                         case 83245:
                             return 5;
                         default:
-                            if (_lastUnknownPetSpell != Me.Pet.CreatedBySpellId)
+                            if (_lastUnknownPetSpell != createdBySpellId)
                             {
-                                _lastUnknownPetSpell = Me.Pet.CreatedBySpellId;
+                                _lastUnknownPetSpell = createdBySpellId;
                                 if (_lastUnknownPetSpell != 0)
                                 {
-                                    Logger.Write(Color.HotPink, "Active Pet created by unknown spell id: {0}", Me.Pet.CreatedBySpellId);
+                                    Logger.Write(Color.HotPink, "Active Pet created by unknown spell id: {0}", createdBySpellId);
                                 }
                             }
-                            break;
+                            return createdBySpellId;
                     }
                 }
 
@@ -138,11 +139,11 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+                        CreateHunterCallPetBehavior(true),
+
                         Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85),
 
                         Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
-
-                        CreateHunterCallPetBehavior(true),
 
                         new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
                             new Sequence(
@@ -231,6 +232,7 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        CreateHunterCallPetBehavior(true)
                         /*
                         Spell.Buff("Hunter's Mark", 
                             ret => Unit.ValidUnit(Target) 
@@ -246,16 +248,9 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateHunterPullBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-
-                        CreateMisdirectionBehavior()
-                        
-                        // , Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane))
-                        )
-                    )
+                CreateHunterCallPetBehavior(false),
+                CreateMisdirectionBehavior()                       
+                // , Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane))
                 );
         }
 
@@ -298,7 +293,11 @@ namespace Singular.ClassSpecific.Hunter
 
                     new Throttle(2, Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPercent)),
 
-                    Common.CreateHunterCallPetBehavior(true),
+                    // don't worry about wrong pet, only missing or dead pet
+                    new Decorator(
+                        req => !Me.GotAlivePet,
+                        Common.CreateHunterCallPetBehavior(true)
+                        ),
 
                     Spell.Buff("Deterrence",
                         ret => (Me.HealthPercent <= HunterSettings.DeterrenceHealth || HunterSettings.DeterrenceCount <= Unit.NearbyUnfriendlyUnits.Count(u => u.Combat && u.CurrentTargetGuid == Me.Guid && !u.IsPet))),
@@ -580,18 +579,19 @@ namespace Singular.ClassSpecific.Hunter
                 );
         }
 
-        private static int PetWeWant
+        private static uint PetWeWant
         {
             get
             {
-                int pet = HunterSettings.PetNumberSolo;
+                uint activePet = ActivePetNumber;
+                if (Me.GotAlivePet && (activePet == 0 || activePet > 5))
+                    return activePet;
 
+                uint pet = (uint) HunterSettings.PetNumberSolo;
                 if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-                    pet = HunterSettings.PetNumberInstance;
+                    pet = (uint)HunterSettings.PetNumberInstance;
                 else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds )
-                    pet = HunterSettings.PetNumberPvp;
-                else
-                    pet = HunterSettings.PetNumberSolo;
+                    pet = (uint)HunterSettings.PetNumberPvp;
 
                 if (!SpellManager.HasSpell(string.Format("Call Pet {0}", pet.ToString())))
                     pet = 1;
@@ -912,7 +912,7 @@ namespace Singular.ClassSpecific.Hunter
                     && onUnit(ret).SpellDistance() < 40
                     && SpellManager.HasSpell("Steady Shot"),
                 new Sequence(
-                    new Action(ret => Logger.Write("Casting Steady Shot on {0}", onUnit(ret).SafeName())),
+                    new Action(ret => Logger.Write("Casting Steady Shot on {0} @ {1:F1}% at {2:F1} yds", onUnit(ret).SafeName(), onUnit(ret).HealthPercent, onUnit(ret).Distance)),
                     new Action(ret => SpellManager.Cast("Steady Shot", onUnit(ret)))
                     )
                 );

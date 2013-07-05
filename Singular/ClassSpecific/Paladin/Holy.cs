@@ -44,7 +44,22 @@ namespace Singular.ClassSpecific.Paladin
             return new PrioritySelector(
                 Spell.BuffSelf( "Devotion Aura", req => Me.Silenced ),
                 CreateRebirthBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead)),
-                CreatePaladinHealBehavior()
+                CreatePaladinHealBehavior(),
+                new Decorator(
+                    req => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    new PrioritySelector(
+                        Spell.Cast("Lay on Hands",
+                            mov => false,
+                            on => Me,
+                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.LayOnHandsHealth),
+                        Common.CreateWordOfGloryBehavior(on => Me),
+                        Spell.Cast("Flash of Light",
+                            mov => true,
+                            on => Me,
+                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.RetributionHealHealth,
+                            cancel => Me.HealthPercent > PaladinSettings.RetributionHealHealth)
+                        )
+                    )
                 );
         }
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Paladin, WoWSpec.PaladinHoly)]
@@ -62,7 +77,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => Unit.NearbyFriendlyPlayers.Count(u => u.IsInMyPartyOrRaid) == 0,
+                    ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                     new PrioritySelector(
                         Helpers.Common.EnsureReadyToAttackFromMelee(),
                         Spell.WaitForCastOrChannel(),

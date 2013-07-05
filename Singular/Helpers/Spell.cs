@@ -45,10 +45,15 @@ namespace Singular.Helpers
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         public static void LogCast(string sname, WoWUnit unit)
         {
+            LogCast(sname, unit, unit.HealthPercent, unit.Distance);
+        }
+
+        public static void LogCast(string sname, WoWUnit unit, double health, double dist)
+        {
             if (unit.IsMe)
-                Logger.Write("Casting {0} on Me @ {1:F1}%", sname, unit.HealthPercent);
+                Logger.Write("Casting {0} on Me @ {1:F1}%", sname, health);
             else
-                Logger.Write("Casting {0} on {1} @ {2:F1}% at {3:F1} yds", sname, unit.SafeName(), unit.HealthPercent, unit.Distance);
+                Logger.Write("Casting {0} on {1} @ {2:F1}% at {3:F1} yds", sname, unit.SafeName(), health, dist);
         }
 
         public static WoWDynamicObject GetGroundEffectBySpellId(int spellId)
@@ -819,16 +824,30 @@ namespace Singular.Helpers
                     new Throttle(
                         new Action(ret =>
                         {
-                            _castOnUnit = onUnit(ret);
-                            if (_castOnUnit == null || !requirements(ret) || !SpellManager.CanCast(spellId(ret), _castOnUnit, true))
-                                return RunStatus.Failure;
+                            RunStatus runStat = RunStatus.Failure;
 
-                            WoWSpell sp = WoWSpell.FromId(spellId(ret));
-                            string sname = sp != null ? sp.Name : "#" + spellId(ret).ToString();
-                            LogCast(sname, _castOnUnit);
-                            SpellManager.Cast(spellId(ret), _castOnUnit);
+                            _castOnUnit = onUnit(ret);
+                            // if (_castOnUnit == null || !requirements(ret) || !SpellManager.CanCast(spellId(ret), _castOnUnit, true))
+                            if (_castOnUnit != null && requirements(ret))
+                            {
+                                _castSpell = WoWSpell.FromId(spellId(ret));
+                                if (_castSpell != null)
+                                {
+                                    if (Spell.CanCastHack(_castSpell.Name, onUnit(ret), skipWowCheck: true))
+                                    {
+                                        string sname = _castSpell != null ? _castSpell.Name : "#" + _castSpell.Id.ToString();
+                                        LogCast(sname, _castOnUnit);
+                                        if (SpellManager.Cast(_castSpell.Id, _castOnUnit))
+                                        {
+                                            runStat = RunStatus.Success;
+                                        }
+                                    }
+                                }
+                            }
+
+                            _castSpell = null;
                             _castOnUnit = null;
-                            return RunStatus.Success;
+                            return runStat;
                         })
                     )
                 );
@@ -1311,9 +1330,18 @@ namespace Singular.Helpers
                 // save flag indicating if currently in a GCD or IsCasting before queueing our cast
                             new Action(ret =>
                             {
+                                _castSpell = null;
                                 _castOnUnit = onUnit(ret);
                                 if (_castOnUnit == null)
                                     return RunStatus.Failure;
+
+                                // health/dist change quickly, so grab these now where
+                                // .. we check requirements so the log message we output
+                                // .. later reflects what they were when we were testing
+                                // .. as opposed to what they may have changed to
+                                // .. (since spell lookup, move while casting check, and cancast take time)
+                                double health = _castOnUnit.HealthPercent;
+                                double dist = _castOnUnit.Distance;
 
                                 if (!requirements(ret))
                                     return RunStatus.Failure;
@@ -1323,23 +1351,31 @@ namespace Singular.Helpers
                                 if (!SpellManager.FindSpell(name(ret), out sfr))
                                     return RunStatus.Failure;
 
-                                WoWSpell spell = sfr.Override ?? sfr.Original;
+                                _castSpell = sfr.Override ?? sfr.Original;
 
-                                if (checkMovement(ret) && Me.IsMoving && !AllowMovingWhileCasting(spell))
+                                if (checkMovement(ret) && Me.IsMoving && !AllowMovingWhileCasting(_castSpell))
+                                {
+                                    if (SingularSettings.Instance.EnableDebugLoggingGCD)
+                                        Logger.WriteDebug("skipping Spell.Cast({0},[{1}]) because we are moving", _castOnUnit.SafeName(), _castSpell.Name);
                                     return RunStatus.Failure;
+                                }
 
                                 // check we can cast it on target without checking for movement
                                 // if (!SpellManager.CanCast(_spell, _castOnUnit, true, false, allow == LagTolerance.Yes))
-                                if (!CanCastHack(name(ret), _castOnUnit, skipWowCheck ))
+                                if (!CanCastHack(name(ret), _castOnUnit, skipWowCheck))
+                                {
+                                    if (SingularSettings.Instance.EnableDebugLoggingGCD)
+                                        Logger.WriteDebug("skipping Spell.Cast({0},[{1}]) because CanCastHack failed", _castOnUnit.SafeName(), _castSpell.Name);
                                     return RunStatus.Failure;
+                                }
 
                                 // save status of queueing spell (lag tolerance - the prior spell still completing)
                                 _IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
-                                LogCast(spell.Name, _castOnUnit);
-                                if (!SpellManager.Cast(spell, _castOnUnit))
+                                LogCast(_castSpell.Name, _castOnUnit, health, dist);
+                                if (!SpellManager.Cast(_castSpell, _castOnUnit))
                                 {
-                                    Logger.WriteDebug(Color.LightPink, "cast of {0} on {1} failed!", spell.Name, _castOnUnit.SafeName());
+                                    Logger.WriteDebug(Color.LightPink, "cast of {0} on {1} failed!", _castSpell.Name, _castOnUnit.SafeName());
                                     return RunStatus.Failure;
                                 }
 
@@ -1384,12 +1420,13 @@ namespace Singular.Helpers
 
                             /// new Action(r => Logger.WriteDebug("Spell.Cast(\"{0}\"): assume we are casting (actual={1}, gcd={2})", name(r), StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling, Spell.GlobalCooldown )),
 #else
-                // now for non-instant spell, wait for .IsCasting to be true
+                            // for instant spell, wait for GCD to start
+                            // for non-instant spell, wait for .IsCasting / .IsChanneling to start
                             new WaitContinue(
                                 TimeSpan.FromMilliseconds(350),
                                 ret =>
                                 {
-                                    if (Spell.GcdTimeLeft.TotalMilliseconds > 750 || Me.CurrentCastTimeLeft.TotalMilliseconds > 750 || Me.CurrentChannelTimeLeft.TotalMilliseconds > 750)
+                                    if ((_castSpell.CastTime == 0 && Spell.GcdTimeLeft.TotalMilliseconds > 750) || Me.CurrentCastTimeLeft.TotalMilliseconds > 750 || Me.CurrentChannelTimeLeft.TotalMilliseconds > 750)
                                         return true;
 
                                     return false;
@@ -1398,29 +1435,28 @@ namespace Singular.Helpers
                                 ),
 #endif
 
+                            // now check for one of the possible done casting states
                             new PrioritySelector(
 
-                                // when not monitoring for cancel, don't wait for completion of full cast
+                                // for instant or no cancel method given, we are done
                                 new Decorator(
-                                    ret => cancel == null,
+                                    ret => cancel == null || _castSpell.CastTime == 0,
                                     new Action(r =>
                                     {
-                                        // Logger.WriteDebug("Spell.Cast(\"{0}\"): no cancel delegate", name(r));
+                                        // Logger.WriteDebug("Spell.Cast(\"{0}\"): no cancel delegate", _castSpell.Name);
                                         return RunStatus.Success;
                                     })
                                     ),
 
-                                // finally, wait at this point until Cast completes
-                                // .. always return success here since based on flags we cast something
-                                new Wait(10,
-                                    ret =>
-                                    {
+                                // while casting/channeling call the cancel method to see if we should abort
+                                new Wait(12,
+                                    ret => {
                                         SingularRoutine.UpdateDiagnosticCastingState();
 
                                         // Interrupted or finished casting. 
                                         if (!Spell.IsCastingOrChannelling(allow))
                                         {
-                                            // Logger.WriteDebug("Spell.Cast(\"{0}\"): cast has ended", name(ret));
+                                            Logger.WriteDebug("Spell.Cast(\"{0}\"): cast has ended", _castSpell.Name);
                                             return true;
                                         }
 
@@ -1428,30 +1464,37 @@ namespace Singular.Helpers
                                         if (cancel(ret))
                                         {
                                             SpellManager.StopCasting();
-                                            Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", name(ret), _castOnUnit.SafeName(), _castOnUnit.HealthPercent);
+                                            Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", _castSpell.Name, _castOnUnit.SafeName(), _castOnUnit.HealthPercent);
                                             return true;
                                         }
                                         // continue casting/channeling at this point
                                         return false;
-                                    },
+                                        },
                                     new ActionAlwaysSucceed()
                                     ),
 
-                                new Action(r =>
-                                {
-                                    Logger.WriteDebug("Spell.Cast(\"{0}\"): timed out waiting", name(r));
+                                // if we are here, we timed out after 12 seconds (very odd)
+                                new Action(r => {
+                                    Logger.WriteDebug("Spell.Cast(\"{0}\"): timed out waiting", _castSpell.Name);
                                     return RunStatus.Success;
-                                })
+                                    })
+
                                 ),
 
                                 // made it this far the we are RunStatus.Success, so reset wowunit reference and return
-                                new Action(r => _castOnUnit = null)
+                                new Action(ret =>
+                                {
+                                    _castOnUnit = null;
+                                    _castSpell = null;
+                                    return RunStatus.Success;
+                                })
                             ),
 
-                        // cast Sequence failed, so only thing left is to reset wowunit reference and report failure
+                        // cast Sequence failed, so only thing left is to reset cached references and report failure
                         new Action(ret =>
                         {
                             _castOnUnit = null;
+                            _castSpell = null;
                             return RunStatus.Failure;
                         })
                         )
@@ -1465,7 +1508,7 @@ namespace Singular.Helpers
         /// but doing it here enforces for all calls, so will reduce list scans and cycles required even for targets selected by auras present/absent
         /// </summary>
         private static WoWUnit _castOnUnit;
-
+        private static WoWSpell _castSpell;
 
         /// <summary>
         /// checked if the spell has an instant cast, the spell is one which can be cast while moving, or we have an aura active which allows moving without interrupting casting.  

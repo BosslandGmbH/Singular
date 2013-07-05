@@ -121,22 +121,22 @@ namespace Singular.ClassSpecific.Shaman
                             ret => StyxWoW.Me.CurrentTarget.Distance < 12
                                 || ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).Any(p => p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 40 * 40),
                             new PrioritySelector(
-                                Spell.Buff("Flame Shock", true),
+                                Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst")),
                                 Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
                                 Spell.Cast("Earth Shock", ret => !SpellManager.HasSpell("Flame Shock"))
                                 )
                             ),
 
                         // have a big attack loaded up, so don't waste it
-                        Spell.Cast("Earth Shock",
-                            ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
+                        Spell.Cast("Earth Shock", ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
 
                         // otherwise, start with Lightning Bolt so we can follow with an instant
                         // to maximize damage at initial aggro
                         Spell.Cast("Lightning Bolt"),
 
                         // we are moving so throw an instant of some type
-                        Spell.Cast("Flame Shock"),
+                        Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst")),
+                        Spell.Cast("Earth Shock"),
                         Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand))
                         )
                     )
@@ -189,12 +189,13 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Elemental Blast"),
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 
-                        Spell.Buff("Flame Shock", true),
+                        Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst") || Me.CurrentTarget.TimeToDeath(-1) > 30),
 
                         Spell.Cast("Lava Burst"),
                         Spell.Cast("Earth Shock",
                             ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
                                    StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
+                        Spell.Cast("Earth Shock", req => !SpellManager.HasSpell("Lava Burst")),
 
                         Spell.Cast("Unleash Elements", ret => 
                             StyxWoW.Me.IsMoving &&

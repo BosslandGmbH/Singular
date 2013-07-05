@@ -20,7 +20,8 @@ namespace Singular.Settings
         Voidwalker  = 16,
         Succubus    = 17,
         Felhunter   = 15,
-        Felguard    = 29
+        Felguard    = 29,
+        Other       = 99999     // a quest or other pet forced upon us for some reason
     }
 
     public enum Soulstone

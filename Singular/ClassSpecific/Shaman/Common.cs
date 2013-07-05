@@ -473,8 +473,11 @@ namespace Singular.ClassSpecific.Shaman
                                     // .. and its okay for multiple heals at that point
                                     Spell.Cast(
                                         "Healing Surge",
-                                        ret => Me,
-                                        ret => Me.HealthPercent <= ShamanSettings.SelfHealingSurge)
+                                        mov => true,
+                                        on => Me,
+                                        req => Me.GetPredictedHealthPercent(true) <= ShamanSettings.SelfHealingSurge,
+                                        cancel => Me.HealthPercent > 90
+                                        )
                                     )
                                 )
                             )

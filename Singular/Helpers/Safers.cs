@@ -384,7 +384,7 @@ namespace Singular.Helpers
                                         if ( DateTime.Now >= _timeNextInvalidTargetMessage)
                                         {
                                             _timeNextInvalidTargetMessage = DateTime.Now + TimeSpan.FromSeconds(1);
-                                            Logger.Write(targetColor, "Current target invalid.  No other targets available");
+                                            Logger.Write(targetColor, "Bot TargetList is empty, no targets available");
                                         }
 
                                         return null;

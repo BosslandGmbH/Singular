@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Warlock
                         new Throttle(5, Spell.Cast("Create Healthstone", mov => true, on => Me, ret => !HaveHealthStone && !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 25), cancel => false )),
                         Spell.BuffSelf("Soulstone", ret => NeedToSoulstoneMyself()),
                         PartyBuff.BuffGroup("Dark Intent"),
-                        Spell.BuffSelf( "Grimoire of Sacrifice", ret => GetCurrentPet() != WarlockPet.None ),
+                        Spell.BuffSelf( "Grimoire of Sacrifice", ret => GetCurrentPet() != WarlockPet.None && GetCurrentPet() != WarlockPet.Other),
                         Spell.BuffSelf( "Unending Breath", req => Me.IsSwimming )
                         )
                     )
@@ -276,7 +276,7 @@ namespace Singular.ClassSpecific.Warlock
                                 && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid)),
 
                         Spell.BuffSelf("Dark Bargain", ret => Me.HealthPercent < 50),
-                        Spell.BuffSelf("Sacrificial Pact", ret => Me.HealthPercent < 60 && GetCurrentPet() != WarlockPet.None && Me.Pet.HealthPercent > 50),
+                        Spell.BuffSelf("Sacrificial Pact", ret => Me.HealthPercent < 60 && GetCurrentPet() != WarlockPet.None && GetCurrentPet() != WarlockPet.Other && Me.Pet.HealthPercent > 50),
 
                         new Decorator(
                             ret => Me.HealthPercent < WarlockSettings.DrainLifePercentage && !Group.AnyHealerNearby,
@@ -478,6 +478,10 @@ namespace Singular.ClassSpecific.Warlock
         /// <returns>WarlockPet to use</returns>
         public static WarlockPet GetBestPet()
         {
+            WarlockPet currPet = GetCurrentPet();
+            if (currPet == WarlockPet.Other)
+                return currPet;
+
             WarlockPet bestPet = SingularSettings.Instance.Warlock().Pet;
             if (bestPet != WarlockPet.None)
             {
@@ -538,11 +542,33 @@ namespace Singular.ClassSpecific.Warlock
             if (!Me.GotAlivePet)
                 return WarlockPet.None;
 
-            if (Me.Pet == null || Me.Pet.CreatureFamilyInfo == null)
+            if (Me.Pet == null)
+            {
+                Logger.WriteDebug( "????? GetCurrentPet unstable - have live pet but Me.Pet == null !!!!!");
                 return WarlockPet.None;
+            }
+
+            uint id;
+            try
+            {
+                // following will fail when we have a non-creature warlock pet
+                // .. this happens in quests where we get a pet assigned as Me.Pet (like Eric "The Swift")
+                id = Me.Pet.CreatureFamilyInfo.Id;
+            }
+            catch
+            {
+                return WarlockPet.Other;
+            }
 
             switch ((WarlockGrimoireOfSupremecyPets) Me.Pet.CreatureFamilyInfo.Id)
             {
+                case (WarlockGrimoireOfSupremecyPets)WarlockPet.Imp:
+                case (WarlockGrimoireOfSupremecyPets)WarlockPet.Felguard:
+                case (WarlockGrimoireOfSupremecyPets)WarlockPet.Voidwalker:
+                case (WarlockGrimoireOfSupremecyPets)WarlockPet.Felhunter:
+                case (WarlockGrimoireOfSupremecyPets)WarlockPet.Succubus:
+                    return (WarlockPet)Me.Pet.CreatureFamilyInfo.Id;
+
                 case WarlockGrimoireOfSupremecyPets.FelImp:
                     return WarlockPet.Imp;
                 case WarlockGrimoireOfSupremecyPets.Wrathguard:
@@ -555,7 +581,7 @@ namespace Singular.ClassSpecific.Warlock
                     return WarlockPet.Succubus;
             }
 
-            return (WarlockPet)Me.Pet.CreatureFamilyInfo.Id;
+            return WarlockPet.Other;
         }
 
         #endregion

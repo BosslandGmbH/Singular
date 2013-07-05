@@ -485,7 +485,7 @@ namespace Singular.Helpers
         {
             return new Decorator( 
 
-                ret => SingularSettings.Instance.UseBandages && Me.HealthPercent < 95 && SpellManager.HasSpell( "First Aid") && !Me.HasAura( "Recently Bandaged") && !Me.ActiveAuras.Any( a => a.Value.IsHarmful ),
+                ret => SingularSettings.Instance.UseBandages && Me.GetPredictedHealthPercent(true) < 95 && SpellManager.HasSpell( "First Aid") && !Me.HasAura( "Recently Bandaged") && !Me.ActiveAuras.Any( a => a.Value.IsHarmful ),
 
                 new PrioritySelector(
 

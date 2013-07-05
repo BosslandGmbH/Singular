@@ -465,7 +465,7 @@ namespace Singular.Helpers
         {
             // need to compare millisecs even though seconds are provided.  otherwise see it as expired 999 ms early because
             // .. of loss of precision
-            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, myAura).TotalSeconds <= secs;
+            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, myAura).TotalSeconds < (double) secs;
         }
 
 
@@ -478,7 +478,7 @@ namespace Singular.Helpers
         /// <returns>true aura missing or less than 'secs' time left, otherwise false</returns>
         public static bool HasKnownAuraExpired(this WoWUnit u, string aura, int secs = 3, bool myAura = true)
         {
-            return u.GetAuraTimeLeft(aura, myAura).TotalSeconds < secs;
+            return u.GetAuraTimeLeft(aura, myAura).TotalSeconds < (double) secs;
         }
 
 
@@ -757,6 +757,7 @@ namespace Singular.Helpers
             return me.GroupInfo.IsInParty || me.GroupInfo.IsInRaid;
         }
 
+/*
         public static uint GetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
         {
             // Reversing note: CGUnit_C::GetPredictedHeals
@@ -795,7 +796,7 @@ namespace Singular.Helpers
 
             public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
         }
-
+*/
         private static bool lastMovingAwayAnswer = false;
         private static ulong guidLastMovingAwayCheck = 0;
         private static double distLastMovingAwayCheck = 0f;

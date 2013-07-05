@@ -1,3 +1,59 @@
+--- Release 3.0.0.2687 ---
+
+General
+
+fixed - double heal cast at rest; caused by Global Cooldown being invoked much more quickly than Is Casting status at times, which was resulting in a double cast at times.  Will now properly complete spell casts or cancel if appropriate
+
+change- message shown when in Pet Combat now shown only once per combat rathe
+
+change- message shown when in a Quest Vehicle now shown once per vehicle
+
+change- message notifying user that Singular is not being called by BotBase is now suppressed when doing a corpse run
+
+fixed - character would cast one self-heal up and then sometimes still apply a bandage
+
+
+Druid
+
+fixed - Feral - Savage Roar was not being cast for those using Glyph of Savagery.  Never having Savage Roar applied also caused Ferocious Bite not to be cast (since combo pts were being saved for Savage Roar)
+
+
+Hunter
+
+fixed - All Specs - Questing: will no longer spam Call Pet while doing a quest which has a pet that cannot coexist with hunter pet 
+
+change- Beast Master - moved Kill Shot above Kill Command in priority
+
+change- Beast Master - added kill sniping with Kill Shot on nearby low-health targets
+
+fixed - All Specs - will now Call Pet as highest priority when out of combat so pet is available if attacked while eating
+
+fixed - All Specs - will now Call Pet in Pull Buffs ensuring pet is available for Pull
+
+
+Paladin
+
+fixed - Holy - will now correctly self-heal while in combat and solo
+
+
+Rogue
+
+change- All Specs - will use Shadowstep, Burst of Speed, and Sprint when pursuing mob moving away from toon
+
+
+Shaman
+
+change- All Specs - revised DPS self-healing to cancel cast if health percent goes above 90% 
+
+change- Elemental - Prior to learning Lava Burst, lower level Elementals will now use Earth Shock rather than Flame Shock unless target will live more than 30 seconds
+
+
+Warlock
+
+fixed - All Specs - Questing: will no longer spam Call Pet while doing a quest which has a pet that cannot coexist with hunter pet 
+
+
+
 --- Release 3.0.0.2661 ---
 
 General

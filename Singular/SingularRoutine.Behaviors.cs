@@ -120,6 +120,7 @@ namespace Singular
         {
             // be sure to turn off -- routines needing it will enable when rebuilt
             HealerManager.NeedHealTargeting = false;
+            HealerManager.Instance.Clear();
 
             // we only do this one time
             if (_restBehavior != null)

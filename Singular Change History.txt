@@ -1,3 +1,91 @@
+--- Release 3.0.0.2742 ---
+
+General
+
+fixed - heal target exception sometimes occurring for Healers when they leave an instance.  occurs mostly (but not only) with Mixed Bot usage.
+
+change- Singular will now automatically switch to Instance spell priority when attacking a known Training Dummy
+
+change- debug logging of heals during Rest 
+
+fixed - all class specific ressurrection spells will cancel the cast in progress if target is detected as already having accepted a rez from someone else
+
+change- Evade bugged mob messages will be written to log at all times (previously was only in debug mode)
+
+
+Druid
+
+*new* - Resto - rewrite of healing logic/priority.  Supports same spells as before plus all abilities and talents including Mushrooms, Force of Nature, casting Regrowth on Clearcasting, Ironbark, Cenarion Ward, and more.  Mushrooms are only set on tank and only when no other healing activity is needed.
+
+*new* - Resto - settings for group healing now appear on Group Heal tab
+
+
+Mage
+
+fixed - Frost - revised PVP logic including addition of Ice Ward, Ring of Frost, Alter Time, and more
+
+fixed - All Specs - correctly creates/recognizes Level 90 Refreshment Table
+
+fixed - All Specs - interruption of Evocation and other channeled casts at times
+
+fixed - All Specs - won't attempt to cast second use Mana Gem immediately
+
+
+Monk
+
+fixed - All Specs - added Use Grapple Weapon setting. 
+
+*new* - Brewmaster - added call to Grapple Weapon
+
+fixed - All Specs - class specific settings for Monks were not accessible.
+
+
+Paladin
+
+change- All Specs - settings for Self-Healing have been grouped together.
+
+change- Holy - settings for Lay on Hands and Flash Heal for group healing have been added for config separately from self-heal versions
+
+fixed - Protection - will now self-heal with Flash Heal correctly
+
+
+Priest
+
+fixed - Disc - added support for Renew on Tank if moving and other instants are on cooldown
+
+fixed - Disc - added support for direct heal with Penance
+
+
+Rogue
+
+*new* - All Specs - new Move Behind Targets setting to enable/disable this Pull approach for Rogues.  Will effect which opener is used based upon positioning
+
+change- All Specs - Slabhide in Stonecore added to the do not move behind list
+
+
+Shaman
+
+fixed - Lowbie - self-heal with Healing Surge was being interrupted at times by bot movement
+
+fixed - Lowbie - self-heal cast will cancel if health gets above 85%
+
+change- Resto - refinement to Healing Rain positioning algorithm to improve healing potential
+
+
+Warrior
+
+*new* - All Specs - added Disarm and a Use Disarm setting to allow disabling
+
+fixed - All Specs - Charge behavior will check for Warbringer debuff on targets
+
+fixed - All Specs - fixed issue where add/removal of Glyph of Long Charge after starting was not recognized
+
+fixed - Fury - removed the Move Behind Target primitive which was interfering at times with questing combat
+
+
+
+
+
 --- Release 3.0.0.2687 ---
 
 General
@@ -50,7 +138,7 @@ change- Elemental - Prior to learning Lava Burst, lower level Elementals will no
 
 Warlock
 
-fixed - All Specs - Questing: will no longer spam Call Pet while doing a quest which has a pet that cannot coexist with hunter pet 
+fixed - All Specs - Questing: will no longer spam Summon Pet while doing a quest which has a pet that cannot coexist with warlock pet 
 
 
 
@@ -2880,6 +2968,5 @@ Protection - rewrite of Protection completed.  should use all abilities needed f
 Settings - Stance now allows choosing a stance or selecting Auto (allowing to automatically choose the best one based on your spec.)
 
 Settings - redundant Shout settings removed
-
 
 

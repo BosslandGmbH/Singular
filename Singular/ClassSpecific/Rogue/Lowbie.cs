@@ -31,7 +31,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
@@ -42,7 +42,7 @@ namespace Singular.ClassSpecific.Rogue
                         Helpers.Common.CreateAutoAttack(true)
                         )
                     ),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }

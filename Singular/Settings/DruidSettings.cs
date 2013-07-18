@@ -5,6 +5,7 @@ using System.IO;
 using Styx.Helpers;
 
 using DefaultValue = Styx.Helpers.DefaultValueAttribute;
+using System.Drawing;
 
 namespace Singular.Settings
 {
@@ -21,7 +22,40 @@ namespace Singular.Settings
             : base(Path.Combine(SingularSettings.SingularSettingsPath, "Druid.xml"))
         {
         }
-        // Pvp By IloveAnimals
+
+        #region Context Late Loading Wrappers
+
+        private DruidHealSettings _battleground;
+        private DruidHealSettings _instance;
+        private DruidHealSettings _raid;
+        private DruidHealSettings _normal;
+
+        [Browsable(false)]
+        public DruidHealSettings Battleground { get { return _battleground ?? (_battleground = new DruidHealSettings(HealingContext.Battlegrounds)); } }
+
+        [Browsable(false)]
+        public DruidHealSettings Instance { get { return _instance ?? (_instance = new DruidHealSettings(HealingContext.Instances)); } }
+
+        [Browsable(false)]
+        public DruidHealSettings Raid { get { return _raid ?? (_raid = new DruidHealSettings(HealingContext.Raids)); } }
+
+        [Browsable(false)]
+        public DruidHealSettings Normal { get { return _normal ?? (_normal = new DruidHealSettings(HealingContext.Normal)); } }
+
+        [Browsable(false)]
+        public DruidHealSettings Heal { get { return HealLookup(Singular.SingularRoutine.CurrentWoWContext); } }
+
+        public DruidHealSettings HealLookup(WoWContext ctx)
+        {
+            if (ctx == WoWContext.Battlegrounds)
+                return Battleground;
+            if (ctx == WoWContext.Instances)
+                return Styx.StyxWoW.Me.CurrentMap.IsRaid ? Raid : Instance;
+            return Normal;
+        }
+
+        #endregion
+
 
         #region pvp
         /*
@@ -302,20 +336,6 @@ namespace Singular.Settings
         public int Rejuvenation { get; set; }
 
         [Setting]
-        [DefaultValue(80)]
-        [Category("Restoration")]
-        [DisplayName("Tree of Life Health")]
-        [Description("Tree of Life will be used at this value")]
-        public int TreeOfLifeHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Restoration")]
-        [DisplayName("Tree of Life Count")]
-        [Description("Tree of Life will be used when count of party members whom health is below Tree of Life health mets this value ")]
-        public int TreeOfLifeCount { get; set; }
-
-        [Setting]
         [DefaultValue(70)]
         [Category("Restoration")]
         [DisplayName("Barkskin Health")]
@@ -558,4 +578,177 @@ namespace Singular.Settings
 
         #endregion
     }
+
+
+    internal class DruidHealSettings : Singular.Settings.HealerSettings
+    {
+        private DruidHealSettings()
+            : base("", HealingContext.None)
+        {
+        }
+
+        public DruidHealSettings(HealingContext ctx)
+            : base("Shaman", ctx)
+        {
+
+            // we haven't created a settings file yet,
+            //  ..  so initialize values for various heal contexts
+
+            if (!SavedToFile)
+            {
+                if (ctx == Singular.HealingContext.Battlegrounds)
+                {
+                }
+                else if (ctx == Singular.HealingContext.Instances)
+                {
+                }
+                else if (ctx == Singular.HealingContext.Raids)
+                {
+                }
+                // omit case for WoWContext.Normal and let it use DefaultValue() values
+            }
+
+            SavedToFile = true;
+        }
+
+        [Setting]
+        [Browsable(false)]
+        [DefaultValue(false)]
+        public bool SavedToFile { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
+        [DisplayName("% Rejuvenation")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Rejuvenation { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
+        [DisplayName("% Nourish")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Nourish { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
+        [DisplayName("% Healing Touch")]
+        [Description("Health % to cast this ability at. Set to 0 to disable. Overridden by Regrowth if Glyphed")]
+        public int HealingTouch { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
+        [DisplayName("% Regrowth")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Regrowth { get; set; }
+
+        [Setting]
+        [DefaultValue(92)]
+        [Category("Restoration")]
+        [DisplayName("% Wild Growth")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int WildGrowth { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Restoration")]
+        [DisplayName("Wild Growth Min Count")]
+        [Description("Min number of players below Healing Rain % in area")]
+        public int CountWildGrowth { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
+        [DisplayName("% Swiftmend (AOE)")]
+        [Description("Health % to cast this ability at based upon minimum player count. Set to 0 to disable.")]
+        public int SwiftmendAOE { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Restoration")]
+        [DisplayName("Swiftmend (AOE) Min Count")]
+        [Description("Min number of players healed")]
+        public int CountSwiftmendAOE { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
+        [DisplayName("% Swiftmend (Direct Heal)")]
+        [Description("Health % to cast this ability at based upon single player health. Set to 0 to disable.")]
+        public int SwiftmendDirectHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Restoration")]
+        [DisplayName("% Wild Mushroom: Bloom")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int WildMushroomBloom { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Restoration")]
+        [DisplayName("Mushroom: Bloom Min Count")]
+        [Description("Min number of players below Mushroom: Bloom % in area")]
+        public int CountMushroomBloom { get; set; }
+
+        [Setting]
+        [DefaultValue(91)]
+        [Category("Restoration")]
+        [DisplayName("% Tranquility")]
+        [Description("Health % to cast this ability at. Must heal Min of 3 people in party, 4 in a raid. Set to 0 to disable.")]
+        public int Tranquility { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Restoration")]
+        [DisplayName("Tranquility Min Count")]
+        [Description("Min number of players below Healing Rain % in area")]
+        public int CountTranquility { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Tree of Life Form")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int TreeOfLife { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Restoration")]
+        [DisplayName("Tree of Life Min Count")]
+        [Description("Min number of players below Tree of Life % in area")]
+        public int CountTreeOfLife { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Ironbark")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Ironbark { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Nature's Swiftness")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int NaturesSwiftness { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Cenarion Ward")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int CenarionWard { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Nature's Vigil")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int NaturesVigil { get; set; }
+
+    }
+
 }

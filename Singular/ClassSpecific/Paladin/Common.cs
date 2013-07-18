@@ -190,22 +190,22 @@ namespace Singular.ClassSpecific.Paladin
                     Spell.Cast(
                         "Eternal Flame",
                         ret => (WoWUnit)ret,
-                        ret => StyxWoW.Me.CurrentHolyPower >= 3 && (((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().EternalFlameHealth ))
+                        ret => StyxWoW.Me.CurrentHolyPower >= 3 && (((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().SelfEternalFlameHealth ))
 
                     );
             }
 
             return new PrioritySelector(
                 new Decorator(
-                    req => Me.CurrentHolyPower >= 1 && Me.HealthPercent <= PaladinSettings.WordOfGloryHealth1 || Me.ActiveAuras.ContainsKey("Divine Purpose"),
+                    req => Me.CurrentHolyPower >= 1 && Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth1 || Me.ActiveAuras.ContainsKey("Divine Purpose"),
                     Spell.Cast("Word of Glory", onUnit)
                     ),
                 new Decorator(
-                    req => Me.CurrentHolyPower >= 2 && Me.HealthPercent <= PaladinSettings.WordOfGloryHealth2,
+                    req => Me.CurrentHolyPower >= 2 && Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth2,
                     Spell.Cast("Word of Glory", onUnit)
                     ),
                 new Decorator(
-                    req => Me.CurrentHolyPower >= 3 && Me.HealthPercent <= PaladinSettings.WordOfGloryHealth3,
+                    req => Me.CurrentHolyPower >= 3 && Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth3,
                     Spell.Cast("Word of Glory", onUnit)
                     )
                 );

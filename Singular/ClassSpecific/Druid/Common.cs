@@ -85,7 +85,10 @@ namespace Singular.ClassSpecific.Druid
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
-                    Spell.BuffSelf("Barkskin")
+                    new Sequence(
+                        Spell.BuffSelf("Barkskin"),
+                        new Action( r => Logger.Write( Color.LightCoral, "Loss of Control - BARKSKIN!!!!"))
+                        )
                     )
                 );
         }
@@ -137,7 +140,7 @@ namespace Singular.ClassSpecific.Druid
                             Spell.BuffSelf("Celestial Alignment", ret => Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
 
                             new Sequence( 
-                                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => true),
+                                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => Me.Specialization != WoWSpec.DruidRestoration),
                                 new ActionAlwaysFail()
                                 ),
 
@@ -175,7 +178,7 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
                         Spell.BuffSelf("Celestial Alignment", ret => Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
                         new Sequence(
-                            Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => true),
+                            Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => Me.Specialization != WoWSpec.DruidRestoration),
                             new ActionAlwaysFail()
                             ),
                         // to do:  time ICoE at start of eclipse
@@ -332,13 +335,16 @@ namespace Singular.ClassSpecific.Druid
                 return new PrioritySelector();
             }
 
-            return new PrioritySelector(
-                ctx => onUnit(ctx),
-                new Decorator(
-                    ret => onUnit(ret) != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
-                    new PrioritySelector(
-                        Movement.CreateMoveToUnitBehavior( onUnit, 40f, 40f),
-                        Spell.Cast("Rebirth", ret => (WoWUnit)ret)
+            return new Decorator(
+                req => DruidSettings.UseRebirth && Me.Combat && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
+                new PrioritySelector(
+                    ctx => onUnit(ctx),
+                    new Decorator(
+                        ret => onUnit(ret) != null,
+                        new PrioritySelector(
+                            Movement.CreateMoveToUnitBehavior( onUnit, 40f, 40f),
+                            Spell.Cast("Rebirth", ret => (WoWUnit)ret)
+                            )
                         )
                     )
                 );

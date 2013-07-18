@@ -115,7 +115,7 @@ namespace Singular.Managers
                 WoWUnit unit = units[i].ToUnit();
                 try
                 {
-                    if (unit == null || !unit.IsValid || unit.IsDead || unit.IsHostile)
+                    if (unit == null || !unit.IsValid || unit.IsDead || unit.IsHostile || unit.HealthPercent <= 0)
                     {
                         units.RemoveAt(i);
                         continue;
@@ -196,40 +196,27 @@ namespace Singular.Managers
                 {
                     prio.Score = u.IsAlive ? 500f : -500f;
                     prio.Score -= u.HealthPercent * 5;
-                }
-                catch (System.AccessViolationException)
-                {
-                    prio.Score = -9999f;
-                    continue;
-                }
-                catch (Styx.InvalidObjectPointerException)
-                {
-                    prio.Score = -9999f;
-                    continue;
-                }
 
-                // If they're out of range, give them a bit lower score.
-                if (u.DistanceSqr > 40 * 40)
-                {
-                    prio.Score -= 50f;
-                }
+                    // If they're out of range, give them a bit lower score.
+                    if (u.DistanceSqr > 40 * 40)
+                    {
+                        prio.Score -= 50f;
+                    }
 
-                // If they're out of LOS, again, lower score!
-                if (!u.InLineOfSpellSight)
-                {
-                    prio.Score -= 100f;
-                }
+                    // If they're out of LOS, again, lower score!
+                    if (!u.InLineOfSpellSight)
+                    {
+                        prio.Score -= 100f;
+                    }
 
-                // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
-                if (tanks.Contains(u.Guid) && u.HealthPercent != 100 && 
-                    // Ignore giving more weight to the tank if we have Beacon of Light on it.
-                    (!amHolyPally || !u.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid)))
-                {
-                    prio.Score += 100f;
-                }
+                    // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
+                    if (tanks.Contains(u.Guid) && u.HealthPercent != 100 && 
+                        // Ignore giving more weight to the tank if we have Beacon of Light on it.
+                        (!amHolyPally || !u.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid)))
+                    {
+                        prio.Score += 100f;
+                    }
 
-                try
-                {
                     // Give flag carriers more weight in battlegrounds. We need to keep them alive!
                     if (inBg && u.IsPlayer && u.Auras.Keys.Any(a => a.ToLowerInvariant().Contains("flag")))
                     {
@@ -238,14 +225,18 @@ namespace Singular.Managers
                 }
                 catch (System.AccessViolationException)
                 {
+                    prio.Score = -9999f;
+                    continue;
                 }
                 catch (Styx.InvalidObjectPointerException)
                 {
+                    prio.Score = -9999f;
+                    continue;
                 }
             }
         }
 
-        private static HashSet<ulong> GetMainTankGuids()
+        public static HashSet<ulong> GetMainTankGuids()
         {
             var infos = StyxWoW.Me.GroupInfo.RaidMembers;
 
@@ -291,7 +282,7 @@ namespace Singular.Managers
         }
 
 
-        public static WoWUnit GetBestCoverageTarget(string spell, int health, int range, int radius, int minCount, SimpleBooleanDelegate requirements = null)
+        public static WoWUnit GetBestCoverageTarget(string spell, int health, int range, int radius, int minCount, SimpleBooleanDelegate requirements = null, IEnumerable<WoWUnit> mainTarget = null)
         {
             if (!Me.IsInGroup() || !Me.Combat)
                 return null;
@@ -308,7 +299,7 @@ namespace Singular.Managers
 
             // build temp list of targets that could use heal and are in range + radius
             List<WoWUnit> coveredTargets = HealerManager.Instance.TargetList
-                .Where(u => u.IsAlive && u.Distance < (range + radius) && u.HealthPercent < health && requirements(u))
+                .Where(u => u.IsAlive && u.SpellDistance() < (range + radius) && u.HealthPercent < health && requirements(u))
                 .ToList();
 
 
@@ -316,8 +307,10 @@ namespace Singular.Managers
             IEnumerable<WoWUnit> listOf;
             if (range == 0)
                 listOf = new List<WoWUnit>() { Me };
+            else if (mainTarget == null)
+                listOf = HealerManager.Instance.TargetList.Where(p => p.IsAlive && p.SpellDistance() <= range);
             else
-                listOf = Unit.NearbyGroupMembersAndPets.Where(p => p.Distance <= range && p.IsAlive);
+                listOf = mainTarget;
 
             // now search list finding target with greatest number of heal targets in radius
             var t = listOf
@@ -325,7 +318,7 @@ namespace Singular.Managers
                 {
                     Player = p,
                     Count = coveredTargets
-                        .Where(pp => pp.IsAlive && pp.Location.Distance(p.Location) < radius)
+                        .Where(pp => pp.IsAlive && pp.SpellDistance(p) < radius)
                         .Count()
                 })
                 .OrderByDescending(v => v.Count)
@@ -420,7 +413,7 @@ namespace Singular.Managers
 
         public void AddBehavior(int pri, string behavName, string spellName, Composite bt)
         {
-            if (pri <= 0)
+            if (pri == 0)
                 Logger.WriteDebug("Skipping Behavior [{0}] configured for Priority {1}", behavName, pri);
             else if (!String.IsNullOrEmpty(spellName) && !SpellManager.HasSpell(spellName))
                 Logger.WriteDebug("Skipping Behavior [{0}] since spell '{1}' is not known by this character", behavName, spellName);

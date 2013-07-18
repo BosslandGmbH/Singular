@@ -79,6 +79,9 @@ namespace Singular.GUI
                 case WoWClass.Druid:
                     toSelect = SingularSettings.Instance.Druid();
                     break;
+                case WoWClass.Monk:
+                    toSelect = SingularSettings.Instance.Monk();
+                    break;
                 default:
                     break;
             }
@@ -144,6 +147,13 @@ namespace Singular.GUI
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Battleground));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Instance));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Raid));
+            }
+
+            if (cls == WoWClass.Druid)
+            {
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.DruidRestoration, SingularSettings.Instance.Druid().Battleground));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.DruidRestoration, SingularSettings.Instance.Druid().Instance));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.DruidRestoration, SingularSettings.Instance.Druid().Raid));
             }
 
             if (cls == WoWClass.Priest)

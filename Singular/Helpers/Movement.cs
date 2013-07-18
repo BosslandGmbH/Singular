@@ -148,7 +148,7 @@ namespace Singular.Helpers
             return CreateFaceTargetBehavior(ret => StyxWoW.Me.CurrentTarget, viewDegrees, waitForFacing );
         }
 
-        public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 70f, bool waitForFacing = true)
+        public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 100f, bool waitForFacing = true)
         {
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled 

@@ -252,7 +252,7 @@ namespace Singular.ClassSpecific.Warlock
                             ),
 
                         new Decorator(
-                            ret => (Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss())) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingUs()) >= 3,
+                            ret => (Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss())) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMyStuff()) >= 3,
                             new PrioritySelector(
                                 Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction),
                                 Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction),
@@ -704,7 +704,7 @@ namespace Singular.ClassSpecific.Warlock
         {
             get
             {
-                return Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && u.IsTargetingUs() && !u.IsCrowdControlled() && StyxWoW.Me.IsSafelyFacing(u));
+                return Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && u.IsTargetingMyStuff() && !u.IsCrowdControlled() && StyxWoW.Me.IsSafelyFacing(u));
             }
         }
 

@@ -149,6 +149,8 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateVictoryRushBehavior(),
 
+                        Common.CreateDisarmBehavior(),
+
                         new Throttle(
                             new Decorator(
                                 ret => Me.HasAura("Glyph of Incite"),
@@ -418,9 +420,7 @@ namespace Singular.ClassSpecific.Warrior
                             ret => StyxWoW.Me.CurrentRage < 50
                                 && Me.CurrentTarget.Distance > 10
                                 && !Spell.IsSpellOnCooldown("Charge")),
-
-
-
+                      
             #region Stun
 
                 // charge them now
@@ -458,6 +458,7 @@ namespace Singular.ClassSpecific.Warrior
                                 && !Me.CurrentTarget.IsCrowdControlled()
                                 && Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed)),
 
+                        Common.CreateDisarmBehavior(),
             #endregion
 
             #region Damage

@@ -32,7 +32,7 @@ namespace Singular.ClassSpecific.Rogue
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
 
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
@@ -63,7 +63,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCastOrChannel(),
@@ -77,7 +77,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         new Throttle( Helpers.Common.CreateInterruptBehavior()),
 
-                        Movement.CreateMoveBehindTargetBehavior(),
+                        Common.CreateRogueMoveBehindTarget(),
 
                         Common.CreateRogueOpenerBehavior(),
 
@@ -132,7 +132,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCastOrChannel(),
@@ -148,7 +148,7 @@ namespace Singular.ClassSpecific.Rogue
                         // Spell.Cast("Feint", ret => Me.CurrentTarget.ThreatInfo.RawPercent > 80),
 
                         // Resume standard priorities
-                        Movement.CreateMoveBehindTargetBehavior(),
+                        Common.CreateRogueMoveBehindTarget(),
 
                         Spell.BuffSelf("Adrenaline Rush", 
                             ret => Me.CurrentEnergy < 20 && !Me.HasAura("Killing Spree")),

@@ -51,13 +51,13 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Lay on Hands",
                             mov => false,
                             on => Me,
-                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.LayOnHandsHealth),
+                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.SelfLayOnHandsHealth),
                         Common.CreateWordOfGloryBehavior(on => Me),
                         Spell.Cast("Flash of Light",
                             mov => true,
                             on => Me,
-                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.RetributionHealHealth,
-                            cancel => Me.HealthPercent > PaladinSettings.RetributionHealHealth)
+                            req => Me.GetPredictedHealthPercent(true) <= PaladinSettings.SelfFlashOfLightHealth,
+                            cancel => Me.HealthPercent > PaladinSettings.SelfFlashOfLightHealth)
                         )
                     )
                 );

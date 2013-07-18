@@ -101,6 +101,13 @@ namespace Singular.Settings
         public bool CombatUseRuptureFinisher { get; set; }
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Move Behind Targets")]
+        [Description("Move behind targets for opener or when target stunned/not targeting Rogue")]
+        public bool MoveBehindTargets { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("Combat Spec")]
         [DisplayName("Use Expose Armor")]

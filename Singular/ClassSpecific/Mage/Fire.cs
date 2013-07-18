@@ -188,7 +188,7 @@ namespace Singular.ClassSpecific.Mage
                         // Defensive stuff
                         Spell.BuffSelf("Ice Block", ret => Me.HealthPercent < 10 && !Me.ActiveAuras.ContainsKey("Hypothermia")),
                         // Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && (Me.IsRooted() || Unit.NearbyUnitsInCombatWithMe.Any( u => u.IsWithinMeleeRange ))),
-                        Spell.BuffSelf("Mana Shield", ret => Me.HealthPercent <= 75),
+                        // Spell.BuffSelf("Mana Shield", ret => Me.HealthPercent <= 75),
 
                         Common.CreateMageAvoidanceBehavior(null, null),
                 

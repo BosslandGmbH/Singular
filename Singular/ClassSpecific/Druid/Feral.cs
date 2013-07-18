@@ -45,8 +45,6 @@ namespace Singular.ClassSpecific.Druid
                             && Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds < (Me.RawComboPoints * 6 + 6),
                         new Sequence(
                             new Action(r => Logger.WriteDebug("cast Savage Roar to use {0} points on corpse of {1} since buff has {2} seconds left", Me.RawComboPoints, ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget).SafeName(), Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds)),
-                            // Spell.Cast(52610, on => ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget))
-                            // Spell.Cast("Savage Roar", on => ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget))
                             CastSavageRoar( on => ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget), req => true)
                             )
                         )
@@ -276,8 +274,6 @@ namespace Singular.ClassSpecific.Druid
                         /// override.  Additionally, CanCast AWLAYS fails for 127538 meaning CanCast("Spell Manager") always fails.  workaround
                         /// is to cast by id
                         ///
-                        // new Throttle(Spell.Cast("Savage Roar", ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery")))),
-                        // new Throttle(Spell.Cast( 52610,        ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery")))),
                         CastSavageRoar( on => Me.CurrentTarget, req => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
 
                         new Throttle( Spell.BuffSelf("Tiger's Fury", 
@@ -381,9 +377,6 @@ namespace Singular.ClassSpecific.Druid
 
                             new PrioritySelector(
                                 // 2. Keep Savage Roar up
-                                // Note:  Savage Roar bugged due to override?  cast by id to work around CanCast always failing on override
-                                // Spell.Cast(52610, req => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
-                                // Spell.Cast("Savage Roar", req => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
                                 CastSavageRoar( on => Me.CurrentTarget, req => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
 
                                 // 3. Use Tiger’s Fury/Nature's Vigil/Incarnation/Berserking/Force of Nature*
@@ -537,9 +530,6 @@ namespace Singular.ClassSpecific.Druid
 
                     new PrioritySelector(
 
-                        // hanlde Savage Roar override bug
-                        // Spell.Cast("Savage Roar", ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
-                        // Spell.Cast(52610, ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
                         CastSavageRoar(on => Me.CurrentTarget, ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
 
                         CastThrash( on => Me.CurrentTarget, ret => _aoeColl.Any(m => !m.HasMyAura("Thrash")) || Me.HasAura("Omen of Clarity"), 0),

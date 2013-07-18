@@ -822,20 +822,30 @@ namespace Singular.ClassSpecific.Shaman
                 return null;
             }
 
+            // note: expensive, but worth it to optimize placement of Healing Rain by
+            // finding location with most heals, but if tied one with most living targets also
             // build temp list of targets that could use heal and are in range + radius
             List<WoWUnit> coveredTargets = HealerManager.Instance.TargetList
-                .Where(u => u.IsAlive && u.DistanceSqr < 50 * 50 && u.HealthPercent < ShamanSettings.Heal.HealingRain )
+                .Where(u => u.IsAlive && u.DistanceSqr < 50 * 50)
+                .ToList();
+            List<WoWUnit> coveredRainTargets = coveredTargets
+                .Where(u => u.HealthPercent < ShamanSettings.Heal.HealingRain)
                 .ToList();
 
             // search all targets to find best one in best location to use as anchor for cast on ground
-            var t = Unit.NearbyGroupMembersAndPets
+            var t = coveredTargets
+                .Where( u => u.DistanceSqr < 40 * 40)
                 .Select(p => new {
                     Player = p,
-                    Count = coveredTargets
-                        .Where(pp => pp.IsAlive && pp.Location.DistanceSqr(p.Location) < 10 * 10)
+                    Count = coveredRainTargets
+                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 10 * 10)
+                        .Count(),
+                    Covered = coveredTargets
+                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 10 * 10)
                         .Count()
                     })
                 .OrderByDescending(v => v.Count)
+                .ThenByDescending(v => v.Covered)
                 .DefaultIfEmpty(null)
                 .FirstOrDefault();
 

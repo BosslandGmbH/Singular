@@ -130,15 +130,13 @@ namespace Singular.ClassSpecific.Warrior
                         // Low level support
                         new Decorator(ret => StyxWoW.Me.Level < 30,
                             new PrioritySelector(
-                                Movement.CreateMoveBehindTargetBehavior(),
                                 Common.CreateVictoryRushBehavior(),
                                 Spell.Cast("Execute"),
                                 Spell.Cast("Bloodthirst"),
                                 Spell.Cast("Wild Strike"),
                         //rage dump
                                 Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) > 3),
-                                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60),
-                                Movement.CreateMoveToMeleeBehavior(true)
+                                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60)
                                 )
                             ),
 
@@ -170,10 +168,11 @@ namespace Singular.ClassSpecific.Warrior
                         //Interupts
                         Helpers.Common.CreateInterruptBehavior(),
 
-                        Movement.CreateMoveBehindTargetBehavior(),
-
                         // Heal up in melee
                         Common.CreateVictoryRushBehavior(),
+
+                        // Disarm if setting enabled
+                        Common.CreateDisarmBehavior(),
 
                         // AOE 
                         // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)

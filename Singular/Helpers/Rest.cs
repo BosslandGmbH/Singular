@@ -58,17 +58,17 @@ namespace Singular.Helpers
                                 && Me.GetPredictedHealthPercent(true) <= 85 && !Me.HasAura("Drink") && !Me.HasAura("Food"),
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior(reason: "to heal"),
-                                new Action(r => { Logger.WriteDebug("Rest Heal - {0} @ {1:F1}% and moving:{2}, cancast:{3}", spellHeal, Me.HealthPercent, Me.IsMoving, Spell.CanCastHack(spellHeal,Me,skipWowCheck:false)); return RunStatus.Failure; }),
-                                Spell.Cast(spellHeal,
-                                    mov => true,
-                                    on => Me,
-                                    req => true,
-                                    cancel => {
-                                        if (SingularSettings.Debug)
-                                            Logger.WriteDebug("PredictedHealth: {0:F1}%  CurrentHealth: {1:F1}%", Me.GetPredictedHealthPercent(true), Me.HealthPercent);
-                                        return Me.HealthPercent > 90;
-                                        }
-                                    )
+                                new Action(r => { Logger.WriteDebug("Rest Heal - {0} @ {1:F1}% Predict:{2:F1}% and moving:{3}, cancast:{4}", spellHeal, Me.HealthPercent, Me.GetPredictedHealthPercent(true), Me.IsMoving, Spell.CanCastHack(spellHeal, Me, skipWowCheck: false)); return RunStatus.Failure; }),
+                                new Sequence(
+                                    Spell.Cast(spellHeal,
+                                        mov => true,
+                                        on => Me,
+                                        req => true,
+                                        cancel => Me.HealthPercent > 90
+                                        ),
+                                    new Action( r => Logger.WriteDebug("Rest - After Heal Attempted: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.GetPredictedHealthPercent(true)))
+                                    ),
+                                new Action( r => Logger.WriteDebug("Rest - After Heal Skipped: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.GetPredictedHealthPercent(true)))
                                 )
                             ),
 

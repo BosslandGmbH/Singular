@@ -83,7 +83,7 @@ namespace Singular.ClassSpecific.Monk
                         ret => !Spell.IsGlobalCooldown(), 
 
                         new PrioritySelector(
-                            Common.GrappleWeapon(),
+                            Common.CreateGrappleWeaponBehavior(),
                             Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),

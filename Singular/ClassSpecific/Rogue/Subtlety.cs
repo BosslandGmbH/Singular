@@ -33,7 +33,7 @@ namespace Singular.ClassSpecific.Rogue
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
 
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateDismount("Pulling"),
                     
@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCastOrChannel(),
@@ -134,7 +134,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

@@ -34,18 +34,11 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkPreCombatBuffs()
         {
             return new PrioritySelector(
-
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(               
-                        // behaviors handling group buffing... handles special moments like
-                        // .. during the buff spam parade during battleground preparation, etc.
-                        // .. check our own buffs in PullBuffs and CombatBuffs if needed
-                        PartyBuff.BuffGroup("Legacy of the White Tiger"),
-                        PartyBuff.BuffGroup("Legacy of the Emperor")
-                        )
-                    )
+                // behaviors handling group buffing... handles special moments like
+                // .. during the buff spam parade during battleground preparation, etc.
+                // .. check our own buffs in PullBuffs and CombatBuffs if needed
+                PartyBuff.BuffGroup("Legacy of the White Tiger"),
+                PartyBuff.BuffGroup("Legacy of the Emperor")
                 );
         }
 
@@ -361,9 +354,26 @@ namespace Singular.ClassSpecific.Monk
         /// cast grapple weapon, dealing with issues of mobs immune to that spell
         /// </summary>
         /// <returns></returns>
-        public static Composite GrappleWeapon()
+        public static Composite CreateGrappleWeaponBehavior()
         {
-            return new Throttle(1, 5, Spell.Cast("Grapple Weapon", ret => !Me.Elite && Me.CurrentTarget.Distance < 40 && !Me.CurrentTarget.Disarmed));
+            if (!MonkSettings.UseGrappleWeapon)
+                return new ActionAlwaysFail();
+
+            return new Throttle(15,
+                Spell.Cast("Grapple Weapon", on =>
+                {
+                    if (Spell.IsSpellOnCooldown("Grapple Weapon"))
+                        return null;
+
+                    WoWUnit unit = Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                        u => u.SpellDistance() < 40
+                            && !Me.CurrentTarget.Disarmed
+                            && !Me.CurrentTarget.IsCrowdControlled()
+                            && Me.IsSafelyFacing(u, 150)
+                            );
+                    return unit;
+                })
+                );
         }
     }
 

@@ -71,56 +71,75 @@ namespace Singular.Settings
         public PaladinSeal Seal { get; set; }
 
         [Setting]
-        [DefaultValue(30)]
-        [Category("Common")]
-        [DisplayName("Lay on Hand Health")]
-        [Description("Lay on Hands will be used at this value")]
-        public int LayOnHandsHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(50)]
-        [Category("Common")]
-        [DisplayName("Flash of Light Health")]
-        [Description("Flash of Light will be used at this value")]
-        public int FlashOfLightHealth { get; set; }
-
-        [Setting]
-        [DefaultValue(0)]
-        [Category("Common")]
-        [DisplayName("Word of Glory 1+ Holy Power")]
-        [Description("Health % to Cast Holy Power if only 1 Holy Power")]
-        public int WordOfGloryHealth1 { get; set; }
-
-        [Setting]
-        [DefaultValue(0)]
-        [Category("Common")]
-        [DisplayName("Word of Glory 2+ Holy Power")]
-        [Description("Health % to Cast Holy Power at 2+ Holy Power")]
-        public int WordOfGloryHealth2 { get; set; }
-
-        [Setting]
-        [DefaultValue(65)]
-        [Category("Common")]
-        [DisplayName("Word of Glory 3+ Holy Power")]
-        [Description("Health % to Cast Holy Power at 3+ Holy Power")]
-        public int WordOfGloryHealth3 { get; set; }
-
-        [Setting]
-        [DefaultValue(65)]
-        [Category("Common")]
-        [DisplayName("Eternal Flame Health %")]
-        [Description("Health % to cast Eternal Flame at 3+ Holy Power")]
-        public int EternalFlameHealth { get; set; }
-
-        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Hammer of Justice immediately in Normal Context")]
         [Description("Stun mobs while Solo immediately to reduce damage taken")]
         public bool StunMobsWhileSolo { get; set; }
+
         #endregion
 
+        #region Self-Heal
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Self-Healing")]
+        [DisplayName("Lay on Hand Health %")]
+        [Description("Lay on Hands will be used at this value")]
+        public int SelfLayOnHandsHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Self-Healing")]
+        [DisplayName("Flash of Light Health %")]
+        [Description("Flash of Light will be used at this value")]
+        public int SelfFlashOfLightHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Self-Healing")]
+        [DisplayName("Word of Glory Health % (1+ Holy Power)")]
+        [Description("Health % to Cast Word of Glory if only 1+ Holy Power")]
+        public int SelfWordOfGloryHealth1 { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Self-Healing")]
+        [DisplayName("Word of Glory Health % (2+ Holy Power)")]
+        [Description("Health % to Cast Word of Glory at 2+ Holy Power")]
+        public int SelfWordOfGloryHealth2 { get; set; }
+
+        [Setting]
+        [DefaultValue(65)]
+        [Category("Self-Healing")]
+        [DisplayName("Word of Glory Health % (3+ Holy Power)")]
+        [Description("Health % to Cast Word of Glory at 3+ Holy Power")]
+        public int SelfWordOfGloryHealth3 { get; set; }
+
+        [Setting]
+        [DefaultValue(65)]
+        [Category("Self-Healing")]
+        [DisplayName("Eternal Flame Health %")]
+        [Description("Health % to cast Eternal Flame at 3+ Holy Power")]
+        public int SelfEternalFlameHealth { get; set; }
+
+        #endregion  
+
         #region Holy
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Holy")]
+        [DisplayName("Lay on Hand Health %")]
+        [Description("Lay on Hands will be used at this value")]
+        public int LayOnHandsHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Holy")]
+        [DisplayName("Flash of Light Health %")]
+        [Description("Flash of Light will be used at this value")]
+        public int FlashOfLightHealth { get; set; }
 
         [Setting]
         [DefaultValue(true)]
@@ -162,8 +181,16 @@ namespace Singular.Settings
         [Category("Holy")]
         [DisplayName("Divine Plea Mana")]
         [Description("Divine Plea will be used at this value")]
-        public double DivinePleaMana { get; set; } 
-        #endregion
+        public double DivinePleaMana { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Holy")]
+        [DisplayName("Use Rebirth")]
+        [Description("True: if Symbiosis active, use Rebirth on Tanks / Healers")]
+        public bool UseRebirth { get; set; }
+
+         #endregion
 
         #region Protection
         [Setting]
@@ -211,26 +238,12 @@ namespace Singular.Settings
         public int DivineProtectionHealthRet { get; set; }
 
         [Setting]
-        [DefaultValue(30)]
-        [Category("Retribution")]
-        [DisplayName("Heal Health")]
-        [Description("Healing will be done at this percentage")]
-        public int RetributionHealHealth { get; set; }
-
-        [Setting]
         [DefaultValue(true)]
         [Category("Retribution")]
         [DisplayName("Use Aveng Wrath/Holy Aveng/GotAK")]
         [Description("True: Automatically use Avenging Wrath, Holy Avenger, and Guardian of the Ancient Kings.  False: you will have to cast manually.")]
         public bool RetAvengAndGoatK { get; set; }
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Holy")]
-        [DisplayName("Use Rebirth")]
-        [Description("True: if Symbiosis active, use Rebirth on Tanks / Healers")]
-        public bool UseRebirth { get; set; }
-
-        #endregion
+       #endregion
     }
 }

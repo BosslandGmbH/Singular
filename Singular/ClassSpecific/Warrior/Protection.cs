@@ -159,6 +159,8 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
                         Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
 
+                        Common.CreateDisarmBehavior(),
+
                         CreateProtectionInterrupt(),
 
                         // Handle Ultimatum procs 

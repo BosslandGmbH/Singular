@@ -41,7 +41,7 @@ namespace Singular.ClassSpecific.Rogue
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
 
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
@@ -66,7 +66,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Helpers.Common.CreateAutoAttack(true),
@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 Safers.EnsureTarget(),
-                Movement.CreateMoveBehindTargetBehavior(),
+                Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
 
                 Spell.WaitForCastOrChannel(),
@@ -171,7 +171,7 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             ),
 
-                        Movement.CreateMoveBehindTargetBehavior(),
+                        Common.CreateRogueMoveBehindTarget(),
 
                         Spell.Cast("Garrote", ret => Common.IsStealthed && Me.CurrentTarget.MeIsBehind),
                         Spell.Buff("Vendetta",  ret => Me.CurrentTarget.IsBoss() &&  (Me.CurrentTarget.HealthPercent < 35 || TalentManager.IsSelected(13))),

@@ -327,7 +327,7 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Avoidance")]
         [DisplayName("Disengage Allowed")]
-        [Description("Allow use of Disengage (or equiv)")]
+        [Description("Allow use of Disengage, Blink, Rocket Jump, Balance-Wild Charge, or equivalent spell to quickly jump away")]
         public bool DisengageAllowed { get; set; }
 
         [Setting]

@@ -23,7 +23,7 @@ namespace Singular.ClassSpecific.Shaman
         private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
         [Behavior(BehaviorType.Rest, WoWClass.Shaman, 0)]
-        public static Composite CreateShamanElementalRest()
+        public static Composite CreateShamanLowbieRest()
         {
             return Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit");
         }
@@ -54,9 +54,13 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, 0)]
         public static Composite CreateShamanLowbieHeal()
         {
-            return new Decorator(
-                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(),
-                Spell.Cast("Healing Surge", ret => StyxWoW.Me, ret => StyxWoW.Me.HealthPercent < 35)
+            return new PrioritySelector(
+                Spell.Cast(
+                    "Healing Surge",
+                    mov => true,
+                    on => Me,
+                    req => Me.GetPredictedHealthPercent(true) <= ShamanSettings.SelfHealingSurge,
+                    cancel => Me.HealthPercent > 85)
                 );
         }
         [Behavior(BehaviorType.Combat, WoWClass.Shaman, 0)]

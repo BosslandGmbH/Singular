@@ -107,6 +107,8 @@ namespace Singular.ClassSpecific.Monk
                 Helpers.Common.CreateAutoAttack(true),
                 Helpers.Common.CreateInterruptBehavior(),
 
+                Common.CreateGrappleWeaponBehavior(),
+
                 // execute if we can
                 Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
@@ -133,6 +135,9 @@ namespace Singular.ClassSpecific.Monk
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateInterruptBehavior(),
+
+                Common.CreateGrappleWeaponBehavior(),
+
                 Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),

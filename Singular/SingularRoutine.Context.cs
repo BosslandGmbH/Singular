@@ -35,6 +35,8 @@ namespace Singular
         public static event EventHandler<WoWContextEventArg> OnWoWContextChanged;
         private static WoWContext _lastContext = WoWContext.None;
 
+        internal static WoWContext ForcedContext { get; set; }
+
         internal static bool IsQuestBotActive { get; set; }
         internal static bool IsBgBotActive { get; set; }
         internal static bool IsDungeonBuddyActive { get; set; }
@@ -66,6 +68,9 @@ namespace Singular
             {
                 if (!StyxWoW.IsInGame)
                     return WoWContext.None;
+
+                if (ForcedContext != WoWContext.None)
+                    return ForcedContext;
 
                 Map map = StyxWoW.Me.CurrentMap;
 
@@ -149,6 +154,8 @@ namespace Singular
             string sRace = Me.Race.ToString().CamelToSpaced();
             if (Me.Race == WoWRace.Pandaren)
                 sRace = " " + Me.FactionGroup.ToString() + sRace;
+
+            Logging.Write(" "); // spacer before prior log text
 
             Logger.Write(Color.LightGreen, "Your Level {0}{1} {2} {3} Build is", Me.Level, sRace, SpecializationName(), Me.Class.ToString() );
 

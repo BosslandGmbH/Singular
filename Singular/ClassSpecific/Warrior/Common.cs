@@ -95,9 +95,11 @@ namespace Singular.ClassSpecific.Warrior
         /// uses across multiple behaviors that reference this method
         /// </summary>
         private static Composite _singletonChargeBehavior = null;
+        private static float _distanceChargeBehavior { get; set; }
        
         public static Composite CreateChargeBehavior()
         {
+            _distanceChargeBehavior = TalentManager.HasGlyph("Long Charge") ? 30f : 25f;
             if (_singletonChargeBehavior == null)
             {
                 _singletonChargeBehavior = new Throttle(TimeSpan.FromMilliseconds(1500),
@@ -105,23 +107,26 @@ namespace Singular.ClassSpecific.Warrior
                         ret => Me.CurrentTarget != null,
 
                         new PrioritySelector(
+                            // Charge to close distance
                             Spell.Cast("Charge",
                                 ret => MovementManager.IsClassMovementAllowed
-                                    && !Me.CurrentTarget.HasMyAura("Charge Stun")
-                                    && Me.CurrentTarget.SpellDistance() >= 10 && Me.CurrentTarget.SpellDistance() < (TalentManager.HasGlyph("Long Charge") ? 30f : 25f)
+                                    && !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer")
+                                    && Me.CurrentTarget.SpellDistance() >= 10 && Me.CurrentTarget.SpellDistance() < _distanceChargeBehavior 
                                     && WarriorSettings.UseWarriorCloser),
 
+                            //  Leap to close distance
                             Spell.CastOnGround("Heroic Leap",
                                 on => Me.CurrentTarget,
                                 req => MovementManager.IsClassMovementAllowed
                                     && !Me.HasAura("Charge")
                                     && Me.CurrentTarget.SpellDistance() > 9
-                                    && !Me.CurrentTarget.HasMyAura("Charge Stun")
+                                    && !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer")
                                     && WarriorSettings.UseWarriorCloser,
                                 false),
 
+                            // Stun
                             Spell.Cast("Heroic Throw",
-                                ret => !Me.CurrentTarget.HasMyAura("Charge Stun")
+                                ret => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.HasAnyAura("Charge Stun","Warbringer")
                                     && !Me.HasAura("Charge")
                                 )
                             )
@@ -167,6 +172,33 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
+        public static Composite CreateDisarmBehavior()
+        {
+            if ( !WarriorSettings.UseDisarm )
+                return new ActionAlwaysFail();
+
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+            {
+                return new Throttle(15, 
+                    Spell.Cast("Disarm", on => {
+                        if (Spell.IsSpellOnCooldown("Disarm"))
+                            return null;
+
+                        WoWUnit unit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(
+                            u => u.IsWithinMeleeRange
+                                && (u.IsMelee() || u.Class == WoWClass.Hunter)
+                                && !Me.CurrentTarget.Disarmed 
+                                && !Me.CurrentTarget.IsCrowdControlled()
+                                && Me.IsSafelyFacing(u, 150)
+                                );
+                        return unit;
+                        })
+                    );
+            }
+
+            return new Throttle( 15, Spell.Cast("Disarm", req => !Me.CurrentTarget.Disarmed && !Me.CurrentTarget.IsCrowdControlled()));
+        }
+
         /// <summary>
         /// checks if in a relatively balanced fight where atleast 3 of your
         /// teammates will benefti from long cooldowns.  fight must be atleast 3 v 3
@@ -178,16 +210,14 @@ namespace Singular.ClassSpecific.Warrior
         /// </summary>
         public static bool IsPvpFightWorthBanner
         {
-            get
+            get 
             {
                 int friends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive);
-                int enemies = Unit.NearbyUnfriendlyUnits.Count();
-
-                if (friends < 3 || enemies < 3)
+                if (friends < 3)
                     return false;
 
-                int readyfriends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive);
-                if (readyfriends < 3)
+                int enemies = Unit.NearbyUnfriendlyUnits.Count();
+                if (enemies < 3)
                     return false;
 
                 int diff = Math.Abs(friends - enemies);

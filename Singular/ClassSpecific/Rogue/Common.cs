@@ -246,6 +246,15 @@ namespace Singular.ClassSpecific.Rogue
 
         }
 
+        public static Composite CreateRogueMoveBehindTarget()
+        {
+            return new Decorator(
+                req => RogueSettings.MoveBehindTargets,
+                Movement.CreateMoveBehindTargetBehavior()
+                );
+        }
+
+        
         public static Composite CreatePullMobMovingAwayFromMe()
         {
             return new Throttle( 2,

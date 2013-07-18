@@ -810,7 +810,7 @@ namespace Singular.Settings
         [DefaultValue(0)]
         [Category("Healing")]
         [DisplayName("% Penance")]
-        [Description("Power Word: Shield will be used at this value")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int Penance { get; set; }
 
         [Setting]

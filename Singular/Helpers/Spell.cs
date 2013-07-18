@@ -1011,10 +1011,12 @@ namespace Singular.Helpers
                     if (!buffNames.Any())
                         return !(myBuff ? _buffUnit.HasMyAura(_buffName) : _buffUnit.HasAura(_buffName));
 
+                    bool buffFound;
                     if (myBuff)
-                        return buffNames.All(b => !_buffUnit.HasMyAura(b));
+                        buffFound = buffNames.Any(b => _buffUnit.HasMyAura(b));
+                    else
+                        buffFound = buffNames.Any(b => _buffUnit.HasAura(b));
 
-                    bool buffFound = buffNames.Any(b => _buffUnit.HasAura(b));
                     return !buffFound;
                 },
                 new Sequence(
@@ -1917,10 +1919,25 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite Resurrect(string spellName)
         {
-            return new PrioritySelector(ctx => Unit.ResurrectablePlayers.FirstOrDefault(u => !Blacklist.Contains(u, BlacklistFlags.Combat)),
-                new Decorator(ctx => ctx != null && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
-                    new Sequence(Cast(spellName, ctx => (WoWPlayer)ctx),
-                        new Action(ctx => Blacklist.Add((WoWPlayer)ctx, BlacklistFlags.Combat, TimeSpan.FromSeconds(30))))));
+            return new PrioritySelector(
+                ctx => Unit.ResurrectablePlayers.FirstOrDefault(u => !Blacklist.Contains(u, BlacklistFlags.Combat)),
+                new Decorator(
+                    ctx => ctx != null && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
+                    new Sequence(
+                        Cast(spellName, mov => true, ctx => (WoWPlayer)ctx, req => true, cancel => 
+                            {
+                                if (((WoWUnit)cancel).IsAlive)
+                                {
+                                    Logger.Write(Color.White, "^Rez target brought back by someone else, cancelling....");
+                                    return true;
+                                }
+
+                                return false;
+                            }),
+                        new Action(ctx => Blacklist.Add((WoWPlayer)ctx, BlacklistFlags.Combat, TimeSpan.FromSeconds(30)))
+                        )
+                    )
+                );
         }
 
         public static bool IsPlayerRessurectNeeded()

@@ -118,5 +118,13 @@ namespace Singular.Settings
         [DisplayName("Victory Rush on Cooldown")]
         [Description("True: use Victory Rush/Impending Victory on cooldown regardless of current health %")]
         public bool VictoryRushOnCooldown { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("General")]
+        [DisplayName("Use Disarm")]
+        [Description("True: use Disarm on cooldown; False: do not cast")]
+        public bool UseDisarm { get; set; }
+
     }
 }

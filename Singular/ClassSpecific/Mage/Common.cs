@@ -31,14 +31,14 @@ namespace Singular.ClassSpecific.Mage
 
         public static bool IsFrozen(this WoWUnit unit)
         {
-            return unit.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Frozen || (a.Spell.School == WoWSpellSchool.Frost && a.Spell.SpellEffects.Any(e => e.AuraType == WoWApplyAuraType.ModRoot)));
+            return Me.HasAura("Brain Freeze") || unit.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Frozen || (a.Spell.School == WoWSpellSchool.Frost && a.Spell.SpellEffects.Any(e => e.AuraType == WoWApplyAuraType.ModRoot)));
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
         public static Composite CreateMagePreCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.WaitForCast(),
+                Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -47,6 +47,7 @@ namespace Singular.ClassSpecific.Mage
                         PartyBuff.BuffGroup("Arcane Brilliance", "Dalaran Brilliance"),
 
                         // Additional armors/barriers for BGs. These should be kept up at all times to ensure we're as survivable as possible.
+                        /*
                         new Decorator(
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds,
                             new PrioritySelector(
@@ -54,15 +55,15 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.BuffSelf("Mana Shield", ret => TalentManager.CurrentSpec != WoWSpec.MageArcane)
                                 )
                             ),
-
+                        */
                         CreateMageArmorBehavior(),
 
                         new PrioritySelector(
                             ctx => MageTable,
                             new Decorator(
-                                ctx => ctx != null && CarriedMageFoodCount < 80 && StyxWoW.Me.FreeNormalBagSlots > 1,
+                                ctx => ctx != null && CarriedMageFoodCount < 60 && StyxWoW.Me.FreeNormalBagSlots > 1,
                                 new Sequence(
-                                    new Action(ctx => Logger.Write("Getting Mage food")),
+                                    new Action(ctx => Logger.Write(Color.White, "^Getting Mage food")),
                 // Move to the Mage table
                                     new DecoratorContinue(
                                         ctx => ((WoWGameObject)ctx).DistanceSqr > 5 * 5,
@@ -85,6 +86,7 @@ namespace Singular.ClassSpecific.Mage
                                         new WaitContinue(2, ctx => !StyxWoW.Me.IsMoving, new ActionAlwaysSucceed())
                                         )
                                     ),
+                                new Action(ctx => Logger.Write(Color.White, "^Conjure Refreshment Table")),
                                 new Action(ctx => SpellManager.Cast("Conjure Refreshment Table")),
                                 new WaitContinue(2, ctx => StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
                                 new WaitContinue(10, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed())
@@ -159,7 +161,8 @@ namespace Singular.ClassSpecific.Mage
                             Spell.BuffSelf("Temporal Shield"),
                             Spell.BuffSelf("Ice Barrier"),
                             Spell.BuffSelf("Incanter's Ward"),
-                            Spell.BuffSelf("Evocation"),
+                            Spell.Cast("Evocation", on => Me, req => TalentManager.HasGlyph("Evocation"), cancel => false),
+
                             new Decorator(
                                 req => !Me.HasAnyAura( "Invoker's Energy", "Incanter's Ward"),
                                 new Throttle( 8, Item.CreateUsePotionAndHealthstone(100, 0))
@@ -175,14 +178,24 @@ namespace Singular.ClassSpecific.Mage
                             && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
 
                      Spell.Buff(
-                        "Evocation", true, on => Me, 
-                        ret => Me.ManaPercent < 30 
-                            || Me.HealthPercent < 30  
-                            || (Me.HealthPercent < 60 && 2 <= Unit.NearbyUnfriendlyUnits.Count( u => u.Combat && u.IsTargetingMeOrPet )),
+                        "Evocation", true, on => Me,
+                        ret => Me.ManaPercent < 30
+                            || Me.HealthPercent < 30
+                            || (Me.HealthPercent < 60 && 2 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Combat && u.IsTargetingMeOrPet)),
                         "Invoker's Energy"
                         ),
 
+                     Spell.Buff("Evocation", true, on => Me, ret => Me.ManaPercent < 30),
+                     Spell.Cast("Evocation", 
+                        on => Me, 
+                        ret => TalentManager.HasGlyph("Evocation") 
+                            && !Common.HasTalent(MageTalents.RuneOfPower) 
+                            && !Me.HasAura("Invoker's Energy")
+                            && Me.HealthPercent < (Common.HasTalent(MageTalents.Invocation) ? 70 : 40),
+                        cancel => false),
+
                     Spell.BuffSelf("Incanter's Ward", req => Unit.NearbyUnitsInCombatWithMe.Any()),
+                    Spell.BuffSelf("Ice Ward", req => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds ),
 
                     Dispelling.CreatePurgeEnemyBehavior("Spellsteal"),
                     // CreateMageSpellstealBehavior(),
@@ -241,7 +254,8 @@ namespace Singular.ClassSpecific.Mage
                                          {
                                              186812,
                                              207386,
-                                             207387 //This is the one for level 85 - not sure if we need to add another at 90
+                                             207387, //This is the one for level 85 - not sure if we need to add another at 90
+                                             211363, //Level 90
                                          };
 
         static private WoWGameObject MageTable
@@ -279,13 +293,17 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateUseManaGemBehavior(SimpleBooleanDelegate requirements)
         {
-            return new PrioritySelector(
-                ctx => StyxWoW.Me.BagItems.FirstOrDefault(i => i.Entry == 36799 || i.Entry == 81901),
-                new Decorator(
-                    ret => ret != null && StyxWoW.Me.ManaPercent < 100 && ((WoWItem)ret).Cooldown == 0 && requirements(ret),
-                    new Sequence(
-                        new Action(ret => Logger.Write("Using {0}", ((WoWItem)ret).Name)),
-                        new Action(ret => ((WoWItem)ret).Use())))
+            return new Throttle( 2, 
+                new PrioritySelector(
+                    ctx => StyxWoW.Me.BagItems.FirstOrDefault(i => i.Entry == 36799 || i.Entry == 81901),
+                    new Decorator(
+                        ret => ret != null && StyxWoW.Me.ManaPercent < 100 && ((WoWItem)ret).Cooldown == 0 && requirements(ret),
+                        new Sequence(
+                            new Action(ret => Logger.Write("Using {0}", ((WoWItem)ret).Name)),
+                            new Action(ret => ((WoWItem)ret).Use())
+                            )
+                        )
+                    )
                 );
         }
 
@@ -398,27 +416,27 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateMagePolymorphOnAddBehavior()
         {
-            return
-                new PrioritySelector(
-                    ctx => Unit.NearbyUnfriendlyUnits.OrderByDescending(u => u.CurrentHealth).FirstOrDefault(IsViableForPolymorph),
-                    new Decorator(
-                        ret => ret != null && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")),
-                        new PrioritySelector(
-                            Spell.Buff("Polymorph", ret => (WoWUnit)ret))));
+            return new PrioritySelector(
+                ctx => Unit.NearbyUnfriendlyUnits.OrderByDescending(u => u.CurrentHealth).FirstOrDefault(IsViableForPolymorph),
+                new Decorator(
+                    ret => ret != null && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")),
+                    Spell.Buff("Polymorph", ret => (WoWUnit)ret)
+                    )
+                );
         }
 
         private static bool IsViableForPolymorph(WoWUnit unit)
         {
-            if (unit.IsCrowdControlled())
-                return false;
-
-            if (unit.CreatureType != WoWCreatureType.Beast && unit.CreatureType != WoWCreatureType.Humanoid)
-                return false;
-
             if (StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == unit)
                 return false;
 
             if (!unit.Combat)
+                return false;
+
+            if (unit.IsCrowdControlled() && !unit.IsFrozen())
+                return false;
+
+            if (unit.CreatureType != WoWCreatureType.Beast && unit.CreatureType != WoWCreatureType.Humanoid)
                 return false;
 
             if (!unit.IsTargetingMeOrPet && !unit.IsTargetingMyPartyMember)
@@ -632,6 +650,7 @@ namespace Singular.ClassSpecific.Mage
                                     ret => Me.Specialization == WoWSpec.MageFrost,
                                     Mage.Frost.CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8), ClusterType.Radius, 8))
                                     ),
+                                Spell.CastOnGround("Ring of Frost", onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 30, true),
                                 Spell.Cast("Frost Nova", mov => true, onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 12, cancel => false),
                                 Spell.Cast("Frostjaw", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false),
                                 Spell.Cast("Cone of Cold", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false),

@@ -296,7 +296,7 @@ namespace Singular.Utilities
             {
                 unit = StyxWoW.Me.CurrentTarget;
                 guid = StyxWoW.Me.CurrentTargetGuid;
-                Logger.WriteDebug("Evade: bugged mob guid:{0}, so assuming current target instead", args.Args[7]);
+                Logger.Write("Evade: bugged mob guid:{0}, so assuming current target instead", args.Args[7]);
             }
 
             if (unit != null)
@@ -327,7 +327,7 @@ namespace Singular.Utilities
 
                     if (BotPoi.Current.Guid == unit.Guid)
                     {
-                        Logger.WriteDebug("EvadeHandling: Current BotPOI type={0} is Evading, clearing now...", BotPoi.Current.Type);
+                        Logger.Write("EvadeHandling: Current BotPOI type={0} is Evading, clearing now...", BotPoi.Current.Type);
                         BotPoi.Clear("Singular recognized Evade bugged mob");
                     }
 

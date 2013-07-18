@@ -74,8 +74,6 @@ namespace Singular.ClassSpecific.Paladin
                     new PrioritySelector(
 
                         // Defensive
-                        Spell.BuffSelf("Sacred Shield"),
-
                         Spell.BuffSelf("Hand of Freedom",
                             ret => Me.HasAuraWithMechanic(WoWSpellMechanic.Dazed,
                                                                     WoWSpellMechanic.Disoriented,
@@ -85,22 +83,10 @@ namespace Singular.ClassSpecific.Paladin
                                                                     WoWSpellMechanic.Slowed,
                                                                     WoWSpellMechanic.Snared)),
 
+                        Spell.BuffSelf("Sacred Shield"),
+
                         Spell.BuffSelf("Divine Shield",
                             ret => Me.CurrentMap.IsBattleground && Me.HealthPercent <= 20 && !Me.HasAura("Forbearance")),
-
-                        Spell.BuffSelf( "Lay on Hands",
-                            ret => Me.HealthPercent <= PaladinSettings.LayOnHandsHealth && !Me.HasAura("Forbearance")),
-
-                        Spell.BuffSelf("Avenging Wrath", 
-                            ret => (Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && (Me.CurrentTarget.TimeToDeath() > 25) || _aoeCount > 1)),
-
-                        Spell.BuffSelf(
-                            "Guardian of Ancient Kings",
-                            ret => Me.HealthPercent <= PaladinSettings.GoAKHealth),
-
-                        Spell.BuffSelf(
-                            "Ardent Defender",
-                            ret => Me.HealthPercent <= PaladinSettings.ArdentDefenderHealth),
 
                         Spell.BuffSelf(
                             "Divine Protection",
@@ -113,7 +99,36 @@ namespace Singular.ClassSpecific.Paladin
                                 && !Me.HasAura("Divine Protection")
                                 && Spell.GetSpellCooldown("Divine Protection", 6).TotalSeconds > 0),
 
-                        Common.CreateWordOfGloryBehavior( on => Me )
+                        Spell.BuffSelf(
+                            "Guardian of Ancient Kings",
+                            ret => Me.HealthPercent <= PaladinSettings.GoAKHealth),
+
+                        Spell.BuffSelf(
+                            "Ardent Defender",
+                            ret => Me.HealthPercent <= PaladinSettings.ArdentDefenderHealth)
+                        )
+                    ),
+
+                // Heal up after Defensive CDs used if needed
+                Spell.BuffSelf( "Lay on Hands",
+                    ret => Me.HealthPercent <= PaladinSettings.SelfLayOnHandsHealth && !Me.HasAura("Forbearance")),
+
+                Common.CreateWordOfGloryBehavior(on => Me),
+
+                Spell.Cast("Flash of Light",
+                    mov => false,
+                    on => Me,
+                    req => SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.GetPredictedHealthPercent(true) <= PaladinSettings.SelfFlashOfLightHealth,
+                    cancel => Me.HealthPercent > 90),
+
+                // now any Offensive CDs
+                new Decorator(
+                    req => !Unit.IsTrivial(Me.CurrentTarget),
+                    new PrioritySelector(
+
+                        Spell.BuffSelf("Avenging Wrath", 
+                            ret => (Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange && (Me.CurrentTarget.TimeToDeath() > 25) || _aoeCount > 1))
+
                         )
                     )
                 );

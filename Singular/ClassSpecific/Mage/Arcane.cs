@@ -198,12 +198,10 @@ namespace Singular.ClassSpecific.Mage
 
                         // Defensive stuff
                         Spell.BuffSelf("Ice Block", ret => Me.HealthPercent < 10 && !Me.ActiveAuras.ContainsKey("Hypothermia")),
-                        Spell.BuffSelf("Mana Shield", ret => Me.HealthPercent <= 75),
                         Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.IsFrozen())),
                         Common.CreateMagePolymorphOnAddBehavior(),
 
-                        Spell.BuffSelf("Mana Shield", ret => Me.ManaPercent < 30),
-                        Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30 && (Me.HasAura("Mana Shield") || !SpellManager.HasSpell("Mana Shield"))),
+                        Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
                         Spell.BuffSelf("Arcane Power"),
                         Spell.BuffSelf("Mirror Image"),
                         Spell.BuffSelf("Flame Orb"),

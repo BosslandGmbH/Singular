@@ -45,10 +45,16 @@ namespace Singular.Helpers
 
             if (!unit.IsMe)
             {
-                if (unit.Class == WoWClass.Monk)
+                if (unit.Class == WoWClass.Hunter
+                    || unit.Class == WoWClass.Mage
+                    || unit.Class == WoWClass.Priest
+                    || unit.Class == WoWClass.Warlock)
+                    return false;
+
+                if (unit.Class == WoWClass.Monk)    // treat all enemy Monks as melee
                     return true;
 
-                if (unit.Class == WoWClass.Druid && unit.HasAura("Cat Form"))
+                if (unit.Class == WoWClass.Druid && unit.HasAnyAura("Cat Form", "Bear Form"))
                     return true;
 
                 if (unit.Class == WoWClass.Shaman && unit.GetAllAuras().Any(a => a.Name == "Unleashed Rage" && a.CreatorGuid == unit.Guid))
@@ -193,6 +199,11 @@ namespace Singular.Helpers
         }
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMe
+        {
+            get { return NearbyUnfriendlyUnits.Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingMyStuff()))); }
+        }
+
+        public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithUs
         {
             get { return NearbyUnfriendlyUnits.Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingUs()))); }
         }
@@ -650,12 +661,19 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name="u">unit</param>
         /// <returns>true if targeting your guys, false if not</returns>
+        public static bool IsTargetingMyStuff(this WoWUnit u)
+        {
+            return u.IsTargetingMeOrPet || u.IsTargetingAnyMinion;
+        }
+
+        /// <summary>
+        /// checks if unit is targeting you, your minions, a group member, or group pets
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <returns>true if targeting your guys, false if not</returns>
         public static bool IsTargetingUs(this WoWUnit u)
         {
-            return u.IsTargetingMeOrPet
-                || u.IsTargetingAnyMinion
-                || Unit.GroupMemberInfos.Any(m => m.Guid == u.CurrentTargetGuid);
-
+            return u.IsTargetingMyStuff() || Unit.GroupMemberInfos.Any(m => m.Guid == u.CurrentTargetGuid);
         }
 
         public static bool IsSensitiveDamage(this WoWUnit u, float range)
@@ -757,8 +775,7 @@ namespace Singular.Helpers
             return me.GroupInfo.IsInParty || me.GroupInfo.IsInRaid;
         }
 
-/*
-        public static uint GetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
+        public static uint LocalGetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
         {
             // Reversing note: CGUnit_C::GetPredictedHeals
             const int PredictedHealsCount = 0x1374;
@@ -777,9 +794,9 @@ namespace Singular.Helpers
                 .Aggregate(health, (current, heal) => current + heal.HealAmount);
         }
 
-        public static float GetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)
+        public static float LocalGetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)
         {
-             return (float)unit.GetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
+             return (float)unit.LocalGetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -796,7 +813,7 @@ namespace Singular.Helpers
 
             public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
         }
-*/
+
         private static bool lastMovingAwayAnswer = false;
         private static ulong guidLastMovingAwayCheck = 0;
         private static double distLastMovingAwayCheck = 0f;

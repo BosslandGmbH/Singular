@@ -212,6 +212,24 @@ namespace Singular.ClassSpecific.Priest
                 })
                 );
 
+            if (PriestSettings.DiscHeal.Renew != 0)
+                behavs.AddBehavior(HealthToPriority(97) + PriHighBase, "Renew @" + PriestSettings.DiscHeal.Renew + "% while moving", "Renew",
+                    new Decorator(
+                        ret => IsSpiritShellEnabled(),
+                        Spell.Cast("Renew", on =>
+                        {
+                            WoWUnit unit = Group.Tanks.Where(u => u.IsAlive && u.HealthPercent < PriestSettings.DiscHeal.Renew && u.DistanceSqr < 40 * 40 && !u.HasAura("Renew") && u.HasAura("Weakened Soul") && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
+                            if (unit != null && Spell.CanCastHack("Renew", unit, skipWowCheck: true))
+                            {
+                                Logger.WriteDebug("Buffing Renew ON TANK: {0}", unit.SafeName());
+                                return unit;
+                            }
+                            return null;
+                        },
+                        req => Me.IsMoving && Spell.IsSpellOnCooldown("Renew"))
+                        )
+                    );
+
             #endregion
 
             #region Atonement Only
@@ -330,6 +348,22 @@ namespace Singular.ClassSpecific.Priest
             #endregion
 
             #region Direct Heals
+
+            if (PriestSettings.DiscHeal.Penance != 0)
+                behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.Penance) + PriSingleBase, "Penance @ " + PriestSettings.DiscHeal.Penance + "%", "Penance",
+                new Decorator(
+                    req => ((WoWUnit)req).HealthPercent < PriestSettings.DiscHeal.Penance,
+                    new PrioritySelector(
+                        CastBuffsBehavior("Penance"),
+                        Spell.Cast("Penance",
+                            mov => true,
+                            on => (WoWUnit)on,
+                            req => true,
+                            cancel => false
+                            )
+                        )
+                    )
+                );
 
             if (PriestSettings.DiscHeal.FlashHeal != 0)
                 behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.FlashHeal) + PriSingleBase, "Flash Heal @ " + PriestSettings.DiscHeal.FlashHeal + "%", "Flash Heal",

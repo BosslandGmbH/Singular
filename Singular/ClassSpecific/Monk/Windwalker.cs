@@ -64,7 +64,7 @@ namespace Singular.ClassSpecific.Monk
                                 )
                             ),
 
-                        Common.GrappleWeapon(),
+                        Common.CreateGrappleWeaponBehavior(),
 
                         // only cast these in Pull if we didn't just roll/fsk.  allow us to reach
                         // .. targets we cannot fully navigate to, but don't want to cast 
@@ -149,6 +149,8 @@ namespace Singular.ClassSpecific.Monk
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Common.CreateGrappleWeaponBehavior(),
+
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
                         // Symbiosis
@@ -223,7 +225,9 @@ namespace Singular.ClassSpecific.Monk
 
                         Helpers.Common.CreateInterruptBehavior(),
 
-                        Spell.Cast( "Leg Sweep", ret => Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange && !u.IsCrowdControlled() )),
+                        Common.CreateGrappleWeaponBehavior(),
+
+                        Spell.Cast("Leg Sweep", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && !u.IsCrowdControlled())),
 
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 

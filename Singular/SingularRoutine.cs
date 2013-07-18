@@ -188,11 +188,14 @@ namespace Singular
                 {
                     prevGuid = 0;
                     Logger.WriteDebug( description + ": changed to: (null)");
+                    HandleTrainingDummy(unit);
                 }
             }
             else if (unit.Guid != prevGuid )
             {
                 prevGuid = unit.Guid;
+
+                HandleTrainingDummy(unit);
 
                 string info = "";
                 if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
@@ -224,6 +227,23 @@ namespace Singular
                     Me.IsSafelyFacing(unit).ToYN(),
                     Blacklist.Contains(unit.Guid, BlacklistFlags.Combat).ToYN()
                     );
+            }
+        }
+
+        private static void HandleTrainingDummy(WoWUnit unit)
+        {
+            bool trainingDummy = unit == null ? false : unit.IsTrainingDummy();
+
+            if (trainingDummy && ForcedContext == WoWContext.None)
+            {
+                ForcedContext = WoWContext.Instances;
+                // ForcedContext = WoWContext.Battlegrounds; 
+                Logger.Write(Color.White, "Detected Training Dummy -- forcing {0} behaviors", CurrentWoWContext.ToString());
+            }
+            else if (!trainingDummy && ForcedContext != WoWContext.None)
+            {
+                ForcedContext = WoWContext.None;
+                Logger.Write(Color.White, "Detected Training Dummy no longer target -- reverting to {0} behaviors", CurrentWoWContext.ToString());
             }
         }
 
@@ -345,12 +365,40 @@ namespace Singular
             }
         }
 
+        /// <summary>
+        /// Stop the Bot writing a reason to the log file.  
+        /// Revised to account for TreeRoot.Stop() now 
+        /// throwing an exception if called too early 
+        /// before tree is run
+        /// </summary>
+        /// <param name="reason">text to write to log as reason for Bot Stop request</param>
         private static void StopBot(string reason)
         {
-            Logger.Write(reason);
-            TreeRoot.Stop();
+            if (!TreeRoot.IsRunning)
+                reason = "Bot Cannot Run: " + reason;
+            else
+            {
+                reason = "Stopping Bot: " + reason;
+
+                if (countRentrancyStopBot == 0)
+                {
+                    countRentrancyStopBot++;
+                    if (TreeRoot.Current != null)
+                        TreeRoot.Current.Stop();
+
+                    TreeRoot.Stop();
+                }
+            }
+
+            Logger.Write(Color.HotPink,reason);
         }
 
+        static int countRentrancyStopBot = 0;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private static uint GetFPS()
         {
             try

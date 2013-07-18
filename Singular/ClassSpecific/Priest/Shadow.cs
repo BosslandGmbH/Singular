@@ -134,7 +134,7 @@ namespace Singular.ClassSpecific.Priest
                                     ret => Me.ManaPercent < PriestSettings.DispersionMana
                                         || Me.HealthPercent < 40 
                                         || (Me.ManaPercent < SingularSettings.Instance.MinMana && Me.IsSwimming)
-                                        || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
+                                        || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingMyStuff()) >= 3),
 
                                 Spell.Cast("Psychic Scream",  ret => (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.CurrentTargetGuid == Me.Guid) || PriestSettings.UsePsychicScream && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= PriestSettings.PsychicScreamAddCount),
 
@@ -245,7 +245,7 @@ namespace Singular.ClassSpecific.Priest
                         // Defensive stuff
                         Spell.BuffSelf("Fade", ret => Common.HasTalent(PriestTalents.Phantasm) && (Me.HasAuraWithMechanic(WoWSpellMechanic.Snared) || Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Guid && (u.Class == WoWClass.Hunter || u.Class == WoWClass.Mage || u.Class == WoWClass.Warlock || u.Class == WoWClass.Priest || u.Class == WoWClass.Shaman || u.Class == WoWClass.Druid)))),
                         Spell.BuffSelf("Fade", ret => ObjectManager.GetObjectsOfType<WoWUnit>(false,false).Any( p => p.Distance < 10 && p.IsPet )),
-                        Spell.BuffSelf("Dispersion", ret => Me.HealthPercent < 40 || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingUs()) >= 3),
+                        Spell.BuffSelf("Dispersion", ret => Me.HealthPercent < 40 || Unit.NearbyUnfriendlyUnits.Count(t => t.GotTarget && t.CurrentTarget.IsTargetingMyStuff()) >= 3),
                         Spell.BuffSelf("Psychic Scream", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10*10) >= 1),
 
                         new Decorator(

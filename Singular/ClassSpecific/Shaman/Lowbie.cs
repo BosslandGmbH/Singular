@@ -91,20 +91,18 @@ namespace Singular.ClassSpecific.Shaman
                     ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
-                        uint lstks = !Me.HasAura("Lightning Shield") ? 0 : Me.ActiveAuras["Lightning Shield"].StackCount;
-
-                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, lstks={2}",
+                        string line = string.Format(".... h={0:F1}%/m={1:F1}%",
                             Me.HealthPercent,
-                            Me.ManaPercent,
-                            lstks
+                            Me.ManaPercent
                             );
 
                         WoWUnit target = Me.CurrentTarget;
                         if (target == null)
                             line += ", target=(null)";
                         else
-                            line += string.Format(", target={0} @ {1:F1} yds, th={2:F1}%, tlos={3}, tloss={4}",
+                            line += string.Format(", target={0}[{1}] @ {2:F1} yds, th={3:F1}%, tlos={4}, tloss={5}",
                                 target.SafeName(),
+                                target.Level,
                                 target.Distance,
                                 target.HealthPercent,
                                 target.InLineOfSight,

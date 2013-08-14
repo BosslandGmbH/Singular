@@ -114,7 +114,7 @@ namespace Singular.ClassSpecific.Monk
 
                 // make sure I have aggro.
                 Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
-                Spell.Cast("Keg Smash", ctx => Me.CurrentChi < 4 && Unit.NearbyUnitsInCombatWithMe.Any(u => u.DistanceSqr <= 8 * 8)),
+                Spell.Cast("Keg Smash", ctx => Me.CurrentChi < 4 && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.DistanceSqr <= 8 * 8)),
                 Spell.CastOnGround("Dizzying Haze", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault().Location, ctx => TankManager.Instance.NeedToTaunt.Any(), true),
                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),

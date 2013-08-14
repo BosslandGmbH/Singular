@@ -52,6 +52,13 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         CreateSummonWaterElemental(),
+
+                        // buff Invoker's Energy if talented
+                        new Sequence(
+                            Spell.Cast("Evocation", on => Me, req => Common.HasTalent(MageTalents.Invocation) && !Me.HasAura("Invoker's Energy"), cancel => false),
+                            new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
+                            ),
+
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                         Spell.Cast("Frostfire Bolt")
                         )
@@ -97,18 +104,37 @@ namespace Singular.ClassSpecific.Mage
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        // stack buffs for some burst... only every few minutes, but we'll use em if we got em
                         new Decorator(
-                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 15 && !u.IsCrowdControlled()),
-                            new PrioritySelector(
-                                CastFreeze( on => Me.CurrentTarget ),
-                                Spell.BuffSelf(
-                                "Frost Nova",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.IsFrozen())
+                             req => Me.GotTarget && !Me.CurrentTarget.IsTrivial() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath(-1) > 40 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
+                             new Decorator(
+                                 req => (Me.HasAura("Invoker's Energy") || !Common.HasTalent(MageTalents.Invocation))
+                                    && (Me.Level < 77 || Me.HasAura("Brain Freeze"))
+                                    && (Me.Level < 24 || Me.HasAura("Fingers of Frost")) 
+                                    && (Me.Level < 36 || Spell.CanCastHack("Icy Veins", Me, skipWowCheck: true)),
+                                 new PrioritySelector(
+
+                                     Spell.BuffSelf("Mirror Image"),
+
+                                     Spell.OffGCD(
+                                         new Sequence(
+                                             new PrioritySelector(
+                                                Spell.BuffSelf("Presence of Mind", req => Spell.GetSpellCooldown("Icy Veins").TotalMinutes > 1.5 || !Spell.IsSpellOnCooldown("Icy Veins")),
+                                                new Decorator(req => !Common.HasTalent(MageTalents.PresenceOfMind), new ActionAlwaysSucceed())
+                                                ),
+                                             new PrioritySelector(
+                                                Spell.BuffSelf("Icy Veins"),
+                                                new Decorator(req => !SpellManager.HasSpell("Icy Veins"), new ActionAlwaysSucceed())
+                                                ),
+                                             new PrioritySelector(
+                                                Spell.BuffSelf("Alter Time"),
+                                                new Decorator(req => !SpellManager.HasSpell("Alter Time"), new ActionAlwaysSucceed())
+                                                )
+                                            )
+                                        )
                                     )
                                 )
                             ),
-
-                        Spell.Cast("Icy Veins"),
 
                         new Decorator(ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10).Count() > 2 && !Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.IsFrozen()),
                             new PrioritySelector(
@@ -126,7 +152,7 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 4),
                                 new Decorator(
                                     ret => Unit.UnfriendlyUnitsNearTarget(10).Count() >= 4,
-                                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 10f, 5f)
+                                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 10f, 7f)
                                     )
                                 )
                             ),
@@ -134,6 +160,22 @@ namespace Singular.ClassSpecific.Mage
                         // Movement.CreateEnsureMovementStoppedBehavior(35f),
 
                         Common.CreateMagePolymorphOnAddBehavior(),
+
+                        // move these instnats really high in priority so we don't waste freezes, etc
+                        Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Brain Freeze")),
+                        Spell.Cast("Ice Lance", ret => Me.ActiveAuras.ContainsKey("Fingers of Frost") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+
+                        new Decorator(
+                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() <= 12 && !u.IsCrowdControlled()),
+                            new Sequence(
+                                new PrioritySelector(
+                                    CastFreeze(on => Me.CurrentTarget),
+                                    Spell.BuffSelf("Frost Nova")
+                                    ),
+                                new Action(r => Logger.WriteDebug("MageAvoidance: move after freezing targets! requesting KITING!!!")),
+                                Common.CreateMageAvoidanceBehavior(null, null)
+                                )
+                            ),
 
                         // nether tempest in CombatBuffs
                         Spell.Cast("Frozen Orb", ret => Spell.UseAOE && 
@@ -152,12 +194,13 @@ namespace Singular.ClassSpecific.Mage
                                 CastFreeze( on => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(8), ClusterType.Radius, 8))
                                 )
                             ),
+
                         Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Brain Freeze")),
-                        Spell.Cast("Ice Lance", ret => ((Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura()) || Me.ActiveAuras.ContainsKey("Fingers of Frost")) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                        Spell.Cast("Ice Lance", ret => Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura() && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                         new Decorator(
-                            ret => Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) || !SpellManager.HasSpell("Frostbolt"),
+                            ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire) && (Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) || !SpellManager.HasSpell("Frostbolt")),
                             new PrioritySelector(
                                 Spell.Cast("Fire Blast"),
                                 Spell.Cast("Frostfire Bolt")
@@ -197,7 +240,7 @@ namespace Singular.ClassSpecific.Mage
 
                         Common.CreateMageAvoidanceBehavior(null, null),
 
-                         CreateSummonWaterElemental(),
+                        CreateSummonWaterElemental(),
 
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
@@ -232,36 +275,33 @@ namespace Singular.ClassSpecific.Mage
                         // Stack some for burst if possible
                          new Sequence(
                             Spell.Cast("Evocation", on => Me, req => Common.HasTalent(MageTalents.Invocation) && !Me.HasAura("Invoker's Energy"), cancel => false),
-                            new Wait( TimeSpan.FromMilliseconds(500), until => Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed()),
-                            new ActionAlwaysFail()
+                            new Wait( TimeSpan.FromMilliseconds(500), until => Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
                             ),
 
                          new Decorator(
-                             req => Me.HasAura("Invoker's Energy") || !Common.HasTalent(MageTalents.Invocation),
+                             req => (Me.HasAura("Invoker's Energy") || !Common.HasTalent(MageTalents.Invocation)),
                              new PrioritySelector(
-                                 new Sequence(
-                                    Spell.BuffSelf("Presence of Mind", req => Spell.GetSpellCooldown("Icy Veins").TotalMinutes > 1.5 || !Spell.IsSpellOnCooldown("Icy Veins")),
-                                    new Wait(2, until => Me.HasAura("Presence of Mind"), new ActionAlwaysSucceed())
-                                    ),
-                                 new Decorator(
-                                     req => Me.HasAura("Presence of Mind") || !Common.HasTalent(MageTalents.PresenceOfMind),
-                                     new PrioritySelector(
-                                         new Sequence(
-                                            Spell.BuffSelf("Icy Veins"),
-                                            new Wait(2, until => Me.HasAura("Icy Veins"), new ActionAlwaysSucceed())
-                                            ),
 
-                                        new Decorator(
-                                            req => Me.HasAura("Icy Veins"),
-                                            new PrioritySelector(
-                                                Spell.BuffSelf("Mirror Image"),
-                                                Spell.BuffSelf("Alter Time")
-                                                )
+                                 Spell.BuffSelf( "Mirror Image"),
+
+                                 Spell.OffGCD(
+                                     new Sequence(
+                                         new PrioritySelector(
+                                            Spell.BuffSelf("Presence of Mind", req => Spell.GetSpellCooldown("Icy Veins").TotalMinutes > 1.5 || !Spell.IsSpellOnCooldown("Icy Veins")),
+                                            new Decorator( req => !Common.HasTalent(MageTalents.PresenceOfMind), new ActionAlwaysSucceed())
+                                            ),
+                                         new PrioritySelector(
+                                            Spell.BuffSelf("Icy Veins"),
+                                            new Decorator( req => !SpellManager.HasSpell("Icy Veins"), new ActionAlwaysSucceed())
+                                            ),
+                                         new PrioritySelector(
+                                            Spell.OffGCD( Spell.BuffSelf("Alter Time")),
+                                            new Decorator( req => !SpellManager.HasSpell("Alter Time"), new ActionAlwaysSucceed())
                                             )
-                                         )
+                                        )
                                     )
-                                 )
-                             ),
+                                )
+                            ),
 
                         // 3 min
                          Spell.BuffSelf("Mage Ward", ret => Me.HealthPercent <= 75),

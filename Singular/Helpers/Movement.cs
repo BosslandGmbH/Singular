@@ -18,6 +18,7 @@ using System.Diagnostics;
 using Singular.Managers;
 using System.Drawing;
 using Styx.CommonBot;
+using System.Reflection;
 
 namespace Singular.Helpers
 {
@@ -215,9 +216,9 @@ namespace Singular.Helpers
         public static Composite CreateMoveToUnitBehavior(UnitSelectionDelegate onUnit, float range, float stopAt = float.MinValue )
         {
             return new Decorator(
-                ret => !MovementManager.IsMovementDisabled && onUnit != null && onUnit(ret) != null && onUnit(ret).Distance > range,
+                ret => !MovementManager.IsMovementDisabled && onUnit != null && onUnit(ret) != null && onUnit(ret).SpellDistance() > range,
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug(Color.White, "MoveToUnit: moving within {0:F1} yds of {1} @ {2:F1} yds", range, onUnit(ret).SafeName(), onUnit(ret).Distance)),
+                    new Action(ret => Logger.WriteDebug(Color.White, "MoveToUnit: moving within {0:F1} yds of {1} @ {2:F1} yds", range, onUnit(ret).SafeName(), onUnit(ret).SpellDistance())),
                     new Action(ret => Navigator.MoveTo(onUnit(ret).Location)),
                     new Action(ret => StopMoving.InRangeOfUnit(onUnit(ret), stopAt == float.MinValue ? range : stopAt)),
                     new ActionAlwaysFail()
@@ -291,13 +292,11 @@ namespace Singular.Helpers
         public static bool InMoveToMeleeStopRange( WoWUnit unit)
         {
             if (unit == null || !unit.IsValid)
-                return true;
+                return false;
 
             if (unit.IsPlayer)
             {
-                if (unit.DistanceSqr < (2 * 2))
-                    return true;
-
+                return unit.DistanceSqr < (2 * 2);
             }
             else
             {
@@ -466,11 +465,16 @@ namespace Singular.Helpers
         internal static WoWPoint Point { get; set; }
         internal static WoWUnit Unit { get; set; }
         internal static double Range { get; set; }
-        internal static SimpleBooleanDelegate StopNow { get; set; }
+        internal static SimpleBooleanDelegate StopRequestDelegate { get; set; }
+
+        internal static string callerName;
+        internal static string callerFile;
+        internal static int callerLine;
 
         public enum StopType
         {
             None = 0,
+            Now,
             AsSoonAsPossible,
             Location,
             RangeOfLocation,
@@ -497,7 +501,7 @@ namespace Singular.Helpers
             bool stopMovingNow;
             try
             {
-                stopMovingNow = StopNow(null);
+                stopMovingNow = StopRequestDelegate(null);
             }
             catch
             {
@@ -526,6 +530,11 @@ namespace Singular.Helpers
                     else if ( Type == StopType.RangeOfUnit)
                         line += string.Format(", within {0:F1} yds of {1} @ {2:F1} yds", Range, Unit.SafeName(), Unit.Distance);
 
+                    if (callerLine > 0)
+                        line += ", source: " + callerFile + " - line: " + callerLine;
+                    else if (callerLine == 0)
+                        line += ", method: " + callerName;
+
                     Logger.WriteDebug(Color.White, line);
                 }
 
@@ -538,6 +547,24 @@ namespace Singular.Helpers
             if (MovementManager.IsMovementDisabled)
                 return;
 
+            if (SingularSettings.Debug)
+            {
+                StackFrame frame = new StackFrame(3);
+                if (frame != null)
+                {
+                    MethodBase method = frame.GetMethod();
+                    callerName = method.DeclaringType.FullName + "." + method.Name;
+                    callerFile = frame.GetFileName();
+                    callerLine = frame.GetFileLineNumber();
+                }
+                else
+                {
+                    callerName = "na";
+                    callerFile = "na";
+                    callerLine = -1;
+                }
+            }
+
             Type = type;
             Unit = unit;
             Point = pt;
@@ -546,7 +573,7 @@ namespace Singular.Helpers
             if (and == null)
                 and = ret => true;
 
-            StopNow = ret => stop(ret) && and(ret);
+            StopRequestDelegate = ret => stop(ret) && and(ret);
         }
 
         public static void AtLocation(WoWPoint pt, SimpleBooleanDelegate and = null)
@@ -561,7 +588,7 @@ namespace Singular.Helpers
 
         public static void InRangeOfUnit(WoWUnit unit, double range, SimpleBooleanDelegate and = null)
         {
-            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, range, at => Unit == null || !Unit.IsValid || Unit.Distance <= range, and);
+            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, range, at => Unit == null || !Unit.IsValid || Unit.SpellDistance() <= range, and);
         }
 
         public static void InMeleeRangeOfUnit(WoWUnit unit, SimpleBooleanDelegate and = null)
@@ -576,12 +603,8 @@ namespace Singular.Helpers
 
         public static void Now()
         {
-            Clear();
-            if (StyxWoW.Me.IsMoving)
-            {
-                Logger.WriteDebug(Color.White, "StopMoving.Now: character already stopped, clearing stop {0} request", Type);
-                Navigator.PlayerMover.MoveStop();
-            }
+            Set(StopType.Now, null, WoWPoint.Empty, 0, at => true, null);
+            Pulse();
         }
 
         public static void AsSoonAsPossible( SimpleBooleanDelegate and = null)

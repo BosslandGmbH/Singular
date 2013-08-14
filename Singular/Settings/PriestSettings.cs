@@ -178,14 +178,21 @@ namespace Singular.Settings
         [Description("Min number of players dispelled (0: disable Mass Dispel)")]
         public int CountMassDispel { get; set; }
 
-/*
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Use Shadow Protection")]
-        [Description("Use Shadow Protection buff")]
-        public bool UseShadowProtection { get; set; }
-*/
+        [DisplayName("Use Fade")]
+        [Description("True: cast Fade on aggro -or- snare if Phantasm talent taken")]
+        public bool UseFade { get; set; }
+
+        /*
+                        [Setting]
+                        [DefaultValue(true)]
+                        [Category("Common")]
+                        [DisplayName("Use Shadow Protection")]
+                        [Description("Use Shadow Protection buff")]
+                        public bool UseShadowProtection { get; set; }
+                */
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
@@ -270,13 +277,20 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Use Speed Buff")]
-        [Description("Cast Tier 2 movement buff when running out of combat")]
+        [Description("Cast Tier 2 movement buff when running and not in combat")]
         public bool UseSpeedBuff { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Speed Buff on Tank")]
+        [Description("Cast Tier 2 movement buff on Tank when they are not in combat and moving")]
+        public bool UseSpeedBuffOnTank { get; set; }
 
         #endregion
 
         #region Discipline
-
+/*
         [Setting]
         [DefaultValue(80)]
         [Category("Discipline")]
@@ -367,11 +381,11 @@ namespace Singular.Settings
         [DisplayName("Dps Mana")]
         [Description("Dps while mana is above this value (Used while in a party)")]
         public int DpsMana { get; set; }
-
+*/
         #endregion
 
         #region Holy
-
+/*
         [Setting]
         [DefaultValue(95)]
         [Category("Holy")]
@@ -435,7 +449,7 @@ namespace Singular.Settings
         [Description("Circle of Healing will be used when this many heal targets below the Circle of Healing Health percent")]
         public int CircleOfHealingCount { get; set; }
 
-
+*/
 
 
         #endregion
@@ -800,6 +814,13 @@ namespace Singular.Settings
         public bool SavedToFile { get; set; }
 
         [Setting]
+        [DefaultValue(100)]
+        [Category("Healing")]
+        [DisplayName("% Power Word: Shield")]
+        [Description("Health % to cast this ability. Set to 0 to disable.")]
+        public int PowerWordShield { get; set; }
+
+        [Setting]
         [DefaultValue(0)]
         [Category("Healing")]
         [DisplayName("% Renew")]
@@ -863,7 +884,7 @@ namespace Singular.Settings
         public int VoidShift { get; set; }
 
         [Setting]
-        [DefaultValue(20)]
+        [DefaultValue(0)]
         [Category("Healing")]
         [DisplayName("% Pain Suppression")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
@@ -882,6 +903,13 @@ namespace Singular.Settings
         [DisplayName("% Power Word Barrier")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int PowerWordBarrier { get; set; }
+
+        [Setting]
+        [DefaultValue(75)]
+        [Category("Health %")]
+        [DisplayName("% Spirit Shell")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int SpiritShell { get; set; }
 
         [Setting]
         [DefaultValue(3)]
@@ -909,7 +937,14 @@ namespace Singular.Settings
         [Category("Target Minimum")]
         [DisplayName("Count Power Word: Barrier")]
         [Description("Min number of players shielded")]
-        public int CountPowerWordBarrier { get; set; }       
+        public int CountPowerWordBarrier { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Target Minimum")]
+        [DisplayName("Count Spirit Shell")]
+        [Description("Min number of players below health %")]
+        public int CountSpiritShell { get; set; }
 
         [Setting]
         [DefaultValue(90)]
@@ -929,8 +964,9 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Healing")]
         [DisplayName("Atonement When Idle")]
-        [Description("Cancel idle time Atonement Healing below this Health %")]
+        [Description("True: DPS with Atonement spells if no healing needed")]
         public bool AtonementWhenIdle { get; set; }
+
 
     }
 }

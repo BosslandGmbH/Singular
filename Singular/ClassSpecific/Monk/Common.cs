@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Monk
                 new PrioritySelector(
                     Spell.BuffSelf("Dematerialize"),
                     Spell.BuffSelf("Nimble Brew", ret => Me.Stunned || Me.Fleeing || Me.HasAuraWithMechanic( WoWSpellMechanic.Horrified )),
-                    Spell.BuffSelf("Dampen Harm", ret => Me.Stunned && Unit.NearbyUnitsInCombatWithMe.Any()),
+                    Spell.BuffSelf("Dampen Harm", ret => Me.Stunned && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any()),
                     Spell.BuffSelf("Tiger's Lust", ret => Me.Rooted && !Me.HasAuraWithEffect( WoWApplyAuraType.ModIncreaseSpeed))
                     )
                 );
@@ -73,7 +73,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.BuffSelf( "Ring of Peace", 
                             ret => Me.GotTarget 
                                 && Me.CurrentTarget.SpellDistance() < 8
-                                && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() > 1))
+                                && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1))
                         )
                     )
                 );
@@ -365,7 +365,7 @@ namespace Singular.ClassSpecific.Monk
                     if (Spell.IsSpellOnCooldown("Grapple Weapon"))
                         return null;
 
-                    WoWUnit unit = Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                    WoWUnit unit = Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(
                         u => u.SpellDistance() < 40
                             && !Me.CurrentTarget.Disarmed
                             && !Me.CurrentTarget.IsCrowdControlled()

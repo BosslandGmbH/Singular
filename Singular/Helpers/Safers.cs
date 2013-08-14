@@ -69,29 +69,6 @@ namespace Singular.Helpers
                     ret => !SingularSettings.DisableAllTargeting,
                     new PrioritySelector(
 
-#region Tank Targeting
-
-                        new Decorator(
-                            // DisableTankTargeting is a user-setting. NeedTankTargeting is an internal one. Make sure both are turned on.
-                            ret => !SingularSettings.Instance.DisableTankTargetSwitching && Group.MeIsTank &&
-                                   TankManager.TargetingTimer.IsFinished && StyxWoW.Me.Combat && TankManager.Instance.FirstUnit != null &&
-                                   (StyxWoW.Me.CurrentTarget == null || StyxWoW.Me.CurrentTarget != TankManager.Instance.FirstUnit),
-                            new Sequence(
-                                // pending spells like mage blizard cause targeting to fail.
-                                CreateClearPendingCursorSpell( RunStatus.Success),
-                                new Action(
-                                    ret =>
-                                    {
-                                        Logger.WriteDebug( targetColor, "EnsureTarget: Targeting first unit of TankTargeting");
-                                        TankManager.Instance.FirstUnit.Target();
-                                    }),
-                                Helpers.Common.CreateWaitForLagDuration(),
-                                new Action(ret => TankManager.TargetingTimer.Reset())
-                                )
-                            ),
-
-#endregion
-
 #region Switch from Current Target if a more important one exists!
 
                         new PrioritySelector(
@@ -100,9 +77,28 @@ namespace Singular.Helpers
 
                             ctx => 
                             {
-                                // No target switching for tanks. They check for their own stuff above.
-                                if (Group.MeIsTank && !SingularSettings.Instance.DisableTankTargetSwitching)
-                                    return null;
+#region Tank Targeting
+                                // Handle tank targeting - only if in Combat, otherwise we'll choose based upon Targeting list
+                                if (!SingularSettings.Instance.DisableTankTargetSwitching && Group.MeIsTank && StyxWoW.Me.Combat && TankManager.Instance.FirstUnit != null)
+                                {
+                                    if ( Me.CurrentTarget != TankManager.Instance.FirstUnit)
+                                    {
+                                        if ( TankManager.TargetingTimer.IsFinished )
+                                        {
+                                            Logger.Write( targetColor, "TankTarget: switching to first unit of TankTargeting");
+                                            return TankManager.Instance.FirstUnit;
+                                        }
+
+                                        if ( !Unit.ValidUnit( Me.CurrentTarget, showReason:false) )
+                                        {
+                                            Logger.Write( targetColor, "TankTarget: CurrentTarget invalid, switching to first unit of TankTargeting");
+                                            return TankManager.Instance.FirstUnit;
+                                        }
+                                    }
+
+                                    return Me.CurrentTarget;   // pass our currenttarget to skip setting or switching
+                                }
+#endregion
 
 #if ALWAYS_SWITCH_TO_BOTPOI
                                 // Check botpoi (our top priority.)  we switch to BotPoi if a kill type exists and not blacklisted
@@ -112,15 +108,15 @@ namespace Singular.Helpers
                                 if (BotPoi.Current.Type == PoiType.Kill)
                                 {
                                     unit = BotPoi.Current.AsObject.ToUnit();
-                                    if (Unit.ValidUnit(unit, showReason: SingularSettings.Debug ))
+                                    if (Unit.ValidUnit(unit, showReason: true ))
                                     {
                                         if (StyxWoW.Me.CurrentTargetGuid != unit.Guid)
-                                            Logger.Write(targetColor, "Current target is not BotPOI.  Switching to " + unit.SafeName() + "!");
+                                            Logger.Write(targetColor, "Switching to BotPoi: " + unit.SafeName() + "!");
 
                                         return unit;
                                     }
 
-                                    Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " not valid --- clearing");
+                                    // Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " not valid --- clearing");
                                     BotPoi.Clear("Singular detected invalid mob as BotPoi");
                                 }
 #endif
@@ -146,7 +142,7 @@ namespace Singular.Helpers
                                     if (target != null && target.Guid != Me.CurrentTargetGuid)
                                     {
                                         // Return the closest one to us
-                                        Logger.Write(targetColor, "Current target valid, but switching to aggroed mob pounding on me " + target.SafeName() + "!");
+                                        Logger.Write(targetColor, "Switching to aggroed mob pounding on me " + target.SafeName() + "!");
                                         return target;
                                     }
                                 }
@@ -235,9 +231,10 @@ namespace Singular.Helpers
                                     new Decorator(
                                         req => ((WoWUnit)req).Guid != StyxWoW.Me.CurrentTargetGuid,
                                         new Sequence(
-                                            new Action(ret => Logger.Write( targetColor, "EnsureTarget: switching to better target {0}", ((WoWUnit)ret).SafeName())),
+                                            new Action(ret => Logger.Write( targetColor, "EnsureTarget: switching to target {0}", ((WoWUnit)ret).SafeName())),
                                             new Action(ret => ((WoWUnit)ret).Target()),
-                                            new WaitContinue( 2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == (WoWUnit)ret, new ActionAlwaysSucceed())
+                                            new WaitContinue( 2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == (WoWUnit)ret, new ActionAlwaysSucceed()),
+                                            new Action(ret => TankManager.TargetingTimer.Reset())   // cheaper to just reset than to check if we need Tank Targeting
                                             )
                                         ),
 

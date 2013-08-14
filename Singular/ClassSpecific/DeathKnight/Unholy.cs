@@ -271,7 +271,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                                 // spread the disease around.
                                 Spell.Cast("Blood Boil",
-                                    ret => TalentManager.IsSelected((int) DeathKnightTalents.RollingBlood) 
+                                    ret => Common.HasTalent(DeathKnightTalents.RollingBlood) 
                                         && !StyxWoW.Me.HasAura("Unholy Blight") 
                                         && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 && Common.ShouldSpreadDiseases),
                                 Spell.Cast("Pestilence",

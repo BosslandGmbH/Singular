@@ -44,7 +44,7 @@ namespace Singular.Settings
         public int WarriorEnragedRegenerationHealth { get; set; }
 
         [Setting]
-        [DefaultValue(20)]
+        [DefaultValue(30)]
         [Category("Protection")]
         [DisplayName("Shield Wall Health")]
         [Description("Shield Wall will be used when your health drops below this value")]
@@ -52,14 +52,14 @@ namespace Singular.Settings
 
 
         [Setting]
-        [DefaultValue(40)]
+        [DefaultValue(20)]
         [Category("Protection")]
         [DisplayName("Last Stand Health")]
         [Description("Last Stand will be used when your health drops below this value")]
         public int WarriorLastStandHealth  { get; set; }
 
         [Setting]
-        [DefaultValue(30)]
+        [DefaultValue(50)]
         [Category("Protection")]
         [DisplayName("Shield Block Health")]
         [Description("Shield Block will be used when your health drops below this value")]

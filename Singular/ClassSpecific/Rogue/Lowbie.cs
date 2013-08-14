@@ -37,13 +37,12 @@ namespace Singular.ClassSpecific.Rogue
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.BuffSelf("Stealth"),
+                        Common.CreateStealthBehavior(),
+                        Common.CreateRogueOpenerBehavior(),
                         Spell.Cast("Sinister Strike"),
                         Helpers.Common.CreateAutoAttack(true)
                         )
-                    ),
-                Common.CreateRogueMoveBehindTarget(),
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
     }

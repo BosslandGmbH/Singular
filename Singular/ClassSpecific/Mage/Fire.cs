@@ -42,7 +42,7 @@ namespace Singular.ClassSpecific.Mage
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -80,7 +80,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 */
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -147,7 +147,7 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
                                 Spell.Cast("Pyroblast", 
                                     ret => Me.ActiveAuras.ContainsKey("Pyroblast!") 
-                                        || (Me.CurrentTarget.IsFrozen() && !Unit.NearbyUnitsInCombatWithMe.Any(u => u.Guid != Me.CurrentTargetGuid))
+                                        || (Me.CurrentTarget.IsFrozen() && !Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.Guid != Me.CurrentTargetGuid))
                                         || (Me.CurrentTarget.TimeToDeath() > 15 && !Me.CurrentTarget.HasAura("Pyroblast"))),
                                 Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
                                 Spell.Cast("Fire Blast", ret => !SpellManager.HasSpell("Inferno Blast")),
@@ -177,7 +177,7 @@ namespace Singular.ClassSpecific.Mage
                 Safers.EnsureTarget(),
                 Common.CreateStayAwayFromFrozenTargetsBehavior(),
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -243,7 +243,7 @@ namespace Singular.ClassSpecific.Mage
                                         )
                                     ),
                 */
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

@@ -49,8 +49,13 @@ namespace Singular.ClassSpecific.Warrior
 
                         CreateDiagnosticOutputBehavior("Pull"),
 
-                        //Buff up
-                        Spell.Cast(Common.SelectedShout),
+                        new Throttle( 2,
+                            Spell.Cast(Common.SelectedShout, 
+                                on => Me, 
+                                req => !Me.HasAura(Common.SelectedShout) 
+                                    || (Me.CurrentRage < (Me.MaxRage - 40) && (Me.SpellDistance() >= 27 || Spell.GetSpellCooldown("Charge").TotalSeconds > 1))
+                                )
+                            ),
 
                         //Shoot flying targets
                         new Decorator(
@@ -63,10 +68,7 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateChargeBehavior()
                         )
-                    ),
-
-                // Move to Melee
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 
@@ -87,38 +89,42 @@ namespace Singular.ClassSpecific.Warrior
                         Common.CreateWarriorEnragedRegeneration(),
 
                         new Decorator(
-                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
-                                && (Me.CurrentTarget.IsPlayer || 4 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1)) || Me.CurrentTarget.TimeToDeath() > 40),
+                            ret => {
+                                if (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss())
+                                    return true;
+
+                                if ( SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+                                    return false;
+
+                                if (Me.CurrentTarget.TimeToDeath() > 40)
+                                    return true;
+
+                                return Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 4;
+                                },
                             new PrioritySelector(
-                                Spell.BuffSelf("Die by the Sword", req => Me.HealthPercent < 50),
-                                Spell.CastOnGround("Demoralizing Banner", on => Me.CurrentTarget, req => true, false),
-                                Spell.Cast("Skull Banner"),
-                                Spell.Cast("Avatar"),
-                                Spell.Cast("Bloodbath")
+                                Spell.OffGCD( Spell.BuffSelf("Die by the Sword", req => Me.HealthPercent < 50)),
+                                Spell.OffGCD( Spell.CastOnGround("Demoralizing Banner", on => Me.CurrentTarget, req => true, false)),
+                                Spell.OffGCD( Spell.BuffSelf("Skull Banner" )),
+                                Spell.OffGCD( Spell.BuffSelf("Avatar")),
+                                Spell.OffGCD( Spell.BuffSelf("Bloodbath"))
                                 )
                             ),
 
-                        Spell.BuffSelf("Rallying Cry", req => !Me.IsInGroup() && Me.HealthPercent < 50),
+                        Spell.OffGCD( Spell.BuffSelf("Rallying Cry", req => !Me.IsInGroup() && Me.HealthPercent < 50)),
 
-                        Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
-
-                        new Decorator(
-                            ret => Me.CurrentTarget.IsBoss(),
-                            new PrioritySelector(
-                                Spell.Cast("Skull Banner", ret => Me.CurrentTarget.IsBoss()),
-                                Spell.Cast("Avatar", ret => Me.CurrentTarget.IsBoss()),
-                                Spell.Cast("Bloodbath", ret => Me.CurrentTarget.IsBoss())
-                                )
-                            ),
+                        Spell.OffGCD( Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus || PartyBuff.WeHaveBloodlust) && (StyxWoW.Me.CurrentTarget.TimeToDeath() > 40 || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances))),
 
                         Spell.Cast("Storm Bolt"),  // in normal rotation
 
                         // Execute is up, so don't care just cast
-                        Spell.Cast("Berserker Rage", ret => Me.CurrentTarget.HealthPercent <= 20),
+                        Spell.Cast("Berserker Rage", 
+                            ret => {
+                                if ( Me.GotTarget && Me.CurrentTarget.HealthPercent <= 20)
+                                    return true;
 
-                        // May get an Enrage off Mortal Strike + Colossus Smash pair, so try to avoid overlapping Enrages
-                        Spell.Cast("Berserker Rage", ret => !Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6),
-                        Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified)),
+                                return !Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6;
+                                }
+                            ),
 
                         Spell.BuffSelf(Common.SelectedShout)
 
@@ -209,7 +215,7 @@ namespace Singular.ClassSpecific.Warrior
                                     ),
 
                                 // Added cast of Shout for rage generation
-                                Spell.Cast(Common.SelectedShout, ret => StyxWoW.Me.CurrentRage < 85)
+                                Spell.Cast(Common.SelectedShout, ret => StyxWoW.Me.CurrentRage < (StyxWoW.Me.MaxRage - 20))
                                 )
                             ),
 
@@ -307,7 +313,7 @@ namespace Singular.ClassSpecific.Warrior
                                         //HeroicLeap(),
 
                                         Spell.Cast("Storm Bolt"),
-                                        Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
+                                        Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.SpellDistance() <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
                                         Spell.Cast("Overpower"),
 
                                         // Rage dump!
@@ -330,6 +336,7 @@ namespace Singular.ClassSpecific.Warrior
         private static Composite CreateArmsAoeCombat(SimpleIntDelegate aoeCount)
         {
             return new PrioritySelector(
+                Spell.OffGCD( Spell.BuffSelf("Sweeping Strikes", ret => aoeCount(ret) >= 2) ),
                 new Decorator(ret => Spell.UseAOE && aoeCount(ret) >= 3,
                     new PrioritySelector(
                         Spell.Cast( "Thunder Clap" ),
@@ -343,9 +350,7 @@ namespace Singular.ClassSpecific.Warrior
                         Spell.Cast("Colossus Smash", ret => !StyxWoW.Me.CurrentTarget.HasMyAura("Colossus Smash")),
                         Spell.Cast("Overpower")
                         )
-                    ),
-
-                Spell.BuffSelf("Sweeping Strikes", ret => aoeCount(ret) == 2)
+                    )
                 );
         }
 
@@ -369,10 +374,10 @@ namespace Singular.ClassSpecific.Warrior
                         new Decorator(
                             ret => Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.IsCrowdControlled(),
                             new PrioritySelector(
-                                Spell.Cast("Avatar"),
-                                Spell.Cast("Bloodbath"),
-                                Spell.Cast("Recklessness"),
-                                Spell.Cast("Skull Banner")
+                                Spell.OffGCD( Spell.BuffSelf("Avatar")),
+                                Spell.OffGCD( Spell.BuffSelf("Bloodbath")),
+                                Spell.OffGCD( Spell.BuffSelf("Recklessness")),
+                                Spell.OffGCD( Spell.Cast("Skull Banner"))
                                 )
                             ),
 
@@ -587,7 +592,7 @@ namespace Singular.ClassSpecific.Warrior
             {
                 if (Me.GotTarget && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget, skipWowCheck: true))
                 {
-                    if (Me.RagePercent >= 85 && (Me.CurrentTarget.HealthPercent > 20 || !SpellManager.HasSpell("Colossus Smash")))
+                    if (Me.RagePercent >= (Me.MaxRage - 15) && (Me.CurrentTarget.HealthPercent > 20 || !SpellManager.HasSpell("Colossus Smash")))
                     {
                         Logger.Write(Color.White, "^Heroic Strike - Rage Dump @ {0}%", (int)Me.RagePercent);
                         return true;
@@ -610,7 +615,7 @@ namespace Singular.ClassSpecific.Warrior
             {
                 if (Me.GotTarget && Me.RagePercent >= 70 && Spell.CanCastHack("Heroic Strike", Me.CurrentTarget, skipWowCheck: true))
                 {
-                    if (Me.CurrentTarget.HasAura("Colossus Smash") || Me.CurrentTarget.TimeToDeath() < 8)
+                    if (Me.CurrentTarget.HasAura("Colossus Smash") || !SpellManager.HasSpell("Colossus Smash") || Me.CurrentTarget.TimeToDeath() < 8)
                     {
                         Logger.Write(Color.White, "^Heroic Strike - Rage Dump @ {0}%", (int)Me.RagePercent);
                         return true;
@@ -645,13 +650,14 @@ namespace Singular.ClassSpecific.Warrior
                         WoWUnit target = Me.CurrentTarget;
                         if (target != null)
                         {
-                            log += string.Format(", th={0:F1}%, dist={1:F1}, inmelee={2}, face={3}, loss={4}, dead={5} secs",
+                            log += string.Format(", th={0:F1}%, dist={1:F1}, inmelee={2}, face={3}, loss={4}, dead={5} secs, flying={6}",
                                 target.HealthPercent,
                                 target.Distance,
                                 target.IsWithinMeleeRange.ToYN(),
                                 Me.IsSafelyFacing(target).ToYN(),
                                 target.InLineOfSpellSight.ToYN(),
-                                target.TimeToDeath()
+                                target.TimeToDeath(),
+                                target.IsFlying.ToYN()
                                 );
                         }
 

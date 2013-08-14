@@ -163,12 +163,12 @@ namespace Singular.ClassSpecific.Warlock
 
                     new Decorator(
                         ret => _mobCount < 4,
-                        Spell.Buff("Immolate", true, on => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.HasAuraExpired("Immolate", 3) && Spell.CanCastHack("Immolate", u) && Me.IsSafelyFacing(u, 150)), req => true)
+                        Spell.Buff("Immolate", true, on => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.HasAuraExpired("Immolate", 3) && Spell.CanCastHack("Immolate", u) && Me.IsSafelyFacing(u, 150)), req => true)
                         ),
 
                     new PrioritySelector(
-                        ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.HasMyAura("Havoc")),
-                        Spell.Buff("Havoc", on => ((WoWUnit)on) ?? Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid))
+                        ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.HasMyAura("Havoc")),
+                        Spell.Buff("Havoc", on => ((WoWUnit)on) ?? Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid))
                         ),
 
                     new Decorator(

@@ -23,7 +23,6 @@ namespace Singular.Settings
         private ShamanHealSettings _battleground;
         private ShamanHealSettings _instance;
         private ShamanHealSettings _raid;
-        private ShamanHealSettings _normal;
 
         [Browsable(false)]
         public ShamanHealSettings Battleground { get { return _battleground ?? (_battleground = new ShamanHealSettings( HealingContext.Battlegrounds )); } }
@@ -35,18 +34,14 @@ namespace Singular.Settings
         public ShamanHealSettings Raid { get { return _raid ?? (_raid = new ShamanHealSettings(HealingContext.Raids)); } }
 
         [Browsable(false)]
-        public ShamanHealSettings Normal { get { return _normal ?? (_normal = new ShamanHealSettings(HealingContext.Normal)); } }
-
-        [Browsable(false)]
         public ShamanHealSettings Heal { get { return HealLookup(Singular.SingularRoutine.CurrentWoWContext); } }
         
         public ShamanHealSettings HealLookup( WoWContext ctx)
         {
-            if (ctx == WoWContext.Battlegrounds)
-                return Battleground;
             if (ctx == WoWContext.Instances)
                 return StyxWoW.Me.CurrentMap.IsRaid ? Raid : Instance;
-            return Normal;
+
+            return Battleground;
         }
 
         #endregion
@@ -405,6 +400,20 @@ namespace Singular.Settings
         [DisplayName("Ascendance Min Count")]
         [Description("Min number of players healed")]
         public int MinAscendanceCount { get; set; }
+
+        [Setting]
+        [DefaultValue(90)]
+        [Category("Restoration")]
+        [DisplayName("Telluric Cast Health %")]
+        [Description("Group Health % we can cast a Lightning Bolt")]
+        public int TelluricHealthCast { get; set; }
+
+        [Setting]
+        [DefaultValue(80)]
+        [Category("Restoration")]
+        [DisplayName("Telluric Cancel Health %")]
+        [Description("Group Health % where we cancel a Lightning Bolt in progress")]
+        public int TelluricHealthCancel { get; set; }
 
     }
 }

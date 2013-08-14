@@ -77,8 +77,6 @@ namespace Singular.ClassSpecific.Rogue
 
                         new Throttle( Helpers.Common.CreateInterruptBehavior()),
 
-                        Common.CreateRogueMoveBehindTarget(),
-
                         Common.CreateRogueOpenerBehavior(),
 
                         Spell.BuffSelf("Adrenaline Rush", ret => Me.CurrentEnergy < 20 && !Me.HasAura("Killing Spree")),

@@ -200,10 +200,15 @@ namespace Singular.Helpers
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMe
         {
+            get { return NearbyUnfriendlyUnits.Where(p => p.Combat && p.CurrentTargetGuid == StyxWoW.Me.Guid); }
+        }
+
+        public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMeOrMyStuff
+        {
             get { return NearbyUnfriendlyUnits.Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingMyStuff()))); }
         }
 
-        public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithUs
+        public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithUsOrOurStuff
         {
             get { return NearbyUnfriendlyUnits.Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingUs()))); }
         }
@@ -239,7 +244,7 @@ namespace Singular.Helpers
             // Duh
             if (p.IsDead)
             {
-                if (showReason) Logger.Write(invalidColor, "invalid attack unit {0} is Dead", p.SafeName());
+                if (showReason) Logger.Write(invalidColor, "invalid attack unit {0} is already Dead", p.SafeName());
                 return false;
             }
 
@@ -439,6 +444,14 @@ namespace Singular.Helpers
         }
 
 
+        public static bool HasAnyAura(this WoWUnit unit, params int[] ids)
+        {
+            var auras = unit.GetAllAuras();
+            var hashes = new HashSet<int>(ids);
+            return auras.Any(a => hashes.Contains(a.SpellId));
+        }
+
+
         /// <summary>
         ///  Checks for my auras on a specified unit. Returns true if the unit has any aura in the auraNames list applied by player.
         /// </summary>
@@ -595,14 +608,14 @@ namespace Singular.Helpers
 
                      );
 #else
-            return unit.Stunned 
-                || unit.Rooted 
+            return unit.Stunned
+                || unit.Rooted
                 || unit.Fleeing 
                 || unit.HasAuraWithEffect(
                         WoWApplyAuraType.ModConfuse, 
                         WoWApplyAuraType.ModCharm, 
                         WoWApplyAuraType.ModFear, 
-                        WoWApplyAuraType.ModDecreaseSpeed, 
+                        // WoWApplyAuraType.ModDecreaseSpeed, 
                         WoWApplyAuraType.ModPacify, 
                         WoWApplyAuraType.ModPacifySilence, 
                         WoWApplyAuraType.ModPossess, 
@@ -645,15 +658,20 @@ namespace Singular.Helpers
 
             _lastIsBossGuid = guid;
             _lastIsBossResult = unit != null && (Lists.BossList.CurrentMapBosses.Contains(unit.Name) || Lists.BossList.BossIds.Contains(unit.Entry));
+            if (!_lastIsBossResult)
+                _lastIsBossResult = IsTrainingDummy(unit);
             return _lastIsBossResult;
         }
 
+        private const int BannerOfTheAlliance = 61573;
+        private const int BannerOfTheHorde = 61574;
+        
         public static bool IsTrainingDummy(this WoWUnit unit)
         {
-            if (!unit.IsMechanical)
-                return false;
-
-            return Lists.BossList.TrainingDummies.Contains(unit.Entry);
+            // return Lists.BossList.TrainingDummies.Contains(unit.Entry);
+            int bannerId = StyxWoW.Me.IsHorde ? BannerOfTheAlliance : BannerOfTheHorde;
+            return unit != null && unit.Level > 1 
+                && ((unit.CurrentHealth == 1 && unit.MaxHealth == 1) || unit.HasAura(bannerId));
         }
 
         /// <summary>

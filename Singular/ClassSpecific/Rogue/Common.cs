@@ -415,6 +415,15 @@ namespace Singular.ClassSpecific.Rogue
                 // changed to only do on non-player targets
                 ret => !Me.CurrentTarget.IsPlayer && (Me.CurrentTarget.IsFlying || Me.CurrentTarget.IsAboveTheGround() || Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= 5),
                 new PrioritySelector(
+                    new Action( r => {
+                        Logger.WriteDebug( "Target appears airborne: flying={0} aboveground={1} dist={2:F1} zdiff={2:F1}",
+                            Me.CurrentTarget.IsFlying.ToYN(),
+                            Me.CurrentTarget.IsAboveTheGround().ToYN(),
+                            Me.CurrentTarget.Distance2D,
+                            Math.Abs(Me.Z - Me.CurrentTarget.Z)
+                            );
+                        return RunStatus.Failure;
+                        }),
                     Spell.Cast("Deadly Throw", req => Me.ComboPoints > 0),
                     Spell.Cast("Shuriken Toss"),
                     Spell.Cast("Throw"),
@@ -592,7 +601,7 @@ namespace Singular.ClassSpecific.Rogue
                 if (Me.CurrentTarget.TimeToDeath() > 20)
                     return true;
 
-                return Unit.NearbyUnitsInCombatWithMe.Any(u => u.Guid != Me.CurrentTargetGuid && !u.IsPet && u.IsWithinMeleeRange );
+                return Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.Guid != Me.CurrentTargetGuid && !u.IsPet && u.IsWithinMeleeRange );
             }
         }
 

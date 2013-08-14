@@ -31,6 +31,7 @@ namespace Singular.ClassSpecific
                     Item.UseItem(47499)));
         }
 
+
         // [Behavior(BehaviorType.Combat, priority: 999)]
         public static Composite CreateUseTrinketsBehaviour()
         {
@@ -53,7 +54,19 @@ namespace Singular.ClassSpecific
 
             if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.OnCooldownInCombat))
             {
-                ps.AddChild( new Decorator( ret => StyxWoW.Me.Combat, Item.UseEquippedTrinket(TrinketUsage.OnCooldownInCombat)));
+                ps.AddChild( 
+                    new Decorator( 
+                        ret => {
+                            if ( !StyxWoW.Me.Combat || !StyxWoW.Me.GotTarget)
+                                return false;
+                            bool isMelee = StyxWoW.Me.IsMelee();
+                            if (isMelee)
+                                return StyxWoW.Me.CurrentTarget.IsWithinMeleeRange;
+                            return !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget.SpellDistance() < 40;
+                            }, 
+                        Item.UseEquippedTrinket(TrinketUsage.OnCooldownInCombat)
+                        )
+                    );
             }
 
             if (SingularSettings.IsTrinketUsageWanted(TrinketUsage.LowHealth))
@@ -86,8 +99,6 @@ namespace Singular.ClassSpecific
         // [Behavior(BehaviorType.Combat, priority: 998)]
         public static Composite CreateRacialBehaviour()
         {
-            int mobRangeForRacials = StyxWoW.Me.IsMelee() ? 5 : 40;
-
             return new Throttle( TimeSpan.FromMilliseconds(250),
                 new Decorator(
                     ret => SingularSettings.Instance.UseRacials,
@@ -98,20 +109,34 @@ namespace Singular.ClassSpecific
                                     return false;
                                 if ( StyxWoW.Me.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Bleeding || a.Spell.DispelType == WoWDispelType.Disease || a.Spell.DispelType == WoWDispelType.Poison))
                                     return true;
-                                if (Unit.NearbyUnitsInCombatWithMe.Count() > 2)
+                                if (Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 2)
                                     return true;
                                 if (StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.CurrentTargetGuid == StyxWoW.Me.Guid && StyxWoW.Me.CurrentTarget.MaxHealth > (StyxWoW.Me.MaxHealth * 2))
                                     return true;
                                 return false;
                                 },
-                            Spell.BuffSelf("Stoneform")
+                            Spell.OffGCD( Spell.BuffSelf("Stoneform"))
                             ),
-                        Spell.BuffSelf("Escape Artist", req => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared)),
-                        Spell.BuffSelf("Gift of the Naaru", req => StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP),
-                        Spell.BuffSelf("Shadowmeld", ret => NeedShadowmeld()),
-                        Spell.BuffSelf("Lifeblood", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAnyAura("Lifeblood", "Berserking") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.SpellDistance() <= mobRangeForRacials),
-                        Spell.BuffSelf("Berserking", ret => !PartyBuff.WeHaveBloodlust && !StyxWoW.Me.HasAura("Lifeblood") && StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.SpellDistance() <= mobRangeForRacials),
-                        Spell.BuffSelf("Blood Fury", ret => StyxWoW.Me.GotTarget && StyxWoW.Me.CurrentTarget.SpellDistance() <= mobRangeForRacials)
+                        Spell.OffGCD( Spell.BuffSelf("Escape Artist", req => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared))),
+                        Spell.OffGCD( Spell.BuffSelf("Gift of the Naaru", req => StyxWoW.Me.HealthPercent < SingularSettings.Instance.GiftNaaruHP)),
+                        Spell.OffGCD( Spell.BuffSelf("Shadowmeld", ret => NeedShadowmeld()) ),
+
+                        // combat buffs only if target within range specified
+                        new Decorator(
+                            req => {
+                                if ( !StyxWoW.Me.Combat || !StyxWoW.Me.GotTarget)
+                                    return false;
+                                bool isMelee = StyxWoW.Me.IsMelee();
+                                if (isMelee)
+                                    return StyxWoW.Me.CurrentTarget.IsWithinMeleeRange;
+                                return !StyxWoW.Me.IsMoving && StyxWoW.Me.CurrentTarget.SpellDistance() < 40;
+                                },
+                            new PrioritySelector(
+                                Spell.OffGCD( Spell.BuffSelf("Lifeblood", ret => !PartyBuff.WeHaveBloodlust)),
+                                Spell.OffGCD( Spell.BuffSelf("Berserking", ret => !PartyBuff.WeHaveBloodlust)),
+                                Spell.OffGCD( Spell.BuffSelf("Blood Fury", ret => true))
+                                )
+                            )
                         )
                     )
                 );

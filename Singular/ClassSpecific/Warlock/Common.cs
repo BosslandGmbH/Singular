@@ -212,7 +212,7 @@ namespace Singular.ClassSpecific.Warlock
 
 
                         new Decorator(
-                            ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsWithinMeleeRange),
+                            ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.IsWithinMeleeRange),
                             new PrioritySelector(
                                 Spell.BuffSelf("Blood Horror", ret => Me.HealthPercent > 20),
                                 Spell.BuffSelf("Whiplash")
@@ -692,7 +692,7 @@ namespace Singular.ClassSpecific.Warlock
                     new Action(ret => Logger.WriteDebug("Casting Health Funnel on Pet @ {0:F1}%", Me.Pet.HealthPercent)),
                     new PrioritySelector(
                         Spell.Cast(ret => "Health Funnel", mov => false, on => Me.Pet, req => Me.HasAura( "Soulburn") || TalentManager.HasGlyph("Health Funnel")),
-                        Spell.Cast(ret => "Health Funnel", mov => false, on => Me.Pet, req => true, cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth)
+                        Spell.Cast(ret => "Health Funnel", mov => true, on => Me.Pet, req => true, cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth)
                         ),
                     Helpers.Common.CreateWaitForLagDuration()
                     // new WaitContinue(TimeSpan.FromMilliseconds(500), ret => !Me.IsCasting && Me.GotAlivePet && Me.Pet.HealthPercent < petMaxHealth && Me.HealthPercent > 50, new ActionAlwaysSucceed())

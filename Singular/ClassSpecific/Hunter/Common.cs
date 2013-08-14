@@ -274,7 +274,7 @@ namespace Singular.ClassSpecific.Hunter
                 feignDeathBehavior = CreateFeignDeath(req => NeedFeignDeath, () => TimeSpan.FromSeconds((new Random()).Next(3)), ret => false);
 
             if ( SingularRoutine.CurrentWoWContext == WoWContext.Instances && HunterSettings.FeignDeathInInstances )
-                feignDeathBehavior = CreateFeignDeath(req => Unit.NearbyUnitsInCombatWithMe.Any( u=> u.Aggro && u.CurrentTargetGuid == Me.Guid), () => TimeSpan.FromMilliseconds(1500), ret => false);
+                feignDeathBehavior = CreateFeignDeath(req => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any( u=> u.Aggro && u.CurrentTargetGuid == Me.Guid), () => TimeSpan.FromMilliseconds(1500), ret => false);
 
             return new Decorator(
                 req => !Unit.IsTrivial(Me.CurrentTarget),
@@ -418,7 +418,7 @@ namespace Singular.ClassSpecific.Hunter
                 if ( Me.HealthPercent <= HunterSettings.FeignDeathHealth )
                     return true;
 
-                if ( HunterSettings.FeignDeathPvpEnemyPets && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsPet && u.OwnedByRoot != null && u.OwnedByRoot.IsPlayer))
+                if ( HunterSettings.FeignDeathPvpEnemyPets && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.IsPet && u.OwnedByRoot != null && u.OwnedByRoot.IsPlayer))
                     return true;
 
                 return false;
@@ -617,18 +617,16 @@ namespace Singular.ClassSpecific.Hunter
             return new Decorator(
                 req => MovementManager.IsClassMovementAllowed,
                 new PrioritySelector(
-                    ctx => Unit.NearbyUnitsInCombatWithMe.Count(),
+                    ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(),
                     new Decorator(
-                        ret => SingularSettings.Instance.DisengageAllowed
-                            && (Me.HealthPercent <= SingularSettings.Instance.DisengageHealth || ((int)ret) >= SingularSettings.Instance.DisengageMobCount),
+                        ret => Kite.IsDisengageWantedByUserSettings((int) ret),
                         new PrioritySelector(
                             Disengage.CreateDisengageBehavior("Disengage", Disengage.Direction.Backwards, 20, CreateSlowMeleeBehaviorForDisengage()),
                             Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
                             )
                         ),
                     new Decorator(
-                        ret => SingularSettings.Instance.KiteAllow
-                            && (Me.HealthPercent <= SingularSettings.Instance.KiteHealth || ((int)ret) >= SingularSettings.Instance.KiteMobCount),
+                        ret => Kite.IsKitingWantedByUserSettings( (int) ret),
                         Kite.BeginKitingBehavior()
                         )
                     )

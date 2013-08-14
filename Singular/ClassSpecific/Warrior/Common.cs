@@ -40,6 +40,8 @@ namespace Singular.ClassSpecific.Warrior
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Berserker Rage", ret => Me.Fleeing || (Me.Stunned && Me.HasAuraWithMechanic(Styx.WoWInternals.WoWSpellMechanic.Sapped))),
+                // StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified)),
+
                 CreateWarriorEnragedRegeneration()
                 );
         }
@@ -108,27 +110,32 @@ namespace Singular.ClassSpecific.Warrior
 
                         new PrioritySelector(
                             // Charge to close distance
+                            // note: use SpellDistance since charge is to a wowunit
                             Spell.Cast("Charge",
                                 ret => MovementManager.IsClassMovementAllowed
                                     && !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer")
-                                    && Me.CurrentTarget.SpellDistance() >= 10 && Me.CurrentTarget.SpellDistance() < _distanceChargeBehavior 
+                                    && Me.CurrentTarget.SpellDistance().Between( 8, _distanceChargeBehavior) 
                                     && WarriorSettings.UseWarriorCloser),
 
                             //  Leap to close distance
+                            // note: use Distance rather than SpellDistance since spell is to point on ground
                             Spell.CastOnGround("Heroic Leap",
                                 on => Me.CurrentTarget,
                                 req => MovementManager.IsClassMovementAllowed
                                     && !Me.HasAura("Charge")
-                                    && Me.CurrentTarget.SpellDistance() > 9
+                                    && Me.CurrentTarget.Distance.Between( 8, 40)
                                     && !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer")
                                     && WarriorSettings.UseWarriorCloser,
-                                false),
+                                false)
+/*                                
+                            ,
 
                             // Stun
                             Spell.Cast("Heroic Throw",
                                 ret => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.HasAnyAura("Charge Stun","Warbringer")
                                     && !Me.HasAura("Charge")
                                 )
+ */ 
                             )
                         )
                     );
@@ -226,6 +233,37 @@ namespace Singular.ClassSpecific.Warrior
         }
 
 
+        public static Composite CreateAttackOutsideOfMelee()
+        {
+            return new Decorator(
+                ret => {
+                    if (!Me.GotTarget)
+                        return false;
+                    if (Me.CurrentTarget.IsFlying)
+                    {
+                        Logger.WriteDebug("{0} is Flying!", Me.CurrentTarget.SafeName());
+                        return true;
+                    }
+                    WoWPoint dest = Me.CurrentTarget.Location;
+                    if ( !Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully( Me.Location, dest))
+                    {
+                        Logger.WriteDebug("{0} is not Fully Pathable!", Me.CurrentTarget.SafeName());
+                        return true;
+                    }
+                    return false;
+                    },
+                new PrioritySelector(
+                    Spell.Cast("Heroic Throw"),
+                    new Sequence(
+                        new PrioritySelector(
+                            Movement.CreateEnsureMovementStoppedBehavior( 30f, reason: "To Cast Throw"),
+                            new ActionAlwaysSucceed()
+                            ),
+                        Spell.Cast("Throw")
+                        )
+                    )
+                );
+        }
     }
 
     enum WarriorTalents

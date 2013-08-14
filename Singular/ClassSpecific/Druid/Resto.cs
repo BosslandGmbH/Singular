@@ -48,19 +48,13 @@ namespace Singular.ClassSpecific.Druid
 
 
         [Behavior(BehaviorType.Rest, WoWClass.Druid, WoWSpec.DruidRestoration)]
-        public static Composite CreateRestoDruidHealRest()
+        public static Composite CreateRestoDruidRest()
         {
             return new PrioritySelector(
-                Spell.WaitForCastOrChannel(),
-                new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
-                    new PrioritySelector(
-                        CreateRestoNonCombatHeal(true),
-                        Rest.CreateDefaultRestBehaviour(),
-                        Spell.Resurrect("Revive"),
-                        CreateRestoNonCombatHeal(false)
-                        )              
-                    )
+                CreateRestoNonCombatHeal(true),
+                Rest.CreateDefaultRestBehaviour(),
+                Spell.Resurrect("Revive"),
+                CreateRestoNonCombatHeal(false)
                 );
         }
 
@@ -266,10 +260,11 @@ namespace Singular.ClassSpecific.Druid
                                 req => !((WoWUnit)req).HasAnyAura("Rejuvenation", "Regrowth"),
                                 new PrioritySelector(
                                     Spell.Buff("Rejuvenation", on => (WoWUnit)on),
-                                    Spell.Cast("Regrowth", on => (WoWUnit)on, req => true, cancel => false)
+                                    Spell.Cast("Regrowth", on => (WoWUnit)on, req => !TalentManager.HasGlyph("Regrowth"), cancel => false)
                                     )
                                 ),
-                            new Wait(2, until => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
+                            new Wait(TimeSpan.FromMilliseconds(500), until => ((WoWUnit)until).HasAnyAura("Rejuvenation","Regrowth"), new ActionAlwaysSucceed()),
+                            new Wait(TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
                             new PrioritySelector(
                                 Spell.Cast("Force of Nature", on => (WoWUnit)on, req => Spell.GetCharges("Force of Nature") > 1),
                                 Spell.Cast("Swiftmend", on => (WoWUnit)on)
@@ -565,12 +560,12 @@ namespace Singular.ClassSpecific.Druid
 
             #region Lowest Priority Healer Tasks
 
-            behavs.AddBehavior(2, "Rejuvenation while Moving @ " + Settings.Heal.Rejuvenation + "%", "Rejuvenation",
+            behavs.AddBehavior(2, "Rejuvenation while Moving @ " + SingularSettings.Instance.IgnoreHealTargetsAboveHealth + "%", "Rejuvenation",
                 new Decorator(
                     req => Me.IsMoving,
                     Spell.Cast("Rejuvenation",
                         mov => false,
-                        on => HealerManager.Instance.TargetList.FirstOrDefault(h => h.IsAlive && h.HealthPercent < 100 && !h.HasMyAura("Rejuvenation") && Spell.CanCastHack("Rejuvenation", h, true)),
+                        on => HealerManager.Instance.TargetList.FirstOrDefault(h => h.IsAlive && h.HealthPercent < SingularSettings.Instance.IgnoreHealTargetsAboveHealth && !h.HasMyAura("Rejuvenation") && Spell.CanCastHack("Rejuvenation", h, true)),
                         req => true
                         )
                     )
@@ -618,8 +613,13 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 ctx => selfOnly || !Me.IsInGroup() ? StyxWoW.Me : HealerManager.FindLowestHealthTarget(), // HealerManager.Instance.FirstUnit,
 
+                new Decorator( 
+                    req => req != null && ((WoWUnit)req).Combat && ((WoWUnit)req).GetPredictedHealthPercent(true) < SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
+                    CreateRestoDruidHealOnlyBehavior()
+                    ),
+
                 new Decorator(
-                    req => !Me.Combat && req != null && !((WoWUnit)req).Combat && ((WoWUnit)req).GetPredictedHealthPercent(true) < SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
+                    req => req != null && !((WoWUnit)req).Combat && ((WoWUnit)req).GetPredictedHealthPercent(true) < SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
 
                     new Sequence(
                         new Action(on => Logger.WriteDebug("NonCombatHeal on {0}: health={1:F1}% predicted={2:F1}% +mine={3:F1}", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent, ((WoWUnit)on).GetPredictedHealthPercent(false), ((WoWUnit)on).GetPredictedHealthPercent(true))),
@@ -627,10 +627,20 @@ namespace Singular.ClassSpecific.Druid
                             // BUFFS First
                             Spell.Buff("Rejuvenation", true, on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 95, 1),
                             Spell.Buff("Regrowth", true, on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 80 && !TalentManager.HasGlyph("Regrowth"), 1),
+
                             // Direct Heals After
                             Spell.Cast("Healing Touch", on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 65),
                             Spell.Cast("Regrowth", on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 75),
-                            Spell.Cast("Nourish", on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 85)
+                            Spell.Cast("Nourish", on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 85),
+
+                            // if Moving, spread Rejuv around on those that need to be topped off
+                            new Decorator(
+                                req => Me.IsMoving,
+                                new PrioritySelector(
+                                    ctx => HealerManager.Instance.TargetList.FirstOrDefault( h => h.HealthPercent < 95 && !h.HasMyAura("Rejuvenation") && Spell.CanCastHack("Rejuvenation", (WoWUnit) ctx, skipWowCheck: true)),
+                                    Spell.Buff("Rejuvenation", on => (WoWUnit) on)
+                                    )
+                                )
                             )
                         )
                     )
@@ -640,27 +650,62 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidHealBehavior()
         {
-            return new Decorator(
-                ret => HealerManager.Instance.TargetList.Any( h => h.Distance < 40 && h.IsAlive && !h.IsMe),
-                new PrioritySelector(
-                    CreateRestoDruidHealOnlyBehavior()
+            return new PrioritySelector(
+                HealerManager.CreateStayNearTankBehavior(),
+                new Decorator(
+                    ret => HealerManager.Instance.TargetList.Any( h => h.Distance < 40 && h.IsAlive && !h.IsMe),
+                    new PrioritySelector(
+                        CreateRestoDruidHealOnlyBehavior()
+                        )
                     )
                 );
         }
 
 
-        [Behavior(BehaviorType.Pull|BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidRestoration)]
+        [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidRestoration)]
+        public static Composite CreateRestoDruidPull()
+        {
+            return new PrioritySelector(
+                HealerManager.CreateStayNearTankBehavior(),
+                new Decorator(
+                    req => !HealerManager.Instance.TargetList.Any(h => h.IsAlive && !h.IsMe && h.Distance < 40),
+                    new PrioritySelector(
+                        Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                        Spell.WaitForCastOrChannel(),
+                        new Decorator(
+                            req => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Spell.Buff("Moonfire"),
+                                Spell.Cast("Wrath"),
+                                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 35f, 30f)
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidRestoration)]
         public static Composite CreateRestoDruidCombat()
         {
-            return new Decorator(
-                req => !HealerManager.Instance.TargetList.Any(h => h.IsAlive && !h.IsMe && h.Distance < 40),
-
-                new PrioritySelector(
-                    Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                    Helpers.Common.CreateInterruptBehavior(),
-                    Spell.Buff("Moonfire"),
-                    Spell.Cast("Wrath"),
-                    Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 35f, 30f)
+            return new PrioritySelector(
+                HealerManager.CreateStayNearTankBehavior(),
+                new Decorator(
+                    req => !HealerManager.Instance.TargetList.Any(h => h.IsAlive && !h.IsMe && h.Distance < 40),
+                    new PrioritySelector(
+                        Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                        Spell.WaitForCastOrChannel(),
+                        new Decorator(
+                            req => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Spell.Buff("Moonfire"),
+                                Spell.Cast("Wrath"),
+                                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 35f, 30f)
+                                )
+                            )
+                        )
                     )
                 );
         }
@@ -670,7 +715,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Innervate", ret => StyxWoW.Me.ManaPercent < 15 || StyxWoW.Me.ManaPercent <= Settings.InnervateMana),
-                Spell.BuffSelf("Barkskin", ret => StyxWoW.Me.HealthPercent <= Settings.Barkskin),
+                Spell.BuffSelf("Barkskin", ret => StyxWoW.Me.HealthPercent <= Settings.Barkskin || Unit.NearbyUnitsInCombatWithMe.Any()),
 
                 // Symbiosis
                 Common.SymbBuff(Symbiosis.IceboundFortitude, on => Me, ret => Me.HealthPercent < Settings.Barkskin),
@@ -692,6 +737,7 @@ namespace Singular.ClassSpecific.Druid
 
         public static WoWUnit GetBestTankTargetFor(string hotName, int stacks = 1, float health = 100f)
         {
+/*
             // fast test unless RaFHelper.Leader is whacked
             try
             {
@@ -703,7 +749,7 @@ namespace Singular.ClassSpecific.Druid
                 }
             }
             catch { }
-
+*/
             WoWUnit hotTarget = null;
             hotTarget = Group.Tanks
                 .Where(u => u.IsAlive && u.Combat && u.HealthPercent < health && u.SpellDistance() < 40
@@ -720,7 +766,7 @@ namespace Singular.ClassSpecific.Druid
         {
             string hotName = "Lifebloom";
             int stacks = 3;
-
+/*
             // fast test unless RaFHelper.Leader is whacked
             try
             {
@@ -732,8 +778,8 @@ namespace Singular.ClassSpecific.Druid
                 }
             }
             catch { }
-
-            WoWUnit hotTarget = Group.Tanks.FirstOrDefault(u => u.IsAlive && RaFHelper.Leader.SpellDistance() < 40 && u.HasMyAura(hotName) && u.InLineOfSpellSight);
+*/
+            WoWUnit hotTarget = Group.Tanks.FirstOrDefault(u => u.IsAlive && u.SpellDistance() < 40 && u.HasMyAura(hotName) && u.InLineOfSpellSight);
             if (hotTarget == null)
             {
                 hotTarget = Group.Tanks

@@ -46,7 +46,23 @@ namespace Singular
                 {
                     Logger.Write(Color.White, "Hooks cleared, re-creating behaviors");
                     RebuildBehaviors();
-                    Spell.GcdInitialize();
+                    Spell.GcdInitialize();   // probably not needed, but quick
+                };
+
+            GlobalSettings.Instance.PropertyChanged += (sender, e) =>
+                {
+                    // only LogLevel change will impact our behav trees
+                    // .. as we conditionally include/omit some diagnostic nodes if debugging
+                    if (e.PropertyName == "LogLevel")
+                    {
+                        // only react to change if it effects our behav trees
+                        if (SingularSettings.Instance.EnableDebugLogging != SingularSettings.Debug)
+                        {
+                            Logger.Write(Color.White, "HonorBuddy {0} setting change, re-creating behaviors", e.PropertyName);
+                            RebuildBehaviors();
+                            Spell.GcdInitialize();   // probably not needed, but quick
+                        }
+                    }
                 };
 
             // install botevent handler so we can consolidate validation on whether 

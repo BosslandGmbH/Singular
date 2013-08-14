@@ -604,6 +604,24 @@ namespace Singular.Helpers
 
         #endregion
 
+        #region OffGCD Composite
+
+        /// <summary>
+        /// wraps a composite so that if continues immediately even if it succeeds by
+        /// forcing it to always return RunStatus.Failure
+        /// </summary>
+        /// <param name="tree"></param>
+        /// <returns></returns>
+        public static Composite OffGCD(Composite tree)
+        {
+            return new Sequence(
+                new Throttle( TimeSpan.FromMilliseconds(500), tree ),
+                new ActionAlwaysFail()
+                );
+        }
+
+        #endregion
+
         #region Cast - by name
 
         /// <summary>
@@ -1012,10 +1030,18 @@ namespace Singular.Helpers
                         return !(myBuff ? _buffUnit.HasMyAura(_buffName) : _buffUnit.HasAura(_buffName));
 
                     bool buffFound;
-                    if (myBuff)
-                        buffFound = buffNames.Any(b => _buffUnit.HasMyAura(b));
-                    else
-                        buffFound = buffNames.Any(b => _buffUnit.HasAura(b));
+                    try
+                    {
+                        if (myBuff)
+                            buffFound = buffNames.Any(b => _buffUnit.HasMyAura(b));
+                        else
+                            buffFound = buffNames.Any(b => _buffUnit.HasAura(b));
+                    }
+                    catch
+                    {
+                        // mark as found buff, so we return false
+                        buffFound = true;
+                    }
 
                     return !buffFound;
                 },
@@ -1626,7 +1652,7 @@ namespace Singular.Helpers
                     new Action(ret => _castOnUnit = onUnit(ret)),
                     new PrioritySelector(
                         new Decorator(
-                            ret => _castOnUnit != null && _castOnUnit.Distance < Spell.ActualMaxRange(spell, _castOnUnit),
+                            ret => _castOnUnit != null && _castOnUnit.Distance < Spell.ActualMaxRange(spell, null),
                             CastOnGround(spell, loc => _castOnUnit.Location, requirements, waitForSpell, desc => string.Format("{0} @ {1:F1}%", _castOnUnit.SafeName(), _castOnUnit.HealthPercent))
                             ),
                         new Action(r => { _castOnUnit = null; return RunStatus.Failure; })

@@ -499,7 +499,6 @@ namespace Singular.ClassSpecific.Shaman
         {
             switch (totem)
             {
-                case WoWTotem.HealingStream:
                 case WoWTotem.Tremor:
                     return 30f;
 
@@ -530,6 +529,9 @@ namespace Singular.ClassSpecific.Shaman
 
                 case WoWTotem.StoneBulwark:
                     // No idea, unlike former glyphed stoneclaw it has a 5 sec pluse shield component so range is more important
+                    return 40f;
+
+                case WoWTotem.HealingStream:
                     return 40f;
 
                 case WoWTotem.HealingTide:

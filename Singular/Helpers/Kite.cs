@@ -228,6 +228,19 @@ namespace Singular.Helpers
             TreeHooks.Instance.ReplaceHook(SingularRoutine.HookName("KitingBehavior"), kitingBehavior );
         }
 
+        public static bool IsDisengageWantedByUserSettings(int mobCount)
+        {
+            return SingularSettings.Instance.DisengageAllowed
+                && (Me.HealthPercent <= SingularSettings.Instance.DisengageHealth || mobCount >= SingularSettings.Instance.DisengageMobCount);
+
+        }
+
+        public static bool IsKitingWantedByUserSettings( int mobCount )
+        {
+            return SingularSettings.Instance.KiteAllow 
+                && (Me.HealthPercent <= SingularSettings.Instance.KiteHealth || mobCount >= SingularSettings.Instance.KiteMobCount);
+        }
+
         public static bool IsKitingPossible(int minScan = -1)
         {
             // note:  PullDistance MUST be longer than our out of melee distance (DISTANCE_WE_NEED_TO_START_BACK_PEDDLING)

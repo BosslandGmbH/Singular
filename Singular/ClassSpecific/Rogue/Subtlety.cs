@@ -135,6 +135,8 @@ namespace Singular.ClassSpecific.Rogue
             return new PrioritySelector(
                 Safers.EnsureTarget(),
                 Common.CreateRogueMoveBehindTarget(),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

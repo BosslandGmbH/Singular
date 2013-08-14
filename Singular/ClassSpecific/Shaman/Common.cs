@@ -64,7 +64,7 @@ namespace Singular.ClassSpecific.Shaman
             get
             {
                 return SingularRoutine.CurrentWoWContext == WoWContext.Normal
-                    && (Unit.NearbyUnitsInCombatWithMe.Count() >= StressMobCount
+                    && (Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= StressMobCount
                     || Unit.NearbyUnfriendlyUnits.Any(u => u.Combat && u.IsTargetingMeOrPet && (u.IsPlayer || (u.Elite && u.Level + 8 > Me.Level))));
             }
         }
@@ -86,6 +86,22 @@ namespace Singular.ClassSpecific.Shaman
                 return ShamanSettings.AllowOffHealHeal
                     && Me.IsInGroup() && !Me.GroupInfo.IsInRaid
                     && (!Common.AnyHealersNearby || Unit.NearbyGroupMembers.Any(m => m.IsAlive && m.HealthPercent < 30));
+            }
+        }
+
+        public static DateTime SuppressShapeshiftUntil
+        {
+            get
+            {
+                return Utilities.EventHandlers.LastShapeshiftFailure.AddSeconds(60);
+            }
+        }
+
+        public static bool RecentShapeshiftErrorOccurred
+        {
+            get
+            {
+                return SuppressShapeshiftUntil > DateTime.Now;
             }
         }
 
@@ -135,7 +151,16 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
         }
-        
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Shaman)]
+        public static Composite CreateShamanPreCombatBuffs()
+        {
+            return new PrioritySelector(
+                CreateShamanMovementBuff()
+                );
+        }
+
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Normal | WoWContext.Instances, 1)]
         public static Composite CreateShamanCombatBuffs()
         {
@@ -151,7 +176,7 @@ namespace Singular.ClassSpecific.Shaman
 
                     // hex someone if they are not current target, attacking us, and 12 yds or more away
                     new Decorator(
-                        req => Me.Specialization != WoWSpec.ShamanEnhancement || !ShamanSettings.AvoidMaelstromDamage,
+                        req => Me.GotTarget && (Me.Specialization != WoWSpec.ShamanEnhancement || !ShamanSettings.AvoidMaelstromDamage),
                         new PrioritySelector(
                             new PrioritySelector(
                                 ctx => Unit.NearbyUnfriendlyUnits
@@ -159,7 +184,7 @@ namespace Singular.ClassSpecific.Shaman
                                             && Me.CurrentTargetGuid != u.Guid
                                             && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
                                             && !u.IsCrowdControlled()
-                                            && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                            && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
                                     .OrderByDescending(u => u.Distance)
                                     .FirstOrDefault(),
                                 Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
@@ -172,7 +197,7 @@ namespace Singular.ClassSpecific.Shaman
                                             && Me.CurrentTargetGuid != u.Guid
                                             && (u.Aggro || u.PetAggro || (u.Combat && u.IsTargetingMeOrPet))
                                             && !u.IsCrowdControlled()
-                                            && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && (!Me.GotTarget || u.Location.Distance(Me.CurrentTarget.Location) > 10))
+                                            && u.Distance.Between(10, 30) && Me.IsSafelyFacing(u) && u.InLineOfSpellSight && u.Location.Distance(Me.CurrentTarget.Location) > 10)
                                     .OrderByDescending(u => u.Distance)
                                     .FirstOrDefault(),
                                 Spell.Cast("Bind Elemental", onUnit => (WoWUnit)onUnit)
@@ -491,20 +516,23 @@ namespace Singular.ClassSpecific.Shaman
         public static Decorator CreateShamanMovementBuff()
         {
             return new Decorator(
-                ret => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown()
-                    && ShamanSettings.UseGhostWolf
+                ret => ShamanSettings.UseGhostWolf
+                    && !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown()
                     && MovementManager.IsClassMovementAllowed
                     && SingularRoutine.CurrentWoWContext != WoWContext.Instances
                     && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
                     && Me.IsAlive
-                    && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport
+                    && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport && !Me.IsSwimming 
                     && !Me.HasAura("Ghost Wolf")
                     && SpellManager.HasSpell("Ghost Wolf")
+                    && !RecentShapeshiftErrorOccurred
                     && BotPoi.Current != null
-                    && BotPoi.Current.Type != PoiType.None && BotPoi.Current.Type != PoiType.Hotspot
+                    && BotPoi.Current.Type != PoiType.None
+                    && BotPoi.Current.Type != PoiType.Hotspot
                     && BotPoi.Current.Location.Distance(Me.Location) > 10
                     && (BotPoi.Current.Location.Distance(Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance || (Me.IsIndoors && !Mount.CanMount()) || (Me.GetSkill(SkillLine.Riding).CurrentValue == 0))
                     && !Me.IsAboveTheGround(),
+
                 new Sequence(
                     new Action(r => Logger.WriteDebug("ShamanMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount{3} riding={4}", 
                         BotPoi.Current.Type, 

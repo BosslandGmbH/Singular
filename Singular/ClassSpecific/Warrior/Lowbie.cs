@@ -44,14 +44,9 @@ namespace Singular.ClassSpecific.Warrior
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
                 // charge
-                Spell.Cast("Charge",
-                    ret => MovementManager.IsClassMovementAllowed 
-                        && StyxWoW.Me.CurrentTarget.Distance > 10 
-                        && StyxWoW.Me.CurrentTarget.Distance < 25),
-                Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)), Spell.Cast(
-                    "Shoot",
-                    ret =>
-                    StyxWoW.Me.CurrentTarget.IsFlying && (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
+                Common.CreateChargeBehavior(),
+                Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)), 
+                Spell.Cast("Shoot", ret => StyxWoW.Me.CurrentTarget.IsFlying && (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
                 // move to melee
                 Movement.CreateMoveToMeleeBehavior(true)
                 );

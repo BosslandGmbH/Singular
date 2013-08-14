@@ -171,16 +171,19 @@ namespace Singular.Settings
                 if (AllowMovement != AllowMovementType.Auto)
                     return AllowMovement == AllowMovementType.None;
 
-                return MovementManager.IsManualMovementBotActive;
+                return SingularRoutine.IsManualMovementBotActive;
             }
         }
+
+        [Browsable(false)]
+        internal static Styx.Common.LogLevel DebugLogLevel = Styx.Common.LogLevel.Verbose;
 
         [Browsable(false)]
         public static bool Debug
         {
             get
             {
-                return SingularSettings.Instance.EnableDebugLogging || (GlobalSettings.Instance.LogLevel > Styx.Common.LogLevel.Normal);
+                return SingularSettings.Instance.EnableDebugLogging || (GlobalSettings.Instance.LogLevel >= DebugLogLevel);
             }
         }
 
@@ -201,12 +204,13 @@ namespace Singular.Settings
                 if (SingularSettings.Instance.TypeOfTargeting != TargetingStyle.Auto)
                     return SingularSettings.Instance.TypeOfTargeting == TargetingStyle.None;
 
-                return MovementManager.IsManualMovementBotActive || SingularRoutine.IsDungeonBuddyActive;
+                return SingularRoutine.IsManualMovementBotActive || SingularRoutine.IsDungeonBuddyActive;
             }
         }
 
         #region Category: Debug
 
+        [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
         [Category("Debug")]
@@ -214,6 +218,7 @@ namespace Singular.Settings
         [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
         public bool EnableDebugLogging { get; set; }
 
+        [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
         [Category("Debug")]
@@ -221,6 +226,7 @@ namespace Singular.Settings
         [Description("Enables logging of GCD/Casting in Singular. Debug Logging setting must also be true")]
         public bool EnableDebugLoggingGCD { get; set; }
 
+        [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
         [Category("Debug")]
@@ -228,6 +234,7 @@ namespace Singular.Settings
         [Description("VERBOSE!! Enables logging of reason each spell in priority cannot be cast")]
         public bool EnableDebugLoggingCanCast { get; set; }
 
+        [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
         [Category("Debug")]
@@ -432,6 +439,13 @@ namespace Singular.Settings
         [DisplayName("Max Heal Target Range")]
         [Description("Max distance that we will see a heal target (max value: 100)")]
         public int MaxHealTargetRange { get; set; }
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Stay Near Tank Range")]
+        [Description("Max distance from Tank before we move towards it (max value: 100)")]
+        public int StayNearTankRange { get; set; }
 
         [Setting]
         [DefaultValue(true)]

@@ -165,7 +165,7 @@ namespace Singular.Helpers
                         new Decorator(
                             ret => ret != null,
                             new Sequence(
-                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                new Action(ret => Logger.Write(String.Format("Using {0} @ {1:F1}% Health", ((WoWItem)ret).Name, StyxWoW.Me.HealthPercent ))),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
                                 Helpers.Common.CreateWaitForLagDuration()))
                         )),
@@ -176,7 +176,7 @@ namespace Singular.Helpers
                         new Decorator(
                             ret => ret != null,
                             new Sequence(
-                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                new Action(ret => Logger.Write(String.Format("Using {0} @ {1:F1}% Mana", ((WoWItem)ret).Name, StyxWoW.Me.ManaPercent ))),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),
                                 Helpers.Common.CreateWaitForLagDuration()))))
                 );
@@ -188,7 +188,7 @@ namespace Singular.Helpers
             return new PrioritySelector(
                 new Decorator(
                     ret =>
-                    SingularSettings.Instance.UseAlchemyFlasks && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 &&
+                    SingularSettings.Instance.UseAlchemyFlasks && StyxWoW.Me.GetSkill(SkillLine.Alchemy) != null && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 &&
                     !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")), // don't try to use the flask if we already have or if we're using a better one
                     new PrioritySelector(
                         ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 58149) ?? StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 47499),
@@ -274,7 +274,7 @@ namespace Singular.Helpers
                 if (!t.Selected)
                     continue;
 
-                string talent = "";
+                string talent = "unknown";
                 switch (Me.Class)
                 {
                     case WoWClass.DeathKnight:

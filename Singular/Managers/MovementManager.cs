@@ -67,13 +67,15 @@ namespace Singular.Managers
         }
 
         /// <summary>
-        /// True: a bot requiring user interaction is running (LazyRaider, RaidBot, etc.)
+        /// we determine this value locally at present to avoid possible botevent sequence errors
+        /// which would occur if this depended on the SingularRoutine value but this event 
+        /// handler were called before 
         /// </summary>
         /// <remarks>
         /// query the active bot only on a bot event and then cache the result.  we don't
         /// need to check more often than that
         /// </remarks>
-        public static bool IsManualMovementBotActive { get; private set; }
+        private static bool IsManualMovementBotActive { get; set; }
 
         // static INavigationProvider _prevNavigation = null;
         static IPlayerMover _prevPlayerMover = null;

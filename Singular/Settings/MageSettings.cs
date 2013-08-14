@@ -65,6 +65,14 @@ namespace Singular.Settings
         [Description("Which Armor Buff to cast (None: user controlled, Auto: best choice)")]
         public MageArmor Armor { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Slow Fall")]
+        [Description("True: Cast Slow Fall if falling")]
+        public bool UseSlowFall { get; set; }
+
+
         #endregion
 
     }

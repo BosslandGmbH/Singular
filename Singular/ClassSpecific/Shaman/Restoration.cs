@@ -165,7 +165,7 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Normal )]
         public static Composite CreateRestoShamanHealBehaviorNormal()
         {
-            // for Solo, use DPS Heal logic
+            // for Solo only, use DPS Heal logic
             return Common.CreateShamanDpsHealBehavior();
         }
 
@@ -262,6 +262,7 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.Pull | BehaviorType.Combat, WoWClass.Shaman, WoWSpec.ShamanRestoration, WoWContext.Instances )]
         public static Composite CreateRestoShamanCombatBehaviorInstances()
         {
+#if OLD_APPROACH
             return new PrioritySelector(
 
                 ctx => HealerManager.Instance.TargetList.Any( t => !t.IsMe && t.IsAlive ),
@@ -305,6 +306,68 @@ namespace Singular.ClassSpecific.Shaman
                         )
                     )
                 );
+#else
+
+            return new PrioritySelector(
+
+                Spell.WaitForCastOrChannel(),
+                CreateRestoDiagnosticOutputBehavior(on => Me.CurrentTarget),
+                
+                HealerManager.CreateStayNearTankBehavior(),
+
+                new Decorator(
+                    ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    new PrioritySelector(
+                        CreateRestoShamanHealingOnlyBehavior( selfOnly:false),
+                        Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Purge"),
+                        Totems.CreateTotemsBehavior(),
+                        new Decorator( 
+                            req => TalentManager.HasGlyph("Telluric Currents"),
+                            new PrioritySelector(
+                                Safers.EnsureTarget(),
+                                Movement.CreateFaceTargetBehavior(),
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Dispelling.CreatePurgeEnemyBehavior("Purge"),
+                                Spell.Cast("Lightning Bolt", 
+                                    mov => true,
+                                    on => Unit.NearbyUnitsInCombatWithUsOrOurStuff
+                                        .Where( u => u.IsAlive && u.SpellDistance() < 40 && Me.IsSafelyFacing(u))
+                                        .OrderByDescending( u => u.HealthPercent)
+                                        .FirstOrDefault( ),
+                                    req => !HealerManager.Instance.TargetList.Any( h => h.IsAlive && h.SpellDistance() < 40 && h.HealthPercent < ShamanSettings.Heal.TelluricHealthCast),
+                                    cancel => HealerManager.Instance.TargetList.Any( h => h.IsAlive && h.SpellDistance() < 40 && h.HealthPercent < ShamanSettings.Heal.TelluricHealthCancel)
+                                    )
+                                )
+                            )
+                        )
+                    ),
+
+                new Decorator(
+                    ret => Me.Combat && !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    new PrioritySelector(
+
+                        Helpers.Common.EnsureReadyToAttackFromMediumRange(),
+                        Movement.CreateFaceTargetBehavior(),
+                        Spell.WaitForCastOrChannel(),
+
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Spell.Cast("Elemental Blast"),
+                                Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
+                                Spell.Cast("Lava Burst"),
+                                Spell.Cast("Earth Shock"),
+                                Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled())),
+                                Spell.Cast("Lightning Bolt")
+                                )
+                            )
+                        )
+                    )
+                );
+
+#endif
         }
 
         #endregion
@@ -380,7 +443,8 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
                         "Healing Tide Totem",
-                        ret => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= (Me.GroupInfo.IsInRaid ? 3 : 2)
+                        on => Me,
+                        req => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= ShamanSettings.Heal.MinHealingTideCount
                         )
                     )
                 );
@@ -390,9 +454,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
                         "Healing Stream Totem",
-                        ret => Me.Combat 
-                            && !Totems.Exist(WoWTotemType.Water)
-                            && HealerManager.Instance.TargetList.Any(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))
+                        on => (!Me.Combat || Totems.Exist(WoWTotemType.Water)) ? null : HealerManager.Instance.TargetList.FirstOrDefault(p => p.GetPredictedHealthPercent() < ShamanSettings.Heal.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingStream))
                         )
                     )
                 );
@@ -490,7 +552,12 @@ namespace Singular.ClassSpecific.Shaman
                             mov => true,
                             on => (WoWUnit)on,
                             req => ((WoWUnit)req).GetPredictedHealthPercent() < ShamanSettings.Heal.HealingWave,
-                            cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal),
+                            cancel => {
+                                if (((WoWUnit)cancel).HealthPercent > cancelHeal)
+                                    return true;
+
+                                return false;
+                                }),
                     new Action(r => TidalWaveConsume())
                     )
                 );

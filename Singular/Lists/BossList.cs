@@ -92,7 +92,10 @@ namespace Singular.Lists
                 63191, // Garalon in Heart of Fear This boss is riding an invisible vehicle and facing is relative to vehicle's facing.
                 69465, // Jin'rokh the Breaker in Throne of Thunder
                 68476, // Horridon in Throne of Thunder
-                43214, // Slabhide in The Stonecore
+                43214, // Slabhide in The Stonecore,
+                70235, // Forgotten Depths: Frozen Head 
+                70247, // Forgotten Depths: Venemous Head
+                70212, // Forgotten Depths: Flaming Head
             };
 
         // this list should only contain bosses that are not found in 5 mans and raids.

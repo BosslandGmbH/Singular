@@ -566,7 +566,7 @@ VoidShift               Void Shift
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
-                        Spell.Cast("Fade", ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
+                        Common.CreateFadeBehavior(),
 
                         Spell.BuffSelf("Desperate Prayer", ret => StyxWoW.Me.HealthPercent <= PriestSettings.DesperatePrayerHealth),
 
@@ -620,8 +620,7 @@ VoidShift               Void Shift
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Buff("Holy Word: Chastise", ret => StyxWoW.Me.HasAura( "Chakra: Chastise")),
-                                Spell.Cast("Holy Fire"),
-                                // Spell.Cast("Power Word: Solace", ret => StyxWoW.Me.ManaPercent < 15),
+                                Common.CreateHolyFireBehavior(),
                                 Spell.Cast("Smite")
                                 )
                             )

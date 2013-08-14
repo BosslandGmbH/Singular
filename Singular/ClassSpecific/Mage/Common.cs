@@ -43,6 +43,9 @@ namespace Singular.ClassSpecific.Mage
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        // Defensive 
+                        Spell.BuffSelf("Slow Fall", req => MageSettings.UseSlowFall && Me.IsFalling),
+
                         PartyBuff.BuffGroup("Dalaran Brilliance", "Arcane Brilliance"),
                         PartyBuff.BuffGroup("Arcane Brilliance", "Dalaran Brilliance"),
 
@@ -147,13 +150,14 @@ namespace Singular.ClassSpecific.Mage
                 req => !Unit.IsTrivial(Me.CurrentTarget),
                 new PrioritySelector(
                     // Defensive 
-
+                    Spell.BuffSelf( "Slow Fall", req => MageSettings.UseSlowFall && Me.IsFalling ),
+                        
                     // handle Cauterize debuff if we took talent and get it
                     new Decorator(
                         ret => Me.ActiveAuras.ContainsKey("Cauterize"),
                         new PrioritySelector(
                             Spell.BuffSelf("Ice Block",
-                                ret => {
+                                ret => { 
                                     _cancelIceBlockForCauterize = DateTime.Now.AddSeconds(10);
                                     return true;
                                 }),
@@ -177,25 +181,9 @@ namespace Singular.ClassSpecific.Mage
                             && StyxWoW.Me.HealthPercent < 20
                             && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
 
-                     Spell.Buff(
-                        "Evocation", true, on => Me,
-                        ret => Me.ManaPercent < 30
-                            || Me.HealthPercent < 30
-                            || (Me.HealthPercent < 60 && 2 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Combat && u.IsTargetingMeOrPet)),
-                        "Invoker's Energy"
-                        ),
-
-                     Spell.Buff("Evocation", true, on => Me, ret => Me.ManaPercent < 30),
-                     Spell.Cast("Evocation", 
-                        on => Me, 
-                        ret => TalentManager.HasGlyph("Evocation") 
-                            && !Common.HasTalent(MageTalents.RuneOfPower) 
-                            && !Me.HasAura("Invoker's Energy")
-                            && Me.HealthPercent < (Common.HasTalent(MageTalents.Invocation) ? 70 : 40),
-                        cancel => false),
-
-                    Spell.BuffSelf("Incanter's Ward", req => Unit.NearbyUnitsInCombatWithMe.Any()),
-                    Spell.BuffSelf("Ice Ward", req => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds ),
+                    Spell.BuffSelf("Incanter's Ward", req => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any()),
+                    Spell.BuffSelf("Ice Ward"),
+                    Spell.Cast("Evocation", mov => true, on => Me, ret => NeedEvocation, cancel => false),
 
                     Dispelling.CreatePurgeEnemyBehavior("Spellsteal"),
                     // CreateMageSpellstealBehavior(),
@@ -213,7 +201,7 @@ namespace Singular.ClassSpecific.Mage
                     // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invoker's Energy")),
 
                     Spell.Cast("Mirror Image", 
-                        req => Me.GotTarget &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMe.Count() >= 3)),
+                        req => Me.GotTarget &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3)),
 
                     Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp),
 
@@ -362,7 +350,7 @@ namespace Singular.ClassSpecific.Mage
 #else
             return new PrioritySelector(
                 ctx => Unit.NearbyUnfriendlyUnits
-                           .Where(u => u.IsFrozen() && Me.SpellDistance(u) < 8)
+                           .Where(u => u.IsRooted() && Me.SpellDistance(u) < 8) // u.IsFrozen() 
                            .OrderBy(u => u.DistanceSqr).FirstOrDefault(),
                 new Decorator(
                     req => req != null,
@@ -589,18 +577,16 @@ namespace Singular.ClassSpecific.Mage
             return new Decorator(
                 req => MovementManager.IsClassMovementAllowed,
                 new PrioritySelector(
-                    ctx => Unit.NearbyUnitsInCombatWithMe.Where(u=>u.SpellDistance() <= 8).Count(),
+                    ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Where(u=>u.SpellDistance() <= 8).Count(),
                     new Decorator(
-                        ret => SingularSettings.Instance.DisengageAllowed 
-                            && ((((int)ret) > 0 && Me.HealthPercent <= SingularSettings.Instance.DisengageHealth) || ((int)ret) >= SingularSettings.Instance.DisengageMobCount),
+                        ret => Kite.IsDisengageWantedByUserSettings((int) ret),
                         new PrioritySelector(
                             Disengage.CreateDisengageBehavior("Blink", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior()),
                             Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
                             )
                         ),
                     new Decorator(
-                        ret => SingularSettings.Instance.KiteAllow 
-                            && ((((int)ret) > 0 && Me.HealthPercent <= SingularSettings.Instance.KiteHealth) || ((int)ret) >= SingularSettings.Instance.KiteMobCount),
+                        ret => Kite.IsKitingWantedByUserSettings((int)ret),
                         new Sequence(
                             new Action( r => Logger.WriteDebug("MageAvoidance: requesting KITING!!!")),
                             Kite.BeginKitingBehavior()
@@ -665,6 +651,31 @@ namespace Singular.ClassSpecific.Mage
 
         #endregion
 
+    
+    public static bool NeedEvocation 
+    { 
+        get 
+        {
+            if (Me.ManaPercent < 30)
+                return true;
+
+            if (HasTalent(MageTalents.Invocation))
+                return Me.HasAuraExpired("Invoker's Energy", 1);
+
+            if (TalentManager.HasGlyph("Evocation"))
+            {
+                if (Me.HealthPercent < 40)
+                {
+                    if ( !HasTalent(MageTalents.RuneOfPower) || Me.HasAura("Rune of Power"))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+            }
+        }
     }
 
     public enum MageTalents

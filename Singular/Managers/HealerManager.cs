@@ -67,7 +67,7 @@ namespace Singular.Managers
                     if (incomingUnit.IsMe)
                         foundMe = true;
 
-                    if (incomingUnit.ToPlayer().IsHorde != isHorde)
+                    if (incomingUnit.ToPlayer().IsHorde != isHorde || !incomingUnit.ToPlayer().IsFriendly)
                         continue;
 
                     outgoingUnits.Add(incomingUnit);
@@ -115,7 +115,7 @@ namespace Singular.Managers
                 WoWUnit unit = units[i].ToUnit();
                 try
                 {
-                    if (unit == null || !unit.IsValid || unit.IsDead || unit.IsHostile || unit.HealthPercent <= 0)
+                    if (unit == null || !unit.IsValid || unit.IsDead || !unit.IsFriendly || unit.HealthPercent <= 0)
                     {
                         units.RemoveAt(i);
                         continue;
@@ -363,17 +363,26 @@ namespace Singular.Managers
                 if (!SingularSettings.Instance.StayNearTank)
                     return null;
 
-                if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && RaFHelper.Leader.IsAlive && RaFHelper.Leader.Distance < SingularSettings.Instance.MaxHealTargetRange)
+                if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && RaFHelper.Leader.IsAlive && (RaFHelper.Leader.Combat || RaFHelper.Leader.Distance < SingularSettings.Instance.MaxHealTargetRange))
                     return RaFHelper.Leader;
 
-                return Group.Tanks.Where(t => t.IsAlive && t.Distance < SingularSettings.Instance.MaxHealTargetRange).OrderBy(t => t.Distance).FirstOrDefault();
+                return Group.Tanks.Where(t => t.IsAlive && (t.Combat || t.Distance < SingularSettings.Instance.MaxHealTargetRange)).OrderBy(t => t.Distance).FirstOrDefault();
             }
         }
 
+        private static int moveNearTank { get; set; }
+        private static int stopNearTank { get; set; }
+
         public static Composite CreateStayNearTankBehavior()
         {
+            if (!SingularSettings.Instance.StayNearTank )
+                return new ActionAlwaysFail();
+
             if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                 return new ActionAlwaysFail();
+
+            moveNearTank = Math.Max( 10, SingularSettings.Instance.StayNearTankRange);
+            stopNearTank = moveNearTank - 5;
 
             return new PrioritySelector(
                 ctx => HealerManager.TankToMoveTowards,
@@ -383,8 +392,8 @@ namespace Singular.Managers
                     new Sequence(
                         new PrioritySelector(
                             Movement.CreateMoveToLosBehavior(unit => ((WoWUnit)unit)),
-                            Movement.CreateMoveToUnitBehavior(unit => ((WoWUnit)unit), 30, 25),
-                            Movement.CreateEnsureMovementStoppedBehavior( 25, unit => (WoWUnit)unit, "in range of tank")
+                            Movement.CreateMoveToUnitBehavior(unit => ((WoWUnit)unit), moveNearTank, stopNearTank),
+                            Movement.CreateEnsureMovementStoppedBehavior( stopNearTank, unit => (WoWUnit)unit, "in range of tank")
                             ),
                         new ActionAlwaysFail()
                         )

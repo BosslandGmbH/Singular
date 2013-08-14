@@ -416,7 +416,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // spread disease
                 Spell.Cast("Blood Boil",
-                    ret => TalentManager.IsSelected((int) DeathKnightTalents.RollingBlood)
+                    ret => Common.HasTalent(DeathKnightTalents.RollingBlood)
                         && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))
                         && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.HasAuraExpired("Blood Plague"))),
 

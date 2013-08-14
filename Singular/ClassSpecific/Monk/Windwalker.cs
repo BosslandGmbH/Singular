@@ -87,7 +87,10 @@ namespace Singular.ClassSpecific.Monk
 
                 new Decorator( 
                     ret => Me.CurrentTarget.IsAboveTheGround(), 
-                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+                    new Sequence(
+                        new Action(r => Logger.WriteDebug("Target appears airborne: flying={0} aboveground={1} dist={2:F1} zdiff={2:F1}", Me.CurrentTarget.IsFlying.ToYN(), Me.CurrentTarget.IsAboveTheGround().ToYN())),
+                        Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+                        )
                     )
                 );
         }
@@ -374,7 +377,7 @@ namespace Singular.ClassSpecific.Monk
 
             if ( target == null || target.IsMe)
                 target = Clusters.GetBestUnitForCluster(
-                    Unit.NearbyUnitsInCombatWithMe,
+                    Unit.NearbyUnitsInCombatWithMeOrMyStuff,
                     ClusterType.Path,
                     40f);
 

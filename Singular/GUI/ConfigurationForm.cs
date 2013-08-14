@@ -93,6 +93,9 @@ namespace Singular.GUI
 
             pgHotkeys.SelectedObject = SingularSettings.Instance.Hotkeys();
 
+            chkDebugLogging.Checked = SingularSettings.Instance.EnableDebugLogging;
+            chkDebugSpellCanCast.Checked = SingularSettings.Instance.EnableDebugLoggingCanCast;
+            // chkDebugTrace.Checked = SingularSettings.Instance.EnableDebugTrace;
 
             InitializeHealContextDropdown(StyxWoW.Me.Class);
             chkUseInstanceBehaviorsWhenSolo.Checked = SingularRoutine.ForceInstanceBehaviors;
@@ -143,7 +146,6 @@ namespace Singular.GUI
             cboHealContext.Items.Clear();
             if (cls == WoWClass.Shaman)
             {
-                cboHealContext.Items.Add(new HealContextItem(HealingContext.Normal, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Normal));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Battleground));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Instance));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Raid));
@@ -159,7 +161,6 @@ namespace Singular.GUI
             if (cls == WoWClass.Priest)
             {
 /*
-                cboHealContext.Items.Add(new HealContextItem(HealingContext.Normal, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscNormal));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscBattleground));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscInstance));
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscRaid));
@@ -172,7 +173,12 @@ namespace Singular.GUI
                 cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.PriestDiscipline, SingularSettings.Instance.Priest().DiscRaid));
             }
 
-            cboHealContext.Enabled = cboHealContext.Items.Count > 0;
+            bool needHealPage = cboHealContext.Items.Count > 0;
+            cboHealContext.Enabled = needHealPage;
+            if (needHealPage && !tabControl1.TabPages.Contains(tabGroupHeal))
+                tabControl1.TabPages.Insert(2, tabGroupHeal);
+            else if (!needHealPage && tabControl1.TabPages.Contains(tabGroupHeal))
+                tabControl1.TabPages.Remove(tabGroupHeal);
 
             foreach (var obj in cboHealContext.Items)
             {
@@ -236,21 +242,21 @@ namespace Singular.GUI
 
         private void btnSaveAndClose_Click(object sender, EventArgs e)
         { // prevent an exception from closing HB.
-            if (((SingularSettings)pgGeneral.SelectedObject).EnableDebugTrace)
-            { 
-                DialogResult rslt = MessageBox.Show("Debug Trace=true will impact performance and create very large log files quickly. Continue?", "Warning! Trace is ON", MessageBoxButtons.OKCancel);
-                if (rslt != System.Windows.Forms.DialogResult.OK)
-                {
-                    return;
-                }
-            }
-
             try
             {
+                // deal with Debug tab controls individually
+                SingularSettings.Instance.EnableDebugLogging = chkDebugLogging.Checked;
+                SingularSettings.Instance.EnableDebugLoggingCanCast = chkDebugSpellCanCast.Checked;
+                // SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
+                Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
+                SingularRoutine.ForceInstanceBehaviors = chkUseInstanceBehaviorsWhenSolo.Checked;
+
+                // save form position
                 SingularSettings.Instance.FormHeight = this.Height;
                 SingularSettings.Instance.FormWidth = this.Width;
                 SingularSettings.Instance.FormTabIndex = tabControl1.SelectedIndex; ;
 
+                // save property group settings from each tab
                 ((SingularSettings)pgGeneral.SelectedObject).Save();
 
                 if (pgClass.SelectedObject != null)
@@ -285,7 +291,7 @@ namespace Singular.GUI
             var sb = new StringBuilder();
 
             // exit quickly if Debug tab not displayed
-            if (tabControl1.SelectedTab != tabPage3)
+            if (tabControl1.SelectedTab != tabDebug)
                 return;
 
             // update list of Targets
@@ -350,7 +356,7 @@ namespace Singular.GUI
 
         private void ShowPlayerNames_CheckedChanged(object sender, EventArgs e)
         {
-            Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
+
         }
 
         private void cboHealContext_SelectedIndexChanged(object sender, EventArgs e)
@@ -361,7 +367,7 @@ namespace Singular.GUI
 
         private void chkUseInstanceBehaviorsWhenSolo_CheckedChanged(object sender, EventArgs e)
         {
-            SingularRoutine.ForceInstanceBehaviors = chkUseInstanceBehaviorsWhenSolo.Checked;
+            
         }
 
         private static int LogMarkIndex = 1;
@@ -383,6 +389,21 @@ namespace Singular.GUI
             else if (tabControl1.SelectedIndex == 1)
                 SetLabelColumnWidth(pgClass, 205);
         }
+
+/*
+        private void chkDebugTrace_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chkDebugTrace.Checked)
+            {
+                DialogResult rslt = MessageBox.Show("WARNING!!! Enabling the Debug Trace setting will slow performance and create very large log files. Use this setting only if you have been requested to. Continue?", "Warning! Trace is ON", MessageBoxButtons.OKCancel);
+                if (rslt != System.Windows.Forms.DialogResult.OK)
+                {
+                    chkDebugTrace.Checked = false;
+                    return;
+                }
+            }
+        }
+*/
     }
 
     public class HealContextItem

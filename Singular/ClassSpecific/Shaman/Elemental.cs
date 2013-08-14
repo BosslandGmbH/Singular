@@ -241,7 +241,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         // Burst if 7 Stacks
                         new Decorator(
-                            ret => Me.HasAura("Lightning Shield", 7) && Spell.GetSpellCooldown("Earth Shock") == TimeSpan.Zero && Spell.GetSpellCooldown("Elemental Blast", 0) == TimeSpan.Zero,
+                            ret => Me.GotTarget && Me.CurrentTarget.SpellDistance() < 40 && Me.HasAura("Lightning Shield", 7) && Spell.GetSpellCooldown("Earth Shock") == TimeSpan.Zero,
                             new PrioritySelector(
                                 new Action( r => { Logger.Write( Color.White, "Burst Rotation"); return RunStatus.Failure;} ),
                                 Spell.Cast( "Unleash Elements", ret => Common.IsImbuedForDPS( Me.Inventory.Equipped.MainHand)),
@@ -330,7 +330,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 
                         new Sequence(
-                            Spell.Cast("Ascendance", req => Me.CurrentTarget.IsBoss()),
+                            Spell.Cast("Ascendance", req => Me.CurrentTarget.IsBoss() && Me.CurrentTarget.SpellDistance() < 40 && !Me.IsMoving ),
                             new ActionAlwaysFail()  // Ascendance off the GCD, so fall through
                             ),
 

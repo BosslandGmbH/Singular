@@ -41,6 +41,7 @@ namespace Singular
         internal static bool IsBgBotActive { get; set; }
         internal static bool IsDungeonBuddyActive { get; set; }
         internal static bool IsPokeBuddyActive { get; set; }
+        internal static bool IsManualMovementBotActive { get; set; }
 
         internal static WoWContext CurrentWoWContext
         {
@@ -111,8 +112,16 @@ namespace Singular
                 BotEvents.Battleground.OnBattlegroundEntered += e => UpdateContext();
                 SingularRoutine.OnBotEvent += (src, arg) =>
                 {
-                    if (arg.Event == SingularBotEvent.BotStart || arg.Event == SingularBotEvent.BotChanged )
-                        UpdateContextStateValues();
+                    if (arg.Event == SingularBotEvent.BotStart || arg.Event == SingularBotEvent.BotChanged)
+                    {
+                        // check if any of the bot detection values have changed which we use to 
+                        // .. conditionally build trees
+                        if (UpdateContextStateValues())
+                        {
+                            // DescribeContext();
+                            RebuildBehaviors();
+                        }
+                    }
                 };
                 _contextEventSubscribed = true;
             }
@@ -141,12 +150,58 @@ namespace Singular
             }               
         }
 
-        private static void UpdateContextStateValues()
+        private static bool Changed( bool currVal, ref bool storedVal)
         {
-            IsQuestBotActive = IsBotInUse("Quest");
-            IsBgBotActive = IsBotInUse("BGBuddy") || IsBotInUse("BG Bot");
-            IsDungeonBuddyActive = IsBotInUse("DungeonBuddy");
-            IsPokeBuddyActive = IsPluginActive("Pokébuddy") || IsPluginActive("Pokehbuddy");
+            if (( currVal && storedVal) || (!currVal && !storedVal))
+                return false;
+
+            storedVal = currVal;
+            return true;
+        }
+
+        private static bool UpdateContextStateValues()
+        {
+            bool questBot= IsBotInUse("Quest");
+            bool bgBot= IsBotInUse("BGBuddy") || IsBotInUse("BG Bot");
+            bool dungeonBot= IsBotInUse("DungeonBuddy");
+            bool petHack = IsPluginActive("Pokébuddy") || IsPluginActive("Pokehbuddy");
+            bool manualBot = IsBotInUse("LazyRaider", "Raid Bot");
+
+            bool changed = false;
+
+            if (questBot != IsQuestBotActive )
+            {
+                changed = true;
+                IsQuestBotActive = questBot;
+            }
+
+            if (bgBot != IsBgBotActive )
+            {
+                changed = true;
+                IsBgBotActive = bgBot ;
+            }
+
+            if (dungeonBot != IsDungeonBuddyActive )
+            {
+                changed = true;
+                IsDungeonBuddyActive = dungeonBot;
+            }
+
+            if ( petHack != IsPokeBuddyActive)
+            {
+                changed = true;
+                IsPokeBuddyActive = petHack;
+            }
+
+            if (manualBot != IsManualMovementBotActive)
+            {
+                changed = true;
+                IsManualMovementBotActive = manualBot;
+            }
+
+            // adjust our HB debug level based upon bot selection
+            SingularSettings.DebugLogLevel = IsQuestBotActive ? LogLevel.Normal : LogLevel.Verbose;
+            return changed;
         } 
 
         static void DescribeContext()

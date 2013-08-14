@@ -49,6 +49,11 @@ namespace Singular.ClassSpecific.Priest
             return false;
         }
 
+        private static bool CanWePwsUnit(WoWUnit unit)
+        {
+            return unit != null && (!unit.HasAura("Weakened Soul") || Me.HasAura("Divine Insight"));
+        }
+
         #endregion 
 
         [Behavior(BehaviorType.Rest, WoWClass.Priest, WoWSpec.PriestDiscipline)]
@@ -213,22 +218,21 @@ namespace Singular.ClassSpecific.Priest
                 );
 
             if (PriestSettings.DiscHeal.Renew != 0)
+            {
                 behavs.AddBehavior(HealthToPriority(97) + PriHighBase, "Renew @" + PriestSettings.DiscHeal.Renew + "% while moving", "Renew",
-                    new Decorator(
-                        ret => IsSpiritShellEnabled(),
-                        Spell.Cast("Renew", on =>
+                    Spell.Cast("Renew", on =>
+                    {
+                        WoWUnit unit = Group.Tanks.Where(u => u.IsAlive && u.HealthPercent < PriestSettings.DiscHeal.Renew && u.DistanceSqr < 40 * 40 && !u.HasAura("Renew") && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
+                        if (unit != null && Spell.CanCastHack("Renew", unit, skipWowCheck: true))
                         {
-                            WoWUnit unit = Group.Tanks.Where(u => u.IsAlive && u.HealthPercent < PriestSettings.DiscHeal.Renew && u.DistanceSqr < 40 * 40 && !u.HasAura("Renew") && u.HasAura("Weakened Soul") && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
-                            if (unit != null && Spell.CanCastHack("Renew", unit, skipWowCheck: true))
-                            {
-                                Logger.WriteDebug("Buffing Renew ON TANK: {0}", unit.SafeName());
-                                return unit;
-                            }
-                            return null;
-                        },
-                        req => Me.IsMoving && Spell.IsSpellOnCooldown("Renew"))
-                        )
+                            Logger.WriteDebug("Buffing Renew ON TANK: {0}", unit.SafeName());
+                            return unit;
+                        }
+                        return null;
+                    },
+                    req => Me.IsMoving && Spell.IsSpellOnCooldown("Power Word: Shield"))
                     );
+            }
 
             #endregion
 
@@ -248,15 +252,15 @@ namespace Singular.ClassSpecific.Priest
                                 new PrioritySelector(
                                     new Action(r => { Logger.WriteDebug("--- atonement only! ---"); return RunStatus.Failure; }),
                                     Movement.CreateFaceTargetBehavior(),
-                                    Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5)),
+                                    // Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5)),
+                                    Common.CreateHolyFireBehavior(),
                                     Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
-                                    Spell.Cast("Holy Fire", mov => false, on => Me.CurrentTarget, req => true, cancel => false),
                                     Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
                                     )
                                 )
                             )
                         )
-                    );
+                    );                   
             }
             #endregion
 
@@ -264,14 +268,52 @@ namespace Singular.ClassSpecific.Priest
 
             int maxDirectHeal = Math.Max(PriestSettings.DiscHeal.FlashHeal, Math.Max(PriestSettings.DiscHeal.Heal, PriestSettings.DiscHeal.GreaterHeal));
 
+
+            if (PriestSettings.DiscHeal.SpiritShell != 0)
+                behavs.AddBehavior(201 + PriAoeBase, "Spirit Shell Activate @ " + PriestSettings.DiscHeal.SpiritShell + "% MinCount: " + PriestSettings.DiscHeal.CountSpiritShell, "Spirit Shell",
+                    new Decorator(
+                        ret => Me.Combat 
+                            && Spell.CanCastHack("Spirit Shell", Me, true)
+                            && HealerManager.Instance.TargetList.Count(h => h.HealthPercent < PriestSettings.DiscHeal.SpiritShell) >= PriestSettings.DiscHeal.CountSpiritShell,
+                        new Sequence(
+                            Spell.BuffSelf("Spirit Shell", req => true),
+                            new PrioritySelector(
+                                new Wait( TimeSpan.FromMilliseconds(500), until => IsSpiritShellEnabled(), new Action( r => Logger.WriteDebug("buff for Spirit Shell now visible"))),
+                                new Action( r => Logger.WriteDebug("cast successfull but Spirit Shell buff not visible"))
+                                )
+                            )
+                        )
+                    );
+
+
+            if (PriestSettings.DiscHeal.PrayerOfMending != 0)
+                behavs.AddBehavior(200 + PriAoeBase, "Prayer of Mending @ " + PriestSettings.DiscHeal.PrayerOfMending + "% MinCount: " + PriestSettings.DiscHeal.CountPrayerOfMending, "Prayer of Mending",
+                    new Decorator(
+                        ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
+                        new PrioritySelector(
+                            context => HealerManager.GetBestCoverageTarget("Prayer of Mending", PriestSettings.DiscHeal.PrayerOfMending, 40, 20, PriestSettings.DiscHeal.CountPrayerOfMending),
+                            new Decorator(
+                                ret => ret != null && Spell.CanCastHack("Prayer of Mending", (WoWUnit) ret),
+                                new PrioritySelector(
+                                    Spell.OffGCD(Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5))),
+                                    Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
+                                    )
+                                )
+                            )
+                        )
+                    );
+
             if (PriestSettings.DiscHeal.DiscLevel90Talent != 0)
                 behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.DiscLevel90Talent) + PriAoeBase, "Halo @ " + PriestSettings.DiscHeal.DiscLevel90Talent + "% MinCount: " + PriestSettings.DiscHeal.CountLevel90Talent, "Halo",
                     new Decorator(
                         ret => SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || SingularRoutine.CurrentWoWContext == WoWContext.Instances,
                         new Decorator(
-                            ret => ret != null
-                                && HealerManager.Instance.TargetList.Count(u => u.IsAlive && u.HealthPercent < PriestSettings.DiscHeal.DiscLevel90Talent && u.Distance < 30) >= PriestSettings.DiscHeal.CountLevel90Talent,
-                            Spell.CastOnGround("Halo", on => (WoWUnit)on, req => true)
+                            ret => ret != null && HealerManager.Instance.TargetList.Count(u => u.IsAlive && u.HealthPercent < PriestSettings.DiscHeal.DiscLevel90Talent && u.Distance < 30) >= PriestSettings.DiscHeal.CountLevel90Talent
+                                && Spell.CanCastHack("Halo", (WoWUnit)ret),
+                            new PrioritySelector(
+                                Spell.OffGCD(Spell.BuffSelf("Archangel", req => ((WoWUnit)req) != null && Me.HasAura("Evangelism", 5))),
+                                Spell.CastOnGround("Halo", on => (WoWUnit)on, req => true)
+                                )
                             )
                         )
                     );
@@ -283,22 +325,11 @@ namespace Singular.ClassSpecific.Priest
                         new PrioritySelector(
                             context => HealerManager.GetBestCoverageTarget("Cascade", PriestSettings.DiscHeal.DiscLevel90Talent, 40, 30, PriestSettings.DiscHeal.CountLevel90Talent),
                             new Decorator(
-                                ret => ret != null,
-                                Spell.Cast("Cascade", on => (WoWUnit)on, req => true)
-                                )
-                            )
-                        )
-                    );
-
-            if (PriestSettings.DiscHeal.PrayerOfMending != 0)
-                behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.DiscLevel90Talent) + PriAoeBase, "Prayer of Mending @ " + PriestSettings.DiscHeal.PrayerOfMending + "% MinCount: " + PriestSettings.DiscHeal.CountPrayerOfMending, "Prayer of Mending",
-                    new Decorator(
-                        ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
-                        new PrioritySelector(
-                            context => HealerManager.GetBestCoverageTarget("Prayer of Mending", PriestSettings.DiscHeal.PrayerOfMending, 40, 20, PriestSettings.DiscHeal.CountPrayerOfMending),
-                            new Decorator(
-                                ret => ret != null,
-                                Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
+                                ret => ret != null && Spell.CanCastHack("Cascade", (WoWUnit) ret),
+                                new PrioritySelector(
+                                    Spell.OffGCD(Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5))),
+                                    Spell.Cast("Cascade", on => (WoWUnit)on, req => true)
+                                    )
                                 )
                             )
                         )
@@ -348,6 +379,13 @@ namespace Singular.ClassSpecific.Priest
             #endregion
 
             #region Direct Heals
+
+            if (PriestSettings.DiscHeal.PowerWordShield != 0)
+            {
+                behavs.AddBehavior(99 + PriSingleBase, "Power Word: Shield @ " + PriestSettings.DiscHeal.PowerWordShield + "%", "Power Word: Shield",
+                    Spell.Buff("Power Word: Shield", on => (WoWUnit) on, req => ((WoWUnit)req).HealthPercent < PriestSettings.DiscHeal.PowerWordShield && CanWePwsUnit((WoWUnit) req))
+                    );
+            }
 
             if (PriestSettings.DiscHeal.Penance != 0)
                 behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.Penance) + PriSingleBase, "Penance @ " + PriestSettings.DiscHeal.Penance + "%", "Penance",
@@ -431,9 +469,9 @@ namespace Singular.ClassSpecific.Priest
                                 new PrioritySelector(
                                     new Action(r => { Logger.WriteDebug("--- atonement when idle ---"); return RunStatus.Failure; }),
                                     Movement.CreateFaceTargetBehavior(),
-                                    Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5)),
+                                    // Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5)),
                                     Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
-                                    Spell.Cast("Holy Fire", mov => false, on => Me.CurrentTarget, req => true, cancel => false),
+                                    Common.CreateHolyFireBehavior(),
                                     Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
                                     )
                                 )
@@ -500,7 +538,7 @@ namespace Singular.ClassSpecific.Priest
                 ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                 new PrioritySelector(
                     Spell.Cast("Desperate Prayer", ret => Me, ret => Me.Combat && Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
-                    Spell.BuffSelf("Power Word: Shield", ret => Me.Combat && Me.HealthPercent < PriestSettings.ShieldHealthPercent && !Me.HasAura("Weakened Soul")),
+                    Spell.BuffSelf("Power Word: Shield", ret => Me.Combat && Me.HealthPercent < PriestSettings.ShieldHealthPercent && CanWePwsUnit((WoWUnit) ret)),
 
                     // keep heal buffs on if glyphed
                     Spell.BuffSelf("Prayer of Mending", ret => Me.Combat && Me.HealthPercent <= 90),
@@ -529,7 +567,7 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(
-                        Spell.Cast("Fade", ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances && Targeting.GetAggroOnMeWithin(StyxWoW.Me.Location, 30) > 0),
+                        Common.CreateFadeBehavior(),
 
                         Spell.BuffSelf("Desperate Prayer", ret => StyxWoW.Me.HealthPercent <= PriestSettings.DesperatePrayerHealth),
 
@@ -574,7 +612,7 @@ namespace Singular.ClassSpecific.Priest
                             return unit;
                             }),
                         Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
-                        Spell.Cast("Holy Fire"),
+                        Common.CreateHolyFireBehavior(),
                         Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
                         )
                     )
@@ -609,7 +647,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Shadow Word: Death", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u))),
                         Spell.Cast("Shadow Word: Pain", req => Me.CurrentTarget.IsPlayer && Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1)),
                         Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
-                        Spell.Cast("Holy Fire"),
+                        Common.CreateHolyFireBehavior(),
                         Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
                         )
                     )
@@ -653,7 +691,7 @@ namespace Singular.ClassSpecific.Priest
                                     return unit;
                                 }),
                                 Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
-                                Spell.Cast("Holy Fire"),
+                                Common.CreateHolyFireBehavior(),
                                 Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
                                 )
                             )
@@ -694,7 +732,7 @@ namespace Singular.ClassSpecific.Priest
                 .DefaultIfEmpty(null)
                 .FirstOrDefault();
 
-            if (t != null && t.Count >= PriestSettings.DiscHeal.PowerWordBarrier)
+            if (t != null && t.Count >= PriestSettings.DiscHeal.CountPowerWordBarrier)
             {
                 Logger.WriteDebug("PowerWordBarrier Target:  found {0} with {1} nearby under {2}%", t.Player.SafeName(), t.Count, PriestSettings.DiscHeal.PowerWordBarrier);
                 return t.Player;
@@ -726,18 +764,6 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 new Sequence(
-                    new DecoratorContinue( 
-                        req => Me.Combat && Spell.CanCastHack("Spirit Shell", Me, true),
-                        new Action(r => Logger.WriteDebug("Spirit Shell prep for {0}", castFor))
-                        ),
-                    Spell.BuffSelf("Spirit Shell", req => Me.Combat),
-                    new PrioritySelector(
-                        new Wait( TimeSpan.FromMilliseconds(500), until => IsSpiritShellEnabled(), new Action( r => Logger.WriteDebug("buff for Spirit Shell now visible"))),
-                        new Action( r => Logger.WriteDebug("cast successfull but Spirit Shell buff not visible"))
-                        ),
-                    new ActionAlwaysFail()
-                    ),
-                new Sequence(
                     Spell.BuffSelf("Inner Focus", req => Me.Combat),
                     new ActionAlwaysFail()
                     ),
@@ -758,21 +784,34 @@ namespace Singular.ClassSpecific.Priest
             if ( SingularSettings.DisableAllTargeting || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                 return new ActionAlwaysFail();
 
-            return new Decorator(
-                req => Me.GotTarget && !Me.CurrentTarget.IsPlayer,
-                new PrioritySelector(
-                    ctx => Unit.HighestHealthMobAttackingTank(),
-                    new Decorator(
-                        req => req != null && Me.CurrentTargetGuid != ((WoWUnit) req).Guid && (Me.CurrentTarget.HealthPercent + 10) < ((WoWUnit)req).HealthPercent,
-                        new Sequence(
-                            new Action( on => {
-                                Logger.Write(Color.LightCoral, "switch to highest health mob {0} @ {1:F1}%", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent );
-                                ((WoWUnit)on).Target();
-                                }),
-                            new Wait(1, req => Me.CurrentTargetGuid == ((WoWUnit)req).Guid, new ActionAlwaysFail())
+            return new PrioritySelector(
+                new Decorator(
+                    req => Me.GotTarget && !Me.CurrentTarget.IsPlayer,
+                    new PrioritySelector(
+                        ctx => Unit.HighestHealthMobAttackingTank(),
+                        new Decorator(
+                            req => req != null && Me.CurrentTargetGuid != ((WoWUnit) req).Guid && (Me.CurrentTarget.HealthPercent + 10) < ((WoWUnit)req).HealthPercent,
+                            new Sequence(
+                                new Action( on => {
+                                    Logger.Write(Color.LightCoral, "switch to highest health mob {0} @ {1:F1}%", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent );
+                                    ((WoWUnit)on).Target();
+                                    }),
+                                new Wait(1, req => Me.CurrentTargetGuid == ((WoWUnit)req).Guid, new ActionAlwaysFail())
+                                )
                             )
                         )
-                    )
+                    ),
+                new Decorator( 
+                    req => !Me.GotTarget,
+                    new Sequence(
+                        ctx => Unit.HighestHealthMobAttackingTank(),
+                        new Action( on => {
+                            Logger.Write(Color.LightCoral, "target highest health mob {0} @ {1:F1}%", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent );
+                            ((WoWUnit)on).Target();
+                            }),
+                        new Wait(1, req => Me.CurrentTargetGuid == ((WoWUnit)req).Guid, new ActionAlwaysFail())
+                        )
+                    )                       
                 );
         }
 

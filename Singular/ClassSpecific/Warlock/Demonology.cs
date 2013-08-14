@@ -83,7 +83,7 @@ namespace Singular.ClassSpecific.Warlock
                             ret => MovementManager.IsClassMovementAllowed
                                 && WarlockSettings.UseDemonicLeap
                                 && ((Me.HealthPercent < 50 && SingularRoutine.CurrentWoWContext == WoWContext.Normal) || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                                && Unit.NearbyUnitsInCombatWithMe.Any(u => u.IsWithinMeleeRange),
+                                && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.IsWithinMeleeRange),
                             new PrioritySelector(
                                 Spell.Cast("Carrion Swarm", req => Me.HasAura("Metamorphosis")),
                                 Disengage.CreateDisengageBehavior("Demonic Leap", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())

@@ -183,6 +183,12 @@ namespace Singular.Settings
         [Description("Use Wild Charge as appropriate for spec")]
         public bool UseWildCharge { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Move Behind Targets")]
+        [Description("Move behind targets for opener or when target stunned/not targeting Druid in Cat Form")]
+        public bool MoveBehindTargets { get; set; }
 
 /*
                         [Setting]
@@ -245,13 +251,6 @@ namespace Singular.Settings
         #endregion
 
         #region Balance
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Balance")]
-        [DisplayName("Allow Kiting")]
-        [Description("Allow Kiting mob to minimize damage taken")]
-        public bool AllowKiting { get; set; }
 
         [Setting]
         [DefaultValue(80)]
@@ -598,12 +597,69 @@ namespace Singular.Settings
             {
                 if (ctx == Singular.HealingContext.Battlegrounds)
                 {
+                    Rejuvenation = 95;
+                    Nourish = 0;
+                    HealingTouch = 0;
+                    Regrowth = 75;
+                    WildGrowth = 90;
+                    CountWildGrowth = 3;
+                    SwiftmendAOE = 0;
+                    CountSwiftmendAOE = 0;
+                    SwiftmendDirectHeal = 74;
+                    WildMushroomBloom = 60;
+                    CountMushroomBloom = 1;
+                    Tranquility = 0;
+                    CountTranquility = 0;
+                    TreeOfLife = 60;
+                    CountTreeOfLife = 1;
+                    Ironbark = 59;
+                    NaturesSwiftness = 35;
+                    CenarionWard = 80;
+                    NaturesVigil = 60;
                 }
                 else if (ctx == Singular.HealingContext.Instances)
                 {
+                    Rejuvenation = 95;
+                    Nourish = 85;
+                    HealingTouch = 70;
+                    Regrowth = 40;
+                    WildGrowth = 85;
+                    CountWildGrowth = 3;
+                    SwiftmendAOE = 0;
+                    CountSwiftmendAOE = 0;
+                    SwiftmendDirectHeal = 70;
+                    WildMushroomBloom = 85;
+                    CountMushroomBloom = 2;
+                    Tranquility = 60;
+                    CountTranquility = 3;
+                    TreeOfLife = 70;
+                    CountTreeOfLife = 3;
+                    Ironbark = 60;
+                    NaturesSwiftness = 25;
+                    CenarionWard = 80;
+                    NaturesVigil = 70;
                 }
                 else if (ctx == Singular.HealingContext.Raids)
                 {
+                    Rejuvenation = 94;
+                    Nourish = 95;
+                    HealingTouch = 60;
+                    Regrowth = 40;
+                    WildGrowth = 90;
+                    CountWildGrowth = 4;
+                    SwiftmendAOE = 0;
+                    CountSwiftmendAOE = 0;
+                    SwiftmendDirectHeal = 85;
+                    WildMushroomBloom = 95;
+                    CountMushroomBloom = 3;
+                    Tranquility = 70;
+                    CountTranquility = 5;
+                    TreeOfLife = 75;
+                    CountTreeOfLife = 4;
+                    Ironbark = 65;
+                    NaturesSwiftness = 25;
+                    CenarionWard = 85;
+                    NaturesVigil = 80;
                 }
                 // omit case for WoWContext.Normal and let it use DefaultValue() values
             }

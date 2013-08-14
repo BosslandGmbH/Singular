@@ -79,10 +79,11 @@ namespace Singular.ClassSpecific.Druid
 
         private static WoWPlayer GetFeralBestSymbiosisTargetForBattlegrounds()
         {
-            return Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Shaman)
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior)
+            return (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Priest)
                 ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Paladin)
-                ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight)));
+                ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Shaman)
+                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior)
+                ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight))));
         }
 
         [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]
@@ -103,6 +104,14 @@ namespace Singular.ClassSpecific.Druid
                         new Decorator(
                             ret => Me.CurrentTarget.IsAboveTheGround(),
                             new PrioritySelector(
+                                new Action(r =>
+                                {
+                                    Logger.WriteDebug("Target appears airborne: flying={0} aboveground={1}",
+                                        Me.CurrentTarget.IsFlying.ToYN(),
+                                        Me.CurrentTarget.IsAboveTheGround().ToYN()
+                                        );
+                                    return RunStatus.Failure;
+                                }),
                                 Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => Me.CurrentTarget.Distance < 35),
                                 Spell.Cast("Moonfire", ret => Me.CurrentTarget.Distance < 40),
                                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
@@ -122,7 +131,7 @@ namespace Singular.ClassSpecific.Druid
                                 Spell.BuffSelf("Dash", 
                                     ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > 15 
                                         && Spell.GetSpellCooldown("Wild Charge", 0).TotalSeconds < 13 ),
-                                Spell.Cast("Ravage", ret => Me.IsSafelyBehind(Me.CurrentTarget)),
+                                Spell.Cast("Ravage", ret => Me.IsSafelyBehind(Me.CurrentTarget) && SingularRoutine.CurrentWoWContext == WoWContext.Instances ),
                                 Spell.Cast("Pounce")
                                 )
                             ),
@@ -132,10 +141,7 @@ namespace Singular.ClassSpecific.Druid
                     ),
 
                 // Move to Melee, going behind target if prowling 
-                new Decorator(
-                    ret => Me.GotTarget && Me.HasAura("Prowl"),
-                    Movement.CreateMoveBehindTargetBehavior()
-                    ),
+                Common.CreateMoveBehindTargetWhileProwling(),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
@@ -206,7 +212,9 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralCombatHeal()
         {
             return new PrioritySelector(
-                CreateFeralDiagnosticOutputBehavior("Combat")
+                new Action(ret => { _currTargetTimeToDeath = Me.CurrentTarget.IsTrainingDummy() ? 100 : Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
+                CreateFeralDiagnosticOutputBehavior("Combat"),
+                Common.SymbBuff( Symbiosis.DivineShield, on => Me, req => Me.HealthPercent < 20)
                 );
         }
 
@@ -224,7 +232,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 Spell.Buff("Cyclone",
-                    ctx => Unit.NearbyUnitsInCombatWithMe.FirstOrDefault(
+                    ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(
                         u => Me.HasAura("Predatory Swiftness")
                             && u.IsCasting
                             && Me.GotTarget
@@ -285,7 +293,7 @@ namespace Singular.ClassSpecific.Druid
                         new Throttle( 
                             Spell.BuffSelf("Berserk", 
                                 ret => Me.HasAura("Tiger's Fury") 
-                                    && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.CurrentTarget.TimeToDeath() >= 20 ))
+                                    && Me.GotTarget && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.CurrentTarget.TimeToDeath() >= 20 ))
                                 )
                             ),
 
@@ -335,6 +343,7 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
+        static long _currTargetTimeToDeath { get; set; }
 
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Instances )]
         public static Composite CreateFeralCombatInstances()
@@ -350,8 +359,6 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
 
                         // updated time to death tracking values before we need them
-                        new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-
                         Helpers.Common.CreateInterruptBehavior(),
 
                         CreateFeralAoeCombat(),
@@ -377,41 +384,41 @@ namespace Singular.ClassSpecific.Druid
 
                             new PrioritySelector(
                                 // 2. Keep Savage Roar up
-                                CastSavageRoar( on => Me.CurrentTarget, req => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
-
-                                // 3. Use Tiger’s Fury/Nature's Vigil/Incarnation/Berserking/Force of Nature*
-                                new Throttle(Spell.BuffSelf("Tiger's Fury",
-                                    ret => Me.EnergyPercent <= 35
-                                        && !Me.ActiveAuras.ContainsKey("Clearcasting")
-                                        && !Me.HasAura("Berserk")
-                                        )),
+                                CastSavageRoar( on => Me.CurrentTarget, req => Me.HasAuraExpired("Savage Roar", 2) && (Me.ComboPoints > 0 || TalentManager.HasGlyph("Savagery"))),
 
                                 new Throttle(
-                                    Spell.BuffSelf("Berserk",
-                                        ret => Me.HasAura("Tiger's Fury")
-                                            && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (SingularRoutine.CurrentWoWContext != WoWContext.Instances && Me.CurrentTarget.TimeToDeath() >= 20))
+                                    new Decorator(
+                                        req => Me.HasAura("Savage Roar") && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                                        new Sequence(
+                                            Spell.BuffSelf("Tiger's Fury", req => !Me.HasAura("Berserk") && (!Spell.IsSpellOnCooldown("Berserk") || Spell.GetSpellCooldown("Berserk").TotalSeconds > 15)),
+                                            new Decorator(
+                                                req => Me.CurrentTarget.IsBoss(),
+                                                new PrioritySelector(
+                                                    Spell.OffGCD( Spell.BuffSelf("Nature's Vigil", req => Spell.GetSpellCooldown("Berserk").TotalSeconds > 90)),
+                                                    new Decorator(
+                                                        req => Spell.CanCastHack("Berserk", Me, skipWowCheck: true),
+                                                        new PrioritySelector(
+                                                            Spell.OffGCD(Spell.BuffSelf("Berserk") ),
+                                                            Spell.OffGCD(Spell.BuffSelf("Incarnation: King of the Jungle")),
+                                                            Spell.OffGCD(Spell.BuffSelf("Nature's Vigil")),
+                                                            Spell.OffGCD(Spell.CastOnGround("Force of Nature", on => Me.CurrentTarget, req => true, false))
+                                                            )
+                                                        )
+                                                    )
+                                                ),
+
+                                            new ActionAlwaysFail()
+                                            )
                                         )
-                                    ),
-
-                                new Throttle(Spell.Cast("Nature's Vigil", ret => Me.HasAura("Berserk"))),
-                                Spell.Cast("Incarnation", ret => Me.HasAura("Berserk")),
-
-                                new Sequence(
-                                    Spell.CastOnGround("Force of Nature",
-                                        u => (Me.CurrentTarget ?? Me).Location,
-                                        ret => StyxWoW.Me.CurrentTarget != null
-                                            && StyxWoW.Me.CurrentTarget.Distance < 40
-                                            && SpellManager.HasSpell("Force of Nature")),
-                                    new ActionAlwaysFail()
                                     ),
 
                                 // 4. Use Nature’s Swiftness/Healing touch to generate Wrath of Cenarius procs when GCD will not cause energy cap*
                                 // 5. Use Predatory Swiftness to generate Dream of Cenarius procs when GCD will not cause energy cap, preferably at 4CP.**
                                 new Decorator(
-                                    ret => Me.EnergyPercent < 80 
+                                    ret => Me.EnergyPercent < 85 
                                         && Common.HasTalent( DruidTalents.DreamOfCenarius) 
                                         && !Me.HasAura("Wrath of Cenarius")
-                                        && Me.ComboPoints >= 4,
+                                        && Me.ComboPoints >= 5,
                                     new Sequence(
                                         new PrioritySelector(
                                             new Decorator(  ret => Me.HasAura("Predatory Swiftness"), new ActionAlwaysSucceed()),
@@ -425,29 +432,29 @@ namespace Singular.ClassSpecific.Druid
                                     ret => DruidSettings.FeralSpellPriority != 1,
                                     new PrioritySelector(
                                         // 5b. made a higher priority to prioritize consuming Omen of Clarity with Thrash if needed
-                                        CastThrash( on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity")),
+                                        CastThrash( on => Me.CurrentTarget, req => Me.HasAura("Clearcasting")),
 
                                         // 6. Ferocious Bite if the boss has less than 25% hp remaining and Rip is near expiring.
-                                        Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent < 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds.Between(150, 6000)),
+                                        Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent < 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds > 250),
+
+                                        // 8. Keep 5 combo point Rip up.
+                                        Spell.Buff("Rip", true, on => Me.CurrentTarget, req => Me.ComboPoints >= 5, 3),
 
                                         // 7. Ferocious Bite if you have 5 CP and at least 6 - 10 seconds on Savage Roar and Rip
                                         Spell.Cast("Ferocious Bite", 
                                             req => Me.ComboPoints >= 5
-                                                && !Me.HasAuraExpired("Savage Roar", 6)
                                                 && !Me.HasAuraExpired("Rip", 6)
+                                                && !Me.HasAuraExpired("Savage Roar", TalentManager.HasGlyph("Savagery") ? 1 : 6)
                                                 ),
-
-                                        // 8. Keep 5 combo point Rip up.
-                                        Spell.Buff("Rip", true, on => Me.CurrentTarget, req => Me.ComboPoints >= 5, 3),
 
                                         // 9. Keep Rake up
                                         Spell.Buff("Rake", true, on => Me.CurrentTarget, req => true, 3),
 
                                         // 10. Spend Omen of Clarity procs on Thrash if Thrash has less than 6 seconds remaining.
-                                        CastThrash(on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity"), 6),
+                                        CastThrash(on => Me.CurrentTarget, req => Me.HasAura("Clearcasting"), 6),
 
                                         // 11. Ravage to generate combo points if Ravage is available (Incarnation)
-                                        Spell.Cast("Ravage", req => Me.ComboPoints < 5 && (Me.IsSafelyBehind(Me.CurrentTarget) || Me.HasAnyAura("Incarnation", "Stampede"))),
+                                        Spell.Cast("Ravage", req => Me.ComboPoints < 5 && (Me.IsSafelyBehind(Me.CurrentTarget) || Me.HasAnyAura(102543, 81022))),
 
                                         // 12. Shred to generate combo points if Shred is available (Behind boss, berserk w/glyph, etc)
                                         Spell.Cast("Shred", req => Me.ComboPoints < 5 && (Me.IsSafelyBehind(Me.CurrentTarget) || (TalentManager.HasGlyph("Shred") && Me.HasAnyAura("Tiger's Fury", "Berserk")))),
@@ -467,26 +474,25 @@ namespace Singular.ClassSpecific.Druid
                                     ret => DruidSettings.FeralSpellPriority == 1,
                                     new PrioritySelector(
 
+                                        // spend Combo Points
                                         new Decorator(
                                             req => Me.ComboPoints >= 5,
                                             new PrioritySelector(
-                                                Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent < 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds.Between(150, 6000)),
-                                                Spell.Cast("Ferocious Bite",
-                                                    req => !Me.HasAuraExpired("Savage Roar", 6)
-                                                        && !Me.HasAuraExpired("Rip", 6)
-                                                        ),
-                                                Spell.Buff("Rip", true, on => Me.CurrentTarget, req => true, 3)
+                                                Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent < 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds > 250),
+                                                Spell.Buff("Rip", true, on => Me.CurrentTarget, req => true, 6),
+                                                Spell.Cast("Ferocious Bite")
                                                 )
                                             ),
 
+                                        // build Combo Points
                                         new Decorator(
                                             req => Me.ComboPoints < 5,
                                             new PrioritySelector(
                                                 // note:  id used to fix Thrash Spell Override bug (similar to Savage Roar)
-                                                CastThrash( on => Me.CurrentTarget, req => Me.HasAura("Omen of Clarity")),
+                                                CastThrash( on => Me.CurrentTarget, req => Me.HasAura("Clearcasting")),
 
                                                 Spell.Buff("Rake", true, on => Me.CurrentTarget, req => true, 3),
-                                                Spell.Cast("Ravage", req => (Me.IsSafelyBehind(Me.CurrentTarget) || Me.HasAnyAura("Incarnation", "Stampede"))),
+                                                Spell.Cast("Ravage", req => (Me.IsSafelyBehind(Me.CurrentTarget) || Me.HasAnyAura(102543, 81022))),
                                                 Spell.Cast("Shred", req => (Me.IsSafelyBehind(Me.CurrentTarget) || (TalentManager.HasGlyph("Shred") && Me.HasAnyAura("Tiger's Fury", "Berserk")))),
                                                 Spell.Cast("Mangle")
                                                 )
@@ -532,7 +538,7 @@ namespace Singular.ClassSpecific.Druid
 
                         CastSavageRoar(on => Me.CurrentTarget, ret => !Me.HasAura("Savage Roar") && (Me.ComboPoints > 1 || TalentManager.HasGlyph("Savagery"))),
 
-                        CastThrash( on => Me.CurrentTarget, ret => _aoeColl.Any(m => !m.HasMyAura("Thrash")) || Me.HasAura("Omen of Clarity"), 0),
+                        CastThrash( on => Me.CurrentTarget, ret => _aoeColl.Any(m => !m.HasMyAura("Thrash")) || Me.HasAura("Clearcasting"), 0),
 
                         Spell.BuffSelf("Tiger's Fury",
                             ret => Me.EnergyPercent <= 35
@@ -544,11 +550,11 @@ namespace Singular.ClassSpecific.Druid
                         // bite if rip good for awhile or target dying soon
                         Spell.Cast("Ferocious Bite",
                             ret => (Me.ComboPoints >= 5 && !Me.HasAuraExpired("Rip", 6))
-                                || Me.ComboPoints >= Me.CurrentTarget.TimeToDeath(99)),
+                                || Me.ComboPoints >= _currTargetTimeToDeath),
 
                         Spell.Cast("Rip",
                             ret => Me.ComboPoints >= 5
-                                && Me.CurrentTarget.TimeToDeath() >= 8
+                                && _currTargetTimeToDeath >= 8
                                 && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 1),
 
                         Spell.Cast("Swipe", ret => Me.CurrentTarget.IsWithinMeleeRange),
@@ -596,7 +602,7 @@ namespace Singular.ClassSpecific.Druid
                         (long)Me.GetAuraTimeLeft("Tiger's Fury", true).TotalMilliseconds,
                         (long)Me.GetAuraTimeLeft("Berserk", true).TotalMilliseconds,
                         (long)Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds,
-                        (long)Me.GetAuraTimeLeft("Omen of Clarity", true).TotalMilliseconds,
+                        (long)Me.GetAuraTimeLeft("Clearcasting", true).TotalMilliseconds,
                         Me.ComboPoints 
                         );
 

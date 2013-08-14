@@ -34,6 +34,19 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
+                // cancel form if we get a shapeshift error 
+                new Throttle(5,
+                    new Decorator(
+                        ret => SingularRoutine.IsQuestBotActive && !Me.IsMoving && Me.Shapeshift == ShapeshiftForm.GhostWolf && Common.RecentShapeshiftErrorOccurred,
+                        new Action(ret =>
+                        {
+                            string formName = "Ghost Wolf";
+                            Logger.Write("/cancel [{0}] due to shapeshift error in Questing; disabling form for {1:F0} secs while not in combat", formName, (Common.SuppressShapeshiftUntil - DateTime.Now).TotalSeconds);
+                            Me.CancelAura(formName);
+                        })
+                        )
+                    ),
+
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                 Common.CreateShamanImbueOffHandBehavior( Imbue.Flametongue ),
 
@@ -201,7 +214,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         new Decorator(ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5) && (StyxWoW.Me.GetAuraTimeLeft("Maelstom Weapon", true).TotalSeconds < 3000 || StyxWoW.Me.GetPredictedHealthPercent(true) > 90),
                             new PrioritySelector(
-                                Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
+                                Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(10f).Any(u => u.IsCrowdControlled())),
                                 Spell.Cast("Lightning Bolt")
                                 )
                             )
@@ -342,21 +355,21 @@ namespace Singular.ClassSpecific.Shaman
                     ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
-                        uint lstks = 0;
+                        uint maelStacks = 0;
                         WoWAura aura = Me.ActiveAuras.Where( a => a.Key == "Maelstrom Weapon").Select( d => d.Value ).FirstOrDefault();
                         if (aura != null)
                         {
-                            lstks = aura.StackCount;
-                            if (lstks == 0)
+                            maelStacks = aura.StackCount;
+                            if (maelStacks == 0)
                                 Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  Maelstrom Weapon buff exists with 0 stacks !!!!");
-                            else if ( !Me.HasAura("Maelstrom Weapon", (int)lstks))
-                                Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  Me.HasAura('Maelstrom Weapon', {0}) was False!!!!", lstks );
+                            else if ( !Me.HasAura("Maelstrom Weapon", (int)maelStacks))
+                                Logger.WriteDebug(Color.MediumVioletRed, "Inconsistancy Error:  Me.HasAura('Maelstrom Weapon', {0}) was False!!!!", maelStacks );
                         }
 
                         string line = string.Format(".... h={0:F1}%/m={1:F1}%, maelstrom={2}",
                             Me.HealthPercent,
                             Me.ManaPercent,
-                            lstks
+                            maelStacks
                             );
 
                         WoWUnit target = Me.CurrentTarget;

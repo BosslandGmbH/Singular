@@ -88,7 +88,7 @@ namespace Singular.ClassSpecific.Druid
                             && Me.IsSafelyFacing(Me.CurrentTarget, 90f)),
 
                     new Decorator(
-                        ret => Unit.NearbyUnitsInCombatWithMe.Any(u => u.SpellDistance() < 8)
+                        ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.SpellDistance() < 8)
                             && (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.HealthPercent < 50)),
                         CreateDruidAvoidanceBehavior(CreateSlowMeleeBehavior(), null, null)
                         ),
@@ -113,7 +113,7 @@ namespace Singular.ClassSpecific.Druid
                             Spell.Buff("Mighty Bash", req => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.IsCrowdControlled()),
 
                             new Decorator(
-                                ret => 1 == Unit.NearbyUnitsInCombatWithMe.Count(),
+                                ret => 1 == Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(),
                                 new PrioritySelector(
                                     new Action(r =>
                                     {
@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific.Druid
                             new Throttle(Spell.BuffSelf("Barkskin")),
 
                             new Decorator(
-                                req => !Group.AnyHealerNearby && (Me.CurrentTarget.TimeToDeath() > 15 || Unit.NearbyUnitsInCombatWithMe.Count() > 1),
+                                req => !Group.AnyHealerNearby && (Me.CurrentTarget.TimeToDeath() > 15 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1),
                                 new PrioritySelector(
                                     Spell.BuffSelf("Nature's Vigil"),
                                     Spell.BuffSelf("Heart of the Wild")
@@ -204,8 +204,6 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Normal)]
         public static Composite CreateDruidBalanceNormalCombat()
         {
-            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), null, null);
-
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
             return new PrioritySelector(
 
@@ -218,7 +216,7 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
 
                         new Decorator( 
-                            ret => Me.HealthPercent < 40 && Unit.NearbyUnitsInCombatWithMe.Any( u => u.IsWithinMeleeRange),
+                            ret => Me.HealthPercent < 40 && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any( u => u.IsWithinMeleeRange),
                             CreateDruidAvoidanceBehavior( CreateSlowMeleeBehavior(), null, null)
                             ),
 
@@ -297,8 +295,6 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds)]
         public static Composite CreateDruidBalancePvPCombat()
         {
-            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), null, null);
-
             Common.WantedDruidForm = ShapeshiftForm.Moonkin;
 
             return new PrioritySelector(
@@ -687,17 +683,23 @@ namespace Singular.ClassSpecific.Druid
         /// <returns></returns>
         public static Composite CreateDruidAvoidanceBehavior(Composite slowAttack, Composite nonfacingAttack, Composite jumpturnAttack)
         {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => MovementManager.IsClassMovementAllowed && DruidSettings.UseWildCharge,
-                    new PrioritySelector(
-                        Disengage.CreateDisengageBehavior("Wild Charge", Disengage.Direction.Backwards, 20, CreateSlowMeleeBehavior()),
-                        Disengage.CreateDisengageBehavior("Displacer Beast", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
+            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jumpturnAttack);
+
+            return new Decorator(
+                req => MovementManager.IsClassMovementAllowed,
+                new PrioritySelector(
+                    ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(),
+                    new Decorator(
+                        ret => Kite.IsDisengageWantedByUserSettings((int) ret),
+                        new PrioritySelector(
+                            Disengage.CreateDisengageBehavior("Wild Charge", Disengage.Direction.Backwards, 20, CreateSlowMeleeBehavior()),
+                            Disengage.CreateDisengageBehavior("Displacer Beast", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
+                            )
+                        ),
+                    new Decorator(
+                        ret => Kite.IsKitingWantedByUserSettings((int)ret),
+                        Kite.BeginKitingBehavior()
                         )
-                    ),
-                new Decorator(
-                    ret => MovementManager.IsClassMovementAllowed && DruidSettings.AllowKiting,
-                    Kite.BeginKitingBehavior()
                     )
                 );
         }

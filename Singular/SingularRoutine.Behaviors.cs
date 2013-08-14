@@ -16,6 +16,7 @@ using System;
 
 using Action = Styx.TreeSharp.Action;
 using Styx.CommonBot;
+using Styx.CommonBot.POI;
 using Styx.WoWInternals.WoWObjects;
 using Styx.Helpers;
 using Styx.WoWInternals;
@@ -43,7 +44,7 @@ namespace Singular
         public override Composite RestBehavior { get { return _restBehavior; } }
 
         private static ulong _guidLastTarget = 0;
-        private static WaitTimer _timerLastTarget = new WaitTimer(TimeSpan.FromSeconds(5));
+        private static WaitTimer _timerLastTarget = new WaitTimer(TimeSpan.FromSeconds(15));
 
         public bool RebuildBehaviors(bool silent = false)
         {
@@ -256,7 +257,7 @@ namespace Singular
     #if BOTS_NOT_CALLING_PULLBUFFS
                             _pullBuffsBehavior,
     #endif
-                            CreateLogTargetChanges("<<< PULL >>>"),
+                            CreateLogTargetChanges( BehaviorType.Pull, "<<< PULL >>>"),
                             new HookExecutor(HookName(BehaviorType.Pull))
                             )
                         )
@@ -272,7 +273,7 @@ namespace Singular
                                 ret => !HotkeyDirector.IsCombatEnabled,
                                 new ActionAlwaysSucceed()
                                 ),
-                            CreateLogTargetChanges("<<< ADD >>>"),
+                            CreateLogTargetChanges( BehaviorType.Combat, "<<< ADD >>>"),
                             new HookExecutor(HookName(BehaviorType.Combat))
                             )
                         )
@@ -340,7 +341,7 @@ namespace Singular
                     _inPetCombat = PetBattleInProgress();
                     if (_inPetCombat)
                     {
-                        Logger.Write(Color.White, "Behaviors disabled in Pet Fight - contact Pet Combat bot/plugin author to fix this");
+                        Logger.Write(Color.White, "Behaviors disabled in Pet Fight");
                     }
                 }
 
@@ -414,55 +415,101 @@ namespace Singular
             return composite != null;
         }
 
-        private static Composite CreateLogTargetChanges(string sType)
+        private static Composite CreateLogTargetChanges(BehaviorType behav, string sType)
         {
             return new Action(r =>
                 {
                     // there are moments where CurrentTargetGuid != 0 but CurrentTarget == null. following
                     // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
-                    if ((SingularSettings.Debug && Me.CurrentTargetGuid != _guidLastTarget))
+                    if (Me.CurrentTargetGuid != _guidLastTarget)
                     {
-                        if (Me.CurrentTarget == null)
+                        if (Me.CurrentTargetGuid == 0)
                         {
                             if (_guidLastTarget != 0)
                             {
-                                Logger.WriteDebug(sType + " CurrentTarget now: (null)");
+                                if (SingularSettings.Debug)
+                                    Logger.WriteDebug(sType + " CurrentTarget now: (null)");
                                 _guidLastTarget = 0;
                             }
                         }
                         else
                         {
                             _guidLastTarget = Me.CurrentTargetGuid;
-
-                            string info = "";
-                            WoWUnit target = Me.CurrentTarget;
-
-                            if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
-                                info += string.Format(", IsBotPoi={0}", Styx.CommonBot.POI.BotPoi.Current.Type);
-
-                            if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
-                                info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
-
-                            Logger.WriteDebug(sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostile={6}, faction={7}, loss={8}, facing={9}" + info,
-                                target.SafeName(),
-                                target.HealthPercent,
-                                target.MaxHealth,
-                                target.Distance,
-                                target.CombatReach,
-                                target.IsPlayer.ToYN(),
-                                target.IsHostile.ToYN(),
-                                target.FactionId ,
-                                target.InLineOfSpellSight.ToYN(),
-                                Me.IsSafelyFacing(target).ToYN()
-                                );
+                            _timerLastTarget.Reset();
+                            if (SingularSettings.Debug)
+                                Logger.WriteDebug("reset target timer to {0:c}", _timerLastTarget.TimeLeft);
+                            LogTargetChanges(behav, sType);
                         }
+                    }
+                    // we have some type of target
+                    else if (_guidLastTarget != 0)  
+                    {       
+                        // make sure we get into melee range within reasonable time
+                        if (!MovementManager.IsMovementDisabled && !IsDungeonBuddyActive )
+                        {
+                            if (Me.IsMelee())
+                            {
+                                if (Me.CurrentTarget.IsWithinMeleeRange)
+                                {
+                                    _timerLastTarget.Reset();
+                                }
+                                else if (_timerLastTarget.IsFinished)
+                                {
+                                    BlacklistFlags blf = Me.CurrentTarget.Aggro || (Me.GotAlivePet && Me.CurrentTarget.PetAggro) ? BlacklistFlags.Combat : BlacklistFlags.Pull;
+                                    if (!Blacklist.Contains(_guidLastTarget, blf))
+                                    {
+                                        TimeSpan bltime = TimeSpan.FromMinutes(5);
 
-                        _timerLastTarget.Reset();
+                                        Logger.Write(Color.HotPink, "{0} Target {1} out of melee range for {2:F1} seconds, blacklisting for {3:c} and clearing {4}", 
+                                            blf, 
+                                            Me.CurrentTarget.SafeName(), 
+                                            _timerLastTarget.WaitTime.TotalSeconds, 
+                                            bltime,
+                                            _guidLastTarget == BotPoi.Current.Guid ? "BotPoi" : "Current Target" );
+
+                                        Blacklist.Add(_guidLastTarget, blf, TimeSpan.FromMinutes(5));
+                                        if (_guidLastTarget == BotPoi.Current.Guid)
+                                            BotPoi.Clear("Clearing Blacklisted BotPoi");
+                                        Me.ClearTarget();
+                                    }
+
+                                }
+                            }
+                        }
                     }
 
                     return RunStatus.Failure;
                 });
 
+        }
+
+        private static void LogTargetChanges(BehaviorType behav, string sType)
+        {
+            if (!SingularSettings.Debug)
+                return;
+
+            string info = "";
+            WoWUnit target = Me.CurrentTarget;
+
+            if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
+                info += string.Format(", IsBotPoi={0}", Styx.CommonBot.POI.BotPoi.Current.Type);
+
+            if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
+                info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
+
+            Logger.WriteDebug(sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostil={6}, faction={7}, loss={8}, face={9}, agro={10}" + info,
+                target.SafeName(),
+                target.HealthPercent,
+                target.MaxHealth,
+                target.Distance,
+                target.CombatReach,
+                target.IsPlayer.ToYN(),
+                target.IsHostile.ToYN(),
+                target.FactionId,
+                target.InLineOfSpellSight.ToYN(),
+                Me.IsSafelyFacing(target).ToYN(),
+                target.Aggro.ToYN() + (!Me.GotAlivePet ? "" : ", pagro=" + target.PetAggro.ToYN())
+                );
         }
 
         private static int _prevPullDistance = -1;

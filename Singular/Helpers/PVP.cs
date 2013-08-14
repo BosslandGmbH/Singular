@@ -52,19 +52,20 @@ namespace Singular.Helpers
 
         public static bool IsStunned(this WoWUnit unit)
         {
-            return unit.HasAuraWithMechanic(WoWSpellMechanic.Stunned, WoWSpellMechanic.Incapacitated);
+            // return unit.HasAuraWithMechanic(WoWSpellMechanic.Stunned, WoWSpellMechanic.Incapacitated);
+            return unit.Stunned || unit.HasAuraWithEffect(WoWApplyAuraType.ModStun);
         }
 
         public static bool IsRooted(this WoWUnit unit)
         {
-            return unit.HasAuraWithMechanic(WoWSpellMechanic.Rooted, WoWSpellMechanic.Shackled);
+            // return unit.HasAuraWithMechanic(WoWSpellMechanic.Rooted, WoWSpellMechanic.Shackled);
+            return unit.Rooted || unit.HasAuraWithEffect(WoWApplyAuraType.ModRoot);
         }
 
         public static bool IsSilenced(WoWUnit unit)
         {
-            return unit.GetAllAuras().Any(a => a.IsHarmful &&
-                (a.Spell.Mechanic == WoWSpellMechanic.Interrupted || 
-                a.Spell.Mechanic == WoWSpellMechanic.Silenced));
+            // return unit.Silenced || unit.GetAllAuras().Any(a => a.IsHarmful && (a.Spell.Mechanic == WoWSpellMechanic.Interrupted || a.Spell.Mechanic == WoWSpellMechanic.Silenced));
+            return unit.Silenced || unit.HasAuraWithEffect(WoWApplyAuraType.ModSilence, WoWApplyAuraType.ModPacifySilence);
         }
 
         public static bool IsSlowed(this WoWUnit unit)

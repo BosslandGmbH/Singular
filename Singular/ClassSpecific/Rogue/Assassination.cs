@@ -171,8 +171,6 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             ),
 
-                        Common.CreateRogueMoveBehindTarget(),
-
                         Spell.Cast("Garrote", ret => Common.IsStealthed && Me.CurrentTarget.MeIsBehind),
                         Spell.Buff("Vendetta",  ret => Me.CurrentTarget.IsBoss() &&  (Me.CurrentTarget.HealthPercent < 35 || TalentManager.IsSelected(13))),
 
@@ -182,7 +180,9 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Dispatch"),
 
                         Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
-                        Spell.Cast("Mutilate")
+                        Spell.Cast("Mutilate"),
+
+                        Common.CreateRogueMoveBehindTarget()
                         )
                     )
                 );

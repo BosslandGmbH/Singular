@@ -215,7 +215,8 @@ namespace Singular.ClassSpecific.Warlock
                             ret => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.IsWithinMeleeRange),
                             new PrioritySelector(
                                 Spell.BuffSelf("Blood Horror", ret => Me.HealthPercent > 20),
-                                Spell.BuffSelf("Whiplash")
+                                Spell.BuffSelf("Whiplash"),
+                                CreateVoidwalkerDisarm()
                                 )
                             ),
 
@@ -282,7 +283,7 @@ namespace Singular.ClassSpecific.Warlock
                             ret => Me.HealthPercent < WarlockSettings.DrainLifePercentage && !Group.AnyHealerNearby,
                             new Sequence(
                                 new PrioritySelector(
-                                    CreateCastSoulburn( ret => SpellManager.CanCast("Drain Life", Me.CurrentTarget, true, false)),
+                                    CreateCastSoulburn( ret => Spell.CanCastHack("Drain Life", Me.CurrentTarget)),
                                     new ActionAlwaysSucceed()
                                     ),
                                 Spell.Cast("Drain Life")
@@ -363,7 +364,7 @@ namespace Singular.ClassSpecific.Warlock
                 ret => !SingularSettings.Instance.DisablePetUsage
                     && !Me.HasAura( "Grimoire of Sacrifice")        // don't summon pet if this buff active
                     && GetBestPet() != GetCurrentPet()
-                    && SpellManager.CanCast( "Summon Imp"), 
+                    && Spell.CanCastHack( "Summon Imp"), 
 
                 new Sequence(
                     // wait for possible auto-spawn if supposed to have a pet and none present
@@ -429,7 +430,7 @@ namespace Singular.ClassSpecific.Warlock
                                             Logger.WriteDebug("CreateWarlockSummonPet:  no shards so instant pet summon not available");
                                         else if (!Me.Combat && !Unit.NearbyUnfriendlyUnits.Any(u => u.Combat || u.IsPlayer))
                                             Logger.WriteDebug("CreateWarlockSummonPet:  not in combat and no imminent danger nearby, so saving shards");
-                                        else if (!SpellManager.CanCast("Soulburn", Me, false, false))
+                                        else if (!Spell.CanCastHack("Soulburn", Me))
                                             Logger.WriteDebug("soulburn not available, shards={0}", Me.CurrentSoulShards);
                                         else
                                         {
@@ -457,6 +458,17 @@ namespace Singular.ClassSpecific.Warlock
                             )
                         )
                     )
+                );
+        }
+
+        public static Composite CreateVoidwalkerDisarm()
+        {
+            if (!WarlockSettings.UseDisarm || GetBestPet() != WarlockPet.Voidwalker)
+                return new ActionAlwaysFail();
+
+            return new Decorator(
+                req => GetCurrentPet() == WarlockPet.Voidwalker,
+                PetManager.CastAction( "Disarm", on => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.IsWithinMeleeRange && !Me.CurrentTarget.Disarmed && !Me.CurrentTarget.IsCrowdControlled() && Me.IsSafelyFacing(u, 150)))
                 );
         }
 
@@ -600,7 +612,7 @@ namespace Singular.ClassSpecific.Warlock
             }
 
             return new Decorator(
-                ret => onUnit(ret) != null && onUnit(ret).IsDead && SpellManager.CanCast( "Soulstone", onUnit(ret), true, true),
+                ret => onUnit(ret) != null && onUnit(ret).IsDead && Spell.CanCastHack( "Soulstone", onUnit(ret)),
                 new Sequence(
                     new Action( r => _targetRez = onUnit(r)),
                     new PrioritySelector(
@@ -672,7 +684,7 @@ namespace Singular.ClassSpecific.Warlock
                         CreateCastSoulburn(ret => {
                             if (Me.Specialization == WoWSpec.WarlockAffliction)
                             {
-                                if (Me.CurrentSoulShards > 0 && SpellManager.CanCast("Soulburn", Me, false, false))
+                                if (Me.CurrentSoulShards > 0 && Spell.CanCastHack("Soulburn", Me))
                                 {
                                     Logger.WriteDebug("Soulburn should follow to make instant health funnel");
                                     return true;
@@ -688,7 +700,7 @@ namespace Singular.ClassSpecific.Warlock
                             new Wait( 1, until => !Me.IsMoving, new ActionAlwaysSucceed() )
                             )
                         ),
-                    new Decorator( ret => SpellManager.CanCast( "Health Funnel", Me.Pet), new ActionAlwaysSucceed()),
+                    new Decorator( ret => Spell.CanCastHack( "Health Funnel", Me.Pet), new ActionAlwaysSucceed()),
                     new Action(ret => Logger.WriteDebug("Casting Health Funnel on Pet @ {0:F1}%", Me.Pet.HealthPercent)),
                     new PrioritySelector(
                         Spell.Cast(ret => "Health Funnel", mov => false, on => Me.Pet, req => Me.HasAura( "Soulburn") || TalentManager.HasGlyph("Health Funnel")),

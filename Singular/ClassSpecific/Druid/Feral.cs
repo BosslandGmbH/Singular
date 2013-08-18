@@ -429,7 +429,7 @@ namespace Singular.ClassSpecific.Druid
                                     ),
 
                                 new Decorator(
-                                    ret => DruidSettings.FeralSpellPriority != 1,
+                                    ret => DruidSettings.FeralSpellPriority != Singular.Settings.DruidSettings.SpellPriority.Noxxic,
                                     new PrioritySelector(
                                         // 5b. made a higher priority to prioritize consuming Omen of Clarity with Thrash if needed
                                         CastThrash( on => Me.CurrentTarget, req => Me.HasAura("Clearcasting")),
@@ -471,7 +471,7 @@ namespace Singular.ClassSpecific.Druid
                                     ),
 
                                 new Decorator(
-                                    ret => DruidSettings.FeralSpellPriority == 1,
+                                    ret => DruidSettings.FeralSpellPriority == Singular.Settings.DruidSettings.SpellPriority.Noxxic,
                                     new PrioritySelector(
 
                                         // spend Combo Points

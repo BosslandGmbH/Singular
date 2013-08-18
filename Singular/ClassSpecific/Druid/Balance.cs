@@ -247,13 +247,11 @@ namespace Singular.ClassSpecific.Druid
 
                                 Spell.Cast("Starfall"),
 
-                                Spell.Cast("Moonfire",
-                                    ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
-                                                u.Combat && !u.IsCrowdControlled() && u.HasAuraExpired("Moonfire", 2))),
-
-                                Spell.Cast("Sunfire",
-                                    ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
-                                                u.Combat && !u.IsCrowdControlled() && !u.HasAuraExpired("Sunfire", 2)))
+                                new PrioritySelector(
+                                    ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
+                                    Spell.Cast("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
+                                    Spell.Cast("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2)))
+                                    )
                                 )
                             ),
 
@@ -430,13 +428,11 @@ namespace Singular.ClassSpecific.Druid
 
                                 Spell.Cast("Starfall", ret => StyxWoW.Me),
 
-                                Spell.Cast("Moonfire",
-                                    ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
-                                                u.Combat && !u.IsCrowdControlled() && !u.HasMyAura("Moonfire"))),
-
-                                Spell.Cast("Sunfire",
-                                    ret => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u =>
-                                                u.Combat && !u.IsCrowdControlled() && !u.HasMyAura("Sunfire")))
+                                new PrioritySelector(
+                                    ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
+                                    Spell.Cast("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
+                                    Spell.Cast("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2)))
+                                    )
                                 )
                             ),
 
@@ -457,8 +453,8 @@ namespace Singular.ClassSpecific.Druid
                             ret => Me.HasAura("Celestial Alignment"),
                             new PrioritySelector(
                                 // to do: make last two casts DoTs if possible... 
-                                Spell.Cast("Starsurge", ret => SpellManager.HasSpell("Starsurge")),
-                                Spell.Cast("Starfire", ret => SpellManager.HasSpell("Starfire"))
+                                Spell.Cast("Starsurge"),
+                                Spell.Cast("Starfire")
                                 )
                             ),
 
@@ -547,52 +543,6 @@ namespace Singular.ClassSpecific.Druid
 
         #endregion
 
-
-        #region Diagnostics
-
-        private static Composite CreateBalanceDiagnosticOutputBehavior()
-        {
-            if (!SingularSettings.Debug)
-                return new ActionAlwaysFail();
-
-            return new ThrottlePasses(1, 1,
-                new Action(ret =>
-                {
-                    string log;
-                    WoWAura eclips = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Eclipse (Solar)" || a.Name == "Eclipse (Lunar)");
-                    string eclipsString = eclips == null ? "None" : (eclips.Name == "Eclipse (Solar)" ? "Solar" : "Lunar");
-
-                    log = string.Format(".... h={0:F1}%/m={1:F1}%, form:{2}, eclps={3}, towards={4}, eclps#={5}, mushcnt={6}",
-                        Me.HealthPercent,
-                        Me.ManaPercent,
-                        Me.Shapeshift.ToString(),
-                        eclipsString,
-                        GetEclipseDirection().ToString(),
-                        Me.CurrentEclipse,
-                        MushroomCount
-                        );
-
-                    WoWUnit target = Me.CurrentTarget;
-                    if (target != null)
-                    {
-                        log += string.Format(", th={0:F1}%/tm={1:F1}%, dist={2:F1}, face={3}, loss={4}, sfire={5}, mfire={6}",
-                            target.HealthPercent,
-                            target.ManaPercent,
-                            target.Distance,
-                            Me.IsSafelyFacing(target),
-                            target.InLineOfSpellSight,
-                            (long)target.GetAuraTimeLeft("Sunfire", true).TotalMilliseconds,
-                            (long)target.GetAuraTimeLeft("Moonfire", true).TotalMilliseconds
-                            );
-                    }
-
-                    Logger.WriteDebug(Color.AntiqueWhite, log);
-                    return RunStatus.Failure;
-                })
-                );
-        }
-
-        #endregion
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
         public static Composite CreateBalancePreCombatBuffBattlegrounds()
@@ -767,6 +717,52 @@ namespace Singular.ClassSpecific.Druid
                 );
 
         }
+
+        #region Diagnostics
+
+        private static Composite CreateBalanceDiagnosticOutputBehavior()
+        {
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
+
+            return new ThrottlePasses(1, 1,
+                new Action(ret =>
+                {
+                    string log;
+                    WoWAura eclips = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Eclipse (Solar)" || a.Name == "Eclipse (Lunar)");
+                    string eclipsString = eclips == null ? "None" : (eclips.Name == "Eclipse (Solar)" ? "Solar" : "Lunar");
+
+                    log = string.Format(".... h={0:F1}%/m={1:F1}%, form:{2}, eclps={3}, towards={4}, eclps#={5}, mushcnt={6}",
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        Me.Shapeshift.ToString(),
+                        eclipsString,
+                        GetEclipseDirection().ToString(),
+                        Me.CurrentEclipse,
+                        MushroomCount
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
+                    {
+                        log += string.Format(", th={0:F1}%/tm={1:F1}%, dist={2:F1}, face={3}, loss={4}, sfire={5}, mfire={6}",
+                            target.HealthPercent,
+                            target.ManaPercent,
+                            target.Distance,
+                            Me.IsSafelyFacing(target),
+                            target.InLineOfSpellSight,
+                            (long)target.GetAuraTimeLeft("Sunfire", true).TotalMilliseconds,
+                            (long)target.GetAuraTimeLeft("Moonfire", true).TotalMilliseconds
+                            );
+                    }
+
+                    Logger.WriteDebug(Color.AntiqueWhite, log);
+                    return RunStatus.Failure;
+                })
+                );
+        }
+
+        #endregion
     }
 
 }

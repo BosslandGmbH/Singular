@@ -29,12 +29,19 @@ namespace Singular.Settings
         }
 
         #region Protection
+
+        public enum SpellPriority
+        {
+            Noxxic = 1,
+            IcyVeins = 2,
+            ElitistJerks = 3
+        }
+
         [Setting]
-        [DefaultValue(1)]
+        [DefaultValue(SpellPriority.Noxxic)]
         [Category("Arms")]
         [DisplayName("Spell Priority Selection")]
-        [Description("1:Noxxic, 2:IcyVeins")]
-        public int ArmsSpellPriority { get; set; }
+        public SpellPriority ArmsSpellPriority { get; set; }
 
         [Setting]
         [DefaultValue(50)]

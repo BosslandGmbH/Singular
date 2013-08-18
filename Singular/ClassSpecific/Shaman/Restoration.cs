@@ -484,10 +484,10 @@ namespace Singular.ClassSpecific.Shaman
                                             Logger.WriteDebug("UE+HR - FAILED - Healing Target object became invalid");
                                         else if (((WoWUnit)ret).Distance > 40)
                                             Logger.WriteDebug("UE+HR - FAILED - Healing Target moved out of range");
-                                        else if (!SpellManager.CanCast("Healing Rain"))
-                                            Logger.WriteDebug("UE+HR - FAILED - SpellManager.CanCast() said NO to Healing Rain");
+                                        else if (!Spell.CanCastHack("Healing Rain"))
+                                            Logger.WriteDebug("UE+HR - FAILED - Spell.CanCastHack() said NO to Healing Rain");
                                         else if (Styx.WoWInternals.World.GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ((WoWUnit)ret).Location))
-                                            Logger.WriteDebug("UE+HR - FAILED - SpellManager.CanCast() unit location not in Line of Sight");
+                                            Logger.WriteDebug("UE+HR - FAILED - Spell.CanCastHack() unit location not in Line of Sight");
                                         else if (Spell.IsSpellOnCooldown("Healing Rain"))
                                             Logger.WriteDebug("UE+HR - FAILED - Healing Rain is on cooldown");
                                         else

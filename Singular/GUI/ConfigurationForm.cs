@@ -15,6 +15,7 @@ using Styx;
 using Styx.CommonBot;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using Styx.CommonBot.POI;
 
 namespace Singular.GUI
 {
@@ -93,7 +94,7 @@ namespace Singular.GUI
 
             pgHotkeys.SelectedObject = SingularSettings.Instance.Hotkeys();
 
-            chkDebugLogging.Checked = SingularSettings.Instance.EnableDebugLogging;
+            // chkDebugLogging.Checked = SingularSettings.Instance.EnableDebugLogging;
             chkDebugSpellCanCast.Checked = SingularSettings.Instance.EnableDebugLoggingCanCast;
             // chkDebugTrace.Checked = SingularSettings.Instance.EnableDebugTrace;
 
@@ -208,7 +209,7 @@ namespace Singular.GUI
                     cboHealContext.SelectedIndex = 0;
             }
         }
-
+/*
         private void Instance_OnTargetListUpdateFinished(object context)
         {
             if (InvokeRequired)
@@ -227,6 +228,7 @@ namespace Singular.GUI
             }
             lblTargets.Text = sb.ToString();
 
+            if (HealerManager.Instance.t
             i = 0;
             sb = new StringBuilder();
             foreach (WoWUnit u in HealerManager.Instance.TargetList)
@@ -237,7 +239,7 @@ namespace Singular.GUI
             }
             lblHealTargets.Text = sb.ToString();
         }
-
+*/
 #pragma warning disable 168 // for ex below
 
         private void btnSaveAndClose_Click(object sender, EventArgs e)
@@ -245,7 +247,7 @@ namespace Singular.GUI
             try
             {
                 // deal with Debug tab controls individually
-                SingularSettings.Instance.EnableDebugLogging = chkDebugLogging.Checked;
+                // SingularSettings.Instance.EnableDebugLogging = chkDebugLogging.Checked;
                 SingularSettings.Instance.EnableDebugLoggingCanCast = chkDebugSpellCanCast.Checked;
                 // SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
                 Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
@@ -287,14 +289,30 @@ namespace Singular.GUI
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            int i = 0;
-            var sb = new StringBuilder();
-
             // exit quickly if Debug tab not displayed
             if (tabControl1.SelectedTab != tabDebug)
                 return;
 
+            // update POI
+            int i = 0;
+            var sb = new StringBuilder();
+            // poitype   distance 
+            sb.Append( BotPoi.Current.Type.ToString());
+            WoWObject o;
+            try {
+                o = BotPoi.Current.AsObject;
+            }
+            catch {
+                o = null;
+            }
+
+            if (o != null)
+                sb.Append(" @ " + o.Distance.ToString("F1") + " yds - " + o.SafeName());
+            lblPoi.Text = sb.ToString();
+
             // update list of Targets
+            i = 0;
+            sb = new StringBuilder();
             foreach (WoWUnit u in Targeting.Instance.TargetList)
             {
                 try
@@ -312,28 +330,28 @@ namespace Singular.GUI
             }
             lblTargets.Text = sb.ToString();
 
-            if (!HealerManager.NeedHealTargeting)
-                return;
-
             // update list of Heal Targets
-            i = 0;
-            sb = new StringBuilder();
-            foreach (WoWUnit u in HealerManager.Instance.TargetList)
+            if (HealerManager.NeedHealTargeting)
             {
-                try
+                i = 0;
+                sb = new StringBuilder();
+                foreach (WoWUnit u in HealerManager.Instance.TargetList)
                 {
-                    sb.AppendLine(u.SafeName().AlignLeft(22) + "- " + u.HealthPercent.ToString("F1").AlignRight(5) + "% @ " + u.Distance.ToString("F1").AlignRight(5) + " yds");
-                    if (++i == 5)
-                        break;
+                    try
+                    {
+                        sb.AppendLine(u.SafeName().AlignLeft(22) + "- " + u.HealthPercent.ToString("F1").AlignRight(5) + "% @ " + u.Distance.ToString("F1").AlignRight(5) + " yds");
+                        if (++i == 5)
+                            break;
+                    }
+                    catch (System.AccessViolationException)
+                    {
+                    }
+                    catch (Styx.InvalidObjectPointerException)
+                    {
+                    }
                 }
-                catch (System.AccessViolationException)
-                {
-                }
-                catch (Styx.InvalidObjectPointerException)
-                {
-                }
+                lblHealTargets.Text = sb.ToString();
             }
-            lblHealTargets.Text = sb.ToString();
         }
 
         // private int lastTried = 0;
@@ -341,7 +359,6 @@ namespace Singular.GUI
         private void button1_Click(object sender, EventArgs e)
         {
             ObjectManager.Update();
-            SpellManager.CanCast("Evasion");
             Logger.Write("Current target is immune to frost? {0}", StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost));
             //var val = Enum.GetValues(typeof(WoWMovement.ClickToMoveType)).GetValue(lastTried++);
             //WoWMovement.ClickToMove(StyxWoW.Me.CurrentTargetGuid, (WoWMovement.ClickToMoveType)val);
@@ -388,6 +405,11 @@ namespace Singular.GUI
                 SetLabelColumnWidth(pgGeneral, 205);
             else if (tabControl1.SelectedIndex == 1)
                 SetLabelColumnWidth(pgClass, 205);
+        }
+
+        private void groupBox2_Enter(object sender, EventArgs e)
+        {
+
         }
 
 /*

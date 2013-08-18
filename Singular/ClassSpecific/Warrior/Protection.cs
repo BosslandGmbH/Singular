@@ -101,21 +101,26 @@ namespace Singular.ClassSpecific.Warrior
                                 )
                             ),
 
+                        new Decorator(
+                            req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                            new PrioritySelector(
                         // Symbiosis
 
-                        new Decorator(
-                            ret => Me.GotTarget && (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3)),
-                            new PrioritySelector(
-                                Spell.OffGCD( Spell.Cast("Recklessness")),
-                                Spell.OffGCD( Spell.Cast("Skull Banner")),
-                // Spell.Cast("Demoralizing Banner", ret => !Me.CurrentTarget.IsBoss() && UseAOE),
-                                Spell.OffGCD( Spell.Cast("Avatar"))
-                                )
-                            ),
+                                new Decorator(
+                                    ret => Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3),
+                                    new PrioritySelector(
+                                        Spell.OffGCD( Spell.Cast("Recklessness")),
+                                        Spell.OffGCD( Spell.Cast("Skull Banner")),
+                        // Spell.Cast("Demoralizing Banner", ret => !Me.CurrentTarget.IsBoss() && UseAOE),
+                                        Spell.OffGCD( Spell.Cast("Avatar"))
+                                        )
+                                    ),
 
-                        // cast above rage dump so we are sure have rage to do damage
-                        Spell.Cast("Bloodbath"),
-                        Spell.Cast("Berserker Rage")
+                                Spell.Cast("Bloodbath"),
+                                Spell.Cast("Berserker Rage")
+                                )
+                            )
+
                 // new Action(ret => { UseTrinkets(); return RunStatus.Failure; }),
                 // Spell.Cast("Deadly Calm", ret => TalentManager.HasGlyph("Incite") || Me.CurrentRage >= RageDump)
                         )

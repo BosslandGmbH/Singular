@@ -73,8 +73,8 @@ namespace Singular.ClassSpecific.Warrior
                         Common.CreateWarriorEnragedRegeneration(),
 
                         new Decorator(
-                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal 
-                                && ( Me.CurrentTarget.IsPlayer || 4 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1)) || Me.CurrentTarget.TimeToDeath() > 40),
+                            ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
+                                && (Me.CurrentTarget.IsPlayer || 4 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1)) || Me.CurrentTarget.TimeToDeath() > 40),
                             new PrioritySelector(
                                 Spell.BuffSelf("Die by the Sword", req => Me.HealthPercent < 50),
                                 Spell.CastOnGround("Demoralizing Banner", on => Me.CurrentTarget, req => true, false),
@@ -86,7 +86,7 @@ namespace Singular.ClassSpecific.Warrior
 
                         Spell.BuffSelf("Rallying Cry", req => !Me.IsInGroup() && Me.HealthPercent < 50),
 
-                        Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
+                        Spell.Cast("Recklessness", ret => (Spell.CanCastHack("Execute") || Common.Tier14FourPieceBonus) && (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
 
                         new Decorator(
                             ret => Me.CurrentTarget.IsBoss(),
@@ -99,12 +99,13 @@ namespace Singular.ClassSpecific.Warrior
 
                         Spell.Cast("Storm Bolt"),  // in normal rotation
 
-                        // Execute is up, so don't care just cast
-                        Spell.Cast("Berserker Rage", ret => Me.CurrentTarget.HealthPercent <= 20),
-
-                        // May get an Enrage off Mortal Strike + Colossus Smash pair, so try to avoid overlapping Enrages
-                        Spell.Cast("Berserker Rage", ret => !Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6),
-                        Spell.BuffSelf("Berserker Rage", ret => StyxWoW.Me.HasAuraWithMechanic(WoWSpellMechanic.Fleeing, WoWSpellMechanic.Sapped, WoWSpellMechanic.Incapacitated, WoWSpellMechanic.Horrified)),
+                        Spell.Cast("Berserker Rage", ret => {
+                            if (Me.CurrentTarget.HealthPercent <= 20)
+                                return true;
+                            if (!Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6)
+                                return true;
+                            return false;
+                            }),
 
                         Spell.BuffSelf(Common.SelectedShout)
 

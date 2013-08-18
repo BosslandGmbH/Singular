@@ -277,12 +277,13 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,
                 new Sequence(
+                    ctx => StyxWoW.Me.CurrentTarget,
                     new Action(ret =>
                     {
-                        MoveResult res = Navigator.MoveTo(StyxWoW.Me.CurrentTarget.Location);
-                        Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", res.ToString(), StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance);
+                        MoveResult result = Navigator.MoveTo(((WoWUnit)ret).Location);
+                        Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", result.ToString(), ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).Distance);
                     }),
-                    new Action(ret => StopMoving.InMeleeRangeOfUnit(StyxWoW.Me.CurrentTarget)),
+                    new Action(ret => StopMoving.InMeleeRangeOfUnit(((WoWUnit)ret))),
                     new ActionAlwaysFail()
                     )
                 );
@@ -495,7 +496,7 @@ namespace Singular.Helpers
 
         public static void Pulse()
         {
-            if ( Type == StopType.None )
+            if (Type == StopType.None || MovementManager.IsMovementDisabled)
                 return;
 
             bool stopMovingNow;

@@ -89,7 +89,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         // Noxxic
                         new Decorator(
-                            req => WarlockSettings.DestructionSpellPriority == 1,
+                            req => WarlockSettings.DestructionSpellPriority == Singular.Settings.WarlockSettings.SpellPriority.Noxxic,
                             new PrioritySelector(
                                 Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
                                 Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
@@ -105,7 +105,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         // Icy Veins
                         new Decorator(
-                            req => WarlockSettings.DestructionSpellPriority != 1,
+                            req => WarlockSettings.DestructionSpellPriority == Singular.Settings.WarlockSettings.SpellPriority.IcyVeins,
                             new PrioritySelector(
                                 Spell.Cast("Shadowburn", ret =>
                                 {

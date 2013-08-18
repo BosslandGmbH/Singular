@@ -105,7 +105,7 @@ namespace Singular.ClassSpecific
                     new PrioritySelector(
                         new Decorator(
                             ret => {
-                                if ( !SpellManager.CanCast("Stoneform") )
+                                if ( !Spell.CanCastHack("Stoneform") )
                                     return false;
                                 if ( StyxWoW.Me.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Bleeding || a.Spell.DispelType == WoWDispelType.Disease || a.Spell.DispelType == WoWDispelType.Poison))
                                     return true;
@@ -147,7 +147,7 @@ namespace Singular.ClassSpecific
             if ( !SingularSettings.Instance.ShadowmeldThreatDrop || StyxWoW.Me.Race != WoWRace.NightElf )
                 return false;
 
-            if ( !SpellManager.CanCast("Shadowmeld") )
+            if ( !Spell.CanCastHack("Shadowmeld") )
                 return false;
 
             if (StyxWoW.Me.IsInGroup())

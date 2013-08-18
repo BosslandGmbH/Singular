@@ -845,7 +845,7 @@ namespace Singular.Helpers
                             RunStatus runStat = RunStatus.Failure;
 
                             _castOnUnit = onUnit(ret);
-                            // if (_castOnUnit == null || !requirements(ret) || !SpellManager.CanCast(spellId(ret), _castOnUnit, true))
+                            // if (_castOnUnit == null || !requirements(ret) || !Spell.CanCastHack(spellId(ret), _castOnUnit, true))
                             if (_castOnUnit != null && requirements(ret))
                             {
                                 _castSpell = WoWSpell.FromId(spellId(ret));
@@ -1389,7 +1389,7 @@ namespace Singular.Helpers
                                 }
 
                                 // check we can cast it on target without checking for movement
-                                // if (!SpellManager.CanCast(_spell, _castOnUnit, true, false, allow == LagTolerance.Yes))
+                                // if (!Spell.CanCastHack(_spell, _castOnUnit, true, false, allow == LagTolerance.Yes))
                                 if (!CanCastHack(name(ret), _castOnUnit, skipWowCheck))
                                 {
                                     if (SingularSettings.Instance.EnableDebugLoggingGCD)
@@ -1596,7 +1596,7 @@ namespace Singular.Helpers
                 else if (Me.Class == WoWClass.Mage)
                     spell = "Ice Floes";
 
-                if (spell != null && CanCastHack(spell, Me)) // SpellManager.CanCast(spell, Me))
+                if (spell != null && CanCastHack(spell, Me)) // Spell.CanCastHack(spell, Me))
                 {
                     LogCast(spell, Me);
                     allowMovingWhileCasting = SpellManager.Cast(spell, Me);
@@ -1757,6 +1757,11 @@ namespace Singular.Helpers
 
         #region Cast Hack - allows casting spells that CanCast returns False
 
+        public static bool CanCastHack(string castName)
+        {
+            return CanCastHack(castName, Me.CurrentTarget, skipWowCheck: false);
+        }
+
         /// <summary>
         /// CastHack following done because CanCast() wants spell as "Metamorphosis: Doom" while Cast() and aura name are "Doom"
         /// </summary>
@@ -1772,7 +1777,7 @@ namespace Singular.Helpers
                 // Logger.WriteDebug("CanCast: spell [{0}] not known", castName);
                 return false;
             }
-
+ 
             WoWSpell spell = sfr.Override ?? sfr.Original;
             
             // check range
@@ -1857,6 +1862,17 @@ namespace Singular.Helpers
                 if (SingularSettings.Instance.EnableDebugLoggingCanCast)
                     Logger.WriteDebug("CanCast[{0}]: insufficient power (need {1:F0}, have {2:F0} {3})", castName, spell.PowerCost, currentPower, formSwitch ? "Mana in Form" : Me.PowerType.ToString() );
                 return false;
+            }
+
+            if (SingularSettings.Instance.DisableSpellsWithCooldown != 0)
+            {
+                int baseCooldown = GetBaseCooldown(spell);
+                if (baseCooldown >= SingularSettings.Instance.DisableSpellsWithCooldown * 1000)
+                {
+                    if (SingularSettings.Instance.EnableDebugLoggingCanCast)
+                        Logger.WriteDebug("CanCast[{0}]: basecooldown of {0} exceeds max allowed user setting of {1} ms", baseCooldown, SingularSettings.Instance.DisableSpellsWithCooldown * 1000);
+                    return false;
+                }
             }
 
             // override spell will sometimes always have cancast=false, so check original also
@@ -2033,6 +2049,11 @@ namespace Singular.Helpers
             return charges;
         }
 
+        public static int GetBaseCooldown(WoWSpell spell)
+        {
+            int cd = Lua.GetReturnVal<int>("return GetSpellBaseCooldown(" + spell.Id.ToString() + ")", 0);
+            return cd;
+        }
     }
 
 #if SPELL_BLACKLIST_WERE_NEEDED

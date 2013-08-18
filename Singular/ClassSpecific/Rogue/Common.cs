@@ -134,7 +134,7 @@ namespace Singular.ClassSpecific.Rogue
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
                 CreateStealthBehavior( ret => Me.GotTarget && !Unit.IsTrivial(Me.CurrentTarget) && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 99 )),
                 Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0 && Me.ComboPointsTarget != Me.CurrentTargetGuid ),
-                Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !SpellManager.CanCast("Redirect"))),
+                Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !Spell.CanCastHack("Redirect"))),
                 new Throttle( 1,
                     new Decorator(
                         req => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.GotTarget,
@@ -546,7 +546,7 @@ namespace Singular.ClassSpecific.Rogue
                     new Decorator( 
                         ret => !IsStealthed 
                             && SpellManager.HasSpell("Pick Lock") 
-                            && SpellManager.CanCast("Pick Lock", Me, false, true)
+                            && Spell.CanCastHack("Pick Lock", Me)
                             && AutoLootIsEnabled(),
                         new Sequence(
                             new Action( r => { box = FindLockedBox();  return box == null ? RunStatus.Failure : RunStatus.Success; }),

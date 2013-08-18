@@ -28,7 +28,7 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
                         && (Me.GetPredictedHealthPercent(true) < SingularSettings.Instance.MinHealth || (Me.Shapeshift == ShapeshiftForm.Normal && Me.GetPredictedHealthPercent(true) < 85))
-                        && ((Me.HasAuraExpired("Rejuvenation", 1) && SpellManager.CanCast("Rejuvenation", Me, false, false))),
+                        && ((Me.HasAuraExpired("Rejuvenation", 1) && Spell.CanCastHack("Rejuvenation", Me))),
                     new PrioritySelector(
                         new Action(r => { Logger.WriteDebug("Lowbie Druid Rest Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift); return RunStatus.Failure; }),
                         Spell.Cast("Rejuvenation", on => StyxWoW.Me, ret => StyxWoW.Me.HasAuraExpired("Rejuvenation", 1))

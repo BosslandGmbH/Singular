@@ -45,9 +45,7 @@
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.chkUseInstanceBehaviorsWhenSolo = new System.Windows.Forms.CheckBox();
             this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
-            this.button1 = new System.Windows.Forms.Button();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.chkDebugLogging = new System.Windows.Forms.CheckBox();
             this.chkDebugSpellCanCast = new System.Windows.Forms.CheckBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.lblTargets = new System.Windows.Forms.Label();
@@ -61,6 +59,8 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.lblPoi = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabClass.SuspendLayout();
@@ -73,6 +73,7 @@
             this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.grpFooter.SuspendLayout();
+            this.groupBox5.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -214,6 +215,7 @@
             // 
             this.tabDebug.Controls.Add(this.groupBox4);
             this.tabDebug.Controls.Add(this.groupBox3);
+            this.tabDebug.Controls.Add(this.groupBox5);
             this.tabDebug.Controls.Add(this.groupBox2);
             this.tabDebug.Controls.Add(this.groupBox1);
             this.tabDebug.Location = new System.Drawing.Point(4, 22);
@@ -228,10 +230,9 @@
             // 
             this.groupBox4.Controls.Add(this.chkUseInstanceBehaviorsWhenSolo);
             this.groupBox4.Controls.Add(this.ShowPlayerNames);
-            this.groupBox4.Controls.Add(this.button1);
-            this.groupBox4.Location = new System.Drawing.Point(165, 235);
+            this.groupBox4.Location = new System.Drawing.Point(165, 262);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(156, 94);
+            this.groupBox4.Size = new System.Drawing.Size(156, 74);
             this.groupBox4.TabIndex = 9;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Temporary Settings";
@@ -256,40 +257,20 @@
             this.ShowPlayerNames.Text = "Show Player Names";
             this.ShowPlayerNames.UseVisualStyleBackColor = true;
             // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(6, 63);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(116, 23);
-            this.button1.TabIndex = 10;
-            this.button1.Text = "Apoc\'s Debug Button";
-            this.button1.UseVisualStyleBackColor = true;
-            // 
             // groupBox3
             // 
-            this.groupBox3.Controls.Add(this.chkDebugLogging);
             this.groupBox3.Controls.Add(this.chkDebugSpellCanCast);
-            this.groupBox3.Location = new System.Drawing.Point(8, 235);
+            this.groupBox3.Location = new System.Drawing.Point(8, 262);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(151, 94);
+            this.groupBox3.Size = new System.Drawing.Size(151, 74);
             this.groupBox3.TabIndex = 8;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Debug Flags";
             // 
-            // chkDebugLogging
-            // 
-            this.chkDebugLogging.AutoSize = true;
-            this.chkDebugLogging.Location = new System.Drawing.Point(9, 21);
-            this.chkDebugLogging.Name = "chkDebugLogging";
-            this.chkDebugLogging.Size = new System.Drawing.Size(99, 17);
-            this.chkDebugLogging.TabIndex = 2;
-            this.chkDebugLogging.Text = "Debug Logging";
-            this.chkDebugLogging.UseVisualStyleBackColor = true;
-            // 
             // chkDebugSpellCanCast
             // 
             this.chkDebugSpellCanCast.AutoSize = true;
-            this.chkDebugSpellCanCast.Location = new System.Drawing.Point(9, 44);
+            this.chkDebugSpellCanCast.Location = new System.Drawing.Point(6, 20);
             this.chkDebugSpellCanCast.Name = "chkDebugSpellCanCast";
             this.chkDebugSpellCanCast.Size = new System.Drawing.Size(127, 17);
             this.chkDebugSpellCanCast.TabIndex = 3;
@@ -299,12 +280,13 @@
             // groupBox2
             // 
             this.groupBox2.Controls.Add(this.lblTargets);
-            this.groupBox2.Location = new System.Drawing.Point(8, 12);
+            this.groupBox2.Location = new System.Drawing.Point(8, 50);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(313, 104);
+            this.groupBox2.Size = new System.Drawing.Size(313, 87);
             this.groupBox2.TabIndex = 0;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Target List";
+            this.groupBox2.Enter += new System.EventHandler(this.groupBox2_Enter);
             // 
             // lblTargets
             // 
@@ -318,7 +300,7 @@
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.lblHealTargets);
-            this.groupBox1.Location = new System.Drawing.Point(8, 122);
+            this.groupBox1.Location = new System.Drawing.Point(8, 143);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(313, 104);
             this.groupBox1.TabIndex = 1;
@@ -413,6 +395,26 @@
             this.label1.TabIndex = 4;
             this.label1.Text = "Singular";
             // 
+            // groupBox5
+            // 
+            this.groupBox5.Controls.Add(this.lblPoi);
+            this.groupBox5.Location = new System.Drawing.Point(7, 6);
+            this.groupBox5.Name = "groupBox5";
+            this.groupBox5.Size = new System.Drawing.Size(313, 38);
+            this.groupBox5.TabIndex = 0;
+            this.groupBox5.TabStop = false;
+            this.groupBox5.Text = "BotPoi (Point of Interest)";
+            this.groupBox5.Enter += new System.EventHandler(this.groupBox2_Enter);
+            // 
+            // lblPoi
+            // 
+            this.lblPoi.AutoSize = true;
+            this.lblPoi.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblPoi.Location = new System.Drawing.Point(6, 16);
+            this.lblPoi.Name = "lblPoi";
+            this.lblPoi.Size = new System.Drawing.Size(0, 14);
+            this.lblPoi.TabIndex = 0;
+            // 
             // ConfigurationForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -445,6 +447,8 @@
             this.groupBox1.PerformLayout();
             this.grpFooter.ResumeLayout(false);
             this.grpFooter.PerformLayout();
+            this.groupBox5.ResumeLayout(false);
+            this.groupBox5.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -477,11 +481,11 @@
         private System.Windows.Forms.Button btnLogMark;
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.CheckBox chkDebugSpellCanCast;
-        private System.Windows.Forms.CheckBox chkDebugLogging;
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.CheckBox chkUseInstanceBehaviorsWhenSolo;
         private System.Windows.Forms.CheckBox ShowPlayerNames;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.GroupBox groupBox5;
+        private System.Windows.Forms.Label lblPoi;
     }
 }

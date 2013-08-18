@@ -286,7 +286,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.BuffSelf("Death's Advance",
                             ret => Common.HasTalent( DeathKnightTalents.DeathsAdvance) 
                                 && Me.GotTarget 
-                                && (!SpellManager.CanCast("Death Grip", false) || SingularRoutine.CurrentWoWContext == WoWContext.Instances) 
+                                && (!Spell.CanCastHack("Death Grip") || SingularRoutine.CurrentWoWContext == WoWContext.Instances) 
                                 && Me.CurrentTarget.DistanceSqr > 10 * 10),
 
                         Spell.BuffSelf("Blood Tap",
@@ -399,7 +399,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     && (Me.HealthPercent < 80 || Me.HasAuraExpired("Dark Succor", 3) || (Me.GotTarget && Me.CurrentTarget.TimeToDeath() < 6) 
                     && Me.CurrentTarget.InLineOfSpellSight 
                     && Me.IsSafelyFacing( Me.CurrentTarget)
-                    && SpellManager.CanCast("Death Strike", Me.CurrentTarget)),
+                    && Spell.CanCastHack("Death Strike", Me.CurrentTarget)),
                 new Sequence(
                     new Action( r => Logger.WriteDebug( Color.White, "Dark Succor ({0} ms left) influenced Death Strike coming....", (int) Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds  )),
                     Spell.Cast("Death Strike")
@@ -415,7 +415,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 // abilities that don't require Runes first
                     Spell.BuffSelf(
                         "Unholy Blight",
-                        ret => SpellManager.CanCast("Unholy Blight")
+                        ret => Spell.CanCastHack("Unholy Blight")
                             && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsPlayer || u.IsBoss()) && u.Distance < (u.MeleeDistance() + 5) && u.HasAuraExpired("Blood Plague"))),
 
                     Spell.Cast("Outbreak", ret => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague")),

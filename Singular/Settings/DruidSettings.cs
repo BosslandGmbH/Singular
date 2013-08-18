@@ -384,12 +384,18 @@ namespace Singular.Settings
 
         #region Feral
 
+        public enum SpellPriority
+        {
+            Noxxic = 1,
+            ElitistJerks = 3
+        }
+
+
         [Setting]
-        [DefaultValue(1)]
+        [DefaultValue(SpellPriority.Noxxic)]
         [Category("Feral")]
         [DisplayName("Instance Spell Priority")]
-        [Description("1:Noxxic, 2:Elitist Jerks")]
-        public int FeralSpellPriority { get; set; }
+        public SpellPriority FeralSpellPriority { get; set; }
 
 
         [Setting]

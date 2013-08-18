@@ -254,7 +254,7 @@ namespace Singular.Helpers
                 {
                     WoWUnit unit = GetPurgeEnemyTarget(spellName);
                     if (unit != null)
-                        Logger.WriteDebug("PurgeEnemy[{0}]:  found {1} has triggering aura, cancast={2}", spellName, unit.SafeName(), SpellManager.CanCast(spellName, unit));
+                        Logger.WriteDebug("PurgeEnemy[{0}]:  found {1} has triggering aura, cancast={2}", spellName, unit.SafeName(), Spell.CanCastHack(spellName, unit));
                     return unit;
                 },
                 ret => SingularSettings.Instance.PurgeTargets != CheckTargets.None

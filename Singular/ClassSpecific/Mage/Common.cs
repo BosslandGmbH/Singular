@@ -80,7 +80,7 @@ namespace Singular.ClassSpecific.Mage
                             ),
 
                         new Decorator(
-                            ctx => ShouldSummonTable && (!Gotfood || NeedTableForBattleground) && SpellManager.CanCast("Conjure Refreshment Table"),
+                            ctx => ShouldSummonTable && (!Gotfood || NeedTableForBattleground) && Spell.CanCastHack("Conjure Refreshment Table"),
                             new Sequence(
                                 new DecoratorContinue(
                                     ctx => StyxWoW.Me.IsMoving,
@@ -100,7 +100,7 @@ namespace Singular.ClassSpecific.Mage
                         Spell.BuffSelf("Conjure Mana Gem", ret => !HaveManaGem )
 /*
                         new Throttle( 1,
-                            new Decorator(ret => !HaveManaGem && SpellManager.CanCast("Conjure Mana Gem"),
+                            new Decorator(ret => !HaveManaGem && Spell.CanCastHack("Conjure Mana Gem"),
                                 new Sequence(
                                     new Action(ret => Logger.Write("Casting Conjure Mana Gem")),
                                     new Action(ret => SpellManager.Cast(759))
@@ -165,12 +165,8 @@ namespace Singular.ClassSpecific.Mage
                             Spell.BuffSelf("Temporal Shield"),
                             Spell.BuffSelf("Ice Barrier"),
                             Spell.BuffSelf("Incanter's Ward"),
-                            Spell.Cast("Evocation", on => Me, req => TalentManager.HasGlyph("Evocation"), cancel => false),
 
-                            new Decorator(
-                                req => !Me.HasAnyAura( "Invoker's Energy", "Incanter's Ward"),
-                                new Throttle( 8, Item.CreateUsePotionAndHealthstone(100, 0))
-                                )
+                            new Throttle( 8, Item.CreateUsePotionAndHealthstone(100, 0))
                             )
                         ),
 
@@ -190,9 +186,7 @@ namespace Singular.ClassSpecific.Mage
 
                     Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
-                    new Throttle( TimeSpan.FromMilliseconds(10000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => !Me.HasAura("Rune of Power"), false) ),
-
-                    //  Spell.CastOnGround("Rune of Power", loc => Me.Location.RayCast(Me.RenderFacing, 1.25f), ret => !Me.IsMoving),
+                    new Throttle( TimeSpan.FromMilliseconds(6000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => !Me.IsMoving && !Me.HasAura("Rune of Power"), false) ),
 
                     Spell.Cast("Nether Tempest", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Nether Tempest", 3)),
                     Spell.Cast("Living Bomb", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Living Bomb", 2)),
@@ -371,7 +365,7 @@ namespace Singular.ClassSpecific.Mage
                 on => {
                     WoWUnit unit = GetSpellstealTarget();
                     if (unit != null)
-                        Logger.WriteDebug("Spellsteal:  found {0} with a triggering aura, cancast={1}", unit.SafeName(), SpellManager.CanCast("Spellsteal", unit));
+                        Logger.WriteDebug("Spellsteal:  found {0} with a triggering aura, cancast={1}", unit.SafeName(), Spell.CanCastHack("Spellsteal", unit));
                     return unit;
                     },
                 ret => SingularSettings.Instance.DispelTargets != CheckTargets.None 
@@ -501,7 +495,7 @@ namespace Singular.ClassSpecific.Mage
                     new Decorator(
                         ret => _Armor != MageArmor.None
                             && !Me.HasMyAura(ArmorSpell(_Armor))
-                            && SpellManager.CanCast(ArmorSpell(_Armor), Me),
+                            && Spell.CanCastHack(ArmorSpell(_Armor), Me),
                         Spell.BuffSelf(s => ArmorSpell(_Armor), ret => !Me.HasAura(ArmorSpell(_Armor)))
                         )
                     )
@@ -651,29 +645,28 @@ namespace Singular.ClassSpecific.Mage
 
         #endregion
 
-    
-    public static bool NeedEvocation 
-    { 
-        get 
-        {
-            if (Me.ManaPercent < 30)
-                return true;
-
-            if (HasTalent(MageTalents.Invocation))
-                return Me.HasAuraExpired("Invoker's Energy", 1);
-
-            if (TalentManager.HasGlyph("Evocation"))
+        public static bool NeedEvocation 
+        { 
+            get 
             {
-                if (Me.HealthPercent < 40)
-                {
-                    if ( !HasTalent(MageTalents.RuneOfPower) || Me.HasAura("Rune of Power"))
-                    {
-                        return true;
-                    }
-                }
-            }
+                // never cast Evocation if we talent rune of power
+                if (HasTalent(MageTalents.RuneOfPower))
+                    return false;
 
-            return false;
+                // always evocate if low mana
+                if (Me.ManaPercent < 30)
+                    return true;
+
+                // for invocation talent, return true if buff has expired
+                bool hasInvocation = HasTalent(MageTalents.Invocation);
+                if ( hasInvocation)
+                    return Me.HasAuraExpired("Invoker's Energy", 1);
+
+                // if low health, return true if we are glyphed (made sure no invocation or rune of power talented chars reach here already)
+                if (Me.HealthPercent < 40)
+                    return TalentManager.HasGlyph("Evocation");
+
+                return false;
             }
         }
     }

@@ -387,6 +387,22 @@ namespace Singular.ClassSpecific.Monk
             return target;
         }
 
+        public static Composite CreateCloseDistanceBehavior()
+        {
+            return new Throttle(TimeSpan.FromMilliseconds(1500),
+                new Decorator(
+                    ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.SpellDistance() > 10 && Me.IsSafelyFacing(Me.CurrentTarget, 10f),
+                    new Sequence(
+                        new PrioritySelector(
+                            Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
+                            Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAnyAura("Flying Serpent Kick"))
+                            )
+                        )
+                    )
+                );
+
+        }
+
         private static Composite CreateWindwalkerDiagnosticBehavior()
         {
             return new ThrottlePasses( 1, 1,

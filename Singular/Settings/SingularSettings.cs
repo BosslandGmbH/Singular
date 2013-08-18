@@ -11,6 +11,8 @@ using System.Reflection;
 using System;
 using System.Collections.Generic;
 using Singular.Helpers;
+using Styx.CommonBot;
+using Styx.WoWInternals;
 
 namespace Singular.Settings
 {
@@ -142,6 +144,29 @@ namespace Singular.Settings
             Logger.WriteFile("  {0}: {1}", "DisableAllTargeting", SingularSettings.DisableAllTargeting.ToYN());
             Logger.WriteFile("  {0}: {1}", "TrivialHealth", Unit.TrivialHealth());
             Logger.WriteFile("");
+
+            if (DisableSpellsWithCooldown == 0)
+                Logger.WriteFile("No spells blocked by DisableSpellsWithCooldown");
+            else if (!Debug)
+                Logger.WriteFile("Spells with cooldown more than {0} secs Blocked by DisableSpellsWithCooldown", DisableSpellsWithCooldown);
+            else
+            {
+                int maxcd = DisableSpellsWithCooldown * 1000;
+                Logger.WriteFile("====== Spells Blocked by DisableSpellsWithCooldown  ======");
+
+                using (StyxWoW.Memory.AcquireFrame())
+                {
+                    foreach (WoWSpell spell in SpellManager.Spells.OrderBy(s => s.Key).Select(s => s.Value))
+                    {
+                        int cd = Spell.GetBaseCooldown(spell);
+                        if (cd >= maxcd)
+                        {
+                            Logger.WriteFile("  {0} {1}", (cd / 1000).ToString().AlignRight(4), spell.Name);
+                        }
+                    }
+                }
+                Logger.WriteFile(" ");
+            }
         }
 
         public void LogSettings(string desc, Styx.Helpers.Settings set)
@@ -183,7 +208,7 @@ namespace Singular.Settings
         {
             get
             {
-                return SingularSettings.Instance.EnableDebugLogging || (GlobalSettings.Instance.LogLevel >= DebugLogLevel);
+                return GlobalSettings.Instance.LogLevel >= DebugLogLevel;
             }
         }
 
@@ -209,7 +234,7 @@ namespace Singular.Settings
         }
 
         #region Category: Debug
-
+/*
         [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
@@ -217,7 +242,7 @@ namespace Singular.Settings
         [DisplayName("Debug Logging")]
         [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
         public bool EnableDebugLogging { get; set; }
-
+*/
         [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
@@ -372,6 +397,13 @@ namespace Singular.Settings
         [Description("Kite if this many mobs in melee range")]
         public int KiteMobCount { get; set; }
 
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Avoidance")]
+        [DisplayName("Jump Turn while Kiting")]
+        [Description("Perform jump turn attack while kiting (only supported by Hunter presently)")]
+        public bool JumpTurnAllow { get; set; }
+
         #endregion
 
         #region Category: General
@@ -403,6 +435,13 @@ namespace Singular.Settings
         [DisplayName("Disable in Quest Vehicle")]
         [Description("True: Singular ignore calls from Questing Bot if in a Quest Vehicle; False: Singular tries to fight/heal when Questing Bot asks it to.")]
         public bool DisableInQuestVehicle { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("General")]
+        [DisplayName("Disable Spells with Cooldown (secs)")]
+        [Description("Do not cast any spell with this cooldown or greater; 0 will cast all spells regardless of cooldown")]
+        public int DisableSpellsWithCooldown { get; set; }
 
         #endregion
 
@@ -462,7 +501,7 @@ namespace Singular.Settings
         public bool IncludePetsAsHealTargets { get; set; }
 
         [Setting]
-        [DefaultValue(RelativePriority.HighPriority)]
+        [DefaultValue(RelativePriority.LowPriority )]
         [Category("Group Healing/Support")]
         [DisplayName("Dispel Debufs")]
         [Description("Dispel harmful debuffs")]

@@ -26,8 +26,6 @@ namespace Singular.ClassSpecific.Hunter
     {
         #region Common
 
-        private static bool NeedToCheckPetGrowlAutoCast { get; set; }
-
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WoWUnit Pet { get { return StyxWoW.Me.Pet; } }
         private static WoWUnit Target { get { return StyxWoW.Me.CurrentTarget; } }
@@ -72,61 +70,6 @@ namespace Singular.ClassSpecific.Hunter
                 return 0;
             }
         }
-
-        #endregion
-
-        #region Manage Growl for Instances
-
-        static Common()
-        {           
-            // Lets hook this event so we can disable growl
-            SingularRoutine.OnWoWContextChanged += Hunter_OnWoWContextChanged;
-        }
-
-        static void Hunter_OnWoWContextChanged(object sender, WoWContextEventArg e)
-        {
-            NeedToCheckPetGrowlAutoCast = true;
-        }
-
-        static Composite CreatePetHandleGrowlAutoCast()
-        {
-            return new Decorator(
-                req => NeedToCheckPetGrowlAutoCast && Me.GotAlivePet,
-                new Action(ret =>
-                {
-                    bool allowed;
-                    bool active = PetManager.IsAutoCast(2649, out allowed);
-
-                    // Disable pet growl in instances but enable it outside.
-                    if (!allowed)
-                        Logger.Write(Color.White, "Pet: Growl is NOT an auto-cast ability for this Pet");
-                    else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
-                    {
-                        if (!active)
-                            Logger.Write(Color.White, "Pet: Growl Auto-Cast Already Disabled");
-                        else
-                        {
-                            Logger.Write(Color.White, "Pet: Disabling 'Growl' Auto-Cast");
-                            Lua.DoString("DisableSpellAutocast(GetSpellInfo(2649))");
-                        }
-                    }
-                    else
-                    {
-                        if (active)
-                            Logger.Write(Color.White, "Pet: Growl Auto-Cast Already Enabled");
-                        else
-                        {
-                            Logger.Write(Color.White, "Pet: Enabling 'Growl' Auto-Cast");
-                            Lua.DoString("EnableSpellAutocast(GetSpellInfo(2649))");
-                        }
-                    }
-
-                    NeedToCheckPetGrowlAutoCast = false;
-                })
-                );
-        }
-
-
 
         #endregion
 
@@ -362,7 +305,7 @@ namespace Singular.ClassSpecific.Hunter
 
 
                     new Decorator(
-                        req => Me.GotAlivePet && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Pet.Guid && Me.Pet.IsSafelyFacing(u)),
+                        req => Me.GotAlivePet && PetManager.CanCastPetAction("Reflective Armor Plating") && Unit.NearbyUnfriendlyUnits.Any(u => u.CurrentTargetGuid == Me.Pet.Guid && Me.Pet.IsSafelyFacing(u, 75f)),
                         PetManager.CastAction("Reflective Armor Plating", on => Me.Pet)
                         ),
 
@@ -448,7 +391,7 @@ namespace Singular.ClassSpecific.Hunter
                                 || (useLauncher && Me.HasAura("Trap Launcher")),
                             new ActionAlwaysSucceed()),
                         new Action(ret => Logger.WriteDebug("Trap: launcher aura present = {0}", Me.HasAura("Trap Launcher"))),
-                        new Action(ret => Logger.WriteDebug("Trap: cancast = {0}", SpellManager.CanCast(trapName, onUnit(ret)))),
+                        new Action(ret => Logger.WriteDebug("Trap: cancast = {0}", Spell.CanCastHack(trapName, onUnit(ret)))),
                         
                         new Action(ret => Logger.Write( Color.PowderBlue, "^{0} trap: {1} on {2}", useLauncher ? "Launch" : "Set", trapName, onUnit(ret).SafeName())),
                         // Spell.Cast( trapName, ctx => onUnit(ctx)),
@@ -477,7 +420,7 @@ namespace Singular.ClassSpecific.Hunter
                             ),
                         new Wait( TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
                         new Action(ret => Logger.WriteDebug("AddTrap: launcher aura present = {0}", Me.HasAura("Trap Launcher"))),
-                        new Action(ret => Logger.WriteDebug("AddTrap: cancast = {0}", SpellManager.CanCast(trapName, (WoWUnit)ret))),
+                        new Action(ret => Logger.WriteDebug("AddTrap: cancast = {0}", Spell.CanCastHack(trapName, (WoWUnit)ret))),
                         // Spell.Cast( trapName, ctx => (WoWUnit) ctx),
                         new Action(ret => Logger.Write( Color.PowderBlue , "^Launch add trap: {0} on {1}", trapName, ((WoWUnit) ret).SafeName())),
                         new Action(ret => SpellManager.Cast( trapName, (WoWUnit) ret)),
@@ -521,7 +464,7 @@ namespace Singular.ClassSpecific.Hunter
 
                         // try instant rez for tenacity pets
                         new Decorator(
-                            ret => Pet != null && !Pet.IsAlive && Me.Combat && reviveInCombat && SpellManager.CanCast("Heart of the Phoenix"),
+                            ret => Pet != null && !Pet.IsAlive && Me.Combat && reviveInCombat && Spell.CanCastHack("Heart of the Phoenix"),
                             new Sequence(
                                 new Action(ret => Logger.WriteDebug("CallPet: attempting Heart of the Phoenix")),
                                 Spell.Cast("Heart of the Phoenix", mov => true, on => Me, req => true, cancel => false),
@@ -538,7 +481,7 @@ namespace Singular.ClassSpecific.Hunter
                                     Movement.CreateEnsureMovementStoppedBehavior(reason: "to call pet"),
                                     new ActionAlwaysSucceed()
                                     ),
-                                new Action(ret => Logger.WriteDebug("CallPet: attempting Revive Pet - cancast={0}", SpellManager.CanCast("Revive Pet"))),
+                                new Action(ret => Logger.WriteDebug("CallPet: attempting Revive Pet - cancast={0}", Spell.CanCastHack("Revive Pet"))),
                                 Spell.Cast("Revive Pet", mov => true, on => Me, req => true, cancel => Me.GotAlivePet),
                                 Helpers.Common.CreateWaitForLagDuration(),
                                 new Wait(TimeSpan.FromMilliseconds(500), ret => Me.GotAlivePet, new ActionAlwaysSucceed())
@@ -553,7 +496,7 @@ namespace Singular.ClassSpecific.Hunter
                                     Movement.CreateEnsureMovementStoppedBehavior(reason: "to dismiss pet"),
                                     new ActionAlwaysSucceed()
                                     ),
-                                new Action(ret => Logger.WriteDebug("CallPet: attempting Dismiss Pet - cancast={0}", SpellManager.CanCast("Dismiss Pet"))),
+                                new Action(ret => Logger.WriteDebug("CallPet: attempting Dismiss Pet - cancast={0}", Spell.CanCastHack("Dismiss Pet"))),
                                 Spell.Cast("Dismiss Pet", mov => true, on => Me, req => true, cancel => false),
                                 new WaitContinue(1, ret => !Me.GotAlivePet, new ActionAlwaysSucceed()),
                                 new Action(ret => Logger.WriteDebug("CallPet: existing pet has been dismissed"))
@@ -564,18 +507,15 @@ namespace Singular.ClassSpecific.Hunter
                         new Decorator(
                             ret => Pet == null,
                             new Sequence(
-                                new Action(ret => Logger.WriteDebug("CallPet: attempting Call Pet {0} - cancast={1}", PetWeWant, SpellManager.CanCast("Call Pet " + PetWeWant.ToString(), Pet))),
+                                new Action(ret => Logger.WriteDebug("CallPet: attempting Call Pet {0} - cancast={1}", PetWeWant, Spell.CanCastHack("Call Pet " + PetWeWant.ToString(), Pet))),
                                 // new Action(ret => PetManager.CallPet(HunterSettings.PetNumber.ToString())),
                                 Spell.Cast(ret => "Call Pet " + PetWeWant.ToString(), on => Me),
 
-                                new WaitContinue(2, ret => Me.GotAlivePet, new ActionAlwaysSucceed()),
-                                new Action( r => NeedToCheckPetGrowlAutoCast = true )
+                                new WaitContinue(2, ret => Me.GotAlivePet, new ActionAlwaysSucceed())
                                 )
                             )
                         )
-                    ),
-
-                    CreatePetHandleGrowlAutoCast()
+                    )
                 );
         }
 
@@ -612,7 +552,15 @@ namespace Singular.ClassSpecific.Hunter
         /// <returns></returns>
         public static Composite CreateHunterAvoidanceBehavior(Composite nonfacingAttack, Composite jumpturnAttack)
         {
-            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jumpturnAttack);
+            Composite jturn = null;
+            if (!SingularSettings.Instance.JumpTurnAllow)
+                jturn = null;
+            else if (jumpturnAttack != null)
+                jturn = jumpturnAttack;
+            else
+                jturn = CreateJumpTurnAttack();
+
+            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jturn);
 
             return new Decorator(
                 req => MovementManager.IsClassMovementAllowed,
@@ -729,9 +677,9 @@ namespace Singular.ClassSpecific.Hunter
                 return false;
 
             useRocketJump = false;
-            if (!SpellManager.CanCast("Disengage", Me, false, false))
+            if (!Spell.CanCastHack("Disengage", Me))
             {
-                if (!SingularSettings.Instance.UseRacials || Me.Race != WoWRace.Goblin || !SpellManager.CanCast("Rocket Jump", Me, false, false))
+                if (!SingularSettings.Instance.UseRacials || Me.Race != WoWRace.Goblin || !Spell.CanCastHack("Rocket Jump", Me))
                     return false;
 
                 useRocketJump = true;
@@ -873,6 +821,24 @@ namespace Singular.ClassSpecific.Hunter
                 );
         }
 
+        private static Composite CreateJumpTurnAttack()
+        {
+            return new Decorator(
+                req => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+                    ctx => SafeArea.NearestEnemyMobAttackingMe,
+                    Spell.Buff("Kill Shot", on => (WoWUnit)on),
+                    Spell.Buff("Serpent Sting", on => (WoWUnit) on),
+                    Spell.Cast("Chimera Shot", on => (WoWUnit)on),
+                    Spell.Cast("Explosive Shot", on => (WoWUnit)on),
+                    Spell.Cast("Black Arrow", on => (WoWUnit) on),
+                    Spell.Cast("Kill Command", on => (WoWUnit)on, req => Me.GotAlivePet && ((WoWUnit)req).Location.Distance(Me.Pet.Location) < 25),
+                    Spell.Cast("Glaive Toss", on => (WoWUnit) on ),
+                    Spell.Cast("Arcane Shot", on => (WoWUnit) on )
+                    )
+                );
+        }
+
         private static Composite CreateFeignDeath(SimpleBooleanDelegate req, WaitGetTimeSpanTimeoutDelegate timeOut, SimpleBooleanDelegate cancel)
         {
             return new Sequence(
@@ -897,7 +863,7 @@ namespace Singular.ClassSpecific.Hunter
 
         /// <summary>
         /// workaround for Spell.Cast("Steady Shot").  fails continuously resulting
-        /// in no casts because it never passes the SpellManager.CanCast() test.
+        /// in no casts because it never passes the Spell.CanCastHack() test.
         /// Had similar results with traps which are also directly cast because of it
         /// </summary>
         /// <param name="onUnit"></param>

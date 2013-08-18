@@ -77,7 +77,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     // I need to use Empower Rune Weapon to use Death Strike
                     Spell.BuffSelf("Empower Rune Weapon",
                         ret => StyxWoW.Me.HealthPercent < Settings.EmpowerRuneWeaponPercent
-                            && !SpellManager.CanCast("Death Strike")),
+                            && !Spell.CanCastHack("Death Strike")),
 
                     new PrioritySelector(
                         ctx => StyxWoW.Me.PartyMembers.FirstOrDefault(u => u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight),
@@ -93,7 +93,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     Spell.BuffSelf("Death's Advance",
                         ret => Common.HasTalent( DeathKnightTalents.DeathsAdvance) 
-                            && StyxWoW.Me.GotTarget && !SpellManager.CanCast("Death Grip", false) 
+                            && StyxWoW.Me.GotTarget && !Spell.CanCastHack("Death Grip") 
                             && StyxWoW.Me.CurrentTarget.DistanceSqr > 10*10),
 
                     Spell.BuffSelf("Blood Tap",

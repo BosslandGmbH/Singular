@@ -507,27 +507,34 @@ namespace Singular.ClassSpecific.Druid
 
             if (Settings.Heal.HealingTouch != 0)
             {
-                if ( SpellManager.HasSpell("Regrowth"))
+                int regrowthInstead = 0;
+                string whyRegrowth = "";
+                if (SpellManager.HasSpell("Regrowth"))
                 {
-                    string whyRegrowth = "";
-                    if ( !SpellManager.HasSpell("Healing Touch"))
-                        whyRegrowth = "Regrowth (since Healing Touch unknown) @ ";
-                    else if ( TalentManager.HasGlyph("Regrowth"))
-                        whyRegrowth = "Glyphed Regrowth (instead of Healing Touch) @ ";
-
-                    if (whyRegrowth != "" )
+                    if (TalentManager.HasGlyph("Regrowth"))
                     {
-                    behavs.AddBehavior(HealthToPriority(Settings.Heal.HealingTouch) + PriSingleBase, whyRegrowth + Settings.Heal.HealingTouch + "%", "Regrowth",
+                        regrowthInstead = Math.Max(Settings.Heal.HealingTouch, Settings.Heal.HealingTouch);
+                        whyRegrowth = "Glyphed Regrowth (instead of Healing Touch) @ ";
+                    }
+                    else if (TalentManager.HasGlyph("Regrowth"))
+                    {
+                        regrowthInstead = Math.Max(Settings.Heal.HealingTouch, Settings.Heal.HealingTouch);
+                        whyRegrowth = "Regrowth (since Healing Touch unknown) @ ";
+                    }                        
+                }
+
+                if (regrowthInstead != 0)
+                {
+                    behavs.AddBehavior(HealthToPriority(Settings.Heal.HealingTouch) + PriSingleBase, whyRegrowth + regrowthInstead + "%", "Regrowth",
                         new PrioritySelector(
                             Spell.Cast("Regrowth",
                                 mov => true,
                                 on => (WoWUnit)on,
-                                req => ((WoWUnit)req).HealthPercent < Settings.Heal.HealingTouch,
+                                req => ((WoWUnit)req).HealthPercent < regrowthInstead,
                                 cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
                                 )
                             )
                         );
-                    }
                 }
                 else
                 {

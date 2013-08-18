@@ -112,7 +112,7 @@ namespace Singular.ClassSpecific.Paladin
                     new Decorator(
                         ret => _seal != PaladinSeal.None
                             && !Me.HasMyAura(SealSpell(_seal))
-                            && SpellManager.CanCast(SealSpell(_seal), Me),
+                            && Spell.CanCastHack(SealSpell(_seal), Me),
                         Spell.Cast( s => SealSpell(_seal), on => Me, ret => !Me.HasAura(SealSpell(_seal)))
                         )
                     )

@@ -69,6 +69,13 @@ namespace Singular.Settings
         public int HealthFunnelRest { get; set; }
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("Pet")]
+        [DisplayName("Use Disarm")]
+        [Description("True: use Disarm on cooldown; False: do not cast")]
+        public bool UseDisarm { get; set; }
+
+        [Setting]
         [DefaultValue(20)]
         [Category("Common")]
         [DisplayName("Drain Life%")]
@@ -110,12 +117,17 @@ namespace Singular.Settings
         [Description("Demonic Leap to disengage from melee")]
         public bool UseDemonicLeap { get; set; }
 
+        public enum SpellPriority
+        {
+            Noxxic = 1,
+            IcyVeins = 2
+        }
+
         [Setting]
-        [DefaultValue(1)]
+        [DefaultValue(SpellPriority.Noxxic )]
         [Category("Destruction")]
         [DisplayName("Spell Priority Selection")]
-        [Description("1:Noxxic, 2:IcyVeins")]
-        public int DestructionSpellPriority { get; set; }
+        public SpellPriority DestructionSpellPriority { get; set; }
 
 
 

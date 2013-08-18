@@ -411,7 +411,7 @@ namespace Singular.ClassSpecific.Mage
                     ret => !SingularSettings.Instance.DisablePetUsage
                         && (!Me.GotAlivePet || Me.Pet.Distance > 40)
                         && PetManager.PetSummonAfterDismountTimer.IsFinished
-                        && SpellManager.CanCast("Summon Water Elemental"),
+                        && Spell.CanCastHack("Summon Water Elemental"),
                     new Sequence(
                         new Action(ret => PetManager.CallPet("Summon Water Elemental")),
                         Helpers.Common.CreateWaitForLagDuration()
@@ -425,7 +425,7 @@ namespace Singular.ClassSpecific.Mage
             return new Decorator(
                 ret => (!Me.GotAlivePet || Me.Pet.Distance > 40)
                     && PetManager.PetSummonAfterDismountTimer.IsFinished
-                    && SpellManager.CanCast("Summon Water Elemental"),
+                    && Spell.CanCastHack("Summon Water Elemental"),
 
                 new Sequence(
                     // wait for possible auto-spawn if supposed to have a pet and none present

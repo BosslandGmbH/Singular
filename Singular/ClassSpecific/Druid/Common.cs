@@ -326,7 +326,7 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
                         && (Me.GetPredictedHealthPercent(true) < SingularSettings.Instance.MinHealth || (Me.Shapeshift == ShapeshiftForm.Normal && Me.GetPredictedHealthPercent(true) < 85))
-                        && ((Me.HasAuraExpired("Rejuvenation", 1) && SpellManager.CanCast("Rejuvenation", Me, false, false)) || (SpellManager.HasSpell("Healing Touch") && SpellManager.CanCast("Healing Touch", Me, false, false))),
+                        && ((Me.HasAuraExpired("Rejuvenation", 1) && Spell.CanCastHack("Rejuvenation", Me)) || (SpellManager.HasSpell("Healing Touch") && Spell.CanCastHack("Healing Touch", Me))),
                     new PrioritySelector(
                         Movement.CreateEnsureMovementStoppedBehavior( reason:"to heal"),
                         new Action(r => { Logger.WriteDebug("Druid Rest Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift ); return RunStatus.Failure; }),
@@ -475,7 +475,7 @@ namespace Singular.ClassSpecific.Druid
                                 else
                                 {
                                     Logger.Write("Symbiosis: we gained {0} #{1}", newSpell.Value.Name, newSpell.Value.Id);
-                                    Logger.WriteDebug("Symbiosis: CanCast {0} is {1}", newSpell.Value.Name, SpellManager.CanCast(newSpell.Value.Name, true));
+                                    Logger.WriteDebug("Symbiosis: CanCast {0} is {1}", newSpell.Value.Name, Spell.CanCastHack(newSpell.Value.Name, true));
                                 }
                                 })
 */
@@ -548,7 +548,7 @@ namespace Singular.ClassSpecific.Druid
                             return RunStatus.Failure;
 
                         // check we can cast it on target
-                        // if (!SpellManager.CanCast(spell, on(ret), false, false, true))
+                        // if (!Spell.CanCastHack(spell, on(ret), false, false, true))
                         //     return RunStatus.Failure;
 
                         Logger.Write(string.Format("Casting Symbiosis: {0} on {1}", spell.Name, on(ret).SafeName()));
@@ -565,7 +565,7 @@ namespace Singular.ClassSpecific.Druid
         }
 
         /// <summary>
-        /// replacement for SpellManager.CanCast() since that does a lookup on SpellManager.Spells and 
+        /// replacement for Spell.CanCastHack() since that does a lookup on SpellManager.Spells and 
         /// ability gained from Druid does not presently appear in that list after buff established (note: class receiving
         /// Symbiosis from Druid does get updated.)
         /// </summary>

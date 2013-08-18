@@ -14,6 +14,7 @@ using Styx.TreeSharp;
 
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
+using System.Drawing;
 
 namespace Singular.Managers
 {
@@ -41,6 +42,12 @@ namespace Singular.Managers
                         PetSummonAfterDismountTimer.Reset();
                     }
                 };
+
+            // force us to check initially upon load
+            NeedToCheckPetTauntAutoCast = true;
+
+            // Lets hook this event so we can disable growl
+            SingularRoutine.OnWoWContextChanged += PetManager_OnWoWContextChanged;
         }
 
         public static bool HavePet { get { return StyxWoW.Me.GotAlivePet; } }
@@ -60,29 +67,40 @@ namespace Singular.Managers
                 PetSummonAfterDismountTimer.Reset();
             }
 
-            if (StyxWoW.Me.Pet != null && _petGuid != StyxWoW.Me.Pet.Guid)
+            if (StyxWoW.Me.Pet != null)
             {
-                // clear any existing spells
-                PetSpells.Clear();
-
-                // only load spells if we have one that is non-null
-                // .. as initial load happens before Me.PetSpells is initialized and we were saving 'null' spells
-                if (StyxWoW.Me.PetSpells.Any(s => s.Spell != null))
+                if (_petGuid != StyxWoW.Me.Pet.Guid)
                 {
-                    // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
-                    PetSpells.AddRange(StyxWoW.Me.PetSpells);
-                    PetSummonAfterDismountTimer.Reset();
-                    _petGuid = StyxWoW.Me.Pet.Guid;
+                    // clear any existing spells
+                    PetSpells.Clear();
 
-                    Logger.WriteDebug("---PetSpells Loaded---");
-                    foreach (var sp in PetSpells)
+                    // only load spells if we have one that is non-null
+                    // .. as initial load happens before Me.PetSpells is initialized and we were saving 'null' spells
+                    if (StyxWoW.Me.PetSpells.Any(s => s.Spell != null))
                     {
-                        if (sp.Spell == null)
-                            Logger.WriteDebug("   {0} spell={1}  Action={0}", sp.ActionBarIndex, sp.ToString(), sp.Action.ToString());
-                        else
-                            Logger.WriteDebug("   {0} spell={1} #{2}", sp.ActionBarIndex, sp.ToString(), sp.Spell.Id);
+                        NeedToCheckPetTauntAutoCast = true;
+
+                        // Cache the list. yea yea, we should just copy it, but I'd rather have shallow copies of each object, rather than a copy of the list.
+                        PetSpells.AddRange(StyxWoW.Me.PetSpells);
+                        PetSummonAfterDismountTimer.Reset();
+                        _petGuid = StyxWoW.Me.Pet.Guid;
+
+                        Logger.WriteDebug("---PetSpells Loaded---");
+                        foreach (var sp in PetSpells)
+                        {
+                            if (sp.Spell == null)
+                                Logger.WriteDebug("   {0} spell={1}  Action={0}", sp.ActionBarIndex, sp.ToString(), sp.Action.ToString());
+                            else
+                                Logger.WriteDebug("   {0} spell={1} #{2}", sp.ActionBarIndex, sp.ToString(), sp.Spell.Id);
+                        }
+                        Logger.WriteDebug(" ");
                     }
-                    Logger.WriteDebug(" ");
+                }
+
+                if (NeedToCheckPetTauntAutoCast)
+                {
+                    NeedToCheckPetTauntAutoCast = false;
+                    HandleAutoCast();
                 }
             }
 
@@ -197,7 +215,7 @@ namespace Singular.Managers
             switch (StyxWoW.Me.Class)
             {
                 case WoWClass.Warlock:
-                    if (SpellManager.CanCast("Summon " + petName))
+                    if (Spell.CanCastHack("Summon " + petName))
                     {
                         Logger.Write(string.Format("[Pet] Calling out my {0}", petName));
                         bool result = SpellManager.Cast("Summon " + petName);
@@ -206,7 +224,7 @@ namespace Singular.Managers
                     break;
 
                 case WoWClass.Mage:
-                    if (SpellManager.CanCast("Summon Water Elemental"))
+                    if (Spell.CanCastHack("Summon Water Elemental"))
                     {
                         Logger.Write("[Pet] Calling out Water Elemental");
                         bool result = SpellManager.Cast("Summon Water Elemental");
@@ -215,7 +233,7 @@ namespace Singular.Managers
                     break;
 
                 case WoWClass.Hunter:
-                    if (SpellManager.CanCast("Call Pet " + petName))
+                    if (Spell.CanCastHack("Call Pet " + petName))
                     {
                         if (!StyxWoW.Me.GotAlivePet)
                         {
@@ -258,6 +276,70 @@ namespace Singular.Managers
 
             return false;
         }
+
+        #region Manage Growl for Instances
+
+        // flag used to indicate need to check; set anywhere but handled within Pulse()
+        private static bool NeedToCheckPetTauntAutoCast { get; set; }
+
+        // set needtocheck flag anytime context changes
+        static void PetManager_OnWoWContextChanged(object sender, WoWContextEventArg e)
+        {
+            NeedToCheckPetTauntAutoCast = true;
+        }
+
+        public static void HandleAutoCast()
+        {
+            if ( StyxWoW.Me.GotAlivePet )
+            {
+                if (StyxWoW.Me.Class == WoWClass.Hunter)
+                {
+                    HandleAutoCastForSpell("Growl");
+                    HandleAutoCastForSpell("Taunt");
+                    HandleAutoCastForSpell("Thunderstomp");
+                }
+                else if (StyxWoW.Me.Class == WoWClass.Warlock && Singular.ClassSpecific.Warlock.Common.GetCurrentPet() == Settings.WarlockPet.Voidwalker)
+                {
+                    HandleAutoCastForSpell("Suffering");
+                }
+            }
+        }
+
+        private static void HandleAutoCastForSpell(string spellName)
+        {
+            WoWPetSpell ps = StyxWoW.Me.PetSpells.FirstOrDefault(s => s.ToString() == spellName);
+            bool allowed;
+            bool active = PetManager.IsAutoCast(ps, out allowed);
+
+            // Disable pet growl in instances but enable it outside.
+            if (ps == null)
+                Logger.WriteDebug("PetManager: '{0}' is NOT an ability known by this Pet", spellName);
+            else if (!allowed)
+                Logger.Write(Color.White, "PetManager: '{0}' is NOT an auto-cast ability for this Pet", spellName);
+            else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+            {
+                if (!active)
+                    Logger.Write(Color.White, "PetManager: '{0}' Auto-Cast Already Disabled", spellName);
+                else
+                {
+                    Logger.Write(Color.White, "PetManager: Disabling '{0}' Auto-Cast", spellName);
+                    Lua.DoString("DisableSpellAutocast(GetSpellInfo(" + ps.Spell.Id + "))");
+                }
+            }
+            else
+            {
+                if (active)
+                    Logger.Write(Color.White, "PetManager: '{0}' Auto-Cast Already Enabled", spellName);
+                else
+                {
+                    Logger.Write(Color.White, "PetManager: Enabling '{0}' Auto-Cast", spellName);
+                    Lua.DoString("EnableSpellAutocast(GetSpellInfo(" + ps.Spell.Id + "))");
+                }
+            }
+        }
+
+        #endregion
+
     }
 
 }

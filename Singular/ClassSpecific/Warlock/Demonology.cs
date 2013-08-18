@@ -212,7 +212,7 @@ namespace Singular.ClassSpecific.Warlock
                 
                 // if we need to cast, check that we can
                 if (shouldCast)
-                    shouldCast = SpellManager.CanCast("Metamorphosis", Me, false);
+                    shouldCast = Spell.CanCastHack("Metamorphosis", Me, false);
             }
 
             return shouldCast;

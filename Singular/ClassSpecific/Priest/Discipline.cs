@@ -144,10 +144,10 @@ namespace Singular.ClassSpecific.Priest
                                             Logger.WriteDebug("PW:B - FAILED - Healing Target object became invalid");
                                         else if (((WoWUnit)ret).Distance > 40)
                                             Logger.WriteDebug("PW:B - FAILED - Healing Target moved out of range");
-                                        else if (!SpellManager.CanCast("Power Word: Barrier"))
-                                            Logger.WriteDebug("PW:B - FAILED - SpellManager.CanCast() said NO to Power Word: Barrier");
+                                        else if (!Spell.CanCastHack("Power Word: Barrier"))
+                                            Logger.WriteDebug("PW:B - FAILED - Spell.CanCastHack() said NO to Power Word: Barrier");
                                         else if (Styx.WoWInternals.World.GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ((WoWUnit)ret).Location))
-                                            Logger.WriteDebug("PW:B - FAILED - SpellManager.CanCast() unit location not in Line of Sight");
+                                            Logger.WriteDebug("PW:B - FAILED - Spell.CanCastHack() unit location not in Line of Sight");
                                         else if (Spell.IsSpellOnCooldown("Power Word: Barrier"))
                                             Logger.WriteDebug("PW:B - FAILED - Power Word: Barrier is on cooldown");
                                         else
@@ -403,10 +403,24 @@ namespace Singular.ClassSpecific.Priest
                     )
                 );
 
-            if (PriestSettings.DiscHeal.FlashHeal != 0)
-                behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.FlashHeal) + PriSingleBase, "Flash Heal @ " + PriestSettings.DiscHeal.FlashHeal + "%", "Flash Heal",
+            string cmt = "";
+            int flashHealHealth = PriestSettings.DiscHeal.FlashHeal;
+            if (!SpellManager.HasSpell("Greater Heal"))
+            {
+                flashHealHealth = Math.Max(flashHealHealth, PriestSettings.DiscHeal.GreaterHeal);
+                cmt = "(Adjusted for Greater Heal)";
+            }
+
+            if (!SpellManager.HasSpell("Heal"))
+            {
+                flashHealHealth = Math.Max(flashHealHealth, PriestSettings.DiscHeal.Heal);
+                cmt = "(Adjusted for Heal)";
+            }
+
+            if (flashHealHealth != 0)
+                behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.FlashHeal) + PriSingleBase, "Flash Heal @ " + flashHealHealth + "% " + cmt, "Flash Heal",
                 new Decorator(
-                    req => ((WoWUnit)req).HealthPercent < PriestSettings.DiscHeal.FlashHeal && !SkipForSpiritShell((WoWUnit)req),
+                    req => ((WoWUnit)req).HealthPercent < flashHealHealth && !SkipForSpiritShell((WoWUnit)req),
                     new PrioritySelector(
                         CastBuffsBehavior("Flash Heal"),
                         Spell.Cast("Flash Heal",

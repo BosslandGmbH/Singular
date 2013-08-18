@@ -378,15 +378,30 @@ VoidShift               Void Shift
                     )
                 );
 
-            if (PriestSettings.HolyHeal.FlashHeal != 0)
-                behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.FlashHeal), "Flash Heal @ " + PriestSettings.HolyHeal.FlashHeal + "%", "Flash Heal",
+            string cmt = "";
+            int flashHealHealth = PriestSettings.DiscHeal.FlashHeal;
+            if (!SpellManager.HasSpell("Greater Heal"))
+            {
+                flashHealHealth = Math.Max(flashHealHealth, PriestSettings.DiscHeal.GreaterHeal);
+                cmt = "(Adjusted for Greater Heal)";
+            }
+
+            if (!SpellManager.HasSpell("Heal"))
+            {
+                flashHealHealth = Math.Max(flashHealHealth, PriestSettings.DiscHeal.Heal);
+                cmt = "(Adjusted for Heal)";
+            }
+
+            if (flashHealHealth != 0)
+                behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.FlashHeal), "Flash Heal @ " + flashHealHealth + "% " + cmt, "Flash Heal",
                 Spell.Cast("Flash Heal",
                     mov => true,
                     on => (WoWUnit)on,
-                    req => ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.FlashHeal,
+                    req => ((WoWUnit)req).HealthPercent < flashHealHealth,
                     cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
                     )
                 );
+
 
             if (PriestSettings.HolyHeal.GreaterHeal != 0)
                 behavs.AddBehavior(HealthToPriority(PriestSettings.HolyHeal.GreaterHeal), "Greater Heal @ " + PriestSettings.HolyHeal.GreaterHeal + "%", "Greater Heal",

@@ -55,13 +55,9 @@ namespace Singular
                     // .. as we conditionally include/omit some diagnostic nodes if debugging
                     if (e.PropertyName == "LogLevel")
                     {
-                        // only react to change if it effects our behav trees
-                        if (SingularSettings.Instance.EnableDebugLogging != SingularSettings.Debug)
-                        {
-                            Logger.Write(Color.White, "HonorBuddy {0} setting change, re-creating behaviors", e.PropertyName);
-                            RebuildBehaviors();
-                            Spell.GcdInitialize();   // probably not needed, but quick
-                        }
+                        Logger.Write(Color.White, "HonorBuddy {0} setting change, re-creating behaviors", e.PropertyName);
+                        RebuildBehaviors();
+                        Spell.GcdInitialize();   // probably not needed, but quick
                     }
                 };
 

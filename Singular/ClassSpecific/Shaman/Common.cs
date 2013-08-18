@@ -278,7 +278,7 @@ namespace Singular.ClassSpecific.Shaman
                     new Decorator(
                         ret => Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id != (int)ret
                             && SpellManager.HasSpell(((Imbue)ret).ToSpellName())
-                            && SpellManager.CanCast(((Imbue)ret).ToSpellName(), null, false, false),
+                            && Spell.CanCastHack(((Imbue)ret).ToSpellName(), null),
                         new Sequence(
                             new Action(ret => Logger.WriteDebug(Color.Pink, "Main hand currently imbued: " + ((Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id).ToString())),
                             new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),
@@ -307,7 +307,7 @@ namespace Singular.ClassSpecific.Shaman
                     new Decorator(
                         ret => Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id != (int)ret
                             && SpellManager.HasSpell(((Imbue)ret).ToSpellName())
-                            && SpellManager.CanCast(((Imbue)ret).ToSpellName(), null, false, false),
+                            && Spell.CanCastHack(((Imbue)ret).ToSpellName(), null),
                         new Sequence(
                             new Action(ret => Logger.WriteDebug(Color.Pink, "Off hand currently imbued: " + ((Imbue)Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id).ToString())),
                             new Action(ret => Lua.DoString("CancelItemTempEnchantment(2)")),

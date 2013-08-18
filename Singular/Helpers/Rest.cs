@@ -54,7 +54,7 @@ namespace Singular.Helpers
 
                 // Self-heal if possible
                         new Decorator(
-                            ret => spellHeal != null && SpellManager.HasSpell(spellHeal) && SpellManager.CanCast(spellHeal, Me, false, false)
+                            ret => spellHeal != null && SpellManager.HasSpell(spellHeal) && Spell.CanCastHack(spellHeal, Me)
                                 && Me.GetPredictedHealthPercent(true) <= 85 && !Me.HasAura("Drink") && !Me.HasAura("Food"),
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior(reason: "to heal"),
@@ -80,7 +80,7 @@ namespace Singular.Helpers
                         new Decorator(
                             ret => SingularSettings.Instance.UseRacials
                                 && (Me.GetPredictedHealthPercent(true) <= SingularSettings.Instance.MinHealth || (Me.PowerType == WoWPowerType.Mana && Me.ManaPercent <= SingularSettings.Instance.MinMana))
-                                && SpellManager.CanCast("Cannibalize")
+                                && Spell.CanCastHack("Cannibalize")
                                 && CorpseAround,
                             new Sequence(
                                 new DecoratorContinue(ret => Me.IsMoving, Movement.CreateEnsureMovementStoppedBehavior(reason: "to cannibalize")),

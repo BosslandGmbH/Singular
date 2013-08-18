@@ -639,7 +639,7 @@ namespace Singular.Helpers
                 && !Me.IsFalling
                 && !Me.IsOnTransport
                 && Me.IsSafelyFacing(bpwjDest)
-                && SpellManager.CanCast("Rocket Jump", Me);
+                && Spell.CanCastHack("Rocket Jump", Me);
         }
 
         private static bool IsKitingNeeded()
@@ -1236,7 +1236,7 @@ namespace Singular.Helpers
             if (Me.Stunned || Me.Rooted || Me.IsStunned() || Me.IsRooted())
                 return false;
 
-            if (!SpellManager.CanCast(spell, Me, false, false))
+            if (!Spell.CanCastHack(spell, Me))
                 return false;
 
             mobToGetAwayFrom = SafeArea.NearestEnemyMobAttackingMe;

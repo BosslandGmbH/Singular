@@ -112,19 +112,19 @@ namespace Singular.ClassSpecific.Warrior
 
                         Spell.OffGCD( Spell.BuffSelf("Rallying Cry", req => !Me.IsInGroup() && Me.HealthPercent < 50)),
 
-                        Spell.OffGCD( Spell.Cast("Recklessness", ret => (SpellManager.CanCast("Execute") || Common.Tier14FourPieceBonus || PartyBuff.WeHaveBloodlust) && (StyxWoW.Me.CurrentTarget.TimeToDeath() > 40 || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances))),
+                        Spell.OffGCD( Spell.Cast("Recklessness", ret => (Spell.CanCastHack("Execute") || Common.Tier14FourPieceBonus || PartyBuff.WeHaveBloodlust) && (StyxWoW.Me.CurrentTarget.TimeToDeath() > 40 || StyxWoW.Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances))),
 
                         Spell.Cast("Storm Bolt"),  // in normal rotation
 
                         // Execute is up, so don't care just cast
-                        Spell.Cast("Berserker Rage", 
-                            ret => {
-                                if ( Me.GotTarget && Me.CurrentTarget.HealthPercent <= 20)
-                                    return true;
+                        Spell.Cast("Berserker Rage", ret => {
+                            if (Me.CurrentTarget.HealthPercent <= 20)
+                                return true;
+                            if (!Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6)
+                                return true;
+                            return false;
+                            }),
 
-                                return !Me.ActiveAuras.ContainsKey("Enrage") && Spell.GetSpellCooldown("Colossus Smash").TotalSeconds > 6;
-                                }
-                            ),
 
                         Spell.BuffSelf(Common.SelectedShout)
 
@@ -170,7 +170,7 @@ namespace Singular.ClassSpecific.Warrior
                         CreateArmsAoeCombat(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1))),
 
                         new Decorator(
-                            ret => WarriorSettings.ArmsSpellPriority == 2,
+                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.IcyVeins,
 
                             new PrioritySelector(
                                 // Noxxic
@@ -221,7 +221,7 @@ namespace Singular.ClassSpecific.Warrior
 
 
                         new Decorator(
-                            ret => WarriorSettings.ArmsSpellPriority == 1,
+                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.Noxxic,
                             new PrioritySelector(
                                 // Icy-Veins
                                 //-------------------------------
@@ -279,7 +279,7 @@ namespace Singular.ClassSpecific.Warrior
                             ),
 
                         new Decorator(
-                            ret => WarriorSettings.ArmsSpellPriority == 3,
+                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.ElitistJerks,
                             new PrioritySelector(
         #region EXECUTE AVAILABLE
                                 new Decorator( ret => Me.CurrentTarget.HealthPercent <= 20,
@@ -502,7 +502,7 @@ namespace Singular.ClassSpecific.Warrior
 
         private static Composite HeroicLeap()
         {
-            return new Decorator(ret => Me.CurrentTarget.HasAura("Colossus Smash") && SpellManager.CanCast("Heroic Leap"),
+            return new Decorator(ret => Me.CurrentTarget.HasAura("Colossus Smash") && Spell.CanCastHack("Heroic Leap"),
                 new Action(ret =>
                 {
                     var tpos = StyxWoW.Me.CurrentTarget.Location;

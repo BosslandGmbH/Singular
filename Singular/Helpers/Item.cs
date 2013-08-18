@@ -237,36 +237,36 @@ namespace Singular.Helpers
 
         public static void WriteCharacterGearAndSetupInfo()
         {
-            if (!SingularSettings.Debug)
-                return;
-
-            uint totalItemLevel;
-            SecondaryStats ss;          //create within frame (does series of LUA calls)
-
-            using (StyxWoW.Memory.AcquireFrame())
+            Logger.WriteFile("");
+            if (SingularSettings.Debug)
             {
-                totalItemLevel = CalcTotalGearScore();
-                ss = new SecondaryStats();
-            }
+                uint totalItemLevel;
+                SecondaryStats ss;          //create within frame (does series of LUA calls)
 
-            Logger.WriteFile("");
-            Logger.WriteFile("Equipped Total Item Level  : {0}", totalItemLevel);
-            Logger.WriteFile("Equipped Average Item Level: {0}", totalItemLevel / 16);
-            Logger.WriteFile("");
-            Logger.WriteFile("Health:      {0}", Me.MaxHealth);
-            Logger.WriteFile("Agility:     {0}", Me.Agility);
-            Logger.WriteFile("Intellect:   {0}", Me.Intellect);
-            Logger.WriteFile("Spirit:      {0}", Me.Spirit);
-            Logger.WriteFile("");
-            Logger.WriteFile("Hit(M/R):    {0}/{1}", ss.MeleeHit, ss.SpellHit);
-            Logger.WriteFile("Expertise:   {0}", ss.Expertise);
-            Logger.WriteFile("Mastery:     {0}", (int) ss.Mastery);
-            Logger.WriteFile("Crit:        {0:F2}", ss.Crit);
-            Logger.WriteFile("Haste(M/R):  {0}/{1}", ss.MeleeHaste, ss.SpellHaste);
-            Logger.WriteFile("SpellPen:    {0}", ss.SpellPen);
-            Logger.WriteFile("PvP Resil:   {0}", ss.Resilience);
-            Logger.WriteFile("PvP Power:   {0}", ss.PvpPower);
-            Logger.WriteFile("");
+                using (StyxWoW.Memory.AcquireFrame())
+                {
+                    totalItemLevel = CalcTotalGearScore();
+                    ss = new SecondaryStats();
+                }
+
+                Logger.WriteFile("Equipped Total Item Level  : {0}", totalItemLevel);
+                Logger.WriteFile("Equipped Average Item Level: {0}", totalItemLevel / 16);
+                Logger.WriteFile("");
+                Logger.WriteFile("Health:      {0}", Me.MaxHealth);
+                Logger.WriteFile("Agility:     {0}", Me.Agility);
+                Logger.WriteFile("Intellect:   {0}", Me.Intellect);
+                Logger.WriteFile("Spirit:      {0}", Me.Spirit);
+                Logger.WriteFile("");
+                Logger.WriteFile("Hit(M/R):    {0}/{1}", ss.MeleeHit, ss.SpellHit);
+                Logger.WriteFile("Expertise:   {0}", ss.Expertise);
+                Logger.WriteFile("Mastery:     {0}", (int)ss.Mastery);
+                Logger.WriteFile("Crit:        {0:F2}", ss.Crit);
+                Logger.WriteFile("Haste(M/R):  {0}/{1}", ss.MeleeHaste, ss.SpellHaste);
+                Logger.WriteFile("SpellPen:    {0}", ss.SpellPen);
+                Logger.WriteFile("PvP Resil:   {0}", ss.Resilience);
+                Logger.WriteFile("PvP Power:   {0}", ss.PvpPower);
+                Logger.WriteFile("");
+            }
 
             Logger.WriteFile("Talents Selected: {0}", Singular.Managers.TalentManager.Talents.Count(t => t.Selected));
             foreach (var t in Singular.Managers.TalentManager.Talents)

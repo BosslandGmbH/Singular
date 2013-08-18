@@ -1,3 +1,201 @@
+--- Release 3.0.0.2885 ---
+
+General
+
+*new* - Cooldown Management: new settings DisableSpellsWithCooldown allows user to block Singular from casting spells with a cooldown equal to or longer than specified value. Disabled by default.  Intended for those wanting manual control over cooldowns.  If Debug is on, log file will list spells blocked
+
+*new* - Debug Logging: the Singular setting for Debug Logging has been removed.  Use the Log Level (setting in HonorBuddy Settings & Tools) to control the output of debug information.
+
+fixed - Manual Movement: bug preventing movement after switching from an AFK bot to manual movement bot
+
+fixed - Error: rare exception occurring when Current Target changed during execution of several continguous lines of code for stopping melee movement
+
+
+Druid
+
+change- Feral - Instances: the spell priority setting is now a drop down list
+
+fixed - Resto - the health % for Regrowth is adjusted upward to the maximum of Regrowth and Healing Touch prior to learning Healing Touch.  This reduces the need to revise health % settings while leveling as a Resto
+
+fixed - Balance - bug occurring in AOE rotation (3+ mobs) while current target is in front, and an add is behind Druid causing it to repeatedly try to apply DoTs to target it isn't facing
+
+
+Hunter
+
+fixed - All Specs - Pet Abilities: now automatically enables/disables Thunderstomp based upon context (same treatment as Growl)
+
+
+Mage
+
+fixed - All Specs - Evocation cast requirements reworked.  Will only cast for Heal if health < 40%, glyphed, and don't have Rune of Power or Invocation talent
+
+
+Monk
+
+fixed - Brewmaster - was not casting Tiger Palm as a filler spell until reaching Level 34
+
+fixed - Brewmaster - Tiger Palm cast 
+
+change- Brewmaster - Dizzying Haze now indicates target it was cast on instead of location
+
+fixed - Brewmaster - no longer requires 3+ Chi to cast Tiger Palm for buffing expired Tiger Power or Power Guard
+
+fixed - Brewmaster - issues with closing distance via Roll or Clash
+
+
+Priest 
+
+fixed - Disc/Holy - the health % for Flash Heal is adjusted upward to the max of Flash Heal and Greater Heal prior to learning Greater Heal.  This reduces the need to change settings when leveling as healing priest in instances.
+
+
+Warlock
+
+fixed - All Specs - specifically casts Voidwalker's Disarm ability if setting is enabled
+
+change- Destruction - spell priority setting is now a dropdown
+
+fixed - All Specs - now automatically enables / enables autocast of Voidwalker Suffering ability in same fashion as Hunter Pet's Growl
+
+
+Warrior
+
+change- Arms - spell priority setting is now a dropdown
+
+fixed - Prot - will only cast Berserkers Rage and DPS buffs if in melee range of current target
+
+
+
+--- Release 3.0.0.2861 ---
+
+General
+
+change- Debug Logging: debug settings have been moved to the Debug tab (no longer on General) of the Class Config window
+
+fixed - Debug Logging: - Log Level changes - Singular will react to changes in the HonorBuddy Log Level being to Diagnostic.  Previously this occurred only on Start, but now will react to changes in Log Level while running.
+
+fixed - Healer Manager: but causing Healer to stand still if beyond Max Heal Target Range and running back to group, Tank pulls while out of range, etc. 
+
+fixed - Trinket Usage: trinkets setup as On Cooldown In Combat will only be used when within combat range of target as opposed to immediately upon entering combat.  
+
+fixed - Racial Usage: in combat abilities (Blood Fury, Berserking, and Lifeblood) are cast only when in combat range of target.
+
+change- Movement: modifications to stop moving logic to reduce stutter steps, etc.  Note: not all occurrences of this are the same.  Don't assume another users post regarding this is due to same cause as yours.
+
+change- Training Dummies: for those prefering to fight things that don't fight back, Singular now automatically switches to Instance spell priorities if targeting a Training Dummy.  Too many people reporting results while using Singular and not in a group (so Solo/Questing spell priority used which is maximized for quick kills and survival, not Raid Boss DPS.)
+
+fixed - Healer Manager: now correctly handles when a group member turns hostile temporary and removes them from the heal list
+
+change- Debug Logging: DebugTrace setting removed from Class Config to prevent use by users misunderstanding its purpose then complaining about amount of debug log output
+
+fixed - Tank Targeting: bug affecting Tank Targeting while using Questing bot with Tank Role fixed (target priority kept switching between tank aggro list and default Questing list.)  Although Questing BotBase does not support group questing, some profile authors have used it to do RAF instance farming.  This fix should improve results when trying to automate the tank in group.
+
+
+Druid
+
+fixed - Balance - now correctly references the standard Avoidance settings on the Class Config -> General tab.
+
+*new* - Feral - now suppots Dispersion obtained via Symbiosis is with Priest
+
+fixed - All Specs - Rebirth cast is now cancelled if target is recognized as being rezzed by another player before cast completes
+
+*new* - Feral - now supports Move Behind Targets setting which controls how to approach target when Prowling
+
+fixed - Guardian - bug preventing entering Bear form when facing trivial mobs
+
+fixed - Resto - bug causing healing to occur only after entering Combat
+
+fixed - Resto - default settings for Heal spells now correctly created.  
+
+fixed - Resto - now properly follows tank in combat and stops out of melee range
+
+
+Mage
+
+*new* - All Specs - added cast of Slow Fall if detect falling.  Added setting to allow disabling in user settings if needed
+
+change- All Specs - will cast Ice Ward in all contexts and not just PVP
+
+fixed - All Specs - will correctly cast Evocation and prevent interrupting channel
+
+fixed - All Specs - now moves away only if they are rooted/nova'd in place
+
+fixed - Fire - was not waiting for channeled casts to complete in solo, battlegrounds, or instances
+
+change- Frost - improved cooldown usage while questing
+
+change- Frost - higher priority placed upon Brain Freeze and Fingers of Frost procs to ensure instants are cast quickly
+
+
+Priest
+
+*new* - All Specs - will cast movement buff on Tank(s) first before self. New setting Use Speed Buff on Tank added to allow user to disable
+
+*new* - All Specs - use of Fade in instances if priest gets aggro, when solo if player pet atttacking, and battlegrounds if talented with Phantasm and currently snared
+
+fixed - Disc - Prayer of Mending made a higher priority
+
+*new* - Disc - Archangel now cast prior to AOE heals
+
+fixed - Disc - Power Word: Shield now correctly available as a heal spell
+
+fixed - Disc - bug preventing cast of Power Word: Barrier
+
+fixed - Shadow - bug causing PW:S to be kept up prior to learning Shadowform
+
+fixed - Shadwo - Instance spell priority
+
+*new* - Disc - added settings for use of Spirit Shell.  No longer cast on cooldown.
+
+
+Rogue
+
+*new* - All Specs - additional debug logging for targets appearing to be airborne (which is causing rogue to use Throw more often than expected.)
+
+fixed - Lowbie - added Ambush to the spell priority
+
+fixed - Lowbie - changed to use standard stealth behavior
+
+
+Shaman
+
+fixed - All Specs - exception occurring at times if no current target selected
+
+fixed - Elemental - now waits until in combat range before casting Ascendance (previously was reported being cast when tank pulled but before being in range of boss)
+
+fixed - Resto - stops at range when following tank in combat
+
+change- Resto - will cast Telluric Currents Lightning Bolt if no group member health % below new Telluric Cast Health %
+
+change- Resto - will cancel Telluric Currents Lightning Bolt in progress if group member health % drops below new Telluric Cancel Health %
+
+fixed - All Specs - when Questing if error occurs due to being in Ghost WOlf form while using a quest item, picking up, or turning in a quest, will now prevent casting Ghost Wolf again for 60 seconds. This behavior has been in support for Feral Druid Cat Form for awhile
+
+fixed - Resto - Healing Tide Totem was using fixed heal count of 3; corrected to reference Healing Tide Min Count setting
+
+
+Warlock
+
+fixed - All Specs - bug where Warlock would try to cast Health Funnel while moving when not able to
+
+
+Warrior
+
+change- Arms - will only cast Shout during Pull if outside of Charge range or Charge is on cooldown
+
+change- Arms - cooldowns now cast more quickly and stacked
+
+fixed - Arms - exception sometimes occurring when checking if Berserker Rage should be cast
+
+fixed - Arms - adjusted distance check for Dragon Roar to account for hitbox size
+
+fixed - Arms - Sweeping Strikes now cast for 2+ mobs 
+
+fixed - Prot - cooldowns now cast more quickly and stacked
+
+fixed - Prot - attacks on flying or raised mobs outside of melee range
+
+
+
 --- Release 3.0.0.2742 ---
 
 General

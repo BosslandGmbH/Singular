@@ -188,9 +188,9 @@ namespace Singular.ClassSpecific.Mage
 
                     new Throttle( TimeSpan.FromMilliseconds(6000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => !Me.IsMoving && !Me.HasAura("Rune of Power"), false) ),
 
-                    Spell.Cast("Nether Tempest", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Nether Tempest", 3)),
-                    Spell.Cast("Living Bomb", ret => Me.GotTarget && Me.CurrentTarget.HasAuraExpired("Living Bomb", 2)),
-                    Spell.Cast("Frost Bomb", ret => Me.GotTarget && !Me.CurrentTarget.HasMyAura("Frost Bomb")),
+                    Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
+                    Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),
+                    Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 0),
 
                     // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invoker's Energy")),
 
@@ -342,6 +342,9 @@ namespace Singular.ClassSpecific.Mage
                 );
              */
 #else
+            if (!SingularSettings.Instance.KiteAllow)
+                return new ActionAlwaysFail();
+
             return new PrioritySelector(
                 ctx => Unit.NearbyUnfriendlyUnits
                            .Where(u => u.IsRooted() && Me.SpellDistance(u) < 8) // u.IsFrozen() 
@@ -568,26 +571,40 @@ namespace Singular.ClassSpecific.Mage
         {
             Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jumpturnAttack);
 
-            return new Decorator(
-                req => MovementManager.IsClassMovementAllowed,
-                new PrioritySelector(
-                    ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Where(u=>u.SpellDistance() <= 8).Count(),
+            PrioritySelector pri = new PrioritySelector();
+
+            if (SingularSettings.Instance.DisengageAllowed)
+            {
+                pri.AddChild(
                     new Decorator(
-                        ret => Kite.IsDisengageWantedByUserSettings((int) ret),
+                        ret => Kite.IsDisengageWantedByUserSettings(),
                         new PrioritySelector(
                             Disengage.CreateDisengageBehavior("Blink", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior()),
                             Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
                             )
-                        ),
+                        )
+                    );
+            }
+
+            if (SingularSettings.Instance.KiteAllow)
+            {
+                pri.AddChild(
                     new Decorator(
-                        ret => Kite.IsKitingWantedByUserSettings((int)ret),
+                        ret => Kite.IsKitingWantedByUserSettings(),
                         new Sequence(
                             new Action( r => Logger.WriteDebug("MageAvoidance: requesting KITING!!!")),
                             Kite.BeginKitingBehavior()
                             )
                         )
-                    )
-                );
+                    );
+            }
+
+            if (!pri.Children.Any())
+            {
+                pri.AddChild(new ActionAlwaysFail());
+            }
+
+            return new Decorator( req => MovementManager.IsClassMovementAllowed, pri );
         }
 
         /*

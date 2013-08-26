@@ -54,9 +54,9 @@ namespace Singular.ClassSpecific.Rogue
                         Common.CreateRogueOpenerBehavior(),
 
                         Common.CreatePullMobMovingAwayFromMe(),
-                        Common.CreateAttackFlyingMobs(),
+                        Common.CreateAttackFlyingOrUnreachableMobs(),
 
-                        Spell.Cast("Mutilate")
+                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers )
                         )
                     )
                 );
@@ -92,7 +92,7 @@ namespace Singular.ClassSpecific.Rogue
                                 Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
                                 Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
-                                Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives")),
+                                Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives") && Common.HasTwoDaggers),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
@@ -108,23 +108,12 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             ),
 
-                        Spell.Cast("Dispatch"), // daggers
+                        Spell.Cast("Dispatch", req => Common.HasDaggerInMainHand), // daggers
 
                         Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
-                        Spell.Cast("Mutilate"),  // daggers
+                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers),  // daggers
 
-                        new ThrottlePasses(60,
-                            new PrioritySelector(
-                                new Decorator(
-                                    ret => !Me.Disarmed && !Common.HasDaggerInMainHand && SpellManager.HasSpell("Dispatch"),
-                                    new Action(ret => Logger.Write(Color.HotPink, "config error: cannot cast Dispatch without Dagger in Mainhand"))
-                                    ),
-                                new Decorator(
-                                    ret => !Me.Disarmed && !Common.HasTwoDaggers && SpellManager.HasSpell("Mutilate"),
-                                    new Action(ret => Logger.Write(Color.HotPink, "config error: cannot cast Mutilate without two Daggers"))
-                                    )
-                                )
-                            )
+                        Common.CheckThatDaggersAreEquippedIfNeeded()
                         )
                     )
                 );
@@ -166,7 +155,7 @@ namespace Singular.ClassSpecific.Rogue
                                 Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
                                 Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
-                                Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives")),
+                                Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives") && Common.HasTwoDaggers ),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
@@ -177,11 +166,12 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                         Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
                         Spell.Buff("Envenom", true, ret => (Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds < 3 && Me.ComboPoints > 0) || Me.ComboPoints == 5),
-                        Spell.Cast("Dispatch"),
+                        Spell.Cast("Dispatch", req => Common.HasDaggerInMainHand),
 
                         Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
-                        Spell.Cast("Mutilate"),
+                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers),
 
+                        Common.CheckThatDaggersAreEquippedIfNeeded(),
                         Common.CreateRogueMoveBehindTarget()
                         )
                     )

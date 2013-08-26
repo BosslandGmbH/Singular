@@ -156,7 +156,9 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Unleash Weapon", 
                             ret => StyxWoW.Me.Inventory.Equipped.OffHand != null 
                                 && StyxWoW.Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == 5),
-                        Spell.Cast("Earth Shock")
+                        Spell.Cast("Earth Shock"),
+
+                        Spell.Cast("Lightning Bolt", ret => Me.CurrentTarget.IsFlying || !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, Me.CurrentTarget.Location))
                         )
                     )
                 );

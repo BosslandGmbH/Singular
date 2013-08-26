@@ -22,11 +22,12 @@ namespace Singular.Dynamics
         /// during behavior construction
         /// </summary>
         public static BehaviorType CurrentBehaviorType { get; set; }
+        public static bool SilentBehaviorCreation { get; set; }
 
 
         private static List<MethodInfo> _methods = new List<MethodInfo>();
 
-        public static Composite GetComposite(WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context, out int behaviourCount)
+        public static Composite GetComposite(WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context, out int behaviourCount, bool silent = false)
         {
             if (context == WoWContext.None)
             {
@@ -36,10 +37,11 @@ namespace Singular.Dynamics
                 return NoContextAvailable.CreateDoNothingBehavior();
             }
 
+            SilentBehaviorCreation = silent;
             behaviourCount = 0;
             if (_methods.Count <= 0)
             {
-                Logger.Write("Building method list");
+                // Logger.WriteDebug("Singular Behaviors: building method list");
                 foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
                 {
                     // All behavior methods should not be generic, and should have zero parameters, with their return types being of type Composite.
@@ -48,8 +50,9 @@ namespace Singular.Dynamics
                             mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(
                                 mi => mi.ReturnType.IsAssignableFrom(typeof (Composite))));
                 }
-                Logger.WriteDebug("Added " + _methods.Count + " methods");
+                Logger.WriteFile("Singular Behaviors: Added " + _methods.Count + " behaviors");
             }
+
             var matchedMethods = new Dictionary<BehaviorAttribute, Composite>();
 
             foreach (MethodInfo mi in _methods)
@@ -68,9 +71,8 @@ namespace Singular.Dynamics
                     // Check if our behavior matches with what we want. If not, don't add it!
                     if (IsMatchingMethod(attribute, wowClass, spec, behavior, context))
                     {
-                        Logger.WriteDebug(string.Format("Matched {0} to behavior {1} for {2} {3} with priority {4}", mi.Name,
-                            behavior, wowClass.ToString().CamelToSpaced(), spec.ToString().CamelToSpaced(),
-                            attribute.PriorityLevel));
+                        if (!silent)
+                            Logger.WriteFile("{0} {1} {2}", attribute.PriorityLevel.ToString().AlignRight(4), behavior.ToString().AlignLeft(15), mi.Name);
 
                         CurrentBehaviorType = behavior;
 

@@ -85,7 +85,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
@@ -165,7 +165,7 @@ namespace Singular.ClassSpecific.Priest
                                     Spell.Buff("Shadow Word: Pain", on => (WoWUnit) on)
                                     ),
 
-                                Spell.Cast("Mind Sear", ctx => (WoWUnit) ctx)
+                                Spell.Cast("Mind Sear", mov => true, ctx => (WoWUnit)ctx, ret => AoeTargets.Count() > 2, cancel => Me.HealthPercent < PriestSettings.ShadowFlashHealHealth)
                                 )
                             ),
 
@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
                                 Spell.Buff("Vampiric Touch"),
                                 Spell.Buff("Shadow Word: Pain", true, ret => Me.CurrentTarget.Elite || Me.CurrentTarget.HealthPercent > 40),
-                                Spell.Cast("Mind Flay", ret => Me.ManaPercent >= PriestSettings.MindFlayMana),
+                                Spell.Cast("Mind Flay", mov => true, on => Me.CurrentTarget, req => Me.ManaPercent >= PriestSettings.MindFlayMana, cancel => false ),
                                 Spell.Cast("Mind Blast")
                                 )
                             ),
@@ -209,7 +209,7 @@ namespace Singular.ClassSpecific.Priest
                                 ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),                           
 
                             Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
-                            Spell.Cast("Mind Flay")
+                            CastMindFlay()
                             )
                         )
                     )
@@ -227,7 +227,7 @@ namespace Singular.ClassSpecific.Priest
 
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -339,7 +339,7 @@ namespace Singular.ClassSpecific.Priest
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -414,7 +414,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20),
                         !Common.HasTalent(PriestTalents.SolaceAndInsanity) 
                             ? new ActionAlwaysFail() 
-                            : Spell.Cast("Mind Flay", ret => Me.CurrentTarget.HasMyAura("Devouring Plague")),
+                            : Spell.Cast("Mind Flay", mov => true, ctx => Me.CurrentTarget, ret => Me.CurrentTarget.HasMyAura("Devouring Plague"), cancel => false),
                         Spell.Buff("Shadow Word: Pain", true, on => Me.CurrentTarget, req => true, 3),
                         Spell.Buff("Vampiric Touch", true, on => Me.CurrentTarget, req => true, 3),
                         Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
@@ -423,8 +423,8 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Halo", ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
                         Spell.Cast("Divine Star"),
                         Spell.Cast("Cascade"),
-                        Spell.Cast("Mind Sear", req => AoeTargets.Count() > 1),
-                        Spell.Cast("Mind Flay", ret => Me.ManaPercent >= PriestSettings.MindFlayMana)
+                        Spell.Cast("Mind Sear", mov => true, ctx => Me.CurrentTarget, ret => AoeTargets.Count() > 1, cancel => false),
+                        Spell.Cast("Mind Flay", mov => true, ctx => Me.CurrentTarget, ret => Me.ManaPercent >= PriestSettings.MindFlayMana, cancel => false)
 #endif
                         )
                     )
@@ -452,6 +452,32 @@ namespace Singular.ClassSpecific.Priest
             }
         }
 
+        static Composite CastMindFlay()
+        {
+            return Spell.Cast("Mind Flay", 
+                mov => true, 
+                on => Me.CurrentTarget, 
+                req => Me.ManaPercent > PriestSettings.MindFlayMana,
+                cancel =>
+                {
+                    if (Spell.IsGlobalCooldown())
+                        return false;
+
+                    if (!Spell.IsSpellOnCooldown("Mind Blast") && Spell.GetSpellCastTime("Mind Blast") == TimeSpan.Zero)
+                        Logger.Write(Color.White, "/cancel Mind Flay for instant Mind Blast proc");
+                    else if (Me.HasAura("Surge of Darkness"))
+                        Logger.Write(Color.White, "/cancel Mind Flay for instant Mind Spike proc");
+                    else if (SpellManager.HasSpell("Shadow Word: Insanity") && Unit.NearbyUnfriendlyUnits.Any(u => u.GetAuraTimeLeft("Shadow Word: Pain", true).TotalMilliseconds.Between(1000, 5000) && u.InLineOfSpellSight))
+                        Logger.Write(Color.White, "/cancel Mind Flay for Shadow Word: Insanity proc");
+                    else if (!Spell.IsSpellOnCooldown("Shadow Word: Death") && Unit.NearbyUnfriendlyUnits.Any(u => u.HealthPercent < 20 && u.InLineOfSpellSight))
+                        Logger.Write(Color.White, "/cancel Mind Flay for Shadow Word: Death proc");
+                    else
+                        return false;
+
+                    return true;
+                });
+
+        }
 
         #endregion
 

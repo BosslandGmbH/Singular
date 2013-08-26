@@ -199,8 +199,6 @@ namespace Singular
                 IsManualMovementBotActive = manualBot;
             }
 
-            // adjust our HB debug level based upon bot selection
-            SingularSettings.DebugLogLevel = IsQuestBotActive ? LogLevel.Normal : LogLevel.Verbose;
             return changed;
         } 
 

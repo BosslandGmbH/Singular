@@ -38,8 +38,38 @@ namespace Singular.ClassSpecific.Rogue
                 CreateStealthBehavior( ret => RogueSettings.StealthIfEating && StyxWoW.Me.HasAura("Food")),
                 Rest.CreateDefaultRestBehaviour( ),
                 CreateRogueOpenBoxes(),
+
+                CheckThatDaggersAreEquippedIfNeeded(),
+
                 CreateRogueGeneralMovementBuff("Rest")
                 );
+        }
+
+        private static Composite _checkDaggers = null;
+
+        public static Composite CheckThatDaggersAreEquippedIfNeeded()
+        {
+            if (_checkDaggers == null)
+            {
+                _checkDaggers = new ThrottlePasses(60,
+                    new Sequence(
+                        new DecoratorContinue(
+                            ret => !Me.Disarmed && !Common.HasDaggerInMainHand && SpellManager.HasSpell("Dispatch"),
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Dispatch", Me.Specialization.ToString().CamelToSpaced()))
+                            ),
+                        new DecoratorContinue(
+                            ret => !Me.Disarmed && !Common.HasTwoDaggers && SpellManager.HasSpell("Mutilate"),
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires two daggers equipped to cast Mutilate", Me.Specialization.ToString().CamelToSpaced()))
+                            ),
+                        new DecoratorContinue(
+                            ret => !Me.Disarmed && !Common.HasDaggerInMainHand && SpellManager.HasSpell("Backstab"),
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Backstab", Me.Specialization.ToString().CamelToSpaced()))
+                            ),
+                        new ActionAlwaysFail()
+                        )
+                    );
+            }
+            return _checkDaggers;
         }
 
         [Behavior(BehaviorType.Heal, WoWClass.Rogue, (WoWSpec) int.MaxValue, WoWContext.Normal|WoWContext.Battlegrounds)]
@@ -133,7 +163,35 @@ namespace Singular.ClassSpecific.Rogue
             return new PrioritySelector(
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
                 CreateStealthBehavior( ret => Me.GotTarget && !Unit.IsTrivial(Me.CurrentTarget) && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 99 )),
-                Spell.Cast("Redirect", on => Me.CurrentTarget, ret => StyxWoW.Me.RawComboPoints > 0 && Me.ComboPointsTarget != Me.CurrentTargetGuid ),
+
+                // throttling this cast as there is an issue which occurs in that RawComboPoints is non-zero, 
+                // .. but WOW is reporting no combo pts exist.  believe this was due to original wowunit no 
+                // .. longer being in objmgr, but just in case throttling to avoid redirect spam loop
+                new Throttle( 3,
+                    Spell.Cast(
+                        "Redirect", 
+                        on => Me.CurrentTarget, 
+                        ret => {
+                            if ( Me.ComboPointsTarget != Me.CurrentTargetGuid )
+                            {
+                                if ( StyxWoW.Me.RawComboPoints > 0 )
+                                {
+                                    WoWUnit comboTarget = ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget);
+                                    if (comboTarget != null)
+                                    {
+                                        if (Spell.CanCastHack("Redirect", comboTarget))
+                                        {
+                                            Logger.Write( Color.White, "^Redirect: place {0} pts from {1} @ {2:F1} yds onto new target {3}", StyxWoW.Me.RawComboPoints, comboTarget.SafeName(), comboTarget.Distance, Me.CurrentTarget.SafeName());
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+
+                            return false;
+                        })
+                    ),
+
                 Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !Spell.CanCastHack("Redirect"))),
                 new Throttle( 1,
                     new Decorator(
@@ -266,7 +324,7 @@ namespace Singular.ClassSpecific.Rogue
                     new Sequence(
                         new Action(r => Logger.WriteDebug("MovingAwayFromMe: Target ({0:F2}) faster than Me ({1:F2}) -- trying Sprint or Ranged Attack", Me.CurrentTarget.MovementInfo.CurrentSpeed, Me.MovementInfo.CurrentSpeed)),
                         new PrioritySelector(
-                            Spell.Cast("Sap", req => Me.IsStealthed && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon)),
+                            Spell.Cast("Sap", req => IsStealthed && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon)),
                             new Decorator(
                                 req => !Me.HasAnyAura("Sprint","Burst of Speed","Shadowstep"),
                                 new PrioritySelector(
@@ -288,6 +346,102 @@ namespace Singular.ClassSpecific.Rogue
                 );
 
         }
+
+        public static Composite CreateRoguePullSapNearbyEnemyBehavior()
+        {
+            if (Dynamics.CompositeBuilder.CurrentBehaviorType != BehaviorType.Pull)
+                return new ActionAlwaysFail();
+
+            return new Decorator(
+                req => IsStealthed && Me.GotTarget,
+                new PrioritySelector(
+                    ctx => GetBestSapTarget(),
+                    new Decorator(
+                        ret => ret != null,
+                        new PrioritySelector(
+                            Movement.CreateMoveToLosBehavior( on => (WoWUnit) on),
+                            Movement.CreateMoveToUnitBehavior( on => (WoWUnit) on, 10, 7, statusWhenMoving: RunStatus.Success ),
+                            new Sequence(
+                                new Action( on => Me.SetFocus( (WoWUnit)on)),
+                                Spell.Cast("Sap", on => (WoWUnit) on),
+                                new DecoratorContinue( req => ((WoWUnit)req).Guid != Me.CurrentTargetGuid, Movement.CreateEnsureMovementStoppedBehavior(reason: "to change direction to CurrentTarget")),
+                                new Wait( TimeSpan.FromMilliseconds(500), until => ((WoWUnit) until).HasAura("Sap"), new ActionAlwaysFail()),
+                                new ActionAlwaysFail()
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+        private static ulong _lastSapTarget = 0;
+
+        private static WoWUnit GetBestSapTarget()
+        {
+            if (RogueSettings.SapAddDistance <= 0 && !RogueSettings.SapMovingTargetsOnPull)
+                return null;
+
+            if (!Me.GotTarget || !IsStealthed)
+                return null;
+
+            if (Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Sap")))
+                return null;
+
+            string msg = "";
+            WoWUnit closestTarget = null;
+
+            if (RogueSettings.SapAddDistance > 0)
+            {
+                closestTarget = Unit.UnfriendlyUnitsNearTarget(RogueSettings.SapAddDistance)
+                     .Where(u => u.Guid != Me.CurrentTargetGuid && !u.IsNeutral && IsUnitViableForSap(u))
+                     .OrderBy(u => u.Location.DistanceSqr(Me.CurrentTarget.Location))
+                     .ThenBy(u => u.DistanceSqr)
+                     .FirstOrDefault();
+
+                if (closestTarget != null)
+                {
+                    msg = string.Format("^Sap: {0} @ {1:F1} yds from target to avoid aggro while hitting target", closestTarget.SafeName(), closestTarget.Location.Distance(Me.CurrentTarget.Location));
+                }
+            }
+
+            if (closestTarget == null)
+            {
+                if (RogueSettings.SapMovingTargetsOnPull && Me.CurrentTarget.IsMoving && IsUnitViableForSap(Me.CurrentTarget))
+                {
+                    closestTarget = Me.CurrentTarget;
+                    msg = "^Sap: {0} since our target and moving";
+                }
+            }
+
+            if (closestTarget == null)
+            {
+                Logger.WriteDebug(Color.White, "no nearby Sap target");
+            }
+            else if (_lastSapTarget != closestTarget.Guid)
+            {
+                _lastSapTarget = closestTarget.Guid;
+                // reset the Melee Range check timeer to avoid timing out
+                SingularRoutine.ResetCurrentTargetTimer();
+                Logger.Write(Color.White, msg, closestTarget.SafeName());
+            }
+
+            return closestTarget;
+        }
+
+        private static bool IsUnitViableForSap(WoWUnit unit)
+        {
+            if (unit.Combat)
+                return false;
+
+            if (!(Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon))
+                return false;
+
+            if (unit.IsCrowdControlled())
+                return false;
+
+            return true;
+        }
+
 
         public static Composite CreateApplyPoisons()
         {
@@ -408,22 +562,46 @@ namespace Singular.ClassSpecific.Rogue
             return TalentManager.IsSelected((int)rogueTalents);
         }
 
-
-        internal static Composite CreateAttackFlyingMobs()
+         
+        internal static Composite CreateAttackFlyingOrUnreachableMobs()
         {
             return new Decorator(
                 // changed to only do on non-player targets
-                ret => !Me.CurrentTarget.IsPlayer && (Me.CurrentTarget.IsFlying || Me.CurrentTarget.IsAboveTheGround() || Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= 5),
+                ret => {
+                    if (!Me.GotTarget)
+                        return false;
+
+                    if (Me.CurrentTarget.IsPlayer)
+                        return false;
+
+                    if (Me.CurrentTarget.IsFlying)
+                    {
+                        Logger.Write(Color.White, "{0} is Flying! using Ranged attack....", Me.CurrentTarget.SafeName());
+                        return true;
+                    }
+
+                    if (Me.CurrentTarget.IsAboveTheGround())
+                    {
+                        Logger.Write(Color.White, "{0} is {1:F1) yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
+                        return true;
+                    }
+
+                    if (Me.CurrentTarget.Distance2DSqr < 5 * 5 && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= 5)
+                    {
+                        Logger.Write(Color.White, "{0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
+                        return true;
+                    }
+
+                    WoWPoint dest = Me.CurrentTarget.Location;
+                    if ( !Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully( Me.Location, dest))
+                    {
+                        Logger.Write(Color.White, "{0} is not Fully Pathable! trying ranged attack....", Me.CurrentTarget.SafeName());
+                        return true;
+                    }
+
+                    return false;
+                    },
                 new PrioritySelector(
-                    new Action( r => {
-                        Logger.WriteDebug( "Target appears airborne: flying={0} aboveground={1} dist={2:F1} zdiff={2:F1}",
-                            Me.CurrentTarget.IsFlying.ToYN(),
-                            Me.CurrentTarget.IsAboveTheGround().ToYN(),
-                            Me.CurrentTarget.Distance2D,
-                            Math.Abs(Me.Z - Me.CurrentTarget.Z)
-                            );
-                        return RunStatus.Failure;
-                        }),
                     Spell.Cast("Deadly Throw", req => Me.ComboPoints > 0),
                     Spell.Cast("Shuriken Toss"),
                     Spell.Cast("Throw"),
@@ -445,7 +623,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 new Sequence(
-                    Spell.BuffSelf("Stealth", ret => !IsStealthed && (req == null || req(ret))),
+                    Spell.BuffSelf("Stealth", ret => !IsStealthed && (req == null || req(ret)) && !Me.GetAllAuras().Any( a => a.IsHarmful)),
                     new Wait( TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed())
                     )                
                 );
@@ -472,7 +650,7 @@ namespace Singular.ClassSpecific.Rogue
 
             if (!AutoLootIsEnabled())
             {
-                Logger.Write(Color.White, "warning:  Auto Loot off, Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
+                Logger.Write(Color.White, "warning:  Auto Loot is off, so Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
                 return new ActionAlwaysFail();
             }
 

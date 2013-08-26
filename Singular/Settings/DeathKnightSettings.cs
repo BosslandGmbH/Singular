@@ -100,13 +100,6 @@ namespace Singular.Settings
         [Description("Health percent when to use Lichborne + Death Coil for healing.")]
         public int LichbornePercent { get; set; }
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Use Raise Ally")]
-        [Description("If set to true, it will battle rez via Raise Ally while in combat.")]
-        public bool UseRaiseAlly { get; set; }
-
 
         #endregion
 

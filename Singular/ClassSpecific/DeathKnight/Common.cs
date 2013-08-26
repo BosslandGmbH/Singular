@@ -183,9 +183,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
 
-                    Spell.BuffSelf("Death Coil",
-                        ret => Me.HasAura("Lichborne")
-                            && Me.HealthPercent < Settings.LichbornePercent),
+                    Spell.Cast("Death Coil", on => Me, ret => Me.HasAura("Lichborne") && Me.HealthPercent < Settings.LichbornePercent),
 
                     Spell.BuffSelf("Death Pact",
                         ret => Common.HasTalent( DeathKnightTalents.DeathPact) 
@@ -265,7 +263,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Spell.BuffSelf("Desecrated Ground", ret => Common.HasTalent( DeathKnightTalents.DesecratedGround) && Me.IsCrowdControlled()),
                     
-                        CreateRaiseAllyBehavior( on => Unit.NearbyGroupMembers.FirstOrDefault( u=> u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight)),
+                        Helpers.Common.CreateCombatRezBehavior("Raise Ally", on => ((WoWUnit)on).SpellDistance() < 40 && ((WoWUnit)on).InLineOfSpellSight),
 
                         // *** Offensive Cooldowns ***
 
@@ -377,7 +375,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     ret => !MovementManager.IsMovementDisabled 
                         && !Me.CurrentTarget.IsBoss() 
                         && Me.CurrentTarget.DistanceSqr > 10 * 10 
-                        && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe)
+                        && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe || (!Me.CurrentTarget.TaggedByOther && Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && SingularRoutine.CurrentWoWContext != WoWContext.Instances))
                     ),
                 new DecoratorContinue( ret => Me.IsMoving, new Action(ret => StopMoving.Now())),
                 new WaitContinue( 1, until => Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
@@ -430,33 +428,6 @@ namespace Singular.ClassSpecific.DeathKnight
                         ),
 
                     Spell.Cast("Plague Strike", ret => Me.CurrentTarget.HasAuraExpired("Blood Plague"))
-                    )
-                );
-        }
-
-        public static Composite CreateRaiseAllyBehavior(UnitSelectionDelegate onUnit)
-        {
-            if (!Settings.UseRaiseAlly)
-                return new PrioritySelector();
-
-            if (onUnit == null)
-            {
-                Logger.WriteDebug("CreateRaiseAllyBehavior: error - onUnit == null");
-                return new PrioritySelector();
-            }
-
-            return new PrioritySelector(
-                ctx => onUnit(ctx),
-                new Decorator(
-                    ret => onUnit(ret) != null && Spell.GetSpellCooldown("Raise Ally") == TimeSpan.Zero,
-                    new PrioritySelector(
-                        Spell.WaitForCast(FaceDuring.Yes),
-                        Movement.CreateMoveToUnitBehavior(ret => (WoWUnit)ret, 40f),
-                        new Decorator(
-                            ret => !Spell.IsGlobalCooldown(),
-                            Spell.Cast("Raise Ally", ret => (WoWUnit)ret)
-                            )
-                        )
                     )
                 );
         }

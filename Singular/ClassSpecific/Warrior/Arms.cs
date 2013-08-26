@@ -18,6 +18,7 @@ using Styx.WoWInternals.WoWObjects;
 using Styx.Common;
 using System.Drawing;
 using CommonBehaviors.Actions;
+using Styx.Pathing;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -57,16 +58,11 @@ namespace Singular.ClassSpecific.Warrior
                                 )
                             ),
 
-                        //Shoot flying targets
-                        new Decorator(
-                            ret => StyxWoW.Me.CurrentTarget.IsFlying,
-                            new PrioritySelector(
-                                Spell.Cast("Heroic Throw"),
-                                Spell.Cast("Throw"),
-                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
-                                )),
+                        Common.CreateAttackFlyingOrUnreachableMobs(),
 
-                        Common.CreateChargeBehavior()
+                        Common.CreateChargeBehavior(),
+
+                        Spell.Cast("Mortal Strike")
                         )
                     )
                 );

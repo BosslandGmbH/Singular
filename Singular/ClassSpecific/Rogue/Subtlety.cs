@@ -46,7 +46,9 @@ namespace Singular.ClassSpecific.Rogue
 
                         Common.CreateRogueOpenerBehavior(),
                         Common.CreatePullMobMovingAwayFromMe(),
-                        Common.CreateAttackFlyingMobs(),
+                        Common.CreateAttackFlyingOrUnreachableMobs(),
+
+                        // ok, everything else failed so just hit him!!!!
                         Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints < 5),
                         Spell.Cast("Hemorrhage")
                         )
@@ -108,18 +110,13 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.IsStealthed),
                         Spell.Buff("Hemorrhage"),
-                        Spell.Cast("Backstab", ret => Me.IsSafelyBehind(Me.CurrentTarget)),
+                        Spell.Cast("Backstab", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.HasDaggerInMainHand),
                         Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
 
                 // following cast is as a Combo Point builder if we can't cast Backstab
                         Spell.Cast("Hemorrhage", ret => Me.CurrentEnergy >= 35 || !SpellManager.HasSpell("Backstab") || !Me.IsSafelyBehind(Me.CurrentTarget)),
 
-                        new ThrottlePasses(60,
-                            new Decorator(
-                                ret => !Me.Disarmed && !Common.HasDaggerInMainHand && SpellManager.HasSpell("Backstab"),
-                                new Action(ret => Logger.Write(Color.HotPink, "config error: cannot cast Backstab without Dagger in Mainhand"))
-                                )
-                            )
+                        Common.CheckThatDaggersAreEquippedIfNeeded()
                         )
                     )
                 );
@@ -166,21 +163,13 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Ambush", ret => Me.CurrentTarget.MeIsBehind && (Me.HasAura("Shadow Dance") || Me.HasAura("Stealth"))),
                         Spell.Buff("Hemorrhage"),
-                        Spell.Cast("Backstab", ret => Me.CurrentTarget.MeIsBehind && HasDaggersEquipped),
-                        Spell.Cast("Hemorrhage", ret => !Me.CurrentTarget.MeIsBehind || !HasDaggersEquipped))
+                        Spell.Cast("Backstab", ret => Me.CurrentTarget.MeIsBehind && Common.HasDaggerInMainHand ),
+                        Spell.Cast("Hemorrhage", ret => !Me.CurrentTarget.MeIsBehind || !Common.HasDaggerInMainHand),
+
+                        Common.CheckThatDaggersAreEquippedIfNeeded()
+                        )
                     )
                 );
-        }
-
-        static bool HasDaggersEquipped
-        {
-            get
-            {
-                var mainhand = Me.Inventory.Equipped.MainHand;
-                var offhand = Me.Inventory.Equipped.OffHand;
-                return mainhand != null && mainhand.ItemInfo != null && mainhand.ItemInfo.WeaponClass == WoWItemWeaponClass.Dagger && offhand != null &&
-                       offhand.ItemInfo != null && offhand.ItemInfo.WeaponClass == WoWItemWeaponClass.Dagger;
-            }
         }
 
         #endregion

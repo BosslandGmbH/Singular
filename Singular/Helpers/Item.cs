@@ -51,11 +51,13 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite UseEquippedItem(uint slot)
         {
-            return new PrioritySelector(
-                ctx => StyxWoW.Me.Inventory.GetItemBySlot(slot),
-                new Decorator(
-                    ctx => ctx != null && CanUseEquippedItem((WoWItem)ctx),
-                    new Action(ctx => UseItem((WoWItem)ctx))
+            return new Throttle( TimeSpan.FromMilliseconds(250),
+                new PrioritySelector(
+                    ctx => StyxWoW.Me.Inventory.GetItemBySlot(slot),
+                    new Decorator(
+                        ctx => ctx != null && CanUseEquippedItem((WoWItem)ctx),
+                        new Action(ctx => UseItem((WoWItem)ctx))
+                        )
                     )
                 );
 
@@ -63,18 +65,20 @@ namespace Singular.Helpers
 
         public static Composite UseEquippedTrinket(TrinketUsage usage)
         {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => usage == SingularSettings.Instance.Trinket1Usage,
-                    UseEquippedItem( (uint) WoWInventorySlot.Trinket1 )
-                    ),
-                new Decorator(
-                    ret => usage == SingularSettings.Instance.Trinket2Usage,
-                    UseEquippedItem( (uint) WoWInventorySlot.Trinket2 )
-                    ),
-                new Decorator(
-                    ret => usage == SingularSettings.Instance.GloveUsage,
-                    UseEquippedItem( (uint) WoWInventorySlot.Hands )
+            return new Throttle( TimeSpan.FromMilliseconds(250),
+                new PrioritySelector(
+                    new Decorator(
+                        ret => usage == SingularSettings.Instance.Trinket1Usage,
+                        UseEquippedItem( (uint) WoWInventorySlot.Trinket1 )
+                        ),
+                    new Decorator(
+                        ret => usage == SingularSettings.Instance.Trinket2Usage,
+                        UseEquippedItem( (uint) WoWInventorySlot.Trinket2 )
+                        ),
+                    new Decorator(
+                        ret => usage == SingularSettings.Instance.GloveUsage,
+                        UseEquippedItem( (uint) WoWInventorySlot.Hands )
+                        )
                     )
                 );
         }
@@ -182,17 +186,21 @@ namespace Singular.Helpers
                 );
         }
 
+        /// <summary>
+        /// use Alchemist's Flask if no flask buff active. do over optimize since this is a precombatbuff behavior
+        /// </summary>
+        /// <returns></returns>
 
         public static Composite CreateUseAlchemyBuffsBehavior()
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret =>
-                    SingularSettings.Instance.UseAlchemyFlasks && StyxWoW.Me.GetSkill(SkillLine.Alchemy) != null && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 &&
-                    !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")), // don't try to use the flask if we already have or if we're using a better one
+                    ret => SingularSettings.Instance.UseAlchemyFlasks 
+                        && StyxWoW.Me.GetSkill(SkillLine.Alchemy) != null && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 
+                        && !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")), // don't try to use the flask if we already have or if we're using a better one
                     new PrioritySelector(
-                        ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 58149) ?? StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 47499),
-                // Flask of Enhancement / Flask of the North
+                        ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 75525),
+                        // Alchemist's Flask
                         new Decorator(
                             ret => ret != null,
                             new Sequence(
@@ -253,6 +261,7 @@ namespace Singular.Helpers
                 Logger.WriteFile("Equipped Average Item Level: {0}", totalItemLevel / 16);
                 Logger.WriteFile("");
                 Logger.WriteFile("Health:      {0}", Me.MaxHealth);
+                Logger.WriteFile("Strength:    {0}", Me.Strength);
                 Logger.WriteFile("Agility:     {0}", Me.Agility);
                 Logger.WriteFile("Intellect:   {0}", Me.Intellect);
                 Logger.WriteFile("Spirit:      {0}", Me.Spirit);

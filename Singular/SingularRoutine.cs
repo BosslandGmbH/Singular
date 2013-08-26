@@ -45,17 +45,21 @@ namespace Singular
             TreeHooks.Instance.HooksCleared += () =>
                 {
                     Logger.Write(Color.White, "Hooks cleared, re-creating behaviors");
-                    RebuildBehaviors();
+                    RebuildBehaviors(silent: true);
                     Spell.GcdInitialize();   // probably not needed, but quick
                 };
 
+            _lastLogLevel = GlobalSettings.Instance.LogLevel;
             GlobalSettings.Instance.PropertyChanged += (sender, e) =>
                 {
                     // only LogLevel change will impact our behav trees
                     // .. as we conditionally include/omit some diagnostic nodes if debugging
-                    if (e.PropertyName == "LogLevel")
+                    // also need to keep a cached copy of prior value as the event
+                    // .. fires on the settor, not when the value is different
+                    if (e.PropertyName == "LogLevel" && _lastLogLevel != GlobalSettings.Instance.LogLevel)
                     {
-                        Logger.Write(Color.White, "HonorBuddy {0} setting change, re-creating behaviors", e.PropertyName);
+                        _lastLogLevel = GlobalSettings.Instance.LogLevel;
+                        Logger.Write(Color.White, "HonorBuddy {0} setting changed to {1}, re-creating behaviors", e.PropertyName, _lastLogLevel.ToString());
                         RebuildBehaviors();
                         Spell.GcdInitialize();   // probably not needed, but quick
                     }
@@ -65,6 +69,8 @@ namespace Singular
             // .. local botevent handlers should be called or not
             SingularBotEventInitialize();
         }
+
+        private static LogLevel _lastLogLevel = LogLevel.None;
 
         public static SingularRoutine Instance { get; private set; }
 
@@ -291,7 +297,7 @@ namespace Singular
             RoutineManager.Reloaded += (s, e) =>
                 {
                     Logger.Write(Color.White, "Routines were reloaded, re-creating behaviors");
-                    RebuildBehaviors();
+                    RebuildBehaviors(silent:true);
                     Spell.GcdInitialize();
                 };
 

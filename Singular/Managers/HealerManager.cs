@@ -289,7 +289,7 @@ namespace Singular.Managers
 
             if (!Spell.CanCastHack(spell, Me, skipWowCheck: true))
             {
-                if (!SingularSettings.Instance.EnableDebugLoggingCanCast)
+                if (!SingularSettings.Instance.DebugSpellCanCast)
                     Logger.WriteDebug("GetBestCoverageTarget: CanCastHack says NO to [{0}]", spell);
                 return null;
             }
@@ -333,7 +333,7 @@ namespace Singular.Managers
                     return t.Player;
                 }
 
-                if (SingularSettings.Instance.EnableDebugLoggingCanCast)
+                if (SingularSettings.Instance.DebugSpellCanCast)
                 {
                     Logger.WriteDebug("GetBestCoverageTarget('{0}'): not enough found - {1} with {2} nearby under {3}%", spell, t.Player.SafeName(), t.Count, health);
                 }
@@ -451,6 +451,9 @@ namespace Singular.Managers
 
         public void ListBehaviors()
         {
+            if (Dynamics.CompositeBuilder.SilentBehaviorCreation)
+                return;
+
             foreach (PrioritizedBehavior hs in blist)
             {
                 Logger.WriteDebug(Color.GreenYellow, "   Priority {0} for Behavior [{1}]", hs.Priority.ToString().AlignRight(4), hs.Name);

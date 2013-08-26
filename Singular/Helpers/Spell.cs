@@ -17,6 +17,7 @@ using Singular.Managers;
 using Styx.Helpers;
 using System.Drawing;
 using Styx.Patchables;
+using Styx.Common;
 
 namespace Singular.Helpers
 {
@@ -1785,38 +1786,38 @@ namespace Singular.Helpers
             {
                 if (spell.IsMeleeSpell && !unit.IsWithinMeleeRange)
                 {
-                    if (SingularSettings.Instance.EnableDebugLoggingCanCast )
-                        Logger.WriteDebug("CanCast[{0}]: target @ {1:F1} yds not in melee range", castName, unit.Distance);
+                    if (SingularSettings.Instance.DebugSpellCanCast )
+                        Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: target @ {1:F1} yds not in melee range", castName, unit.Distance);
                     return false;
                 }
                 if (spell.HasRange )
                 {
                     if (unit.Distance > spell.ActualMaxRange(unit))
                     {
-                        if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                            Logger.WriteDebug("CanCast[{0}]: out of range - further than {1:F1}", castName, spell.ActualMaxRange(unit));
+                        if (SingularSettings.Instance.DebugSpellCanCast)
+                            Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: out of range - further than {1:F1}", castName, spell.ActualMaxRange(unit));
                         return false;
                     }
                     if (unit.Distance < spell.ActualMinRange(unit))
                     {
-                        if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                            Logger.WriteDebug("CanCast[{0}]: out of range - closer than {1:F1}", castName, spell.ActualMinRange(unit));
+                        if (SingularSettings.Instance.DebugSpellCanCast)
+                            Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: out of range - closer than {1:F1}", castName, spell.ActualMinRange(unit));
                         return false;
                     }
                 }
 
                 if (!unit.InLineOfSpellSight)
                 {
-                    if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                        Logger.WriteDebug("CanCast[{0}]: not in spell line of {1}", castName, unit.SafeName());
+                    if (SingularSettings.Instance.DebugSpellCanCast)
+                        Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: not in spell line of {1}", castName, unit.SafeName());
                     return false;
                 }
             }
 
             if ((spell.CastTime != 0u || IsFunnel(spell)) && Me.IsMoving && !AllowMovingWhileCasting(spell))
             {
-                if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                    Logger.WriteDebug("CanCast[{0}]: cannot cast while moving", castName);
+                if (SingularSettings.Instance.DebugSpellCanCast)
+                    Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: cannot cast while moving", castName);
                 return false;
             }
 
@@ -1825,15 +1826,15 @@ namespace Singular.Helpers
                 uint num = StyxWoW.WoWClient.Latency * 2u;
                 if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
                 {
-                    if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                        Logger.WriteDebug("CanCast[{0}]: current cast of {1} has {2:F0} ms left", castName, Me.CurrentCastId, Me.CurrentCastTimeLeft.TotalMilliseconds - num);
+                    if (SingularSettings.Instance.DebugSpellCanCast)
+                        Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: current cast of {1} has {2:F0} ms left", castName, Me.CurrentCastId, Me.CurrentCastTimeLeft.TotalMilliseconds - num);
                     return false;
                 }
 
                 if (spell.CooldownTimeLeft.TotalMilliseconds > num)
                 {
-                    if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                        Logger.WriteDebug("CanCast[{0}]: still on cooldown for {1:F0} ms", castName, spell.CooldownTimeLeft.TotalMilliseconds - num);
+                    if (SingularSettings.Instance.DebugSpellCanCast)
+                        Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: still on cooldown for {1:F0} ms", castName, spell.CooldownTimeLeft.TotalMilliseconds - num);
                     return false;
                 }
             }
@@ -1859,8 +1860,8 @@ namespace Singular.Helpers
 
             if (currentPower < (uint) spell.PowerCost)
             {
-                if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                    Logger.WriteDebug("CanCast[{0}]: insufficient power (need {1:F0}, have {2:F0} {3})", castName, spell.PowerCost, currentPower, formSwitch ? "Mana in Form" : Me.PowerType.ToString() );
+                if (SingularSettings.Instance.DebugSpellCanCast)
+                    Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: insufficient power (need {1:F0}, have {2:F0} {3})", castName, spell.PowerCost, currentPower, formSwitch ? "Mana in Form" : Me.PowerType.ToString() );
                 return false;
             }
 
@@ -1869,8 +1870,8 @@ namespace Singular.Helpers
                 int baseCooldown = GetBaseCooldown(spell);
                 if (baseCooldown >= SingularSettings.Instance.DisableSpellsWithCooldown * 1000)
                 {
-                    if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                        Logger.WriteDebug("CanCast[{0}]: basecooldown of {0} exceeds max allowed user setting of {1} ms", baseCooldown, SingularSettings.Instance.DisableSpellsWithCooldown * 1000);
+                    if (SingularSettings.Instance.DebugSpellCanCast)
+                        Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: basecooldown of {0} exceeds max allowed user setting of {1} ms", baseCooldown, SingularSettings.Instance.DisableSpellsWithCooldown * 1000);
                     return false;
                 }
             }
@@ -1878,8 +1879,8 @@ namespace Singular.Helpers
             // override spell will sometimes always have cancast=false, so check original also
             if (!skipWowCheck && !spell.CanCast && (sfr.Override == null || !sfr.Original.CanCast))
             {
-                if (SingularSettings.Instance.EnableDebugLoggingCanCast)
-                    Logger.WriteDebug("CanCast[{0}]: spell specific CanCast failed (#{1})", castName, spell.Id);
+                if (SingularSettings.Instance.DebugSpellCanCast)
+                    Logger.WriteFile(LogLevel.Diagnostic, "CanCast[{0}]: spell specific CanCast failed (#{1})", castName, spell.Id);
 
                 return false;
             }

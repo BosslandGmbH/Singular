@@ -181,7 +181,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         new Decorator( 
                             ret => Me.IsInGroup() && WarlockSettings.UseSoulstone != Soulstone.None && WarlockSettings.UseSoulstone != Soulstone.Self,
-                            CreateWarlockRessurectBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead))
+                            Helpers.Common.CreateCombatRezBehavior("Soulstone", on => true, requirements => true)
                             ),
 
 
@@ -256,7 +256,7 @@ namespace Singular.ClassSpecific.Warlock
                             ret => (Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss())) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMyStuff()) >= 3,
                             new PrioritySelector(
                                 Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction),
-                                Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction),
+                                Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && Destruction.CurrentBurningEmbers >= 30),
                                 Spell.BuffSelf("Dark Soul: Knowledge", ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800)
                                 )
                             ),
@@ -612,7 +612,7 @@ namespace Singular.ClassSpecific.Warlock
             }
 
             return new Decorator(
-                ret => onUnit(ret) != null && onUnit(ret).IsDead && Spell.CanCastHack( "Soulstone", onUnit(ret)),
+                ret => Me.Combat && onUnit(ret) != null && onUnit(ret).IsDead && Spell.CanCastHack( "Soulstone", onUnit(ret)) && !Group.Healers.Any(h => h.IsAlive && !h.Combat && h.SpellDistance() < 40),
                 new Sequence(
                     new Action( r => _targetRez = onUnit(r)),
                     new PrioritySelector(
@@ -620,7 +620,7 @@ namespace Singular.ClassSpecific.Warlock
                         Movement.CreateMoveToUnitBehavior(ret => _targetRez, 40f),
                         new Decorator(
                             ret => !Spell.IsGlobalCooldown(),
-                            Spell.Cast("Soulstone", ret => _targetRez)
+                            Spell.Cast("Soulstone", mov => true, on => _targetRez, req => true, cancel => ((WoWUnit)cancel).IsAlive)
                             )
                         )
                     )
@@ -629,8 +629,8 @@ namespace Singular.ClassSpecific.Warlock
 
         private static bool UseSoulstoneForBattleRez()
         {
-            bool cast = WarlockSettings.UseSoulstone == Soulstone.Ressurect
-                || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext == WoWContext.Instances);
+            bool cast = SingularSettings.Instance.CombatRezTarget != CombatRezTarget.None 
+                && (WarlockSettings.UseSoulstone == Soulstone.Ressurect || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext == WoWContext.Instances));
             return cast;
         }
 

@@ -35,7 +35,7 @@ namespace Singular.ClassSpecific.Monk
         private static Composite TryCastClashBehavior()
         {
             return new Decorator(
-                ctx => _clashTimer.IsFinished && Spell.CanCastHack("Clash", Me.CurrentTarget),
+                ctx => _clashTimer.IsFinished && Spell.CanCastHack("Clash", Me.CurrentTarget) && Singular.Utilities.EventHandlers.LastNoPathTarget != Me.CurrentTargetGuid,
                 new Sequence(new Action(ctx => SpellManager.Cast("Clash")), new Action(ctx => _clashTimer.Reset())));
         }
 

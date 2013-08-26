@@ -106,7 +106,7 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Cast("Corruption", req => !Me.HasAura("Metamorphosis") && Me.CurrentTarget.HasAuraExpired("Corruption", 3)),
                         new Throttle(1,
                             new Sequence(
-                                Spell.CastHack("Metamorphosis: Doom", "Doom", on => Me.CurrentTarget, req => Me.HasAura("Metamorphosis") && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom", 10) && DoesCurrentTargetDeserveToGetDoom()),
+                                Spell.CastHack("Metamorphosis: Doom", "Doom", on => Me.CurrentTarget, req => Me.HasAura("Metamorphosis") && (Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom", 10) && DoesCurrentTargetDeserveToGetDoom()) || NeedToReapplyDoom()),
                                 new WaitContinue(TimeSpan.FromMilliseconds(350), canRun => Me.CurrentTarget.HasAura("Doom"), new ActionAlwaysSucceed())
                                 )
                             ),
@@ -179,6 +179,27 @@ namespace Singular.ClassSpecific.Warlock
                 );
         }
 
+
+        #region Handle Forcing Reapply of Doom if Needed due to Buff/Proc
+
+        static ulong _guidLastUberDoom = 0;
+        static DateTime _timeNextUberDoom = DateTime.Now;
+
+        private static bool NeedToReapplyDoom()
+        {
+            if (Me.HasAura("Perfect Aim") && (_guidLastUberDoom != Me.CurrentTargetGuid || _timeNextUberDoom < DateTime.Now))
+            {
+                _guidLastUberDoom = Me.CurrentTargetGuid;
+                _timeNextUberDoom = DateTime.Now + TimeSpan.FromSeconds(60);
+                Logger.Write(Color.White, "^Perfect Aim: applying 100% Critical Doom");
+                return true;
+            }
+
+            return false;
+        }
+
+        #endregion
+
         private static uint endMoltenCore = 0;
         private static uint stackMoltenCore = 0;
 
@@ -208,6 +229,8 @@ namespace Singular.ClassSpecific.Warlock
                     shouldCast = true;
                 // check if we have Corruption and we need to dump fury
                 else if (CurrentDemonicFury >= WarlockSettings.FurySwitchToDemon && !Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
+                    shouldCast = true;
+                else if (Me.HasAnyAura("Dark Soul: Knowledge", "Perfect Aim"))
                     shouldCast = true;
                 
                 // if we need to cast, check that we can
@@ -243,7 +266,7 @@ namespace Singular.ClassSpecific.Warlock
                 if (CurrentDemonicFury < 40)
                     shouldCancel = true;
                 // check if we should stay in demon form because of buff
-                else if (Me.HasAura("Dark Soul: Knowledge"))
+                else if (Me.HasAnyAura("Dark Soul: Knowledge", "Perfect Aim"))
                     shouldCancel = false;
                 // check if we should stay in demon form because of Doom falling off
                 else if ( CurrentDemonicFury >= 60 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom"))

@@ -29,9 +29,8 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueCombatPull()
         {
             return new PrioritySelector(
-                Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
-
                 Safers.EnsureTarget(),
+                Common.CreateRoguePullSapNearbyEnemyBehavior(),
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
@@ -43,16 +42,11 @@ namespace Singular.ClassSpecific.Rogue
 
                         Common.CreateRogueOpenerBehavior(),
                         Common.CreatePullMobMovingAwayFromMe(),
-                        Common.CreateAttackFlyingMobs(),
+                        Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         // ok, everything else failed so just hit him!!!!
-                        new Decorator(
-                            ret => !Common.IsStealthed &&  Me.CurrentTarget.IsWithinMeleeRange,
-                            new PrioritySelector(
-                                Spell.Buff("Revealing Strike", true, ret => true),
-                                Spell.Cast("Sinister Strike")
-                                )
-                            )
+                        Spell.Buff("Revealing Strike", true, ret => true),
+                        Spell.Cast("Sinister Strike")
                         )
                     )
                 );

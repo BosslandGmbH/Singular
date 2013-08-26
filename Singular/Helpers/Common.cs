@@ -502,5 +502,78 @@ namespace Singular.Helpers
                 );
         }
 
+        static DateTime brezStart = DateTime.Now;
+        static ulong brezPrevGuid = 0;
+
+        public static Composite CreateCombatRezBehavior(string spellName, SimpleBooleanDelegate unitFilter = null, SimpleBooleanDelegate requirements = null)
+        {
+            UnitSelectionDelegate onUnit;
+
+            if (unitFilter == null)
+                unitFilter = req => true;
+
+            if (requirements == null)
+                requirements = req => true;
+
+            switch (SingularSettings.Instance.CombatRezTarget)
+            {
+                default:
+                    onUnit = null;
+                    break;
+                case CombatRezTarget.Tank:
+                    onUnit = on => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead && unitFilter(t) && t.SpellDistance() < SingularSettings.Instance.MaxHealTargetRange);
+                    break;
+                case CombatRezTarget.Healer:
+                    onUnit = on => Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead && unitFilter(h) && h.SpellDistance() < SingularSettings.Instance.MaxHealTargetRange);
+                    break;
+                case CombatRezTarget.TankOrHealer:
+                    onUnit = on => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead && unitFilter(t) && t.SpellDistance() < SingularSettings.Instance.MaxHealTargetRange)
+                        ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead && unitFilter(h) && h.SpellDistance() < SingularSettings.Instance.MaxHealTargetRange);
+                    break;
+                case CombatRezTarget.DPS:
+                    onUnit = on => Group.Dps.FirstOrDefault(d => !d.IsMe && d.IsDead && unitFilter(d) && d.SpellDistance() < SingularSettings.Instance.MaxHealTargetRange);
+                    break;
+                case CombatRezTarget.All:
+                    onUnit = on => (Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead && unitFilter(t) && t.SpellDistance() < SingularSettings.Instance.MaxHealTargetRange)
+                        ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead && unitFilter(h) && h.SpellDistance() < SingularSettings.Instance.MaxHealTargetRange))
+                            ?? Group.Dps.FirstOrDefault(d => !d.IsMe && d.IsDead && unitFilter(d) && d.SpellDistance() < SingularSettings.Instance.MaxHealTargetRange);
+                    break;
+            }
+
+            if (onUnit == null)
+            {
+                Logger.WriteDebug("CreateRebirthBehavior: error - onUnit == null");
+                return new PrioritySelector();
+            }
+
+            // throttle to minimize the impact of the list searches to once every interval
+            return new ThrottlePasses( 1, 1,
+                new Decorator(
+                    req => Me.Combat && Spell.GetSpellCooldown(spellName) == TimeSpan.Zero && requirements(req),
+                    new PrioritySelector(
+                        ctx => onUnit(ctx),
+                        new Decorator(
+                            ret => onUnit(ret) != null,
+                            new PrioritySelector(
+                                new Action( on => {
+                                    if (((WoWUnit)on).Guid != brezPrevGuid)
+                                    {
+                                        brezPrevGuid = ((WoWUnit)on).Guid;
+                                        brezStart = DateTime.Now + TimeSpan.FromSeconds( SingularSettings.Instance.CombatRezDelay);
+                                        Logger.Write(Color.White,"^Combat Ressurrect: {0} @ {1:F1} yds in {2} seconds", ((WoWUnit)on).SafeName(), ((WoWUnit)on).SpellDistance(), SingularSettings.Instance.CombatRezDelay);
+                                    }
+                                    return RunStatus.Failure;
+                                }),
+                                Movement.CreateMoveToLosBehavior(on => (WoWUnit) on),
+                                Movement.CreateMoveToUnitBehavior(on => (WoWUnit)on, 40f, 40f),
+                                new Wait( SingularSettings.Instance.CombatRezDelay, until => brezStart < DateTime.Now, new ActionAlwaysFail()),
+                                Spell.Cast(spellName, mov => true, on => (WoWUnit)on, requirements, cancel => ((WoWUnit)cancel).IsAlive)
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
     }
 }

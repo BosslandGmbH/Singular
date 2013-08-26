@@ -44,21 +44,13 @@ namespace Singular.ClassSpecific.Warrior
                         //Buff up
                         Spell.Cast(Common.SelectedShout),
 
-                        //Shoot flying targets
-                        new Decorator(
-                            ret => StyxWoW.Me.CurrentTarget.IsFlying,
-                            new PrioritySelector(
-                                Spell.Cast("Heroic Throw"),
-                                Spell.Cast("Throw"),
-                                Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 27f, 22f)
-                                )),
+                        Common.CreateAttackFlyingOrUnreachableMobs(),
 
-                        Common.CreateChargeBehavior()
+                        Common.CreateChargeBehavior(),
+
+                        Spell.Cast("Bloodthirst")
                         )
-                    ),
-
-                // Move to Melee
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 

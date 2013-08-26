@@ -44,11 +44,11 @@ namespace Singular
         public override Composite RestBehavior { get { return _restBehavior; } }
 
         private static ulong _guidLastTarget = 0;
-        private static WaitTimer _timerLastTarget = new WaitTimer(TimeSpan.FromSeconds(15));
+        private static WaitTimer _timerLastTarget = new WaitTimer(TimeSpan.FromSeconds(20));
 
         public bool RebuildBehaviors(bool silent = false)
         {
-            Logger.PrintStackTrace("RebuildBehaviors called.");
+            // Logger.PrintStackTrace("RebuildBehaviors called.");
 
             InitBehaviors();
 
@@ -63,29 +63,29 @@ namespace Singular
             TreeHooks.Instance.ReplaceHook(HookName("KitingBehavior"), new ActionAlwaysFail());
 
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
-            if (!EnsureComposite(true, context, BehaviorType.Combat))
+            if (!EnsureComposite( silent, true, context, BehaviorType.Combat))
             {
                 return false;
             }
 
-            if (!EnsureComposite(true, context, BehaviorType.Pull))
+            if (!EnsureComposite( silent, true, context, BehaviorType.Pull))
             {
                 return false;
             }
 
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
-            EnsureComposite(false, context, BehaviorType.Rest);
+            EnsureComposite( silent, false, context, BehaviorType.Rest);
             if (TreeHooks.Instance.Hooks[HookName(BehaviorType.Rest)] == null)
                 TreeHooks.Instance.ReplaceHook(HookName(BehaviorType.Rest), Helpers.Rest.CreateDefaultRestBehaviour());
 
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
-            EnsureComposite(false, context, BehaviorType.CombatBuffs);
-            EnsureComposite(false, context, BehaviorType.Heal);
-            EnsureComposite(false, context, BehaviorType.PullBuffs);
-            EnsureComposite(false, context, BehaviorType.PreCombatBuffs);
+            EnsureComposite( silent, false, context, BehaviorType.CombatBuffs);
+            EnsureComposite( silent, false, context, BehaviorType.Heal);
+            EnsureComposite( silent, false, context, BehaviorType.PullBuffs);
+            EnsureComposite( silent, false, context, BehaviorType.PreCombatBuffs);
 
-            EnsureComposite(false, context, BehaviorType.LossOfControl);
+            EnsureComposite( silent, false, context, BehaviorType.LossOfControl);
 
 #if SHOW_BEHAVIOR_LOAD_DESCRIPTION
             // display concise single line describing what behaviors we are loading
@@ -388,12 +388,12 @@ namespace Singular
         /// <param name="error">true: report error if composite not found, false: allow null composite</param>
         /// <param name="type">BehaviorType that should be loaded</param>
         /// <returns>true: composite loaded and saved to hook, false: failure</returns>
-        private bool EnsureComposite(bool error, WoWContext context, BehaviorType type)
+        private bool EnsureComposite(bool silent, bool error, WoWContext context, BehaviorType type)
         {
             int count = 0;
             Composite composite;
 
-            Logger.WriteDebug("Creating " + type + " behavior.");
+            // Logger.WriteDebug("Creating " + type + " behavior.");
 
             composite = CompositeBuilder.GetComposite(Class, TalentManager.CurrentSpec, type, context, out count);
 
@@ -413,6 +413,13 @@ namespace Singular
             }
 
             return composite != null;
+        }
+
+        public static void ResetCurrentTargetTimer()
+        {
+            _timerLastTarget.Reset();
+            if (SingularSettings.Debug)
+                Logger.WriteDebug("reset target timer to {0:c}", _timerLastTarget.TimeLeft);
         }
 
         private static Composite CreateLogTargetChanges(BehaviorType behav, string sType)
@@ -435,45 +442,36 @@ namespace Singular
                         else
                         {
                             _guidLastTarget = Me.CurrentTargetGuid;
-                            _timerLastTarget.Reset();
-                            if (SingularSettings.Debug)
-                                Logger.WriteDebug("reset target timer to {0:c}", _timerLastTarget.TimeLeft);
+                            ResetCurrentTargetTimer();
                             LogTargetChanges(behav, sType);
                         }
                     }
                     // we have some type of target
-                    else if (_guidLastTarget != 0)  
+                    else if (Me.CurrentTargetGuid != 0 && !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Normal)  
                     {       
                         // make sure we get into melee range within reasonable time
-                        if (!MovementManager.IsMovementDisabled && !IsDungeonBuddyActive )
+                        if ((!Me.IsMelee() || Me.CurrentTarget.IsWithinMeleeRange) && Movement.InLineOfSpellSight(Me.CurrentTarget, 5000))
                         {
-                            if (Me.IsMelee())
+                            ResetCurrentTargetTimer();
+                        }
+                        else if (_timerLastTarget.IsFinished)
+                        {
+                            BlacklistFlags blf = Me.CurrentTarget.Aggro || (Me.GotAlivePet && Me.CurrentTarget.PetAggro) ? BlacklistFlags.Combat : BlacklistFlags.Pull;
+                            if (!Blacklist.Contains(_guidLastTarget, blf))
                             {
-                                if (Me.CurrentTarget.IsWithinMeleeRange)
-                                {
-                                    _timerLastTarget.Reset();
-                                }
-                                else if (_timerLastTarget.IsFinished)
-                                {
-                                    BlacklistFlags blf = Me.CurrentTarget.Aggro || (Me.GotAlivePet && Me.CurrentTarget.PetAggro) ? BlacklistFlags.Combat : BlacklistFlags.Pull;
-                                    if (!Blacklist.Contains(_guidLastTarget, blf))
-                                    {
-                                        TimeSpan bltime = TimeSpan.FromMinutes(5);
+                                TimeSpan bltime = TimeSpan.FromMinutes(5);
 
-                                        Logger.Write(Color.HotPink, "{0} Target {1} out of melee range for {2:F1} seconds, blacklisting for {3:c} and clearing {4}", 
-                                            blf, 
-                                            Me.CurrentTarget.SafeName(), 
-                                            _timerLastTarget.WaitTime.TotalSeconds, 
-                                            bltime,
-                                            _guidLastTarget == BotPoi.Current.Guid ? "BotPoi" : "Current Target" );
+                                Logger.Write(Color.HotPink, "{0} Target {1} out of range/line of sight for {2:F1} seconds, blacklisting for {3:c} and clearing {4}", 
+                                    blf, 
+                                    Me.CurrentTarget.SafeName(), 
+                                    _timerLastTarget.WaitTime.TotalSeconds, 
+                                    bltime,
+                                    _guidLastTarget == BotPoi.Current.Guid ? "BotPoi" : "Current Target" );
 
-                                        Blacklist.Add(_guidLastTarget, blf, TimeSpan.FromMinutes(5));
-                                        if (_guidLastTarget == BotPoi.Current.Guid)
-                                            BotPoi.Clear("Clearing Blacklisted BotPoi");
-                                        Me.ClearTarget();
-                                    }
-
-                                }
+                                Blacklist.Add(_guidLastTarget, blf, TimeSpan.FromMinutes(5));
+                                if (_guidLastTarget == BotPoi.Current.Guid)
+                                    BotPoi.Clear("Clearing Blacklisted BotPoi");
+                                Me.ClearTarget();
                             }
                         }
                     }

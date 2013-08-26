@@ -448,7 +448,7 @@ namespace Singular.ClassSpecific.Shaman
             // .. avoid unnecessary heal casts
                     new Decorator(
                         ret => !Me.Combat,
-                        Spell.Cast("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) <= 85)
+                        Spell.Cast("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) < 85)
                         ),
 
                     new Decorator(
@@ -456,9 +456,12 @@ namespace Singular.ClassSpecific.Shaman
 
                         new PrioritySelector(
 
-                            new Sequence(
-                                Spell.BuffSelf("Ancestral Guidance", ret => Me.HealthPercent < (Common.StressfulSituation ? 60 : 40)),
-                                new ActionAlwaysFail()  // not on GCD
+                            Spell.OffGCD( 
+                                Spell.BuffSelf("Ancestral Guidance", 
+                                    ret => Me.HealthPercent < ShamanSettings.SelfAncestralGuidance 
+                                        && Me.GotTarget
+                                        && Me.CurrentTarget.TimeToDeath() > 8 
+                                    )
                                 ),
 
                             // save myself if possible

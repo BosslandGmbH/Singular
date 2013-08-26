@@ -231,7 +231,7 @@ namespace Singular.Helpers
                                     new Decorator(
                                         req => ((WoWUnit)req).Guid != StyxWoW.Me.CurrentTargetGuid,
                                         new Sequence(
-                                            new Action(ret => Logger.Write( targetColor, "EnsureTarget: switching to target {0}", ((WoWUnit)ret).SafeName())),
+                                            // new Action(ret => Logger.Write( targetColor, "EnsureTarget: switching to target {0}", ((WoWUnit)ret).SafeName())),
                                             new Action(ret => ((WoWUnit)ret).Target()),
                                             new WaitContinue( 2, ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == (WoWUnit)ret, new ActionAlwaysSucceed()),
                                             new Action(ret => TankManager.TargetingTimer.Reset())   // cheaper to just reset than to check if we need Tank Targeting

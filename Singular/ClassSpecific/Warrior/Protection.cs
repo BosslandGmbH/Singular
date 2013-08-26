@@ -37,26 +37,32 @@ namespace Singular.ClassSpecific.Warrior
 
                 Helpers.Common.CreateDismount("Pulling"),
 
-                Common.CreateAttackOutsideOfMelee(),
+                Spell.WaitForCastOrChannel(),
 
-                //Buff up (or use to generate Rage)
-                new Throttle( TimeSpan.FromSeconds(1), 
+                new Decorator(
+                    req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+                        Common.CreateAttackFlyingOrUnreachableMobs(),
 
-                        Spell.Cast("Battle Shout", 
-                            ret => !Me.HasMyAura("Commanding Shout") 
-                                && (!Me.HasPartyBuff(PartyBuffType.AttackPower) || Me.CurrentRage < 20)),
+                        Common.CreateChargeBehavior(),
 
-                        Spell.Cast("Commanding Shout", 
-                            ret => !Me.HasMyAura("Battle Shout") 
-                                && (!Me.HasPartyBuff(PartyBuffType.Stamina) || Me.CurrentRage < 20))
+                        //Buff up (or use to generate Rage)
+                        new Throttle( TimeSpan.FromSeconds(1), 
+                            new PrioritySelector(
+
+                                Spell.Cast("Battle Shout", 
+                                    ret => !Me.HasMyAura("Commanding Shout") 
+                                        && (!Me.HasPartyBuff(PartyBuffType.AttackPower) || Me.CurrentRage < 20)),
+
+                                Spell.Cast("Commanding Shout", 
+                                    ret => !Me.HasMyAura("Battle Shout") 
+                                        && (!Me.HasPartyBuff(PartyBuffType.Stamina) || Me.CurrentRage < 20))
+                                )
+                            ),
+
+                        Spell.Cast( "Shield Slam")
                         )
-                    ),
-
-                Common.CreateChargeBehavior(),
-
-                // Move to Melee
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
         #endregion

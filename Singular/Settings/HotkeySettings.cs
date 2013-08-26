@@ -51,48 +51,55 @@ namespace Singular.Settings
 
         [Setting]
         [DefaultValue(true)]
-        [Category("Behavior Messaging")]
+        [Category("Control")]
         [DisplayName("Chat Frame Message")]
         [Description("Outputs message to Chat frame when toggle pressed")]
         public bool ChatFrameMessage { get; set; }
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("Control")]
+        [DisplayName("Key Toggles Behavior")]
+        [Description("True: press key to disable, press key again to enable; False: press and hold key to disable, release key to enable")]
+        public bool KeysToggleBehavior { get; set; }
+
+        [Setting]
         [DefaultValue(Keys.None)]
-        [Category("Behavior Toggle")]
-        [DisplayName("AOE Combat Toggle")]
+        [Category("Hotkeys")]
+        [DisplayName("Key - AOE")]
         [Description("Enables/Disables AOE Combat Abilities")]
         public Keys AoeToggle { get; set; }
 
         [Setting]
         [DefaultValue(Keys.None)]
-        [Category("Behavior Toggle")]
-        [DisplayName("Combat Toggle")]
+        [Category("Hotkeys")]
+        [DisplayName("Key - Combat")]
         [Description("Enables/Disables All Combat Abilities")]
         public Keys CombatToggle { get; set; }
 
         [Setting]
         [DefaultValue(Keys.None)]
-        [Category("Behavior Toggle")]
-        [DisplayName("Movement Toggle")]
+        [Category("Hotkeys")]
+        [DisplayName("Key - Movement")]
         [Description("Enables/Disables Singular Movement")]
         public Keys MovementToggle { get; set; }
 
         [Setting]
         [DefaultValue(false)]
-        [Category("Temporary Behavior")]
-        [DisplayName("Suspend Movement")]
-        [Description("True: movement keys configured below suspend bot movement for # seconds")]
+        [Category("User Movement while Botting")]
+        [DisplayName("Allow User Movement")]
+        [Description("True: keys below suspend bot movement for # seconds")]
         public bool SuspendMovement { get; set; }
 
         [Setting]
         [DefaultValue(3)]
-        [Category("Temporary Behavior")]
+        [Category("User Movement while Botting")]
         [DisplayName("Suspend Duration")]
         [Description("Seconds after last suspend keypress to disable movement")]
         public int SuspendDuration { get; set; }
 
         [Setting]
-        [Category("Temporary Behavior")]
+        [Category("User Movement while Botting")]
         [DisplayName("Suspend Keys")]
         [Description("Keys that will disable ALL movement for # seconds")]
         public Keys[] SuspendMovementKeys { get; set; }

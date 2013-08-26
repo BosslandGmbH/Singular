@@ -638,16 +638,15 @@ namespace Singular.ClassSpecific.Druid
             return new Decorator(
                 req => MovementManager.IsClassMovementAllowed,
                 new PrioritySelector(
-                    ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(),
                     new Decorator(
-                        ret => Kite.IsDisengageWantedByUserSettings((int) ret),
+                        ret => Kite.IsDisengageWantedByUserSettings(),
                         new PrioritySelector(
                             Disengage.CreateDisengageBehavior("Wild Charge", Disengage.Direction.Backwards, 20, CreateSlowMeleeBehavior()),
                             Disengage.CreateDisengageBehavior("Displacer Beast", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
                             )
                         ),
                     new Decorator(
-                        ret => Kite.IsKitingWantedByUserSettings((int)ret),
+                        ret => Kite.IsKitingWantedByUserSettings(),
                         Kite.BeginKitingBehavior()
                         )
                     )

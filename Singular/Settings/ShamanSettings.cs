@@ -148,6 +148,13 @@ namespace Singular.Settings
         public int SelfHealingSurge { get; set; }
 
         [Setting]
+        [DefaultValue(65)]
+        [Category("Self-Heal")]
+        [DisplayName("Ancestral Guidance %")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int SelfAncestralGuidance { get; set; }
+
+        [Setting]
         [DefaultValue(25)]
         [Category("Self-Heal")]
         [DisplayName("Ancestral Swiftness Heal %")]

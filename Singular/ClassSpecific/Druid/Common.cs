@@ -236,7 +236,26 @@ namespace Singular.ClassSpecific.Druid
                         return !Group.MeIsTank && Me.GetPredictedHealthPercent(true) < DruidSettings.SelfRejuvenationHealth;
                     }),
 
-                Spell.Cast("Healing Touch", on => Me, ret => Me.HealthPercent <= DruidSettings.PredSwiftnessHealingTouchHealth && Me.ActiveAuras.ContainsKey("Predatory Swiftness")),
+                Spell.Cast( "Healing Touch", on => 
+                    {
+                        if (!Me.HasAura("Predatory Swiftnes"))
+                            return null;
+                        
+                        // heal self if needed
+                        if (Me.HealthPercent < DruidSettings.PredSwiftnessHealingTouchHealth)
+                            return Me;
+                        
+                        // heal others if needed
+                        if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                            return Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < DruidSettings.PredSwiftnessPvpHeal && p.DistanceSqr < 40 * 40).FirstOrDefault();
+                        
+                        // heal anyone if buff about to expire
+                        if (Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds.Between(500, 2000))
+                            return Unit.GroupMembers.Where(p => p.IsAlive && p.DistanceSqr < 40 * 40).OrderBy(k => k.GetPredictedHealthPercent()).FirstOrDefault();
+
+                        return null;
+                    }) ,
+
                 Spell.Cast("Healing Touch", on => Me, ret => Me.HealthPercent <= 95 && Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds.Between(500, 2000)),
 
                 Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < DruidSettings.SelfRenewalHealth),
@@ -356,28 +375,10 @@ namespace Singular.ClassSpecific.Druid
 
         public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
         {
-            if (!DruidSettings.UseRebirth)
-                return new PrioritySelector();
+            if (Me.Specialization == WoWSpec.DruidGuardian)
+                return Helpers.Common.CreateCombatRezBehavior("Rebirth", on => ((WoWUnit)on).SpellDistance() < 40 && ((WoWUnit)on).InLineOfSpellSight, requirements => true);
 
-            if (onUnit == null)
-            {
-                Logger.WriteDebug("CreateRebirthBehavior: error - onUnit == null");
-                return new PrioritySelector();
-            }
-
-            return new Decorator(
-                req => DruidSettings.UseRebirth && Me.Combat && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
-                new PrioritySelector(
-                    ctx => onUnit(ctx),
-                    new Decorator(
-                        ret => onUnit(ret) != null,
-                        new PrioritySelector(
-                            Movement.CreateMoveToUnitBehavior( onUnit, 40f, 40f),
-                            Spell.Cast("Rebirth", mov => !Me.HasAnyAura("Nature's Swiftness","Predatory Swiftness"), on => (WoWUnit)on, req => true, cancel => ((WoWUnit)cancel).IsAlive)
-                            )
-                        )
-                    )
-                );
+            return Helpers.Common.CreateCombatRezBehavior("Rebirth", filter => true, reqd => !Me.HasAnyAura("Nature's Swiftness", "Predatory Swiftness"));
         }
 
         public static Composite CreateFaerieFireBehavior(UnitSelectionDelegate onUnit, SimpleBooleanDelegate Required)

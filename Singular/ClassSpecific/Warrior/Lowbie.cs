@@ -43,10 +43,9 @@ namespace Singular.ClassSpecific.Warrior
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
-                // charge
+                Common.CreateAttackFlyingOrUnreachableMobs(),
                 Common.CreateChargeBehavior(),
-                Spell.Cast("Throw", ret => StyxWoW.Me.CurrentTarget.IsFlying && Item.RangedIsType(WoWItemWeaponClass.Thrown)), 
-                Spell.Cast("Shoot", ret => StyxWoW.Me.CurrentTarget.IsFlying && (Item.RangedIsType(WoWItemWeaponClass.Bow) || Item.RangedIsType(WoWItemWeaponClass.Gun))),
+
                 // move to melee
                 Movement.CreateMoveToMeleeBehavior(true)
                 );

@@ -37,6 +37,7 @@ namespace Singular.Settings
             104050,     // "Torrent of Frost"
             103962,     // "Torrent of Frost"
             103904,     // "Torrent of Frost" 
+            139822,     // Cinders - Flaming Head, Meguera, Forgotten Depths
         };
 
         public SpellList SpellList;

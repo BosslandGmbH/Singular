@@ -45,8 +45,8 @@
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.chkUseInstanceBehaviorsWhenSolo = new System.Windows.Forms.CheckBox();
             this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
-            this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.chkDebugSpellCanCast = new System.Windows.Forms.CheckBox();
+            this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.lblPoi = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.lblTargets = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -59,8 +59,6 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.groupBox5 = new System.Windows.Forms.GroupBox();
-            this.lblPoi = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabClass.SuspendLayout();
@@ -69,11 +67,10 @@
             this.tabHotkeys.SuspendLayout();
             this.tabDebug.SuspendLayout();
             this.groupBox4.SuspendLayout();
-            this.groupBox3.SuspendLayout();
+            this.groupBox5.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.grpFooter.SuspendLayout();
-            this.groupBox5.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -207,14 +204,13 @@
             this.pgHotkeys.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pgHotkeys.Location = new System.Drawing.Point(3, 3);
             this.pgHotkeys.Name = "pgHotkeys";
-            this.pgHotkeys.PropertySort = System.Windows.Forms.PropertySort.NoSort;
+            this.pgHotkeys.PropertySort = System.Windows.Forms.PropertySort.Categorized;
             this.pgHotkeys.Size = new System.Drawing.Size(326, 336);
             this.pgHotkeys.TabIndex = 1;
             // 
             // tabDebug
             // 
             this.tabDebug.Controls.Add(this.groupBox4);
-            this.tabDebug.Controls.Add(this.groupBox3);
             this.tabDebug.Controls.Add(this.groupBox5);
             this.tabDebug.Controls.Add(this.groupBox2);
             this.tabDebug.Controls.Add(this.groupBox1);
@@ -257,29 +253,33 @@
             this.ShowPlayerNames.Text = "Show Player Names";
             this.ShowPlayerNames.UseVisualStyleBackColor = true;
             // 
-            // groupBox3
+            // groupBox5
             // 
-            this.groupBox3.Controls.Add(this.chkDebugSpellCanCast);
-            this.groupBox3.Location = new System.Drawing.Point(8, 262);
-            this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(151, 74);
-            this.groupBox3.TabIndex = 8;
-            this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Debug Flags";
+            this.groupBox5.Controls.Add(this.lblPoi);
+            this.groupBox5.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
+            this.groupBox5.Location = new System.Drawing.Point(7, 6);
+            this.groupBox5.Name = "groupBox5";
+            this.groupBox5.Size = new System.Drawing.Size(313, 38);
+            this.groupBox5.TabIndex = 0;
+            this.groupBox5.TabStop = false;
+            this.groupBox5.Text = "BotPoi (Point of Interest)";
+            this.groupBox5.Enter += new System.EventHandler(this.groupBox2_Enter);
             // 
-            // chkDebugSpellCanCast
+            // lblPoi
             // 
-            this.chkDebugSpellCanCast.AutoSize = true;
-            this.chkDebugSpellCanCast.Location = new System.Drawing.Point(6, 20);
-            this.chkDebugSpellCanCast.Name = "chkDebugSpellCanCast";
-            this.chkDebugSpellCanCast.Size = new System.Drawing.Size(127, 17);
-            this.chkDebugSpellCanCast.TabIndex = 3;
-            this.chkDebugSpellCanCast.Text = "Debug Spell.CanCast";
-            this.chkDebugSpellCanCast.UseVisualStyleBackColor = true;
+            this.lblPoi.AutoSize = true;
+            this.lblPoi.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblPoi.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.lblPoi.Location = new System.Drawing.Point(6, 16);
+            this.lblPoi.Name = "lblPoi";
+            this.lblPoi.Size = new System.Drawing.Size(35, 14);
+            this.lblPoi.TabIndex = 0;
+            this.lblPoi.Text = "None";
             // 
             // groupBox2
             // 
             this.groupBox2.Controls.Add(this.lblTargets);
+            this.groupBox2.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
             this.groupBox2.Location = new System.Drawing.Point(8, 50);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(313, 87);
@@ -292,14 +292,17 @@
             // 
             this.lblTargets.AutoSize = true;
             this.lblTargets.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTargets.ForeColor = System.Drawing.SystemColors.ControlText;
             this.lblTargets.Location = new System.Drawing.Point(6, 16);
             this.lblTargets.Name = "lblTargets";
-            this.lblTargets.Size = new System.Drawing.Size(0, 14);
+            this.lblTargets.Size = new System.Drawing.Size(147, 14);
             this.lblTargets.TabIndex = 0;
+            this.lblTargets.Text = "Target  99% @ 10 yds";
             // 
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.lblHealTargets);
+            this.groupBox1.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
             this.groupBox1.Location = new System.Drawing.Point(8, 143);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(313, 104);
@@ -311,10 +314,12 @@
             // 
             this.lblHealTargets.AutoSize = true;
             this.lblHealTargets.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblHealTargets.ForeColor = System.Drawing.SystemColors.ControlText;
             this.lblHealTargets.Location = new System.Drawing.Point(6, 16);
             this.lblHealTargets.Name = "lblHealTargets";
-            this.lblHealTargets.Size = new System.Drawing.Size(0, 14);
+            this.lblHealTargets.Size = new System.Drawing.Size(126, 14);
             this.lblHealTargets.TabIndex = 0;
+            this.lblHealTargets.Text = "Heal Target @ ...";
             // 
             // timer1
             // 
@@ -395,26 +400,6 @@
             this.label1.TabIndex = 4;
             this.label1.Text = "Singular";
             // 
-            // groupBox5
-            // 
-            this.groupBox5.Controls.Add(this.lblPoi);
-            this.groupBox5.Location = new System.Drawing.Point(7, 6);
-            this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(313, 38);
-            this.groupBox5.TabIndex = 0;
-            this.groupBox5.TabStop = false;
-            this.groupBox5.Text = "BotPoi (Point of Interest)";
-            this.groupBox5.Enter += new System.EventHandler(this.groupBox2_Enter);
-            // 
-            // lblPoi
-            // 
-            this.lblPoi.AutoSize = true;
-            this.lblPoi.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblPoi.Location = new System.Drawing.Point(6, 16);
-            this.lblPoi.Name = "lblPoi";
-            this.lblPoi.Size = new System.Drawing.Size(0, 14);
-            this.lblPoi.TabIndex = 0;
-            // 
             // ConfigurationForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -439,16 +424,14 @@
             this.tabDebug.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
-            this.groupBox3.ResumeLayout(false);
-            this.groupBox3.PerformLayout();
+            this.groupBox5.ResumeLayout(false);
+            this.groupBox5.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.grpFooter.ResumeLayout(false);
             this.grpFooter.PerformLayout();
-            this.groupBox5.ResumeLayout(false);
-            this.groupBox5.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -480,11 +463,9 @@
         private System.Windows.Forms.Label lblTargets;
         private System.Windows.Forms.Button btnLogMark;
         private System.Windows.Forms.ToolTip toolTip1;
-        private System.Windows.Forms.CheckBox chkDebugSpellCanCast;
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.CheckBox chkUseInstanceBehaviorsWhenSolo;
         private System.Windows.Forms.CheckBox ShowPlayerNames;
-        private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Label lblPoi;
     }

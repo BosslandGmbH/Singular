@@ -228,17 +228,20 @@ namespace Singular.Helpers
             TreeHooks.Instance.ReplaceHook(SingularRoutine.HookName("KitingBehavior"), kitingBehavior );
         }
 
-        public static bool IsDisengageWantedByUserSettings(int mobCount)
+        public static bool IsDisengageWantedByUserSettings()
         {
             return SingularSettings.Instance.DisengageAllowed
-                && (Me.HealthPercent <= SingularSettings.Instance.DisengageHealth || mobCount >= SingularSettings.Instance.DisengageMobCount);
-
+                && !MovementManager.IsMovementDisabled
+                && Me.HealthPercent < SingularSettings.Instance.DisengageHealth
+                && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(m => m.SpellDistance() < SingularSettings.Instance.AvoidDistance) >= SingularSettings.Instance.DisengageMobCount;
         }
 
-        public static bool IsKitingWantedByUserSettings( int mobCount )
+        public static bool IsKitingWantedByUserSettings()
         {
             return SingularSettings.Instance.KiteAllow 
-                && (Me.HealthPercent <= SingularSettings.Instance.KiteHealth || mobCount >= SingularSettings.Instance.KiteMobCount);
+                && !MovementManager.IsMovementDisabled
+                && Me.HealthPercent < SingularSettings.Instance.KiteHealth
+                && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count( m => m.SpellDistance() < SingularSettings.Instance.AvoidDistance) >= SingularSettings.Instance.KiteMobCount;
         }
 
         public static bool IsKitingPossible(int minScan = -1)

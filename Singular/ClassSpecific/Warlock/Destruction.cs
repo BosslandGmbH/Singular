@@ -168,7 +168,7 @@ namespace Singular.ClassSpecific.Warlock
 
                     new PrioritySelector(
                         ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.HasMyAura("Havoc")),
-                        Spell.Buff("Havoc", on => ((WoWUnit)on) ?? Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid))
+                        Spell.Buff("Havoc", on => ((WoWUnit)on) ?? Unit.NearbyUnitsInCombatWithMeOrMyStuff.Where(u => u.Guid != Me.CurrentTargetGuid).OrderByDescending( u => u.CurrentHealth).FirstOrDefault())
                         ),
 
                     new Decorator(
@@ -183,7 +183,8 @@ namespace Singular.ClassSpecific.Warlock
                                         && !Me.HasAura( "Rain of Fire")
                                         && 3 <= Unit.NearbyUnfriendlyUnits.Count(u => ((WoWUnit)req).Location.Distance(u.Location) <= 8))
                                 ),
-                                Spell.Buff("Fire and Brimstone", on => Me.CurrentTarget, req => Unit.NearbyUnfriendlyUnits.Count(u => Me.CurrentTarget.Location.Distance(u.Location) <= 10f) >= 4)
+
+                                Spell.OffGCD(Spell.Buff("Fire and Brimstone", on => Me.CurrentTarget, req => Unit.NearbyUnfriendlyUnits.Count(u => Me.CurrentTarget.Location.Distance(u.Location) <= 10f) >= 4))
                             )
                         )
                     )

@@ -11,6 +11,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Rest = Singular.Helpers.Rest;
 using System.Drawing;
+using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Paladin
 {
@@ -122,32 +123,46 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Holy Prism", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 40)),
 
                         new Decorator(
+                            ret => _mobCount >= 2 && Spell.UseAOE && Me.CurrentTarget.IsTrivial(),
+                            new PrioritySelector(
+                                // Bobby53: Inq > 5HP DS > Exo > HotR > 3-4HP DS
+                                Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 4),
+                                Spell.Cast("Divine Storm", ret => Me.CurrentHolyPower == 5),
+                                Spell.Cast("Exorcism", req => TalentManager.HasGlyph("Mass Exorcism")),
+                                Spell.Cast("Hammer of the Righteous"),
+                                Spell.Cast("Divine Storm", ret => Me.CurrentHolyPower >= 3)
+                                )
+                            ),
+
+                        new Decorator(
                             ret => _mobCount >= 2 && Spell.UseAOE,
                             new PrioritySelector(
                                 Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
 
-                                // EJ: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
+                                // EJ: Inq > 5HP DS > LH > HoW > Exo > HotR > Judge > 3-4HP DS (> SS)
                                 Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 4),
-                                Spell.Cast( ret => SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
-                                Spell.Cast("Execution Sentence" ),
+                                Spell.Cast(SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
+                                Spell.Cast("Execution Sentence"),
                                 Spell.Cast("Hammer of Wrath"),
                                 Spell.Cast("Exorcism"),
-                                Spell.Cast(ret => SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
+                                Spell.Cast(SpellManager.HasSpell("Hammer of the Righteous") ? "Hammer of the Righteous" : "Crusader Strike"),
                                 Spell.Cast("Judgment"),
-                                Spell.Cast(ret => SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
+                                Spell.Cast(SpellManager.HasSpell("Divine Storm") ? "Divine Storm" : "Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
                                 Spell.BuffSelf("Sacred Shield"),
-                                Movement.CreateMoveToMeleeBehavior(true)
+                                Movement.CreateMoveToMeleeBehavior(true),
+                                new ActionAlwaysSucceed()
                                 )
                             ),
 
-                        // EJ: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
+                        // was EJ: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
+                        // now EJ: Inq > 5HP TV > ES > HoW > CS > Judge > Exo > 3-4HP TV (> SS)
                         Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 4),
                         Spell.Cast( "Templar's Verdict", ret => Me.CurrentHolyPower == 5),
                         Spell.Cast("Execution Sentence" ),
                         Spell.Cast("Hammer of Wrath"),
-                        Spell.Cast("Exorcism"),
                         Spell.Cast("Crusader Strike"),
                         Spell.Cast("Judgment"),
+                        Spell.Cast("Exorcism"),
                         Spell.Cast("Templar's Verdict", ret => Me.CurrentHolyPower >= 3),
                         Spell.BuffSelf("Sacred Shield")
                         )

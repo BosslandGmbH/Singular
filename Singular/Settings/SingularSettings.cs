@@ -52,6 +52,16 @@ namespace Singular.Settings
         Auto
     }
 
+    enum CombatRezTarget
+    {
+        None = 0,
+        All = Tank | Healer | DPS,
+        Tank = 1,
+        Healer = 2,
+        TankOrHealer = Tank | Healer,
+        DPS = 4
+    }
+
     internal class SingularSettings : Styx.Helpers.Settings
     {
         private static SingularSettings _instance;
@@ -201,14 +211,20 @@ namespace Singular.Settings
         }
 
         [Browsable(false)]
-        internal static Styx.Common.LogLevel DebugLogLevel = Styx.Common.LogLevel.Verbose;
-
-        [Browsable(false)]
         public static bool Debug
         {
             get
             {
-                return GlobalSettings.Instance.LogLevel >= DebugLogLevel;
+                return GlobalSettings.Instance.LogLevel >= Styx.Common.LogLevel.Verbose;
+            }
+        }
+
+        [Browsable(false)]
+        public bool DebugSpellCanCast
+        {
+            get
+            {
+                return GlobalSettings.Instance.LogLevel >= Styx.Common.LogLevel.Diagnostic;
             }
         }
 
@@ -250,14 +266,6 @@ namespace Singular.Settings
         [DisplayName("Debug Logging GCD")]
         [Description("Enables logging of GCD/Casting in Singular. Debug Logging setting must also be true")]
         public bool EnableDebugLoggingGCD { get; set; }
-
-        [Browsable(false)]
-        [Setting]
-        [DefaultValue(false)]
-        [Category("Debug")]
-        [DisplayName("Debug Logging Spell.CanCast")]
-        [Description("VERBOSE!! Enables logging of reason each spell in priority cannot be cast")]
-        public bool EnableDebugLoggingCanCast { get; set; }
 
         [Browsable(false)]
         [Setting]
@@ -377,7 +385,7 @@ namespace Singular.Settings
         public int DisengageMobCount { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
+        [DefaultValue(false)]
         [Category("Avoidance")]
         [DisplayName("Kiting Allowed")]
         [Description("Allow kiting of mobs.")]
@@ -397,6 +405,14 @@ namespace Singular.Settings
         [Description("Kite if this many mobs in melee range")]
         public int KiteMobCount { get; set; }
 
+        [Setting]
+        [DefaultValue(8)]
+        [Category("Avoidance")]
+        [DisplayName("Avoid Distance")]
+        [Description("Only mobs within this distance that are attacking you count towards Disengage/Kite mob counts")]
+        public int AvoidDistance { get; set; }
+
+        [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
         [Category("Avoidance")]
@@ -440,7 +456,7 @@ namespace Singular.Settings
         [DefaultValue(0)]
         [Category("General")]
         [DisplayName("Disable Spells with Cooldown (secs)")]
-        [Description("Do not cast any spell with this cooldown or greater; 0 will cast all spells regardless of cooldown")]
+        [Description("Prevent Singular from casting any spell with this cooldown or greater; set to 0 to allow Singular to cast all spells")]
         public int DisableSpellsWithCooldown { get; set; }
 
         #endregion
@@ -501,11 +517,25 @@ namespace Singular.Settings
         public bool IncludePetsAsHealTargets { get; set; }
 
         [Setting]
-        [DefaultValue(RelativePriority.LowPriority )]
+        [DefaultValue(RelativePriority.LowPriority)]
         [Category("Group Healing/Support")]
         [DisplayName("Dispel Debufs")]
         [Description("Dispel harmful debuffs")]
         public RelativePriority DispelDebuffs { get; set; }
+
+        [Setting]
+        [DefaultValue(CombatRezTarget.TankOrHealer)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Combat Rez Target")]
+        [Description("None: disable Combat Rez; other setting limits rez to target with that role set")]
+        public CombatRezTarget CombatRezTarget { get; set; }
+
+        [Setting]
+        [DefaultValue(2)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Combat Rez Delay")]
+        [Description("Wait (seconds) before casting Battle Rez on group member")]
+        public int CombatRezDelay { get; set; }
 
         #endregion
 

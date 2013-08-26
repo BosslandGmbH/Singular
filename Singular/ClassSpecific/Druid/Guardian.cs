@@ -49,7 +49,7 @@ namespace Singular.ClassSpecific.Druid
 
                         //Shoot flying targets
                         new Decorator(
-                            ret => Me.CurrentTarget.IsFlying,
+                            ret => Me.CurrentTarget.IsFlying || !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, Me.CurrentTarget.Location),
                             new PrioritySelector(
                                 Spell.Cast("Moonfire"),
                                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)

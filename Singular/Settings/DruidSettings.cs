@@ -241,13 +241,6 @@ namespace Singular.Settings
         [Description("Health Percent to cast for self-heal when Solo")]
         public int SelfCenarionWardHealth { get; set; }
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Use Combat Rez")]
-        [Description("If set to true, it will rez while in combat.")]
-        public bool UseRebirth { get; set; }
-
         #endregion
 
         #region Balance
@@ -404,6 +397,13 @@ namespace Singular.Settings
         [DisplayName("Pred Swift Healing Touch")]
         [Description("Health Percent to cast for Predatory Swiftness heal when Solo")]
         public int PredSwiftnessHealingTouchHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(35)]
+        [Category("Feral")]
+        [DisplayName("Pred Swift PVP Off-Heal")]
+        [Description("Health Percent to cast for Predatory Swiftness heal on group member")]
+        public int PredSwiftnessPvpHeal { get; set; }
 
 
 /*

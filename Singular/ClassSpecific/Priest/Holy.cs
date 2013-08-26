@@ -150,7 +150,7 @@ namespace Singular.ClassSpecific.Priest
             PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
             int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, Math.Max(PriestSettings.HolyHeal.Heal, Math.Max(PriestSettings.HolyHeal.GreaterHeal, PriestSettings.HolyHeal.Renew )));
 
-            Logger.WriteFile("Priest Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
+            Logger.WriteDebugInBehaviorCreate("Priest Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
 
             if (SingularSettings.Instance.DispelDebuffs != RelativePriority.None)
             {

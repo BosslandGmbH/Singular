@@ -13,6 +13,8 @@ using Singular.Managers;
 using Singular.Dynamics;
 using Styx.CommonBot;
 using CommonBehaviors.Actions;
+using System.Drawing;
+using Styx.Pathing;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -101,41 +103,30 @@ namespace Singular.ClassSpecific.Warrior
        
         public static Composite CreateChargeBehavior()
         {
-            _distanceChargeBehavior = TalentManager.HasGlyph("Long Charge") ? 30f : 25f;
+            _distanceChargeBehavior = Me.CombatReach + (TalentManager.HasGlyph("Long Charge") ? 30f : 25f);
             if (_singletonChargeBehavior == null)
             {
                 _singletonChargeBehavior = new Throttle(TimeSpan.FromMilliseconds(1500),
                     new Decorator(
-                        ret => Me.CurrentTarget != null,
+                        ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget != null && Me.CurrentTargetGuid != Singular.Utilities.EventHandlers.LastNoPathTarget,
 
                         new PrioritySelector(
                             // Charge to close distance
                             // note: use SpellDistance since charge is to a wowunit
                             Spell.Cast("Charge",
-                                ret => MovementManager.IsClassMovementAllowed
-                                    && !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer")
-                                    && Me.CurrentTarget.SpellDistance().Between( 8, _distanceChargeBehavior) 
+                                ret => !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer")
+                                    && Me.CurrentTarget.Distance.Between( 8, _distanceChargeBehavior) 
                                     && WarriorSettings.UseWarriorCloser),
 
                             //  Leap to close distance
                             // note: use Distance rather than SpellDistance since spell is to point on ground
                             Spell.CastOnGround("Heroic Leap",
                                 on => Me.CurrentTarget,
-                                req => MovementManager.IsClassMovementAllowed
-                                    && !Me.HasAura("Charge")
+                                req => !Me.HasAura("Charge")
                                     && Me.CurrentTarget.Distance.Between( 8, 40)
                                     && !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer")
                                     && WarriorSettings.UseWarriorCloser,
                                 false)
-/*                                
-                            ,
-
-                            // Stun
-                            Spell.Cast("Heroic Throw",
-                                ret => !Me.CurrentTarget.Stunned && !Me.CurrentTarget.HasAnyAura("Charge Stun","Warbringer")
-                                    && !Me.HasAura("Charge")
-                                )
- */ 
                             )
                         )
                     );
@@ -233,32 +224,59 @@ namespace Singular.ClassSpecific.Warrior
         }
 
 
-        public static Composite CreateAttackOutsideOfMelee()
+        public static Composite CreateAttackFlyingOrUnreachableMobs()
         {
             return new Decorator(
-                ret => {
+                ret =>
+                {
                     if (!Me.GotTarget)
                         return false;
+
+                    if (Me.CurrentTarget.IsPlayer)
+                        return false;
+
                     if (Me.CurrentTarget.IsFlying)
                     {
-                        Logger.WriteDebug("{0} is Flying!", Me.CurrentTarget.SafeName());
+                        Logger.Write(Color.White, "Ranged Attack: {0} is Flying! using Ranged attack....", Me.CurrentTarget.SafeName());
                         return true;
                     }
-                    WoWPoint dest = Me.CurrentTarget.Location;
-                    if ( !Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully( Me.Location, dest))
+
+                    if ((DateTime.Now - Singular.Utilities.EventHandlers.LastNoPathFailure).TotalSeconds < 1f)
                     {
-                        Logger.WriteDebug("{0} is not Fully Pathable!", Me.CurrentTarget.SafeName());
+                        Logger.Write(Color.White, "Ranged Attack: No Path Available error just happened, so using Ranged attack ....", Me.CurrentTarget.SafeName());
                         return true;
                     }
+/*
+                    if (Me.CurrentTarget.IsAboveTheGround())
+                    {
+                    Logger.Write(Color.White, "{0} is {1:F1) yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
+                    return true;
+                    }
+*/
+                    double heightCheck = Me.CurrentTarget.MeleeDistance();
+                    if (Me.CurrentTarget.Distance2DSqr < heightCheck * heightCheck && Math.Abs(Me.Z - Me.CurrentTarget.Z) >= heightCheck )
+                    {
+                        Logger.Write(Color.White, "Ranged Attack: {0} appears to be off the ground! using Ranged attack....", Me.CurrentTarget.SafeName());
+                        return true;
+                    }
+                    
+                    WoWPoint dest = Me.CurrentTarget.Location;
+                    if (!Me.CurrentTarget.IsWithinMeleeRange && !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, dest))
+                    {
+                        Logger.Write(Color.White, "Ranged Attack: {0} is not Fully Pathable! using ranged attack....", Me.CurrentTarget.SafeName());
+                        return true;
+                    }
+
                     return false;
-                    },
+                },
                 new PrioritySelector(
                     Spell.Cast("Heroic Throw"),
                     new Sequence(
                         new PrioritySelector(
-                            Movement.CreateEnsureMovementStoppedBehavior( 30f, reason: "To Cast Throw"),
+                            Movement.CreateEnsureMovementStoppedBehavior( 27f, on => Me.CurrentTarget, reason: "To cast Throw"),
                             new ActionAlwaysSucceed()
                             ),
+                        new Wait( 1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
                         Spell.Cast("Throw")
                         )
                     )

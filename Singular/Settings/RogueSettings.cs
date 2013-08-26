@@ -92,6 +92,20 @@ namespace Singular.Settings
         [Description("Requires AutoLoot ON; unlock boxes in bags during rest")]
         public bool UsePickLock { get; set; }
 
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Common")]
+        [DisplayName("Sap Adds Distance")]
+        [Description("Sap mobs within this many yards of target that may aggro; 0 to disable")]
+        public int SapAddDistance { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Sap target if moving")]
+        [Description("Sap target that is moving to avoid having to follow while stealthed")]
+        public bool SapMovingTargetsOnPull { get; set; }
+
 
         [Setting]
         [DefaultValue(true)]

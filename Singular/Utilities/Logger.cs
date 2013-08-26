@@ -133,6 +133,42 @@ namespace Singular
                 WriteDebug(string.Format("\tCaller {0}: {1} in {2} line {3}", i, frame.GetMethod().Name, Path.GetFileName(frame.GetFileName()), frame.GetFileLineNumber()));
             }
         }
+
+        /// <summary>
+        /// write behavior creation message to log window and file
+        /// </summary>
+        /// <param name="message">message text with embedded parameters</param>
+        /// <param name="args">replacement parameter values</param>
+        public static void WriteInBehaviorCreate(string message, params object[] args)
+        {
+            if (!Dynamics.CompositeBuilder.SilentBehaviorCreation)
+                Write(message, args);
+        }
+
+        public static void WriteInBehaviorCreate(Color clr, string message, params object[] args)
+        {
+            if (!Dynamics.CompositeBuilder.SilentBehaviorCreation)
+                Write(clr, message, args);
+        }
+
+        /// <summary>
+        /// write behavior creation message to log window and file
+        /// </summary>
+        /// <param name="message">message text with embedded parameters</param>
+        /// <param name="args">replacement parameter values</param>
+        public static void WriteDebugInBehaviorCreate(string message, params object[] args)
+        {
+            if (!Dynamics.CompositeBuilder.SilentBehaviorCreation)
+                WriteDebug(message, args);
+        }
+
+        public static void WriteDebugInBehaviorCreate(Color clr, string message, params object[] args)
+        {
+            if (!Dynamics.CompositeBuilder.SilentBehaviorCreation)
+                WriteDebug(clr, message, args);
+        }
+
+
     }
 
     public class LogMessage : Action

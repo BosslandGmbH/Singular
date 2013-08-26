@@ -342,7 +342,7 @@ namespace Singular.Helpers
             var dist = distance * distance;
             var curTarLocation = StyxWoW.Me.CurrentTarget.Location;
             return NearbyUnfriendlyUnits.Where(
-                        p => ValidUnit(p) && p.Location.DistanceSqr(curTarLocation) <= dist).ToList();
+                        p => p.Location.DistanceSqr(curTarLocation) <= dist).ToList();
         }
 
         /// <summary>

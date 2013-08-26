@@ -43,7 +43,7 @@ namespace Singular.ClassSpecific.Paladin
         {
             return new PrioritySelector(
                 Spell.BuffSelf( "Devotion Aura", req => Me.Silenced ),
-                CreateRebirthBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead)),
+                CreateRebirthBehavior(),
                 CreatePaladinHealBehavior(),
                 new Decorator(
                     req => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
@@ -204,33 +204,11 @@ namespace Singular.ClassSpecific.Paladin
 
         private static WoWUnit _rebirthTarget;
 
-        public static Composite CreateRebirthBehavior(UnitSelectionDelegate onUnit)
+        public static Composite CreateRebirthBehavior()
         {
-            if (!PaladinSettings.UseRebirth)
-                return new PrioritySelector();
-
-            if (onUnit == null)
-            {
-                Logger.WriteDebug("CreateRebirthBehavior: error - onUnit == null");
-                return new PrioritySelector();
-            }
-
             return new Decorator(
                 ret => Me.HasAura("Symbiosis"),
-                new PrioritySelector(
-                    ctx => _rebirthTarget = onUnit(ctx),
-                    new Decorator(
-                        ret => _rebirthTarget != null && Spell.GetSpellCooldown("Rebirth") == TimeSpan.Zero,
-                        new PrioritySelector(
-                            Spell.WaitForCast(FaceDuring.Yes),
-                            Movement.CreateMoveToUnitBehavior( ret => _rebirthTarget , 40f),
-                            new Decorator(
-                                ret => !Spell.IsGlobalCooldown(),
-                                Spell.Cast("Rebirth", ret => _rebirthTarget )
-                                )
-                            )
-                        )
-                    )
+                Helpers.Common.CreateCombatRezBehavior("Rebirth", filter => true, requirements => true)
                 );
         }
     }

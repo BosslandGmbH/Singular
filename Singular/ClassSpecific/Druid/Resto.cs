@@ -107,7 +107,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast(
                             "Rebirth",
                             ret => (WoWUnit)ret,
-                            ret => Settings.UseRebirth && StyxWoW.Me.Combat && RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader &&
+                            ret => SingularSettings.Instance.CombatRezTarget != CombatRezTarget.None && StyxWoW.Me.Combat && RaFHelper.Leader != null && (WoWUnit)ret == RaFHelper.Leader &&
                                    ((WoWUnit)ret).IsDead && (TalentManager.HasGlyph("Unburdened Rebirth") || StyxWoW.Me.BagItems.Any(i => i.Entry == mapleSeedId))),
                         Spell.Cast(
                             "Tranquility",
@@ -192,7 +192,7 @@ namespace Singular.ClassSpecific.Druid
             PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
             int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, Math.Max(Settings.Heal.Rejuvenation, Math.Max(Settings.Heal.HealingTouch, Math.Max(Settings.Heal.Nourish, Settings.Heal.Regrowth))));
 
-            Logger.WriteFile("Druid Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
+            Logger.WriteDebugInBehaviorCreate("Druid Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
 
             #region Cleanse
 
@@ -207,10 +207,10 @@ namespace Singular.ClassSpecific.Druid
             #region Save the Group
 
             // Tank: Rebirth
-            if (Settings.UseRebirth )
+            if (SingularSettings.Instance.CombatRezTarget != CombatRezTarget.None )
             {
                 behavs.AddBehavior(799, "Rebirth Tank/Healer", "Rebirth",
-                    Common.CreateRebirthBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead))
+                    Helpers.Common.CreateCombatRezBehavior( "Rebirth", filter => true, requirements => true)
                     );
             }
 

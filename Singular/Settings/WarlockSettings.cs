@@ -93,7 +93,7 @@ namespace Singular.Settings
         [DefaultValue(Soulstone.Auto)]
         [Category("Common")]
         [DisplayName("Use Soulstone")]
-        [Description("Auto: Instances=Ressurect, Normal/Battleground=Self, Disabled Movement=None")]
+        [Description("Auto: Instances=Ressurect, Normal/Battleground=Self, Disabled Movement=None -- Ressurrect requires Singular Combat Rez settings to be set as well")]
         public Soulstone UseSoulstone { get; set; }
 
         [Setting]

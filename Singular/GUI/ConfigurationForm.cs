@@ -95,7 +95,7 @@ namespace Singular.GUI
             pgHotkeys.SelectedObject = SingularSettings.Instance.Hotkeys();
 
             // chkDebugLogging.Checked = SingularSettings.Instance.EnableDebugLogging;
-            chkDebugSpellCanCast.Checked = SingularSettings.Instance.EnableDebugLoggingCanCast;
+            // chkDebugSpellCanCast.Checked = SingularSettings.Instance.EnableDebugLoggingCanCast;
             // chkDebugTrace.Checked = SingularSettings.Instance.EnableDebugTrace;
 
             InitializeHealContextDropdown(StyxWoW.Me.Class);
@@ -248,7 +248,7 @@ namespace Singular.GUI
             {
                 // deal with Debug tab controls individually
                 // SingularSettings.Instance.EnableDebugLogging = chkDebugLogging.Checked;
-                SingularSettings.Instance.EnableDebugLoggingCanCast = chkDebugSpellCanCast.Checked;
+                // SingularSettings.Instance.EnableDebugLoggingCanCast = chkDebugSpellCanCast.Checked;
                 // SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
                 Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
                 SingularRoutine.ForceInstanceBehaviors = chkUseInstanceBehaviorsWhenSolo.Checked;
@@ -298,6 +298,7 @@ namespace Singular.GUI
             var sb = new StringBuilder();
             // poitype   distance 
             sb.Append( BotPoi.Current.Type.ToString());
+
             WoWObject o;
             try {
                 o = BotPoi.Current.AsObject;
@@ -308,6 +309,9 @@ namespace Singular.GUI
 
             if (o != null)
                 sb.Append(" @ " + o.Distance.ToString("F1") + " yds - " + o.SafeName());
+            else if (BotPoi.Current.Type != PoiType.None)
+                sb.Append(" @ " + BotPoi.Current.Location.Distance(StyxWoW.Me.Location).ToString("F1") + " yds - " + BotPoi.Current.Name );
+
             lblPoi.Text = sb.ToString();
 
             // update list of Targets

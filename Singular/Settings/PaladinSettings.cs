@@ -183,13 +183,6 @@ namespace Singular.Settings
         [Description("Divine Plea will be used at this value")]
         public double DivinePleaMana { get; set; }
 
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Holy")]
-        [DisplayName("Use Rebirth")]
-        [Description("True: if Symbiosis active, use Rebirth on Tanks / Healers")]
-        public bool UseRebirth { get; set; }
-
          #endregion
 
         #region Protection

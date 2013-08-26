@@ -56,6 +56,7 @@ namespace Singular.Utilities
             LocalizedUnitNotInfrontFailure = GetSymbolicLocalizeValue( "SPELL_FAILED_UNIT_NOT_INFRONT");
             LocalizedNoPocketsToPickFailure = GetSymbolicLocalizeValue( "SPELL_FAILED_TARGET_NO_POCKETS");
             LocalizedAlreadyPickPocketedError = GetSymbolicLocalizeValue("ERR_ALREADY_PICKPOCKETED");
+            LocalizedNoPathAvailableFailure = GetSymbolicLocalizeValue("SPELL_FAILED_NOPATH");
 
             // monitor ERR_ strings in Error Message Handler
             LocalizedShapeshiftMessages = new Dictionary<string, string>();
@@ -95,8 +96,10 @@ namespace Singular.Utilities
         public static DateTime LastLineOfSightFailure { get; set; }
         public static DateTime LastUnitNotInfrontFailure { get; set; }
         public static DateTime LastShapeshiftFailure { get; set; }
+        public static DateTime LastNoPathFailure { get; set; }
 
         public static WoWUnit LastLineOfSightTarget { get; set; }
+        public static ulong LastNoPathTarget { get; set; }
 
         public static Dictionary<ulong, int> MobsThatEvaded = new Dictionary<ulong, int>();
 
@@ -107,6 +110,7 @@ namespace Singular.Utilities
         private static string LocalizedUnitNotInfrontFailure;
         private static string LocalizedNoPocketsToPickFailure;
         private static string LocalizedAlreadyPickPocketedError;
+        private static string LocalizedNoPathAvailableFailure;
 
         // a combination of errors and spell failures we search for Druid shape shift errors
         private static Dictionary<string,string> LocalizedShapeshiftMessages;
@@ -186,24 +190,30 @@ namespace Singular.Utilities
                         }
 
                         LastLineOfSightFailure = DateTime.Now;
-                        Logger.WriteFile("[CombatLog] cast fail due to los reported at {0} on target {1:X}", LastLineOfSightFailure.ToString("HH:mm:ss.fff"), e.DestGuid );
+                        Logger.WriteFile("[CombatLog] cast failed due to los reported at {0} on target {1:X}", LastLineOfSightFailure.ToString("HH:mm:ss.fff"), e.DestGuid );
                     }
-                    else if ( StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuestBotActive)
+                    else if (!MovementManager.IsMovementDisabled && StyxWoW.Me.Class == WoWClass.Warrior && e.Args[14].ToString() == LocalizedNoPathAvailableFailure)
+                    {
+                        LastNoPathFailure = DateTime.Now;
+                        LastNoPathTarget = StyxWoW.Me.CurrentTargetGuid;
+                        Logger.WriteFile("[CombatLog] cast failed due to no path available to current target");
+                    }
+                    else if (StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuestBotActive)
                     {
                         if (LocalizedShapeshiftMessages.ContainsKey(e.Args[14].ToString()))
                         {
                             string symbolicName = LocalizedShapeshiftMessages[e.Args[14].ToString()];
                             LastShapeshiftFailure = DateTime.Now;
-                            Logger.WriteFile("[CombatLog] cast fail due to shapeshift error '{0}' while questing reported at {1}", symbolicName, LastShapeshiftFailure.ToString("HH:mm:ss.fff"));
+                            Logger.WriteFile("[CombatLog] cast failed due to shapeshift error '{0}' while questing reported at {1}", symbolicName, LastShapeshiftFailure.ToString("HH:mm:ss.fff"));
                         }
                     }
                     else if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket)
                     {
-                        if (e.Args[14].ToString() == LocalizedNoPocketsToPickFailure )
+                        if (e.Args[14].ToString() == LocalizedNoPocketsToPickFailure)
                         {
                             // args on this event don't match standard SPELL_CAST_FAIL
                             // -- so, Singular only casts on current target so use that assumption
-                            WoWUnit unit = StyxWoW.Me.CurrentTarget;    
+                            WoWUnit unit = StyxWoW.Me.CurrentTarget;
                             if (unit == null)
                                 Logger.WriteFile("[CombatLog] has no pockets event did not have a valid unit");
                             else

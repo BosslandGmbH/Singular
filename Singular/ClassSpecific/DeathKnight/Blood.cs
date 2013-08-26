@@ -79,10 +79,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => StyxWoW.Me.HealthPercent < Settings.EmpowerRuneWeaponPercent
                             && !Spell.CanCastHack("Death Strike")),
 
-                    new PrioritySelector(
-                        ctx => StyxWoW.Me.PartyMembers.FirstOrDefault(u => u.IsDead && u.DistanceSqr < 40 * 40 && u.InLineOfSpellSight),
-                        Spell.Cast("Raise Ally", ctx => ctx as WoWUnit, req => Settings.UseRaiseAlly)
-                        ),
+                    Helpers.Common.CreateCombatRezBehavior("Raise Ally", on => ((WoWUnit)on).SpellDistance() < 40 && ((WoWUnit)on).InLineOfSpellSight),
 
                     // *** Offensive Cooldowns ***
                     // I am using pet as dps bonus

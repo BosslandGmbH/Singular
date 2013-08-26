@@ -384,7 +384,7 @@ namespace Singular.ClassSpecific.Shaman
             if ( !selfOnly)
                 moveInRange = (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds);
 
-            Logger.WriteFile( "Shaman Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
+            Logger.WriteDebugInBehaviorCreate("Shaman Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
 
 /*
             if (SpellManager.HasSpell("Earthliving Weapon"))

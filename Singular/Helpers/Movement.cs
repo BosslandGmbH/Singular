@@ -64,19 +64,13 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name="unit">target we are moving towards</param>
         /// <returns></returns>
-        public static bool InLineOfSpellSight(WoWUnit unit)
+        public static bool InLineOfSpellSight(WoWUnit unit, int timeOut = 1000)
         {
             if (unit.InLineOfSpellSight)
             {
-                if ((DateTime.Now - EventHandlers.LastLineOfSightFailure).TotalMilliseconds < 1000)
+                if ((DateTime.Now - EventHandlers.LastLineOfSightFailure).TotalMilliseconds < timeOut)
                 {
-                    if (unit.IsWithinMeleeRange)
-                    {
-                        Logger.WriteDebug( Color.White, "InLineOfSpellSight: last LoS error < 1 sec but in melee range, pretending we are in LoS");
-                        return true;
-                    }
-
-                    Logger.WriteDebug( Color.White, "InLineOfSpellSight: last LoS error < 1 sec, pretending still not in LoS");
+                    Logger.WriteDebug( Color.White, "InLineOfSpellSight: last LoS error < {0} ms, pretending still not in LoS", timeOut);
                     return false;
                 }
 
@@ -213,16 +207,22 @@ namespace Singular.Helpers
             return CreateMoveToUnitBehavior(onUnit, range);
         }
 
-        public static Composite CreateMoveToUnitBehavior(UnitSelectionDelegate onUnit, float range, float stopAt = float.MinValue )
+        public static Composite CreateMoveToUnitBehavior(UnitSelectionDelegate onUnit, float range, float stopAt = float.MinValue, RunStatus statusWhenMoving = RunStatus.Failure )
         {
             return new Decorator(
-                ret => !MovementManager.IsMovementDisabled && onUnit != null && onUnit(ret) != null && onUnit(ret).SpellDistance() > range,
-                new Sequence(
-                    new Action(ret => Logger.WriteDebug(Color.White, "MoveToUnit: moving within {0:F1} yds of {1} @ {2:F1} yds", range, onUnit(ret).SafeName(), onUnit(ret).SpellDistance())),
-                    new Action(ret => Navigator.MoveTo(onUnit(ret).Location)),
-                    new Action(ret => StopMoving.InRangeOfUnit(onUnit(ret), stopAt == float.MinValue ? range : stopAt)),
-                    new ActionAlwaysFail()
-                    )
+                ret => !MovementManager.IsMovementDisabled,
+                new Action(ret => {
+                    WoWUnit unit = onUnit == null ? null : onUnit(ret);
+                    if ( unit != null && unit.SpellDistance() > range)
+                    {
+                        MoveResult moveRes = Navigator.MoveTo(unit.Location);
+                        Logger.WriteDebug(Color.White, "MoveToUnit[{0}]: moving within {1:F1} yds of {2} @ {3:F1} yds", moveRes, range, unit.SafeName(), unit.SpellDistance());
+                        StopMoving.InRangeOfUnit(unit, stopAt == float.MinValue ? range : stopAt);
+                        if (moveRes != MoveResult.Failed && moveRes != MoveResult.PathGenerationFailed)
+                            return statusWhenMoving;
+                    }
+                    return RunStatus.Failure;
+                    })
                 );
         }
 

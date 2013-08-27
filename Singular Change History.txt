@@ -1,3 +1,130 @@
+
+--- Release 3.0.0.2967 ---
+
+General
+
+fixed - Buff() API: fixed conditional expiration test to be <= to expriration time value 2:09 PM 8/27/2013rather than <, to allow use of 0 as a valid expiration period
+
+
+Mage
+
+fixed - All Specs - bug preventing cast of Frost Bomb or Living Bomb in all contexts
+
+
+Rogue
+
+*new* - All Specs - support for Dismantle of melee enemies and Hunters.  Class SPecific setting Use Dismantle added which defaults to 'false'
+
+*new* - All Specs - support for Sap on potential adds during Pull.  Setting to configure the distance from Pull Target added (defaults to 0)
+
+*new* - All Specs - will now Gouge adds during Combat to reduce damage taken during multi-mob fights
+
+
+
+
+--- Release 3.0.0.2957 ---
+
+General
+
+fixed - HotKeys: full hotkey usage and temporary movement suspension are now available in Singular again
+
+*new* - HotKeys: option to use hotkeys as toggles (on/off) or only disabled while pressed
+
+fixed - Out of Melee Range Enemies: refinement to logic identifying mobs as being off the ground.  previously was detecting some as being waaaayyyy off ground that actually weren't due to meshes not being flush with terrain
+
+change- Debug Logging: reduced/eliminated some log messages which have not been needed for awhile
+
+fixed - Rebuild Behaviors: behaviors were being rebuilt every time a Quest Behavior that updated Global Settings ended. This was due to the PropertyChanged method being fired anytime a property was written rather than when it was actually changed. Singular now caches the value and checks if it was actually changed
+
+change- Pull Timeout: added timeout for actually getting into fight with Pull Target.  
+
+*new* - Debug BotPoi: the Debug tab now displays the BotPoi info for troubleshooting Questing
+
+fixed - Use Items/Trinkets: should no longer display multiple /use messages
+
+fixed - Char Stats: added Strength to diagnostic info (was missing)
+
+fixed - Move to Unit: experienced an infrequent error where target changed in middle of behavior.  Now handled
+
+*new* - Singular General Settings:  settings added to control all Battle Rez behavior across classes.  No longer appears in Class Specific (except for part of Soulstone behavior for Warlocks)
+ 
+*new* - Forgotten Depths: added Cinders to Cleanse blacklist for Meguera 
+
+
+Death Knight 
+
+*new* - All Specs - Raise Ally behavior now uses the Singular General settings Combat Rez Target and Combat Rez Delay.
+
+
+Druid
+
+*new* - Feral - when Predatory Swiftness procs and Druid does not need heal, will heal nearest group member below new settings PVP Off-heal
+
+*new* - All Specs - Rebirth behavior now uses the Singular General settings Combat Rez Target and Combat Rez Delay.
+
+fixed - Guardian - now correctly pulls flying / above ground targets
+
+
+Mage
+
+fixed - All Specs - some issues with Kiting
+
+
+Monk
+
+fixed - Brewmaster - now recognizes if Clash encounters a No Path Found error and won't issue 2nd cast on same target
+
+
+Paladin
+
+*new* - Holy - Rebirth (Symbiosis) behavior now uses the Singular General settings Combat Rez Target and Combat Rez Delay.
+
+*new* - Retribution - supports a trivial mob AoE spell priority.  If current target meets trivial mob settings (see General tab) and multiple targets exist, will use spells that focus on multitarget hit only
+
+change- Retribution - the priority of Exorcism for Singlar target priority was lowered on EJ post, so change made here
+
+
+Priest
+
+fixed - Shadow - fixed interruption of Mind Flay channel in all contexts
+
+change- Shadow - will now interrupt Mind Flay if higher priority DPS spell becomes available during channel
+
+
+Rogues
+
+change- All Specs - will now issue warning during Rest if Rogue requires Daggers equipped but does not have them
+
+fixed - All Specs - Redirect will now correctly check if original target is still in range and exists before casting on new target
+
+
+Shaman
+
+change- All Specs - setting added for Ancestral Guidance
+
+fixed - Enhancement - ensured use of Lightning Bolt if mob out of range or flying
+
+
+Warlock
+
+*new* - All Specs - settings for Singualar -> General settings for Battle Rez now effect Soulstone if saved for rezzing a player
+
+*new* - Demonology - now recognizes the Perfect Aim buff and will reapply Doom on the current target if needed
+
+change- Destruction - Havoc is now targeted at the mob attacking us with the greatest health
+
+change- Destruction - changed Fire and Brimstone code to react faster since Off the GCD
+
+
+Warrior
+
+fixed - All Specs - added a top damage melee range spell to Pull so combat when Charge on cooldown does not begin with a white swing
+
+fixed - Protection - issue with Warrior not casting Charge as frequently as neede when Solo
+
+fixed - All Specs - issue with Warrior spamming Charge if mob is in location that generates WOW No Path Availble error message
+
+
 --- Release 3.0.0.2885 ---
 
 General

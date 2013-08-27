@@ -30,14 +30,14 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueSubtletyNormalPull()
         {
             return new PrioritySelector(
+                Helpers.Common.CreateDismount("Pulling"),
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
-
                 Safers.EnsureTarget(),
+                Common.CreateRogueControlNearbyEnemyBehavior(),
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
-                Helpers.Common.CreateDismount("Pulling"),
-                    
                 Spell.WaitForCastOrChannel(),
+                    
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
@@ -71,7 +71,8 @@ namespace Singular.ClassSpecific.Rogue
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
-                        new Throttle(Helpers.Common.CreateInterruptBehavior()),
+                        Helpers.Common.CreateInterruptBehavior(),
+                        Common.CreateDismantleBehavior(),
 
                         Common.CreateRogueOpenerBehavior(),
 
@@ -142,6 +143,7 @@ namespace Singular.ClassSpecific.Rogue
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
                         Helpers.Common.CreateInterruptBehavior(),
+                        Common.CreateDismantleBehavior(),
 
                         Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints <= 3),
 

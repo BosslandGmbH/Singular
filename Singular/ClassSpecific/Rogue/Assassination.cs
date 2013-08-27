@@ -38,12 +38,14 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateAssaRoguePull()
         {
             return new PrioritySelector(
+                Helpers.Common.CreateDismount("Pulling"),
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
-
                 Safers.EnsureTarget(),
+                Common.CreateRogueControlNearbyEnemyBehavior(),
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
+
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
@@ -80,6 +82,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Common.CreateDismantleBehavior(),
 
                         Spell.Buff("Vendetta", ret => Me.CurrentTarget.IsPlayer || Me.CurrentTarget.Elite || Me.CurrentTarget.IsBoss() || Common.AoeCount > 1),
 
@@ -139,6 +142,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Common.CreateDismantleBehavior(),
 
                         // Agro management
                         Spell.Cast(

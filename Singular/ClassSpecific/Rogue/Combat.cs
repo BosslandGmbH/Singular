@@ -29,11 +29,14 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueCombatPull()
         {
             return new PrioritySelector(
+                Helpers.Common.CreateDismount("Pulling"),
+                Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
                 Safers.EnsureTarget(),
-                Common.CreateRoguePullSapNearbyEnemyBehavior(),
+                Common.CreateRogueControlNearbyEnemyBehavior(),
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
+
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && Me.GotTarget && Me.IsSafelyFacing(Me.CurrentTarget),
                     new PrioritySelector(
@@ -69,7 +72,8 @@ namespace Singular.ClassSpecific.Rogue
                         // updated time to death tracking values before we need them
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
-                        new Throttle( Helpers.Common.CreateInterruptBehavior()),
+                        Helpers.Common.CreateInterruptBehavior(),
+                        Common.CreateDismantleBehavior(),
 
                         Common.CreateRogueOpenerBehavior(),
 
@@ -134,6 +138,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
 
                         Helpers.Common.CreateInterruptBehavior(),
+                        Common.CreateDismantleBehavior(),
 
                         // Instance Specific Behavior
                         Spell.Cast("Tricks of the Trade", ret => Common.BestTricksTarget, ret => RogueSettings.UseTricksOfTheTrade),

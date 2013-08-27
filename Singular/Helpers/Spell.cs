@@ -1077,19 +1077,24 @@ namespace Singular.Helpers
                     if (_buffName == null)
                         return false;
 
-                    if (DoubleCastPreventionDict.Contains(onUnit(ret), name(ret)))
+                    if (DoubleCastPreventionDict.Contains(_buffUnit, _buffName))
                         return false;
 
+                    bool hasExpired;
                     if (!buffNames.Any())
                     {
-                        bool hasExpired = onUnit(ret).HasAuraExpired(name(ret), expirSecs, myBuff);
-                        if (hasExpired)
-                            Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, auraleft={2:F1} secs", name(ret), SpellManager.HasSpell(name(ret)).ToYN(), onUnit(ret).GetAuraTimeLeft(name(ret), true).TotalSeconds);
+                        hasExpired = _buffUnit.HasAuraExpired(_buffName, expirSecs, myBuff);
+                        if (hasExpired && SingularSettings.Debug)
+                            Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, auraleft={2:F1} secs", _buffName, SpellManager.HasSpell(_buffName).ToYN(), _buffUnit.GetAuraTimeLeft(_buffName, true).TotalSeconds);
 
                         return hasExpired;
                     }
 
-                    return buffNames.All(b => onUnit(ret).HasAuraExpired(b, expirSecs, myBuff));
+                    hasExpired = SpellManager.HasSpell(_buffName) && buffNames.All(b => _buffUnit.HasKnownAuraExpired(b, expirSecs, myBuff));
+                    if (hasExpired && SingularSettings.Debug)
+                        Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, all auras less than {2:F1} secs", _buffName, SpellManager.HasSpell(_buffName).ToYN(), expirSecs );
+
+                    return hasExpired;
                 },
                 new Sequence(
                 // new Action(ctx => _lastBuffCast = name),

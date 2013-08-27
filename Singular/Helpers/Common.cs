@@ -305,12 +305,14 @@ namespace Singular.Helpers
 
             #endregion
 
-            return new Sequence(
-                actionSelectTarget,               
-                new Decorator(
-                    ret => _unitInterrupt != null,
-                    // majority of these are off GCD, so throttle all to avoid most fail messages
-                    new Throttle( TimeSpan.FromMilliseconds(500), prioSpell )
+            return new Throttle( 
+                new Sequence(
+                    actionSelectTarget,               
+                    new Decorator(
+                        ret => _unitInterrupt != null,
+                        // majority of these are off GCD, so throttle all to avoid most fail messages
+                        new Throttle( TimeSpan.FromMilliseconds(500), prioSpell )
+                        )
                     )
                 );
         }

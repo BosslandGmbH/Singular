@@ -163,5 +163,12 @@ namespace Singular.Settings
         [Description("Allow use in Combat on Current Target if spell usable and current target valid")]
         public bool AllowPickPocketInCombat { get; set; }
 
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("General")]
+        [DisplayName("Use Dismantle")]
+        [Description("True: use Disarm on cooldown; False: do not cast")]
+        public static bool UseDimantle { get; set; }
     }
 }

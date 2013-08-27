@@ -190,12 +190,12 @@ namespace Singular.ClassSpecific.Mage
 
                     Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
                     Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),
-                    Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 0),
+                    Spell.Buff("Frost Bomb", true, on => Me.CurrentTarget, req => true, 0),
 
                     // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invoker's Energy")),
 
                     Spell.Cast("Mirror Image", 
-                        req => Me.GotTarget &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3)),
+                         req => Me.GotTarget &&  (Me.CurrentTarget.IsBoss() || (Me.CurrentTarget.Elite && SingularRoutine.CurrentWoWContext != WoWContext.Instances) || Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3)),
 
                     Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp),
 

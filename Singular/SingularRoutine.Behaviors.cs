@@ -62,6 +62,12 @@ namespace Singular
             // special behavior - reset KitingBehavior hook prior to calling class specific createion
             TreeHooks.Instance.ReplaceHook(HookName("KitingBehavior"), new ActionAlwaysFail());
 
+            if (!silent)
+            {
+                Logger.WriteFile("");
+                Logger.WriteFile("{0} {1} {2}", "Pri".AlignRight(4), "Context".AlignLeft(15), "Method");
+            }
+
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
             if (!EnsureComposite( silent, true, context, BehaviorType.Combat))
             {
@@ -110,6 +116,11 @@ namespace Singular
                 Logger.Write(Color.LightGreen, "Loaded{0} behaviors for {1}: {2}", Me.Specialization.ToString().CamelToSpaced(), context.ToString(), sMsg);
             }
 #endif
+            if (!silent)
+            {
+                Logger.WriteFile("");
+            }
+
             return true;
         }
 
@@ -447,7 +458,7 @@ namespace Singular
                         }
                     }
                     // we have some type of target
-                    else if (Me.CurrentTargetGuid != 0 && !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Normal)  
+                    else if (Me.CurrentTarget != null && !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Normal)  
                     {       
                         // make sure we get into melee range within reasonable time
                         if ((!Me.IsMelee() || Me.CurrentTarget.IsWithinMeleeRange) && Movement.InLineOfSpellSight(Me.CurrentTarget, 5000))

@@ -228,6 +228,9 @@ namespace Singular.ClassSpecific.Rogue
                         // Symbiosis
                         new Throttle(179, Spell.BuffSelf("Growl", ret => Me.HealthPercent < 65 && SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
 
+                        // stun an add 4 out of every 10 secs if possible
+                        Spell.Cast("Gouge", on => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.IsWithinMeleeRange && !u.IsCrowdControlled() && u.IsSafelyFacing(Me, 150) && Me.IsSafelyFacing(u, 150))),
+
                         // Spell.BuffSelf("Feint", ret => AoeCount > 2 && !Me.HasAura("Combat Readiness") && HaveTalent(RogueTalents.Elusivenss)),
                         Spell.BuffSelf("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),
                         Spell.BuffSelf("Cloak of Shadows", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
@@ -347,7 +350,7 @@ namespace Singular.ClassSpecific.Rogue
 
         }
 
-        public static Composite CreateRoguePullSapNearbyEnemyBehavior()
+        public static Composite CreateRogueControlNearbyEnemyBehavior()
         {
             if (Dynamics.CompositeBuilder.CurrentBehaviorType != BehaviorType.Pull)
                 return new ActionAlwaysFail();
@@ -477,6 +480,35 @@ namespace Singular.ClassSpecific.Rogue
                     new Decorator(
                         ret => ret != null && !StyxWoW.Me.HasAura("Blade Flurry"),
                         Spell.Buff("Blind", ret => (WoWUnit)ret, ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro) > 1)));
+        }
+
+
+        public static Composite CreateDismantleBehavior()
+        {
+            if (!RogueSettings.UseDimantle)
+                return new ActionAlwaysFail();
+
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+            {
+                return new Throttle(15,
+                    Spell.Cast("Dismantle", on =>
+                    {
+                        if (Spell.IsSpellOnCooldown("Dismantle"))
+                            return null;
+
+                        WoWUnit unit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(
+                            u => u.IsWithinMeleeRange
+                                && (u.IsMelee() || u.Class == WoWClass.Hunter)
+                                && !Me.CurrentTarget.Disarmed
+                                && !Me.CurrentTarget.IsCrowdControlled()
+                                && Me.IsSafelyFacing(u, 150)
+                                );
+                        return unit;
+                    })
+                    );
+            }
+
+            return new Throttle(15, Spell.Cast("Dismantle", req => !Me.CurrentTarget.Disarmed && !Me.CurrentTarget.IsCrowdControlled()));
         }
 
         public static WoWUnit BestTricksTarget

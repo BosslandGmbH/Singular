@@ -654,6 +654,13 @@ namespace Singular.Settings
         [Description("Mob with Max Health less than % of your Max Health considered trivial")]
         public int TrivialMaxHealthPcnt { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Enemy Control")]
+        [DisplayName("Use AOE Attacks")]
+        [Description("True: use multi-target damage spells when necessary; False: single target spells on current target only")]
+        public bool AllowAOE { get; set; }
+
         #endregion
 
         #region Class Late-Loading Wrappers

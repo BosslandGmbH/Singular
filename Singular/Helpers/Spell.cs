@@ -87,7 +87,7 @@ namespace Singular.Helpers
         {
             get
             {
-                return HotkeyDirector.IsAoeEnabled;
+                return HotkeyDirector.IsAoeEnabled && SingularSettings.Instance.AllowAOE;
             }
         }
 

@@ -49,7 +49,7 @@ namespace Singular.ClassSpecific.Rogue
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         // ok, everything else failed so just hit him!!!!
-                        Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints < 5),
+                        Spell.OffGCD(Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints < 4 && Me.IsWithinMeleeRange)),
                         Spell.Cast("Hemorrhage")
                         )
                     )
@@ -98,14 +98,17 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             ),
 
-                        // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
                         Spell.BuffSelf("Shadow Dance",
                             ret => Me.GotTarget
                                 && !Common.IsStealthed
                                 && !Me.HasAuraExpired("Slice and Dice", 3)
                                 && Me.ComboPoints < 2),
 
-                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
+                        // lets try a big hit if stealthed and behind before anything
+                        Spell.Cast("Ambush", ret => HasTalent(RogueTalents.Subterfuge) && Me.HasAura("Subterfuge") && Common.IsStealthed && Me.IsSafelyBehind(Me.CurrentTarget)),
+
+                        Spell.Cast("Slice and Dice",  on => Me,  ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
+
                         Spell.Buff("Rupture", true, ret => Me.ComboPoints >= 5),
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5),
 

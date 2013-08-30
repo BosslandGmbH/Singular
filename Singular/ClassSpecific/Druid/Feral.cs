@@ -129,8 +129,10 @@ namespace Singular.ClassSpecific.Druid
                             ret => Me.HasAura("Prowl"),
                             new PrioritySelector(
                                 Spell.BuffSelf("Dash", 
-                                    ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > 15 
-                                        && Spell.GetSpellCooldown("Wild Charge", 0).TotalSeconds < 13 ),
+                                    ret => MovementManager.IsClassMovementAllowed && Me.IsMoving
+                                        && ((Me.CurrentTarget.Distance > 15 && Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 3)
+                                            || Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 40)
+                                    ),
                                 Spell.Cast("Ravage", ret => Me.IsSafelyBehind(Me.CurrentTarget) && SingularRoutine.CurrentWoWContext == WoWContext.Instances ),
                                 Spell.Cast("Pounce")
                                 )
@@ -212,7 +214,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralCombatHeal()
         {
             return new PrioritySelector(
-                new Action(ret => { _currTargetTimeToDeath = Me.CurrentTarget.IsTrainingDummy() ? 100 : Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
+                new Action(ret => { _currTargetTimeToDeath = Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
                 CreateFeralDiagnosticOutputBehavior("Combat"),
                 Common.SymbBuff( Symbiosis.DivineShield, on => Me, req => Me.HealthPercent < 20)
                 );

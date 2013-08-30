@@ -238,7 +238,7 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.Cast( "Healing Touch", on => 
                     {
-                        if (!Me.HasAura("Predatory Swiftnes"))
+                        if (!Me.HasAura("Predatory Swiftness"))
                             return null;
                         
                         // heal self if needed

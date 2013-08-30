@@ -162,35 +162,9 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
-                CreateStealthBehavior( ret => Me.GotTarget && !Unit.IsTrivial(Me.CurrentTarget) && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 99 )),
+                CreateStealthBehavior( ret => Me.GotTarget && !Unit.IsTrivial(Me.CurrentTarget) && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 40 )),
 
-                // throttling this cast as there is an issue which occurs in that RawComboPoints is non-zero, 
-                // .. but WOW is reporting no combo pts exist.  believe this was due to original wowunit no 
-                // .. longer being in objmgr, but just in case throttling to avoid redirect spam loop
-                new Throttle( 3,
-                    Spell.Cast(
-                        "Redirect", 
-                        on => Me.CurrentTarget, 
-                        ret => {
-                            if ( Me.ComboPointsTarget != Me.CurrentTargetGuid )
-                            {
-                                if ( StyxWoW.Me.RawComboPoints > 0 )
-                                {
-                                    WoWUnit comboTarget = ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget);
-                                    if (comboTarget != null)
-                                    {
-                                        if (Spell.CanCastHack("Redirect", comboTarget))
-                                        {
-                                            Logger.Write( Color.White, "^Redirect: place {0} pts from {1} @ {2:F1} yds onto new target {3}", StyxWoW.Me.RawComboPoints, comboTarget.SafeName(), comboTarget.Distance, Me.CurrentTarget.SafeName());
-                                            return true;
-                                        }
-                                    }
-                                }
-                            }
-
-                            return false;
-                        })
-                    ),
+                CreateRogueRedirectBehavior(),
 
                 Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !Spell.CanCastHack("Redirect"))),
                 new Throttle( 1,
@@ -243,10 +217,33 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Shiv", ret => Me.CurrentTarget.HasAura("Enraged")),
 
+                        // Now any enemy missing Weakened Armor
+                        Spell.Buff("Expose Armor", req => {
+                            if (!Me.GotTarget)
+                                return false;
+
+                            if (Me.CurrentTarget.HasAura("Weakened Armor", 3))
+                                return false;
+
+                            if (!TalentManager.HasGlyph("Expose Armor"))
+                                return false;
+
+                            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances && Unit.GroupMembers.Any( u => u.IsAlive && u.CurrentTargetGuid ==  Me.CurrentTargetGuid && (u.Class == WoWClass.Druid || u.Class == WoWClass.Warrior)))
+                                return false;
+
+                            if (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.IsMelee())
+                                return true;
+
+                            if (Me.CurrentTarget.TimeToDeath() < 30)
+                                return false;
+
+                            return true; 
+                            }),
+
                         Common.CreateRogueBlindOnAddBehavior(),
 
                         // Redirect if we have CP left
-                        Spell.Cast("Redirect", ret => StyxWoW.Me.RawComboPoints > 0 && StyxWoW.Me.ComboPoints < 1),
+                        CreateRogueRedirectBehavior(),
 
                         Spell.Cast("Marked for Death", ret => StyxWoW.Me.RawComboPoints == 0),
 
@@ -465,9 +462,41 @@ namespace Singular.ClassSpecific.Rogue
                 ret => Common.IsStealthed,
                 new PrioritySelector(
                     CreateRoguePickPocket(),
+
+                    /// Cheap Shot logic
+                    /// for Subterfuge, wait up to 2500 secs then cast Ambush (we hope)
+                    /// for non-Subterfuge, melee swings on target building up energy
+                    new Sequence(
+                        Spell.Cast("Cheap Shot", 
+                            mov => false,
+                            on => Me.CurrentTarget,
+                            ret => Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && (!Me.CurrentTarget.IsStunned() || Me.CurrentTarget.HasAura("Sap") ),
+                            cancel => false // only to make sure GCD has started
+                            ),
+                        new Wait( TimeSpan.FromMilliseconds(300), until => Me.CurrentTarget.HasAura("Cheap Shot"), new ActionAlwaysSucceed()),
+                        new WaitContinue( 
+                            TimeSpan.FromMilliseconds( 3700),
+                            until => {
+                                if (Common.AoeCount > 1)
+                                    return true;
+                                if (Me.CurrentTarget.GetAuraTimeLeft("Cheap Shot").TotalMilliseconds < 350)
+                                    return true;
+                                if (Me.GetAuraTimeLeft("Subterfuge").TotalMilliseconds.Between(1,400))
+                                    return true;
+                                return false;
+                                },
+                            new ActionAlwaysFail()
+                            ),
+                        new WaitContinue(
+                            TimeSpan.FromMilliseconds(1400),
+                            until => Me.EnergyPercent == 100 || Me.CurrentTarget.GetAuraTimeLeft("Cheap Shot").TotalMilliseconds < 500,
+                            new ActionAlwaysSucceed()
+                            )
+                        ),
+
                     Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) || (Common.HasTalent( RogueTalents.CloakAndDagger) && IsActuallyStealthed)),
-                    Spell.Cast("Garrote", ret => (!Me.IsMoving && !Me.IsSafelyBehind(Me.CurrentTarget)) || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed)),
-                    Spell.Cast("Cheap Shot", ret => !Me.IsMoving || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed))
+                    Spell.Cast("Garrote", ret => (!Me.IsSafelyBehind(Me.CurrentTarget)) || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed)),
+                    Spell.Cast("Cheap Shot", ret => (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed))
                     )
                 );
         }
@@ -715,6 +744,38 @@ namespace Singular.ClassSpecific.Rogue
                                         ret => Me.CurrentTarget.ThreatInfo.RawPercent > 80
                                             && Me.IsInGroup()
                                             && Group.AnyTankNearby);
+        }
+
+        public static Composite CreateRogueRedirectBehavior()
+        {
+            // throttling this cast as there is an issue which occurs in that RawComboPoints is non-zero, 
+            // .. but WOW is reporting no combo pts exist.  believe this was due to original wowunit no 
+            // .. longer being in objmgr, but just in case throttling to avoid redirect spam loop
+            return new Throttle(3,
+                Spell.Cast(
+                    "Redirect",
+                    on => Me.CurrentTarget,
+                    ret =>
+                    {
+                        if (Me.ComboPointsTarget != Me.CurrentTargetGuid)
+                        {
+                            if (StyxWoW.Me.RawComboPoints > 0)
+                            {
+                                WoWUnit comboTarget = ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget);
+                                if (comboTarget != null)
+                                {
+                                    if (Spell.CanCastHack("Redirect", comboTarget))
+                                    {
+                                        Logger.Write(Color.White, "^Redirect: place {0} pts from {1} @ {2:F1} yds onto new target {3}", StyxWoW.Me.RawComboPoints, comboTarget.SafeName(), comboTarget.Distance, Me.CurrentTarget.SafeName());
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+
+                        return false;
+                    })
+                );
         }
 
         public static bool HasDaggerInMainHand

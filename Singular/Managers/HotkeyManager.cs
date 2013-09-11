@@ -21,6 +21,10 @@ namespace Singular.Managers
 {
     internal static class HotkeyDirector
     {
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        public static extern IntPtr GetActiveWindow();
+        
+
         private static HotkeySettings HotkeySettings { get { return SingularSettings.Instance.Hotkeys(); } }
 
         /// <summary>
@@ -189,6 +193,10 @@ namespace Singular.Managers
         /// </summary>
         internal static void Pulse()
         {
+            // since we are polling system keybd, make sure our game window is active
+            if (GetActiveWindow() != StyxWoW.Memory.Process.MainWindowHandle)
+                return;
+
             // handle release of key here if not using toggle behavior
             if (!HotkeySettings.KeysToggleBehavior)
             {

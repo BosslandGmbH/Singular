@@ -162,7 +162,7 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
-                CreateStealthBehavior( ret => Me.GotTarget && !Unit.IsTrivial(Me.CurrentTarget) && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 40 )),
+                CreateStealthBehavior( ret => Me.GotTarget && !Unit.IsTrivial(Me.CurrentTarget) && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral() && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 40 )),
 
                 CreateRogueRedirectBehavior(),
 
@@ -256,7 +256,7 @@ namespace Singular.ClassSpecific.Rogue
                         // Pursuit
                         Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12 && Unit.CurrentTargetIsMovingAwayFromMe),
                         Spell.Cast("Burst of Speed", ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > 10 && Unit.CurrentTargetIsMovingAwayFromMe),
-                        Spell.Cast("Shuriken Toss", ret => Me.IsSafelyFacing(Me.CurrentTarget)),
+                        Spell.Cast("Shuriken Toss", ret => !IsStealthed && !Me.CurrentTarget.IsWithinMeleeRange && Me.IsSafelyFacing(Me.CurrentTarget)),
 
                         // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
                         new Sequence(
@@ -393,7 +393,7 @@ namespace Singular.ClassSpecific.Rogue
             if (RogueSettings.SapAddDistance > 0)
             {
                 closestTarget = Unit.UnfriendlyUnitsNearTarget(RogueSettings.SapAddDistance)
-                     .Where(u => u.Guid != Me.CurrentTargetGuid && !u.IsNeutral && IsUnitViableForSap(u))
+                     .Where(u => u.Guid != Me.CurrentTargetGuid && !u.IsSensitiveDamage() && IsUnitViableForSap(u))
                      .OrderBy(u => u.Location.DistanceSqr(Me.CurrentTarget.Location))
                      .ThenBy(u => u.DistanceSqr)
                      .FirstOrDefault();
@@ -609,7 +609,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Action CreateActionCalcAoeCount()
         {
             return new Action(ret =>
-            {
+            { 
                 if (!Spell.UseAOE || Battlegrounds.IsInsideBattleground || Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.IsCrowdControlled()))
                     AoeCount = 1;
                 else

@@ -272,22 +272,33 @@ namespace Singular.ClassSpecific.Warlock
                     new Decorator(
                         ret => _mobCount >= 4 && SpellManager.HasSpell("Seed of Corruption"),
                         new PrioritySelector(
-                            ctx => Common.TargetsInCombat.FirstOrDefault(m => !m.HasAura("Seed of Corruption")),
-                            new Sequence(
-                                new PrioritySelector(
-                                    Common.CreateCastSoulburn(ret => ret != null),
-                                    new ActionAlwaysSucceed()
-                                    ),
-                                Spell.Cast("Seed of Corruption", ret => (WoWUnit)ret)
+                            // if current target doesn't have CotE, then Soulburn+CotE
+                            new Decorator(
+                                req => !Me.CurrentTarget.HasAura("Curse of the Elements"),
+                                new Sequence(
+                                    Common.CreateCastSoulburn(req => true),
+                                    Spell.Buff("Curse of the Elements")
+                                    )
+                                ),
+                            // roll SoC on targets in combat that we are facing
+                            new PrioritySelector(
+                                ctx => Common.TargetsInCombat.FirstOrDefault(m => !m.HasAura("Seed of Corruption")),
+                                new Sequence(
+                                    new PrioritySelector(
+                                        Common.CreateCastSoulburn(req => req != null),
+                                        new ActionAlwaysSucceed()
+                                        ),
+                                    Spell.Cast("Seed of Corruption", on => (WoWUnit)on)
+                                    )
                                 )
                             )
                         ),
                     new Decorator(
                         ret => _mobCount >= 2,
                         new PrioritySelector(
-                            CreateApplyDotsBehavior(ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Agony")), soulBurn => true)
-                // , CreateApplyDotsBehavior( ctx => TargetsInCombat.FirstOrDefault(m => Common.AuraMissing(m,"Corruption")), soulBurn => true)
-                            , CreateApplyDotsBehavior(ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Unstable Affliction")), soulBurn => true)
+                            CreateApplyDotsBehavior(ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Agony")), soulBurn => true),
+                            // CreateApplyDotsBehavior( ctx => TargetsInCombat.FirstOrDefault(m => Common.AuraMissing(m,"Corruption")), soulBurn => true),
+                            CreateApplyDotsBehavior(ctx => Common.TargetsInCombat.FirstOrDefault(m => m.HasAuraExpired("Unstable Affliction")), soulBurn => true)
                             )
                         )
                     )

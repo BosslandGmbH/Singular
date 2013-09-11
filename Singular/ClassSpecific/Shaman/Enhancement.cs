@@ -34,19 +34,6 @@ namespace Singular.ClassSpecific.Shaman
         {
             return new PrioritySelector(
 
-                // cancel form if we get a shapeshift error 
-                new Throttle(5,
-                    new Decorator(
-                        ret => SingularRoutine.IsQuestBotActive && !Me.IsMoving && Me.Shapeshift == ShapeshiftForm.GhostWolf && Common.RecentShapeshiftErrorOccurred,
-                        new Action(ret =>
-                        {
-                            string formName = "Ghost Wolf";
-                            Logger.Write("/cancel [{0}] due to shapeshift error in Questing; disabling form for {1:F0} secs while not in combat", formName, (Common.SuppressShapeshiftUntil - DateTime.Now).TotalSeconds);
-                            Me.CancelAura(formName);
-                        })
-                        )
-                    ),
-
                 Common.CreateShamanImbueMainHandBehavior(Imbue.Windfury, Imbue.Flametongue),
                 Common.CreateShamanImbueOffHandBehavior( Imbue.Flametongue ),
 

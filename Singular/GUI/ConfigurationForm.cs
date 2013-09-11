@@ -96,7 +96,7 @@ namespace Singular.GUI
 
             // chkDebugLogging.Checked = SingularSettings.Instance.EnableDebugLogging;
             // chkDebugSpellCanCast.Checked = SingularSettings.Instance.EnableDebugLoggingCanCast;
-            // chkDebugTrace.Checked = SingularSettings.Instance.EnableDebugTrace;
+            chkDebugTrace.Checked = SingularSettings.Instance.EnableDebugTrace;
 
             InitializeHealContextDropdown(StyxWoW.Me.Class);
             chkUseInstanceBehaviorsWhenSolo.Checked = SingularRoutine.ForceInstanceBehaviors;
@@ -249,7 +249,7 @@ namespace Singular.GUI
                 // deal with Debug tab controls individually
                 // SingularSettings.Instance.EnableDebugLogging = chkDebugLogging.Checked;
                 // SingularSettings.Instance.EnableDebugLoggingCanCast = chkDebugSpellCanCast.Checked;
-                // SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
+                SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
                 Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
                 SingularRoutine.ForceInstanceBehaviors = chkUseInstanceBehaviorsWhenSolo.Checked;
 

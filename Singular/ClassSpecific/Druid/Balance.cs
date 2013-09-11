@@ -307,7 +307,7 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(), 
                     new PrioritySelector(
 
-                        Spell.BuffSelf("Moonkin Form"),
+                        Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.IsCasting && u.Distance <30 && u.CurrentTargetGuid == Me.Guid ),
@@ -409,7 +409,7 @@ namespace Singular.ClassSpecific.Druid
                         Spell.BuffSelf("Innervate",
                             ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
 
-                        Spell.BuffSelf("Moonkin Form"),
+                        Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
@@ -564,7 +564,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 CreateBalanceDiagnosticOutputBehavior(),
-                Spell.BuffSelf("Moonkin Form")
+                Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
                 );
         }
 
@@ -572,7 +572,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceCombatBuffNormal()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Moonkin Form")
+                Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
                 );
         }
 
@@ -580,7 +580,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceCombatBuffBattlegrounds()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Moonkin Form"),
+                Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                 // Symbiosis
 /*

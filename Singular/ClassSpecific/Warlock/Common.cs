@@ -222,34 +222,22 @@ namespace Singular.ClassSpecific.Warlock
 
                         new PrioritySelector(
                             // find an add within 8 yds (not our current target)
-                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f),
+                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.SpellDistance() < 8),
 
                             Spell.CastOnGround( "Shadowfury", on => ((WoWUnit)on).Location, ret => ret != null, true),
 
                             // treat as a heal, but we cast on what would be our fear target -- allow even when fear use disabled
-                            Spell.Buff("Mortal Coil", on => (WoWUnit)on, ret => !((WoWUnit) ret).IsUndead && Me.HealthPercent < 50),
-                            Spell.Buff("Mortal Coil", on => Me.CurrentTarget, ret => !Me.CurrentTarget.IsUndead && Me.HealthPercent < 50),
+                            Spell.Buff("Mortal Coil", on => (WoWUnit)on, ret => WarlockSettings.UseFear && !((WoWUnit)ret).IsUndead && Me.HealthPercent < 50),
+                            Spell.Buff("Mortal Coil", on => Me.CurrentTarget, ret => WarlockSettings.UseFear && Me.GotTarget && !Me.CurrentTarget.IsUndead && Me.HealthPercent < 50 && Me.HealthPercent < Me.CurrentTarget.HealthPercent ),
 
-                            // fear current target if my health is dangerously low and his not as much
+                            // Howl of Terror if too m any mobs attacking us that arent' controlled
                             Spell.Buff("Howl of Terror", 
                                 on => Me.CurrentTarget, 
                                 ret => WarlockSettings.UseFear &&
-                                4 <= Unit.NearbyUnfriendlyUnits.Count(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.Distance < 8f)),
+                                5 <= Unit.NearbyUnfriendlyUnits.Count(u => (Battlegrounds.IsInsideBattleground || u.CurrentTargetGuid == Me.Guid) && !u.IsStunned() && u.SpellDistance() < 10f)),
 
-                            // fear add if multiple mobs and our health low
-                            Spell.Buff("Fear", 
-                                on => (WoWUnit) on, 
-                                req => WarlockSettings.UseFear 
-                                    && Me.HealthPercent < 50
-                                    && !((WoWUnit) req).IsUndead ),
-
-                            // fear current target if my health is dangerously low and his not as much
-                            Spell.Buff("Fear", 
-                                on => Me.CurrentTarget, 
-                                ret => WarlockSettings.UseFear 
-                                    && Me.HealthPercent < Me.CurrentTarget.HealthPercent 
-                                    && Me.HealthPercent < 35
-                                    && !Me.CurrentTarget.IsUndead )
+                            // fear if situation dictates it
+                            Spell.Buff("Fear", on => GetBestFearTarget())
                             ),
 
                         new Decorator(
@@ -352,6 +340,58 @@ namespace Singular.ClassSpecific.Warlock
         }
 
         #endregion
+
+
+        private static ulong _lastSapTarget = 0;
+
+
+
+        private static WoWUnit GetBestFearTarget()
+        {
+            if (!WarlockSettings.UseFear)
+                return null;
+
+            if (!Me.GotTarget)
+                return null;
+
+            // use a larger range than normal 40 yds to check Fear because of mechanic causing them to run
+            if (Unit.UnfriendlyUnits(80).Any(u => !u.IsUndead && u.HasMyAura("Fear")))
+                return null;
+
+            string msg = "";
+
+            // check if a player is attacking us and Fear them first
+            WoWUnit closestTarget = Unit.NearbyUnitsInCombatWithMe
+                .Where(u => u.IsPlayer && !u.IsUndead)
+                .OrderByDescending(u => u.HealthPercent)
+                .FirstOrDefault();
+            if (closestTarget != null)
+            {
+                msg = string.Format("^Fear: player {0} attacking us from {1:F1} yds", closestTarget.SafeName(), closestTarget.Distance);
+            }
+            // otherwise check if over Mob count setting
+            else if (WarlockSettings.UseFearCount > 0 && Unit.NearbyUnitsInCombatWithMe.Count() >= WarlockSettings.UseFearCount)
+            {
+                closestTarget = Unit.NearbyUnitsInCombatWithMe
+                    .Where(u => !u.IsUndead && u.Guid != (!Me.GotAlivePet ? 0 : Me.Pet.CurrentTargetGuid))
+                    .OrderByDescending(u => u.IsPlayer)
+                    .ThenBy(u => u.DistanceSqr)
+                    .FirstOrDefault();
+
+                if (closestTarget != null)
+                {
+                    msg = string.Format("^Sap: {0} @ {1:F1} yds from target to avoid aggro while hitting target", closestTarget.SafeName(), closestTarget.Location.Distance(Me.CurrentTarget.Location));
+                }
+            }
+
+            if (closestTarget == null)
+            {
+                Logger.WriteDebug(Color.White, "no nearby Fear target");
+            }
+
+            return closestTarget;
+        }
+
 
         /// <summary>
         /// summons warlock pet user configured.  handles cases where pet is gone and
@@ -716,7 +756,7 @@ namespace Singular.ClassSpecific.Warlock
         {
             get
             {
-                return Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && u.IsTargetingMyStuff() && !u.IsCrowdControlled() && StyxWoW.Me.IsSafelyFacing(u));
+                return Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && u.IsTargetingUs() && !u.IsCrowdControlled() && StyxWoW.Me.IsSafelyFacing(u));
             }
         }
 

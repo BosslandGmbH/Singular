@@ -55,13 +55,14 @@ namespace Singular
         CombatBuffs = 0x20,
         Combat = 0x40,
         LossOfControl = 0x80,
+        Death = 0x100,
 
         // this is no guarantee that the bot is in combat
         InCombat = Heal | CombatBuffs | Combat,
         // this is no guarantee that the bot is out of combat
-        OutOfCombat = Rest | PreCombatBuffs | PullBuffs | PreCombatBuffs,
+        OutOfCombat = Rest | PreCombatBuffs | PullBuffs | PreCombatBuffs | Death,
 
-        All = Rest | PreCombatBuffs | PullBuffs | Pull | Heal | CombatBuffs | Combat | LossOfControl ,
+        All = Rest | PreCombatBuffs | PullBuffs | Pull | Heal | CombatBuffs | Combat | LossOfControl | Death,
     }
 
     [Flags]

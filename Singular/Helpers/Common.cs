@@ -242,10 +242,10 @@ namespace Singular.Helpers
             #region 8 Yard Range
 
             if ( Me.Race == WoWRace.BloodElf )
-                prioSpell.AddChild(Spell.Cast("Arcane Torrent", ctx => _unitInterrupt, req => _unitInterrupt.Distance < 8 && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage( 8f))));
+                prioSpell.AddChild(Spell.Cast("Arcane Torrent", ctx => _unitInterrupt, req => _unitInterrupt.Distance < 8 && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage( 8))));
 
             if ( Me.Race == WoWRace.Tauren)
-                prioSpell.AddChild(Spell.Cast("War Stomp", ctx => _unitInterrupt, ret => _unitInterrupt.Distance < 8 && !_unitInterrupt.IsBoss() && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage( 8f))));
+                prioSpell.AddChild(Spell.Cast("War Stomp", ctx => _unitInterrupt, ret => _unitInterrupt.Distance < 8 && !_unitInterrupt.IsBoss() && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage( 8))));
 
             #endregion
 

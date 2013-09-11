@@ -35,6 +35,7 @@ namespace Singular
         private Composite _pullBuffsBehavior;
         private Composite _restBehavior;
         private Composite _lostControlBehavior;
+        private Composite _deathBehavior;
         public override Composite CombatBehavior { get { return _combatBehavior; } }
         public override Composite CombatBuffBehavior { get { return _combatBuffsBehavior; } }
         public override Composite HealBehavior { get { return _healBehavior; } }
@@ -42,6 +43,7 @@ namespace Singular
         public override Composite PullBehavior { get { return _pullBehavior; } }
         public override Composite PullBuffBehavior { get { return _pullBuffsBehavior; } }
         public override Composite RestBehavior { get { return _restBehavior; } }
+        public override Composite DeathBehavior { get { return _deathBehavior; } }
 
         private static ulong _guidLastTarget = 0;
         private static WaitTimer _timerLastTarget = new WaitTimer(TimeSpan.FromSeconds(20));
@@ -81,17 +83,18 @@ namespace Singular
 
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
             EnsureComposite( silent, false, context, BehaviorType.Rest);
-            if (TreeHooks.Instance.Hooks[HookName(BehaviorType.Rest)] == null)
+            // if (TreeHooks.Instance.Hooks[HookName(BehaviorType.Rest)] == null)
+            if (!TreeHooks.Instance.Hooks.ContainsKey(HookName(BehaviorType.Rest)) || TreeHooks.Instance.Hooks[HookName(BehaviorType.Rest)].Count <= 0)
                 TreeHooks.Instance.ReplaceHook(HookName(BehaviorType.Rest), Helpers.Rest.CreateDefaultRestBehaviour());
-
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
             EnsureComposite( silent, false, context, BehaviorType.CombatBuffs);
             EnsureComposite( silent, false, context, BehaviorType.Heal);
             EnsureComposite( silent, false, context, BehaviorType.PullBuffs);
             EnsureComposite( silent, false, context, BehaviorType.PreCombatBuffs);
+            EnsureComposite( silent, false, context, BehaviorType.Death);
 
-            EnsureComposite( silent, false, context, BehaviorType.LossOfControl);
+            EnsureComposite(silent, false, context, BehaviorType.LossOfControl);
 
 #if SHOW_BEHAVIOR_LOAD_DESCRIPTION
             // display concise single line describing what behaviors we are loading
@@ -290,6 +293,20 @@ namespace Singular
                         )
                     )
                 );
+
+            _deathBehavior = new LockSelector(
+                new CallWatch("Death",
+                    new Decorator(
+                        ret => AllowBehaviorUsage(),
+                        new PrioritySelector(
+                            new Action( r => ResetCurrentTarget() ),
+                            Spell.WaitForGcdOrCastOrChannel(),
+                            new HookExecutor(HookName(BehaviorType.Death))
+                            )
+                        )
+                    )
+                );
+
         }
 
         private static bool HaveWeLostControl
@@ -431,6 +448,11 @@ namespace Singular
             _timerLastTarget.Reset();
             if (SingularSettings.Debug)
                 Logger.WriteDebug("reset target timer to {0:c}", _timerLastTarget.TimeLeft);
+        }
+
+        public static void ResetCurrentTarget()
+        {
+            _guidLastTarget = 0;
         }
 
         private static Composite CreateLogTargetChanges(BehaviorType behav, string sType)

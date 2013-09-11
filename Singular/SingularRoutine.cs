@@ -25,51 +25,6 @@ namespace Singular
 {
     public partial class SingularRoutine : CombatRoutine
     {
-        public SingularRoutine()
-        {
-            Instance = this;
-
-            // Do this now, so we ensure we update our context when needed.
-            BotEvents.Player.OnMapChanged += e =>
-                {
-                    // Don't run this handler if we're not the current routine!
-                    if (RoutineManager.Current.Name != Name)
-                        return;
-
-                    // Only ever update the context. All our internal handlers will use the context changed event
-                    // so we're not reliant on anything outside of ourselves for updates.
-                    UpdateContext();
-                };
-		
-
-            TreeHooks.Instance.HooksCleared += () =>
-                {
-                    Logger.Write(Color.White, "Hooks cleared, re-creating behaviors");
-                    RebuildBehaviors(silent: true);
-                    Spell.GcdInitialize();   // probably not needed, but quick
-                };
-
-            _lastLogLevel = GlobalSettings.Instance.LogLevel;
-            GlobalSettings.Instance.PropertyChanged += (sender, e) =>
-                {
-                    // only LogLevel change will impact our behav trees
-                    // .. as we conditionally include/omit some diagnostic nodes if debugging
-                    // also need to keep a cached copy of prior value as the event
-                    // .. fires on the settor, not when the value is different
-                    if (e.PropertyName == "LogLevel" && _lastLogLevel != GlobalSettings.Instance.LogLevel)
-                    {
-                        _lastLogLevel = GlobalSettings.Instance.LogLevel;
-                        Logger.Write(Color.White, "HonorBuddy {0} setting changed to {1}, re-creating behaviors", e.PropertyName, _lastLogLevel.ToString());
-                        RebuildBehaviors();
-                        Spell.GcdInitialize();   // probably not needed, but quick
-                    }
-                };
-
-            // install botevent handler so we can consolidate validation on whether 
-            // .. local botevent handlers should be called or not
-            SingularBotEventInitialize();
-        }
-
         private static LogLevel _lastLogLevel = LogLevel.None;
 
         public static SingularRoutine Instance { get; private set; }
@@ -82,192 +37,75 @@ namespace Singular
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
-        private static bool IsMounted
+        public SingularRoutine()
         {
-            get
-            {
-                if (StyxWoW.Me.Class == WoWClass.Druid)
-                {
-                    switch (StyxWoW.Me.Shapeshift)
-                    {
-                        case ShapeshiftForm.FlightForm:
-                        case ShapeshiftForm.EpicFlightForm:
-                            return true;
-                    }
-                }
-
-                return StyxWoW.Me.Mounted;
-            }
-        }
-
-        private ConfigurationForm _configForm;
-        public override void OnButtonPress()
-        {
-            if (_configForm == null || _configForm.IsDisposed || _configForm.Disposing)
-            {
-                _configForm = new ConfigurationForm();
-                _configForm.Height = SingularSettings.Instance.FormHeight;
-                _configForm.Width = SingularSettings.Instance.FormWidth;
-                TabControl tab = (TabControl) _configForm.Controls["tabControl1"];
-                tab.SelectedIndex = SingularSettings.Instance.FormTabIndex;
-            }
-
-            _configForm.Show();
-        }
-
-        static DateTime _nextNoCallMsgAllowed = DateTime.MinValue;
-
-        public override void Pulse()
-        {
-            // No pulsing if we're loading or out of the game.
-            if (!StyxWoW.IsInGame || !StyxWoW.IsInWorld)
-                return;
-
-            // check time since last call and be sure user knows if Singular isn't being called
-            if (SingularSettings.Debug)
-            {
-                TimeSpan since = CallWatch.SinceLast;
-                if (since.TotalSeconds > (4 * CallWatch.WarnTime))
-                {
-                    if (!Me.IsGhost && !Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
-                    {
-                        Logger.WriteDebug(Color.HotPink, "warning: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
-                        _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.WarnTime);
-                    }
-                }
-            }
-
-            // talentmanager.Pulse() intense if does work, so return if true
-            if (TalentManager.Pulse())
-                return;
-
-            // check and output casting state information
-            UpdateDiagnosticCastingState();
-
-            // Update the current context, check if we need to rebuild any behaviors.
-            UpdateContext();
-
-            // Double cast shit
-            Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow > t);
-
-            MonitorPullDistance();
-
-            // Output if Target changed 
-            CheckCurrentTarget();
-
-            // Pulse our StopAt manager
-            StopMoving.Pulse();
-
-            //Only pulse for classes with pets
-            switch (StyxWoW.Me.Class)
-            {
-                case WoWClass.Hunter:
-                case WoWClass.DeathKnight:
-                case WoWClass.Warlock:
-                case WoWClass.Mage:
-                    PetManager.Pulse();
-                    break;
-            }
-
-
-            if (Me.IsInGroup())
-            {
-                if (HealerManager.NeedHealTargeting && CurrentWoWContext != WoWContext.Normal)
-                    HealerManager.Instance.Pulse();
-
-                if (Group.MeIsTank && CurrentWoWContext == WoWContext.Instances)
-                    TankManager.Instance.Pulse();
-            }
-
-            HotkeyDirector.Pulse();
-        }
-
-        private static ulong _lastCheckCurrTargetGuid = 0;
-        private static ulong _lastCheckPetsTargetGuid = 0;
-
-        private void CheckCurrentTarget()
-        {
-            if (!SingularSettings.Debug)
-                return;
-
-            CheckTarget(Me.CurrentTarget, ref _lastCheckCurrTargetGuid, "YourCurrentTarget");
-            if ( Me.GotAlivePet )
-                CheckTarget(Me.Pet.CurrentTarget, ref _lastCheckPetsTargetGuid, "PetsCurrentTarget");
-        }
-
-
-        private void CheckTarget(WoWUnit unit, ref ulong prevGuid, string description)
-        {
-            // there are moments where CurrentTargetGuid != 0 but CurrentTarget == null. following
-            // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
-            if (unit == null)
-            {
-                if (prevGuid != 0)
-                {
-                    prevGuid = 0;
-                    Logger.WriteDebug( description + ": changed to: (null)");
-                    HandleTrainingDummy(unit);
-                }
-            }
-            else if (unit.Guid != prevGuid )
-            {
-                prevGuid = unit.Guid;
-
-                HandleTrainingDummy(unit);
-
-                string info = "";
-                if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
-                    info += string.Format(", IsBotPoi={0}", Styx.CommonBot.POI.BotPoi.Current.Type);
-
-                if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
-                    info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
-
-                string playerInfo = "N";
-                if (unit.IsPlayer)
-                {
-                    WoWPlayer p = unit.ToPlayer();
-                    playerInfo = string.Format("Y, Friend={0}, IsPvp={1}, CtstPvp={2}, FfaPvp={3}", Me.IsHorde == p.IsHorde, p.IsPvPFlagged, p.ContestedPvPFlagged, p.IsFFAPvPFlagged);
-                }
-
-                Logger.WriteDebug( description + ": changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, trivial={5}, player={6}, attackable={7}, hostile={8}, entry={9}, faction={10}, loss={11}, facing={12}, blacklist={13}" + info,
-                    unit.SafeName(),
-                    unit.HealthPercent,
-                    unit.MaxHealth,
-                    unit.Distance,
-                    unit.CombatReach,
-                    unit.IsTrivial(),
-                    playerInfo,
-                    unit.Attackable.ToYN(),
-                    unit.IsHostile.ToYN(),
-                    unit.Entry,
-                    unit.FactionId,
-                    unit.InLineOfSpellSight.ToYN(),
-                    Me.IsSafelyFacing(unit).ToYN(),
-                    Blacklist.Contains(unit.Guid, BlacklistFlags.Combat).ToYN()
-                    );
-            }
-        }
-
-        private static void HandleTrainingDummy(WoWUnit unit)
-        {
-            bool trainingDummy = unit == null ? false : unit.IsTrainingDummy();
-
-            if (trainingDummy && ForcedContext == WoWContext.None)
-            {
-                ForcedContext = WoWContext.Instances;
-                // ForcedContext = WoWContext.Battlegrounds; 
-                Logger.Write(Color.White, "Detected Training Dummy -- forcing {0} behaviors", CurrentWoWContext.ToString());
-            }
-            else if (!trainingDummy && ForcedContext != WoWContext.None)
-            {
-                ForcedContext = WoWContext.None;
-                Logger.Write(Color.White, "Detected Training Dummy no longer target -- reverting to {0} behaviors", CurrentWoWContext.ToString());
-            }
+            Instance = this;
         }
 
         public override void Initialize()
         {
             WriteSupportInfo();
+
+            _lastLogLevel = GlobalSettings.Instance.LogLevel;
+
+            // When we actually need to use it, we will.
+            Spell.GcdInitialize();
+
+            TalentManager.Init();
+            EventHandlers.Init();
+            MountManager.Init();
+            HotkeyDirector.Init();
+            MovementManager.Init();
+             // SoulstoneManager.Init();   // switch to using Death behavior
+            Dispelling.Init();
+            Singular.Lists.BossList.Init();
+
+            //Logger.Write("Combat log event handler started.");
+            // Do this now, so we ensure we update our context when needed.
+            BotEvents.Player.OnMapChanged += e =>
+            {
+                // Don't run this handler if we're not the current routine!
+                if (!WeAreTheCurrentCombatRoutine)
+                    return;
+
+                // Only ever update the context. All our internal handlers will use the context changed event
+                // so we're not reliant on anything outside of ourselves for updates.
+                UpdateContext();
+            };
+
+            TreeHooks.Instance.HooksCleared += () =>
+            {
+                // Don't run this handler if we're not the current routine!
+                if (!WeAreTheCurrentCombatRoutine)
+                    return;
+
+                Logger.Write(Color.White, "Hooks cleared, re-creating behaviors");
+                RebuildBehaviors(silent: true);
+                Spell.GcdInitialize();   // probably not needed, but quick
+            };
+
+            GlobalSettings.Instance.PropertyChanged += (sender, e) =>
+            {
+                // Don't run this handler if we're not the current routine!
+                if (!WeAreTheCurrentCombatRoutine)
+                    return;
+
+                // only LogLevel change will impact our behav trees
+                // .. as we conditionally include/omit some diagnostic nodes if debugging
+                // also need to keep a cached copy of prior value as the event
+                // .. fires on the settor, not when the value is different
+                if (e.PropertyName == "LogLevel" && _lastLogLevel != GlobalSettings.Instance.LogLevel)
+                {
+                    _lastLogLevel = GlobalSettings.Instance.LogLevel;
+                    Logger.Write(Color.White, "HonorBuddy {0} setting changed to {1}, re-creating behaviors", e.PropertyName, _lastLogLevel.ToString());
+                    RebuildBehaviors();
+                    Spell.GcdInitialize();   // probably not needed, but quick
+                }
+            };
+
+            // install botevent handler so we can consolidate validation on whether 
+            // .. local botevent handlers should be called or not
+            SingularBotEventInitialize();
 
             Logger.Write("Determining talent spec.");
             try
@@ -301,30 +139,15 @@ namespace Singular
                     Spell.GcdInitialize();
                 };
 
-            // create silently since will creating again right after this
-            if (!RebuildBehaviors(true))
-            {
-                return;
-            }
-            Logger.WriteDebug(Color.White, "Verified behaviors can be created!");
-
-            // When we actually need to use it, we will.
-            Spell.GcdInitialize();
-
-            EventHandlers.Init();
-            MountManager.Init();
-            HotkeyDirector.Init();
-            MovementManager.Init();
-            SoulstoneManager.Init();
-            Dispelling.Init();
-            Singular.Lists.BossList.Init();
-
-            //Logger.Write("Combat log event handler started.");
 
             // create silently since Start button will create a context change (at least first Start)
             // .. which will build behaviors again
-            Instance.RebuildBehaviors(true);
+            if (!Instance.RebuildBehaviors(true))
+            {
+                return;
+            }
 
+            Logger.WriteDebug(Color.White, "Verified behaviors can be created!");
             Logger.Write("Initialization complete!");
         }
 
@@ -459,6 +282,199 @@ namespace Singular
         {
             string hbpath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
             return hbpath;
+        }
+
+        public static bool WeAreTheCurrentCombatRoutine
+        {
+            get
+            {
+                return RoutineManager.Current.Name == SingularRoutine.Instance.Name;
+            }
+        }
+
+        private static bool IsMounted
+        {
+            get
+            {
+                if (StyxWoW.Me.Class == WoWClass.Druid)
+                {
+                    switch (StyxWoW.Me.Shapeshift)
+                    {
+                        case ShapeshiftForm.FlightForm:
+                        case ShapeshiftForm.EpicFlightForm:
+                            return true;
+                    }
+                }
+
+                return StyxWoW.Me.Mounted;
+            }
+        }
+
+        private ConfigurationForm _configForm;
+        public override void OnButtonPress()
+        {
+            if (_configForm == null || _configForm.IsDisposed || _configForm.Disposing)
+            {
+                _configForm = new ConfigurationForm();
+                _configForm.Height = SingularSettings.Instance.FormHeight;
+                _configForm.Width = SingularSettings.Instance.FormWidth;
+                TabControl tab = (TabControl)_configForm.Controls["tabControl1"];
+                tab.SelectedIndex = SingularSettings.Instance.FormTabIndex;
+            }
+
+            _configForm.Show();
+        }
+
+        static DateTime _nextNoCallMsgAllowed = DateTime.MinValue;
+
+        public override void Pulse()
+        {
+            // No pulsing if we're loading or out of the game.
+            if (!StyxWoW.IsInGame || !StyxWoW.IsInWorld)
+                return;
+
+            // check time since last call and be sure user knows if Singular isn't being called
+            if (SingularSettings.Debug)
+            {
+                TimeSpan since = CallWatch.SinceLast;
+                if (since.TotalSeconds > (4 * CallWatch.WarnTime))
+                {
+                    if (!Me.IsGhost && !Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
+                    {
+                        Logger.WriteDebug(Color.HotPink, "warning: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
+                        _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.WarnTime);
+                    }
+                }
+            }
+
+            // talentmanager.Pulse() intense if does work, so return if true
+            if (TalentManager.Pulse())
+                return;
+
+            // check and output casting state information
+            UpdateDiagnosticCastingState();
+
+            // Update the current context, check if we need to rebuild any behaviors.
+            UpdateContext();
+
+            // Double cast shit
+            Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow > t);
+
+            MonitorPullDistance();
+
+            // Output if Target changed 
+            CheckCurrentTarget();
+
+            // Pulse our StopAt manager
+            StopMoving.Pulse();
+
+            //Only pulse for classes with pets
+            switch (StyxWoW.Me.Class)
+            {
+                case WoWClass.Hunter:
+                case WoWClass.DeathKnight:
+                case WoWClass.Warlock:
+                case WoWClass.Mage:
+                    PetManager.Pulse();
+                    break;
+            }
+
+            if (Me.IsInGroup())
+            {
+                if (CurrentWoWContext != WoWContext.Normal)
+                    HealerManager.Instance.Pulse();
+
+                if (Group.MeIsTank && CurrentWoWContext == WoWContext.Instances)
+                    TankManager.Instance.Pulse();
+            }
+
+            HotkeyDirector.Pulse();
+        }
+
+        private static ulong _lastCheckCurrTargetGuid = 0;
+        private static ulong _lastCheckPetsTargetGuid = 0;
+
+        private void CheckCurrentTarget()
+        {
+            if (!SingularSettings.Debug)
+                return;
+
+            CheckTarget(Me.CurrentTarget, ref _lastCheckCurrTargetGuid, "YourCurrentTarget");
+            if (Me.GotAlivePet)
+                CheckTarget(Me.Pet.CurrentTarget, ref _lastCheckPetsTargetGuid, "PetsCurrentTarget");
+        }
+
+
+        private void CheckTarget(WoWUnit unit, ref ulong prevGuid, string description)
+        {
+            // there are moments where CurrentTargetGuid != 0 but CurrentTarget == null. following
+            // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
+            if (unit == null)
+            {
+                if (prevGuid != 0)
+                {
+                    prevGuid = 0;
+                    Logger.WriteDebug(description + ": changed to: (null)");
+                    HandleTrainingDummy(unit);
+                }
+            }
+            else if (unit.Guid != prevGuid)
+            {
+                prevGuid = unit.Guid;
+
+                HandleTrainingDummy(unit);
+
+                string info = "";
+                if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
+                    info += string.Format(", IsBotPoi={0}", Styx.CommonBot.POI.BotPoi.Current.Type);
+
+                if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
+                    info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
+
+                string playerInfo = "N";
+                if (unit.IsPlayer)
+                {
+                    WoWPlayer p = unit.ToPlayer();
+                    playerInfo = string.Format("Y, Friend={0}, IsPvp={1}, CtstPvp={2}, FfaPvp={3}", Me.IsHorde == p.IsHorde, p.IsPvPFlagged, p.ContestedPvPFlagged, p.IsFFAPvPFlagged);
+                }
+
+                Logger.WriteDebug(description + ": changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, trivial={5}, player={6}, attackable={7}, neutral={8}, hostile={9}, entry={10}, faction={11}, loss={12}, facing={13}, blacklist={14}, combat={15}" + info,
+                    unit.SafeName(),
+                    unit.HealthPercent,
+                    unit.MaxHealth,
+                    unit.Distance,
+                    unit.CombatReach,
+                    unit.IsTrivial(),
+                    playerInfo,
+                     
+                    unit.Attackable.ToYN(),
+                    unit.IsNeutral().ToYN(),
+                    unit.IsHostile.ToYN(),
+                    unit.Entry,
+                    unit.FactionId,
+                    unit.InLineOfSpellSight.ToYN(),
+                    Me.IsSafelyFacing(unit).ToYN(),
+                    Blacklist.Contains(unit.Guid, BlacklistFlags.Combat).ToYN(),
+                    unit.Combat.ToYN()
+                    );
+            }
+        }
+
+        private static void HandleTrainingDummy(WoWUnit unit)
+        {
+            bool trainingDummy = unit == null ? false : unit.IsTrainingDummy();
+
+            if (trainingDummy && ForcedContext == WoWContext.None)
+            {
+                ForcedContext = WoWContext.Instances;
+                // ForcedContext = WoWContext.Battlegrounds; 
+                Logger.Write(Color.White, "Detected Training Dummy -- forcing {0} behaviors", CurrentWoWContext.ToString());
+            }
+            else if (!trainingDummy && ForcedContext != WoWContext.None)
+            {
+                ForcedContext = WoWContext.None;
+                Logger.Write(Color.White, "Detected Training Dummy no longer target -- reverting to {0} behaviors", CurrentWoWContext.ToString());
+            }
         }
 
         private static bool _lastIsGCD = false;

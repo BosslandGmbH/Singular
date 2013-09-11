@@ -55,14 +55,14 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
                         && Me.HasAura("Predatory Swiftness")
-                        && (Me.GetPredictedHealthPercent(true) < 95 || (Common.HasTalent( DruidTalents.DreamOfCenarius) && !Me.HasAuraExpired("Dream of Cenarius"))),
+                        && (Me.GetPredictedHealthPercent(true) < 95),
                     new PrioritySelector(
                         new Action(r => { Logger.WriteDebug("Druid Rest Swift Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift); return RunStatus.Failure; }),
                         Spell.Cast("Healing Touch",
                             mov => true,
                             on => Me,
                             req => true,
-                            cancel => false)
+                            cancel => Me.HealthPercent > 95 )
                         )
                     )
 
@@ -117,7 +117,7 @@ namespace Singular.ClassSpecific.Druid
                                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                                 )),
 
-                        Spell.BuffSelf("Cat Form"),
+                        Spell.BuffSelf("Cat Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         Common.CreateProwlBehavior(),
 
@@ -185,20 +185,7 @@ namespace Singular.ClassSpecific.Druid
                     // since this check comes while not in combat (so will be doing other things like Questing) need to add some checks:
                     // - only if Moving
                     // - only if No Recent Shapefhift Error (since form may have resulted from error in picking up Quest, completing Quest objectives, or turning in Quest)
-                    new Throttle(10, Spell.BuffSelf("Cat Form", ret => Me.IsMoving && !Common.RecentShapeshiftErrorOccurred && !Me.IsSwimming && !Me.HasAnyAura("Travel Form", "Aquatic Form"))),
-
-                    // cancel form if we get a shapeshift error 
-                    new Throttle( 5,
-                        new Decorator(
-                            ret => !Me.IsMoving && Me.Shapeshift != ShapeshiftForm.Normal && SingularRoutine.IsQuestBotActive && Common.RecentShapeshiftErrorOccurred,
-                            new Action(ret =>
-                            {
-                                string formName = Me.Shapeshift.ToString() + " Form";
-                                Logger.Write("/cancel [{0}] due to shapeshift error in Questing; disabling form for {1:F0} secs while not in combat", formName, (Common.SuppressShapeshiftUntil - DateTime.Now).TotalSeconds );
-                                Me.CancelAura(formName);
-                            })
-                            )
-                        ),
+                    new Throttle(10, Spell.BuffSelf("Cat Form", ret => Me.IsMoving && !Utilities.EventHandlers.IsShapeshiftSuppressed && !Me.IsSwimming && !Me.HasAnyAura("Travel Form", "Aquatic Form"))),
 
                     Common.CreateProwlBehavior(
                         ret => DruidSettings.ProwlAlways
@@ -225,7 +212,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateFeralCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Cat Form")
+                Spell.BuffSelf("Cat Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
                 );
         }
 

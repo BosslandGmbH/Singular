@@ -56,7 +56,7 @@ namespace Singular.ClassSpecific.Druid
                                 )
                             ),
 
-                        Spell.BuffSelf("Bear Form"),
+                        Spell.BuffSelf("Bear Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
                         CreateGuardianWildChargeBehavior(),
                         Common.CreateFaerieFireBehavior( on => Me.CurrentTarget, req => true)
                         )
@@ -78,7 +78,7 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateGuardianNormalCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Bear Form"),
+                Spell.BuffSelf("Bear Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                 new Decorator(
                     req => Me.GotTarget && !Me.CurrentTarget.IsTrivial(),

@@ -79,7 +79,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints <= 3),
 
                         new Decorator(
-                            ret => Common.AoeCount > 1,
+                            ret => Common.AoeCount > 1 && !Me.CurrentTarget.IsPlayer,
                             new PrioritySelector(
                                 Spell.BuffSelf("Shadow Dance", ret => Common.AoeCount >= 3),
                                 Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5 && Common.AoeCount < 7 && !Me.CurrentTarget.HasAuraExpired("Crimson Tempest", 7)),
@@ -88,7 +88,7 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             ),
                         new Decorator(
-                            ret => Common.AoeCount >= 3,
+                            ret => Common.AoeCount >= 3 && !Me.CurrentTarget.IsPlayer,
                             new PrioritySelector(
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
@@ -115,7 +115,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.IsStealthed),
                         Spell.Buff("Hemorrhage"),
                         Spell.Cast("Backstab", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.HasDaggerInMainHand),
-                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
+                        Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
 
                 // following cast is as a Combo Point builder if we can't cast Backstab
                         Spell.Cast("Hemorrhage", ret => Me.CurrentEnergy >= 35 || !SpellManager.HasSpell("Backstab") || !Me.IsSafelyBehind(Me.CurrentTarget)),

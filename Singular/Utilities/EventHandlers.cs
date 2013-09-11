@@ -33,7 +33,7 @@ namespace Singular.Utilities
             // set default values for timed error states
             LastLineOfSightFailure = DateTime.MinValue;
             LastUnitNotInfrontFailure = DateTime.MinValue;
-            LastShapeshiftFailure = DateTime.MinValue;
+            SuppressShapeshiftUntil = DateTime.MinValue;
 
             // hook combat log event if we are debugging or not in performance critical circumstance
             if (SingularSettings.Debug || (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid))
@@ -95,8 +95,9 @@ namespace Singular.Utilities
         /// </summary>
         public static DateTime LastLineOfSightFailure { get; set; }
         public static DateTime LastUnitNotInfrontFailure { get; set; }
-        public static DateTime LastShapeshiftFailure { get; set; }
         public static DateTime LastNoPathFailure { get; set; }
+        public static DateTime SuppressShapeshiftUntil { get; set; }
+        public static bool IsShapeshiftSuppressed { get { return SuppressShapeshiftUntil > DateTime.Now; } }
 
         public static WoWUnit LastLineOfSightTarget { get; set; }
         public static ulong LastNoPathTarget { get; set; }
@@ -155,6 +156,10 @@ namespace Singular.Utilities
 
         private static void HandleCombatLog(object sender, LuaEventArgs args)
         {
+            // Since we hooked this in ctor, make sure we are the selected CC
+            if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
+                return;
+
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
             if (e.SourceGuid != StyxWoW.Me.Guid)
                 return;
@@ -198,13 +203,14 @@ namespace Singular.Utilities
                         LastNoPathTarget = StyxWoW.Me.CurrentTargetGuid;
                         Logger.WriteFile("[CombatLog] cast failed due to no path available to current target");
                     }
-                    else if (StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuestBotActive)
+                    else if (!SingularRoutine.IsManualMovementBotActive && (StyxWoW.Me.Class == WoWClass.Druid || StyxWoW.Me.Class == WoWClass.Shaman))
                     {
                         if (LocalizedShapeshiftMessages.ContainsKey(e.Args[14].ToString()))
                         {
                             string symbolicName = LocalizedShapeshiftMessages[e.Args[14].ToString()];
-                            LastShapeshiftFailure = DateTime.Now;
-                            Logger.WriteFile("[CombatLog] cast failed due to shapeshift error '{0}' while questing reported at {1}", symbolicName, LastShapeshiftFailure.ToString("HH:mm:ss.fff"));
+                            SuppressShapeshiftUntil = DateTime.Now.Add( TimeSpan.FromSeconds(30));
+                            Logger.Write(Color.White, "/cancel{0} - due to Shapeshift Error '{1}' on cast, suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
+                            Lua.DoString("CancelShapeshiftForm()");
                         }
                     }
                     else if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket)
@@ -366,6 +372,10 @@ namespace Singular.Utilities
 
         private static void HandleErrorMessage(object sender, LuaEventArgs args)
         {
+            // Since we hooked this in ctor, make sure we are the selected CC
+            if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
+                return;
+
             bool handled = false;
 
             if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket && args.Args[0].ToString() == LocalizedAlreadyPickPocketedError)
@@ -379,15 +389,17 @@ namespace Singular.Utilities
                 }
             }
 
-            if (StyxWoW.Me.Class == WoWClass.Druid && SingularRoutine.IsQuestBotActive)
+            if ( !SingularRoutine.IsManualMovementBotActive && (StyxWoW.Me.Class == WoWClass.Druid || StyxWoW.Me.Class == WoWClass.Shaman))
             {
                 if (LocalizedShapeshiftMessages.ContainsKey(args.Args[0].ToString()))
                 {
                     string symbolicName = LocalizedShapeshiftMessages[args.Args[0].ToString()];
-                    LastShapeshiftFailure = DateTime.Now;
-                    Logger.WriteFile("[WowErrorMessage] cast fail due to shapeshift error '{0}' while questing reported at {1}", symbolicName, LastShapeshiftFailure.ToString("HH:mm:ss.fff"));
+                    SuppressShapeshiftUntil = DateTime.Now.Add(TimeSpan.FromSeconds(30));
+                    Logger.Write(Color.White, "/cancel{0} - due to Red Shapeshift Error '{1}', suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
+                    Lua.DoString("CancelShapeshiftForm()");
                     handled = true;
                 }
+
             }
 
             if (!handled && SingularSettings.Debug)

@@ -146,7 +146,7 @@ namespace Singular.ClassSpecific.Mage
                                         )
                                     ),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
-                                Spell.Cast("Frozen Orb"),
+                                Spell.Cast("Frozen Orb", req => Spell.UseAOE && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 150))),
                                 Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.Cast("Ice Lance", ret => Me.HasAura("Fingers of Frost") && Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 4),
@@ -178,8 +178,7 @@ namespace Singular.ClassSpecific.Mage
                             ),
 
                         // nether tempest in CombatBuffs
-                        Spell.Cast("Frozen Orb", ret => Spell.UseAOE && 
-                            0 == Clusters.GetClusterCount( Me, Unit.NearbyUnfriendlyUnits.Where(u=>u.IsNeutral && !u.Combat).ToList(), ClusterType.Cone, 25f)),
+                        Spell.Cast("Frozen Orb", req => Spell.UseAOE && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 150))),
 
                         // on mobs that will live a long time, build up the debuff... otherwise react to procs more quickly
                         // this is the main element that departs from normal instance rotation
@@ -365,7 +364,7 @@ namespace Singular.ClassSpecific.Mage
                                     ),
                                 // Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
-                                Spell.Cast("Frozen Orb"),
+                                Spell.Cast("Frozen Orb", req => !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 150))),
                                 Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.Cast("Ice Lance", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 4),
@@ -379,7 +378,7 @@ namespace Singular.ClassSpecific.Mage
                         Movement.CreateEnsureMovementStoppedBehavior(25f),
 
                         // nether tempest in CombatBuffs
-                        Spell.Cast("Frozen Orb", ret => Spell.UseAOE ),
+                        Spell.Cast("Frozen Orb", req => Spell.UseAOE && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 150))),
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.HasAura("Frostbolt", 3) || Me.CurrentTarget.HasAuraExpired("Frostbolt", 3)),
                         new Throttle( 1,
                             new Decorator( 

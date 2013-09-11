@@ -8,6 +8,7 @@ using System.Drawing;
 using Styx.Common.Helpers;
 using System.Collections.Generic;
 using Singular.Helpers;
+using Styx.CommonBot.Routines;
 
 namespace Singular.Managers
 {
@@ -20,7 +21,11 @@ namespace Singular.Managers
 
         private static void HandlePlayerDead(object sender, LuaEventArgs args)
         {
-            if (StyxWoW.Me.IsAlive || StyxWoW.Me.IsGhost )
+            // Since we hooked this in ctor, make sure we are the selected CC
+            if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
+                return;
+
+            if (StyxWoW.Me.IsAlive || StyxWoW.Me.IsGhost)
                 return;
 
             List<string> hasSoulstone = Lua.GetReturnValues("return HasSoulstone()", "hawker.lua");

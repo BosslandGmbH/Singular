@@ -43,6 +43,7 @@
             this.pgHotkeys = new System.Windows.Forms.PropertyGrid();
             this.tabDebug = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.chkDebugTrace = new System.Windows.Forms.CheckBox();
             this.chkUseInstanceBehaviorsWhenSolo = new System.Windows.Forms.CheckBox();
             this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
@@ -224,6 +225,7 @@
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.chkDebugTrace);
             this.groupBox4.Controls.Add(this.chkUseInstanceBehaviorsWhenSolo);
             this.groupBox4.Controls.Add(this.ShowPlayerNames);
             this.groupBox4.Location = new System.Drawing.Point(165, 262);
@@ -233,23 +235,33 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Temporary Settings";
             // 
+            // chkDebugTrace
+            // 
+            this.chkDebugTrace.AutoSize = true;
+            this.chkDebugTrace.Location = new System.Drawing.Point(6, 57);
+            this.chkDebugTrace.Name = "chkDebugTrace";
+            this.chkDebugTrace.Size = new System.Drawing.Size(124, 17);
+            this.chkDebugTrace.TabIndex = 2;
+            this.chkDebugTrace.Text = "Trace Behavior Calls";
+            this.chkDebugTrace.UseVisualStyleBackColor = true;
+            // 
             // chkUseInstanceBehaviorsWhenSolo
             // 
             this.chkUseInstanceBehaviorsWhenSolo.AutoSize = true;
-            this.chkUseInstanceBehaviorsWhenSolo.Location = new System.Drawing.Point(6, 43);
+            this.chkUseInstanceBehaviorsWhenSolo.Location = new System.Drawing.Point(6, 38);
             this.chkUseInstanceBehaviorsWhenSolo.Name = "chkUseInstanceBehaviorsWhenSolo";
             this.chkUseInstanceBehaviorsWhenSolo.Size = new System.Drawing.Size(147, 17);
-            this.chkUseInstanceBehaviorsWhenSolo.TabIndex = 9;
+            this.chkUseInstanceBehaviorsWhenSolo.TabIndex = 1;
             this.chkUseInstanceBehaviorsWhenSolo.Text = "Force Instance Behaviors";
             this.chkUseInstanceBehaviorsWhenSolo.UseVisualStyleBackColor = true;
             // 
             // ShowPlayerNames
             // 
             this.ShowPlayerNames.AutoSize = true;
-            this.ShowPlayerNames.Location = new System.Drawing.Point(6, 20);
+            this.ShowPlayerNames.Location = new System.Drawing.Point(6, 19);
             this.ShowPlayerNames.Name = "ShowPlayerNames";
             this.ShowPlayerNames.Size = new System.Drawing.Size(121, 17);
-            this.ShowPlayerNames.TabIndex = 8;
+            this.ShowPlayerNames.TabIndex = 0;
             this.ShowPlayerNames.Text = "Show Player Names";
             this.ShowPlayerNames.UseVisualStyleBackColor = true;
             // 
@@ -468,5 +480,6 @@
         private System.Windows.Forms.CheckBox ShowPlayerNames;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Label lblPoi;
+        private System.Windows.Forms.CheckBox chkDebugTrace;
     }
 }

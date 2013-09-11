@@ -89,22 +89,6 @@ namespace Singular.ClassSpecific.Shaman
             }
         }
 
-        public static DateTime SuppressShapeshiftUntil
-        {
-            get
-            {
-                return Utilities.EventHandlers.LastShapeshiftFailure.AddSeconds(60);
-            }
-        }
-
-        public static bool RecentShapeshiftErrorOccurred
-        {
-            get
-            {
-                return SuppressShapeshiftUntil > DateTime.Now;
-            }
-        }
-
         /// <summary>
         /// checks if in a relatively balanced fight where atleast 3 of your
         /// teammates will benefti from Bloodlust.  fight must be atleast 3 v 3
@@ -528,7 +512,7 @@ namespace Singular.ClassSpecific.Shaman
                     && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport && !Me.IsSwimming 
                     && !Me.HasAura("Ghost Wolf")
                     && SpellManager.HasSpell("Ghost Wolf")
-                    && !RecentShapeshiftErrorOccurred
+                    && !Utilities.EventHandlers.IsShapeshiftSuppressed
                     && BotPoi.Current != null
                     && BotPoi.Current.Type != PoiType.None
                     && BotPoi.Current.Type != PoiType.Hotspot

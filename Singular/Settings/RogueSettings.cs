@@ -58,7 +58,7 @@ namespace Singular.Settings
         public bool StealthIfEating { get; set; }
 
         [Setting]
-        [DefaultValue(2)]
+        [DefaultValue(4)]
         [Category("Common")]
         [DisplayName("Fan of Knives Count")]
         [Description("Use FoK as Combo Point builder at this enemy count")]
@@ -93,7 +93,7 @@ namespace Singular.Settings
         public bool UsePickLock { get; set; }
 
         [Setting]
-        [DefaultValue(0)]
+        [DefaultValue(25)]
         [Category("Common")]
         [DisplayName("Sap Adds Distance")]
         [Description("Sap mobs within this many yards of target that may aggro; 0 to disable")]

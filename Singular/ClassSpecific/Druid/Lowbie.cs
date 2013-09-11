@@ -104,7 +104,7 @@ namespace Singular.ClassSpecific.Druid
                         // moonfire if already out of form
                         Spell.Buff("Moonfire", req => StyxWoW.Me.Shapeshift != ShapeshiftForm.Cat || StyxWoW.Me.CurrentTarget.Distance > 8),
 
-                        Spell.BuffSelf("Cat Form"),
+                        Spell.BuffSelf("Cat Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
                         Helpers.Common.CreateInterruptBehavior(),
                         Helpers.Common.CreateAutoAttack(true),
 

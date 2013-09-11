@@ -236,6 +236,12 @@ namespace Singular.Managers
             }
         }
 
+        public override void Pulse()
+        {
+            if (NeedHealTargeting)
+                base.Pulse();
+        }
+
         public static HashSet<ulong> GetMainTankGuids()
         {
             var infos = StyxWoW.Me.GroupInfo.RaidMembers;

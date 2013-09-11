@@ -31,22 +31,6 @@ namespace Singular.ClassSpecific.Druid
 
         public const WoWSpec DruidAllSpecs = (WoWSpec)int.MaxValue;
 
-        public static DateTime SuppressShapeshiftUntil
-        {
-            get
-            {
-                return Utilities.EventHandlers.LastShapeshiftFailure.AddSeconds(60);
-            }
-        }
-
-        public static bool RecentShapeshiftErrorOccurred
-        {
-            get
-            {
-                return SuppressShapeshiftUntil > DateTime.Now;
-            }
-        }
-
         #region PreCombat Buffs
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid)]
@@ -238,25 +222,26 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.Cast( "Healing Touch", on => 
                     {
-                        if (!Me.HasAura("Predatory Swiftness"))
-                            return null;
-                        
-                        // heal self if needed
-                        if (Me.HealthPercent < DruidSettings.PredSwiftnessHealingTouchHealth)
-                            return Me;
-                        
-                        // heal others if needed
-                        if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                            return Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < DruidSettings.PredSwiftnessPvpHeal && p.DistanceSqr < 40 * 40).FirstOrDefault();
-                        
-                        // heal anyone if buff about to expire
-                        if (Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds.Between(500, 2000))
-                            return Unit.GroupMembers.Where(p => p.IsAlive && p.DistanceSqr < 40 * 40).OrderBy(k => k.GetPredictedHealthPercent()).FirstOrDefault();
+                        WoWUnit target = null;
+                        if (Me.HasAura("Predatory Swiftness"))
+                        {
+                            // heal self if needed
+                            if (Me.HealthPercent < DruidSettings.PredSwiftnessHealingTouchHealth)
+                                target = Me;
+                            // heal others if needed
+                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                                target = Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < DruidSettings.PredSwiftnessPvpHeal && p.DistanceSqr < 40 * 40).FirstOrDefault();
+                            // heal anyone if buff about to expire
+                            else if (Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds.Between(500, 2000))
+                                target = Unit.GroupMembers.Where(p => p.IsAlive && p.DistanceSqr < 40 * 40).OrderBy(k => k.GetPredictedHealthPercent()).FirstOrDefault();
 
-                        return null;
+                            if (target != null)
+                            {
+                                Logger.WriteDebug("PredSwift Heal @ actual:{0:F1}% predict:{1:F1}% and moving:{2} in form:{3}", target.HealthPercent, target.GetPredictedHealthPercent(true), target.IsMoving, target.Shapeshift);
+                            }
+                        }
+                        return target;
                     }) ,
-
-                Spell.Cast("Healing Touch", on => Me, ret => Me.HealthPercent <= 95 && Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds.Between(500, 2000)),
 
                 Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < DruidSettings.SelfRenewalHealth),
                 Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < DruidSettings.SelfCenarionWardHealth),
@@ -344,11 +329,11 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 new Decorator(
                     ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
-                        && (Me.GetPredictedHealthPercent(true) < SingularSettings.Instance.MinHealth || (Me.Shapeshift == ShapeshiftForm.Normal && Me.GetPredictedHealthPercent(true) < 85))
-                        && ((Me.HasAuraExpired("Rejuvenation", 1) && Spell.CanCastHack("Rejuvenation", Me)) || (SpellManager.HasSpell("Healing Touch") && Spell.CanCastHack("Healing Touch", Me))),
+                        && Me.GetPredictedHealthPercent(true) < (Me.Shapeshift == ShapeshiftForm.Normal ? 85 : SingularSettings.Instance.MinHealth)
+                        && ((Me.HasAuraExpired("Rejuvenation", 1) && Spell.CanCastHack("Rejuvenation", Me)) || Spell.CanCastHack("Healing Touch", Me)),
                     new PrioritySelector(
                         Movement.CreateEnsureMovementStoppedBehavior( reason:"to heal"),
-                        new Action(r => { Logger.WriteDebug("Druid Rest Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift ); return RunStatus.Failure; }),
+                        new Action(r => { Logger.WriteDebug("Rest Heal @ actual:{0:F1}% predict:{1:F1}% and moving:{2} in form:{3}", Me.HealthPercent, Me.GetPredictedHealthPercent(true), Me.IsMoving, Me.Shapeshift ); return RunStatus.Failure; }),
                         Spell.BuffSelf("Rejuvenation", req => !SpellManager.HasSpell("Healing Touch")),
                         Spell.Cast("Healing Touch",
                             mov => true,
@@ -406,7 +391,7 @@ namespace Singular.ClassSpecific.Druid
                         && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
                         && Me.IsAlive
                         && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport && !Me.IsSwimming && !Me.HasAnyAura("Travel Form", "Flight Form")
-                        && !RecentShapeshiftErrorOccurred 
+                        && !Utilities.EventHandlers.IsShapeshiftSuppressed 
                         && SpellManager.HasSpell("Cat Form")
                         && BotPoi.Current != null
                         && BotPoi.Current.Type != PoiType.None

@@ -15,6 +15,7 @@ using Styx.TreeSharp;
 using Action = Styx.TreeSharp.Action;
 using Singular.Settings;
 using System.Drawing;
+using System;
 
 namespace Singular.ClassSpecific.Mage
 {
@@ -34,6 +35,8 @@ namespace Singular.ClassSpecific.Mage
         }
 
 
+        private static DateTime _lastPyroPull = DateTime.MinValue;
+
         [Behavior(BehaviorType.Pull, WoWClass.Mage, WoWSpec.MageFire, WoWContext.Normal)]
         public static Composite CreateMageFireNormalPull()
         {
@@ -50,7 +53,20 @@ namespace Singular.ClassSpecific.Mage
                         Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
                         Spell.Cast("Inferno Blast", ret => Me.HasAura("Heating Up")), // Me.ActiveAuras.ContainsKey("Heating Up")),
                         //new Throttle( 3, Spell.Cast("Frostfire Bolt", req => Me.CurrentTarget.SpellDistance() > 20) ),
-                        Spell.Cast("Pyroblast")
+                        // Pyroblast 
+                        new Sequence(
+                            Spell.Cast("Pyroblast", req => {
+                                if (Me.CurrentTarget.SpellDistance() > 18)
+                                    return true;
+                                if (DateTime.Now > _lastPyroPull.AddMilliseconds(3000))
+                                    return true;
+                                return false;
+                                }),
+                            new Action( r => _lastPyroPull = DateTime.Now )
+                            ),
+                        Spell.Cast("Fire Blast", ret => !SpellManager.HasSpell("Inferno Blast")),
+                        Spell.Cast("Scorch"),
+                        Spell.Cast("Fireball")
                        )
                     ),
 
@@ -115,7 +131,7 @@ namespace Singular.ClassSpecific.Mage
                             ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
                                 // Movement.CreateEnsureMovementStoppedBehavior(5f),
-                                Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
+                                Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Inferno Blast") && Me.CurrentTarget.HasAnyAura("Pyroblast", "Ignite", "Combustion")),
                                 Spell.Cast("Dragon's Breath", ret => Me.CurrentTarget.DistanceSqr <= 12 * 12),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3),
@@ -204,10 +220,7 @@ namespace Singular.ClassSpecific.Mage
                             ret => Me.IsSafelyFacing(Me.CurrentTarget, 90) &&
                                    Me.CurrentTarget.DistanceSqr <= 8 * 8),
 
-                        Spell.Cast("Fire Blast",
-                            ret => Me.ActiveAuras.ContainsKey("Impact")),
-                        // Rotation
-                
+                        // Rotation               
                         Spell.Cast("Mage Bomb", ret => !Me.CurrentTarget.HasAura("Living Bomb") || (Me.CurrentTarget.HasAura("Living Bomb") && Me.CurrentTarget.GetAuraTimeLeft("Living Bomb", true).TotalSeconds <= 2)),
                          Spell.Cast("Inferno Blast", ret => Me.HasAura("Heating Up")),
                          Spell.Cast("Frost Bomb", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 1),

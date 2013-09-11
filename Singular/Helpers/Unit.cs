@@ -174,27 +174,36 @@ namespace Singular.Helpers
         ///   Gets the nearby unfriendly units within 40 yards.
         /// </summary>
         /// <value>The nearby unfriendly units.</value>
+        public static IEnumerable<WoWUnit> UnfriendlyUnits(int maxSpellDist)
+        {
+            Type typeWoWUnit = typeof(WoWUnit);
+            Type typeWoWPlayer = typeof(WoWPlayer);
+            List<WoWObject> objectList = ObjectManager.ObjectList;
+            List<WoWUnit> list = new List<WoWUnit>();
+            for (int i = 0; i < objectList.Count; i++)
+            {
+                Type type = objectList[i].GetType();
+                if (type == typeWoWUnit || type == typeWoWPlayer)
+                {
+                    WoWUnit t = objectList[i] as WoWUnit;
+                    if (t != null && ValidUnit(t) && t.SpellDistance() < maxSpellDist )
+                    {
+                        list.Add(t);
+                    }
+                }
+            }
+            return list;
+        }
+
+        /// <summary>
+        ///   Gets the nearby unfriendly units within 40 yards.
+        /// </summary>
+        /// <value>The nearby unfriendly units.</value>
         public static IEnumerable<WoWUnit> NearbyUnfriendlyUnits
         {
             get
             {
-                Type typeWoWUnit = typeof(WoWUnit);
-                Type typeWoWPlayer = typeof(WoWPlayer);
-                List<WoWObject> objectList = ObjectManager.ObjectList;
-                List<WoWUnit> list = new List<WoWUnit>();
-                for (int i = 0; i < objectList.Count; i++)
-                {
-                    Type type = objectList[i].GetType();
-                    if (type == typeWoWUnit || type == typeWoWPlayer)
-                    {
-                        WoWUnit t = objectList[i] as WoWUnit;
-                        if (t != null && ValidUnit(t) && t.SpellDistance() < 40)
-                        {
-                            list.Add(t);
-                        }
-                    }
-                }
-                return list;
+                return UnfriendlyUnits(40);
             }
         }
 
@@ -571,6 +580,11 @@ namespace Singular.Helpers
                 a.TryCancelAura();
         }
 
+        public static bool IsNeutral(this WoWUnit unit)
+        {
+            return unit.GetReactionTowards(StyxWoW.Me) == WoWUnitReaction.Neutral;
+        }
+
         /// <summary>
         /// Returns a list of resurrectable players in a 40 yard radius
         /// </summary>
@@ -694,15 +708,15 @@ namespace Singular.Helpers
             return u.IsTargetingMyStuff() || Unit.GroupMemberInfos.Any(m => m.Guid == u.CurrentTargetGuid);
         }
 
-        public static bool IsSensitiveDamage(this WoWUnit u, float range)
+        public static bool IsSensitiveDamage(this WoWUnit u,  int range = 0)
         {
-            if (u == StyxWoW.Me.CurrentTarget)
+            if (u.Guid == StyxWoW.Me.CurrentTargetGuid)
                 return false;
 
-            if (!u.Combat && !u.IsPlayer && u.IsNeutral)
+            if (!u.Combat && !u.IsPlayer && u.IsNeutral())
                 return true;
 
-            if (u.SpellDistance() > range)
+            if (range > 0 && u.SpellDistance() > range)
                 return false;
 
             return u.IsCrowdControlled();

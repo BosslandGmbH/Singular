@@ -94,7 +94,7 @@ namespace Singular.ClassSpecific.Rogue
                                 Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                                 Spell.Buff("Rupture", true, ret => (Me.CurrentTarget.GetAuraTimeLeft("Rupture", true).TotalSeconds < 3)),
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
-                                Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
+                                Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                                 Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives") && Common.HasTwoDaggers),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
@@ -113,7 +113,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Cast("Dispatch", req => Common.HasDaggerInMainHand), // daggers
 
-                        Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
+                        Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
                         Spell.Cast("Mutilate", req => Common.HasTwoDaggers),  // daggers
 
                         Common.CheckThatDaggersAreEquippedIfNeeded()

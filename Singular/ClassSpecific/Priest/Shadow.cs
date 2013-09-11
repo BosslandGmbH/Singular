@@ -452,6 +452,51 @@ namespace Singular.ClassSpecific.Priest
             }
         }
 
+        private static WoWUnit GetBestMindSearTarget()
+        {
+            const int MindSearCount = 3;
+
+            if (!Me.IsInGroup() || !Me.Combat)
+                return Clusters.GetBestUnitForCluster(AoeTargets, ClusterType.Radius, 10f);
+
+            if (!Spell.CanCastHack("Mind Sear", Me, skipWowCheck: true))
+            {
+                // Logger.WriteDebug("GetBestMindSearTarget: CanCastHack says NO to Healing Rain");
+                return null;
+            }
+
+            List<WoWUnit> targetsCovered = Unit.UnfriendlyUnits(50).ToList();
+            if (targetsCovered.Count() < MindSearCount)
+                return null;
+              
+            List<WoWUnit> targets = targetsCovered
+                .Union( Group.Tanks)
+                .ToList();
+
+            // search all targets to find best one in best location to use as anchor for cast on ground
+            var t = targets
+                .Where( u => u.SpellDistance() < 40 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight )
+                .Select(p => new
+                {
+                    Unit = p,
+                    Count = targetsCovered
+                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 10 * 10)
+                        .Count()
+                })
+                .OrderByDescending(v => v.Count)
+                .ThenByDescending(v => v.Unit.IsPlayer)
+                .DefaultIfEmpty(null)
+                .FirstOrDefault();
+
+            if (t != null && t.Count >= MindSearCount )
+            {
+                Logger.WriteDebug("GetBestMindSearTarget:  found {0} with {1} enemies within 10 yds", t.Unit.SafeName(), t.Count);
+                return t.Unit;
+            }
+
+            return null;
+        }
+
         static Composite CastMindFlay()
         {
             return Spell.Cast("Mind Flay", 

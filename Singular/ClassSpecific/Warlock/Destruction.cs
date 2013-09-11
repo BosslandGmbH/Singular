@@ -61,8 +61,55 @@ namespace Singular.ClassSpecific.Warlock
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.All)]
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.Normal)]
         public static Composite CreateWarlockDestructionNormalCombat()
+        {
+            _InstantRoF = Me.HasAura("Aftermath");
+
+            return new PrioritySelector(
+                Helpers.Common.EnsureReadyToAttackFromLongRange(),
+
+                Spell.WaitForCast(FaceDuring.Yes),
+
+                new Decorator(ret => !Spell.IsGlobalCooldown(),
+
+                    new PrioritySelector(
+
+                        Helpers.Common.CreateAutoAttack(true),
+
+                        Helpers.Common.CreateInterruptBehavior(),
+
+                        new Action(ret =>
+                        {
+                            _mobCount = TargetsInCombat.Count();
+                            return RunStatus.Failure;
+                        }),
+
+                        CreateAoeBehavior(),
+
+                        // Noxxic
+                        Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
+                        Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
+                        Spell.Cast("Conflagrate"),
+                        Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire"), false),
+
+                        Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
+                        Spell.Cast("Incinerate"),
+
+                        Spell.Cast("Fel Flame", ret => Me.IsMoving && Me.CurrentTarget.GetAuraTimeLeft("Immolate").TotalMilliseconds.Between(300, 3000)),
+
+                        Spell.Cast("Drain Life", ret => Me.HealthPercent <= WarlockSettings.DrainLifePercentage && !Group.AnyHealerNearby),
+                        Spell.Cast("Shadow Bolt")
+                        )
+                    )
+                );
+
+        }
+
+
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.Battlegrounds )]
+        [Behavior(BehaviorType.Combat, WoWClass.Warlock, WoWSpec.WarlockDestruction, WoWContext.Instances)]
+        public static Composite CreateWarlockDestructionInstanceCombat()
         {
             _InstantRoF = Me.HasAura("Aftermath");
 
@@ -167,7 +214,7 @@ namespace Singular.ClassSpecific.Warlock
                         ),
 
                     new PrioritySelector(
-                        ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.HasMyAura("Havoc")),
+                        ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && !u.HasMyAura("Havoc ")),
                         Spell.Buff("Havoc", on => ((WoWUnit)on) ?? Unit.NearbyUnitsInCombatWithMeOrMyStuff.Where(u => u.Guid != Me.CurrentTargetGuid).OrderByDescending( u => u.CurrentHealth).FirstOrDefault())
                         ),
 

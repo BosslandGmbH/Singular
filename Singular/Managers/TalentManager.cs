@@ -8,6 +8,7 @@ using Styx.WoWInternals;
 using System.Drawing;
 using Styx.CommonBot;
 using Styx.Common.Helpers;
+using Styx.CommonBot.Routines;
 
 namespace Singular.Managers
 {
@@ -16,6 +17,10 @@ namespace Singular.Managers
         //public const int TALENT_FLAG_ISEXTRASPEC = 0x10000;
 
         static TalentManager()
+        {
+        }
+
+        public static void Init()
         {
             Talents = new List<Talent>();
             TalentId = new int[6];
@@ -77,6 +82,10 @@ namespace Singular.Managers
 
         private static void UpdateTalentManager(object sender, LuaEventArgs args)
         {
+            // Since we hooked this in ctor, make sure we are the selected CC
+            if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
+                return;
+
             var oldSpec = CurrentSpec;
             int[] oldTalent = TalentId;
             int[] oldGlyph = GlyphId;

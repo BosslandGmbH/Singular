@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Mage
 
                     Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
-                    new Throttle( TimeSpan.FromMilliseconds(6000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => !Me.IsMoving && !Me.HasAura("Rune of Power"), false) ),
+                    new Throttle( TimeSpan.FromMilliseconds(6000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => !Me.IsMoving && !Me.InVehicle && !Me.HasAura("Rune of Power") && Singular.Utilities.EventHandlers.LastNoPathFailure.AddSeconds(30) < DateTime.Now, false) ),
 
                     Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
                     Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),
@@ -401,33 +401,30 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateMagePolymorphOnAddBehavior()
         {
-            return new PrioritySelector(
-                ctx => Unit.NearbyUnfriendlyUnits.OrderByDescending(u => u.CurrentHealth).FirstOrDefault(IsViableForPolymorph),
-                new Decorator(
-                    ret => ret != null && Unit.NearbyUnfriendlyUnits.All(u => !u.HasMyAura("Polymorph")),
-                    Spell.Buff("Polymorph", ret => (WoWUnit)ret)
-                    )
+            return new Decorator(
+                req => !Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Polymorph")),
+                Spell.Buff("Polymorph", on => Unit.NearbyUnfriendlyUnits.Where(IsViableForPolymorph).OrderByDescending(u => u.CurrentHealth).FirstOrDefault())
                 );
         }
 
         private static bool IsViableForPolymorph(WoWUnit unit)
         {
-            if (StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget == unit)
+            if (StyxWoW.Me.CurrentTargetGuid == unit.Guid)
                 return false;
 
             if (!unit.Combat)
                 return false;
 
-            if (unit.IsCrowdControlled() && !unit.IsFrozen())
+            if (unit.CreatureType != WoWCreatureType.Beast && unit.CreatureType != WoWCreatureType.Humanoid)
                 return false;
 
-            if (unit.CreatureType != WoWCreatureType.Beast && unit.CreatureType != WoWCreatureType.Humanoid)
+            if (unit.IsCrowdControlled())
                 return false;
 
             if (!unit.IsTargetingMeOrPet && !unit.IsTargetingMyPartyMember)
                 return false;
 
-            if (StyxWoW.Me.GroupInfo.IsInParty && StyxWoW.Me.PartyMembers.Any(p => p.CurrentTarget != null && p.CurrentTarget == unit))
+            if (StyxWoW.Me.RaidMembers.Any(m => m.CurrentTargetGuid == unit.Guid && m.IsAlive))
                 return false;
 
             return true;

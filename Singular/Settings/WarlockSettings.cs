@@ -90,6 +90,13 @@ namespace Singular.Settings
         public bool UseFear { get; set; }
 
         [Setting]
+        [DefaultValue(3)]
+        [Category("Common")]
+        [DisplayName("Use Fear Count")]
+        [Description("Use Fear when this many attacking Warlock (not pet); 0 to disable mob count based check")]
+        public int UseFearCount { get; set; }
+
+        [Setting]
         [DefaultValue(Soulstone.Auto)]
         [Category("Common")]
         [DisplayName("Use Soulstone")]

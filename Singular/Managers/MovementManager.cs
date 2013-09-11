@@ -186,6 +186,7 @@ namespace Singular.Managers
 
         class NoNavigation : INavigationProvider
         {
+            public bool AtLocation(WoWPoint point1, WoWPoint point2) { return true; }
             public bool CanNavigateFully(WoWPoint from, WoWPoint to, int maxHops) { return true; }
             public bool Clear() { return true; }
             public WoWPoint[] GeneratePath(WoWPoint from, WoWPoint to) { return new WoWPoint[] { new WoWPoint(from.X, from.Y, from.Z) }; }

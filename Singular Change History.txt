@@ -1,3 +1,98 @@
+--- Release 3.0.0.3018 ---
+
+General
+
+Note  - This is the last release prior to changes for 5.4 Changes
+
+change- support for Soulstone and Ankh changed to use Death Behavior.  Users should not notice a change, unless using a BotBase which does not support the Death Behavior
+
+fixed - Singular no longer hooks events unless it is the active Combat Routine
+
+*new* - No Path Available handler to detect errors when trying to use point to point abilities ( Charge, Clash, DnD, or any cast on the ground ability).  Should not get stuck in loop attepmting to cast same ability and failing when no way to reach target in game.
+
+fixed - Changed method for detecting Neutral mobs when deciding whether to crowd control, etc.  Some mobs which appear in game as neutral are actually hostile mobs with a 0 yd aggro range. This caused us to Sap, etc. on mobs which we would not aggro but thought we would.  Note: this is not related to any issues reported by users regarding not attacking neutral mobs, which are due to the botbase or its setup.
+
+fixed - HealManager will no longer pulse if not actively in use; was causing exceptions at some times when opening Class Config form Debug tab
+
+fixed - Hotkeys now only recognized when linked game is active window
+
+*new* - General purpose shape shift error handler.  Will automatically leave form if an error occurs while interacting or using certain abilities where that is not allowed.  Quest profile authors not accounting for character form will still result in error, but as long as the operation is retried it should succeed in short order
+
+
+Druid
+
+fixed - All Specs - all Shape Shift casts now react to recently recently received shape shift errors.  In other words, if a shape shift error has been received in the last 30 seconds, shifting into form will be suppressed. This should occurr only during Questing or other botbases which automate actions like using items for quests, etc.
+
+fixed - Feral - was casting Healing Touch more than expected during Rest.
+
+
+Mage
+
+fixed - All Specs - would cast Rune of Power while in vehicle in DungeonBuddy.
+
+fixed - Fire - while leveling would cast additional Pyroblast after mob was already approaching melee range.  Will now cast one Pyroblast during Pull and begin rest of attack sequence
+
+fixed - Fire - obsolete Glyph of Fire Blast was still referenced.  Changed to implement Glyph of Inferno Blast logic.
+
+fixed - Frost - Frozen Orb now only cast if no mobs in range that we are not already in combat with or if any that are crowd controlled
+
+change- Lowbie - Frost Nova now cast if mobs within 12 yds.  Previously waited until they reached melee
+
+
+Priest
+
+fixed - Shadow - in instances was previously always targeting Tank for Mind Sear.  Now targets best mob or tank, depending on which reaches the most enemies with AOE
+
+
+Rogue
+
+fixed - All Specs - Fan of Knives now correctly disabled if AOE is disabled
+
+fixed - All Specs - no longer casts Shuriken Toss while stealthed
+
+change- Subtlety - will use only Single target priority if current target is a player
+
+change- All Specs - default for Fan of Knives Count setting changed to 4 (was 2)
+
+change- All SPecs - default for Sap Adds Distance setting changed to 25 (was 0 - disabled)
+
+
+Warlock
+
+fixed - Affliction - will now do Soulburn + CotE for AOE
+
+fixed - All Specs - now correctly detects if any current mob has our Fear debuff; fixes chain Fear casting error
+
+*new* - All Specs - setting Use Fear Count controls the number of mobs that must be attacking Warlock before Fear is used
+
+
+
+
+--- Release 3.0.0.2978 ---
+
+General
+
+*new* - Allow AOE Setting; setting on Class Config, General tab, Enemy Control allowing you to disable use of AOE attacks and always focus on current target only
+
+
+Druid
+
+fixed - Feral - Healing Touch now cast during combat when needed if Predatory Swiftness procced. Inadvertent character deletion cause typo in aura name
+
+
+Rogue
+
+fixed - All Specs - revised maximum distance from target that Rogue will stealth when Stealth Always = false
+
+*new* - All Specs - support for casting Expose Armor if solo or in group with no Warriors / Druids nearby.  Must have Glyph of Expose Armor equipped to enable and target must be a player or target which will live at least 30+ seconds
+
+change- All Specs - opens with Cheap Shot when solo/pvp.  If nothing else attacking, will pause allowing energy to regen while target stunned
+
+fixed - Subtlety - now only casts Premeditation if target is in melee range
+
+fixed - All Specs - Use Dismantle setting fixed so now visible in Class Config -> Class Specific
+
+
 
 --- Release 3.0.0.2967 ---
 

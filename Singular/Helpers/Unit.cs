@@ -14,6 +14,7 @@ using Styx.Common;
 using System.Diagnostics;
 using Styx.Common.Helpers;
 using System.Drawing;
+using Styx.WoWInternals.DBC;
 
 namespace Singular.Helpers
 {

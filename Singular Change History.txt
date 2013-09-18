@@ -1,8 +1,8 @@
---- Release 3.0.0.3018 ---
+--- Release 3.0.0.3058 ---
 
 General
 
-Note  - This is the last release prior to changes for 5.4 Changes
+fixed - bug preventing DungeonBuddy Death behavior from running
 
 change- support for Soulstone and Ankh changed to use Death Behavior.  Users should not notice a change, unless using a BotBase which does not support the Death Behavior
 
@@ -25,6 +25,10 @@ fixed - All Specs - all Shape Shift casts now react to recently recently receive
 
 fixed - Feral - was casting Healing Touch more than expected during Rest.
 
+*new* - Resto - Group Heal settings for Genesis, Heart of the Wild, and Dream of Cenarius
+
+*new* - Resto - support for Atonement like healing with Dream of Cenarius and Wrath spam
+
 
 Mage
 
@@ -39,7 +43,16 @@ fixed - Frost - Frozen Orb now only cast if no mobs in range that we are not alr
 change- Lowbie - Frost Nova now cast if mobs within 12 yds.  Previously waited until they reached melee
 
 
+Monk 
+
+fixed - All Specs - support for Chi Burst
+
+*new* - Windwalker - setting to allow Off-healing if possible in Battlegrounds
+
+
 Priest
+
+*new* - Disc/Holy - support for Leap of Faith.  User setting available to disable if necessary
 
 fixed - Shadow - in instances was previously always targeting Tank for Mind Sear.  Now targets best mob or tank, depending on which reaches the most enemies with AOE
 
@@ -59,6 +72,8 @@ change- All SPecs - default for Sap Adds Distance setting changed to 25 (was 0 -
 
 Warlock
 
+fixed - Affliction - no longer fears target while another is already feared
+
 fixed - Affliction - will now do Soulburn + CotE for AOE
 
 fixed - All Specs - now correctly detects if any current mob has our Fear debuff; fixes chain Fear casting error
@@ -66,6 +81,144 @@ fixed - All Specs - now correctly detects if any current mob has our Fear debuff
 *new* - All Specs - setting Use Fear Count controls the number of mobs that must be attacking Warlock before Fear is used
 
 
+
+--------------------------------------------------------------------
+Note: following are the class/specialization changes form 5.4 which 
+impacted Singular and have been accounted for beginning with this 
+release.  Changes in addition to those listed above have been made 
+to account for these changes.
+--------------------------------------------------------------------
+	
+Death Knight
+
+Talents
+
+Plague Leech now tries to convert 2 fully-depleted runes (up from 1) into a Death Rune based on specialization.
+Blood: Restores 1 Frost Rune, 1 Unholy Rune
+Frost: 1 Frost Rune, 1 Unholy Rune
+Unholy: 1 Blood Rune, 1 Frost Rune
+
+
+Druid
+
+Feral
+
+Predatory Swiftness no longer has a chance to make Cyclone instant, free, and castable in all forms.
+
+
+Restoration
+
+Genesis is a new Restoration spell learned at level 88. Genesis targets all party or raid members within 60 yards and accelerates the casting Druid's Rejuvenation effects, causing them to heal and expire at 400% of the normal rate. Costs the same amount of mana to cast as Rejuvenation.
+
+Talents
+Dream of Cenarius: Causes Wrath to deal 20% more damage and heals a nearby friendly target for 100% of the damage done.
+Heart of the Wild when activated, now also provides a 25% bonus to healing for Restoration Druids.
+Nature's Swiftness is no longer a talent, and is now an ability learned by Balance and Restoration Druids at level 30.
+New talent: Ysera's Gift. Ysera's Gift replaces Nature's Swiftness, and heals the Druid for 5% of their maximum health every 5 seconds. If the Druid is at full health, it will heal the most injured friendly target nearby instead.
+
+Glyphs
+
+Glyph of Fae Silence will now cause Faerie Fire to interrupt when used on targets that are immune to silence effects.
+Glyph of Efflorescence increases the healing done by Swiftmend by 20%, causes the Efflorescence healing effect to be triggered by Wild Mushroom instead of Swiftmend, and lasts as long as the Wild Mushroom is active.
+Glyph of the Moonbeast's effect is now baseline and has been replaced with Glyph of Guided Stars.
+Glyph of Guided Stars causes Starfall to only hit targets affected by the Druid's Moonfire or Sunfire.
+
+
+Hunter
+
+General
+
+Counter Shot is now a baseline interrupt ability learned by all Hunters at level 22.
+Deterrence now has a 3-minute cooldown (up from 2 minutes) but has 2 charges.
+Readiness has been removed.
+
+Marksman
+
+Binding Shot is no longer a Marksman Hunter ability and is once again a talent.
+
+Talents
+
+Silencing Shot is no longer a talent and is now an ability that replaces Counter Shot for Marksman Hunters.
+
+Glyphs
+
+
+Mage
+
+Glyphs
+
+Glyph of Blink now increases distance travelled with the Blink spell by 8 yards (up from 5 yards).
+Glyph of Rapid Displacement gives Blink two charges, gaining a charge every 15 seconds, but no longer frees the Mage from stuns and bonds.
+
+
+Monk
+
+Talents
+
+Chi Burst no longer requires a target. It now travels as a 40-yard line in front of the Monk.
+Invoke Xuen, the White Tiger now has a pet control bar for Xuen, and the talent is no longer on global cooldown for all Monk specializations. 
+Rushing Jade Wind has been redesigned and replaces Spinning Crane Kick.
+Rushing Jade Wind: The Monk summons a whirling tornado around them, dealing damage to nearby enemies (heals nearby allies for Mistweavers). Rushing Jade Wind has the same costs, Chi generation, and periodic rate as Spinning Crane kick, but, deals 60% of the periodic damage or healing, lasts 6 seconds, is instant, and not channeled.
+
+Glyphs
+
+Glyph of Targeted Expulsion allows Expel Harm to be used on other players.
+
+
+Paladin
+
+Talents
+
+Burden of Guilt has been replaced with a new talent called Evil is a Point of View.
+
+
+Priest
+
+Holy
+
+Lightspring is now baseline for all Holy Priests and the ability has been renamed to Lightwell.
+
+Glyphs
+
+Glyph of Dark Binding's effect is now baseline and has been replaced with Glyph of Focused Mending.
+Glyph of Focused Mending causes Prayer of Mending to only bounce between the target and the caster.
+
+
+Shaman
+
+Restoration
+
+Healing Rain's healing has been reduced by 30%, and the area-of-effect has been increased to 12 yards (up from 10 yards).
+
+Talents
+
+Healing Tide Totem is no longer a talent and is a baseline ability for all Shamans. Additionally, this totem will now heal 12 raid members (up from 5) when used in a 25-player instance.
+New Talent: Rushing Streams. Rushing Streams replaces Healing Tide Totem talent, increases healing done by Healing Stream Totem by 15%, and causes the totem to heal 2 targets at once.
+New talent: Totemic Persistence. Summoning a second totem of the same element no longer causes the first totem to be destroyed. Only one non-Fire totem can benefit from this effect at a time.
+
+
+Warlock
+
+Affliction
+
+Soul Swap no longer does any damage, and now copies damage-over-time effects instead of just moving them without needing a glyph. Copied effects now once again preserve their power and duration. Duration has been reduced to 3 seconds (down from 20 seconds).
+
+Talents
+
+Archimonde's Vengeance has been redesigned and renamed into Archimonde's Darkness.
+Kil'jaden's Cunning no longer reduces movement speed, and will now allow the Warlock to cast Incinerate, Malefic Grasp, and Shadow Bolt while moving.
+Mannoroth's Fury is no longer a passive ability. Mannoroth's Fury now has a duration of 10 seconds with a 60 second cooldown, and increases the area of area-of-effect by 500% and increases damage by 100% for Hellfire, Immolation Aura, Rain of Fire, and Seed of Corruption.
+
+Glyphs
+
+Glyph of Dark Soul has been replaced by Glyph of Curse of the Elements.
+
+
+Warrior
+
+General
+
+Hamstring is no longer on a global cooldown.
 
 
 --- Release 3.0.0.2978 ---

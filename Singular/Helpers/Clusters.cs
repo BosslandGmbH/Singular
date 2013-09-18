@@ -25,8 +25,8 @@ namespace Singular.Helpers
                     return GetChainedCluster(target, otherUnits, clusterRange);
                 case ClusterType.Cone:
                     return GetConeCluster(target, otherUnits, clusterRange);
-                case ClusterType.Path:
-                    return GetPathCluster(target, otherUnits, clusterRange);
+                case ClusterType.PathToUnit:
+                    return GetPathToUnitCluster(target, otherUnits, clusterRange);
                 default:
                     throw new ArgumentOutOfRangeException("type");
             }
@@ -48,7 +48,7 @@ namespace Singular.Helpers
                     return GetChainedClusterCount(target, otherUnits, clusterRange);
                 case ClusterType.Cone:
                     return GetConeClusterCount(target, otherUnits, clusterRange);
-                case ClusterType.Path:
+                case ClusterType.PathToUnit:
                     return GetPathClusterCount(target, otherUnits, clusterRange);
                 default:
                     throw new ArgumentOutOfRangeException("type");
@@ -70,7 +70,7 @@ namespace Singular.Helpers
                     return (from u in units
                             select new { Count = GetChainedClusterCount(u, units, clusterRange), Unit = u }).OrderByDescending(a => a.Count).
                         FirstOrDefault().Unit;
-                case ClusterType.Path:
+                case ClusterType.PathToUnit:
                     return (from u in units
                             select new { Count = GetPathClusterCount(u, units, clusterRange), Unit = u }).OrderByDescending(a => a.Count).
                         FirstOrDefault().Unit;
@@ -121,16 +121,20 @@ namespace Singular.Helpers
             return chainedTargets;
         }
 
-        private static IEnumerable<WoWUnit> GetPathCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
+        private static IEnumerable<WoWUnit> GetPathToUnitCluster(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
+        {
+            return GetPathToPointCluster(target.Location, otherUnits, distance);
+        }
+
+        public static IEnumerable<WoWUnit> GetPathToPointCluster(WoWPoint destLoc, IEnumerable<WoWUnit> otherUnits, float distance)
         {
             var myLoc = StyxWoW.Me.Location;
-            var targetLoc = target.Location;
-            return otherUnits.Where(u => u.Location.GetNearestPointOnSegment(myLoc,targetLoc).Distance(u.Location) <= distance);
+            return otherUnits.Where(u => u.Location.GetNearestPointOnSegment(myLoc, destLoc).Distance(u.Location) <= distance);
         }
 
         private static int GetPathClusterCount(WoWUnit target, IEnumerable<WoWUnit> otherUnits, float distance)
         {
-            return GetPathCluster(target, otherUnits, distance).Count();
+            return GetPathToUnitCluster(target, otherUnits, distance).Count();
         }
 
         static WoWUnit GetChainTarget(WoWUnit from, IEnumerable<WoWUnit> otherUnits, List<WoWUnit> currentChainTargets, float chainRangeSqr)

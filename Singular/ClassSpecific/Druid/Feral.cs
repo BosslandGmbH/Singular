@@ -216,21 +216,6 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Battlegrounds, 2)]
-        public static Composite CreateFeralDruidBattlegroundCombatBuffs()
-        {
-            return new PrioritySelector(
-                Spell.Buff("Cyclone",
-                    ctx => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(
-                        u => Me.HasAura("Predatory Swiftness")
-                            && u.IsCasting
-                            && Me.GotTarget
-                            && Me.CurrentTargetGuid != u.Guid
-                        )
-                    )
-                );
-        }
-
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateFeralNormalCombat()
         {

@@ -224,7 +224,7 @@ namespace Singular.ClassSpecific.Paladin
         PursuitOfJustice,
         FistOfJustice,
         Repentance,
-        BurdenOfGuilt,
+        EvilIsaPointOfView,
         SelflessHealer,
         EternalFlame,
         SacredShield,

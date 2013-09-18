@@ -241,7 +241,7 @@ namespace Singular.ClassSpecific.Warlock
 
                                 Spell.Buff("Howl of Terror", on => (WoWUnit)on, req => Spell.IsSpellOnCooldown("Fear") || 1 < Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && Me.SpellDistance(u) < 10f)),
                                 Spell.Buff("Mortal Coil", on => (WoWUnit)on, req => Me.HealthPercent < 70),
-                                Spell.Buff("Fear", on => (WoWUnit)on)
+                                Spell.Buff("Fear", on => Common.GetBestFearTarget())
                                 )
                             ),
 

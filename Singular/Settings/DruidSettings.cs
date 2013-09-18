@@ -786,6 +786,20 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(60)]
         [Category("Restoration")]
+        [DisplayName("% Genesis")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int Genesis { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Restoration")]
+        [DisplayName("Genesis Min Count")]
+        [Description("Min number of players with Rejuvenation below % in area")]
+        public int CountGenesis { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
         [DisplayName("% Ironbark")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int Ironbark { get; set; }
@@ -810,6 +824,41 @@ namespace Singular.Settings
         [DisplayName("% Nature's Vigil")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int NaturesVigil { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Restoration")]
+        [DisplayName("% Heart of the Wild")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HeartOfTheWild { get; set; }
+
+        [Setting]
+        [DefaultValue(5)]
+        [Category("Restoration")]
+        [DisplayName("Heart of the Wild Min Count")]
+        [Description("Minimum number of players below Heart of the Wild % to cast this ability.")]
+        public int CountHeartOfTheWild { get; set; }
+
+        [Setting]
+        [DefaultValue(0)]
+        [Category("Restoration")]
+        [DisplayName("Dream of Cenarius Only Above %")]
+        [Description("Only Dream of Cenarius Healing done above this Health %")]
+        public int DreamOfCenariusAbovePercent { get; set; }
+
+        [Setting]
+        [DefaultValue(1)]
+        [Category("Restoration")]
+        [DisplayName("Dream of Cenarius Only Count")]
+        [Description("Count of Heal Targets below Dream of Cenarius Only % which allows other heal spells")]
+        public int DreamOfCenariusAboveCount { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Restoration")]
+        [DisplayName("Dream of Cenarius When Idle")]
+        [Description("True: DPS with Dream of Cenarius spells if no healing needed")]
+        public bool DreamOfCenariusWhenIdle { get; set; }
 
     }
 

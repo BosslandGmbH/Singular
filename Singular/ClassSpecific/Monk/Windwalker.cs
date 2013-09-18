@@ -20,6 +20,7 @@ namespace Singular.ClassSpecific.Monk
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
+        public static bool HasTalent(MonkTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         // delay casting instant ranged abilities if we just cast Roll/FSK
         private readonly static WaitTimer RollTimer = new WaitTimer(TimeSpan.FromMilliseconds(1500));
@@ -77,7 +78,6 @@ namespace Singular.ClassSpecific.Monk
                                 )
                             ),
 
-                        Spell.Cast("Chi Burst", ret => !Me.IsMoving),
                         Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi || Me.HasAura("Combo Breaker: Blackout Kick")),
                         Spell.Cast("Tiger Palm", ret => (Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")) || Me.HasAura("Combo Breaker: Tiger Palm")),
                         Spell.Cast( "Expel Harm", ret => Me.CurrentChi < (Me.MaxChi-2) && Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10 ),
@@ -169,7 +169,8 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Fists of Fury", 
                             ret => Unit.NearbyUnfriendlyUnits.Count( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 2),
 
-                        Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count( u => u.Distance <= 8 ) >= 4),
+                        Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 4),
+                        Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
 
                         Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")),
 
@@ -246,7 +247,8 @@ namespace Singular.ClassSpecific.Monk
 
                         Spell.Cast("Fists of Fury",
                             ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
-                        
+
+                        Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 4),
                         Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
 
                         Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
@@ -337,28 +339,31 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
 
-                    // not likely, but if one close don't waste it
-                    new Decorator(
-                        ret => Me.HealthPercent < 80 && Common.AnySpheres(SphereType.Life, MonkSettings.SphereDistanceInCombat ),
-                        Common.CreateMoveToSphereBehavior(SphereType.Life, MonkSettings.SphereDistanceInCombat)
-                        ),
+                // not likely, but if one close don't waste it
+                new Decorator(
+                    ret => Me.HealthPercent < 80 && Common.AnySpheres(SphereType.Life, MonkSettings.SphereDistanceInCombat ),
+                    Common.CreateMoveToSphereBehavior(SphereType.Life, MonkSettings.SphereDistanceInCombat)
+                    ),
 
-                    Common.CreateHealingSphereBehavior(65),
+                Common.CreateHealingSphereBehavior(65),
 
-                    Spell.Cast( "Expel Harm", ctx => Me, ret => Me.HealthPercent < 65 ),
+                Spell.Cast("Expel Harm", on =>
+                {
+                    WoWUnit target = null;
+                        
+                    if (Me.HealthPercent < MonkSettings.ExpelHarmHealth)
+                        target = Me;
+                    else if (MonkSettings.AllowOffHeal && TalentManager.HasGlyph("Targeted Explusion"))
+                        target = Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < MonkSettings.ExpelHarmHealth && p.DistanceSqr < 40 * 40).FirstOrDefault();
 
-                    Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)MonkTalents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
-#if USE_CHI_BURST                            
-                    ,
+                    if (target != null)
+                        Logger.WriteDebug("Expel Harm Heal @ actual:{0:F1}% predict:{1:F1}% and moving:{2}", target.HealthPercent, target.GetPredictedHealthPercent(true), target.IsMoving);
 
-                    // check if spell exists in requirement since we dont want to evaluate onUnit if talent not taken
-                    Spell.Cast("Chi Burst", 
-                        ctx => BestChiBurstTarget(), 
-                        ret => SpellManager.HasSpell("Chi Burst") 
-                            && Me.CurrentChi >= 2 
-                            && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
-#endif
-                    );
+                    return target;
+                }),
+
+                Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)MonkTalents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
+                );
         }
 
         /// <summary>
@@ -372,13 +377,13 @@ namespace Singular.ClassSpecific.Monk
             if (Me.IsInGroup())
                 target = Clusters.GetBestUnitForCluster( 
                     Unit.NearbyGroupMembers.Where(m => m.IsAlive && m.HealthPercent < 80), 
-                    ClusterType.Path, 
+                    ClusterType.PathToUnit, 
                     40f);
 
             if ( target == null || target.IsMe)
                 target = Clusters.GetBestUnitForCluster(
                     Unit.NearbyUnitsInCombatWithMeOrMyStuff,
-                    ClusterType.Path,
+                    ClusterType.PathToUnit,
                     40f);
 
             if (target == null)

@@ -55,13 +55,10 @@ namespace Singular.ClassSpecific.Priest
 
                 Spell.BuffSelf("Power Word: Shield", ret => (Me.HealthPercent < PriestSettings.ShieldHealthPercent || (!Me.HasAura("Shadowform") && SpellManager.HasSpell("Shadowform"))) && !Me.HasAura("Weakened Soul")),
 
-                // keep heal buffs on if glyphed
-                new Decorator(
-                    ret => TalentManager.HasGlyph("Dark Binding") || !Me.HasAura("Shadowform"),
-                    new PrioritySelector(
-                        Spell.BuffSelf("Prayer of Mending", ret => Me.HealthPercent <= 90),
-                        Spell.BuffSelf("Renew", ret => Me.HealthPercent <= 90)
-                        )
+                // keep heal buffs on if (glyph no longer required)
+                new PrioritySelector(
+                    Spell.BuffSelf("Prayer of Mending", ret => Me.HealthPercent <= 90),
+                    Spell.BuffSelf("Renew", ret => Me.HealthPercent <= 90)
                     ),
 
                 Spell.Cast("Psychic Scream", ret => PriestSettings.UsePsychicScream

@@ -553,7 +553,7 @@ namespace Singular.ClassSpecific.Shaman
         ElementalMastery,
         AncestralSwiftness,
         EchoOfTheElements,
-        HealingTideTotem,
+        RushingStreams,
         AncestralGuidance,
         Conductivity,
         UnleashedFury,

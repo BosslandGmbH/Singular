@@ -758,7 +758,7 @@ namespace Singular.ClassSpecific.Druid
         FelineSwiftness = 1,
         DispacerBeast,
         WildCharge,
-        NaturesSwiftness,
+        YserasGift,
         Renewal,
         CenarionWard,
         FaerieSwarm,

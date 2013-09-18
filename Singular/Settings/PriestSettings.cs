@@ -287,6 +287,13 @@ namespace Singular.Settings
         [Description("Cast Tier 2 movement buff on Tank when they are not in combat and moving")]
         public bool UseSpeedBuffOnTank { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Leap of Faith")]
+        [Description("Leap of Faith on group members dying in bad stuff or near death from melee enemies")]
+        public bool UseLeapOfFaith { get; set; }
+
         #endregion
 
         #region Discipline

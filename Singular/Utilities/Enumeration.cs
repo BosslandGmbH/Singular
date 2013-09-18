@@ -22,7 +22,7 @@ namespace Singular
         Chained,
         Cone,
         // returns a cluster of units that are between LocalPlayer location and 'target'
-        Path
+        PathToUnit
     }
 
     public enum CastOn

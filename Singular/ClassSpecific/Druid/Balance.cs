@@ -63,14 +63,11 @@ namespace Singular.ClassSpecific.Druid
         #region Heal
 
 
-        private static bool _ImaMoonBeast = false;
         private static WoWUnit _CrowdControlTarget;
 
         [Behavior(BehaviorType.Heal, WoWClass.Druid, WoWSpec.DruidBalance)]
         public static Composite CreateDruidBalanceHeal()
         {
-            _ImaMoonBeast = TalentManager.HasGlyph( "Moonbeast");
-
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
@@ -95,11 +92,7 @@ namespace Singular.ClassSpecific.Druid
 
             #endregion 
 
-                    Spell.Cast("Rejuvenation", on => Me, 
-                        req => {
-                            int setting = _ImaMoonBeast ? DruidSettings.MoonBeastRejuvenationHealth : DruidSettings.SelfRejuvenationHealth;
-                            return Me.HealthPercent <= setting && Me.HasAuraExpired("Rejuvenation", 1);
-                        }),
+                    Spell.Cast("Rejuvenation", on => Me, req => Me.HealthPercent <= DruidSettings.MoonBeastRejuvenationHealth && Me.HasAuraExpired("Rejuvenation", 1)),
 
                     Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < DruidSettings.SelfNaturesSwiftnessHealth ),
                     Spell.BuffSelf("Renewal", ret => Me.HealthPercent < DruidSettings.SelfRenewalHealth),
@@ -152,7 +145,7 @@ namespace Singular.ClassSpecific.Druid
                             )
                         ),
 
-                    Spell.Cast("Healing Touch", on => Me, req => _ImaMoonBeast && Me.HealthPercent <= DruidSettings.MoonBeastHealingTouch && Me.HasAuraExpired("Rejuvenation", 1))
+                    Spell.Cast("Healing Touch", on => Me, req => Me.HealthPercent <= DruidSettings.MoonBeastHealingTouch && Me.HasAuraExpired("Rejuvenation", 1))
                     )
                 );
         }
@@ -245,7 +238,8 @@ namespace Singular.ClassSpecific.Druid
                                     new ActionAlwaysFail()
                                     ),
 
-                                Spell.Cast("Starfall"),
+                                // Starfall:  verify either not glyphed -or- at least 3 targets have DoT
+                                Spell.Cast("Starfall", req => !TalentManager.HasGlyph("Guided Stars") || Unit.NearbyUnfriendlyUnits.Count( u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")) >= 3),
 
                                 new PrioritySelector(
                                     ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),

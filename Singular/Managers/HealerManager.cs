@@ -406,6 +406,46 @@ namespace Singular.Managers
                     )
                 );
         }
+
+        public static Composite CreateAttackEnsureTarget()
+        {
+            if (SingularSettings.DisableAllTargeting || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+                return new ActionAlwaysFail();
+
+            return new PrioritySelector(
+                new Decorator(
+                    req => Me.GotTarget && !Me.CurrentTarget.IsPlayer,
+                    new PrioritySelector(
+                        ctx => Unit.HighestHealthMobAttackingTank(),
+                        new Decorator(
+                            req => req != null && Me.CurrentTargetGuid != ((WoWUnit)req).Guid && (Me.CurrentTarget.HealthPercent + 10) < ((WoWUnit)req).HealthPercent,
+                            new Sequence(
+                                new Action(on =>
+                                {
+                                    Logger.Write(Color.LightCoral, "switch to highest health mob {0} @ {1:F1}%", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent);
+                                    ((WoWUnit)on).Target();
+                                }),
+                                new Wait(1, req => Me.CurrentTargetGuid == ((WoWUnit)req).Guid, new ActionAlwaysFail())
+                                )
+                            )
+                        )
+                    ),
+                new Decorator(
+                    req => !Me.GotTarget,
+                    new Sequence(
+                        ctx => Unit.HighestHealthMobAttackingTank(),
+                        new Action(on =>
+                        {
+                            Logger.Write(Color.LightCoral, "target highest health mob {0} @ {1:F1}%", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent);
+                            ((WoWUnit)on).Target();
+                        }),
+                        new Wait(1, req => Me.CurrentTargetGuid == ((WoWUnit)req).Guid, new ActionAlwaysFail())
+                        )
+                    )
+                );
+        }
+
+
     }
 
     class PrioritizedBehaviorList

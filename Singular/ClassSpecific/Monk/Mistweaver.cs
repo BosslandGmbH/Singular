@@ -24,6 +24,7 @@ namespace Singular.ClassSpecific.Monk
         private const int SOOTHING_MIST = 115175;
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
+        public static bool HasTalent(MonkTalents tal) { return TalentManager.IsSelected((int)tal); }
 
 
         [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkMistweaver)]
@@ -85,7 +86,6 @@ namespace Singular.ClassSpecific.Monk
                         new PrioritySelector(
                             Common.CreateGrappleWeaponBehavior(),
                             Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
-                            Spell.Cast("Chi Burst", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12),
                             Spell.Cast("Jab")
@@ -142,6 +142,7 @@ namespace Singular.ClassSpecific.Monk
                             Spell.Cast("Fists of Fury",
                                 ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 2),
 
+                            Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
                             Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
 
                             Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),

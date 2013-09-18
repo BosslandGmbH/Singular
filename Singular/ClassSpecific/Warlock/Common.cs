@@ -241,7 +241,7 @@ namespace Singular.ClassSpecific.Warlock
                             ),
 
                         new Decorator(
-                            ret => (Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss())) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMyStuff()) >= 3,
+                            ret => (Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 20)) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMyStuff()) >= 3,
                             new PrioritySelector(
                                 Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction),
                                 Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && Destruction.CurrentBurningEmbers >= 30),
@@ -346,7 +346,7 @@ namespace Singular.ClassSpecific.Warlock
 
 
 
-        private static WoWUnit GetBestFearTarget()
+        public static WoWUnit GetBestFearTarget()
         {
             if (!WarlockSettings.UseFear)
                 return null;
@@ -768,7 +768,7 @@ namespace Singular.ClassSpecific.Warlock
         DarkRegeneration,
         SoulLeech,
         HarvestLife,
-        HowlOfTerror,
+        DemonicBreath,
         MortalCoil,
         Shadowfury,
         SoulLink,
@@ -780,7 +780,7 @@ namespace Singular.ClassSpecific.Warlock
         GrimoireOfSupremacy,
         GrimoireOfService,
         GrimoireOfSacrifice,
-        ArchimondesVengeance,
+        ArchimondesDarkness,
         KiljadensCunning,
         MannorothsFury
     }

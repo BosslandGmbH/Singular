@@ -137,7 +137,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 
-                Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && Me.Stunned ),
+                Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && Me.Stunned && !TalentManager.HasGlyph("Rapid Displacement")),
                 Spell.BuffSelf("Temporal Shield", ret => Me.Stunned)
                 );
         }
@@ -572,11 +572,12 @@ namespace Singular.ClassSpecific.Mage
 
             if (SingularSettings.Instance.DisengageAllowed)
             {
+                int distBlink = TalentManager.HasGlyph("Blink") ? 28 : 20;
                 pri.AddChild(
                     new Decorator(
                         ret => Kite.IsDisengageWantedByUserSettings(),
                         new PrioritySelector(
-                            Disengage.CreateDisengageBehavior("Blink", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior()),
+                            Disengage.CreateDisengageBehavior("Blink", Disengage.Direction.Frontwards, distBlink, CreateSlowMeleeBehavior()),
                             Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
                             )
                         )

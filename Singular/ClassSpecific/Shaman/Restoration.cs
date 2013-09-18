@@ -905,10 +905,10 @@ namespace Singular.ClassSpecific.Shaman
                 .Select(p => new {
                     Player = p,
                     Count = coveredRainTargets
-                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 10 * 10)
+                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 12 * 12)
                         .Count(),
                     Covered = coveredTargets
-                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 10 * 10)
+                        .Where(pp => pp.Location.DistanceSqr(p.Location) < 12 * 12)
                         .Count()
                     })
                 .OrderByDescending(v => v.Count)

@@ -311,6 +311,42 @@ namespace Singular.ClassSpecific.Priest
                 return false;
             });
         }
+
+        public static Composite CreateLeapOfFaithBehavior()
+        {
+            if (PriestSettings.UseLeapOfFaith)
+            {
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                {
+                    return new Decorator(
+                        req => !Spell.IsSpellOnCooldown("Leap of Faith"),
+                        new PrioritySelector(
+                            ctx => Unit.NearbyGroupMembers
+                                .FirstOrDefault(u => u.HealthPercent.Between(1, 40) && u.Combat && u.Distance > 15 && Unit.UnfriendlyUnits(45).Any(e => e.CurrentTargetGuid == u.Guid && e.Combat && e.HealthPercent > (u.HealthPercent + 10) && u.IsMelee())),
+
+                            Spell.Cast("Leap of Faith", on => (WoWUnit) on)
+                            )
+                        );
+                }
+
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                {
+                    return new ThrottlePasses( 1, 1,
+                        new Decorator(
+                            req => !Spell.IsSpellOnCooldown("Leap of Faith") && !Me.IsStandingInBadStuff(),
+                            new PrioritySelector(
+                                ctx => Unit.NearbyGroupMembers
+                                    .FirstOrDefault(u => u.HealthPercent.Between(1, 40) && u.IsStandingInBadStuff()),
+
+                                Spell.Cast("Leap of Faith", on => (WoWUnit)on)
+                                )
+                            )
+                        );
+                }
+            }
+
+            return new ActionAlwaysFail();
+        }
     }
 
     public enum PriestTalents

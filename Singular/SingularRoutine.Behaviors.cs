@@ -299,7 +299,7 @@ namespace Singular
                     new Decorator(
                         ret => AllowBehaviorUsage(),
                         new PrioritySelector(
-                            new Action( r => ResetCurrentTarget() ),
+                            new Action(r => { ResetCurrentTarget(); return RunStatus.Failure; }),
                             Spell.WaitForGcdOrCastOrChannel(),
                             new HookExecutor(HookName(BehaviorType.Death))
                             )

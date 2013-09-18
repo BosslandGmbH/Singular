@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Blackout Kick", ret => StyxWoW.Me.CurrentChi >= 2),
                 Spell.Cast("Jab"),
                 //Only roll to get to the mob quicker. 
-                Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.CurrentTarget.Distance.Between(5, 20)),
+                Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.CurrentTarget.Distance > 12),
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }

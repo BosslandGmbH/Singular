@@ -282,19 +282,35 @@ namespace Singular.ClassSpecific.Priest
                     )
                 );
 
-            if (PriestSettings.HolyHeal.PrayerOfMending  != 0 )
-            behavs.AddBehavior(397, "Prayer of Mending @ " + PriestSettings.HolyHeal.PrayerOfMending + "% MinCount: " + PriestSettings.HolyHeal.CountPrayerOfMending, "Prayer of Mending",
-                new Decorator(
-                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
-                    new PrioritySelector(
-                        context => HealerManager.GetBestCoverageTarget("Prayer of Mending", PriestSettings.HolyHeal.PrayerOfMending, 40, 20, PriestSettings.HolyHeal.CountPrayerOfMending),
+            if (PriestSettings.HolyHeal.PrayerOfMending != 0)
+            {
+                if (!TalentManager.HasGlyph("Focused Mending"))
+                {
+                    behavs.AddBehavior(397, "Prayer of Mending @ " + PriestSettings.HolyHeal.PrayerOfMending + "% MinCount: " + PriestSettings.HolyHeal.CountPrayerOfMending, "Prayer of Mending",
                         new Decorator(
-                            ret => ret != null,
-                            Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
+                            ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
+                            new PrioritySelector(
+                                context => HealerManager.GetBestCoverageTarget("Prayer of Mending", PriestSettings.HolyHeal.PrayerOfMending, 40, 20, PriestSettings.HolyHeal.CountPrayerOfMending),
+                                new Decorator(
+                                    ret => ret != null,
+                                    Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
+                                    )
+                                )
                             )
-                        )
-                    )
-                );
+                        );
+                }
+                else
+                {
+                    behavs.AddBehavior(397, "Prayer of Mending @ " + PriestSettings.HolyHeal.PrayerOfMending + "% (Glyph of Focused Mending)", "Prayer of Mending",
+                        Spell.Cast("Prayer of Mending",
+                            mov => true,
+                            on => (WoWUnit)on,
+                            req => !((WoWUnit)req).IsMe && ((WoWUnit)req).HealthPercent < PriestSettings.HolyHeal.PrayerOfMending && Me.HealthPercent < PriestSettings.HolyHeal.PrayerOfMending,
+                            cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
+                            )
+                        );
+                }
+            }
 
             if ( PriestSettings.HolyHeal.BindingHeal != 0 )
             {
@@ -586,6 +602,8 @@ VoidShift               Void Shift
                         Spell.BuffSelf("Desperate Prayer", ret => StyxWoW.Me.HealthPercent <= PriestSettings.DesperatePrayerHealth),
 
                         Common.CreateShadowfiendBehavior(),
+
+                        Common.CreateLeapOfFaithBehavior(),
 
                         Spell.Cast(
                             "Hymn of Hope", 

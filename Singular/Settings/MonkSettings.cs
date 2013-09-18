@@ -100,5 +100,16 @@ namespace Singular.Settings
         #endregion
 
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Windwalker")]
+        [DisplayName("Allow Off-Heal")]
+        public bool AllowOffHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(65)]
+        [Category("Windwalker")]
+        [DisplayName("Expel Harm Health")]
+        public int ExpelHarmHealth { get; set; }
     }
 }

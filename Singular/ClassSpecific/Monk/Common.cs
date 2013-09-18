@@ -29,6 +29,7 @@ namespace Singular.ClassSpecific.Monk
     {
         private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        public static bool HasTalent(MonkTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, (WoWSpec)int.MaxValue, WoWContext.All, 1)]
         public static Composite CreateMonkPreCombatBuffs()
@@ -75,7 +76,9 @@ namespace Singular.ClassSpecific.Monk
                                 && Me.CurrentTarget.SpellDistance() < 8
                                 && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1))
                         )
-                    )
+                    ),
+
+                CreateChiBurstBehavior()
                 );
         }
 
@@ -375,6 +378,37 @@ namespace Singular.ClassSpecific.Monk
                 })
                 );
         }
+
+        public static Composite CreateChiBurstBehavior()
+        {
+            if ( !HasTalent(MonkTalents.ChiBurst))
+                return new ActionAlwaysFail();
+
+            if (Me.Specialization == WoWSpec.MonkMistweaver && SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+            {
+                return new Decorator(
+                    req => !Spell.IsSpellOnCooldown("Chi Burst") && !Me.CurrentTarget.IsBoss()
+                        && 3 <= Clusters.GetPathToPointCluster(Me.Location.RayCast(Me.RenderFacing, 40f), HealerManager.Instance.TargetList.Where(m => Me.IsSafelyFacing(m, 25)), 5f).Count(),
+                    Spell.Cast("Chi Burst",
+                        mov => true,
+                        ctx => Me,
+                        ret => Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent,
+                        cancel => false
+                        )
+                    );
+            }
+
+            return new Decorator(
+                req => !Spell.IsSpellOnCooldown("Chi Burst") && !Me.CurrentTarget.IsBoss() 
+                    && 3 <= Clusters.GetPathToPointCluster( Me.Location.RayCast(Me.RenderFacing, 40f), Unit.NearbyUnfriendlyUnits.Where( m => Me.IsSafelyFacing(m,25)), 5f).Count(),
+                Spell.Cast("Chi Burst",
+                    mov => true,
+                    ctx => Me,
+                    ret => Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent,
+                    cancel => false
+                    )
+                );
+            }   
     }
 
     public enum MonkTalents

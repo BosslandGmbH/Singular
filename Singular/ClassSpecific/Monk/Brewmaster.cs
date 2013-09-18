@@ -18,6 +18,7 @@ namespace Singular.ClassSpecific.Monk
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
+        public static bool HasTalent(MonkTalents tal) { return TalentManager.IsSelected((int)tal); }
 
         private static readonly WaitTimer _clashTimer = new WaitTimer(TimeSpan.FromSeconds(3));
         // ToDo  Summon Black Ox Statue, Chi Burst and 
@@ -229,7 +230,7 @@ namespace Singular.ClassSpecific.Monk
                             ),
 
                         // ***** Spend Chi *****
-                        Spell.Cast("Rushing Jade Wind", ctx => TalentManager.IsSelected((int)MonkTalents.RushingJadeWind) && (!Me.HasAura("Shuffle") || Me.Auras["Shuffle"].TimeLeft <= TimeSpan.FromSeconds(1))),
+                        // Spell.Cast("Rushing Jade Wind", ctx => TalentManager.IsSelected((int)MonkTalents.RushingJadeWind) && (!Me.HasAura("Shuffle") || Me.Auras["Shuffle"].TimeLeft <= TimeSpan.FromSeconds(1))),
                         Spell.Cast("Blackout Kick", ctx => !SpellManager.HasSpell("Brewmaster Training") || Me.HasKnownAuraExpired("Shuffle", 1)),
                         Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power", 1) || (SpellManager.HasSpell("Brewmaster Training") && Me.HasKnownAuraExpired("Power Guard", 1))),
 
@@ -240,6 +241,7 @@ namespace Singular.ClassSpecific.Monk
                             req => Me.CurrentChi < Me.MaxChi,
                             new PrioritySelector(
                                 Spell.Cast("Keg Smash", ctx => Me.MaxChi - Me.CurrentChi >= 2),
+                                Spell.Cast("Rushing Jade Wind", ctx =>  HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
                                 Spell.Cast("Spinning Crane Kick", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
 
                                 // jab with power strike talent is > expel Harm if off CD.

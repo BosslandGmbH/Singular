@@ -71,14 +71,29 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             get
             {
-                if (!Me.GotTarget)
+                // check talent only to avoid some unnecessary LUA if not needed
+                if (!HasTalent(DeathKnightTalents.PlagueLeech) || !Me.GotTarget)
                     return false;
 
-                int frostFever = (int) Me.CurrentTarget.GetAuraTimeLeft("Frost Fever").TotalMilliseconds;
-                int bloodPlague = (int) Me.CurrentTarget.GetAuraTimeLeft("Blood Plague").TotalMilliseconds;
-                // if there is 3 or less seconds left on the diseases and we have a fully depleted rune then return true.
-                return (frostFever.Between(350,3000) || bloodPlague.Between(350,3000))
-                    && (BloodRuneSlotsActive == 0 || FrostRuneSlotsActive == 0 || UnholyRuneSlotsActive == 0);
+                WoWAura auraFrostFever = Me.GetAllAuras().Where(a => a.Name == "Frost Fever" && a.TimeLeft.TotalMilliseconds > 250).FirstOrDefault();
+                WoWAura auraBloodPlague = Me.GetAllAuras().Where(a => a.Name == "Blood Plague" && a.TimeLeft.TotalMilliseconds > 250).FirstOrDefault();
+                if (auraFrostFever == null || auraBloodPlague == null)
+                    return false;
+
+                bool depletedBlood, depletedFrost, depletedUnholy;
+
+                // Check Runes per http://wow.joystiq.com/2013/06/25/lichborne-patch-5-4-patch-note-analysis-for-death-knights/#continued
+                if (Me.Specialization == WoWSpec.DeathKnightUnholy)
+                {
+                    depletedBlood = BloodRuneSlotsActive == 0;
+                    depletedFrost = FrostRuneSlotsActive == 0;
+                    return (depletedFrost && depletedBlood);
+                }
+
+                depletedFrost = FrostRuneSlotsActive == 0;
+                depletedUnholy = UnholyRuneSlotsActive == 0;
+
+                return (depletedFrost && depletedUnholy);
             }
         }
 

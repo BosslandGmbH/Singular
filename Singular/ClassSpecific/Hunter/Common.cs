@@ -290,7 +290,9 @@ namespace Singular.ClassSpecific.Hunter
                             && (Target.IsBoss() || Target.IsPlayer || ScaryNPC || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet)),
                         new PrioritySelector(
                             Spell.Buff("Rapid Fire", ret => !Me.HasAura("The Beast Within")),
-                            Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within")),
+                            Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within"))
+/*
+                            ,
                             Spell.Cast("Readiness", ret =>
                             {
                                 bool readyForReadiness = true;
@@ -300,8 +302,9 @@ namespace Singular.ClassSpecific.Hunter
                                     readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Rapid Fire").TotalSeconds.Between(30, 165);
                                 return readyForReadiness;
                             })
-                            )
-                        ),
+ */
+                             )
+                       ),
 
 
                     new Decorator(
@@ -979,7 +982,7 @@ namespace Singular.ClassSpecific.Hunter
         Posthaste,
         NarrowEscape,
         CrouchingTiger,
-        SilencingShot,
+        BindingShot,
         WyvernSting,
         Intimidation,
         Exhiliration,
@@ -989,7 +992,7 @@ namespace Singular.ClassSpecific.Hunter
         DireBeast,
         ThrillOfTheHunt,
         MurderOfCrows,
-        BlinkStrike,
+        BlinkStrikes,
         LynxRush,
         GlaiveToss,
         Powershot,

@@ -62,17 +62,30 @@ namespace Singular.Helpers
             return ObjectManager.GetObjectsOfType<WoWDynamicObject>().FirstOrDefault(o => o.SpellId == spellId);
         }
 
-        public static bool IsStandingInGroundEffect(bool harmful = true)
+        public static bool IsStandingInGroundEffect(this WoWUnit unit, bool harmful = true)
         {
             foreach (var obj in ObjectManager.GetObjectsOfType<WoWDynamicObject>())
             {
-                if (obj.Distance <= obj.Radius)
+                // We're standing in this.
+                if (obj.Caster != null && obj.Caster.IsValid)
                 {
-                    // We're standing in this.
-                    if (obj.Caster.IsFriendly && !harmful)
+                    if (!harmful && obj.Caster.IsFriendly && obj.Distance <= obj.Radius)
                         return true;
-                    if (obj.Caster.IsHostile && harmful)
+                    if (harmful && obj.Caster.IsHostile && obj.Distance <= obj.Radius)
                         return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool IsStandingInBadStuff(this WoWUnit unit)
+        {
+            foreach (var obj in ObjectManager.GetObjectsOfType<WoWDynamicObject>())
+            {
+                if (obj.Caster != null && obj.Caster.IsValid && obj.Caster.IsHostile && unit.Location.Distance(obj.Location) <= obj.Radius)
+                {
+                    Logger.Write(Color.White, "^Yikes: {0} is standing in {1}", unit.SafeName(), obj.Name);
+                    return true;
                 }
             }
             return false;
@@ -1565,7 +1578,7 @@ namespace Singular.Helpers
             else if (Me.Class == WoWClass.Hunter)
                 allowMovingWhileCasting = spell.Name == "Steady Shot" || (spell.Name == "Aimed Shot" && TalentManager.HasGlyph("Aimed Shot")) || spell.Name == "Cobra Shot";
             else if (Me.Class == WoWClass.Warlock)
-                allowMovingWhileCasting = ClassSpecific.Warlock.Common.HasTalent(ClassSpecific.Warlock.WarlockTalents.KiljadensCunning);
+                allowMovingWhileCasting = (spell.Name == "Incinerate" || spell.Name == "Malefic Grasp" || spell.Name == "Shadow Bolt") && ClassSpecific.Warlock.Common.HasTalent(ClassSpecific.Warlock.WarlockTalents.KiljadensCunning);
 
             //            if (!allowMovingWhileCasting && Me.ZoneId == 5723)
             //                allowMovingWhileCasting = Me.HasAura("Molten Feather");
@@ -2029,7 +2042,7 @@ namespace Singular.Helpers
                 return Me.CurrentPendingCursorSpell;
 #else
                 int pendingSpellId = 0;
-                var pendingSpellPtr = StyxWoW.Memory.Read<IntPtr>((IntPtr)0xC1EC2C, true);
+                var pendingSpellPtr = StyxWoW.Memory.Read<IntPtr>((IntPtr)0xC8D064, true);
                 if (pendingSpellPtr != IntPtr.Zero)
                     pendingSpellId = StyxWoW.Memory.Read<int>(pendingSpellPtr + 32);
 

@@ -245,7 +245,7 @@ namespace Singular.ClassSpecific.Priest
                     new Decorator(
                         req => (Me.Combat || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds) && HealerManager.Instance.TargetList.Count(h => h.HealthPercent < PriestSettings.DiscHeal.AtonementAbovePercent) < PriestSettings.DiscHeal.AtonementAboveCount,
                         new PrioritySelector(
-                            CreateDiscAtonmementEnsureTarget(),
+                            HealerManager.CreateAttackEnsureTarget(),
                             CreateDiscAtonementMovement(),
                             new Decorator(
                                 req => Unit.ValidUnit(Me.CurrentTarget),
@@ -287,21 +287,37 @@ namespace Singular.ClassSpecific.Priest
 
 
             if (PriestSettings.DiscHeal.PrayerOfMending != 0)
-                behavs.AddBehavior(200 + PriAoeBase, "Prayer of Mending @ " + PriestSettings.DiscHeal.PrayerOfMending + "% MinCount: " + PriestSettings.DiscHeal.CountPrayerOfMending, "Prayer of Mending",
-                    new Decorator(
-                        ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
-                        new PrioritySelector(
-                            context => HealerManager.GetBestCoverageTarget("Prayer of Mending", PriestSettings.DiscHeal.PrayerOfMending, 40, 20, PriestSettings.DiscHeal.CountPrayerOfMending),
-                            new Decorator(
-                                ret => ret != null && Spell.CanCastHack("Prayer of Mending", (WoWUnit) ret),
-                                new PrioritySelector(
-                                    Spell.OffGCD(Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5))),
-                                    Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
+            {
+                if (!TalentManager.HasGlyph("Focused Mending"))
+                {
+                    behavs.AddBehavior(200 + PriAoeBase, "Prayer of Mending @ " + PriestSettings.DiscHeal.PrayerOfMending + "% MinCount: " + PriestSettings.DiscHeal.CountPrayerOfMending, "Prayer of Mending",
+                        new Decorator(
+                            ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
+                            new PrioritySelector(
+                                context => HealerManager.GetBestCoverageTarget("Prayer of Mending", PriestSettings.DiscHeal.PrayerOfMending, 40, 20, PriestSettings.DiscHeal.CountPrayerOfMending),
+                                new Decorator(
+                                    ret => ret != null && Spell.CanCastHack("Prayer of Mending", (WoWUnit)ret),
+                                    new PrioritySelector(
+                                        Spell.OffGCD(Spell.BuffSelf("Archangel", req => Me.HasAura("Evangelism", 5))),
+                                        Spell.Cast("Prayer of Mending", on => (WoWUnit)on, req => true)
+                                        )
                                     )
                                 )
                             )
-                        )
-                    );
+                        );
+                }
+                else
+                {
+                    behavs.AddBehavior(200 + PriAoeBase, "Prayer of Mending @ " + PriestSettings.DiscHeal.PrayerOfMending + "% (Glyph of Focused Mending)", "Prayer of Mending",
+                        Spell.Cast("Prayer of Mending",
+                            mov => true,
+                            on => (WoWUnit)on,
+                            req => !((WoWUnit)req).IsMe && ((WoWUnit)req).HealthPercent < PriestSettings.DiscHeal.PrayerOfMending && Me.HealthPercent < PriestSettings.DiscHeal.PrayerOfMending,
+                            cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
+                            )
+                        );
+                }
+            }
 
             if (PriestSettings.DiscHeal.DiscLevel90Talent != 0)
                 behavs.AddBehavior(HealthToPriority(PriestSettings.DiscHeal.DiscLevel90Talent) + PriAoeBase, "Halo @ " + PriestSettings.DiscHeal.DiscLevel90Talent + "% MinCount: " + PriestSettings.DiscHeal.CountLevel90Talent, "Halo",
@@ -476,7 +492,7 @@ namespace Singular.ClassSpecific.Priest
                     new Decorator(
                         req => PriestSettings.DiscHeal.AtonementWhenIdle && (Me.Combat || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds),
                         new PrioritySelector(
-                            CreateDiscAtonmementEnsureTarget(),
+                            HealerManager.CreateAttackEnsureTarget(),
                             CreateDiscAtonementMovement(),
                             new Decorator( 
                                 req => Unit.ValidUnit( Me.CurrentTarget),
@@ -508,8 +524,8 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     req => Me.Combat && (Spell.IsGlobalCooldown() || Spell.IsCastingOrChannelling()),
                     new PrioritySelector(
-                        CreateDiscAtonmementEnsureTarget(),
-                        Movement.CreateFaceTargetBehavior( waitForFacing:false)
+                        HealerManager.CreateAttackEnsureTarget(),
+                        Movement.CreateFaceTargetBehavior(waitForFacing: false)
                         )
                     ),
 
@@ -586,6 +602,8 @@ namespace Singular.ClassSpecific.Priest
                         Spell.BuffSelf("Desperate Prayer", ret => StyxWoW.Me.HealthPercent <= PriestSettings.DesperatePrayerHealth),
 
                         Common.CreateShadowfiendBehavior(),
+
+                        Common.CreateLeapOfFaithBehavior(),
 
                         Spell.Cast(
                             "Hymn of Hope",
@@ -791,42 +809,6 @@ namespace Singular.ClassSpecific.Priest
         private static Composite CreateDiscAtonementMovement()
         {
             return Helpers.Common.EnsureReadyToAttackFromMediumRange();
-        }
-
-        private static Composite CreateDiscAtonmementEnsureTarget()
-        {
-            if ( SingularSettings.DisableAllTargeting || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
-                return new ActionAlwaysFail();
-
-            return new PrioritySelector(
-                new Decorator(
-                    req => Me.GotTarget && !Me.CurrentTarget.IsPlayer,
-                    new PrioritySelector(
-                        ctx => Unit.HighestHealthMobAttackingTank(),
-                        new Decorator(
-                            req => req != null && Me.CurrentTargetGuid != ((WoWUnit) req).Guid && (Me.CurrentTarget.HealthPercent + 10) < ((WoWUnit)req).HealthPercent,
-                            new Sequence(
-                                new Action( on => {
-                                    Logger.Write(Color.LightCoral, "switch to highest health mob {0} @ {1:F1}%", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent );
-                                    ((WoWUnit)on).Target();
-                                    }),
-                                new Wait(1, req => Me.CurrentTargetGuid == ((WoWUnit)req).Guid, new ActionAlwaysFail())
-                                )
-                            )
-                        )
-                    ),
-                new Decorator( 
-                    req => !Me.GotTarget,
-                    new Sequence(
-                        ctx => Unit.HighestHealthMobAttackingTank(),
-                        new Action( on => {
-                            Logger.Write(Color.LightCoral, "target highest health mob {0} @ {1:F1}%", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent );
-                            ((WoWUnit)on).Target();
-                            }),
-                        new Wait(1, req => Me.CurrentTargetGuid == ((WoWUnit)req).Guid, new ActionAlwaysFail())
-                        )
-                    )                       
-                );
         }
 
         #region Diagnostics

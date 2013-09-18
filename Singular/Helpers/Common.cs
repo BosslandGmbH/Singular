@@ -270,6 +270,9 @@ namespace Singular.Helpers
             #endregion
 
             #region 30 yards
+            // Druid
+            if (TalentManager.HasGlyph("Fae Silence"))
+                prioSpell.AddChild(Spell.Cast("Faerie Fire", ctx => _unitInterrupt, req => Me.Shapeshift == ShapeshiftForm.Bear));
 
             if (Me.Specialization == WoWSpec.PaladinProtection)
                 prioSpell.AddChild( Spell.Cast("Avenger's Shield", ctx => _unitInterrupt));
@@ -294,10 +297,13 @@ namespace Singular.Helpers
             if ( Me.Class == WoWClass.Mage)
                 prioSpell.AddChild( Spell.Cast("Counterspell", ctx => _unitInterrupt));
 
-            if ( Me.Class == WoWClass.Hunter)
-                prioSpell.AddChild( Spell.Cast("Silencing Shot", ctx => _unitInterrupt));
+            if (Me.Class == WoWClass.Hunter)
+                prioSpell.AddChild(Spell.Cast("Counter Shot", ctx => _unitInterrupt));
 
-            if ( Me.Class == WoWClass.Druid)
+            if (Me.Specialization == WoWSpec.HunterMarksmanship)
+                prioSpell.AddChild(Spell.Cast("Silencing Shot", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Druid)
                 prioSpell.AddChild( Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin));
 
             if (Me.Specialization == WoWSpec.ShamanElemental || Me.Specialization == WoWSpec.ShamanEnhancement )

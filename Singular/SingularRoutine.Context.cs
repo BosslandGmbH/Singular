@@ -5,6 +5,7 @@ using System.Text;
 using Styx;
 using Styx.CommonBot;
 using Styx.CommonBot.Routines;
+using Styx.Plugins;
 using Styx.WoWInternals.DBC;
 using System.Drawing;
 using Singular.Helpers;
@@ -162,9 +163,9 @@ namespace Singular
         private static bool UpdateContextStateValues()
         {
             bool questBot= IsBotInUse("Quest");
-            bool bgBot= IsBotInUse("BGBuddy") || IsBotInUse("BG Bot");
+            bool bgBot= IsBotInUse("BGBuddy", "BG Bot");
             bool dungeonBot= IsBotInUse("DungeonBuddy");
-            bool petHack = IsPluginActive("Pokébuddy") || IsPluginActive("Pokehbuddy");
+            bool petHack = IsPluginActive("Pokébuddy", "Pokehbuddy");
             bool manualBot = IsBotInUse("LazyRaider", "Raid Bot");
 
             bool changed = false;
@@ -340,14 +341,14 @@ namespace Singular
 
         public static bool IsBotInUse(params string[] nameSubstrings)
         {
-            string botName = GetBotName().ToUpper();
-            return nameSubstrings.Any( s => botName.Contains(s.ToUpper()));
+            string botName = GetBotName().ToLowerInvariant();
+            return nameSubstrings.Any( s => botName.Contains(s.ToLowerInvariant()));
         }
 
         public static bool IsPluginActive(params string[] nameSubstrings)
         {
-            bool res = nameSubstrings.Any( s => Styx.Common.Plugins.PluginManager.GetEnabledPlugins().Any(p => p.ToUpper() == s.ToUpper()));
-            return res;
+            var lowerNames = nameSubstrings.Select(s => s.ToLowerInvariant()).ToList();
+            return PluginManager.Plugins.Any(p => p.Enabled && lowerNames.Contains(p.Name.ToLowerInvariant()));
         }
 
         private static int GetInstanceDifficulty( )

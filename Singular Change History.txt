@@ -1,3 +1,36 @@
+--- Release 3.0.0.3080 ---
+
+General
+
+fixed - compile error in version downloaded from Singular thread due to a namespace being deleted from HonorBuddy 
+
+fixed - exception occurring infrequently while checking if current target has changed
+
+*new* - added Self-Ressurect setting to control how Soulstone or Shaman's Ressurect spell is used if active on your character
+
+*new* - Added Corrupted Touch #149207 and Mark of Arrogance #144351 to the Cleanse Blacklist
+
+
+Hunter
+
+change- Beast Master - Normal and Instance spell priorities will no longer cast Explosive Trap when Glyph of Explosive Trap equipped
+
+fixed - All Specs - if eating / drinking immediately after dismounting, would sometimes attempt to Call Pet interrupting health restoration
+
+fixed - All Specs - removed Explosive Trap with glyph from abilities used to crowd control while solo
+
+
+Warlock
+
+fixed - All Specs - if eating / drinking immediately after dismounting, would sometimes attempt to Call Pet interrupting health restoration
+
+
+Warrior
+
+fixed - Lowbie - Charge was only cast during Pull, but quest profiles using behaviors that do not invoke Pull Behavior were causing this to be missed.  Added to Combat behavior
+
+
+
 --- Release 3.0.0.3058 ---
 
 General

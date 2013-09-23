@@ -1,4 +1,7 @@
-﻿using Styx;
+﻿/*
+ * file no longer used 
+ * 
+using Styx;
 using Styx.CommonBot;
 using Styx.WoWInternals;
 using System;
@@ -77,3 +80,4 @@ namespace Singular.Managers
         }
     }
 }
+*/

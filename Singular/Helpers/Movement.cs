@@ -66,7 +66,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static bool InLineOfSpellSight(WoWUnit unit, int timeOut = 1000)
         {
-            if (unit.InLineOfSpellSight)
+            if (unit != null && unit.InLineOfSpellSight)
             {
                 if ((DateTime.Now - EventHandlers.LastLineOfSightFailure).TotalMilliseconds < timeOut)
                 {

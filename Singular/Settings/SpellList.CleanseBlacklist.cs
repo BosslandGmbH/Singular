@@ -38,6 +38,8 @@ namespace Singular.Settings
             103962,     // "Torrent of Frost"
             103904,     // "Torrent of Frost" 
             139822,     // Cinders - Flaming Head, Meguera, Forgotten Depths
+            149207,     // Corrupted Touch - Lingering Corruption, Siege of Orgrimmar
+            144351,     // Mark of Arrogance - Sha of Price, Siege of Orgrimmar
         };
 
         public SpellList SpellList;

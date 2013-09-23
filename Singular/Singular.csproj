@@ -93,14 +93,9 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="fasmdll_managed">
+    <Reference Include="Honorbuddy, Version=2.5.7851.348, Culture=neutral, PublicKeyToken=50a565ab5c01ae50, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Honorbuddy\fasmdll_managed.dll</HintPath>
-    </Reference>
-    <Reference Include="Honorbuddy">
-      <SpecificVersion>False</SpecificVersion>
-      <ExecutableExtension>.exe</ExecutableExtension>
-      <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
+      <HintPath>..\..\..\..\HB\Honorbuddy.exe</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
@@ -115,13 +110,13 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Tripper.RecastManaged">
+    <Reference Include="Tripper.RecastManaged, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b2150347bb351956, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Honorbuddy\Tripper.RecastManaged.dll</HintPath>
+      <HintPath>..\..\..\..\HB\Tripper.RecastManaged.dll</HintPath>
     </Reference>
-    <Reference Include="Tripper.Tools">
+    <Reference Include="Tripper.Tools, Version=1.0.0.0, Culture=neutral, PublicKeyToken=c40611ce03f849a2, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Honorbuddy\Tripper.Tools.dll</HintPath>
+      <HintPath>..\..\..\..\HB\Tripper.Tools.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -188,6 +183,7 @@
     <Compile Include="Dynamics\SessionState.cs" />
     <Compile Include="Helpers\Clusters.cs" />
     <Compile Include="Helpers\Common.cs" />
+    <Compile Include="Helpers\Death.cs" />
     <Compile Include="Helpers\Dispelling.cs" />
     <Compile Include="Dynamics\CompositeBuilder.cs" />
     <Compile Include="Helpers\Group.cs" />
@@ -295,6 +291,9 @@ rd /s /q "c:\HBB\Routines\Singular"
 rd /s /q "c:\HB-BRODIE\Routines\Singular"
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "c:\HB-BRODIE\Routines\Singular\" /i /f /s /v /y
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "c:\HB-BRODIE\Routines\Singular\" /i /f /v /y
+rd /s /q "c:\HB-BRODIE2\Routines\Singular"
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "c:\HB-BRODIE2\Routines\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.xml" "c:\HB-BRODIE2\Routines\Singular\" /i /f /v /y
 )
 
 if $(ConfigurationName) == HighVoltz (

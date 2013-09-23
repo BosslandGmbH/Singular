@@ -19,6 +19,9 @@ namespace Singular.ClassSpecific.Warrior
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
                 Helpers.Common.CreateInterruptBehavior(),
+
+                Common.CreateChargeBehavior(),
+
                 // Heal
                 Common.CreateVictoryRushBehavior(),
 

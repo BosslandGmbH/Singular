@@ -52,6 +52,13 @@ namespace Singular.Settings
         Auto
     }
 
+    enum SelfRessurectStyle
+    {
+        None = 0,
+        Enable,
+        Auto
+    }
+
     enum CombatRezTarget
     {
         None = 0,
@@ -459,9 +466,16 @@ namespace Singular.Settings
         [Description("Prevent Singular from casting any spell with this cooldown or greater; set to 0 to allow Singular to cast all spells")]
         public int DisableSpellsWithCooldown { get; set; }
 
+        [Setting]
+        [DefaultValue(SelfRessurectStyle.Auto )]
+        [Category("General")]
+        [DisplayName("Self-Ressurect")]
+        [Description("Auto: Self-Ressurect (Ankh/Soulstone) unless Movement is disabled, Enable: Always Self-Ressurect if available, None: never Self-Ressurect")]
+        public SelfRessurectStyle SelfRessurect { get; set; }
+
         #endregion
 
-        #region Pets
+        #region Category: Pets
 
         [Setting]
         [DefaultValue(false)]

@@ -479,8 +479,8 @@ namespace Singular
                             LogTargetChanges(behav, sType);
                         }
                     }
-                    // we have some type of target
-                    else if (Me.CurrentTarget != null && !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Normal)  
+                    // oddly, only testing for Me.CurrentTarget != null was allowing NullReferenceExceptions to occur in InLineOfSpellSight
+                    else if (Me.CurrentTargetGuid != 0 && Me.CurrentTarget != null && Me.CurrentTarget.IsValid && !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Normal)  
                     {       
                         // make sure we get into melee range within reasonable time
                         if ((!Me.IsMelee() || Me.CurrentTarget.IsWithinMeleeRange) && Movement.InLineOfSpellSight(Me.CurrentTarget, 5000))

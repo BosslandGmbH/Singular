@@ -68,16 +68,17 @@ namespace Singular.ClassSpecific.Warlock
                 //-- move following to top of root
                 //new Decorator(ctx => SingularSettings.Instance.DisablePetUsage && Me.GotAlivePet,
                 //    new Action(ctx => Lua.DoString("PetDismiss()"))),
-
-                // new ThrottlePasses( 5, new Action( r => { Logger.Write( "in Rest()"); return RunStatus.Failure; } )),
-                new Sequence(
-                    Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 80 && Me.HealthPercent > 60 && !Me.HasAnyAura("Drink", "Food")),
-                    Helpers.Common.CreateWaitForLagDuration()
-                    ),
-
                 new Decorator(
-                    ret => !Me.Mounted,
-                    Common.CreateWarlockSummonPet()
+                    req => !Me.HasAura("Drink") && !Me.HasAura("Food") && !Me.Mounted,
+                    new PrioritySelector(
+                        // new ThrottlePasses( 5, new Action( r => { Logger.Write( "in Rest()"); return RunStatus.Failure; } )),
+                        new Sequence(
+                            Spell.BuffSelf("Life Tap", ret => Me.ManaPercent < 80 && Me.HealthPercent > 60),
+                            Helpers.Common.CreateWaitForLagDuration()
+                            ),
+
+                        Common.CreateWarlockSummonPet()
+                        )
                     ),
 
                 Rest.CreateDefaultRestBehaviour(),

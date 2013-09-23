@@ -82,9 +82,13 @@ namespace Singular.ClassSpecific.Hunter
                 new Decorator( 
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        CreateHunterCallPetBehavior(true),
-
-                        Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85),
+                        new Decorator(
+                            ret => !Me.HasAura("Drink") && !Me.HasAura("Food"),
+                            new PrioritySelector(
+                                CreateHunterCallPetBehavior(true),
+                                Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85)
+                                )
+                            ),
 
                         Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
 
@@ -806,8 +810,8 @@ namespace Singular.ClassSpecific.Hunter
                             new PrioritySelector(
                                 CreateHunterTrapBehavior("Ice Trap", false, onUnit => (WoWUnit)onUnit),
                                 CreateHunterTrapBehavior("Snake Trap", false, onUnit => (WoWUnit)onUnit, ret => SpellManager.HasSpell("Entrapment")),
-                                CreateHunterTrapBehavior("Explosive Trap", false, onUnit => (WoWUnit)onUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
-                                CreateHunterTrapBehavior("Freezing Trap", false, onUnit => (WoWUnit)onUnit, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null)
+                                CreateHunterTrapBehavior("Freezing Trap", false, onUnit => (WoWUnit)onUnit, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null),
+                                CreateHunterTrapBehavior("Explosive Trap", false, onUnit => (WoWUnit)onUnit, ret => TalentManager.HasGlyph("Explosive Trap"))
                                 )
                             ),
                         new Decorator(
@@ -911,7 +915,6 @@ namespace Singular.ClassSpecific.Hunter
                             Common.CreateHunterTrapBehavior("Freezing Trap", true, on => ccUnit),
                             Spell.Cast("Scatter Shot", on => ccUnit),
                             Spell.CastOnGround("Binding Shot", ret => ccUnit.Location, ret => true, false),
-                            Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
                             Common.CreateHunterTrapBehavior("Snake Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Entrapment")),
                             Common.CreateHunterTrapBehavior("Ice Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Ice Trap")),
                             Spell.Cast("Concussive Shot", on => ccUnit)
@@ -944,8 +947,8 @@ namespace Singular.ClassSpecific.Hunter
                             Spell.CastOnGround("Binding Shot", ret => ccUnit.Location, ret => true, false),
                             Common.CreateHunterTrapBehavior("Snake Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Entrapment")),
                             Common.CreateHunterTrapBehavior("Ice Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Ice Trap")),
-                            Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Explosive Trap")),
-                            Spell.Cast("Concussive Shot", on => ccUnit)
+                            Spell.Cast("Concussive Shot", on => ccUnit),
+                            Common.CreateHunterTrapBehavior("Explosive Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Explosive Trap"))
                             ),
                         new Action(ret => { if (ccUnit != null) Blacklist.Add(ccUnit, BlacklistFlags.Combat, TimeSpan.FromSeconds(2)); })
                         )

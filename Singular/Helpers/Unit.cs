@@ -822,7 +822,7 @@ namespace Singular.Helpers
 
             var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
 
-            var heals = StyxWoW.Memory.Read<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
+            var heals = StyxWoW.Memory.ReadArray<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
             return heals.Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
                 .Aggregate(health, (current, heal) => current + heal.HealAmount);
         }

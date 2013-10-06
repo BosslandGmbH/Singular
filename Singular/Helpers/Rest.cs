@@ -54,8 +54,8 @@ namespace Singular.Helpers
 
                 // Self-heal if possible
                         new Decorator(
-                            ret => spellHeal != null && SpellManager.HasSpell(spellHeal) && Spell.CanCastHack(spellHeal, Me)
-                                && Me.GetPredictedHealthPercent(true) <= 85 && !Me.HasAura("Drink") && !Me.HasAura("Food"),
+                            ret => spellHeal != null && Me.GetPredictedHealthPercent(true) <= 85 && !Me.HasAura("Drink") && !Me.HasAura("Food")
+                                && SpellManager.HasSpell(spellHeal) && Spell.CanCastHack(spellHeal, Me),
                             new PrioritySelector(
                                 Movement.CreateEnsureMovementStoppedBehavior(reason: "to heal"),
                                 new Action(r => { Logger.WriteDebug("Rest Heal - {0} @ {1:F1}% Predict:{2:F1}% and moving:{3}, cancast:{4}", spellHeal, Me.HealthPercent, Me.GetPredictedHealthPercent(true), Me.IsMoving, Spell.CanCastHack(spellHeal, Me, skipWowCheck: false)); return RunStatus.Failure; }),

@@ -1,8 +1,63 @@
+--- Release 3.0.0.3111 ---
+
+General
+
+change- no longer disables Singular Combat while in a quest vehicle.  Quest profile authors must use the DisableBehavior and EnableBehavior statement if the combat routine should be disabled.  See http://www.thebuddyforum.com/honorbuddy-forum/community-developer-forum/134665-fyi-profile-writers-pulldistance-you.html#post1289255 for details
+
+change- default for running in Framelock now true
+
+fixed - was only recognizing training dummy as target and forcing use of instance spell priorities while in Debug mode. 
+
+*new* - Class Config setting on Debug tab - can now disable debug output.  Useful if you want to have Log Level set to Diagnostic in HonorBuddy, but prevent Singular from outputting debug info
+
+fixed - issue with suppressing movement while in a quest vehicle without checking Disable In Vehicle setting.  
+
+
+Death Knight
+
+fixed - Frost - no longer casts Pillar of Frost when out of melee range
+
+change- Frost - revision to DW and 1H spell priorities
+
+change- Unholy - revision to DW and 1H spell priorities
+
+
+Druid
+
+fixed - Feral - will no longer cast Predatory Swiftness Healing Touch unless needed.  Previously would cast only due to aura expiring
+
+fixed - Feral - was checking wrong target for Rip debuff, which was causing Ferocious Bite to not be cast frequently (if at all)
+
+
+Priest
+
+fixed - Holy - will now correctly attack enemies when Solo
+
+
+Shaman
+
+fixed - All Specs - suppresses interrupts if a Grounding Totem is active
+
+
+Warlock
+
+fixed - All Specs - no longer prevents Health Funnel if Soul Link talent taken
+
+
+Warrior
+
+fixed - All Specs - correctly uses Heroic Throw as interrupt if Glyph of Gag Order equipped
+
+
+
+
 --- Release 3.0.0.3080 ---
 
 General
 
 fixed - compile error in version downloaded from Singular thread due to a namespace being deleted from HonorBuddy 
+
+fixed - error causing characters to not release after Death in some cases
 
 fixed - exception occurring infrequently while checking if current target has changed
 

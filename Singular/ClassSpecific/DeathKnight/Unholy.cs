@@ -64,35 +64,53 @@ namespace Singular.ClassSpecific.DeathKnight
                             ),
 
                         // Single target rotation.
+
+                        // Target < 35%, Soul Reaper
+                        Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+
                         // Diseases
                         Common.CreateApplyDiseases(),
 
-                        // Execute
-                        Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+                        // Scourge Strike/Death and Decay*(Unholy/Death Runes are Capped)
+                        new Decorator(
+                            req => Common.UnholyRuneSlotsActive >= 2,
+                            new PrioritySelector(
+                                Spell.CastOnGround("Death and Decay",
+                                    on => StyxWoW.Me.CurrentTarget,
+                                    ret => Spell.UseAOE,
+                                    false),
+                                Spell.Cast("Scourge Strike")
+                                )
+                            ),
 
+                        // Dark Transformation
                         Spell.Cast("Dark Transformation",
                             ret => StyxWoW.Me.GotAlivePet
                                 && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
                                 && StyxWoW.Me.HasAura("Shadow Infusion", 5)),
+                        
+                        // Death Coil (Sudden Doom, high RP)
+                        Spell.Cast("Death Coil",
+                            ret => Me.HasAura(SuddenDoom) || Me.CurrentRunicPower >= 80),                       
 
+                        // Festering Strike (BB and FF are up)
                         Spell.Cast("Festering Strike", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),
+                        
+                        // Scourge Strike
                         Spell.Cast("Scourge Strike"),
+                        
+                        // Festering Strike
+                        Spell.Cast("Festering Strike"),
 
-                        Spell.CastOnGround("Death and Decay",
-                            ret => StyxWoW.Me.CurrentTarget.Location,
-                            ret => Spell.UseAOE && (StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount > 0), 
-                            false),
-
-                        Spell.Cast("Blood Tap"),
-
-                        Spell.Cast("Death Coil", 
-                            ret => Me.HasAura(SuddenDoom) 
-                                || Me.CurrentRunicPower >= 80 
-                                || (Me.BloodRuneCount+Me.FrostRuneCount+Me.UnholyRuneCount+Me.DeathRuneCount == 0)),
-
+                        // Horn of Winter
                         Spell.Cast("Horn of Winter"),
 
-                        // *** 3 Lowbie Cast what we have Priority
+
+                        // post Single target
+                        // attack at range if possible
+                        Spell.Cast("Death Coil", req => Me.GotTarget && !Me.CurrentTarget.IsWithinMeleeRange ),
+
+                        // attack with other abilities if we don't know scourge strike yet
                         new Decorator(
                             ret => !SpellManager.HasSpell("Scourge Strike"),
                             new PrioritySelector(
@@ -302,41 +320,60 @@ namespace Singular.ClassSpecific.DeathKnight
 
                                 Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemoreselessWinter)),
                                 Spell.Cast("Horn of Winter"),
+
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
                 
                         // *** Single target rotation. ***
 
+                        // Single target rotation.
+
                         // Target < 35%, Soul Reaper
                         Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
 
-                        // > Diseases
+                        // Diseases
                         Common.CreateApplyDiseases(),
 
-                        // > Dark Transformation
+                        // Scourge Strike/Death and Decay*(Unholy/Death Runes are Capped)
+                        new Decorator(
+                            req => Common.UnholyRuneSlotsActive >= 2,
+                            new PrioritySelector(
+                                Spell.CastOnGround("Death and Decay",
+                                    on => StyxWoW.Me.CurrentTarget,
+                                    ret => Spell.UseAOE,
+                                    false),
+                                Spell.Cast("Scourge Strike")
+                                )
+                            ),
+
+                        // Dark Transformation
                         Spell.Cast("Dark Transformation",
-                            ret => StyxWoW.Me.GotAlivePet 
-                                && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") 
-                                && Me.HasAura("Shadow Infusion", 5)),
+                            ret => StyxWoW.Me.GotAlivePet
+                                && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
+                                && StyxWoW.Me.HasAura("Shadow Infusion", 5)),
+                        
+                        // Death Coil (Sudden Doom, high RP)
+                        Spell.Cast("Death Coil",
+                            ret => Me.HasAura(SuddenDoom)
+                                || Me.CurrentRunicPower >= 80
+                                || (Me.BloodRuneCount + Me.FrostRuneCount + Me.UnholyRuneCount + Me.DeathRuneCount == 0)),                       
 
-                        // > Scourge Strike/Death and Decay* (UU or Death Runes are up)
-                        Spell.Cast("Scourge Strike", ret => StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount == 2),
-
-                        // > Festering Strike (BB and FF are up)
+                        // Festering Strike (BB and FF are up)
                         Spell.Cast("Festering Strike", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),
-
-                        // > Death Coil (Sudden Doom, high RP)
-                        Spell.Cast("Death Coil", ret => StyxWoW.Me.HasAura(SuddenDoom) || StyxWoW.Me.CurrentRunicPower >= 80),
-
-                        // > Scourge Strike
+                        
+                        // Scourge Strike
                         Spell.Cast("Scourge Strike"),
-
-                        // > Festering Strike
+                        
+                        // Festering Strike
                         Spell.Cast("Festering Strike"),
 
-                        // > Horn of Winter
-                        Spell.Cast("Horn of Winter")
+                        // Horn of Winter
+                        Spell.Cast("Horn of Winter"),
+
+                        // post Single target
+                        // attack at range if possible
+                        Spell.Cast("Death Coil", req => Me.GotTarget && !Me.CurrentTarget.IsWithinMeleeRange )
                         )
                     ),
 

@@ -276,7 +276,7 @@ namespace Singular.ClassSpecific.Druid
 
                         // bite if rip on for awhile or target dying soon
                         Spell.Cast("Ferocious Bite", 
-                            ret => (Me.ComboPoints >= 5 && !Me.HasAuraExpired("Rip", 6))
+                            ret => (Me.ComboPoints >= 5 && !Me.CurrentTarget.HasAuraExpired("Rip", 6))
                                 || Me.ComboPoints >= Me.CurrentTarget.TimeToDeath(99)),
 
                         Spell.Cast("Rip",
@@ -417,7 +417,7 @@ namespace Singular.ClassSpecific.Druid
                                         // 7. Ferocious Bite if you have 5 CP and at least 6 - 10 seconds on Savage Roar and Rip
                                         Spell.Cast("Ferocious Bite", 
                                             req => Me.ComboPoints >= 5
-                                                && !Me.HasAuraExpired("Rip", 6)
+                                                && !Me.CurrentTarget.HasAuraExpired("Rip", 6)
                                                 && !Me.HasAuraExpired("Savage Roar", TalentManager.HasGlyph("Savagery") ? 1 : 6)
                                                 ),
 
@@ -466,8 +466,16 @@ namespace Singular.ClassSpecific.Druid
                                                 CastThrash( on => Me.CurrentTarget, req => Me.HasAura("Clearcasting")),
 
                                                 Spell.Buff("Rake", true, on => Me.CurrentTarget, req => true, 3),
+
+                                                // following if 3 - 4 targets
+                                                CastThrash( on => Me.CurrentTarget, req => _aoeCount >= 3, 2),
+                                                Spell.Cast("Swipe", req => _aoeCount >= 3),
+
+                                                // following only if 2 or less targets
                                                 Spell.Cast("Ravage", req => (Me.IsSafelyBehind(Me.CurrentTarget) || Me.HasAnyAura(102543, 81022))),
                                                 Spell.Cast("Shred", req => (Me.IsSafelyBehind(Me.CurrentTarget) || (TalentManager.HasGlyph("Shred") && Me.HasAnyAura("Tiger's Fury", "Berserk")))),
+
+                                                // otherwise mangle mangle mangle
                                                 Spell.Cast("Mangle")
                                                 )
                                             )
@@ -491,6 +499,7 @@ namespace Singular.ClassSpecific.Druid
                 );
         }
 
+        private static int _aoeCount;
         private static IEnumerable<WoWUnit> _aoeColl;
 
         private static Composite CreateFeralAoeCombat()
@@ -502,11 +511,11 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
 
                 new Action( ret => {
-                    _aoeColl = Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8f);
+                    BuildAoeCollection();
                     return RunStatus.Failure;
                     }),
 
-                new Decorator(ret => Spell.UseAOE && _aoeColl.Count() >= 5 && !_aoeColl.Any(m => m.IsCrowdControlled()) && Me.Level >= 22,
+                new Decorator(ret => Spell.UseAOE && _aoeCount >= 5 && Me.Level >= 22,
 
                     new PrioritySelector(
 
@@ -523,7 +532,7 @@ namespace Singular.ClassSpecific.Druid
 
                         // bite if rip good for awhile or target dying soon
                         Spell.Cast("Ferocious Bite",
-                            ret => (Me.ComboPoints >= 5 && !Me.HasAuraExpired("Rip", 6))
+                            ret => (Me.ComboPoints >= 5 && !Me.CurrentTarget.HasAuraExpired("Rip", 6))
                                 || Me.ComboPoints >= _currTargetTimeToDeath),
 
                         Spell.Cast("Rip",
@@ -549,6 +558,21 @@ namespace Singular.ClassSpecific.Druid
         }
 
 
+        private static void BuildAoeCollection()
+        {
+            if (!Spell.UseAOE)
+                _aoeColl = new List<WoWUnit>(){ Me.CurrentTarget };
+            else
+            {
+                _aoeColl = Unit.UnfriendlyUnits(8);
+                if (_aoeColl.Any(m => m.IsCrowdControlled()))
+                {
+                    _aoeColl = new List<WoWUnit>() { Me.CurrentTarget };
+                }
+            }
+
+            _aoeCount = _aoeColl.Count();
+        }
 
         #region Diagnostics
 
@@ -594,6 +618,14 @@ namespace Singular.ClassSpecific.Druid
                             (long)target.GetAuraTimeLeft("Rip", true).TotalMilliseconds,
                             (long)target.GetAuraTimeLeft("Thrash", true).TotalMilliseconds
                             );
+
+                        if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                        {
+                            log += string.Format(", refsvg={0}, refrip={1}",
+                                Me.HasAuraExpired("Savage Roar", TalentManager.HasGlyph("Savagery") ? 1 : 6).ToYN(),
+                                target.HasAuraExpired("Rip", 6).ToYN()
+                                );
+                        }
                     }
 
                     Logger.WriteDebug(Color.AntiqueWhite, log);

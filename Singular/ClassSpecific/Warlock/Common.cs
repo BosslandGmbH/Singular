@@ -714,8 +714,8 @@ namespace Singular.ClassSpecific.Warlock
                     && Me.Pet.HealthPercent < petMinHealth
                     && !Spell.IsSpellOnCooldown("Health Funnel")
                     && Me.Pet.Distance < 45
-                    && Me.Pet.InLineOfSpellSight
-                    && !HasTalent(WarlockTalents.SoulLink),
+                    && Me.Pet.InLineOfSpellSight,
+                    // && !HasTalent(WarlockTalents.SoulLink),  // no longer replaces Health Funnel
                 new Sequence(
                     new PrioritySelector(
 

@@ -188,6 +188,7 @@ namespace Singular.ClassSpecific.Monk
         [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Instances)]
         public static Composite CreateBrewmasterMonkInstanceCombat()
         {
+            TankManager.NeedTankTargeting = true;
 
             var powerStrikeTimer = new WaitTimer(TimeSpan.FromSeconds(20));
 

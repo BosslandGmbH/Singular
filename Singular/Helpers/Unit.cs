@@ -512,7 +512,7 @@ namespace Singular.Helpers
         /// <returns>true aura missing or less than 'secs' time left, otherwise false</returns>
         public static bool HasKnownAuraExpired(this WoWUnit u, string aura, int secs = 3, bool myAura = true)
         {
-            return u.GetAuraTimeLeft(aura, myAura).TotalSeconds < (double) secs;
+            return u.GetAuraTimeLeft(aura, myAura).TotalSeconds < (double)secs;
         }
 
 
@@ -524,6 +524,9 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static bool HasAuraWithMechanic(this WoWUnit unit, params WoWSpellMechanic[] mechanics)
         {
+            if (unit == null)
+                return false;
+
             var auras = unit.GetAllAuras();
             return auras.Any(a => mechanics.Contains(a.Spell.Mechanic));
         }
@@ -536,6 +539,9 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static bool HasAuraWithMechanic(this WoWUnit unit, params WoWApplyAuraType [] applyType)
         {
+            if (unit == null)
+                return false;
+
             var auras = unit.GetAllAuras();
             return auras.Any(a => a.Spell.SpellEffects.Any( se => applyType.Contains(se.AuraType)));
         }
@@ -549,6 +555,9 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
         {
+            if (onUnit == null)
+                return TimeSpan.Zero;
+
             WoWAura wantedAura =
                 onUnit.GetAllAuras().Where(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 
@@ -557,7 +566,10 @@ namespace Singular.Helpers
 
         public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, int auraID, bool fromMyAura = true)
         {
-            WoWAura wantedAura =onUnit.GetAllAuras()
+            if (onUnit == null)
+                return TimeSpan.Zero;
+
+            WoWAura wantedAura = onUnit.GetAllAuras()
                 .Where(a => a.SpellId == auraID && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
@@ -565,6 +577,9 @@ namespace Singular.Helpers
 
         public static uint GetAuraStacks(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
         {
+            if (onUnit == null)
+                return 0;
+
             WoWAura wantedAura =
                 onUnit.GetAllAuras().Where(a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 

@@ -29,9 +29,19 @@ namespace Singular.Managers
         }
 
         public new static TankManager Instance { get; set; }
+
+        // following property is set by BT implementations for spec + context
+        public static bool NeedTankTargeting { get; set; }
+
         public List<WoWUnit> NeedToTaunt { get; private set; }
 
         public static readonly WaitTimer TargetingTimer = new WaitTimer(TimeSpan.FromSeconds(1));
+
+        public override void Pulse()
+        {
+            if (NeedTankTargeting)
+                base.Pulse();
+        }
 
         protected override List<WoWObject> GetInitialObjectList()
         {

@@ -137,6 +137,8 @@ namespace Singular.ClassSpecific.Paladin
         [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinProtection)]
         public static Composite CreateProtectionCombat()
         {
+            TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
+
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),

@@ -169,19 +169,31 @@ namespace Singular.Helpers
             if (SingularSettings.Instance.InterruptTarget == CheckTargets.Current)
                 actionSelectTarget = new Action( 
                     ret => {
+                        _unitInterrupt = null;
+                        if (Me.Class == WoWClass.Shaman && ClassSpecific.Shaman.Totems.Exist(WoWTotem.Grounding))
+                            return RunStatus.Failure;
+
                         WoWUnit u = Me.CurrentTarget;
                         _unitInterrupt = IsInterruptTarget(u) ? u : null;
                         if (_unitInterrupt != null && SingularSettings.Debug)
                             Logger.WriteDebug("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds );
+
+                        return _unitInterrupt == null ? RunStatus.Failure : RunStatus.Success;
                     }
                     );
             else // if ( SingularSettings.Instance.InterruptTarget == InterruptType.All )
             {
                 actionSelectTarget = new Action( 
-                    ret => { 
-                        _unitInterrupt = Unit.NearbyUnitsInCombatWithMeOrMyStuff.Where(u => IsInterruptTarget(u)).OrderBy( u => u.Distance ).FirstOrDefault();
+                    ret => {
+                        _unitInterrupt = null;
+                        if (Me.Class == WoWClass.Shaman && ClassSpecific.Shaman.Totems.Exist(WoWTotem.Grounding))
+                            return RunStatus.Failure;
+
+                        _unitInterrupt = Unit.NearbyUnitsInCombatWithMeOrMyStuff.Where(u => IsInterruptTarget(u)).OrderBy(u => u.Distance).FirstOrDefault();
                         if (_unitInterrupt != null && SingularSettings.Debug)
                             Logger.WriteDebug("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds);
+
+                        return _unitInterrupt == null ? RunStatus.Failure : RunStatus.Success;
                         }
                     );
             }
@@ -277,9 +289,9 @@ namespace Singular.Helpers
             if (Me.Specialization == WoWSpec.PaladinProtection)
                 prioSpell.AddChild( Spell.Cast("Avenger's Shield", ctx => _unitInterrupt));
 
-            if (Me.Class == WoWClass.Shaman)
+            if (Me.Class == WoWClass.Warrior && TalentManager.HasGlyph("Gag Order"))
                 // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
-                prioSpell.AddChild( Spell.Cast("Heroic Throw", ctx => _unitInterrupt, ret => TalentManager.HasGlyph("Gag Order") && !_unitInterrupt.IsBoss()));
+                prioSpell.AddChild( Spell.Cast("Heroic Throw", ctx => _unitInterrupt, ret =>  !_unitInterrupt.IsBoss()));
 
             if ( Me.Class == WoWClass.Priest ) 
                 prioSpell.AddChild( Spell.Cast("Silence", ctx => _unitInterrupt));
@@ -314,11 +326,8 @@ namespace Singular.Helpers
             return new Throttle( 
                 new Sequence(
                     actionSelectTarget,               
-                    new Decorator(
-                        ret => _unitInterrupt != null,
-                        // majority of these are off GCD, so throttle all to avoid most fail messages
-                        new Throttle( TimeSpan.FromMilliseconds(500), prioSpell )
-                        )
+                    // majority of these are off GCD, so throttle all to avoid most fail messages
+                    new Throttle( TimeSpan.FromMilliseconds(500), prioSpell )
                     )
                 );
         }

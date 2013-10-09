@@ -76,6 +76,34 @@ namespace Singular.Settings
         public SingularSettings()
             : base(Path.Combine(CharacterSettingsPath, "SingularSettings.xml"))
         {
+            Version current = SingularRoutine.GetSingularVersion();
+            Version cfgver = null;
+
+            // if version is null, set to current value
+            if (ConfigVersion == null)
+                ConfigVersion = current.ToString();
+
+            try
+            {
+                cfgver = new Version(ConfigVersion);
+            }
+            catch
+            {
+                cfgver = current;
+            }
+
+            if (cfgver < current)
+            {
+                Logger.WriteFile("Settings: updating config file from verion {0}", ConfigVersion.ToString());
+                if (new Version("3.0.0.3080") <= current)
+                {
+                    Logger.WriteFile("Settings: {0} changes", new Version("3.0.0.3080").ToString());
+                    UseFrameLock = true;
+                    DisableInQuestVehicle = false;
+                }
+            }
+
+            ConfigVersion = current.ToString();
         }
 
         public static string GlobalSettingsPath
@@ -160,6 +188,8 @@ namespace Singular.Settings
             Logger.WriteFile("  {0}: {1}", "DisableAllMovement", SingularSettings.Instance.DisableAllMovement.ToYN());
             Logger.WriteFile("  {0}: {1}", "DisableAllTargeting", SingularSettings.DisableAllTargeting.ToYN());
             Logger.WriteFile("  {0}: {1}", "TrivialHealth", Unit.TrivialHealth());
+            Logger.WriteFile("  {0}: {1}", "NeedTankTargeting", TankManager.NeedTankTargeting);
+            Logger.WriteFile("  {0}: {1}", "NeedHealTargeting", HealerManager.NeedHealTargeting);
             Logger.WriteFile("");
 
             if (DisableSpellsWithCooldown == 0)
@@ -222,7 +252,7 @@ namespace Singular.Settings
         {
             get
             {
-                return GlobalSettings.Instance.LogLevel >= Styx.Common.LogLevel.Verbose;
+                return GlobalSettings.Instance.LogLevel >= Styx.Common.LogLevel.Verbose && !Instance.DisableDebugLogging;
             }
         }
 
@@ -231,7 +261,7 @@ namespace Singular.Settings
         {
             get
             {
-                return GlobalSettings.Instance.LogLevel >= Styx.Common.LogLevel.Diagnostic;
+                return GlobalSettings.Instance.LogLevel >= Styx.Common.LogLevel.Diagnostic && !Instance.DisableDebugLogging;
             }
         }
 
@@ -256,16 +286,16 @@ namespace Singular.Settings
             }
         }
 
-        #region Category: Debug
-/*
+        #region Category: Hidden
+
         [Browsable(false)]
         [Setting]
-        [DefaultValue(false)]
-        [Category("Debug")]
-        [DisplayName("Debug Logging")]
-        [Description("Enables debug logging from Singular. This will cause quite a bit of spam. Use it for diagnostics only.")]
-        public bool EnableDebugLogging { get; set; }
-*/
+        public string ConfigVersion { get; set; }
+            
+        #endregion 
+
+        #region Category: Debug
+
         [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
@@ -281,6 +311,14 @@ namespace Singular.Settings
         [DisplayName("Debug Trace")]
         [Description("EXTREMELY VERBOSE!! Enables logging of entry/exit into each behavior. Only use if instructed or you prefer slower response times!")]
         public bool EnableDebugTrace { get; set; }
+
+        [Browsable(false)]
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Debug")]
+        [DisplayName("Disable Debug Logging")]
+        [Description("Disables debug logging by Singular. Will suppress debug output even when enabled by other means")]
+        public bool DisableDebugLogging { get; set; }
 
         #endregion
 
@@ -432,7 +470,7 @@ namespace Singular.Settings
         #region Category: General
 
         [Setting]
-        [DefaultValue(false)]
+        [DefaultValue(true)]
         [Category("General")]
         [DisplayName("Use Framlock in Singular")]
         [Description("Force use of Framelock in Singular.  Primarily for use with Botbases that do not support Framelock")]
@@ -453,7 +491,7 @@ namespace Singular.Settings
         public bool DisableNonCombatBehaviors { get; set; }
 
         [Setting]
-        [DefaultValue(true)]
+        [DefaultValue(false)]
         [Category("General")]
         [DisplayName("Disable in Quest Vehicle")]
         [Description("True: Singular ignore calls from Questing Bot if in a Quest Vehicle; False: Singular tries to fight/heal when Questing Bot asks it to.")]

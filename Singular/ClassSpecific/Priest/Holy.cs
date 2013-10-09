@@ -638,7 +638,7 @@ VoidShift               Void Shift
                     ),
 
                 new Decorator(
-                    ret => Me.Combat && !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal || !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                     new PrioritySelector(
                         Helpers.Common.EnsureReadyToAttackFromLongRange(),
                         Spell.WaitForCastOrChannel(),

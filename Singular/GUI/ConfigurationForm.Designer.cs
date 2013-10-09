@@ -42,16 +42,18 @@
             this.tabHotkeys = new System.Windows.Forms.TabPage();
             this.pgHotkeys = new System.Windows.Forms.PropertyGrid();
             this.tabDebug = new System.Windows.Forms.TabPage();
-            this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.chkDisableDebug = new System.Windows.Forms.CheckBox();
             this.chkDebugTrace = new System.Windows.Forms.CheckBox();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.chkUseInstanceBehaviorsWhenSolo = new System.Windows.Forms.CheckBox();
             this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.lblPoi = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.lblTargets = new System.Windows.Forms.Label();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.lblHealTargets = new System.Windows.Forms.Label();
+            this.grpAuxTargeting = new System.Windows.Forms.GroupBox();
+            this.lblAuxTargets = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.grpFooter = new System.Windows.Forms.GroupBox();
             this.btnLogMark = new System.Windows.Forms.Button();
@@ -67,10 +69,11 @@
             this.grpHealHeader.SuspendLayout();
             this.tabHotkeys.SuspendLayout();
             this.tabDebug.SuspendLayout();
+            this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.groupBox5.SuspendLayout();
             this.groupBox2.SuspendLayout();
-            this.groupBox1.SuspendLayout();
+            this.grpAuxTargeting.SuspendLayout();
             this.grpFooter.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -91,6 +94,7 @@
             this.tabControl1.Size = new System.Drawing.Size(340, 368);
             this.tabControl1.TabIndex = 4;
             this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
+            this.tabControl1.Selected += new System.Windows.Forms.TabControlEventHandler(this.tabControl1_Selected);
             this.tabControl1.VisibleChanged += new System.EventHandler(this.tabControl1_VisibleChanged);
             // 
             // tabGeneral
@@ -211,10 +215,11 @@
             // 
             // tabDebug
             // 
+            this.tabDebug.Controls.Add(this.groupBox3);
             this.tabDebug.Controls.Add(this.groupBox4);
             this.tabDebug.Controls.Add(this.groupBox5);
             this.tabDebug.Controls.Add(this.groupBox2);
-            this.tabDebug.Controls.Add(this.groupBox1);
+            this.tabDebug.Controls.Add(this.grpAuxTargeting);
             this.tabDebug.Location = new System.Drawing.Point(4, 22);
             this.tabDebug.Name = "tabDebug";
             this.tabDebug.Padding = new System.Windows.Forms.Padding(3);
@@ -223,9 +228,41 @@
             this.tabDebug.Text = "Debugging";
             this.tabDebug.UseVisualStyleBackColor = true;
             // 
+            // groupBox3
+            // 
+            this.groupBox3.Controls.Add(this.chkDisableDebug);
+            this.groupBox3.Controls.Add(this.chkDebugTrace);
+            this.groupBox3.Location = new System.Drawing.Point(7, 262);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(156, 74);
+            this.groupBox3.TabIndex = 9;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "Debug Output";
+            // 
+            // chkDisableDebug
+            // 
+            this.chkDisableDebug.AutoSize = true;
+            this.chkDisableDebug.Location = new System.Drawing.Point(9, 19);
+            this.chkDisableDebug.Name = "chkDisableDebug";
+            this.chkDisableDebug.Size = new System.Drawing.Size(131, 17);
+            this.chkDisableDebug.TabIndex = 2;
+            this.chkDisableDebug.Text = "Disable Debug Output";
+            this.toolTip1.SetToolTip(this.chkDisableDebug, "Disable/block all debug output");
+            this.chkDisableDebug.UseVisualStyleBackColor = true;
+            // 
+            // chkDebugTrace
+            // 
+            this.chkDebugTrace.AutoSize = true;
+            this.chkDebugTrace.Location = new System.Drawing.Point(9, 42);
+            this.chkDebugTrace.Name = "chkDebugTrace";
+            this.chkDebugTrace.Size = new System.Drawing.Size(124, 17);
+            this.chkDebugTrace.TabIndex = 2;
+            this.chkDebugTrace.Text = "Trace Behavior Calls";
+            this.toolTip1.SetToolTip(this.chkDebugTrace, "Controls extremely verbose log of Behavior Tree activity");
+            this.chkDebugTrace.UseVisualStyleBackColor = true;
+            // 
             // groupBox4
             // 
-            this.groupBox4.Controls.Add(this.chkDebugTrace);
             this.groupBox4.Controls.Add(this.chkUseInstanceBehaviorsWhenSolo);
             this.groupBox4.Controls.Add(this.ShowPlayerNames);
             this.groupBox4.Location = new System.Drawing.Point(165, 262);
@@ -235,24 +272,15 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Temporary Settings";
             // 
-            // chkDebugTrace
-            // 
-            this.chkDebugTrace.AutoSize = true;
-            this.chkDebugTrace.Location = new System.Drawing.Point(6, 57);
-            this.chkDebugTrace.Name = "chkDebugTrace";
-            this.chkDebugTrace.Size = new System.Drawing.Size(124, 17);
-            this.chkDebugTrace.TabIndex = 2;
-            this.chkDebugTrace.Text = "Trace Behavior Calls";
-            this.chkDebugTrace.UseVisualStyleBackColor = true;
-            // 
             // chkUseInstanceBehaviorsWhenSolo
             // 
             this.chkUseInstanceBehaviorsWhenSolo.AutoSize = true;
-            this.chkUseInstanceBehaviorsWhenSolo.Location = new System.Drawing.Point(6, 38);
+            this.chkUseInstanceBehaviorsWhenSolo.Location = new System.Drawing.Point(6, 42);
             this.chkUseInstanceBehaviorsWhenSolo.Name = "chkUseInstanceBehaviorsWhenSolo";
             this.chkUseInstanceBehaviorsWhenSolo.Size = new System.Drawing.Size(147, 17);
             this.chkUseInstanceBehaviorsWhenSolo.TabIndex = 1;
             this.chkUseInstanceBehaviorsWhenSolo.Text = "Force Instance Behaviors";
+            this.toolTip1.SetToolTip(this.chkUseInstanceBehaviorsWhenSolo, "True: use Instance priority no matter what we are doing");
             this.chkUseInstanceBehaviorsWhenSolo.UseVisualStyleBackColor = true;
             // 
             // ShowPlayerNames
@@ -263,6 +291,7 @@
             this.ShowPlayerNames.Size = new System.Drawing.Size(121, 17);
             this.ShowPlayerNames.TabIndex = 0;
             this.ShowPlayerNames.Text = "Show Player Names";
+            this.toolTip1.SetToolTip(this.ShowPlayerNames, "Use Player Name in log output instad of class name");
             this.ShowPlayerNames.UseVisualStyleBackColor = true;
             // 
             // groupBox5
@@ -311,27 +340,27 @@
             this.lblTargets.TabIndex = 0;
             this.lblTargets.Text = "Target  99% @ 10 yds";
             // 
-            // groupBox1
+            // grpAuxTargeting
             // 
-            this.groupBox1.Controls.Add(this.lblHealTargets);
-            this.groupBox1.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.groupBox1.Location = new System.Drawing.Point(8, 143);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(313, 104);
-            this.groupBox1.TabIndex = 1;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Heal Targeting";
+            this.grpAuxTargeting.Controls.Add(this.lblAuxTargets);
+            this.grpAuxTargeting.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
+            this.grpAuxTargeting.Location = new System.Drawing.Point(8, 143);
+            this.grpAuxTargeting.Name = "grpAuxTargeting";
+            this.grpAuxTargeting.Size = new System.Drawing.Size(313, 104);
+            this.grpAuxTargeting.TabIndex = 1;
+            this.grpAuxTargeting.TabStop = false;
+            this.grpAuxTargeting.Text = "Other Targeting";
             // 
-            // lblHealTargets
+            // lblAuxTargets
             // 
-            this.lblHealTargets.AutoSize = true;
-            this.lblHealTargets.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblHealTargets.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.lblHealTargets.Location = new System.Drawing.Point(6, 16);
-            this.lblHealTargets.Name = "lblHealTargets";
-            this.lblHealTargets.Size = new System.Drawing.Size(126, 14);
-            this.lblHealTargets.TabIndex = 0;
-            this.lblHealTargets.Text = "Heal Target @ ...";
+            this.lblAuxTargets.AutoSize = true;
+            this.lblAuxTargets.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblAuxTargets.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.lblAuxTargets.Location = new System.Drawing.Point(6, 16);
+            this.lblAuxTargets.Name = "lblAuxTargets";
+            this.lblAuxTargets.Size = new System.Drawing.Size(133, 14);
+            this.lblAuxTargets.TabIndex = 0;
+            this.lblAuxTargets.Text = "Other Target @ ...";
             // 
             // timer1
             // 
@@ -434,14 +463,16 @@
             this.grpHealHeader.PerformLayout();
             this.tabHotkeys.ResumeLayout(false);
             this.tabDebug.ResumeLayout(false);
+            this.groupBox3.ResumeLayout(false);
+            this.groupBox3.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
+            this.grpAuxTargeting.ResumeLayout(false);
+            this.grpAuxTargeting.PerformLayout();
             this.grpFooter.ResumeLayout(false);
             this.grpFooter.PerformLayout();
             this.ResumeLayout(false);
@@ -456,8 +487,8 @@
         private System.Windows.Forms.TabPage tabClass;
         private System.Windows.Forms.PropertyGrid pgClass;
         private System.Windows.Forms.TabPage tabDebug;
-        private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.Label lblHealTargets;
+        private System.Windows.Forms.GroupBox grpAuxTargeting;
+        private System.Windows.Forms.Label lblAuxTargets;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.TabPage tabGroupHeal;
         private System.Windows.Forms.TabPage tabHotkeys;
@@ -481,5 +512,7 @@
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Label lblPoi;
         private System.Windows.Forms.CheckBox chkDebugTrace;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.CheckBox chkDisableDebug;
     }
 }

@@ -79,7 +79,7 @@ namespace Singular.Helpers
                             {
 #region Tank Targeting
                                 // Handle tank targeting - only if in Combat, otherwise we'll choose based upon Targeting list
-                                if (!SingularSettings.Instance.DisableTankTargetSwitching && Group.MeIsTank && StyxWoW.Me.Combat && TankManager.Instance.FirstUnit != null)
+                                if (TankManager.NeedTankTargeting && !SingularSettings.Instance.DisableTankTargetSwitching && Group.MeIsTank && StyxWoW.Me.Combat && TankManager.Instance.FirstUnit != null)
                                 {
                                     if ( Me.CurrentTarget != TankManager.Instance.FirstUnit)
                                     {
@@ -211,12 +211,12 @@ namespace Singular.Helpers
                                 // at this point, stick with it if in Targetlist
                                 if (Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
                                 {
-                                    Logger.WriteDebug( targetColor, "EnsureTarget: failed validation but is in TargetList, continuing...");
+                                    Logger.WriteDebug( targetColor, "EnsureTarget: failed validation but {0} is in TargetList, continuing...", Me.CurrentTarget.SafeName());
                                     return Me.CurrentTarget;
                                 }
 
                                 // otherwise, let's get a new one
-                                Logger.WriteDebug( targetColor, "EnsureTarget: invalid target, so forcing selection of a new one");
+                                Logger.WriteDebug(targetColor, "EnsureTarget: invalid target {0}, so forcing selection of a new one...", Me.CurrentTarget == null ? "(null)" : Me.CurrentTarget.SafeName());
                                 return null;
                             },
 

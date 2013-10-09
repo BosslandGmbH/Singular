@@ -37,6 +37,8 @@ namespace Singular
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
+        delegate void OnTargetChange(WoWUnit unit);
+
         public SingularRoutine()
         {
             Instance = this;
@@ -396,16 +398,13 @@ namespace Singular
 
         private void CheckCurrentTarget()
         {
-            if (!SingularSettings.Debug)
-                return;
-
-            CheckTarget(Me.CurrentTarget, ref _lastCheckCurrTargetGuid, "YourCurrentTarget");
-            if (Me.GotAlivePet)
-                CheckTarget(Me.Pet.CurrentTarget, ref _lastCheckPetsTargetGuid, "PetsCurrentTarget");
+            CheckTarget(Me.CurrentTarget, ref _lastCheckCurrTargetGuid, "YourCurrentTarget", HandleTrainingDummy);
+            if (SingularSettings.Debug && Me.GotAlivePet)
+                CheckTarget(Me.Pet.CurrentTarget, ref _lastCheckPetsTargetGuid, "PetsCurrentTarget", (x) => { });
         }
 
 
-        private void CheckTarget(WoWUnit unit, ref ulong prevGuid, string description)
+        private void CheckTarget(WoWUnit unit, ref ulong prevGuid, string description, OnTargetChange onchg)
         {
             // there are moments where CurrentTargetGuid != 0 but CurrentTarget == null. following
             // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
@@ -414,63 +413,63 @@ namespace Singular
                 if (prevGuid != 0)
                 {
                     prevGuid = 0;
-                    Logger.WriteDebug(description + ": changed to: (null)");
-                    HandleTrainingDummy(unit);
+                    onchg(unit);
+                    if (SingularSettings.Debug)
+                        Logger.WriteDebug(description + ": changed to: (null)");
                 }
             }
             else if (unit.Guid != prevGuid)
             {
                 prevGuid = unit.Guid;
-
-                HandleTrainingDummy(unit);
-
-                string info = "";
-                if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
-                    info += string.Format(", IsBotPoi={0}", Styx.CommonBot.POI.BotPoi.Current.Type);
-
-                if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
-                    info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
-
-                string playerInfo = "N";
-                if (unit.IsPlayer)
+                onchg(unit);
+                if (SingularSettings.Debug)
                 {
-                    WoWPlayer p = unit.ToPlayer();
-                    playerInfo = string.Format("Y, Friend={0}, IsPvp={1}, CtstPvp={2}, FfaPvp={3}", Me.IsHorde == p.IsHorde, p.IsPvPFlagged, p.ContestedPvPFlagged, p.IsFFAPvPFlagged);
-                }
+                    string info = "";
+                    if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
+                        info += string.Format(", IsBotPoi={0}", Styx.CommonBot.POI.BotPoi.Current.Type);
 
-                Logger.WriteDebug(description + ": changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, trivial={5}, player={6}, attackable={7}, neutral={8}, hostile={9}, entry={10}, faction={11}, loss={12}, facing={13}, blacklist={14}, combat={15}" + info,
-                    unit.SafeName(),
-                    unit.HealthPercent,
-                    unit.MaxHealth,
-                    unit.Distance,
-                    unit.CombatReach,
-                    unit.IsTrivial(),
-                    playerInfo,
-                     
-                    unit.Attackable.ToYN(),
-                    unit.IsNeutral().ToYN(),
-                    unit.IsHostile.ToYN(),
-                    unit.Entry,
-                    unit.FactionId,
-                    unit.InLineOfSpellSight.ToYN(),
-                    Me.IsSafelyFacing(unit).ToYN(),
-                    Blacklist.Contains(unit.Guid, BlacklistFlags.Combat).ToYN(),
-                    unit.Combat.ToYN()
-                    );
+                    if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
+                        info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
+
+                    string playerInfo = "N";
+                    if (unit.IsPlayer)
+                    {
+                        WoWPlayer p = unit.ToPlayer();
+                        playerInfo = string.Format("Y, Friend={0}, IsPvp={1}, CtstPvp={2}, FfaPvp={3}", Me.IsHorde == p.IsHorde, p.IsPvPFlagged, p.ContestedPvPFlagged, p.IsFFAPvPFlagged);
+                    }
+
+                    Logger.WriteDebug(description + ": changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, trivial={5}, player={6}, attackable={7}, neutral={8}, hostile={9}, entry={10}, faction={11}, loss={12}, facing={13}, blacklist={14}, combat={15}" + info,
+                        unit.SafeName(),
+                        unit.HealthPercent,
+                        unit.MaxHealth,
+                        unit.Distance,
+                        unit.CombatReach,
+                        unit.IsTrivial(),
+                        playerInfo,
+
+                        unit.Attackable.ToYN(),
+                        unit.IsNeutral().ToYN(),
+                        unit.IsHostile.ToYN(),
+                        unit.Entry,
+                        unit.FactionId,
+                        unit.InLineOfSpellSight.ToYN(),
+                        Me.IsSafelyFacing(unit).ToYN(),
+                        Blacklist.Contains(unit.Guid, BlacklistFlags.Combat).ToYN(),
+                        unit.Combat.ToYN()
+                        );
+                }
             }
         }
 
         private static void HandleTrainingDummy(WoWUnit unit)
         {
-            bool trainingDummy = unit == null ? false : unit.IsTrainingDummy();
-
-            if (trainingDummy && ForcedContext == WoWContext.None)
+            if (ForcedContext == WoWContext.None && unit != null && unit.IsTrainingDummy())
             {
                 ForcedContext = WoWContext.Instances;
                 // ForcedContext = WoWContext.Battlegrounds; 
                 Logger.Write(Color.White, "Detected Training Dummy -- forcing {0} behaviors", CurrentWoWContext.ToString());
             }
-            else if (!trainingDummy && ForcedContext != WoWContext.None)
+            else if (ForcedContext != WoWContext.None && (unit == null || !unit.IsTrainingDummy()))
             {
                 ForcedContext = WoWContext.None;
                 Logger.Write(Color.White, "Detected Training Dummy no longer target -- reverting to {0} behaviors", CurrentWoWContext.ToString());

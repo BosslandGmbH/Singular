@@ -293,6 +293,8 @@ namespace Singular.ClassSpecific.DeathKnight
         [Behavior(BehaviorType.Combat, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood, WoWContext.Instances)]
         public static Composite CreateDeathKnightBloodInstanceCombat()
         {
+            TankManager.NeedTankTargeting = true;
+
             return
                 new PrioritySelector(
 

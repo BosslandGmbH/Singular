@@ -97,6 +97,7 @@ namespace Singular.GUI
             // chkDebugLogging.Checked = SingularSettings.Instance.EnableDebugLogging;
             // chkDebugSpellCanCast.Checked = SingularSettings.Instance.EnableDebugLoggingCanCast;
             chkDebugTrace.Checked = SingularSettings.Instance.EnableDebugTrace;
+            chkDisableDebug.Checked = SingularSettings.Instance.DisableDebugLogging;
 
             InitializeHealContextDropdown(StyxWoW.Me.Class);
             chkUseInstanceBehaviorsWhenSolo.Checked = SingularRoutine.ForceInstanceBehaviors;
@@ -250,6 +251,7 @@ namespace Singular.GUI
                 // SingularSettings.Instance.EnableDebugLogging = chkDebugLogging.Checked;
                 // SingularSettings.Instance.EnableDebugLoggingCanCast = chkDebugSpellCanCast.Checked;
                 SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
+                SingularSettings.Instance.DisableDebugLogging = chkDisableDebug.Checked;
                 Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
                 SingularRoutine.ForceInstanceBehaviors = chkUseInstanceBehaviorsWhenSolo.Checked;
 
@@ -354,7 +356,30 @@ namespace Singular.GUI
                     {
                     }
                 }
-                lblHealTargets.Text = sb.ToString();
+                lblAuxTargets.Text = sb.ToString();
+            }
+
+            // update list of Tank Targets
+            if (TankManager.NeedTankTargeting)
+            {
+                i = 0;
+                sb = new StringBuilder();
+                foreach (WoWUnit u in TankManager.Instance.TargetList)
+                {
+                    try
+                    {
+                        sb.AppendLine(u.SafeName().AlignLeft(20) + " " + u.HealthPercent.ToString("F1").AlignRight(5) + "%  " + u.Distance.ToString("F1").AlignRight(5) + " yds");
+                        if (++i == 5)
+                            break;
+                    }
+                    catch (System.AccessViolationException)
+                    {
+                    }
+                    catch (Styx.InvalidObjectPointerException)
+                    {
+                    }
+                }
+                lblTargets.Text = sb.ToString();
             }
         }
 
@@ -414,6 +439,21 @@ namespace Singular.GUI
         private void groupBox2_Enter(object sender, EventArgs e)
         {
 
+        }
+
+        private void tabControl1_Selected(object sender, TabControlEventArgs e)
+        {
+            if (HealerManager.NeedHealTargeting)
+            {
+                grpAuxTargeting.Text = "Heal Targets";
+            }
+            else if (TankManager.NeedTankTargeting)
+            {
+                grpAuxTargeting.Text = "Tank Targets";
+            }
+
+            grpAuxTargeting.Visible = HealerManager.NeedHealTargeting || TankManager.NeedTankTargeting;
+            grpAuxTargeting.Enabled = HealerManager.NeedHealTargeting || TankManager.NeedTankTargeting;
         }
 
 /*

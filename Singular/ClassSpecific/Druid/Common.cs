@@ -228,12 +228,15 @@ namespace Singular.ClassSpecific.Druid
                             // heal self if needed
                             if (Me.HealthPercent < DruidSettings.PredSwiftnessHealingTouchHealth)
                                 target = Me;
+                            // already checked self, so skip group searches
+                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                                target = null;  
                             // heal others if needed
-                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (Me.GotTarget && Me.CurrentTarget.IsPlayer))
                                 target = Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < DruidSettings.PredSwiftnessPvpHeal && p.DistanceSqr < 40 * 40).FirstOrDefault();
                             // heal anyone if buff about to expire
                             else if (Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds.Between(500, 2000))
-                                target = Unit.GroupMembers.Where(p => p.IsAlive && p.DistanceSqr < 40 * 40).OrderBy(k => k.GetPredictedHealthPercent()).FirstOrDefault();
+                                target = Unit.GroupMembers.Where(p => p.IsAlive && p.DistanceSqr < 40 * 40 && p.HealthPercent < 30).OrderBy(k => k.GetPredictedHealthPercent()).FirstOrDefault();
 
                             if (target != null)
                             {

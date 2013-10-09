@@ -134,8 +134,13 @@ namespace Singular
         private void InitBehaviors()
         {
             // be sure to turn off -- routines needing it will enable when rebuilt
+            TankManager.NeedTankTargeting = false;
+            if (TankManager.Instance != null)
+                TankManager.Instance.Clear();
+
             HealerManager.NeedHealTargeting = false;
-            HealerManager.Instance.Clear();
+            if (HealerManager.Instance != null)
+                HealerManager.Instance.Clear();
 
             // we only do this one time
             if (_restBehavior != null)
@@ -348,7 +353,7 @@ namespace Singular
                     if (_inQuestVehicle )
                     {
                         Logger.Write(Color.White, "Singular is {0} while in a Quest Vehicle", SingularSettings.Instance.DisableInQuestVehicle ? "Disabled" : "Enabled");
-                        Logger.Write(Color.White, "See the [Disable in Quest Vehicle]={0} setting to change", SingularSettings.Instance.DisableInQuestVehicle);
+                        Logger.Write(Color.White, "Change [Disable in Quest Vehicle] setting to '{0}' to change", !SingularSettings.Instance.DisableInQuestVehicle);
                     }
                 }
 

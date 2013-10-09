@@ -45,6 +45,7 @@ namespace Singular.Managers
 
         public new static HealerManager Instance { get; private set; }
 
+        // following property is set by BT implementations for spec + context
         public static bool NeedHealTargeting { get; set; }
 
         private List<WoWUnit> HealList { get { return ObjectList.ConvertAll(o => o.ToUnit()); } }

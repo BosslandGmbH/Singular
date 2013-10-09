@@ -139,6 +139,8 @@ namespace Singular.ClassSpecific.Warrior
         [Behavior(BehaviorType.Combat, WoWClass.Warrior, WoWSpec.WarriorProtection, WoWContext.All)]
         public static Composite CreateProtectionNormalCombat()
         {
+            TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
+
             return new PrioritySelector(
                 ctx => TankManager.Instance.FirstUnit ?? Me.CurrentTarget,
 

@@ -385,7 +385,7 @@ namespace Singular.Settings
 
 
         [Setting]
-        [DefaultValue(SpellPriority.Noxxic)]
+        [DefaultValue(SpellPriority.ElitistJerks )]
         [Category("Feral")]
         [DisplayName("Instance Spell Priority")]
         public SpellPriority FeralSpellPriority { get; set; }

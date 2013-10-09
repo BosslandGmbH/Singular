@@ -108,6 +108,8 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.Combat, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.All)]
         public static Composite CreateGuardianNormalCombat()
         {
+            TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
+
            // Logger.Write("guardian loop.");
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),

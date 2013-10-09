@@ -42,7 +42,7 @@ namespace Singular.Managers
         {
             get
             {
-                return !HotkeyDirector.IsMovementEnabled || (SingularRoutine.IsQuestBotActive && StyxWoW.Me.InVehicle);
+                return !HotkeyDirector.IsMovementEnabled || (SingularRoutine.IsQuestBotActive && SingularSettings.Instance.DisableInQuestVehicle && StyxWoW.Me.InVehicle);
             }
         }
 

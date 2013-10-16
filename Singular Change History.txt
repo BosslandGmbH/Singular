@@ -1,3 +1,10 @@
+--- Release 3.0.0.3123 ---
+
+General
+
+fixed - initialization bug which would sometimes cause HonorBuddy to hang during routine intialization
+
+
 --- Release 3.0.0.3111 ---
 
 General

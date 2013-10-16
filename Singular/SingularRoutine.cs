@@ -46,6 +46,8 @@ namespace Singular
 
         public override void Initialize()
         {
+            SingularSettings.Initialize();
+
             WriteSupportInfo();
 
             _lastLogLevel = GlobalSettings.Instance.LogLevel;

@@ -196,8 +196,8 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 CreateHunterCallPetBehavior(false),
-                CreateMisdirectionBehavior()                       
-                // , Spell.Buff("Hunter's Mark", ret => Target != null && Unit.ValidUnit(Target) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane))
+                CreateMisdirectionBehavior(),
+                Spell.Buff("Hunter's Mark", req => Target != null && Unit.ValidUnit(Target) && Target.SpellDistance().Between(40, 60) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)) 
                 );
         }
 

@@ -82,11 +82,11 @@ namespace Singular
 
             if (SingularSettings.Debug)
             {
-                Logging.Write(newColor, "[Singular-DEBUG] " + message, args);
+                Logging.Write(newColor, "(Singular) " + message, args);
             }
             else
             {
-                Logging.Write(LogLevel.Diagnostic, newColor, "[Singular-DEBUG] " + message, args);
+                Logging.Write(LogLevel.Diagnostic, newColor, "(Singular) " + message, args);
             }
         }
 
@@ -106,7 +106,7 @@ namespace Singular
         /// <param name="args">replacement parameter values</param>
         public static void WriteFile(string message, params object[] args)
         {
-            WriteFile(LogLevel.Verbose, message, args);
+            WriteFile(LogLevel.Diagnostic, message, args);
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace Singular
         public static void WriteFile( LogLevel ll, string message, params object[] args)
         {
             if ( GlobalSettings.Instance.LogLevel >= LogLevel.Quiet)
-                Logging.WriteToFileSync( ll, "[Singular] " + message, args);
+                Logging.WriteToFileSync( ll, "(Singular) " + message, args);
         }
 
         public static void PrintStackTrace(string reason = "Debug")

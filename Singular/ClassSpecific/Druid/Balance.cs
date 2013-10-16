@@ -229,7 +229,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
 
-                                CreateMushroomSetAndDetonateBehavior(),
+                                // CreateMushroomSetAndDetonateBehavior(),
 
                                 new Sequence(
                                     Spell.CastOnGround("Force of Nature",
@@ -407,25 +407,25 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
-                        new Decorator(
-                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
-                            new PrioritySelector(
+                        new PrioritySelector(
+                            ctx => !Spell.UseAOE ? 1 : Unit.UnfriendlyUnitsNearTarget(10f).Count(),
 
-                                CreateMushroomSetAndDetonateBehavior(),
-
-                                new Sequence(
-                                    Spell.CastOnGround("Force of Nature",
-                                        ret => StyxWoW.Me.CurrentTarget.Location,
-                                        ret => true ),
-                                    new ActionAlwaysFail()
-                                    ),
-
-                                Spell.Cast("Starfall", ret => StyxWoW.Me),
-
+                            new Decorator(
+                                req => ((int)req) > 1,
                                 new PrioritySelector(
-                                    ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
-                                    Spell.Cast("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
-                                    Spell.Cast("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2)))
+
+                                    // CreateMushroomSetAndDetonateBehavior(),
+
+                                    Spell.Cast("Starfall", ret => StyxWoW.Me),
+
+                                    Spell.CastOnGround("Hurricane", on => Me.CurrentTarget, req => ((int)req) > 6, false),
+
+                                    new PrioritySelector(
+                                        ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
+                                        Spell.Cast("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2))),
+                                        Spell.CastOnGround("Hurricane", on => Me.CurrentTarget, req => (!Spell.UseAOE ? 1 : Unit.UnfriendlyUnitsNearTarget(10f).Count()) > 3, false),
+                                        Spell.Cast("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2)))
+                                        )
                                     )
                                 )
                             ),
@@ -660,8 +660,9 @@ namespace Singular.ClassSpecific.Druid
                                 Spell.Buff("Disorienting Roar", onUnit => (WoWUnit)onUnit, req => true),
                                 Spell.Buff("Mass Entanglement", onUnit => (WoWUnit)onUnit, req => true),
                                 Spell.Buff("Mighty Bash", onUnit => (WoWUnit)onUnit, req => true),
-                                new Throttle( 1, Spell.Buff("Faerie Swarm", onUnit => (WoWUnit)onUnit, req => true)),
-                                new Sequence(
+                                new Throttle( 1, Spell.Buff("Faerie Swarm", onUnit => (WoWUnit)onUnit, req => true))
+/*
+                                new Sequence(                                   
                                     Spell.CastOnGround("Wild Mushroom",
                                         on => (WoWUnit) on,
                                         req => req != null && !Spell.IsSpellOnCooldown("Wild Mushroom: Detonate")
@@ -671,6 +672,7 @@ namespace Singular.ClassSpecific.Druid
                                     new Action(r => Logger.WriteDebug("SlowMelee: found {0} mushrooms", MushroomCount)),
                                     Spell.Cast("Wild Mushroom: Detonate")
                                     )
+*/ 
                                 )
                             )
                         )
@@ -696,14 +698,16 @@ namespace Singular.ClassSpecific.Druid
                         }),
 
                     // detonate if we have 3 shrooms -or- or timer since last shroom cast has expired
-                    Spell.Cast("Wild Mushroom: Detonate", ret => checkMushroomCount >= 3 || (checkMushroomCount > 0 && detonateTimer.IsFinished )),
+                    // Spell.Cast("Wild Mushroom: Detonate", ret => checkMushroomCount >= 3 || (checkMushroomCount > 0 && detonateTimer.IsFinished)),
+                    Spell.Cast("Wild Mushroom: Detonate", ret => checkMushroomCount > 0),
 
                     // Make sure we arenIf Detonate is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
                     // .. also, waitForSpell must be false since Wild Mushroom does not stop targeting after click like other click on ground spells
                     // .. will wait locally and fall through to cancel targeting regardless
                     new Sequence(
-                        Spell.CastOnGround("Wild Mushroom", on => BestAoeTarget, req => checkMushroomCount < 3 && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds < 3f, false),
-                        new Action( ctx => detonateTimer.Reset() ), 
+                        // Spell.CastOnGround("Wild Mushroom", on => BestAoeTarget, req => checkMushroomCount < 3 && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds < 3f, false),
+                        Spell.CastOnGround("Wild Mushroom", on => BestAoeTarget, req => checkMushroomCount < 1 && Spell.GetSpellCooldown("Wild Mushroom: Detonate").TotalSeconds < 1f, false),
+                        new Action(ctx => detonateTimer.Reset()), 
                         new Action( ctx => Lua.DoString("SpellStopTargeting()"))                       
                         )
                     )

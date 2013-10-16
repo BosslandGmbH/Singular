@@ -296,7 +296,7 @@ namespace Singular.Managers
 
             if (!Spell.CanCastHack(spell, Me, skipWowCheck: true))
             {
-                if (!SingularSettings.Instance.DebugSpellCanCast)
+                if (!SingularSettings.DebugSpellCanCast)
                     Logger.WriteDebug("GetBestCoverageTarget: CanCastHack says NO to [{0}]", spell);
                 return null;
             }
@@ -340,7 +340,7 @@ namespace Singular.Managers
                     return t.Player;
                 }
 
-                if (SingularSettings.Instance.DebugSpellCanCast)
+                if (SingularSettings.DebugSpellCanCast)
                 {
                     Logger.WriteDebug("GetBestCoverageTarget('{0}'): not enough found - {1} with {2} nearby under {3}%", spell, t.Player.SafeName(), t.Count, health);
                 }

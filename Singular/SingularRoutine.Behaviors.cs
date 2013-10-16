@@ -484,7 +484,7 @@ namespace Singular
                             LogTargetChanges(behav, sType);
                         }
                     }
-                    // oddly, only testing for Me.CurrentTarget != null was allowing NullReferenceExceptions to occur in InLineOfSpellSight
+                    // testing for Me.CurrentTarget != null also to address objmgr not resolving guid yet to avoid NullRef
                     else if (Me.CurrentTargetGuid != 0 && Me.CurrentTarget != null && Me.CurrentTarget.IsValid && !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Normal)  
                     {       
                         // make sure we get into melee range within reasonable time

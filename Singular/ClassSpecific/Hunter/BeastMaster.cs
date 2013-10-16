@@ -33,6 +33,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
 
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                Helpers.Common.CreateAutoAttack(true),
                     
                 Spell.WaitForCastOrChannel(),
             
@@ -50,8 +51,6 @@ namespace Singular.ClassSpecific.Hunter
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
                         Helpers.Common.CreateInterruptBehavior(),
-
-                        Helpers.Common.CreateAutoAttack(true),
 
                         Common.CreateHunterNormalCrowdControl(),
 

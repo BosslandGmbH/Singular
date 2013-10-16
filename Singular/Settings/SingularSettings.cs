@@ -71,39 +71,61 @@ namespace Singular.Settings
 
     internal class SingularSettings : Styx.Helpers.Settings
     {
+        private static int entrycount = 0;
         private static SingularSettings _instance;
 
         public SingularSettings()
             : base(Path.Combine(CharacterSettingsPath, "SingularSettings.xml"))
         {
-            Version current = SingularRoutine.GetSingularVersion();
-            Version cfgver = null;
-
-            // if version is null, set to current value
-            if (ConfigVersion == null)
-                ConfigVersion = current.ToString();
-
-            try
+            entrycount++;
+            if (entrycount != 1)
             {
-                cfgver = new Version(ConfigVersion);
-            }
-            catch
-            {
-                cfgver = current;
+                Logger.WriteFile("Settings: unexpected reentrant call in Settings: {0}", entrycount );
             }
 
-            if (cfgver < current)
+            if (_instance != null)
             {
-                Logger.WriteFile("Settings: updating config file from verion {0}", ConfigVersion.ToString());
-                if (new Version("3.0.0.3080") <= current)
+                if (_instance != this)
                 {
-                    Logger.WriteFile("Settings: {0} changes", new Version("3.0.0.3080").ToString());
-                    UseFrameLock = true;
-                    DisableInQuestVehicle = false;
+                    Logger.WriteFile("Settings: unexpected singleton error");
+                }
+            }
+            else
+            {
+                _instance = this;
+
+                Version current = SingularRoutine.GetSingularVersion();
+                Version cfgver = null;
+
+                // if version is null, set to current value
+                if (ConfigVersion == null)
+                    ConfigVersion = current.ToString();
+
+                try
+                {
+                    cfgver = new Version(ConfigVersion);
+                }
+                catch
+                {
+                    cfgver = current;
+                }
+
+                if (cfgver < current)
+                {
+                    Logger.WriteFile("Settings: updating config file from verion {0}", ConfigVersion.ToString());
+                    if (new Version("3.0.0.3080") <= current)
+                    {
+                        Logger.WriteFile("Settings: applying {0} related changes", new Version("3.0.0.3080").ToString());
+                        UseFrameLock = true;
+                        DisableInQuestVehicle = false;
+                    }
+
+                    ConfigVersion = current.ToString();
+                    Logger.WriteFile("Settings: config file upgrade to {0} complete", ConfigVersion.ToString());
                 }
             }
 
-            ConfigVersion = current.ToString();
+            entrycount--;
         }
 
         public static string GlobalSettingsPath
@@ -132,6 +154,12 @@ namespace Singular.Settings
                 string settingsDirectory = Path.Combine(Styx.Common.Utilities.AssemblyDirectory, "Settings");
                 return Path.Combine(Path.Combine(Path.Combine(settingsDirectory, StyxWoW.Me.RealmName), StyxWoW.Me.Name), "Singular");
             }
+        }
+
+        public static void Initialize()
+        {
+            if (_instance == null)
+                _instance = new SingularSettings();
         }
 
         public static SingularSettings Instance 
@@ -257,7 +285,7 @@ namespace Singular.Settings
         }
 
         [Browsable(false)]
-        public bool DebugSpellCanCast
+        public static bool DebugSpellCanCast
         {
             get
             {
@@ -472,7 +500,7 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("General")]
-        [DisplayName("Use Framlock in Singular")]
+        [DisplayName("Use Framelock in Singular")]
         [Description("Force use of Framelock in Singular.  Primarily for use with Botbases that do not support Framelock")]
         public bool UseFrameLock { get; set; }
 

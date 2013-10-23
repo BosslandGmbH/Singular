@@ -1,3 +1,64 @@
+--- Release 3.0.0.3142 ---
+
+General
+
+fixed - Issue resulting in Null Reference exception when Tick()ing behaviors for a few classes 
+
+*new* - Added BehaviorFlags tracking to monitor changes to BehaviorFlags.  Only works if Combat Routine is still being pulsed
+
+change- Internal revisions to some aspects of casting logic.  Should not result in any noticeable difference to user but improves re-entrancy of code
+
+
+Death Knight
+
+change- All Specs - default setting for Death Siphon % changed from 60 to 85
+
+fixed - Blood - changed Blood Tap so treated as not invoking GCD
+
+*new* - Blood - diagnostic output when Debug enabled
+
+fixed - Blood - Instances: will no longer use Death Strike as first melee ability unless not at full health
+
+fixed - Blood - Instances: several improvements to Blood priority.  If you have issues with holding aggro, set Log Level to Diagnostic and post a log file.
+
+fixed - Blood - Bone Shield will be cast during Rest if in an Instance or Battleground. Previously was casting only in Combat which forced 1 min cooldown period to occur entirely in combat
+
+
+Druid
+
+fixed - Balance - issue with failed Starsurge cast immediately following a successful one
+
+
+Hunter
+
+fixed - Beast Master - issue with Kill Command not accounting for size of hitboxes.  Some casts also missed because of check for Hunter to be in range of target as well.
+
+change- All Specs - Hunter's Mark cast between 44 and 65 yards from target in Solo and Instances since out of range for other abilities
+
+change- All Specs - additional debug logic added to Trap behavior to detect reason for failure when Log Level >= Verbose
+
+
+Mage
+
+change- All Specs - removed Blink from Loss of Control reaction behavior.
+
+
+Priest
+
+fixed - Discipline - fixed target selection for Shadow Word: Death casts
+
+fixed - Shadow - fixed priority of Mind Blast vs Devouring Plague to avoid wasting Shadow Orbs
+
+fixed - Shadow - fixed so successful Mind Blast casts are not immediately followed by a failed attempt
+
+
+Shaman
+
+fixed - Elemental - fixed so successful non-instant Lava Burst casts are not immediately followed by a failed attempt.
+
+fixed - Enhancement - suppress use of Feral Spirit on trivial mobs
+
+
 --- Release 3.0.0.3123 ---
 
 General

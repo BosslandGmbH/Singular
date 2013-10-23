@@ -34,7 +34,7 @@ namespace Singular.ClassSpecific.Hunter
 
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
                 Helpers.Common.CreateAutoAttack(true),
-                    
+                
                 Spell.WaitForCastOrChannel(),
             
                 new Decorator(
@@ -72,7 +72,7 @@ namespace Singular.ClassSpecific.Hunter
                             ret => Spell.UseAOE && Me.GotTarget && !(Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
                             new PrioritySelector(
                                 Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, ret => !TalentManager.HasGlyph("Explosive Trap")),
+                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, req => !TalentManager.HasGlyph("Explosive Trap")),
                                 Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
                                 Spell.Cast( "Cobra Shot"),
                                 Common.CastSteadyShot(on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot"))
@@ -82,7 +82,8 @@ namespace Singular.ClassSpecific.Hunter
                         // Single Target Rotation
                         Spell.Buff("Serpent Sting"),
                         Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
-                        Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < 25f),
+                        // Spell.Cast("Kill Command", ctx => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < 25f),
+                        Spell.CastHack("Kill Command", on => Me.Pet == null ? null : Me.Pet.CurrentTarget, req => Me.GotAlivePet && Me.Pet.SpellDistance(Pet.CurrentTarget) < 25f),
                         Spell.BuffSelf("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
 
                         Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 50 || Me.HasAnyAura("Thrill of the Hunt", "The Beast Within")),
@@ -103,6 +104,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
 
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                Helpers.Common.CreateAutoAttack(true),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -116,8 +118,6 @@ namespace Singular.ClassSpecific.Hunter
 
                         // Helpers.Common.CreateInterruptBehavior(),
                         Helpers.Common.CreateInterruptBehavior(),
-
-                        Helpers.Common.CreateAutoAttack(true),
 
                         Common.CreateHunterPvpCrowdControl(),
 
@@ -149,7 +149,7 @@ namespace Singular.ClassSpecific.Hunter
                             Spell.Cast("Cobra Shot", time => ((int)time) > (int) Spell.GetSpellCastTime("Cobra Shot").TotalMilliseconds && ((int)time) < 4000)
                             ),
 
-                        Spell.Cast("Kill Command", ctx => Me.Pet == null ? null : Me.Pet.CurrentTarget, ret => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < (Pet.MeleeDistance(Pet.CurrentTarget) + 20f)),
+                        Spell.CastHack("Kill Command", ctx => Me.Pet == null ? null : Me.Pet.CurrentTarget, ret => Me.GotAlivePet && Pet.GotTarget && Pet.Location.Distance(Pet.CurrentTarget.Location) < (Pet.MeleeDistance(Pet.CurrentTarget) + 20f)),
                         Spell.BuffSelf("Focus Fire", ctx => Me.HasAura("Frenzy", 5) && !Me.HasAura("The Beast Within")),
 
                         Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 60 || Me.HasAnyAura("Thrill of the Hunt", "The Beast Within")),

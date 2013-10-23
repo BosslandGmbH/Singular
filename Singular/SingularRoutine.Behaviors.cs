@@ -431,19 +431,17 @@ namespace Singular
             composite = CompositeBuilder.GetComposite(Class, TalentManager.CurrentSpec, type, context, out count);
 
             // handle those composites we need to default if not found
-            if (composite == null)
-            {
-                if (type == BehaviorType.Rest)
-                    composite = Helpers.Rest.CreateDefaultRestBehaviour();
-            }
-
-            TreeHooks.Instance.ReplaceHook(HookName(type), composite);
+            if (composite == null && type == BehaviorType.Rest)
+                composite = Helpers.Rest.CreateDefaultRestBehaviour();
 
             if ((composite == null || count <= 0) && error)
             {
                 StopBot(string.Format("Singular does not support {0} for this {1} {2} in {3} context!", type, StyxWoW.Me.Class, TalentManager.CurrentSpec, context));
                 return false;
             }
+
+            // replace hook we created during initialization
+            TreeHooks.Instance.ReplaceHook(HookName(type), composite ?? new ActionAlwaysFail());
 
             return composite != null;
         }
@@ -549,6 +547,7 @@ namespace Singular
         }
 
         private static int _prevPullDistance = -1;
+        private static Bots.Grind.BehaviorFlags _prevBehaviorFlags = Bots.Grind.BehaviorFlags.All;
 
         private static void MonitorPullDistance()
         {
@@ -556,6 +555,11 @@ namespace Singular
             {
                 _prevPullDistance = CharacterSettings.Instance.PullDistance;
                 Logger.Write(Color.White, "attention: Pull Distance set to {0} yds by {1}, Plug-in, Profile, or User", _prevPullDistance, GetBotName());
+            }
+            if (_prevBehaviorFlags != Bots.Grind.LevelBot.BehaviorFlags)
+            {
+                _prevBehaviorFlags = Bots.Grind.LevelBot.BehaviorFlags;
+                Logger.WriteFile("attention: BehaviorFlags changed to [{0}]", _prevBehaviorFlags.ToString());
             }
         }
 

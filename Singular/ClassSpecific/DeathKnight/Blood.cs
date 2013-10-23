@@ -16,6 +16,7 @@ using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
@@ -93,9 +94,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             && StyxWoW.Me.GotTarget && !Spell.CanCastHack("Death Grip") 
                             && StyxWoW.Me.CurrentTarget.DistanceSqr > 10*10),
 
-                    Spell.BuffSelf("Blood Tap",
-                        ret => StyxWoW.Me.HasAura("Blood Charge", 5)
-                            && (Common.BloodRuneSlotsActive == 0 || Common.FrostRuneSlotsActive == 0 || Common.UnholyRuneSlotsActive == 0)),
+                    Spell.OffGCD( Spell.BuffSelf("Blood Tap", ret => NeedBloodTap() ) ),
 
                     Spell.Cast("Plague Leech", ret => Common.CanCastPlagueLeech)
                     )
@@ -272,6 +271,8 @@ namespace Singular.ClassSpecific.DeathKnight
                     Helpers.Common.EnsureReadyToAttackFromMelee(),
                     Spell.WaitForCast(),
 
+                    CreateDiagnosticOutputBehavior("Pull"),
+
                     Helpers.Common.CreateAutoAttack(true),
 
                     new Decorator(
@@ -308,6 +309,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             Helpers.Common.CreateInterruptBehavior(),
 
                             // Taunts
+                            //------------------------------------------------------------------------
                             new Decorator( 
                                 ret => SingularSettings.Instance.EnableTaunting 
                                     && TankManager.Instance.NeedToTaunt.Any()
@@ -343,6 +345,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                  ),
 
                         // Start AoE section
+                        //------------------------------------------------------------------------
                         new PrioritySelector(
                             ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
                             new Decorator(
@@ -385,6 +388,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             ),
 
                         // refresh diseases if possible and needed
+                        //------------------------------------------------------------------------
                         Spell.Cast("Blood Boil",
                             ret => Spell.UseAOE
                                 && SpellManager.HasSpell("Scarlet Fever")
@@ -397,36 +401,78 @@ namespace Singular.ClassSpecific.DeathKnight
                                 })
                             ),
 
+                        // Taunts
+                        //------------------------------------------------------------------------
                         Common.CreateApplyDiseases(),
 
-                        // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
-                        Spell.Cast("Death Coil", ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
-                        Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
-                        Spell.Cast("Rune Strike"),
-
-                        // Active Mitigation - just cast DS on cooldown
-                        Spell.Cast("Death Strike"),
-                        /*
-                        new Sequence(
-                            Spell.Cast("Death Strike", ret => DeathStrikeTimer.IsFinished),
-                            new Action(ret => DeathStrikeTimer.Reset())
-                            ),
-                        */
-
-                        Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
-                        Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
-                        Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
-                        Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Heart Strike") && _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
-                        Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                        CreateDeathKnightBloodInstanceSingleTargetCombat(),
 
                         // *** 3 Lowbie Cast what we have Priority
-                        // ... not much to do here, just use our Unholy Runes on PS prior to learning DS
-                        Spell.Cast("Plague Strike", ret => !SpellManager.HasSpell("Death Strike"))
+                        // ... not much to do here, just use our Frost and Unholy Runes on IT+PS prior to learning DS
+                        Spell.Cast("Plague Strike", ret => !SpellManager.HasSpell("Death Strike")),
+                        Spell.Cast("Icy Touch", ret => !SpellManager.HasSpell("Death Strike"))
                         )
                     ),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
+        }
+
+        private static Composite CreateDeathKnightBloodInstanceSingleTargetCombat()
+        {
+            return new PrioritySelector(
+                // Runic Power Dump if approaching capp
+                new Decorator(
+                    req => Me.CurrentRunicPower >= 80,
+                    new PrioritySelector(
+                        Spell.Cast("Rune Strike"),
+                        Spell.Cast("Death Coil")
+                        )
+                    ),
+
+                // Healing and Active Mitigation - just cast DS on cooldown
+                Spell.Cast("Death Strike", req => Me.HealthPercent < 99 || Common.BloodRuneSlotsActive == 0),
+
+                // use Blood Runes
+                new Decorator(
+                    req => Common.BloodRuneSlotsActive > 0,
+                    new PrioritySelector(
+                        Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+                        Spell.Cast("Heart Strike"),
+                        Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Heart Strike"))
+                        )
+                    ),
+
+                Spell.Cast("Rune Strike"),
+                Spell.Cast("Death Coil", req => !SpellManager.HasSpell("Rune Strike")),
+                Spell.Cast("Horn of Winter", on => Me),
+
+                new Decorator(
+                    req => Spell.UseAOE && Me.HasAura("Crimson Scourge"),
+                    new PrioritySelector(
+                        Spell.CastOnGround("Death and Decay", on => Me.CurrentTarget, req => !Me.CurrentTarget.IsMoving, waitForSpell: false),
+                        Spell.Cast("Blood Boil", on => Me.CurrentTarget)
+                        )
+                    )
+                );
+
+            /*
+            return new PrioritySelector(
+                // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
+                Spell.Cast("Death Coil", ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
+                Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
+                Spell.Cast("Rune Strike"),
+
+                // Active Mitigation - just cast DS on cooldown
+                Spell.Cast("Death Strike"),
+
+                Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
+                Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
+                Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Heart Strike") && _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
+                Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost))
+                );
+             */
         }
 
         private static bool UseBloodBoilForDiseases()
@@ -447,7 +493,13 @@ namespace Singular.ClassSpecific.DeathKnight
             return false;
         }
 
-        private static bool NeedsDisease( WoWUnit unit)
+
+        private static bool NeedBloodTap()
+        {
+            return StyxWoW.Me.HasAura("Blood Charge", 5) && (Common.BloodRuneSlotsActive == 0 || Common.FrostRuneSlotsActive == 0 || Common.UnholyRuneSlotsActive == 0);
+        }
+
+        private static bool NeedsDisease(WoWUnit unit)
         {
             return !Me.CurrentTarget.HasAura("Frost Fever") || !Me.CurrentTarget.HasAura("Blood Plague"); 
         }
@@ -467,5 +519,63 @@ namespace Singular.ClassSpecific.DeathKnight
         }
 
         #endregion
+
+        [Behavior(BehaviorType.Pull, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood, WoWContext.All, priority: 1)]
+        public static Composite CreateDeathKnightBloodPullDiagnostic()
+        {
+            return CreateDiagnosticOutputBehavior("Pull");
+        }
+
+        [Behavior(BehaviorType.Heal, WoWClass.DeathKnight, WoWSpec.DeathKnightBlood, WoWContext.All, priority: 1)]
+        public static Composite CreateDeathKnightBloodHealsDiagnostic()
+        {
+            return CreateDiagnosticOutputBehavior("Combat");
+        }
+
+        private static Composite CreateDiagnosticOutputBehavior(string context = null)
+        {
+            if (context == null)
+                context = "...";
+            else
+                context = "<<" + context + ">>";
+
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
+
+            return new ThrottlePasses(1,
+                new Action(ret =>
+                {
+                    string log;
+                    log = string.Format(context + " h={0:F1}%/r={1:F1}%, Runes-BFUD={2}/{3}/{4}/{5} BloodChg={6} BoneShield={7} CrimScrg={8} aoe={9}",
+                        Me.HealthPercent,
+                        Me.RunicPowerPercent,
+                        Common.BloodRuneSlotsActive, Common.FrostRuneSlotsActive, Common.UnholyRuneSlotsActive, Common.DeathRuneSlotsActive,                       
+                        Spell.GetCharges("Blood Charge"),
+                        (long) Me.GetAuraTimeLeft("Bone Shield").TotalMilliseconds,
+                        (long) Me.GetAuraTimeLeft("Crimson Scourge").TotalMilliseconds,
+                        Unit.UnfriendlyUnitsNearTarget(15f).Count()
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
+                    {
+                        log += string.Format(" th={0:F1}% dist={1:F1} inmelee={2} face={3} loss={4} dead={5}s ffvr={6} bplg={7}",
+                            target.HealthPercent,
+                            target.Distance,
+                            target.IsWithinMeleeRange.ToYN(),
+                            Me.IsSafelyFacing(target).ToYN(),
+                            target.InLineOfSpellSight.ToYN(),
+                            target.TimeToDeath(),
+                            
+                            (long) target.GetAuraTimeLeft("Frost Fever").TotalMilliseconds,
+                            (long) target.GetAuraTimeLeft("Blood Plague").TotalMilliseconds
+                            );
+                    }
+
+                    Logger.WriteDebug(Color.AntiqueWhite, log);
+                    return RunStatus.Failure;
+                })
+                );
+        }
     }
 }

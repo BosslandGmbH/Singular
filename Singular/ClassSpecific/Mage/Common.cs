@@ -137,7 +137,7 @@ namespace Singular.ClassSpecific.Mage
                         )
                     ),
 
-                Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && Me.Stunned && !TalentManager.HasGlyph("Rapid Displacement")),
+                // Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && Me.Stunned && !TalentManager.HasGlyph("Rapid Displacement")),
                 Spell.BuffSelf("Temporal Shield", ret => Me.Stunned)
                 );
         }

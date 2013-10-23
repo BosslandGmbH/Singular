@@ -75,7 +75,7 @@ namespace Singular.Settings
         public int DeathPactPercent { get; set; }
 
         [Setting]
-        [DefaultValue(60)]
+        [DefaultValue(85)]
         [Category("Common")]
         [DisplayName("Death Siphon Percent")]
         [Description("Health percent when to use Death Siphon for healing.")]

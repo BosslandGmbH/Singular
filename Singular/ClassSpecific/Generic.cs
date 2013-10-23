@@ -20,19 +20,6 @@ namespace Singular.ClassSpecific
 {
     public static class Generic
     {
-        // [Behavior(BehaviorType.PreCombatBuffs, priority:999)]
-        // [IgnoreBehaviorCount(BehaviorType.Combat), IgnoreBehaviorCount(BehaviorType.Rest)]
-        public static Composite CreateFlasksBehaviour()
-        {
-            return new Decorator(
-                ret => SingularSettings.Instance.UseAlchemyFlasks && !Unit.HasAnyAura(StyxWoW.Me, "Enhanced Agility", "Enhanced Intellect", "Enhanced Strength"),
-                new PrioritySelector(
-                    Item.UseItem(75525),
-                    Item.UseItem(58149),
-                    Item.UseItem(47499)));
-        }
-
-
         // [Behavior(BehaviorType.Combat, priority: 999)]
         public static Composite CreateUseTrinketsBehaviour()
         {

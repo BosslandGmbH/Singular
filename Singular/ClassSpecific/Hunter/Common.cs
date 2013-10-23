@@ -197,7 +197,7 @@ namespace Singular.ClassSpecific.Hunter
             return new PrioritySelector(
                 CreateHunterCallPetBehavior(false),
                 CreateMisdirectionBehavior(),
-                Spell.Buff("Hunter's Mark", req => Target != null && Unit.ValidUnit(Target) && Target.SpellDistance().Between(40, 60) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)) 
+                Spell.Buff("Hunter's Mark", req => Target != null && Unit.ValidUnit(Target) && Target.SpellDistance().Between(44, 65) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)) 
                 );
         }
 
@@ -377,26 +377,35 @@ namespace Singular.ClassSpecific.Hunter
 
         #region Traps
 
-        public static Composite CreateHunterTrapBehavior(string trapName, bool useLauncher, UnitSelectionDelegate onUnit, SimpleBooleanDelegate req = null)
+        public static Composite CreateHunterTrapBehavior(string trapName, bool useLauncher, UnitSelectionDelegate onUnit, SimpleBooleanDelegate require = null)
         {
             return new PrioritySelector(
                 new Decorator(
                     ret => onUnit != null && onUnit(ret) != null 
-                        && (req == null || req(ret))
+                        && (require == null || require(ret))
                         && onUnit(ret).DistanceSqr < (40*40) 
                         && SpellManager.HasSpell(trapName) && Spell.GetSpellCooldown(trapName) == TimeSpan.Zero,
                     new Sequence(
                         new Action(ret => Logger.WriteDebug("Trap: use trap launcher requested: {0}", useLauncher )),
+
+                        // add or remove trap launcher based upon parameter 
                         new PrioritySelector(
                             new Decorator(ret => useLauncher && Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
-                            Spell.BuffSelf("Trap Launcher", ret => useLauncher ),
+                            Spell.BuffSelf("Trap Launcher", req => useLauncher ),
                             new Decorator(ret => !useLauncher, new Action( ret => Me.CancelAura( "Trap Launcher")))
                             ),
-                        // new Wait(TimeSpan.FromMilliseconds(500), ret => !useLauncher && Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
-                        new Wait(TimeSpan.FromMilliseconds(500),
-                            ret => (!useLauncher && !Me.HasAura("Trap Launcher"))
-                                || (useLauncher && Me.HasAura("Trap Launcher")),
-                            new ActionAlwaysSucceed()),
+
+                        // wait for launcher to appear (or dissappear) as required
+                        new PrioritySelector(
+                            new Wait(TimeSpan.FromMilliseconds(500),
+                                until => (!useLauncher && !Me.HasAura("Trap Launcher")) || (useLauncher && Me.HasAura("Trap Launcher")),
+                                new ActionAlwaysSucceed()),
+                            new Action( ret => {
+                                Logger.WriteDebug("Trap: FAILURE! unable to {0} the Trap Launcher aura", useLauncher ? "Buff" : "Cancel");
+                                return RunStatus.Failure;
+                                })
+                            ),
+
                         new Action(ret => Logger.WriteDebug("Trap: launcher aura present = {0}", Me.HasAura("Trap Launcher"))),
                         new Action(ret => Logger.WriteDebug("Trap: cancast = {0}", Spell.CanCastHack(trapName, onUnit(ret)))),
                         
@@ -763,10 +772,7 @@ namespace Singular.ClassSpecific.Hunter
                 return new ThrottlePasses( 5,
                     new Decorator( 
                         ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
-                        new Sequence(
-                            Spell.Cast("Misdirection", ctx => Me.Pet, req => Me.GotAlivePet && Pet.Distance < 100),
-                            new ActionAlwaysFail()  // not on the GCD, so continue immediately
-                            )
+                        Spell.OffGCD( Spell.Cast("Misdirection", ctx => Me.Pet, req => Me.GotAlivePet && Pet.Distance < 100))
                         )
                     );
             }
@@ -779,10 +785,7 @@ namespace Singular.ClassSpecific.Hunter
                     return new ThrottlePasses(5,
                         new Decorator(
                             ret => Me.GotAlivePet && !Me.HasAura("Misdirection"),
-                            new Sequence(
-                                Spell.Cast("Misdirection", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 100)),
-                                new ActionAlwaysFail()  // not on the GCD, so continue immediately
-                                )
+                            Spell.OffGCD( Spell.Cast("Misdirection", on => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Distance < 100)))
                             )
                         );
                 }
@@ -838,7 +841,7 @@ namespace Singular.ClassSpecific.Hunter
                     Spell.Cast("Chimera Shot", on => (WoWUnit)on),
                     Spell.Cast("Explosive Shot", on => (WoWUnit)on),
                     Spell.Cast("Black Arrow", on => (WoWUnit) on),
-                    Spell.Cast("Kill Command", on => (WoWUnit)on, req => Me.GotAlivePet && ((WoWUnit)req).Location.Distance(Me.Pet.Location) < 25),
+                    Spell.CastHack("Kill Command", on => (WoWUnit) on, req => Me.GotAlivePet && Me.Pet.CurrentTargetGuid == ((WoWUnit)req).Guid && Me.Pet.SpellDistance((WoWUnit) req) < 25f),
                     Spell.Cast("Glaive Toss", on => (WoWUnit) on ),
                     Spell.Cast("Arcane Shot", on => (WoWUnit) on )
                     )

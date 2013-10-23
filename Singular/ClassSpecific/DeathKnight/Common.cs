@@ -63,6 +63,7 @@ namespace Singular.ClassSpecific.DeathKnight
         internal static int BloodRuneSlotsActive { get { return Me.GetRuneCount(0) + Me.GetRuneCount(1); } }
         internal static int FrostRuneSlotsActive { get { return Me.GetRuneCount(2) + Me.GetRuneCount(3); } }
         internal static int UnholyRuneSlotsActive { get { return Me.GetRuneCount(4) + Me.GetRuneCount(5); } }
+        internal static int DeathRuneSlotsActive { get { return Me.GetRuneCount(RuneType.Death); } }
 
         /// <summary>
         /// check that we are in the last tick of Frost Fever or Blood Plague on current target and have a fully depleted rune
@@ -156,7 +157,11 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // limit PoF to once every ten seconds in case there is some
                 // .. oddness here
-                new Throttle(10, Spell.BuffSelf("Path of Frost", ret => Settings.UsePathOfFrost)));
+                new Throttle(10, Spell.BuffSelf("Path of Frost", ret => Settings.UsePathOfFrost)),
+
+                // Bone Shield has 1 min cd and 5 min duration, so cast out of combat if possible
+                Spell.BuffSelf( "Bone Shield", req => Me.IsInInstance || Battlegrounds.IsInsideBattleground)
+                );
         }
 
         #endregion

@@ -180,7 +180,7 @@ namespace Singular.ClassSpecific.Druid
 
                         // otherwise, start with a bigger hitter with cast time so we can follow 
                         // with an instant to maximize damage at initial aggro
-                        Spell.Cast("Starsurge"),
+                        Spell.Cast("Starsurge", on => Me.CurrentTarget, req => true, cancel => false),
                         Spell.Cast("Wrath", ret => GetEclipseDirection() == EclipseType.Solar),
 
                         // we are moving so throw an instant of some type
@@ -267,7 +267,7 @@ namespace Singular.ClassSpecific.Druid
 
                         CreateDoTRefreshOnEclipse(),
 
-                        Spell.Cast("Starsurge"),
+                        Spell.Cast("Starsurge", on => Me.CurrentTarget, req => true, cancel => false),
                         Spell.Cast("Starfall", ret => Me.CurrentTarget.IsPlayer || (Me.CurrentTarget.Elite && (Me.CurrentTarget.Level + 10) >= Me.Level)),
 
                         new PrioritySelector(
@@ -328,7 +328,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8f) >= 1),
 
                         // use every Shooting Stars proc
-                        Spell.Cast( "Starsurge", ret => Me.ActiveAuras.ContainsKey( "Shooting Stars")),
+                        Spell.Cast("Starsurge", on => Me.CurrentTarget, req => Me.ActiveAuras.ContainsKey("Shooting Stars"), cancel => false),
 
                         // Spread MF/IS on Rouges / Feral Druids first
                         Common.CreateFaerieFireBehavior(
@@ -447,14 +447,14 @@ namespace Singular.ClassSpecific.Druid
                             ret => Me.HasAura("Celestial Alignment"),
                             new PrioritySelector(
                                 // to do: make last two casts DoTs if possible... 
-                                Spell.Cast("Starsurge"),
+                                Spell.Cast("Starsurge", on => Me.CurrentTarget, req => true, cancel => false),
                                 Spell.Cast("Starfire")
                                 )
                             ),
 
                         CreateDoTRefreshOnEclipse(),
 
-                        Spell.Cast("Starsurge"),
+                        Spell.Cast("Starsurge", on => Me.CurrentTarget, req => true, cancel => false),
                         Spell.Cast("Starfall"),
 
                         new PrioritySelector(

@@ -186,12 +186,12 @@ namespace Singular.ClassSpecific.Shaman
                                 )
                             ),
 
-                        Spell.Cast("Elemental Blast"),
+                        Spell.Cast("Elemental Blast", on => Me.CurrentTarget, req => true, cancel => false),
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 
                         Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst") || Me.CurrentTarget.TimeToDeath(-1) > 30),
 
-                        Spell.Cast("Lava Burst"),
+                        Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => false),
                         Spell.Cast("Earth Shock",
                             ret => StyxWoW.Me.HasAura("Lightning Shield", 5) &&
                                    StyxWoW.Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),
@@ -323,7 +323,7 @@ namespace Singular.ClassSpecific.Shaman
                                 Spell.Cast("Chain Lightning", ret => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(15f), ClusterType.Chained, 12))
                                 )),
 
-                        Spell.Cast("Elemental Blast"),
+                        Spell.Cast("Elemental Blast", on => Me.CurrentTarget, req => true, cancel => false),
 
                         Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
 
@@ -334,7 +334,7 @@ namespace Singular.ClassSpecific.Shaman
                             new ActionAlwaysFail()  // Ascendance off the GCD, so fall through
                             ),
 
-                        Spell.Cast("Lava Burst"),
+                        Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => false),
                         Spell.Cast("Earth Shock",
                             ret => Me.HasAura("Lightning Shield", 5)
                                 && Me.CurrentTarget.GetAuraTimeLeft("Flame Shock", true).TotalSeconds > 3),

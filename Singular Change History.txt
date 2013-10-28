@@ -1,3 +1,40 @@
+--- Release 3.0.0.3161 ---
+
+General
+
+change- optimization for targeting when inside an Instance.
+
+change- now outputs "Your Level ..." description of botting and character context when entering/exiting instances 
+
+*new* - ability to select which behaviors to use when targeting Training Dummy (see Class Config => Debug tab)
+
+
+Druid
+
+fixed - All Specs - Force of Nature now correctly cast as an On Target spell rather than a On Ground spell
+
+fixed - Balance - Instances: Mighty Bash no longer cast on cooldown on targets in Melee range
+
+fixed - Resto - logic for casting Wild Mushroom
+
+
+Priest
+
+change- Shadow - Battlegrounds: revised priority and logic for multi-dotting. Vampiric Touch (now higher priority) and should more evenly alternate between SW:P and VT
+
+
+Warlock
+
+fixed - Affliction - fixed 
+
+
+Warrior
+
+fixed - Protection - now correctly taunts when Instances (Group) context is active and not only when inside an instance.
+
+
+
+
 --- Release 3.0.0.3142 ---
 
 General

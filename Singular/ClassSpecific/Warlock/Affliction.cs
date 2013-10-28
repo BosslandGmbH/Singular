@@ -133,9 +133,9 @@ namespace Singular.ClassSpecific.Warlock
                                 && Me.CurrentSoulShards < 1),
 
                         CreateApplyDotsBehavior(
-                            ret => Me.CurrentTarget,
+                            on => Me.CurrentTarget,
                 //                            ret => Me.CurrentTarget.HealthPercent < 20 || Me.CurrentTarget.HasAnyAura("Agony", "Corruption", "Unstable Affliction")),
-                            ret => (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.HealthPercent > 20 || Me.TimeToDeath() > 15)
+                            req => (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.HealthPercent > 20 || Me.TimeToDeath() > 15)
                                 && !Me.CurrentTarget.HasAnyOfMyAuras("Agony", "Corruption", "Unstable Affliction", "Haunt")),
 
                         Spell.Cast("Malefic Grasp", ret => Me.CurrentTarget.HealthPercent > 20),
@@ -339,6 +339,7 @@ namespace Singular.ClassSpecific.Warlock
                                 && Me.CurrentSoulShards > 0),
 
                         CreateCastSoulSwap(onUnit)
+                        // , new Action( r => Logger.WriteDebug("CreateApplyDotsBehavior: Soulburn tree"))
                         ),
 
                     new Action( ret => {
@@ -355,9 +356,10 @@ namespace Singular.ClassSpecific.Warlock
                                 ++_dotCount;
 
                             // if mob dying very soon, skip DoTs
-                            if (onUnit(ret).TimeToDeath() < 4)
+                            if (onUnit(ret).TimeToDeath(99) < 4)
                                 _dotCount = 4;
                         }
+                        // Logger.WriteDebug("CreateApplyDotsBehavior: DotCount={0}", _dotCount );
                         return RunStatus.Failure;
                         }),
                     new Decorator(

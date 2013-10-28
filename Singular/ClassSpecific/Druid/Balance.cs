@@ -231,12 +231,7 @@ namespace Singular.ClassSpecific.Druid
 
                                 // CreateMushroomSetAndDetonateBehavior(),
 
-                                new Sequence(
-                                    Spell.CastOnGround("Force of Nature",
-                                        ret => StyxWoW.Me.CurrentTarget.Location,
-                                        ret => true),
-                                    new ActionAlwaysFail()
-                                    ),
+                                Spell.OffGCD( Spell.Cast("Force of Nature", req => !Me.CurrentTarget.IsTrivial() && Me.CurrentTarget.TimeToDeath() > 8) ),
 
                                 // Starfall:  verify either not glyphed -or- at least 3 targets have DoT
                                 Spell.Cast("Starfall", req => !TalentManager.HasGlyph("Guided Stars") || Unit.NearbyUnfriendlyUnits.Count( u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")) >= 3),
@@ -405,7 +400,7 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
-                        Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
+                        // Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
                         new PrioritySelector(
                             ctx => !Spell.UseAOE ? 1 : Unit.UnfriendlyUnitsNearTarget(10f).Count(),

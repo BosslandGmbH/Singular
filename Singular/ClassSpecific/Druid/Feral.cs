@@ -293,14 +293,7 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.Cast("Mangle"),
 
-                        new Sequence(
-                            Spell.CastOnGround("Force of Nature", 
-                                u => (Me.CurrentTarget ?? Me) .Location,
-                                ret => StyxWoW.Me.CurrentTarget != null 
-                                    && StyxWoW.Me.CurrentTarget.Distance < 40
-                                    && SpellManager.HasSpell("Force of Nature")),
-                            new ActionAlwaysFail()
-                            ),
+                        Spell.OffGCD(Spell.Cast("Force of Nature", req => Me.Specialization != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
 
                         new Decorator(
                             ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > (Me.CurrentTarget.IsPlayer ? 10 : 15),
@@ -375,7 +368,7 @@ namespace Singular.ClassSpecific.Druid
                                                             Spell.OffGCD(Spell.BuffSelf("Berserk") ),
                                                             Spell.OffGCD(Spell.BuffSelf("Incarnation: King of the Jungle")),
                                                             Spell.OffGCD(Spell.BuffSelf("Nature's Vigil")),
-                                                            Spell.OffGCD(Spell.CastOnGround("Force of Nature", on => Me.CurrentTarget, req => true, false))
+                                                            Spell.OffGCD(Spell.Cast("Force of Nature"))
                                                             )
                                                         )
                                                     )

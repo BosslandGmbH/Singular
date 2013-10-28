@@ -164,7 +164,7 @@ namespace Singular.ClassSpecific.Warrior
                                 && Me.CurrentTarget.HealthPercent < 20),
 
                         new Decorator( 
-                            ret => SingularSettings.Instance.EnableTaunting && Me.IsInInstance,
+                            ret => SingularSettings.Instance.EnableTaunting && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
                             CreateTauntBehavior()
                             ),
 

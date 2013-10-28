@@ -917,17 +917,36 @@ namespace Singular.ClassSpecific.Druid
 
         private static Composite CreateMushroomSetBehavior()
         {
-            return new Decorator(
-                req => checkMushroomCount < 1,
-                new PrioritySelector(
-                    ctx => Group.Tanks.FirstOrDefault(t => t.IsAlive && t.Combat && !t.IsMoving && Me.SpellDistance(t) < 40 && t.GotTarget && t.CurrentTarget.Combat && t.SpellDistance(t.CurrentTarget) < 15),
+            Composite castShroom;
 
-                    // Make sure we arenIf bloom is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
+            if (!TalentManager.HasGlyph("the Sprouting Mushroom"))
+                castShroom = Spell.CastOnGround("Wild Mushroom", on => (WoWUnit)on, req => true, false);
+            else
+                castShroom = Spell.CastOnGround("Wild Mushroom", loc => ((WoWUnit)loc).Location, req => req != null, false);
+
+            return new Throttle( 5,
+                new Decorator(
+                    req => {
+                        WoWUnit mushroom = Mushrooms.FirstOrDefault();
+                        if (RaFHelper.Leader != null && RaFHelper.Leader.IsValid && (mushroom == null || mushroom.SpellDistance(RaFHelper.Leader) > 10))
+                        {
+                            if (RaFHelper.Leader.IsAlive && RaFHelper.Leader.Combat && !RaFHelper.Leader.IsMoving
+                                && RaFHelper.Leader.GotTarget && RaFHelper.Leader.SpellDistance(RaFHelper.Leader.CurrentTarget) < 15)
+                            return true;
+                        }
+                        return false;
+                        },
+
+                    new PrioritySelector(
+                        ctx => RaFHelper.Leader,
+
+                        // Make sure we arenIf bloom is coming off CD, make sure we drop some more shrooms. 3 seconds is probably a little late, but good enough.
                     // .. also, waitForSpell must be false since Wild Mushroom does not stop targeting after click like other click on ground spells
                     // .. will wait locally and fall through to cancel targeting regardless
-                    new Sequence(
-                        Spell.CastOnGround("Wild Mushroom", on => (WoWUnit) on, req => true, false),
-                        new Action(ctx => Lua.DoString("SpellStopTargeting()"))
+                        new Sequence(
+                            castShroom,
+                            new Action(ctx => Lua.DoString("SpellStopTargeting()"))
+                            )
                         )
                     )
                 );

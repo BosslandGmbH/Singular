@@ -289,10 +289,17 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
 
                         Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3, cancel => false),
+                      
+                        Spell.Buff("Vampiric Touch", true, on => Me.CurrentTarget, req => Me.CurrentTarget.TimeToDeath() > 6, 3),
+                        Spell.Buff("Shadow Word: Pain", true, on => Me.CurrentTarget, req => Me.CurrentTarget.TimeToDeath() > 6, 1),
 
                         // multi-dot to supply procs and mana
-                        Spell.Buff("Shadow Word: Pain", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasAuraExpired("Shadow Word: Pain", 1) && u.InLineOfSpellSight), req => true, 1),
-                        Spell.Buff("Vampiric Touch", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasAuraExpired("Vampiric Touch", 3) && u.InLineOfSpellSight), req => true, 3),
+                        new PrioritySelector(
+                            ctx => Unit.NearbyUnfriendlyUnits
+                                .FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && (u.HasAuraExpired("Vampiric Touch", 3) || u.HasAuraExpired("Shadow Word: Pain", 1)) && u.InLineOfSpellSight),
+                            Spell.Buff("Vampiric Touch", true, on => (WoWUnit) on, req => true, 3),
+                            Spell.Buff("Shadow Word: Pain", true, on => (WoWUnit) on, req => true, 1)
+                            ),
 
                         Spell.Cast("Mind Flay", mov => true, on => Me.CurrentTarget, req => true, 
                             cancel => {

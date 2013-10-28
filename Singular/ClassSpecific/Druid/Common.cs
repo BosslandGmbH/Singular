@@ -124,10 +124,7 @@ namespace Singular.ClassSpecific.Druid
                         new PrioritySelector(
                             Spell.BuffSelf("Celestial Alignment", ret => Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
 
-                            new Sequence( 
-                                Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => Me.Specialization != WoWSpec.DruidRestoration),
-                                new ActionAlwaysFail()
-                                ),
+                            Spell.OffGCD(Spell.Cast("Force of Nature", req => Me.Specialization != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
 
                     // to do:  time ICoE at start of eclipse
                             Spell.BuffSelf("Incarnation: Chosen of Elune"),
@@ -163,7 +160,7 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
                         Spell.BuffSelf("Celestial Alignment", ret => Spell.GetSpellCooldown("Celestial Alignment") == TimeSpan.Zero && PartyBuff.WeHaveBloodlust),
                         new Sequence(
-                            Spell.CastOnGround("Force of Nature", ret => StyxWoW.Me.CurrentTarget.Location, ret => Me.Specialization != WoWSpec.DruidRestoration),
+                            Spell.OffGCD(Spell.Cast("Force of Nature", req => Me.Specialization != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
                             new ActionAlwaysFail()
                             ),
                         // to do:  time ICoE at start of eclipse

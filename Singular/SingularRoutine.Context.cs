@@ -34,6 +34,7 @@ namespace Singular
     {
         public static event EventHandler<WoWContextEventArg> OnWoWContextChanged;
         private static WoWContext _lastContext = WoWContext.None;
+        private static uint _lastMapId = 0;
 
         internal static WoWContext ForcedContext { get; set; }
 
@@ -93,14 +94,11 @@ namespace Singular
                     }
                 }
 
-                if (SingularRoutine.ForceInstanceBehaviors)
-                    return WoWContext.Instances;
-
                 return WoWContext.Normal;
             }
         }
 
-        public static bool ForceInstanceBehaviors { get; set; }
+        public static WoWContext TrainingDummyBehaviors { get; set; }
 
         private bool _contextEventSubscribed;
         private void UpdateContext()
@@ -147,7 +145,13 @@ namespace Singular
                 }
 
                 _lastContext = current;
-            }               
+                _lastMapId = Me.MapId;
+            }
+            else if (_lastMapId != Me.MapId)
+            {
+                DescribeContext();
+                _lastMapId = Me.MapId;
+            }
         }
 
         private static bool Changed( bool currVal, ref bool storedVal)

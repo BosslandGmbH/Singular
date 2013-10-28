@@ -100,7 +100,7 @@ namespace Singular.GUI
             chkDisableDebug.Checked = SingularSettings.Instance.DisableDebugLogging;
 
             InitializeHealContextDropdown(StyxWoW.Me.Class);
-            chkUseInstanceBehaviorsWhenSolo.Checked = SingularRoutine.ForceInstanceBehaviors;
+            InitializeForceBehaviorsDropdown();
 
             if (!timer1.Enabled)
                 timer1.Start();
@@ -210,37 +210,46 @@ namespace Singular.GUI
                     cboHealContext.SelectedIndex = 0;
             }
         }
-/*
-        private void Instance_OnTargetListUpdateFinished(object context)
+
+        private void InitializeForceBehaviorsDropdown()
         {
-            if (InvokeRequired)
-            {
-                Invoke(new TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished), context);
-                return;
-            }
+            cboForceUseOf.Items.Add(new CboItem((int)WoWContext.Normal, "Normal (Solo)"));
+            cboForceUseOf.Items.Add(new CboItem((int)WoWContext.Battlegrounds, "Battlegrounds (PVP)"));
+            cboForceUseOf.Items.Add(new CboItem((int)WoWContext.Instances, "Instances (Group)"));
 
-            int i = 0;
-            var sb = new StringBuilder();
-            foreach (WoWUnit u in Targeting.Instance.TargetList)
-            {
-                sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
-                if (++i == 5)
-                    break;
-            }
-            lblTargets.Text = sb.ToString();
-
-            if (HealerManager.Instance.t
-            i = 0;
-            sb = new StringBuilder();
-            foreach (WoWUnit u in HealerManager.Instance.TargetList)
-            {
-                sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
-                if (++i == 5)
-                    break;
-            }
-            lblHealTargets.Text = sb.ToString();
+            SetComboBoxEnum(cboForceUseOf, (int)SingularRoutine.TrainingDummyBehaviors);
         }
-*/
+        /*
+                private void Instance_OnTargetListUpdateFinished(object context)
+                {
+                    if (InvokeRequired)
+                    {
+                        Invoke(new TargetListUpdateFinishedDelegate(Instance_OnTargetListUpdateFinished), context);
+                        return;
+                    }
+
+                    int i = 0;
+                    var sb = new StringBuilder();
+                    foreach (WoWUnit u in Targeting.Instance.TargetList)
+                    {
+                        sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
+                        if (++i == 5)
+                            break;
+                    }
+                    lblTargets.Text = sb.ToString();
+
+                    if (HealerManager.Instance.t
+                    i = 0;
+                    sb = new StringBuilder();
+                    foreach (WoWUnit u in HealerManager.Instance.TargetList)
+                    {
+                        sb.AppendLine(u.SafeName() + " - " + u.HealthPercent.ToString("F1") + "% - " + u.Distance.ToString("F1") + " yds");
+                        if (++i == 5)
+                            break;
+                    }
+                    lblHealTargets.Text = sb.ToString();
+                }
+        */
 #pragma warning disable 168 // for ex below
 
         private void btnSaveAndClose_Click(object sender, EventArgs e)
@@ -253,7 +262,7 @@ namespace Singular.GUI
                 SingularSettings.Instance.EnableDebugTrace = chkDebugTrace.Checked;
                 SingularSettings.Instance.DisableDebugLogging = chkDisableDebug.Checked;
                 Extensions.ShowPlayerNames = ShowPlayerNames.Checked;
-                SingularRoutine.ForceInstanceBehaviors = chkUseInstanceBehaviorsWhenSolo.Checked;
+                SingularRoutine.TrainingDummyBehaviors = (WoWContext) GetComboBoxEnum(cboForceUseOf);
 
                 // save form position
                 SingularSettings.Instance.FormHeight = this.Height;
@@ -456,20 +465,56 @@ namespace Singular.GUI
             grpAuxTargeting.Enabled = HealerManager.NeedHealTargeting || TankManager.NeedTankTargeting;
         }
 
-/*
-        private void chkDebugTrace_CheckedChanged(object sender, EventArgs e)
+        /// <summary>
+        /// set current ComboBox selection for list built from CboItems to passe enum value
+        /// </summary>
+        /// <param name="cb"></param>
+        /// <param name="e"></param>
+        private static void SetComboBoxEnum(System.Windows.Forms.ComboBox cb, int e)
         {
-            if (chkDebugTrace.Checked)
+            CboItem item;
+            for (int i = 0; i < cb.Items.Count; i++)
             {
-                DialogResult rslt = MessageBox.Show("WARNING!!! Enabling the Debug Trace setting will slow performance and create very large log files. Use this setting only if you have been requested to. Continue?", "Warning! Trace is ON", MessageBoxButtons.OKCancel);
-                if (rslt != System.Windows.Forms.DialogResult.OK)
+                item = (CboItem)cb.Items[i];
+                if (item.e == e)
                 {
-                    chkDebugTrace.Checked = false;
+                    cb.SelectedIndex = i;
                     return;
                 }
             }
+
+            item = (CboItem)cb.Items[0];
+            Logger.WriteDebug("Dialog Error: combobox {0} does not have enum({1}) in list, defaulting to enum({2})", cb.Name, e, item.e);
+            cb.SelectedIndex = 0;
         }
-*/
+
+        /// <summary>
+        /// retrieves the current Enum value from combobox populated with CboItem objects
+        /// </summary>
+        /// <param name="cb"></param>
+        /// <returns></returns>
+        private static int GetComboBoxEnum(System.Windows.Forms.ComboBox cb)
+        {
+            CboItem item = (CboItem)cb.Items[cb.SelectedIndex];
+            return item.e;
+        }
+    }
+
+    public class CboItem
+    {
+        public int e;
+        public string s;
+
+        public override string ToString()
+        {
+            return s;
+        }
+
+        public CboItem(int pe, string ps)
+        {
+            e = pe;
+            s = ps;
+        }
     }
 
     public class HealContextItem
@@ -503,5 +548,6 @@ namespace Singular.GUI
             Spec = spec;
         }
     }
+
 
 }

@@ -177,10 +177,17 @@ namespace Singular.Helpers
         /// <value>The nearby unfriendly units.</value>
         public static IEnumerable<WoWUnit> UnfriendlyUnits(int maxSpellDist)
         {
+            bool useTargeting = (SingularRoutine.IsDungeonBuddyActive || (SingularRoutine.IsQuestBotActive && StyxWoW.Me.IsInInstance));
+
+            if (useTargeting)
+            {
+                return Targeting.Instance.TargetList.Where(u => u != null && ValidUnit(u) && u.SpellDistance() < maxSpellDist);
+            }
+
             Type typeWoWUnit = typeof(WoWUnit);
             Type typeWoWPlayer = typeof(WoWPlayer);
-            List<WoWObject> objectList = ObjectManager.ObjectList;
             List<WoWUnit> list = new List<WoWUnit>();
+            List<WoWObject> objectList = ObjectManager.ObjectList;
             for (int i = 0; i < objectList.Count; i++)
             {
                 Type type = objectList[i].GetType();

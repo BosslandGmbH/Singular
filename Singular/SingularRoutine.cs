@@ -42,6 +42,7 @@ namespace Singular
         public SingularRoutine()
         {
             Instance = this;
+            TrainingDummyBehaviors = WoWContext.Instances;
         }
 
         public override void Initialize()
@@ -400,7 +401,7 @@ namespace Singular
 
         private void CheckCurrentTarget()
         {
-            CheckTarget(Me.CurrentTarget, ref _lastCheckCurrTargetGuid, "YourCurrentTarget", HandleTrainingDummy);
+            CheckTarget(Me.CurrentTarget, ref _lastCheckCurrTargetGuid, "YourCurrentTarget", OnPlayerTargetChange);
             if (SingularSettings.Debug && Me.GotAlivePet)
                 CheckTarget(Me.Pet.CurrentTarget, ref _lastCheckPetsTargetGuid, "PetsCurrentTarget", (x) => { });
         }
@@ -463,18 +464,18 @@ namespace Singular
             }
         }
 
-        private static void HandleTrainingDummy(WoWUnit unit)
+        private static void OnPlayerTargetChange(WoWUnit unit)
         {
-            if (ForcedContext == WoWContext.None && unit != null && unit.IsTrainingDummy())
+            // special handling if targeting Training Dummy
+            if (ForcedContext == WoWContext.None && unit != null && !IsQuestBotActive && unit.IsTrainingDummy())
             {
-                ForcedContext = WoWContext.Instances;
-                // ForcedContext = WoWContext.Battlegrounds; 
-                Logger.Write(Color.White, "Detected Training Dummy -- forcing {0} behaviors", CurrentWoWContext.ToString());
+                ForcedContext = SingularRoutine.TrainingDummyBehaviors;
+                Logger.Write(Color.White, "^Detected Training Dummy: forcing {0} behaviors", CurrentWoWContext.ToString());
             }
             else if (ForcedContext != WoWContext.None && (unit == null || !unit.IsTrainingDummy()))
             {
                 ForcedContext = WoWContext.None;
-                Logger.Write(Color.White, "Detected Training Dummy no longer target -- reverting to {0} behaviors", CurrentWoWContext.ToString());
+                Logger.Write(Color.White, "^Detected Training Dummy: reverting to {0} behaviors", CurrentWoWContext.ToString());
             }
         }
 

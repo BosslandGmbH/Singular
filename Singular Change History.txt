@@ -1,3 +1,38 @@
+--- Release 3.0.0.3173 ---
+
+General
+
+fixed - infrequent bug where Combat behavior would still run if no current target established. 
+
+fixed - Pending Spell on Cursor detection
+
+
+Monk
+
+*new* - All Specs - support for Class Specific setting Disable Roll (defaults to false)
+
+
+Priest
+
+change- Discipline - will Pull with Smite if no aggro yet.  Should slightly reduce damage taken and rate of kill from point of combat
+
+fixed - Shadow - null reference exceptions occurring during Solo combat in some cases
+
+
+Rogue
+
+fixed - All Specs - Pick Lock bug (issue due to Pending Spell on Cursor issue mentioned above)
+
+change- Assassination - if not Dual Wielding daggers will emit message regarding user error then cast Sinister Strike
+
+
+Warlock
+
+change- Affliction - slight reordering of dot logic for efficiency
+
+
+
+
 --- Release 3.0.0.3161 ---
 
 General
@@ -25,7 +60,7 @@ change- Shadow - Battlegrounds: revised priority and logic for multi-dotting. Va
 
 Warlock
 
-fixed - Affliction - fixed 
+fixed - Affliction - bug fixed which caused Malefic Grasp to be cast instead of DoTs on target in certain circumstances if no damage has been caused to enemy yet. 
 
 
 Warrior

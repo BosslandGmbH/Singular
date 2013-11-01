@@ -58,11 +58,25 @@ namespace Singular.ClassSpecific.Rogue
                         Common.CreatePullMobMovingAwayFromMe(),
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
-                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers )
+                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers ),
+
+                        AssaCastSinisterStrike()
                         )
                     )
                 );
         }
+
+        private static Composite AssaCastSinisterStrike()
+        {
+            return new Decorator(
+                req => !Common.HasTwoDaggers,
+                new Sequence(
+                    new Action(r => Logger.Write(Color.White, "^User Error: not Dual Wielding Daggers - using Sinister Strike")),
+                    Spell.Cast("Sinister Strike")
+                    )
+                );
+        }
+
         [Behavior(BehaviorType.Combat, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Normal | WoWContext.Battlegrounds )]
         public static Composite CreateAssaRogueNormalCombat()
         {
@@ -96,6 +110,7 @@ namespace Singular.ClassSpecific.Rogue
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
                                 Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                                 Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives") && Common.HasTwoDaggers),
+                                AssaCastSinisterStrike(),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
@@ -116,7 +131,9 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
                         Spell.Cast("Mutilate", req => Common.HasTwoDaggers),  // daggers
 
-                        Common.CheckThatDaggersAreEquippedIfNeeded()
+                        Common.CheckThatDaggersAreEquippedIfNeeded(),
+
+                        AssaCastSinisterStrike()
                         )
                     )
                 );
@@ -160,6 +177,7 @@ namespace Singular.ClassSpecific.Rogue
                                 Spell.Cast("Crimson Tempest", ret => Me.ComboPoints >= 5),
                                 Spell.BuffSelf("Fan of Knives", ret => Common.AoeCount >= RogueSettings.FanOfKnivesCount ),
                                 Spell.Cast("Mutilate", ret => !SpellManager.HasSpell("Fan of Knives") && Common.HasTwoDaggers ),
+                                AssaCastSinisterStrike(),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             ),
@@ -176,6 +194,8 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Mutilate", req => Common.HasTwoDaggers),
 
                         Common.CheckThatDaggersAreEquippedIfNeeded(),
+                        AssaCastSinisterStrike(),
+
                         Common.CreateRogueMoveBehindTarget()
                         )
                     )

@@ -346,18 +346,20 @@ namespace Singular.ClassSpecific.Warlock
                         _dotCount = 0;
                         if (onUnit != null && onUnit(ret) != null)
                         {
-                            if (!onUnit(ret).HasAuraExpired("Agony", 3))
-                                ++_dotCount;
-                            if (!onUnit(ret).HasAuraExpired("Corruption", 3))
-                                ++_dotCount;
-                            if (!onUnit(ret).HasAuraExpired("Unstable Affliction", 3))
-                                ++_dotCount;
-                            if (!onUnit(ret).HasAuraExpired("Haunt", 3))
-                                ++_dotCount;
-
                             // if mob dying very soon, skip DoTs
                             if (onUnit(ret).TimeToDeath(99) < 4)
                                 _dotCount = 4;
+                            else
+                            {
+                                if (!onUnit(ret).HasAuraExpired("Agony", 3))
+                                    ++_dotCount;
+                                if (!onUnit(ret).HasAuraExpired("Corruption", 3))
+                                    ++_dotCount;
+                                if (!onUnit(ret).HasAuraExpired("Unstable Affliction", 3))
+                                    ++_dotCount;
+                                if (!onUnit(ret).HasAuraExpired("Haunt", 3))
+                                    ++_dotCount;
+                            }
                         }
                         // Logger.WriteDebug("CreateApplyDotsBehavior: DotCount={0}", _dotCount );
                         return RunStatus.Failure;

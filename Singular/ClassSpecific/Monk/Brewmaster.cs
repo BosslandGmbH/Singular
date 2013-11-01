@@ -281,7 +281,7 @@ namespace Singular.ClassSpecific.Monk
                             new Sequence(
                                 new PrioritySelector(
                                     Spell.Cast("Clash", on => (WoWUnit) on),
-                                    Spell.Cast("Roll", on => (WoWUnit) on)
+                                    Spell.Cast("Roll", on => (WoWUnit) on, req => !MonkSettings.DisableRoll)
                                     )
                                 )
                             )

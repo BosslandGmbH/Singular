@@ -47,6 +47,13 @@ namespace Singular.Settings
         #region Common
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Disable Roll")]
+        [Description("Prevent Singular from casting Roll")]
+        public bool DisableRoll { get; set; }
+
+        [Setting]
         [DefaultValue(60)]
         [Category("Common")]
         [DisplayName("Fortifying Brew Percent")]

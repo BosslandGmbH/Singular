@@ -619,10 +619,40 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
-        // Note: This will probably break shit if we're solo, but oh well!
-        [Behavior(BehaviorType.Combat | BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestDiscipline, WoWContext.Normal)]
-        public static Composite CreateDiscCombatNormal()
+        [Behavior(BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestDiscipline, WoWContext.Normal)]
+        public static Composite CreateDiscCombatNormalPull()
+        {
+            return new PrioritySelector(
+
+                Helpers.Common.EnsureReadyToAttackFromMediumRange(),
+                Movement.CreateFaceTargetBehavior(),
+                Spell.WaitForCastOrChannel(),
+
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        CreateDiscDiagnosticOutputBehavior(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),
+
+                        Helpers.Common.CreateInterruptBehavior(),
+                        Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
+                        Spell.Cast("Shadow Word: Death", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && Me.IsSafelyFacing(u))),
+                        Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => !Unit.NearbyUnfriendlyUnits.Any(u => u.Aggro), cancel => false),
+                        Spell.Buff("Shadow Word: Pain", req => Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1) && Me.CurrentTarget.TimeToDeath(99) >= 8),
+                        Spell.Buff("Shadow Word: Pain", true, on =>
+                        {
+                            WoWUnit unit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.IsTargetingMeOrPet && !u.HasMyAura("Shadow Word: Pain") && !u.IsCrowdControlled());
+                            return unit;
+                        }),
+                        Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
+                        Common.CreateHolyFireBehavior(),
+                        Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
+                        )
+                    )
+                );
+        }
+
+        [Behavior(BehaviorType.Combat, WoWClass.Priest, WoWSpec.PriestDiscipline, WoWContext.Normal)]
+        public static Composite CreateDiscCombatNormalCombat()
         {
             return new PrioritySelector(
 
@@ -639,10 +669,11 @@ namespace Singular.ClassSpecific.Priest
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                         Spell.Cast("Shadow Word: Death", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && Me.IsSafelyFacing(u))),
                         Spell.Buff("Shadow Word: Pain", req => Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1) && Me.CurrentTarget.TimeToDeath(99) >= 8),
-                        Spell.Buff("Shadow Word: Pain", true, on => {
+                        Spell.Buff("Shadow Word: Pain", true, on =>
+                        {
                             WoWUnit unit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.IsTargetingMeOrPet && !u.HasMyAura("Shadow Word: Pain") && !u.IsCrowdControlled());
                             return unit;
-                            }),
+                        }),
                         Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
                         Common.CreateHolyFireBehavior(),
                         Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
@@ -651,8 +682,6 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
-        // Note: This will probably break shit if we're solo, but oh well!
         [Behavior(BehaviorType.Combat | BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestDiscipline, WoWContext.Battlegrounds )]
         public static Composite CreateDiscCombatPvp()
         {
@@ -686,8 +715,6 @@ namespace Singular.ClassSpecific.Priest
                 );
         }
 
-        // This behavior is used in combat/heal AND pull. Just so we're always healing our party.
-        // Note: This will probably break shit if we're solo, but oh well!
         [Behavior(BehaviorType.Combat | BehaviorType.Pull, WoWClass.Priest, WoWSpec.PriestDiscipline, WoWContext.Instances)]
         public static Composite CreateDiscCombatInstances()
         {

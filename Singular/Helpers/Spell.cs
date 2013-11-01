@@ -2133,7 +2133,7 @@ namespace Singular.Helpers
                 return Me.CurrentPendingCursorSpell;
 #else
                 int pendingSpellId = 0;
-                var pendingSpellPtr = StyxWoW.Memory.Read<IntPtr>((IntPtr)0xC8D064, true);
+                var pendingSpellPtr = StyxWoW.Memory.Read<IntPtr>((IntPtr)0xC83494, true);
                 if (pendingSpellPtr != IntPtr.Zero)
                     pendingSpellId = StyxWoW.Memory.Read<int>(pendingSpellPtr + 32);
 

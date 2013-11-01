@@ -87,12 +87,12 @@ namespace Singular.ClassSpecific.Monk
                             Common.CreateGrappleWeaponBehavior(),
                             Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
-                            Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12),
+                            Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12),
                             Spell.Cast("Jab")
                             )
                         ),
 
-                    Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12),
+                    Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > 12),
 
                     Movement.CreateMoveToMeleeBehavior(true)
                     )
@@ -156,7 +156,7 @@ namespace Singular.ClassSpecific.Monk
                             )
                         ),
 
-                    Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12),
+                    Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > 12),
 
                     Movement.CreateMoveToMeleeBehavior(true)
                     )

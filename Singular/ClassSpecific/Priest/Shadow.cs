@@ -171,9 +171,10 @@ namespace Singular.ClassSpecific.Priest
 
                         // for targets we will fight longer than 10 seconds (it's a guess)
                         new Decorator(
-                            ret => Me.CurrentTarget.MaxHealth > (Me.MaxHealth * 2)
+                            ret => Me.GotTarget &&
+                                ( Me.CurrentTarget.MaxHealth > (Me.MaxHealth * 2)
                                 || Me.CurrentTarget.TimeToDeath() > 10
-                                || (Me.CurrentTarget.Elite && Me.CurrentTarget.Level > (Me.Level - 10)),
+                                || (Me.CurrentTarget.Elite && Me.CurrentTarget.Level > (Me.Level - 10))),
 
                             new PrioritySelector(
                                 // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
@@ -194,7 +195,7 @@ namespace Singular.ClassSpecific.Priest
                             Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3, cancel => false),
 
                             new Decorator(
-                                ret => Me.CurrentTarget.TimeToDeath() > 8 && !Unit.IsTrivial(Me.CurrentTarget),
+                                ret => Me.GotTarget && Me.CurrentTarget.TimeToDeath() > 8 && !Unit.IsTrivial(Me.CurrentTarget),
                                 new PrioritySelector(
                                     Spell.Buff("Shadow Word: Pain", true),
                                     Spell.Buff("Vampiric Touch", true)

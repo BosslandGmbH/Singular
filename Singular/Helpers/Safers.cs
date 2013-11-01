@@ -17,6 +17,7 @@ using Singular.Managers;
 using Action = Styx.TreeSharp.Action;
 using Styx.Helpers;
 using System;
+using Styx.Common.Helpers;
 
 namespace Singular.Helpers
 {
@@ -398,22 +399,33 @@ namespace Singular.Helpers
                                             )
                                         ),
 
-                                    // looks like no success, so don't continue to spell priorities
-                                    new Decorator( 
-                                        ret => !Me.GotTarget || Me.CurrentTarget.IsDead,
-                                        new ActionAlwaysSucceed()
-                                        ),
-
-                                    // otherwise, we are here if current target is valid or we set a good one, either way... fall through
+                                    // fall through... we'll catch whether we targeted or not in next check
                                     new ActionAlwaysFail()
                                     )
                                 )
-                            )
+                            ),
+
 #endregion
+                        new Decorator(
+                            req => !Me.GotTarget || !Me.CurrentTarget.IsAlive, 
+                            new Action( r => {
+                                if (_lastTargetMessageGuid != Me.CurrentTargetGuid || _nextTargetMessageTimer.IsFinished)
+                                {
+                                    Logger.Write(targetColor, "EnsureTarget: no valid target set -- skipping spell priority");
+                                    _nextTargetMessageTimer.Reset();
+                                }
+
+                                _lastTargetMessageGuid = Me.CurrentTargetGuid;
+                                return RunStatus.Success;
+                                })
+                            )
 
                         )
                     );
         }
+
+        private static readonly WaitTimer _nextTargetMessageTimer = WaitTimer.TenSeconds;
+        private static ulong _lastTargetMessageGuid = (ulong) 0xffffffffffffffff;
 
         /// <summary>
         /// targeting is blocked if pending spell on cursor, so this routine checks if a spell is on cursor

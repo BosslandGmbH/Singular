@@ -59,7 +59,7 @@ namespace Singular.ClassSpecific.Monk
                             new Sequence(
                                 new PrioritySelector(
                                     Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
-                                    Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
+                                    Spell.Cast("Roll", ret =>  !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
                                     ),
                                 new Action( r => RollTimer.Reset() )
                                 )
@@ -276,7 +276,7 @@ namespace Singular.ClassSpecific.Monk
                             ret => MovementManager.IsClassMovementAllowed && Me.IsSafelyFacing(Me.CurrentTarget, 10f) && Me.CurrentTarget.Distance > 10,
                             new PrioritySelector(
                                 Spell.Cast("Flying Serpent Kick",  ret => TalentManager.HasGlyph("Flying Serpent Kick")),
-                                Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
+                                Spell.Cast("Roll", ret =>  !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
                                 )
                             )
                         )
@@ -302,7 +302,7 @@ namespace Singular.ClassSpecific.Monk
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 15)
+                        Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > 15)
                         )
                     ),
 
@@ -400,7 +400,7 @@ namespace Singular.ClassSpecific.Monk
                     new Sequence(
                         new PrioritySelector(
                             Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
-                            Spell.Cast("Roll", ret => Me.CurrentTarget.Distance > 12 && !Me.HasAnyAura("Flying Serpent Kick"))
+                            Spell.Cast("Roll", ret =>  !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > 12 && !Me.HasAnyAura("Flying Serpent Kick"))
                             )
                         )
                     )

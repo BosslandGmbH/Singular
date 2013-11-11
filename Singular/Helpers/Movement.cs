@@ -296,17 +296,13 @@ namespace Singular.Helpers
                 return false;
 
             if (unit.IsPlayer)
-            {
                 return unit.DistanceSqr < (2 * 2);
-            }
-            else
-            {
-                float preferredDistance = Spell.MeleeDistance(unit) - 1f;
-                if (unit.Distance <= preferredDistance)
-                    return true;
-            }
 
-            return !unit.IsMoving && unit.IsWithinMeleeRange;
+            float preferredDistance = Spell.MeleeDistance(unit) - (unit.IsMoving ? 1.5f : 1f);
+            if (unit.Distance <= preferredDistance && unit.IsWithinMeleeRange)
+                return true;
+
+            return false;
         }
 #endif
 

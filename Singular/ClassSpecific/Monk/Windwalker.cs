@@ -55,13 +55,15 @@ namespace Singular.ClassSpecific.Monk
                             ),
 #endif
                         new Decorator(
-                            ret => MovementManager.IsClassMovementAllowed && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 10,
-                            new Sequence(
-                                new PrioritySelector(
-                                    Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
-                                    Spell.Cast("Roll", ret =>  !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
-                                    ),
-                                new Action( r => RollTimer.Reset() )
+                            ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12,
+                            new Throttle( 1,
+                                new Sequence(
+                                    new PrioritySelector(
+                                        Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
+                                        Spell.Cast("Roll", ret =>  !Me.HasAura("Flying Serpent Kick"))
+                                        ),
+                                    new Action( r => RollTimer.Reset() )
+                                    )
                                 )
                             ),
 
@@ -130,6 +132,7 @@ namespace Singular.ClassSpecific.Monk
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
+
                 Helpers.Common.CreateAutoAttack(true),
 
                 new Decorator( 
@@ -151,6 +154,20 @@ namespace Singular.ClassSpecific.Monk
                         CreateWindwalkerDiagnosticBehavior(),
 
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        new Decorator(
+                            ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12,
+                            new Throttle(1,
+                                new Sequence(
+                                    new PrioritySelector(
+                                        Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
+                                        Spell.Cast("Roll", ret => !Me.HasAura("Flying Serpent Kick"))
+                                        ),
+                                    new Action(r => RollTimer.Reset())
+                                    )
+                                )
+                            ),
+
 
                         Common.CreateGrappleWeaponBehavior(),
 

@@ -11,6 +11,7 @@ using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Styx.CommonBot;
+using System;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
@@ -145,13 +146,17 @@ namespace Singular.ClassSpecific.DeathKnight
                         && StyxWoW.Me.HasAura("Shadow Infusion", 5)),
 
             // spread the disease around.
-                Spell.Cast("Blood Boil",
-                    ret => Common.HasTalent( DeathKnightTalents.RollingBlood)
-                        && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10
-                        && !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases),
+                new Throttle( TimeSpan.FromSeconds(1.5f),
+                    new PrioritySelector(
+                        Spell.Cast("Blood Boil",
+                            ret => Common.HasTalent( DeathKnightTalents.RollingBlood)
+                                && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10
+                                && !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases),
 
-                Spell.Cast("Pestilence",
-                    ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases),
+                        Spell.Cast("Pestilence",
+                            ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases)
+                        )                       
+                    ),
 
                 Spell.CastOnGround(
                     "Death and Decay",

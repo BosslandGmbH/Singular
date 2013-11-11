@@ -277,6 +277,13 @@ namespace Singular
 
             Item.WriteCharacterGearAndSetupInfo();
 
+            Logger.WriteFile(" ");
+            Logger.WriteFile("My Current Dynamic Info");
+            Logger.WriteFile("=======================");
+            Logger.WriteFile("Combat Reach:    {0:F4}", Me.CombatReach);
+            Logger.WriteFile("Bounding Height: {0:F4}", Me.BoundingHeight );
+            Logger.WriteFile(" ");
+
 #if LOG_GROUP_COMPOSITION
             if (CurrentWoWContext == WoWContext.Instances)
             {

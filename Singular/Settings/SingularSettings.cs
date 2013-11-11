@@ -94,6 +94,7 @@ namespace Singular.Settings
             {
                 _instance = this;
 
+                bool fileExists = ConfigVersion != null;
                 Version current = SingularRoutine.GetSingularVersion();
                 Version cfgver = null;
 
@@ -113,15 +114,34 @@ namespace Singular.Settings
                 if (cfgver < current)
                 {
                     Logger.WriteFile("Settings: updating config file from verion {0}", ConfigVersion.ToString());
-                    if (new Version("3.0.0.3080") <= current)
+                    if (new Version("3.0.0.3080") < current)
                     {
                         Logger.WriteFile("Settings: applying {0} related changes", new Version("3.0.0.3080").ToString());
                         UseFrameLock = true;
                         DisableInQuestVehicle = false;
                     }
 
+                    if (new Version("3.0.0.3173") < current)
+                    {
+                        Logger.WriteFile("Settings: applying {0} related changes", new Version("3.0.0.3173").ToString());
+                        if ( MinHealth == 65)
+                            MinHealth = 60;
+                        if (MinMana == 65)
+                            MinMana = 50;
+                    }
+
                     ConfigVersion = current.ToString();
                     Logger.WriteFile("Settings: config file upgrade to {0} complete", ConfigVersion.ToString());
+
+                    // now handle any calculated default values
+                    if (!fileExists)
+                    {
+                        if (StyxWoW.Me.Class == WoWClass.DeathKnight)
+                        {
+                            MinHealth = 50;
+                            Logger.WriteFile("Settings: applying Death Knight specific Default MinHealth = {0}", MinHealth);
+                        }
+                    }
                 }
             }
 
@@ -398,14 +418,14 @@ namespace Singular.Settings
         #region Category: Consumables
 
         [Setting]
-        [DefaultValue(65)]
+        [DefaultValue(60)]
         [Category("Consumables")]
         [DisplayName("Eat at Health %")]
         [Description("Minimum health to eat at.")]
         public int MinHealth { get; set; }
 
         [Setting]
-        [DefaultValue(65)]
+        [DefaultValue(50)]
         [Category("Consumables")]
         [DisplayName("Drink at Mana %")]
         [Description("Minimum mana to drink at.")]

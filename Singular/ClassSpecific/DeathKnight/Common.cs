@@ -346,7 +346,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     switch (Me.Specialization)
                     {
                         case WoWSpec.DeathKnightBlood:
-                            Presence = DeathKnightPresence.Blood;
+                            Presence =  DeathKnightPresence.Blood;
                             break;
                         default:
                         case WoWSpec.DeathKnightFrost:
@@ -409,6 +409,14 @@ namespace Singular.ClassSpecific.DeathKnight
 
         public static Composite CreateDarkSuccorBehavior()
         {
+            if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat)
+            {
+                if (Common.SelectedPresence == DeathKnightPresence.Blood && TalentManager.HasGlyph("Dark Succor"))
+                {
+                    Logger.Write(Color.White, "User Error:  Glyph of Dark Succor does not proc with Blood Presence");
+                }
+            }
+
             // health below determined %
             // user wants to cast on cooldown without regard to health
             // we have aura AND (target is about to die OR aura expires in less than 3 secs)

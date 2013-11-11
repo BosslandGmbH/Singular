@@ -381,7 +381,7 @@ namespace Singular.ClassSpecific.Warlock
 
                 if (closestTarget != null)
                 {
-                    msg = string.Format("^Sap: {0} @ {1:F1} yds from target to avoid aggro while hitting target", closestTarget.SafeName(), closestTarget.Location.Distance(Me.CurrentTarget.Location));
+                    msg = string.Format("^Fear: {0} @ {1:F1} yds from target to avoid aggro while hitting target", closestTarget.SafeName(), closestTarget.Location.Distance(Me.CurrentTarget.Location));
                 }
             }
 

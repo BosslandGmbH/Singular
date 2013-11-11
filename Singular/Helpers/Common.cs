@@ -226,7 +226,10 @@ namespace Singular.Helpers
             if ( Me.Class == WoWClass.Rogue)
             {
                 prioSpell.AddChild( Spell.Cast("Kick", ctx => _unitInterrupt));
-                prioSpell.AddChild( Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && Me.IsSafelyFacing(_unitInterrupt)));
+                if ( TalentManager.HasGlyph("Gouge"))
+                    prioSpell.AddChild(Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && Me.IsSafelyFacing(_unitInterrupt, 150f)));
+                else
+                    prioSpell.AddChild(Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && Me.IsSafelyFacing(_unitInterrupt, 150f) && _unitInterrupt.IsSafelyFacing(Me, 150f)));
             }
 
             if ( Me.Class == WoWClass.Warrior)
@@ -323,11 +326,11 @@ namespace Singular.Helpers
 
             #endregion
 
-            return new Throttle( 
+            return new ThrottlePasses( 1, TimeSpan.FromMilliseconds(500),  
                 new Sequence(
                     actionSelectTarget,               
                     // majority of these are off GCD, so throttle all to avoid most fail messages
-                    new Throttle( TimeSpan.FromMilliseconds(500), prioSpell )
+                    prioSpell 
                     )
                 );
         }

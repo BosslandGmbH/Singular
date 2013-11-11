@@ -117,7 +117,7 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateShamanEnhancementNormalPull()
         {
             return new PrioritySelector(
-                new Decorator(req => Me.Level < 20, Helpers.Common.EnsureReadyToAttackFromLongRange()),
+                new Decorator(req => Me.Level < 20, Helpers.Common.EnsureReadyToAttackFromMediumRange()),
                 new Decorator(req => Me.Level >= 20, Helpers.Common.EnsureReadyToAttackFromMelee()),
                 Spell.WaitForCastOrChannel(),
 

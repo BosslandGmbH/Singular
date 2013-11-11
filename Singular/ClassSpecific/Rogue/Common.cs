@@ -95,7 +95,7 @@ namespace Singular.ClassSpecific.Rogue
                                     ret => !Unit.NearbyUnfriendlyUnits.Any(u => !u.IsCrowdControlled()),
                                     new ActionAlwaysSucceed()
                                     ),
-                                Spell.Cast("Gouge"),
+                                Spell.Cast("Gouge", req => TalentManager.HasGlyph("Gouge") || Me.CurrentTarget.IsSafelyFacing(Me, 150f)),
                                 Spell.Cast("Blind")
                                 ),
                             Helpers.Common.CreateWaitForLagDuration(),
@@ -187,6 +187,12 @@ namespace Singular.ClassSpecific.Rogue
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Rogue, (WoWSpec)int.MaxValue, WoWContext.All)]
         public static Composite CreateRogueCombatBuffs()
         {
+            UnitSelectionDelegate onGouge;
+            if ( TalentManager.HasGlyph("Gouge"))
+                onGouge = on => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.IsWithinMeleeRange && !u.IsCrowdControlled() && Me.IsSafelyFacing(u, 150));
+            else
+                onGouge = on => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.IsWithinMeleeRange && !u.IsCrowdControlled() && u.IsSafelyFacing(Me, 150) && Me.IsSafelyFacing(u, 150));
+
             return new PrioritySelector(
 
                 Movement.CreateFaceTargetBehavior(),
@@ -203,7 +209,7 @@ namespace Singular.ClassSpecific.Rogue
                         new Throttle(179, Spell.BuffSelf("Growl", ret => Me.HealthPercent < 65 && SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
 
                         // stun an add 4 out of every 10 secs if possible
-                        Spell.Cast("Gouge", on => Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.IsWithinMeleeRange && !u.IsCrowdControlled() && u.IsSafelyFacing(Me, 150) && Me.IsSafelyFacing(u, 150))),
+                        Spell.Cast("Gouge", onGouge ),
 
                         // Spell.BuffSelf("Feint", ret => AoeCount > 2 && !Me.HasAura("Combat Readiness") && HaveTalent(RogueTalents.Elusivenss)),
                         Spell.BuffSelf("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),
@@ -840,8 +846,9 @@ namespace Singular.ClassSpecific.Rogue
                     new Decorator(
                         ret => box != null && AutoLootIsEnabled(),
                         new Sequence(
-                            new Action( r => Logger.WriteDebug( "open box - wait for openable")),
+                            new Action(r => Logger.WriteDebug( "openbox: wait for it to be openable")),
                             new Wait(2, ret => box.IsOpenable && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), new Action(r => box.UseContainerItem())),
+                            new Action(r => Logger.WriteDebug("openbox: box now opened")),
                             new Action(r => Blacklist.Add(box.Guid, BlacklistFlags.Loot, TimeSpan.FromSeconds(30))),
                             Helpers.Common.CreateWaitForLagDuration()
                             )

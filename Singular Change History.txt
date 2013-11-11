@@ -1,3 +1,40 @@
+--- Release 3.0.0.3187 ---
+
+General
+
+change - HB WoWUnit.IsWithinMeleeRange API sometimes reported true while outside of melee range causing characters to stop just out of melee range but believeing it was close enough.  now moves slightly closer even when that API indicates it is not necessary.
+
+change - default Eat at Health % to 60 (was 65) 
+
+change - default Drink at Mana % to 50 (as 65)
+
+
+Death Knight
+
+*new* - all specs - warning message issued if Glyph of Dark Succor equipped and not in Frost or Unholy presence
+
+fixed - Unholy - throttled so Pestilence and Blood Boil aren't cast successively due to slow update of enemy debuffs
+
+*new* - all specs - default Eat at Health % for Death Knights to 50%.  This is a class specific override that occurs only for a new character settings file
+
+
+Monk
+
+fixed - Windwalker - now prevents immediate cast of Roll at end of Flying Serpent Kick that was occurring due to 
+
+
+Rogue
+
+fixed - All Specs - now correctly skips check if enemy is facing Rogue if Glyph of Gouge is equipped
+
+
+Shaman
+
+fixed - Enhancement (Level 10 - Level 19) - fixed logic causing low level Enhancement to stop out of Lightning Bolt range
+
+
+
+
 --- Release 3.0.0.3173 ---
 
 General
@@ -10,6 +47,8 @@ fixed - Pending Spell on Cursor detection
 Monk
 
 *new* - All Specs - support for Class Specific setting Disable Roll (defaults to false)
+
+
 
 
 Priest

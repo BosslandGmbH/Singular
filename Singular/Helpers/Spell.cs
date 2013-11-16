@@ -249,7 +249,7 @@ namespace Singular.Helpers
             if (spell.MaxRange == 0)
                 return 0;
             // 0.1 margin for error
-            return unit != null ? spell.MaxRange + unit.CombatReach + StyxWoW.Me.CombatReach - 0.1f : spell.MaxRange;
+            return unit != null ? spell.MaxRange + unit.CombatReach + StyxWoW.Me.CombatReach : spell.MaxRange;
         }
 
         public static float ActualMaxRange(string name, WoWUnit unit)
@@ -276,7 +276,7 @@ namespace Singular.Helpers
                 return 0;
 
             // some code was using 1.66666675f instead of Me.CombatReach ?
-            return unit != null ? spell.MinRange + unit.CombatReach + StyxWoW.Me.CombatReach + 0.1f : spell.MinRange;
+            return unit != null ? spell.MinRange + unit.CombatReach + StyxWoW.Me.CombatReach : spell.MinRange;
         }
 
         public static double TimeToEnergyCap()

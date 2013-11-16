@@ -166,7 +166,7 @@ namespace Singular.ClassSpecific.Mage
                         Spell.Cast("Ice Lance", ret => Me.ActiveAuras.ContainsKey("Fingers of Frost") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                         new Decorator(
-                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() <= 12 && !u.IsCrowdControlled()),
+                            ret => Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() <= 12 && !u.IsCrowdControlled() && u.CurrentTargetGuid == Me.Guid),
                             new Sequence(
                                 new PrioritySelector(
                                     CastFreeze(on => Me.CurrentTarget),
@@ -249,7 +249,7 @@ namespace Singular.ClassSpecific.Mage
                          // Spell.BuffSelf("Mana Shield", ret => Me.HealthPercent <= 75),
 
                         new Decorator(
-                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 15 && !u.IsCrowdControlled()),
+                            ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 15 && !u.IsCrowdControlled()),
                             new PrioritySelector(
                                 CastFreeze(on => Me.CurrentTarget),
                                 Spell.BuffSelf(

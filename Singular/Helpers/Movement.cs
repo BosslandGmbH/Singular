@@ -153,19 +153,32 @@ namespace Singular.Helpers
                     && !StyxWoW.Me.IsSafelyFacing(toUnit(ret), viewDegrees),
                 new Action( ret => 
                 {
+                    WoWUnit unit = toUnit(ret);
+
                     if (SingularSettings.Debug)
                         Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
 
-                    toUnit(ret).Face();
+                    unit.Face();
 
-                    // check only if standard facing for wait, not value given by viewDegrees
-                    // .. this optimizes for combat... cases where facing within viewDegrees
-                    // .. must be enforced should use a different behavior
+                    if (!waitForFacing)
+                        return RunStatus.Failure;
 
-                    if (waitForFacing && !StyxWoW.Me.IsSafelyFacing(toUnit(ret)))
-                        return RunStatus.Success;
-                    
-                    return RunStatus.Failure;
+                    // even though we may want a tighter conical facing check, allow
+                    // .. behavior to continue if 150 or better so we can cast while turning
+                    if (StyxWoW.Me.IsSafelyFacing(unit, 150f))
+                        return RunStatus.Failure;
+
+                    // special handling for when consumed by Direglob and other mobs we are inside/on top of 
+                    // .. as facing sometimes won't matter
+                    if (StyxWoW.Me.InVehicle)
+                    {
+                        Logger.WriteDebug("FaceTarget: don't wait to face {0} since in vehicle", unit.SafeName());
+                        return RunStatus.Failure;
+                    }
+
+                    // otherwise, indicate behavior complete so begins again while
+                    // .. waiting for facing to occur
+                    return RunStatus.Success;
                 })
                 );
         }

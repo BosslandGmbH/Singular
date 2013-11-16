@@ -32,7 +32,7 @@ namespace Singular.ClassSpecific.Mage
                          Helpers.Common.CreateInterruptBehavior(),
                          Common.CreateMagePolymorphOnAddBehavior(),
 
-                         Spell.BuffSelf("Frost Nova", ret => Unit.UnfriendlyUnits(12).Any(u => u.Combat && u.IsTargetingMeOrPet)),
+                         Spell.BuffSelf("Frost Nova", ret => Unit.UnfriendlyUnits(12).Any(u => u.Combat && u.CurrentTargetGuid == Me.Guid)),
                          // only Fire Blast if already in Combat
                          Spell.Cast("Fire Blast", ret => Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet),
                          // otherwise take advantage of casting without incoming damage
@@ -63,7 +63,7 @@ namespace Singular.ClassSpecific.Mage
                          Common.CreateMageAvoidanceBehavior(),
                          Common.CreateMagePolymorphOnAddBehavior(),
 
-                         Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && u.Combat && u.IsTargetingMeOrPet)),
+                         Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && u.Combat && u.CurrentTargetGuid == Me.Guid)),
                          Spell.Cast("Fire Blast"),
                          Spell.Cast("Frostfire Bolt")
                          )

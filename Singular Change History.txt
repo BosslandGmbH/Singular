@@ -1,3 +1,23 @@
+--- Release 3.0.0.3195 ---
+
+General
+
+change- revised Facing logic to allow quicker cast when facing is needed
+
+fixed - bug impacting distance calculation of ranged spells.  in rare cases it was resulting character to stopped at the maximum range of spell with greatest reach but believe it wasn't within range. 
+
+
+Mage
+
+fixed - Frost - Solo: check that target is targeting player before casting of Freeze and Frost Nova
+
+fixed - Frost - Solo/Battlegrounds: corrected bug impacting when Frost Nova and Freeze were used
+
+fixed - Lowbie - Solo: corrected bug impacting when Frost Nova and Freeze were used
+
+
+
+
 --- Release 3.0.0.3187 ---
 
 General

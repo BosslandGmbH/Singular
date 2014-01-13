@@ -93,35 +93,21 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="GreyMagic, Version=2.5.8179.374, Culture=neutral, PublicKeyToken=260525fa2b0e778a, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\HB\GreyMagic.dll</HintPath>
+    <Reference Include="GreyMagic">
+      <HintPath>..\Honorbuddy\GreyMagic.dll</HintPath>
     </Reference>
-    <Reference Include="Honorbuddy, Version=2.5.8179.374, Culture=neutral, PublicKeyToken=50a565ab5c01ae50, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\HB\Honorbuddy.exe</HintPath>
+    <Reference Include="Honorbuddy">
+      <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.SQLite">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Honorbuddy\System.Data.SQLite.dll</HintPath>
-    </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Tripper.RecastManaged, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b2150347bb351956, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\HB\Tripper.RecastManaged.dll</HintPath>
-    </Reference>
-    <Reference Include="Tripper.Tools, Version=1.0.0.0, Culture=neutral, PublicKeyToken=c40611ce03f849a2, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\HB\Tripper.Tools.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassSpecific\DeathKnight\Blood.cs" />
@@ -282,7 +268,7 @@
 %25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "G:\Code\WoW\Honorbuddy 2\trunk\Honorbuddy\bin\Debug\CustomClasses\Singular v2\" /i /f /s /v /y
 )
 if $(ConfigurationName) == Raphus (
-%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\Buddy\Honorbuddy\Source\trunk\Honorbuddy\CustomClasses\Singular\" /i /f /s /v /y
+%25SystemRoot%25\system32\xcopy.exe "$(ProjectDir)*.cs" "D:\Buddy\Honorbuddy\Source\branches\StyxRaphus\Honorbuddy\Routines\Singular\" /i /f /s /v /y
 )
 
 if $(ConfigurationName) == Bobby53 (

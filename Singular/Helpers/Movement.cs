@@ -287,19 +287,26 @@ namespace Singular.Helpers
                     )
                 );
 #else
-            return new Decorator(
-                ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,
-                new Sequence(
-                    ctx => StyxWoW.Me.CurrentTarget,
-                    new Action(ret =>
-                    {
-                        MoveResult result = Navigator.MoveTo(((WoWUnit)ret).Location);
-                        Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", result.ToString(), ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).Distance);
-                    }),
-                    new Action(ret => StopMoving.InMeleeRangeOfUnit(((WoWUnit)ret))),
-                    new ActionAlwaysFail()
-                    )
-                );
+            return 
+				new PrioritySelector(
+					ctx => StyxWoW.Me.CurrentTarget,
+					new Decorator(
+						ret => !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
+						CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss && !((WoWUnit)ctx).IsMoving)
+						),
+					new Decorator(
+					ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,
+						new Sequence(
+							ctx => StyxWoW.Me.CurrentTarget,
+							new Action(ret =>
+							{
+								MoveResult result = Navigator.MoveTo(((WoWUnit)ret).Location);
+								Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", result.ToString(), ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).Distance);
+							}),
+							new Action(ret => StopMoving.InMeleeRangeOfUnit(((WoWUnit)ret))),
+							new ActionAlwaysFail()
+							)
+					));
 #endif
         }
 
@@ -370,11 +377,8 @@ namespace Singular.Helpers
 
         public static WoWPoint CalculatePointBehindTarget()
         {
-            float facing = StyxWoW.Me.CurrentTarget.Rotation;
-            facing += WoWMathHelper.DegreesToRadians(180); // was 150 ?
-            facing = WoWMathHelper.NormalizeRadian(facing);
-
-            return StyxWoW.Me.CurrentTarget.Location.RayCast(facing, Spell.MeleeRange - 2f);
+	        var curTarget = StyxWoW.Me.CurrentTarget;
+	        return WoWMathHelper.CalculatePointBehind(curTarget.Location, curTarget.Rotation, curTarget.CombatReach + 2f);
         }
 
         #endregion

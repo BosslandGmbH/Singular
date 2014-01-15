@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using Styx;
@@ -364,33 +365,30 @@ namespace Singular
 
         private static int GetInstanceDifficulty( )
         {
-            int diffidx = Lua.GetReturnVal<int>("return GetInstanceDifficulty()", 0);
-            return diffidx;
+			return Lua.GetReturnVal<int>("local _,_,d=GetInstanceInfo() if d ~= nil then return d end return 1", 0);
         }
 
-
-        private static string[] _InstDiff = new string[] 
+        private static readonly string[] InstDiff = new[] 
         {
-            /* 0*/  "Unknown Difficulty",
-            /* 1*/  "None; not in an Instance",
-            /* 2*/  "5-player Normal",
-            /* 3*/  "5-player Heroic",
-            /* 4*/  "10-player Raid",
-            /* 5*/  "25-player Raid",
-            /* 6*/  "10-player Heroic Raid",
-            /* 7*/  "25-player Heroic Raid",
-            /* 8*/  "LFR Raid Instance",
-            /* 9*/  "Challenge Mode Raid",
-            /* 10*/  "40-player Raid"
+            /* 0*/  "None; not in an Instance",
+            /* 1*/  "5-player Normal",
+            /* 2*/  "5-player Heroic",
+            /* 3*/  "10-player Raid",
+            /* 4*/  "25-player Raid",
+            /* 5*/  "10-player Heroic Raid",
+            /* 6*/  "25-player Heroic Raid",
+            /* 7*/  "LFR Raid Instance",
+            /* 8*/  "Challenge Mode Raid",
+            /* 9*/  "40-player Raid"
         };
-
-        private static string GetInstanceDifficultyName( )
+		
+        private static string GetInstanceDifficultyName()
         {
             int diff = GetInstanceDifficulty();
-            if (diff < _InstDiff.GetLowerBound(0) || diff > _InstDiff.GetUpperBound(0))
+            if (diff >= InstDiff.Length)
                 return string.Format("Difficulty {0} Undefined", diff);
 
-            return _InstDiff[diff];
+            return InstDiff[diff];
         }
 
     }

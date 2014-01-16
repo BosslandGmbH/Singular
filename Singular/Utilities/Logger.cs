@@ -86,7 +86,7 @@ namespace Singular
             }
             else
             {
-                Logging.Write(LogLevel.Diagnostic, newColor, "(Singular) " + message, args);
+				WriteFile("(Singular) " + message, args);
             }
         }
 

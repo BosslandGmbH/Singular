@@ -1096,14 +1096,14 @@ namespace Singular.Helpers
                     if (!buffNames.Any())
                     {
                         hasExpired = _buffUnit.HasAuraExpired(_buffName, expirSecs, myBuff);
-                        if (hasExpired && SingularSettings.Debug)
+                        if (hasExpired)
                             Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, auraleft={2:F1} secs", _buffName, SpellManager.HasSpell(_buffName).ToYN(), _buffUnit.GetAuraTimeLeft(_buffName, true).TotalSeconds);
 
                         return hasExpired;
                     }
 
                     hasExpired = SpellManager.HasSpell(_buffName) && buffNames.All(b => _buffUnit.HasKnownAuraExpired(b, expirSecs, myBuff));
-                    if (hasExpired && SingularSettings.Debug)
+                    if (hasExpired)
                         Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, all auras less than {2:F1} secs", _buffName, SpellManager.HasSpell(_buffName).ToYN(), expirSecs );
 
                     return hasExpired;

@@ -155,8 +155,7 @@ namespace Singular.Helpers
                 {
                     WoWUnit unit = toUnit(ret);
 
-                    if (SingularSettings.Debug)
-                        Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
+                    Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
 
                     unit.Face();
 
@@ -563,23 +562,19 @@ namespace Singular.Helpers
 
             if (SingularSettings.Debug)
             {
-                StackFrame frame = new StackFrame(3);
-                if (frame != null)
-                {
-                    MethodBase method = frame.GetMethod();
-                    callerName = method.DeclaringType.FullName + "." + method.Name;
-                    callerFile = frame.GetFileName();
-                    callerLine = frame.GetFileLineNumber();
-                }
-                else
-                {
-                    callerName = "na";
-                    callerFile = "na";
-                    callerLine = -1;
-                }
+	            StackFrame frame = new StackFrame(3);
+	            
+		        MethodBase method = frame.GetMethod();
+
+	            if (method.DeclaringType != null)
+	            {
+		            callerName = method.DeclaringType.FullName + "." + method.Name;
+		            callerFile = frame.GetFileName();
+		            callerLine = frame.GetFileLineNumber();
+	            }
             }
 
-            Type = type;
+	        Type = type;
             Unit = unit;
             Point = pt;
             Range = range;

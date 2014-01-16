@@ -169,16 +169,12 @@ namespace Singular.Utilities
             switch (e.Event)
             {
                 default:
-                    if ( SingularSettings.Debug )
-                        Logger.WriteDebug("[CombatLog] filter out this event -- " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
+                    Logger.WriteDebug("[CombatLog] filter out this event -- " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
                     break;
 
                 // spell_cast_failed only passes filter in Singular debug mode
                 case "SPELL_CAST_FAILED":
-                    if ( !SingularSettings.Debug)
-                        Logger.WriteFile("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14] );
-                    else
-                        Logger.WriteDebug("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14]);
+                    Logger.WriteDebug("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14]);
 
                     if ( e.Args[14].ToString() == LocalizedLineOfSightFailure )
                     {
@@ -275,16 +271,13 @@ namespace Singular.Utilities
                     // .. that they don't have enough +Hit for will get DoT spam.  This allows easy
                     // .. diagnosis of false reports of rotation issues where a user simply isn't geared
                     // .. this happens more at the beginning of an expansion especially
-                    if (SingularSettings.Debug)
-                    {
-                        Logger.WriteDebug(
-                            "[CombatLog] {0} {1}#{2} {3}",
-                            e.Event,
-                            e.Spell.Name,
-                            e.SpellId,
-                            e.Args[14]
-                            );
-                    }
+                    Logger.WriteDebug(
+                        "[CombatLog] {0} {1}#{2} {3}",
+                        e.Event,
+                        e.Spell.Name,
+                        e.SpellId,
+                        e.Args[14]
+                        );
 
                     if (e.Args[14].ToString() == "EVADE")
                     {
@@ -402,9 +395,9 @@ namespace Singular.Utilities
 
             }
 
-            if (!handled && SingularSettings.Debug)
+            if (!handled)
             {
-                Logger.WriteFile("[WoWRedError] {0}", args.Args[0].ToString());
+                Logger.WriteDebug("[WoWRedError] {0}", args.Args[0].ToString());
             }
         }
 

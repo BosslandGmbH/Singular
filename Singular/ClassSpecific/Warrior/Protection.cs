@@ -336,8 +336,8 @@ namespace Singular.ClassSpecific.Warrior
                             !Me.GotTarget ? "(null)" : Me.CurrentTarget.SafeName(),
                             !Me.GotTarget ? 0 : Me.CurrentTarget.HealthPercent,
                             !Me.GotTarget ? 0 : Me.CurrentTarget.Distance,
-                            !Me.GotTarget ? false : Me.CurrentTarget.IsWithinMeleeRange ,
-                            !Me.GotTarget ? false : Me.IsSafelyFacing( Me.CurrentTarget  )
+                            Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange ,
+                            Me.GotTarget && Me.IsSafelyFacing( Me.CurrentTarget  )
                             );
                         return RunStatus.Failure;
                         })

@@ -449,8 +449,7 @@ namespace Singular
         public static void ResetCurrentTargetTimer()
         {
             _timerLastTarget.Reset();
-            if (SingularSettings.Debug)
-                Logger.WriteDebug("reset target timer to {0:c}", _timerLastTarget.TimeLeft);
+            Logger.WriteDebug("reset target timer to {0:c}", _timerLastTarget.TimeLeft);
         }
 
         public static void ResetCurrentTarget()
@@ -470,8 +469,7 @@ namespace Singular
                         {
                             if (_guidLastTarget != 0)
                             {
-                                if (SingularSettings.Debug)
-                                    Logger.WriteDebug(sType + " CurrentTarget now: (null)");
+                                Logger.WriteDebug(sType + " CurrentTarget now: (null)");
                                 _guidLastTarget = 0;
                             }
                         }
@@ -525,11 +523,11 @@ namespace Singular
             string info = "";
             WoWUnit target = Me.CurrentTarget;
 
-            if (Styx.CommonBot.POI.BotPoi.Current.Guid == Me.CurrentTargetGuid)
-                info += string.Format(", IsBotPoi={0}", Styx.CommonBot.POI.BotPoi.Current.Type);
+            if (BotPoi.Current.Guid == Me.CurrentTargetGuid)
+                info += string.Format(", IsBotPoi={0}", BotPoi.Current.Type);
 
-            if (Styx.CommonBot.Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
-                info += string.Format(", TargetIndex={0}", Styx.CommonBot.Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
+            if (Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
+                info += string.Format(", TargetIndex={0}", Targeting.Instance.TargetList.IndexOf(Me.CurrentTarget) + 1);
 
             Logger.WriteDebug(sType + " CurrentTarget now: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, player={5}, hostil={6}, faction={7}, loss={8}, face={9}, agro={10}" + info,
                 target.SafeName(),
@@ -648,10 +646,7 @@ namespace Singular
                     TimeSpan since = SinceLast;
                     if (since.TotalSeconds >= WarnTime)
                     {
-                        if (SingularSettings.Debug)
-                            Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
-                        else
-                            Logger.WriteFile("warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
+                        Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
                     }
                 }
             };

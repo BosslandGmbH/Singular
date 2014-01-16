@@ -855,7 +855,7 @@ namespace Singular.ClassSpecific.Druid
                     && (u.GetAuraStacks(hotName) < stacks || u.GetAuraTimeLeft(hotName).TotalSeconds < 3) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent)
                 .FirstOrDefault();
 
-            if (hotTarget != null && SingularSettings.Debug)
+            if (hotTarget != null)
                 Logger.WriteDebug("GetBestTankTargetFor('{0}'): found Tank {1} @ {2:F1}%, hasmyaura={3}", hotName, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.HasMyAura(hotName));
 
             return hotTarget;
@@ -887,7 +887,7 @@ namespace Singular.ClassSpecific.Druid
                     .FirstOrDefault();
             }
 
-            if (hotTarget != null && SingularSettings.Debug)
+            if (hotTarget != null)
                 Logger.WriteDebug("GetLifebloomTarget({0:F1}%): tank {1} @ {2:F1}%, stacks={3}", health, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.GetAuraStacks(hotName));
 
             return hotTarget;

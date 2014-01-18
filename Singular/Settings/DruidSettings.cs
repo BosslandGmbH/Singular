@@ -593,7 +593,7 @@ namespace Singular.Settings
         }
 
         public DruidHealSettings(HealingContext ctx)
-            : base("Shaman", ctx)
+            : base("Druid", ctx)
         {
 
             // we haven't created a settings file yet,

@@ -1,4 +1,4 @@
---- Release 3.0.0.3227 ---
+--- Release 3.0.0.3231 ---
 
 General
 
@@ -16,6 +16,8 @@ change- cached guids in unit lookup portion of Combat Log event handler
 Druid
 
 *new* - Resto - added diagnostic output behavior to monitor buffs, etc.
+
+fixed - Resto - bug in DruidHealSettings class initialization and availability
 
 
 Hunter

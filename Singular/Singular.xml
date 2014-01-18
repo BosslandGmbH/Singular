@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>01/18/2014 15:47:54</ScanTime>
+  <ScanTime>01/18/2014 16:04:19</ScanTime>
   <FileList>
     <File Hash="30572" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="23027" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -95,7 +95,7 @@
     <File Hash="6704" Name="Managers\TalentManager.cs" />
     <File Hash="4733" Name="Managers\TankManager.cs" />
     <File Hash="7979" Name="Settings\DeathKnightSettings.cs" />
-    <File Hash="32127" Name="Settings\DruidSettings.cs" />
+    <File Hash="32126" Name="Settings\DruidSettings.cs" />
     <File Hash="1029" Name="Settings\HealerSettings.cs" />
     <File Hash="3749" Name="Settings\HotkeySettings.cs" />
     <File Hash="3926" Name="Settings\HunterSettings.cs" />

@@ -1,3 +1,47 @@
+--- Release 3.0.0.3227 ---
+
+General
+
+fixed - exception when checking instance difficulty fixed
+
+fixed - no longer attempts to summon pets/demons when a cinematic is playing
+
+change- Heal Targeting now uses the HonorBuddy HealTargeting instance to allow bots and components to overload weighting, etc.  
+
+fixed - Debug output from Singular was not fully disabled when Disable Debug Output setting was checked
+
+change- cached guids in unit lookup portion of Combat Log event handler
+
+
+Druid
+
+*new* - Resto - added diagnostic output behavior to monitor buffs, etc.
+
+
+Hunter
+
+change- All Specs - Feign Death will now report when its been cancelled by something other than Singular
+
+
+Paladin
+
+fixed - All Specs - bug with keeping Eternal Flame up
+
+fixed - Holy - at times not self-healing
+
+
+Rogue
+
+fixed - All Specs - support for Combat Readiness and 
+
+
+Shaman
+
+fixed - Resto - Instance behaviors had redundant Interrupt and Purge logic when Telluric Currents glyph is equipped
+
+
+
+
 --- Release 3.0.0.3195 ---
 
 General

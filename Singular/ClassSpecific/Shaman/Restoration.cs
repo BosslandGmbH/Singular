@@ -327,8 +327,6 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
                                 Safers.EnsureTarget(),
                                 Movement.CreateFaceTargetBehavior(),
-                                Helpers.Common.CreateInterruptBehavior(),
-                                Dispelling.CreatePurgeEnemyBehavior("Purge"),
                                 Spell.Cast("Lightning Bolt", 
                                     mov => true,
                                     on => Unit.NearbyUnitsInCombatWithUsOrOurStuff

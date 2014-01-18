@@ -856,9 +856,13 @@ namespace Singular.ClassSpecific.Hunter
                 new Action(ret => Logger.Write("... wait at most {0} seconds before cancelling Feign Death", (waitToCancelFeignDeath.EndTime - waitToCancelFeignDeath.StartTime).TotalSeconds)),
                 new Action(ret => waitToCancelFeignDeath.Reset()),
                 new WaitContinue(TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Feign Death"), new ActionAlwaysSucceed()),
-                new WaitContinue(360, ret => cancel(ret) || waitToCancelFeignDeath.IsFinished || !Me.HasAura("Feign Death"), new ActionAlwaysSucceed()),
-                new DecoratorContinue( 
-                    ret => Me.HasAura( "Feign Death"),
+                new WaitContinue(360, ret => !Me.IsAlive || cancel(ret) || waitToCancelFeignDeath.IsFinished || !Me.HasAura("Feign Death"), new ActionAlwaysSucceed()),
+                new DecoratorContinue(
+                    ret => !Me.HasAura("Feign Death"),
+                    new Action(ret => Logger.Write("... Feign Death aura not present, cancelling wait"))
+                    ),
+                new DecoratorContinue(
+                    ret => Me.HasAura("Feign Death"),
                     new Sequence(
                         new Action(ret => Logger.Write("/cancel Feign Death after {0} seconds", (DateTime.Now - waitToCancelFeignDeath.StartTime).TotalSeconds)),
                         new Action(ret => Me.CancelAura("Feign Death"))

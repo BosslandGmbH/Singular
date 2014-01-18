@@ -155,7 +155,8 @@ namespace Singular.Helpers
                 {
                     WoWUnit unit = toUnit(ret);
 
-                    Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
+                    if (SingularSettings.Debug)
+                        Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
 
                     unit.Face();
 
@@ -286,26 +287,26 @@ namespace Singular.Helpers
                     )
                 );
 #else
-            return 
-				new PrioritySelector(
-					ctx => StyxWoW.Me.CurrentTarget,
-					new Decorator(
-						ret => !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
-						CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss && !((WoWUnit)ctx).IsMoving)
-						),
-					new Decorator(
-					ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,
-						new Sequence(
-							ctx => StyxWoW.Me.CurrentTarget,
-							new Action(ret =>
-							{
-								MoveResult result = Navigator.MoveTo(((WoWUnit)ret).Location);
-								Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", result.ToString(), ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).Distance);
-							}),
-							new Action(ret => StopMoving.InMeleeRangeOfUnit(((WoWUnit)ret))),
-							new ActionAlwaysFail()
-							)
-					));
+            return new PrioritySelector(
+				ctx => StyxWoW.Me.CurrentTarget,
+				new Decorator(
+					ret => !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
+					CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss && !((WoWUnit)ctx).IsMoving)
+					),
+                new Decorator(
+                    ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,
+                    new Sequence(
+                        ctx => StyxWoW.Me.CurrentTarget,
+                        new Action(ret =>
+                        {
+                            MoveResult result = Navigator.MoveTo(((WoWUnit)ret).Location);
+                            Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", result.ToString(), ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).Distance);
+                        }),
+                        new Action(ret => StopMoving.InMeleeRangeOfUnit(((WoWUnit)ret))),
+                        new ActionAlwaysFail()
+                        )
+                    )
+                );
 #endif
         }
 
@@ -376,8 +377,11 @@ namespace Singular.Helpers
 
         public static WoWPoint CalculatePointBehindTarget()
         {
-	        var curTarget = StyxWoW.Me.CurrentTarget;
-	        return WoWMathHelper.CalculatePointBehind(curTarget.Location, curTarget.Rotation, curTarget.CombatReach + 2f);
+            float facing = StyxWoW.Me.CurrentTarget.Rotation;
+            facing += WoWMathHelper.DegreesToRadians(180); // was 150 ?
+            facing = WoWMathHelper.NormalizeRadian(facing);
+
+            return StyxWoW.Me.CurrentTarget.Location.RayCast(facing, Spell.MeleeRange - 2f);
         }
 
         #endregion
@@ -562,19 +566,23 @@ namespace Singular.Helpers
 
             if (SingularSettings.Debug)
             {
-	            StackFrame frame = new StackFrame(3);
-	            
-		        MethodBase method = frame.GetMethod();
-
-	            if (method.DeclaringType != null)
-	            {
-		            callerName = method.DeclaringType.FullName + "." + method.Name;
-		            callerFile = frame.GetFileName();
-		            callerLine = frame.GetFileLineNumber();
-	            }
+                StackFrame frame = new StackFrame(3);
+                if (frame != null)
+                {
+                    MethodBase method = frame.GetMethod();
+                    callerName = method.DeclaringType.FullName + "." + method.Name;
+                    callerFile = frame.GetFileName();
+                    callerLine = frame.GetFileLineNumber();
+                }
+                else
+                {
+                    callerName = "na";
+                    callerFile = "na";
+                    callerLine = -1;
+                }
             }
 
-	        Type = type;
+            Type = type;
             Unit = unit;
             Point = pt;
             Range = range;

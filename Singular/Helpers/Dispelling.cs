@@ -265,11 +265,15 @@ namespace Singular.Helpers
         {
             if (SingularSettings.Instance.PurgeTargets == CheckTargets.Current)
             {
-                if (StyxWoW.Me.GotTarget)
+                if (Unit.ValidUnit(StyxWoW.Me.CurrentTarget))
                 {
                     WoWAura aura = GetPurgeEnemyAura(StyxWoW.Me.CurrentTarget);
                     if (aura != null)
                     {
+                        // expensive call, so do only if purgeable debuf found when checking only currenttarget
+                        if (!StyxWoW.Me.IsSafelyFacing(StyxWoW.Me.CurrentTarget))
+                            return null;
+
                         Logger.WriteDebug("PurgeEnemyTarget: want to {0} {1} with '{2}' #{3}", spellName, StyxWoW.Me.CurrentTarget.SafeName(), aura.Name, aura.SpellId);
                         return StyxWoW.Me.CurrentTarget;
                     }

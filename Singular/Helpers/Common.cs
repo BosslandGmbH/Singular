@@ -175,7 +175,7 @@ namespace Singular.Helpers
 
                         WoWUnit u = Me.CurrentTarget;
                         _unitInterrupt = IsInterruptTarget(u) ? u : null;
-                        if (_unitInterrupt != null)
+                        if (_unitInterrupt != null && SingularSettings.Debug)
                             Logger.WriteDebug("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds );
 
                         return _unitInterrupt == null ? RunStatus.Failure : RunStatus.Success;
@@ -190,7 +190,7 @@ namespace Singular.Helpers
                             return RunStatus.Failure;
 
                         _unitInterrupt = Unit.NearbyUnitsInCombatWithMeOrMyStuff.Where(u => IsInterruptTarget(u)).OrderBy(u => u.Distance).FirstOrDefault();
-                        if (_unitInterrupt != null)
+                        if (_unitInterrupt != null && SingularSettings.Debug)
                             Logger.WriteDebug("Possible Interrupt Target: {0} @ {1:F1} yds casting {2} #{3} for {4} ms", _unitInterrupt.SafeName(), _unitInterrupt.Distance, _unitInterrupt.CastingSpell.Name, _unitInterrupt.CastingSpell.Id, _unitInterrupt.CurrentCastTimeLeft.TotalMilliseconds);
 
                         return _unitInterrupt == null ? RunStatus.Failure : RunStatus.Success;

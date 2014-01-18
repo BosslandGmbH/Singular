@@ -84,10 +84,6 @@ namespace Singular
             {
                 Logging.Write(newColor, "(Singular) " + message, args);
             }
-            else
-            {
-				WriteFile("(Singular) " + message, args);
-            }
         }
 
         /// <summary>

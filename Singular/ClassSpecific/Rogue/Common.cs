@@ -203,7 +203,7 @@ namespace Singular.ClassSpecific.Rogue
                     req => !Unit.IsTrivial( Me.CurrentTarget),
                     new PrioritySelector(
                         // Defensive
-                        // Spell.BuffSelf("Combat Readiness", ret => AoeCount > 2 && !Me.HasAura("Feint")),
+                        Spell.BuffSelf("Combat Readiness", ret => !Me.HasAnyAura("Feint", "Evasion") && Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == Me.Guid) > 2 ),
 
                         // Symbiosis
                         new Throttle(179, Spell.BuffSelf("Growl", ret => Me.HealthPercent < 65 && SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
@@ -212,14 +212,15 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast("Gouge", onGouge ),
 
                         // Spell.BuffSelf("Feint", ret => AoeCount > 2 && !Me.HasAura("Combat Readiness") && HaveTalent(RogueTalents.Elusivenss)),
-                        Spell.BuffSelf("Evasion", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 6 * 6 && u.IsTargetingMeOrPet) >= 2),
+                        Spell.BuffSelf("Evasion", ret => !Me.HasAnyAura("Feint", "Combat Readiness") && Unit.UnfriendlyUnits(6).Count(u => u.CurrentTargetGuid == Me.Guid) > 1),
                         Spell.BuffSelf("Cloak of Shadows", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet && u.IsCasting) >= 1),
                         Spell.BuffSelf("Smoke Bomb", ret => StyxWoW.Me.HealthPercent < 40 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr > 4 * 4 && u.IsAlive && u.Combat && u.IsTargetingMeOrPet) >= 1),
                         Spell.BuffSelf("Vanish", ret => StyxWoW.Me.HealthPercent < 20 && !SingularRoutine.IsQuestBotActive),
 
                         Spell.BuffSelf("Preparation",
                             ret => Spell.GetSpellCooldown("Vanish").TotalSeconds > 10
-                                && Spell.GetSpellCooldown("Evasion").TotalSeconds > 10),
+                                && Spell.GetSpellCooldown("Evasion").TotalSeconds > 10
+                                && Spell.GetSpellCooldown("Combat Readiness").TotalSeconds > 10),
 
                         Spell.Cast("Shiv", ret => Me.CurrentTarget.HasAura("Enraged")),
 
@@ -649,7 +650,7 @@ namespace Singular.ClassSpecific.Rogue
 
                     if (Me.CurrentTarget.IsAboveTheGround())
                     {
-                        Logger.Write(Color.White, "{0} is {1:F1) yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
+                        Logger.Write(Color.White, "{0} is {1:F1} yds above the ground! using Ranged attack....", Me.CurrentTarget.SafeName(), Me.CurrentTarget.HeightOffTheGround());
                         return true;
                     }
 

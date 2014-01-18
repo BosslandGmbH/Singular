@@ -29,7 +29,7 @@ namespace Singular.Managers
      *
      */
 
-    internal class HealerManager : Targeting
+    internal class HealerManager : HealTargeting
     {
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
@@ -40,7 +40,7 @@ namespace Singular.Managers
         static HealerManager()
         {
             // Make sure we have a singleton instance!
-            Instance = new HealerManager();
+            HealTargeting.Instance = Instance = new HealerManager();
         }
 
         public new static HealerManager Instance { get; private set; }
@@ -68,12 +68,15 @@ namespace Singular.Managers
                     if (incomingUnit.IsMe)
                         foundMe = true;
 
-                    if (incomingUnit.ToPlayer().IsHorde != isHorde || !incomingUnit.ToPlayer().IsFriendly)
+                    var player = incomingUnit as WoWPlayer;
+
+                    if (player != null && player.IsHorde != isHorde)
                         continue;
 
                     outgoingUnits.Add(incomingUnit);
-                    if (SingularSettings.Instance.IncludePetsAsHealTargets && incomingUnit is WoWPlayer && incomingUnit.ToPlayer().GotAlivePet)
-                        outgoingUnits.Add(incomingUnit.ToPlayer().Pet);
+
+                    if (SingularSettings.Instance.IncludePetsAsHealTargets && player != null && player.GotAlivePet)
+                        outgoingUnits.Add(player.Pet);
                 }
                 catch (System.AccessViolationException)
                 {
@@ -105,28 +108,32 @@ namespace Singular.Managers
         {
             bool isHorde = StyxWoW.Me.IsHorde;
             int maxHealRangeSqr;
-            
-            if ( MovementManager.IsMovementDisabled)
+
+            if (MovementManager.IsMovementDisabled)
                 maxHealRangeSqr = 40 * 40;
             else
                 maxHealRangeSqr = SingularSettings.Instance.MaxHealTargetRange * SingularSettings.Instance.MaxHealTargetRange;
+
+            WoWPoint myLoc = Me.Location;
 
             for (int i = units.Count - 1; i >= 0; i--)
             {
                 WoWUnit unit = units[i].ToUnit();
                 try
                 {
-                    if (unit == null || !unit.IsValid || unit.IsDead || !unit.IsFriendly || unit.HealthPercent <= 0)
+                    if (unit == null || !unit.IsValid || unit.IsDead || unit.HealthPercent <= 0 || !unit.IsFriendly)
                     {
                         units.RemoveAt(i);
                         continue;
                     }
 
-                    WoWPlayer p = null;
-                    if (unit is WoWPlayer)
-                        p = unit.ToPlayer();
-                    else if (unit.IsPet && unit.OwnedByRoot != null && unit.OwnedByRoot.IsPlayer)
-                        p = unit.OwnedByRoot.ToPlayer();
+                    WoWPlayer p = unit as WoWPlayer;
+                    if (p == null && unit.IsPet)
+                    {
+                        var ownedByRoot = unit.OwnedByRoot;
+                        if (ownedByRoot != null && ownedByRoot.IsPlayer)
+                            p = unit.OwnedByRoot.ToPlayer();
+                    }
 
                     if (p != null)
                     {
@@ -156,7 +163,7 @@ namespace Singular.Managers
                     // Almost all healing is 40 yards, so we'll use that. If in Battlegrounds use a slightly larger value to expane our 
                     // healing range, but not too large that we are running all over the bg zone 
                     // note: reordered following tests so only one floating point distance comparison done due to evalution of DisableAllMovement
-                    if (unit.DistanceSqr > maxHealRangeSqr)
+                    if (unit.Location.DistanceSqr(myLoc) > maxHealRangeSqr)
                     {
                         units.RemoveAt(i);
                         continue;
@@ -180,6 +187,7 @@ namespace Singular.Managers
             var tanks = GetMainTankGuids();
             var inBg = Battlegrounds.IsInsideBattleground;
             var amHolyPally = StyxWoW.Me.Specialization == WoWSpec.PaladinHoly;
+            var myLoc = Me.Location;
 
             foreach (TargetPriority prio in units)
             {
@@ -199,7 +207,7 @@ namespace Singular.Managers
                     prio.Score -= u.HealthPercent * 5;
 
                     // If they're out of range, give them a bit lower score.
-                    if (u.DistanceSqr > 40 * 40)
+                    if (u.Location.DistanceSqr(myLoc) > 40 * 40)
                     {
                         prio.Score -= 50f;
                     }
@@ -211,7 +219,7 @@ namespace Singular.Managers
                     }
 
                     // Give tanks more weight. If the tank dies, we all die. KEEP HIM UP.
-                    if (tanks.Contains(u.Guid) && u.HealthPercent != 100 && 
+                    if (tanks.Contains(u.Guid) && u.HealthPercent != 100 &&
                         // Ignore giving more weight to the tank if we have Beacon of Light on it.
                         (!amHolyPally || !u.Auras.Any(a => a.Key == "Beacon of Light" && a.Value.CreatorGuid == StyxWoW.Me.Guid)))
                     {
@@ -354,7 +362,7 @@ namespace Singular.Managers
         /// </summary>
         /// <param name="hotName">spell name of HoT</param>
         /// <returns>reference to target that needs the HoT</returns>
-        public static WoWUnit GetBestTankTargetForHOT( string hotName, float health = 100f)
+        public static WoWUnit GetBestTankTargetForHOT(string hotName, float health = 100f)
         {
             WoWUnit hotTarget = null;
             hotTarget = Group.Tanks.Where(u => u.IsAlive && u.Combat && u.HealthPercent < health && u.DistanceSqr < 40 * 40 && !u.HasMyAura(hotName) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent).FirstOrDefault();
@@ -382,13 +390,13 @@ namespace Singular.Managers
 
         public static Composite CreateStayNearTankBehavior()
         {
-            if (!SingularSettings.Instance.StayNearTank )
+            if (!SingularSettings.Instance.StayNearTank)
                 return new ActionAlwaysFail();
 
             if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                 return new ActionAlwaysFail();
 
-            moveNearTank = Math.Max( 10, SingularSettings.Instance.StayNearTankRange);
+            moveNearTank = Math.Max(10, SingularSettings.Instance.StayNearTankRange);
             stopNearTank = moveNearTank - 5;
 
             return new PrioritySelector(
@@ -400,7 +408,7 @@ namespace Singular.Managers
                         new PrioritySelector(
                             Movement.CreateMoveToLosBehavior(unit => ((WoWUnit)unit)),
                             Movement.CreateMoveToUnitBehavior(unit => ((WoWUnit)unit), moveNearTank, stopNearTank),
-                            Movement.CreateEnsureMovementStoppedBehavior( stopNearTank, unit => (WoWUnit)unit, "in range of tank")
+                            Movement.CreateEnsureMovementStoppedBehavior(stopNearTank, unit => (WoWUnit)unit, "in range of tank")
                             ),
                         new ActionAlwaysFail()
                         )
@@ -484,7 +492,7 @@ namespace Singular.Managers
 
         public Composite GenerateBehaviorTree()
         {
-            if ( !SingularSettings.Debug )
+            if (!SingularSettings.Debug)
                 return new PrioritySelector(blist.Select(b => b.behavior).ToArray());
 
             PrioritySelector pri = new PrioritySelector();

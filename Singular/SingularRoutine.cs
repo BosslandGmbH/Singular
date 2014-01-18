@@ -331,12 +331,46 @@ namespace Singular
         }
 
         static DateTime _nextNoCallMsgAllowed = DateTime.MinValue;
+        static DateTime _nextNotInGameMsgAllowed = DateTime.MinValue;
+        static DateTime _nextNotInWorldMsgAllowed = DateTime.MinValue;
+        static DateTime _nextInCinematicMsgAllowed = DateTime.MinValue;
+
 
         public override void Pulse()
         {
-            // No pulsing if we're loading or out of the game.
-            if (!StyxWoW.IsInGame || !StyxWoW.IsInWorld)
+#region Pulse - No pulsing if we're loading or out of the game.
+
+            if (!StyxWoW.IsInGame)
+            {
+                if (DateTime.Now > _nextNotInGameMsgAllowed)
+                {
+                    Logger.WriteDebug(Color.HotPink, "warning: not in game");
+                    _nextNotInGameMsgAllowed = DateTime.Now.AddSeconds(30);
+                }
                 return;
+            }
+
+            if (!StyxWoW.IsInWorld)
+            {
+                if (DateTime.Now > _nextNotInWorldMsgAllowed)
+                {
+                    Logger.WriteDebug(Color.HotPink, "warning: not in world");
+                    _nextNotInWorldMsgAllowed = DateTime.Now.AddSeconds(30);
+                }
+                return;
+            }
+
+            if (InCinematic())
+            {
+                if (DateTime.Now > _nextInCinematicMsgAllowed)
+                {
+                    Logger.WriteDebug(Color.HotPink, "warning: cinematic is playing");
+                    _nextInCinematicMsgAllowed = DateTime.Now.AddSeconds(30);
+                }
+                return;
+            }
+
+#endregion
 
             // check time since last call and be sure user knows if Singular isn't being called
             if (SingularSettings.Debug)
@@ -386,9 +420,6 @@ namespace Singular
 
             if (Me.IsInGroup())
             {
-                if (CurrentWoWContext != WoWContext.Normal)
-                    HealerManager.Instance.Pulse();
-
                 if (Group.MeIsTank && CurrentWoWContext == WoWContext.Instances)
                     TankManager.Instance.Pulse();
             }

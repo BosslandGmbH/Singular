@@ -449,7 +449,8 @@ namespace Singular
         public static void ResetCurrentTargetTimer()
         {
             _timerLastTarget.Reset();
-            Logger.WriteDebug("reset target timer to {0:c}", _timerLastTarget.TimeLeft);
+            if (SingularSettings.Debug)
+                Logger.WriteDebug("reset target timer to {0:c}", _timerLastTarget.TimeLeft);
         }
 
         public static void ResetCurrentTarget()
@@ -469,7 +470,8 @@ namespace Singular
                         {
                             if (_guidLastTarget != 0)
                             {
-                                Logger.WriteDebug(sType + " CurrentTarget now: (null)");
+                                if (SingularSettings.Debug)
+                                    Logger.WriteDebug(sType + " CurrentTarget now: (null)");
                                 _guidLastTarget = 0;
                             }
                         }
@@ -646,7 +648,10 @@ namespace Singular
                     TimeSpan since = SinceLast;
                     if (since.TotalSeconds >= WarnTime)
                     {
-                        Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
+                        if (SingularSettings.Debug)
+                            Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
+                        else
+                            Logger.WriteFile("warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
                     }
                 }
             };

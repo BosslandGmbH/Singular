@@ -136,7 +136,7 @@ namespace Singular.ClassSpecific.Paladin
                 new PrioritySelector(
                     ctx => _healTarget = (selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit),
                     new Decorator(
-                        ret => ret != null && (moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
+                        ret => ret != null && (selfOnly || moveInRange || ((WoWUnit)ret).InLineOfSpellSight && ((WoWUnit)ret).DistanceSqr < 40 * 40),
                         new PrioritySelector(
                             Spell.WaitForCast(),
                             new Decorator(

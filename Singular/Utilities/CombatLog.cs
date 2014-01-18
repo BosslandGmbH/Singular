@@ -29,9 +29,10 @@ namespace Singular
         {
             get
             {
+                ulong cachedSourceGuid = SourceGuid;
                 return
                     ObjectManager.GetObjectsOfType<WoWUnit>(true, true).FirstOrDefault(
-                        o => o.IsValid && (o.Guid == SourceGuid || o.DescriptorGuid == SourceGuid));
+                        o => o.IsValid && (o.Guid == cachedSourceGuid || o.DescriptorGuid == cachedSourceGuid));
             }
         }
 
@@ -45,9 +46,10 @@ namespace Singular
         {
             get
             {
+                ulong cachedDestGuid = DestGuid;
                 return
                     ObjectManager.GetObjectsOfType<WoWUnit>(true, true).FirstOrDefault(
-                        o => o.IsValid && (o.Guid == DestGuid || o.DescriptorGuid == DestGuid));
+                        o => o.IsValid && (o.Guid == cachedDestGuid || o.DescriptorGuid == cachedDestGuid));
             }
         }
 

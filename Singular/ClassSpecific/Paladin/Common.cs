@@ -1,20 +1,15 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using CommonBehaviors.Actions;
 using Singular.Dynamics;
 using Singular.Helpers;
 using Singular.Managers;
 using Singular.Settings;
-
 using Styx;
-
 using Styx.CommonBot;
-using Styx.WoWInternals.WoWObjects;
 using Styx.TreeSharp;
+using Styx.WoWInternals.WoWObjects;
 using System;
-using Styx.WoWInternals;
-
+using System.Linq;
 using Action = Styx.TreeSharp.Action;
-using Rest = Singular.Helpers.Rest;
 
 namespace Singular.ClassSpecific.Paladin
 {
@@ -181,16 +176,21 @@ namespace Singular.ClassSpecific.Paladin
         {
             if ( HasTalent( PaladinTalents.EternalFlame ))
             {
+                if (onUnit == null)
+                    return new ActionAlwaysFail();
+
                 return new PrioritySelector(
-                    Spell.Cast(
-                        "Eternal Flame",
-                        onUnit,
-                        ret => onUnit(ret) is WoWPlayer && PaladinSettings.KeepEternalFlameUp && Group.Tanks.Contains((WoWPlayer)onUnit(ret)) && !Group.Tanks.Any(t => t.HasMyAura("Eternal Flame"))),
+                    ctx => onUnit(ctx),
 
                     Spell.Cast(
                         "Eternal Flame",
-                        ret => (WoWUnit)ret,
-                        ret => StyxWoW.Me.CurrentHolyPower >= 3 && (((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().SelfEternalFlameHealth ))
+                        on => (WoWUnit) on,
+                        ret => ret is WoWPlayer && PaladinSettings.KeepEternalFlameUp && Group.Tanks.Contains((WoWPlayer)onUnit(ret)) && !Group.Tanks.Any(t => t.HasMyAura("Eternal Flame"))),
+
+                    Spell.Cast(
+                        "Eternal Flame",
+                        on => (WoWUnit) on,
+                        ret => StyxWoW.Me.CurrentHolyPower >= 3 && ((WoWUnit)ret).HealthPercent <= SingularSettings.Instance.Paladin().SelfEternalFlameHealth)
 
                     );
             }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using Styx;
@@ -365,8 +364,10 @@ namespace Singular
 
         private static int GetInstanceDifficulty( )
         {
-			return Lua.GetReturnVal<int>("local _,_,d=GetInstanceInfo() if d ~= nil then return d end return 1", 0);
+			int diffidx = Lua.GetReturnVal<int>("local _,_,d=GetInstanceInfo() if d ~= nil then return d end return 1", 0);
+            return diffidx;
         }
+
 
         private static readonly string[] InstDiff = new[] 
         {
@@ -381,8 +382,8 @@ namespace Singular
             /* 8*/  "Challenge Mode Raid",
             /* 9*/  "40-player Raid"
         };
-		
-        private static string GetInstanceDifficultyName()
+
+        private static string GetInstanceDifficultyName( )
         {
             int diff = GetInstanceDifficulty();
             if (diff >= InstDiff.Length)
@@ -391,5 +392,10 @@ namespace Singular
             return InstDiff[diff];
         }
 
+        public bool InCinematic()
+        {
+            bool inCin = Lua.GetReturnVal<bool>("return InCinematic()", 0);
+            return inCin;
+        }
     }
 }

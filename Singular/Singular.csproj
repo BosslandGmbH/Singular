@@ -93,8 +93,15 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="GreyMagic">
+    <Reference Include="GreyMagic, Version=2.5.8673.5, Culture=neutral, PublicKeyToken=260525fa2b0e778a, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Honorbuddy\GreyMagic.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Honorbuddy, Version=2.5.7851.348, Culture=neutral, PublicKeyToken=50a565ab5c01ae50, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\HB\Honorbuddy.exe</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Honorbuddy">
       <HintPath>..\Honorbuddy\Honorbuddy.exe</HintPath>

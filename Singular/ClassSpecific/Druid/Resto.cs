@@ -16,6 +16,7 @@ using Action = Styx.TreeSharp.Action;
 using CommonBehaviors.Actions;
 using Styx.Common.Helpers;
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace Singular.ClassSpecific.Druid
 {
@@ -750,7 +751,10 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateRestoDruidHealBehavior()
         {
             return new PrioritySelector(
+                CreateRestoDiagnosticOutputBehavior(),
+
                 HealerManager.CreateStayNearTankBehavior(),
+
                 new Decorator(
                     ret => HealerManager.Instance.TargetList.Any( h => h.Distance < 40 && h.IsAlive && !h.IsMe),
                     new PrioritySelector(
@@ -855,7 +859,7 @@ namespace Singular.ClassSpecific.Druid
                     && (u.GetAuraStacks(hotName) < stacks || u.GetAuraTimeLeft(hotName).TotalSeconds < 3) && u.InLineOfSpellSight).OrderBy(u => u.HealthPercent)
                 .FirstOrDefault();
 
-            if (hotTarget != null)
+            if (hotTarget != null && SingularSettings.Debug)
                 Logger.WriteDebug("GetBestTankTargetFor('{0}'): found Tank {1} @ {2:F1}%, hasmyaura={3}", hotName, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.HasMyAura(hotName));
 
             return hotTarget;
@@ -887,7 +891,7 @@ namespace Singular.ClassSpecific.Druid
                     .FirstOrDefault();
             }
 
-            if (hotTarget != null)
+            if (hotTarget != null && SingularSettings.Debug)
                 Logger.WriteDebug("GetLifebloomTarget({0:F1}%): tank {1} @ {2:F1}%, stacks={3}", health, hotTarget.SafeName(), hotTarget.HealthPercent, hotTarget.GetAuraStacks(hotName));
 
             return hotTarget;
@@ -973,5 +977,47 @@ namespace Singular.ClassSpecific.Druid
                     })
                 );
         }
+
+
+        #region Diagnostics
+
+        private static Composite CreateRestoDiagnosticOutputBehavior()
+        {
+            if (!SingularSettings.Debug)
+                return new ActionAlwaysFail();
+
+            return new ThrottlePasses(1, 1,
+                new Action(ret =>
+                {
+                    string log;
+                    log = string.Format(".... h={0:F1}%/m={1:F1}%, form:{2}, mushcnt={3}",
+                        Me.HealthPercent,
+                        Me.ManaPercent,
+                        Me.Shapeshift.ToString(),
+                        MushroomCount
+                        );
+
+                    WoWUnit target = Me.CurrentTarget;
+                    if (target != null)
+                    {
+                        log += string.Format(", th={0:F1}%/tm={1:F1}%, dist={2:F1}, face={3}, loss={4}, sfire={5}, mfire={6}",
+                            target.HealthPercent,
+                            target.ManaPercent,
+                            target.Distance,
+                            Me.IsSafelyFacing(target),
+                            target.InLineOfSpellSight,
+                            (long)target.GetAuraTimeLeft("Sunfire", true).TotalMilliseconds,
+                            (long)target.GetAuraTimeLeft("Moonfire", true).TotalMilliseconds
+                            );
+                    }
+
+                    Logger.WriteDebug(Color.AntiqueWhite, log);
+                    return RunStatus.Failure;
+                })
+                );
+        }
+
+        #endregion
     }
+
 }

@@ -795,7 +795,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 HealerManager.CreateStayNearTankBehavior(),
                 new Decorator(
-                    req => !HealerManager.Instance.TargetList.Any(h => h.IsAlive && !h.IsMe && h.Distance < 40),
+                    req => !HealerManager.Instance.TargetList.Any(h => h.IsAlive && !h.IsMe && h.Distance < 40) || HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
                         Helpers.Common.EnsureReadyToAttackFromLongRange(),
                         Spell.WaitForCastOrChannel(),
@@ -804,7 +804,7 @@ namespace Singular.ClassSpecific.Druid
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
                                 Spell.Buff("Moonfire"),
-                                Spell.Cast("Wrath"),
+                                Spell.Cast("Wrath", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
                                 Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 35f, 30f)
                                 )
                             )

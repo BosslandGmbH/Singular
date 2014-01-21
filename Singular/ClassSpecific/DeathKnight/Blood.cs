@@ -41,7 +41,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     // we want to make sure our primary target is within melee range so we don't run outside of anti-magic zone.
                     Spell.CastOnGround("Anti-Magic Zone", 
-                        loc => StyxWoW.Me.Location,
+                        loc => StyxWoW.Me,
                         ret => Common.HasTalent( DeathKnightTalents.AntiMagicZone) 
                             && !StyxWoW.Me.HasAura("Anti-Magic Shell") 
                             && Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == StyxWoW.Me.Guid) 
@@ -138,7 +138,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             new Decorator(
                                 ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= Settings.DeathAndDecayCount,
                                 new PrioritySelector(
-                                    Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => true, false),
+                                    Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),
 
                                     // Spell.Cast("Gorefiend's Grasp", ret => Common.HasTalent( DeathKnightTalents.GorefiendsGrasp)),
                                     Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemoreselessWinter)),
@@ -229,12 +229,16 @@ namespace Singular.ClassSpecific.DeathKnight
                             Common.CreateDarkSuccorBehavior(),
 
                             // Start AoE section
-                            Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => true, false),
+                            Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),
                             Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemoreselessWinter)),
 
                             // renew/spread disease if possible
-                            Spell.Cast("Blood Boil", ret => Spell.UseAOE && UseBloodBoilForDiseases()),
-                            Spell.Cast("Pestilence", ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases),
+                            new Throttle( 2,
+                                new PrioritySelector(
+                                    Spell.Cast("Blood Boil", ret => Spell.UseAOE && UseBloodBoilForDiseases()),
+                                    Spell.Cast("Pestilence", ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases)
+                                    )
+                                ),
 
 
                             // apply / refresh disease if needed 
@@ -351,7 +355,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             new Decorator(
                                 ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= Settings.DeathAndDecayCount,
                                 new PrioritySelector(
-                                    Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget.Location, ret => true, false),
+                                    Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),
 
                                     // Spell.Cast("Gorefiend's Grasp", ret => Common.HasTalent( DeathKnightTalents.GorefiendsGrasp)),
                                     Spell.Cast("Remorseless Winter", ret => Common.HasTalent(DeathKnightTalents.RemoreselessWinter)),
@@ -360,15 +364,19 @@ namespace Singular.ClassSpecific.DeathKnight
                                     Common.CreateApplyDiseases(),
 
                                     // Spread Diseases
-                                    Spell.Cast("Blood Boil",
-                                        ret => Common.HasTalent(DeathKnightTalents.RollingBlood)
-                                            && !StyxWoW.Me.HasAura("Unholy Blight")
-                                            && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10
-                                            && Common.ShouldSpreadDiseases),
+                                    new Throttle( 2,
+                                        new PrioritySelector(
+                                            Spell.Cast("Blood Boil",
+                                                ret => Common.HasTalent(DeathKnightTalents.RollingBlood)
+                                                    && !StyxWoW.Me.HasAura("Unholy Blight")
+                                                    && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10
+                                                    && Common.ShouldSpreadDiseases),
 
-                                    Spell.Cast("Pestilence",
-                                        ret => !StyxWoW.Me.HasAura("Unholy Blight")
-                                            && Common.ShouldSpreadDiseases),
+                                            Spell.Cast("Pestilence",
+                                                ret => !StyxWoW.Me.HasAura("Unholy Blight")
+                                                    && Common.ShouldSpreadDiseases)
+                                            )
+                                        ),
 
                                     // Active Mitigation
                                     new Sequence(

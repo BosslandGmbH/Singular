@@ -338,7 +338,7 @@ namespace Singular.ClassSpecific.Monk
             // healing sphere keeps spell on cursor for up to 3 casts... need to stop targeting after 1
             return new Sequence(
                 Spell.CastOnGround("Healing Sphere",
-                    ctx => Me.Location,
+                    on => Me,
                     ret => Me.HealthPercent < sphereBelowHealth 
                         && (Me.PowerType != WoWPowerType.Mana)
                         && !Common.AnySpheres(SphereType.Healing, 1f),

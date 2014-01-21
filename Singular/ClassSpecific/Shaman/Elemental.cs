@@ -177,8 +177,9 @@ namespace Singular.ClassSpecific.Shaman
                                 new Action( act => { Logger.WriteDebug("performing aoe behavior"); return RunStatus.Failure; }),
 
                                 Spell.CastOnGround("Earthquake", 
-                                    ret => StyxWoW.Me.CurrentTarget.Location, 
-                                    req => StyxWoW.Me.CurrentTarget.Distance < 34
+                                    on => StyxWoW.Me.CurrentTarget,
+                                    req => StyxWoW.Me.CurrentTarget != null 
+                                        && StyxWoW.Me.CurrentTarget.Distance < 34
                                         && (StyxWoW.Me.ManaPercent > 60 || StyxWoW.Me.HasAura( "Clearcasting")) 
                                         && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 6),
 

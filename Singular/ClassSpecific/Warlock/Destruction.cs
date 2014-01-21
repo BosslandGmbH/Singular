@@ -224,7 +224,7 @@ namespace Singular.ClassSpecific.Warlock
                             new PrioritySelector(
                                 ctx => Clusters.GetBestUnitForCluster( Unit.NearbyUnfriendlyUnits.Where(u => Me.IsSafelyFacing(u)), ClusterType.Radius, 8f),
                                 Spell.CastOnGround( "Rain of Fire", 
-                                    loc => ((WoWUnit)loc).Location, 
+                                    on => (WoWUnit)on, 
                                     req => req != null 
                                         && _InstantRoF
                                         && !Me.HasAura( "Rain of Fire")

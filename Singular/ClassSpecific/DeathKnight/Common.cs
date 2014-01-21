@@ -267,7 +267,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                                                              (u.IsCasting || u.ChanneledCastingSpellId != 0) &&
                                                                              u.CurrentTargetGuid == Me.Guid)),
                     // we want to make sure our primary target is within melee range so we don't run outside of anti-magic zone.
-                        Spell.CastOnGround("Anti-Magic Zone", ctx => Me.Location,
+                        Spell.CastOnGround("Anti-Magic Zone", ctx => Me,
                                            ret => Common.HasTalent( DeathKnightTalents.AntiMagicZone) &&
                                                   !Me.HasAura("Anti-Magic Shell") &&
                                                   Unit.NearbyUnfriendlyUnits.Any(u =>
@@ -283,7 +283,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Spell.BuffSelf("Desecrated Ground", ret => Common.HasTalent( DeathKnightTalents.DesecratedGround) && Me.IsCrowdControlled()),
                     
-                        Helpers.Common.CreateCombatRezBehavior("Raise Ally", on => ((WoWUnit)on).SpellDistance() < 40 && ((WoWUnit)on).InLineOfSpellSight),
+                        Helpers.Common.CreateCombatRezBehavior("Raise Ally", req => ((WoWUnit)req).SpellDistance() < 40 && ((WoWUnit)req).InLineOfSpellSight),
 
                         // *** Offensive Cooldowns ***
 

@@ -160,8 +160,8 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 Spell.CastOnGround(
                     "Death and Decay",
-                    ret => StyxWoW.Me.CurrentTarget.Location,
-                    ret => StyxWoW.Me.UnholyRuneCount == 2,
+                    ret => StyxWoW.Me.CurrentTarget,
+                    ret => Common.UnholyRuneSlotsActive >= 2,
                     false),
 
                 Spell.Cast("Blood Boil",
@@ -233,8 +233,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                           !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation") &&
                                           StyxWoW.Me.HasAura("Shadow Infusion", 5)),
                         Spell.CastOnGround("Death and Decay",
-                                           ret => StyxWoW.Me.CurrentTarget.Location,
-                                           ret => StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount > 0, false),
+                                           ret => StyxWoW.Me.CurrentTarget,
+                                           ret => Common.UnholyRuneSlotsActive >= 2, false),
                         Spell.Cast("Scourge Strike", ret => StyxWoW.Me.UnholyRuneCount == 2 || StyxWoW.Me.DeathRuneCount > 0),
                         Spell.Cast("Festering Strike", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),
                         Spell.Cast("Death Coil",
@@ -293,12 +293,16 @@ namespace Singular.ClassSpecific.DeathKnight
                                 Common.CreateApplyDiseases(),
 
                                 // spread the disease around.
-                                Spell.Cast("Blood Boil",
-                                    ret => Common.HasTalent(DeathKnightTalents.RollingBlood) 
-                                        && !StyxWoW.Me.HasAura("Unholy Blight") 
-                                        && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 && Common.ShouldSpreadDiseases),
-                                Spell.Cast("Pestilence",
-                                    ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases),
+                                new Throttle( 2,
+                                    new PrioritySelector(
+                                        Spell.Cast("Blood Boil",
+                                            ret => Common.HasTalent(DeathKnightTalents.RollingBlood) 
+                                                && !StyxWoW.Me.HasAura("Unholy Blight") 
+                                                && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 && Common.ShouldSpreadDiseases),
+                                        Spell.Cast("Pestilence",
+                                            ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases)
+                                        )
+                                    ),
 
                                 Spell.Cast("Dark Transformation",
                                     ret => StyxWoW.Me.GotAlivePet 
@@ -306,8 +310,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                         && Me.HasAura("Shadow Infusion", 5) ),
 
                                 Spell.CastOnGround("Death and Decay",
-                                    loc => StyxWoW.Me.CurrentTarget.Location,
-                                    req => Spell.UseAOE && StyxWoW.Me.UnholyRuneCount == 2, 
+                                    loc => StyxWoW.Me.CurrentTarget,
+                                    req => Spell.UseAOE && Common.UnholyRuneSlotsActive >= 2, 
                                     false),
 
                                 Spell.Cast("Blood Boil",

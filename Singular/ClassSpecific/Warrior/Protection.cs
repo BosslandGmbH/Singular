@@ -233,7 +233,7 @@ namespace Singular.ClassSpecific.Warrior
             return new Throttle( 1, 1,
                 new PrioritySelector(
                     Spell.CastOnGround("Mocking Banner",
-                        ret => (TankManager.Instance.NeedToTaunt.FirstOrDefault() ?? Me).Location,
+                        on => (TankManager.Instance.NeedToTaunt.FirstOrDefault() ?? Me),
                         ret => TankManager.Instance.NeedToTaunt.Any() && Clusters.GetCluster(TankManager.Instance.NeedToTaunt.FirstOrDefault(), TankManager.Instance.NeedToTaunt, ClusterType.Radius, 15f).Count() >= 2),
 
                     Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault()),

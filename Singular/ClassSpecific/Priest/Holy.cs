@@ -638,7 +638,7 @@ VoidShift               Void Shift
                     ),
 
                 new Decorator(
-                    ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal || !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe) || HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
                         Helpers.Common.EnsureReadyToAttackFromLongRange(),
                         Spell.WaitForCastOrChannel(),
@@ -654,7 +654,7 @@ VoidShift               Void Shift
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Buff("Holy Word: Chastise", ret => StyxWoW.Me.HasAura( "Chakra: Chastise")),
                                 Common.CreateHolyFireBehavior(),
-                                Spell.Cast("Smite")
+                                Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS())
                                 )
                             )
                         )

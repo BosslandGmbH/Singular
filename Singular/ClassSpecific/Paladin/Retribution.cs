@@ -137,7 +137,7 @@ namespace Singular.ClassSpecific.Paladin
                         new Decorator(
                             ret => _mobCount >= 2 && Spell.UseAOE,
                             new PrioritySelector(
-                                Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
+                                Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => 2 <= Clusters.GetClusterCount(Me.CurrentTarget, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 10f)),
 
                                 // EJ: Inq > 5HP DS > LH > HoW > Exo > HotR > Judge > 3-4HP DS (> SS)
                                 Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 4),
@@ -274,7 +274,7 @@ namespace Singular.ClassSpecific.Paladin
                         new Decorator(
                             ret => _mobCount >= 2 && Spell.UseAOE,
                             new PrioritySelector(
-                                Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => true),
+                                Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => true),
 
                                 // EJ Multi Rotation: Inq > 5HP TV > ES > HoW > Exo > CS > Judge > 3-4HP TV (> SS)
                                 Spell.BuffSelf("Inquisition", ret => Me.CurrentHolyPower > 0 && Me.GetAuraTimeLeft("Inquisition", true).TotalSeconds < 3),

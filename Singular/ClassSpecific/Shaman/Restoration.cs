@@ -226,7 +226,7 @@ namespace Singular.ClassSpecific.Shaman
                     ),
 
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && !HealerManager.Instance.TargetList.Any( t => !t.IsMe && t.IsAlive ),
+                    ret => !Spell.IsGlobalCooldown() && (!HealerManager.Instance.TargetList.Any( t => !t.IsMe && t.IsAlive ) || HealerManager.AllowHealerDPS()),
                     new PrioritySelector(
 
                         Helpers.Common.EnsureReadyToAttackFromMediumRange(),
@@ -316,6 +316,29 @@ namespace Singular.ClassSpecific.Shaman
                 HealerManager.CreateStayNearTankBehavior(),
 
                 new Decorator(
+                    ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe) || HealerManager.AllowHealerDPS(),
+                    new PrioritySelector(
+
+                        Helpers.Common.EnsureReadyToAttackFromMediumRange(),
+                        Movement.CreateFaceTargetBehavior(),
+                        Spell.WaitForCastOrChannel(),
+
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+                                Helpers.Common.CreateInterruptBehavior(),
+                                Spell.Cast("Elemental Blast", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
+                                Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
+                                Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
+                                Spell.Cast("Earth Shock"),
+                                Spell.Cast("Chain Lightning", on => Me.CurrentTarget, req => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled()), cancel => HealerManager.CancelHealerDPS()),
+                                Spell.Cast("Lightning Bolt", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS())
+                                )
+                            )
+                        )
+                    ),
+
+                new Decorator(
                     ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
                     new PrioritySelector(
                         CreateRestoShamanHealingOnlyBehavior( selfOnly:false),
@@ -336,29 +359,6 @@ namespace Singular.ClassSpecific.Shaman
                                     req => !HealerManager.Instance.TargetList.Any( h => h.IsAlive && h.SpellDistance() < 40 && h.HealthPercent < ShamanSettings.Heal.TelluricHealthCast),
                                     cancel => HealerManager.Instance.TargetList.Any( h => h.IsAlive && h.SpellDistance() < 40 && h.HealthPercent < ShamanSettings.Heal.TelluricHealthCancel)
                                     )
-                                )
-                            )
-                        )
-                    ),
-
-                new Decorator(
-                    ret => Me.Combat && !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
-                    new PrioritySelector(
-
-                        Helpers.Common.EnsureReadyToAttackFromMediumRange(),
-                        Movement.CreateFaceTargetBehavior(),
-                        Spell.WaitForCastOrChannel(),
-
-                        new Decorator(
-                            ret => !Spell.IsGlobalCooldown(),
-                            new PrioritySelector(
-                                Helpers.Common.CreateInterruptBehavior(),
-                                Spell.Cast("Elemental Blast"),
-                                Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
-                                Spell.Cast("Lava Burst"),
-                                Spell.Cast("Earth Shock"),
-                                Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled())),
-                                Spell.Cast("Lightning Bolt")
                                 )
                             )
                         )

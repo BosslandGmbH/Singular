@@ -225,7 +225,7 @@ namespace Singular.ClassSpecific.Warlock
                             // find an add within 8 yds (not our current target)
                             ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.Combat || Battlegrounds.IsInsideBattleground) && !u.IsStunned() && u.CurrentTargetGuid == Me.Guid && Me.CurrentTargetGuid != u.Guid && u.SpellDistance() < 8),
 
-                            Spell.CastOnGround( "Shadowfury", on => ((WoWUnit)on).Location, ret => ret != null, true),
+                            Spell.CastOnGround( "Shadowfury", on => (WoWUnit)on, ret => ret != null, true),
 
                             // treat as a heal, but we cast on what would be our fear target -- allow even when fear use disabled
                             Spell.Buff("Mortal Coil", on => (WoWUnit)on, ret => WarlockSettings.UseFear && !((WoWUnit)ret).IsUndead && Me.HealthPercent < 50),

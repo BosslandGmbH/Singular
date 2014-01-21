@@ -701,15 +701,15 @@ namespace Singular.ClassSpecific.Priest
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
+                    ret => !Spell.IsGlobalCooldown() && HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                         Spell.Cast("Shadow Word: Death", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && Me.IsSafelyFacing(u))),
                         Spell.Cast("Shadow Word: Pain", req => Me.CurrentTarget.IsPlayer && Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1)),
-                        Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
+                        Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
                         Common.CreateHolyFireBehavior(),
-                        Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
+                        Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS())
                         )
                     )
                 );
@@ -730,7 +730,7 @@ namespace Singular.ClassSpecific.Priest
                     ),
 
                 new Decorator(
-                    ret => Me.Combat && !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
+                    ret => Me.Combat && (!Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe) || HealerManager.AllowHealerDPS()),
                     new PrioritySelector(
 
                         Helpers.Common.EnsureReadyToAttackFromMediumRange(),
@@ -749,9 +749,9 @@ namespace Singular.ClassSpecific.Priest
                                     WoWUnit unit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.IsTargetingMeOrPet && !u.HasMyAura("Shadow Word: Pain") && !u.IsCrowdControlled());
                                     return unit;
                                 }),
-                                Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
+                                Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
                                 Common.CreateHolyFireBehavior(),
-                                Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => false)
+                                Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS())
                                 )
                             )
                         )

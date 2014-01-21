@@ -403,22 +403,27 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Plague Strike", ret => Me.CurrentTarget.HasAuraExpired("Blood Plague")),
 
                 // spread disease
-                Spell.Cast("Blood Boil",
-                    ret => Common.HasTalent(DeathKnightTalents.RollingBlood)
-                        && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))
-                        && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.HasAuraExpired("Blood Plague"))),
+                new Throttle( 2,
+                    new PrioritySelector(
+                        Spell.Cast("Blood Boil",
+                            ret => Common.HasTalent(DeathKnightTalents.RollingBlood)
+                                && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))
+                                && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.HasAuraExpired("Blood Plague"))),
 
-                Spell.Cast("Pestilence",
-                    ret => !Me.CurrentTarget.HasAuraExpired("Blood Plague")
-                        && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))),
+                        Spell.Cast("Pestilence",
+                            ret => !StyxWoW.Me.HasAura("Unholy Blight")
+                                && !Me.CurrentTarget.HasAuraExpired("Blood Plague")
+                                && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague")))
+                        )
+                    ),
 
                 // damage
-                Spell.Cast("Howling Blast", ret => Me.FrostRuneCount >= 2 || Me.DeathRuneCount >= 2),
-                Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location, ret => Me.UnholyRuneCount >= 2, false),
+                Spell.Cast("Howling Blast", ret => (Me.FrostRuneCount + Me.DeathRuneCount) >= 2),
+                Spell.CastOnGround("Death and Decay", on => Me.CurrentTarget, req => (Me.UnholyRuneCount + Me.DeathRuneCount) >= 2, false),
                 Spell.Cast("Frost Strike", ret => NeedToDumpRunicPower ),
                 Spell.Cast("Obliterate", ret => !IsDualWielding && Me.HasAura(KillingMachine)),
                 Spell.Cast("Howling Blast"),
-                Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget.Location, ret => true, false),
+                // Spell.CastOnGround("Death and Decay", ret => Me.CurrentTarget, ret => true, false),
                 Spell.Cast("Frost Strike"),
                 Spell.Cast("Horn of Winter"),
                 Spell.Cast("Plague Strike")

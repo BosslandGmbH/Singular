@@ -186,7 +186,7 @@ namespace Singular.ClassSpecific.Mage
 
                     Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
-                    new Throttle( TimeSpan.FromMilliseconds(6000), Spell.CastOnGround("Rune of Power", loc => Me.Location, req => !Me.IsMoving && !Me.InVehicle && !Me.HasAura("Rune of Power") && Singular.Utilities.EventHandlers.LastNoPathFailure.AddSeconds(30) < DateTime.Now, false) ),
+                    new Throttle( TimeSpan.FromMilliseconds(6000), Spell.CastOnGround("Rune of Power", on => Me, req => !Me.IsMoving && !Me.InVehicle && !Me.HasAura("Rune of Power") && Singular.Utilities.EventHandlers.LastNoPathFailure.AddSeconds(30) < DateTime.Now, false) ),
 
                     Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
                     Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),

@@ -187,7 +187,7 @@ namespace Singular.ClassSpecific.Paladin
                                 Spell.Cast("Consecration", ret => !Me.IsMoving),
                         /// level 90 talents
                                 Spell.Cast("Holy Prism", on => Me),           // target enemy for Single target
-                                Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => Me.CurrentTarget != null, false),       // no mana cost
+                                Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Me.CurrentTarget != null, false),       // no mana cost
                                 Spell.Cast("Execution Sentence", 
                                     on => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => u.HealthPercent < 20 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight )),               // no mana cost
                         /// end of talents
@@ -207,7 +207,7 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Hammer of Wrath", ret => Me.CurrentTarget.HealthPercent < 20),
                         /// level 90 talent if avail
                         Spell.Cast("Holy Prism", ret => Spell.UseAOE),           // target enemy for Single target
-                        Spell.CastOnGround("Light's Hammer", loc => Me.CurrentTarget.Location, ret => Spell.UseAOE && Me.GotTarget, false ),       // no mana cost
+                        Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Spell.UseAOE && Me.GotTarget, false ),       // no mana cost
                         Spell.Cast("Execution Sentence", ret => Me.CurrentTarget.HealthPercent < 20),               // no mana cost
                         /// back to normal
                         Spell.Cast("Holy Wrath")

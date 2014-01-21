@@ -120,7 +120,7 @@ namespace Singular.ClassSpecific.Priest
                                     new Sequence(
                 // new Action( ret => Logger.Write( "Speed Buff for {0}", mode ) ),
                                         Spell.CastOnGround("Angelic Feather",
-                                            ctx => StyxWoW.Me.Location,
+                                            on => StyxWoW.Me,
                                             ret => true,
                                             false),
                                         Helpers.Common.CreateWaitForLagDuration(orUntil => Spell.GetPendingCursorSpell != null),
@@ -198,7 +198,7 @@ namespace Singular.ClassSpecific.Priest
                                         new Sequence(
                                             // new Action( ret => Logger.Write( "Speed Buff for {0}", mode ) ),
                                             Spell.CastOnGround("Angelic Feather",
-                                                ctx => StyxWoW.Me.Location,
+                                                on => StyxWoW.Me,
                                                 ret => true,
                                                 false),
                                             Helpers.Common.CreateWaitForLagDuration( orUntil => Spell.GetPendingCursorSpell != null ),

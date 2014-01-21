@@ -308,7 +308,7 @@ namespace Singular.ClassSpecific.Druid
                                     new ActionAlwaysSucceed()
                                     ),
                                 new PrioritySelector(
-                                    Spell.CastOnGround("Ursol's Vortex", loc => ((WoWUnit)loc).Location, req => Me.GotTarget, false),
+                                    Spell.CastOnGround("Ursol's Vortex", on => (WoWUnit)on, req => Me.GotTarget, false),
                                     Spell.Cast("Entangling Roots", on => (WoWUnit)on),
                                     new ActionAlwaysSucceed()
                                     )
@@ -651,7 +651,7 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
                         new Throttle( 2,
                             new PrioritySelector(
-                                Spell.CastOnGround("Ursol's Vortex", loc => ((WoWUnit)loc).Location, req => Me.GotTarget, false),
+                                Spell.CastOnGround("Ursol's Vortex", on => (WoWUnit)on, req => Me.GotTarget, false),
                                 Spell.Buff("Disorienting Roar", onUnit => (WoWUnit)onUnit, req => true),
                                 Spell.Buff("Mass Entanglement", onUnit => (WoWUnit)onUnit, req => true),
                                 Spell.Buff("Mighty Bash", onUnit => (WoWUnit)onUnit, req => true),

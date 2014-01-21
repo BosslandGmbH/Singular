@@ -820,7 +820,7 @@ namespace Singular.ClassSpecific.Hunter
                         new Decorator(
                             ret => Me.IsSafelyFacing((WoWUnit)ret),
                             new PrioritySelector(
-                                Spell.CastOnGround("Binding Shot", ret => ((WoWUnit)ret).Location, ret => true, false),
+                                Spell.CastOnGround("Binding Shot", on => (WoWUnit) on, ret => true, false),
                                 Spell.Cast("Concussive Shot", on => (WoWUnit)on),
                                 Spell.Cast("Scatter Shot", on => (WoWUnit)on, ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || Me.FocusedUnit == null)
                                 )
@@ -921,7 +921,7 @@ namespace Singular.ClassSpecific.Hunter
                         new PrioritySelector(
                             Common.CreateHunterTrapBehavior("Freezing Trap", true, on => ccUnit),
                             Spell.Cast("Scatter Shot", on => ccUnit),
-                            Spell.CastOnGround("Binding Shot", ret => ccUnit.Location, ret => true, false),
+                            Spell.CastOnGround("Binding Shot", on => ccUnit, ret => true, false),
                             Common.CreateHunterTrapBehavior("Snake Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Entrapment")),
                             Common.CreateHunterTrapBehavior("Ice Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Ice Trap")),
                             Spell.Cast("Concussive Shot", on => ccUnit)
@@ -951,7 +951,7 @@ namespace Singular.ClassSpecific.Hunter
                         new PrioritySelector(
                             Common.CreateHunterTrapBehavior("Freezing Trap", true, on => ccUnit),
                             Spell.Cast("Scatter Shot", on => ccUnit),
-                            Spell.CastOnGround("Binding Shot", ret => ccUnit.Location, ret => true, false),
+                            Spell.CastOnGround("Binding Shot", on => ccUnit, ret => true, false),
                             Common.CreateHunterTrapBehavior("Snake Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Entrapment")),
                             Common.CreateHunterTrapBehavior("Ice Trap", true, on => ccUnit, ret => TalentManager.HasGlyph("Ice Trap")),
                             Spell.Cast("Concussive Shot", on => ccUnit),

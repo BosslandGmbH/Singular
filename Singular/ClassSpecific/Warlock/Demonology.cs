@@ -210,7 +210,7 @@ namespace Singular.ClassSpecific.Warlock
                 new Decorator( 
                     ret => Me.CurrentTarget.HasAuraExpired("Hand of Gul'dan", "Shadowflame", 1),
                     new PrioritySelector(
-                        Spell.CastOnGround("Hand of Gul'dan", loc => Me.CurrentTarget.Location, ret => TalentManager.HasGlyph("Hand of Gul'dan")),
+                        Spell.CastOnGround("Hand of Gul'dan", on => Me.CurrentTarget, ret => Me.GotTarget && TalentManager.HasGlyph("Hand of Gul'dan")),
                         Spell.Cast("Hand of Gul'dan", req => !TalentManager.HasGlyph("Hand of Gul'dan"))
                         )
                     )
@@ -347,7 +347,7 @@ namespace Singular.ClassSpecific.Warlock
                                     ret => !Me.HasAura("Metamorphosis"),
                                     new PrioritySelector(
                                         Spell.Buff("Hand of Gul'dan", onUnit => (WoWUnit)onUnit, req => !TalentManager.HasGlyph("Hand of Gul'dan")),
-                                        Spell.CastOnGround("Hand of Gul'dan", loc => ((WoWUnit)loc).Location, req => Me.GotTarget && TalentManager.HasGlyph("Hand of Gul'dan"), false)
+                                        Spell.CastOnGround("Hand of Gul'dan", on => (WoWUnit)on, req => Me.GotTarget && TalentManager.HasGlyph("Hand of Gul'dan"), false)
                                         )
                                     ),
                                 Spell.Buff("Mortal Coil", onUnit => (WoWUnit)onUnit),

@@ -1,3 +1,43 @@
+--- Release 3.0.0.3253 ---
+
+General
+
+change- added Tyrael to list of manual movement bots automatically detected
+
+change- Singular no longer suppresses summoning Pet during cinematic (see next change)
+
+fixed - Singular now suppresses summoning Pet and all other Pulse() logic if Combat BehaviorFlag has been disabled
+
+*new* - added settings to General -> Group Healing to control whether and when Healers can DPS.  This applies to general DPS and not attack spells which have a specific healing/mana benefit (Atonement, Telluric Currents, etc.)
+
+change- Ground spell casts which took position from a specific target unit location will now correctly handle if that target dies between the spell cast and the point where click on the ground is performed
+
+
+Death Knight
+
+fixed - All Specs - no longer casts back to back Blood Boil/Pestilence to spread diseases (second cast was occurring too fast before results of prior one had become available.)
+
+fixed - Frost - was previously not taking advantage of Death Runes in all cases
+
+
+Druid
+
+*new* - Resto - will now cast Moonfire/Wrath based upon the General -> Healer DPS ... settings
+
+
+Priest
+
+*new* - Disc - will now cast SD:D/SW:P/Penance/Holy Fire/Smite based upon the General -> Healer DPS ... settings
+
+*new* - Holy - will now cast HW:C/SD:D/SW:P/Holy Fire/Smite based upon the General -> Healer DPS ... settings
+
+
+Shaman
+
+*new* - Resto - will now cast Elemental Blast/Flame Shock/Lava Burst/Earth Shock/Chain Lightning/Lightning Bolt based upon the General -> Healer DPS ... settings
+
+
+
 --- Release 3.0.0.3231 ---
 
 General

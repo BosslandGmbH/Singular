@@ -117,6 +117,45 @@ namespace Singular
                 Logging.WriteToFileSync( ll, "(Singular) " + message, args);
         }
 
+        /// <summary>
+        /// write message to log window if Singular Debug Enabled setting true
+        /// </summary>
+        /// <param name="message">message text</param>
+        public static void WriteDiagnostic(string message)
+        {
+            WriteDiagnostic(Color.Orange, message);
+        }
+
+        /// <summary>
+        /// write message to log window if Singular Debug Enabled setting true
+        /// </summary>
+        /// <param name="message">message text with embedded parameters</param>
+        /// <param name="args">replacement parameter values</param>
+        public static void WriteDiagnostic(string message, params object[] args)
+        {
+            WriteDiagnostic(Color.Orange, message, args);
+        }
+
+        /// <summary>
+        /// write message to log window if Singular Debug Enabled setting true
+        /// </summary>
+        /// <param name="clr">color of message in window</param>
+        /// <param name="message">message text with embedded parameters</param>
+        /// <param name="args">replacement parameter values</param>
+        public static void WriteDiagnostic(Color clr, string message, params object[] args)
+        {
+            System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);
+
+            if (SingularSettings.Debug)
+            {
+                Logging.Write(newColor, "(Singular) " + message, args);
+            }
+            else
+            {
+                WriteFile(LogLevel.Diagnostic, "(Singular) " + message, args);
+            }
+        }
+
         public static void PrintStackTrace(string reason = "Debug")
         {
             WriteDebug("Stack trace for " + reason);

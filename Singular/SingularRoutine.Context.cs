@@ -169,7 +169,7 @@ namespace Singular
             bool bgBot= IsBotInUse("BGBuddy", "BG Bot");
             bool dungeonBot= IsBotInUse("DungeonBuddy");
             bool petHack = IsPluginActive("Pokébuddy", "Pokehbuddy");
-            bool manualBot = IsBotInUse("LazyRaider", "Raid Bot");
+            bool manualBot = IsBotInUse("LazyRaider", "Raid Bot", "Tyrael");
 
             bool changed = false;
 

@@ -47,6 +47,7 @@ namespace Singular.Helpers
     {
         // type casting method for context dereferencing within Spell class
         private static CastContext CastContext(this object ctx) { return (CastContext)ctx; }
+        private static CogContext CogContext(this object ctx) { return (CogContext)ctx; }
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         public static void LogCast(string sname, WoWUnit unit)
@@ -1665,14 +1666,17 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CastOnGround(string spell, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, bool waitForSpell = true)
         {
+            if (onUnit == null || requirements == null)
+                return new ActionAlwaysFail();
+
             return new Decorator(
-                ret => onUnit != null,
+                req => requirements(req),
                 new Sequence(
                     ctx => new CastContext( onUnit(ctx), ctx),
                     new PrioritySelector(
                         new Decorator(
                             ret => ret.CastContext().unit != null && ret.CastContext().unit.Distance < Spell.ActualMaxRange(spell, null),
-                            CastOnGround(spell, loc => loc.CastContext().unit.Location, requirements, waitForSpell, desc => string.Format("{0} @ {1:F1}%", desc.CastContext().unit.SafeName(), desc.CastContext().unit.HealthPercent))
+                            CastOnGround(spell, loc => loc.CastContext().unit.Location, req => true, waitForSpell, desc => string.Format("on {0} @ {1:F1}%", desc.CastContext().unit.SafeName(), desc.CastContext().unit.HealthPercent))
                             ),
                         new Action(r => { return RunStatus.Failure; })
                         )
@@ -1691,69 +1695,79 @@ namespace Singular.Helpers
         /// <param name = "requirements">The requirements.</param>
         /// <param name="waitForSpell">Waits for spell to become active on cursor if true. </param>
         /// <returns>.</returns>
-        public static Composite CastOnGround(string spell, LocationRetriever onLocation,
-            SimpleBooleanDelegate requirements, bool waitForSpell = true, SimpleStringDelegate targetDesc = null)
+        public static Composite CastOnGround(string spell, LocationRetriever onLocRtrv,
+            SimpleBooleanDelegate requirements, bool waitForSpell = true, SimpleStringDelegate tgtDescRtrv = null)
         {
-            return
-                new Decorator(
-                    ret => requirements(ret)
-                        && onLocation != null
-                        && Spell.CanCastHack(spell, null, skipWowCheck:true)
-                        && LocationInRange(spell, onLocation(ret))
-                        && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), onLocation(ret)),
-                    new Sequence(
-                        new Action(ret => Logger.Write("Casting {0} {1}at location {2} at {3:F1} yds", spell, targetDesc == null ? "" : "on " + targetDesc(ret) + " ", onLocation(ret), onLocation(ret).Distance(StyxWoW.Me.Location))),
+            if ( onLocRtrv == null || requirements == null )
+                return new ActionAlwaysFail();
 
-                        new Action(ret => { return SpellManager.Cast(spell) ? RunStatus.Success : RunStatus.Failure; } ),
+            return new Decorator(
+                req => requirements(req),    
+           
+                new PrioritySelector(                
+                    ctx => new CogContext(onLocRtrv, tgtDescRtrv, ctx),
 
-                        new DecoratorContinue(
-                            ctx => waitForSpell,
+                    new Decorator(
+                        req => Spell.CanCastHack(spell, null, skipWowCheck:true)
+                            && LocationInRange(spell, (req as CogContext).loc)
+                            && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), (req as CogContext).loc),
+                        new Sequence(
+                            new Action( ret => {
+                                CogContext cog = ret.CogContext();
+                                Logger.Write("Casting {0} {1}at {2:F1} yds {3}", spell, cog.targetDesc, cog.loc.Distance(StyxWoW.Me.Location), cog.loc);
+                                return SpellManager.Cast(spell) ? RunStatus.Success : RunStatus.Failure; 
+                                }),
+
+                            new DecoratorContinue(
+                                ctx => waitForSpell,
+                                new PrioritySelector(
+                                    new WaitContinue(1,
+                                        ret => GetPendingCursorSpell != null && GetPendingCursorSpell.Name == spell,
+                                        new ActionAlwaysSucceed()
+                                        ),
+                                    new Action(r =>
+                                    {
+                                        Logger.WriteDebug("error: spell {0} not seen as pending on cursor after 1 second", spell);
+                                        return RunStatus.Failure;
+                                    })
+                                    )
+                                ),
+
+                            new Action(ret => SpellManager.ClickRemoteLocation(ret.CogContext().loc)),
+
+                            // check for we are done status
                             new PrioritySelector(
-                                new WaitContinue(1,
-                                    ret => GetPendingCursorSpell != null && GetPendingCursorSpell.Name == spell,
+                    // done if cursor doesn't have spell anymore
+                                new Decorator(
+                                    ret => !waitForSpell,
+                                    new Action(r => Lua.DoString("SpellStopTargeting()"))   //just in case
+                                    ),
+
+                                new Wait(TimeSpan.FromMilliseconds(750),
+                                    ret => Spell.GetPendingCursorSpell == null || Me.IsCasting || Me.IsChanneling,
                                     new ActionAlwaysSucceed()
                                     ),
-                                new Action(r =>
+
+                                // otherwise cancel
+                                new Action(ret =>
                                 {
-                                    Logger.WriteDebug("error: spell {0} not seen as pending on cursor after 1 second", spell);
+                                    Logger.WriteDebug("/cancel {0} - click {1} failed -OR- Pending Cursor Spell API broken -- distance={2:F1} yds, loss={3}, face={4}",
+                                        spell,
+                                        ret.CogContext().loc,
+                                        StyxWoW.Me.Location.Distance(ret.CogContext().loc),
+                                        GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ret.CogContext().loc),
+                                        StyxWoW.Me.IsSafelyFacing(ret.CogContext().loc)
+                                        );
+
+                                    // Pending Spell Cursor API is broken... seems like we can't really check at this point, so assume it failed and worked... uggghhh
+                                    Lua.DoString("SpellStopTargeting()");
                                     return RunStatus.Failure;
                                 })
                                 )
-                            ),
-
-                        new Action(ret => SpellManager.ClickRemoteLocation(onLocation(ret))),
-
-                        // check for we are done status
-                        new PrioritySelector(
-                // done if cursor doesn't have spell anymore
-                            new Decorator(
-                                ret => !waitForSpell,
-                                new Action(r => Lua.DoString("SpellStopTargeting()"))   //just in case
-                                ),
-
-                            new Wait(TimeSpan.FromMilliseconds(750),
-                                ret => Spell.GetPendingCursorSpell == null || Me.IsCasting || Me.IsChanneling,
-                                new ActionAlwaysSucceed()
-                                ),
-
-                            // otherwise cancel
-                            new Action(ret =>
-                            {
-                                Logger.WriteDebug("/cancel {0} - click {1} failed -OR- Pending Cursor Spell API broken -- distance={2:F1} yds, loss={3}, face={4}",
-                                    spell,
-                                    onLocation(ret),
-                                    StyxWoW.Me.Location.Distance(onLocation(ret)),
-                                    GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), onLocation(ret)),
-                                    StyxWoW.Me.IsSafelyFacing(onLocation(ret))
-                                    );
-
-                                // Pending Spell Cursor API is broken... seems like we can't really check at this point, so assume it failed and worked... uggghhh
-                                Lua.DoString("SpellStopTargeting()");
-                                return RunStatus.Failure;
-                            })
                             )
                         )
-                    );
+                    )
+                );
         }
 
         private static bool LocationInRange(string spellName, WoWPoint loc)
@@ -2202,6 +2216,41 @@ namespace Singular.Helpers
             {
                 health = unit.HealthPercent;
                 distance = unit.Distance;
+            }
+        }
+    }
+
+    /// <summary>
+    /// cached result of loc(ret), desc(ret), etc for Spell.CastOnGround.  for expensive queries (such as Cluster.GetBestUnitForCluster()) we want to avoid
+    /// performing them multiple times.  in some cases we were caching that locally in the context parameter of a wrapping PrioritySelector
+    /// but doing it here enforces for all calls, so will reduce list scans and cycles required even for targets selected by auras present/absent
+    /// </summary>
+    internal class CogContext
+    {
+        internal WoWPoint loc;
+        internal string targetDesc;
+        internal object context;
+
+        // always create passing the existing context so it is preserved for delegate usage
+        internal CogContext(object ctx)
+        {
+            context = ctx;
+        }
+
+        // always create passing the existing context so it is preserved for delegate usage
+        internal CogContext(LocationRetriever locrtrv, SimpleStringDelegate descrtrv, object ctx)
+        {
+            loc = WoWPoint.Empty;
+            targetDesc = "";
+            context = ctx;
+
+            if (locrtrv != null)
+            {
+                loc = locrtrv(ctx);
+                if (descrtrv != null)
+                {
+                    targetDesc = descrtrv(ctx) + " ";
+                }
             }
         }
     }

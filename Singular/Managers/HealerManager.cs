@@ -296,6 +296,66 @@ namespace Singular.Managers
 #endif
         }
 
+        /// <summary>
+        /// check if Healer should be permitted to do straight DPS abilities (with purpose to damage and not indirect heal, buff, mana return, etc.)
+        /// </summary>
+        /// <returns></returns>
+        public static bool AllowHealerDPS()
+        {
+            WoWContext ctx = SingularRoutine.CurrentWoWContext;
+            if (ctx == WoWContext.Normal)
+                return true;
+
+            if (!SingularSettings.Instance.HealerCombatAllow)
+                return false;
+
+            if (Me.ManaPercent < SingularSettings.Instance.HealerCombatMinMana)
+                return false;
+
+            if (HealerManager.Instance.FirstUnit != null && HealerManager.Instance.FirstUnit.HealthPercent < SingularSettings.Instance.HealerCombatMinHealth)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// check whether a healer DPS cast in progress should be cancelled
+        /// </summary>
+        /// <returns></returns>
+        public static bool CancelHealerDPS()
+        {
+            // allow combat setting is false, so cast originated by some other logic, so allow it to finish
+            if (!SingularSettings.Instance.HealerCombatAllow)
+                return false;
+
+            // always let DPS casts while solo complete
+            WoWContext ctx = SingularRoutine.CurrentWoWContext;
+            if (ctx == WoWContext.Normal)
+                return false;
+
+            // allow casts that are close to finishing to finish regardless
+            if (Spell.IsCastingOrChannelling() && Me.CurrentCastTimeLeft.TotalMilliseconds < 333)
+            {
+                Logger.WriteDebug("CancelHealerDPS: suppressing /cancel since less than 333 ms remaining");
+                return false;
+            }
+
+            // use a window less than actual to avoid cast/cancel/cast/cancel due to mana hovering at setting level
+            if (Me.ManaPercent < (SingularSettings.Instance.HealerCombatMinMana - 3))
+            {
+                Logger.WriteDebug("CancelHealerDPS: /cancel because Mana={0:F1}% fell below Min={1}%", Me.ManaPercent, SingularSettings.Instance.HealerCombatMinMana);
+                return true;
+            }
+
+            // check if group health has dropped below setting
+            if (HealerManager.Instance.FirstUnit != null && HealerManager.Instance.FirstUnit.HealthPercent < SingularSettings.Instance.HealerCombatMinHealth)
+            {
+                Logger.WriteDebug("CancelHealerDPS: /cancel because {0} @ {1:F1}% health fell below Min={2}%", HealerManager.Instance.FirstUnit.SafeName(), HealerManager.Instance.FirstUnit.HealthPercent, SingularSettings.Instance.HealerCombatMinHealth);
+                return true;
+            }
+
+            return false;
+        }
 
         public static WoWUnit GetBestCoverageTarget(string spell, int health, int range, int radius, int minCount, SimpleBooleanDelegate requirements = null, IEnumerable<WoWUnit> mainTarget = null)
         {

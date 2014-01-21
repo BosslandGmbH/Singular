@@ -449,8 +449,10 @@ namespace Singular
         public static void ResetCurrentTargetTimer()
         {
             _timerLastTarget.Reset();
+            /*
             if (SingularSettings.Debug)
                 Logger.WriteDebug("reset target timer to {0:c}", _timerLastTarget.TimeLeft);
+            */
         }
 
         public static void ResetCurrentTarget()
@@ -554,12 +556,16 @@ namespace Singular
             if (_prevPullDistance != CharacterSettings.Instance.PullDistance)
             {
                 _prevPullDistance = CharacterSettings.Instance.PullDistance;
-                Logger.Write(Color.White, "attention: Pull Distance set to {0} yds by {1}, Plug-in, Profile, or User", _prevPullDistance, GetBotName());
+                Logger.Write(Color.HotPink, "info: Pull Distance set to {0} yds by {1}, Plug-in, Profile, or User", _prevPullDistance, GetBotName());
             }
+        }
+
+        private static void MonitorBehaviorFlags()
+        {
             if (_prevBehaviorFlags != Bots.Grind.LevelBot.BehaviorFlags)
             {
                 _prevBehaviorFlags = Bots.Grind.LevelBot.BehaviorFlags;
-                Logger.WriteFile("attention: BehaviorFlags changed to [{0}]", _prevBehaviorFlags.ToString());
+                Logger.WriteDiagnostic(Color.HotPink, "info: BehaviorFlags changed to [{0}] by {1}, Plug-in or Profile", _prevBehaviorFlags.ToString(), GetBotName());
             }
         }
 
@@ -648,10 +654,7 @@ namespace Singular
                     TimeSpan since = SinceLast;
                     if (since.TotalSeconds >= WarnTime)
                     {
-                        if (SingularSettings.Debug)
-                            Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
-                        else
-                            Logger.WriteFile("warning: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
+                        Logger.WriteDiagnostic(Color.HotPink, "info: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
                     }
                 }
             };
@@ -676,7 +679,7 @@ namespace Singular
             if (SingularSettings.Debug)
             {
                 if ((DateTime.Now - LastCall).TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
-                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", (DateTime.Now - LastCall).TotalSeconds, Name);
+                    Logger.WriteDebug(Color.HotPink, "info: {0:F1} seconds since BotBase last called Singular (now in {1})", (DateTime.Now - LastCall).TotalSeconds, Name);
             }
 
             if (!CallTrace)
@@ -704,7 +707,7 @@ namespace Singular
             {
                 TimeSpan since = SinceLast;
                 if (since.TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
-                    Logger.WriteDebug(Color.HotPink, "warning: {0:F1} seconds since BotBase last called Singular (now in {1})", since.TotalSeconds, Name);
+                    Logger.WriteDebug(Color.HotPink, "info: {0:F1} seconds since BotBase last called Singular (now in {1})", since.TotalSeconds, Name);
             }
 
             if (!SingularSettings.Trace )

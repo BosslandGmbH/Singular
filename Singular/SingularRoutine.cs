@@ -331,44 +331,48 @@ namespace Singular
         }
 
         static DateTime _nextNoCallMsgAllowed = DateTime.MinValue;
+
         static DateTime _nextNotInGameMsgAllowed = DateTime.MinValue;
         static DateTime _nextNotInWorldMsgAllowed = DateTime.MinValue;
-        static DateTime _nextInCinematicMsgAllowed = DateTime.MinValue;
+        static DateTime _nextCombatDisabledMsgAllowed = DateTime.MinValue;
 
 
         public override void Pulse()
         {
-#region Pulse - No pulsing if we're loading or out of the game.
+
+#region Pulse - check for conditions that we should not Pulse during
 
             if (!StyxWoW.IsInGame)
             {
                 if (DateTime.Now > _nextNotInGameMsgAllowed)
                 {
-                    Logger.WriteDebug(Color.HotPink, "warning: not in game");
+                    Logger.WriteDebug(Color.HotPink, "info: not in game");
                     _nextNotInGameMsgAllowed = DateTime.Now.AddSeconds(30);
                 }
                 return;
             }
+            _nextNotInGameMsgAllowed = DateTime.MinValue;
 
             if (!StyxWoW.IsInWorld)
             {
                 if (DateTime.Now > _nextNotInWorldMsgAllowed)
                 {
-                    Logger.WriteDebug(Color.HotPink, "warning: not in world");
+                    Logger.WriteDebug(Color.HotPink, "info: not in world");
                     _nextNotInWorldMsgAllowed = DateTime.Now.AddSeconds(30);
                 }
                 return;
             }
+            _nextNotInWorldMsgAllowed = DateTime.MinValue;
 
-            if (InCinematic())
-            {
-                if (DateTime.Now > _nextInCinematicMsgAllowed)
-                {
-                    Logger.WriteDebug(Color.HotPink, "warning: cinematic is playing");
-                    _nextInCinematicMsgAllowed = DateTime.Now.AddSeconds(30);
-                }
+            // output messages about pulldistance and behaviorflag changes here
+            MonitorPullDistance();
+            MonitorBehaviorFlags();
+
+            // now if combat disabled, bail out 
+            if (Bots.Grind.BehaviorFlags.Combat != (Bots.Grind.LevelBot.BehaviorFlags & Bots.Grind.BehaviorFlags.Combat))
                 return;
-            }
+
+            _nextCombatDisabledMsgAllowed = DateTime.MinValue;
 
 #endregion
 
@@ -380,7 +384,7 @@ namespace Singular
                 {
                     if (!Me.IsGhost && !Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
                     {
-                        Logger.WriteDebug(Color.HotPink, "warning: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
+                        Logger.WriteDebug(Color.HotPink, "info: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
                         _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.WarnTime);
                     }
                 }
@@ -398,8 +402,6 @@ namespace Singular
 
             // Double cast shit
             Spell.DoubleCastPreventionDict.RemoveAll(t => DateTime.UtcNow > t);
-
-            MonitorPullDistance();
 
             // Output if Target changed 
             CheckCurrentTarget();

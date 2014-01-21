@@ -231,6 +231,20 @@ namespace Singular.Settings
                 LogSettings("Priest.Holy.Heal.Raid", Priest().HolyRaid);
             }
 
+            if (StyxWoW.Me.Specialization == WoWSpec.PriestDiscipline)
+            {
+                LogSettings("Priest.Disc.Heal.Battleground", Priest().DiscBattleground);
+                LogSettings("Priest.Disc.Heal.Instance", Priest().DiscInstance);
+                LogSettings("Priest.Disc.Heal.Raid", Priest().DiscRaid);
+            }
+
+            if (StyxWoW.Me.Specialization == WoWSpec.DruidRestoration)
+            {
+                LogSettings("Druid.Heal.Battleground", Druid().Battleground);
+                LogSettings("Druid.Heal.Instance", Druid().Instance);
+                LogSettings("Druid.Heal.Raid", Druid().Raid);
+            }
+
             Logger.WriteFile("====== Evaluated/Dynamic Settings ======");
             Logger.WriteFile("  {0}: {1}", "Debug", SingularSettings.Debug.ToYN());
             Logger.WriteFile("  {0}: {1}", "DisableAllMovement", SingularSettings.Instance.DisableAllMovement.ToYN());
@@ -636,6 +650,28 @@ namespace Singular.Settings
         [DisplayName("Combat Rez Delay")]
         [Description("Wait (seconds) before casting Battle Rez on group member")]
         public int CombatRezDelay { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Healer DPS Allow")]
+        [Description("Allow Healer to DPS. Does not affect Atonement/Telluric Currents/etc casts.  Ignored in Raids")]
+        public bool HealerCombatAllow { get; set; }
+
+        [Setting]
+        [DefaultValue(75)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Healer DPS Min Mana %")]
+        [Description("Healer will DPS if Healer Mana % is above this")]
+        public int HealerCombatMinMana { get; set; }
+
+        [Setting]
+        [DefaultValue(85)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Healer DPS Min Health %")]
+        [Description("Healer will DPS if Lowest Health % in group is above this")]
+        public int HealerCombatMinHealth { get; set; }
+
 
         #endregion
 

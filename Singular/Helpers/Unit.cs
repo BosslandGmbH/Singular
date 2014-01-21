@@ -324,7 +324,8 @@ namespace Singular.Helpers
             if (unit == null)
                 return false;
 
-            return unit.MaxHealth <= TrivialHealth();
+            uint maxh = unit.MaxHealth;
+            return maxh <= TrivialHealth();
         }
 
         public static WoWUnit GetPlayerParent(WoWUnit unit)

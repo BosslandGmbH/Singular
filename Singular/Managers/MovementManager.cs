@@ -87,7 +87,7 @@ namespace Singular.Managers
         {
             SingularRoutine.OnBotEvent += (src, arg) =>
             {
-                IsManualMovementBotActive = SingularRoutine.IsBotInUse("LazyRaider", "Raid Bot");
+                IsManualMovementBotActive = SingularRoutine.IsBotInUse("LazyRaider", "Raid Bot", "Tyrael");
                 if (arg.Event == SingularBotEvent.BotStart)
                     MovementManager.Start();
                 else if (arg.Event == SingularBotEvent.BotStop)

@@ -173,8 +173,8 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Buff("Rupture", true,
                             ret => RogueSettings.CombatUseRuptureFinisher 
                                 && Common.AoeCount <= 1
-                                && Me.ComboPoints >= 4 
-                                && Me.CurrentTarget.HasBleedDebuff()),
+                                && Me.ComboPoints >= 4
+                                && Me.CurrentTarget.HasMyAura("Revealing Strike")),
 
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints == 5),
 

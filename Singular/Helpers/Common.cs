@@ -498,6 +498,10 @@ namespace Singular.Helpers
             return prio;
         }
 
+        /// <summary>
+        /// Ensures the ready to attack from medium (30yd) range.
+        /// </summary>
+        /// <returns></returns>
         public static Composite EnsureReadyToAttackFromMediumRange( )
         {
             return new PrioritySelector(
@@ -510,6 +514,10 @@ namespace Singular.Helpers
                 );
         }
 
+        /// <summary>
+        /// Ensures the ready to attack from long (40yd) range.
+        /// </summary>
+        /// <returns></returns>
         public static Composite EnsureReadyToAttackFromLongRange()
         {
             return new PrioritySelector(

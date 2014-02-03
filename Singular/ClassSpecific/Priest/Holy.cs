@@ -640,7 +640,7 @@ VoidShift               Void Shift
                 new Decorator(
                     ret => !Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe) || HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
-                        Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                        Helpers.Common.EnsureReadyToAttackFromMediumRange(),
                         Spell.WaitForCastOrChannel(),
 
                         new Decorator( 

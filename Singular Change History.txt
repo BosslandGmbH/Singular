@@ -1,3 +1,59 @@
+--- Release 3.0.0.3299 ---
+
+General
+
+fixed - Heal Target list was empty when used with BotBases that disable PulseFlags.Targeting (most manual assist bots.)  Singular will now Pulse the Heal Targeting if running a healing spec and it has been disabled by the BotBase
+
+fixed - will now check if item on cooldown before using Alchemists Flask to recognize when a different item with shared cooldown is active
+
+*new* - option Allow Melee Move Behind which controls whether a melee character will move behind a boss, etc.  'true' does not force moving behind, it only permits it.  'false' prevents Singular moving behind
+
+fixed - slight change to training dummy recognition to identify a few additional cases
+
+*new* - additional entries in the prevent move behind boss list 
+
+*new* - Shaman and Rogues will no longer get stuck spamming imbues/poisons on Bind of Pickup items won in dungeons that are still tradeable
+
+
+Monk
+
+fixed - Windwalker - will now wait for channeled casts to complete so no longer interrupting Fists of Fury
+
+
+Paladin
+
+fixed - All Specs - will now cast Word of Glory if health % below the maximum Word of Glory % if Divine Purpose has procced
+
+fixed - Disc/Holy - Mass Dispel now correctly interprets the Mass Dispel Count setting
+
+fixed - Disc/Holy - Solo: now correctly cast Power Word: Shield before pulling if option is enabled
+
+fixed - All Specs - Solo: setting for Power Word: Shield Health % moved from Shadow settings group to General since it pertains to all specs
+
+fixed - Holy - move within range of target distance shortened for Pull and Combat
+
+
+Rogue
+
+fixed - Combat - corrected Rupture cast to check for Revealing Strike on target
+
+
+Shaman
+
+change- All Specs - additional info on weapons when imbue cast
+
+fixed - Enhancement - Instances: AOE use of Fire Nova now correctly checks for Flame Shock instead of assuming its present
+
+fixed - Resto - added check to only cast cooldowns when in Combat
+
+
+Warrior
+
+fixed - All Specs - will now suppress any and all closers if Use Charge/Heroic Leap is false
+
+
+
+
 --- Release 3.0.0.3253 ---
 
 General

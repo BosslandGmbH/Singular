@@ -1,4 +1,5 @@
 ﻿#define NO_LATENCY_ISSUES_WITH_GLOBAL_COOLDOWN
+#define HONORBUDDY_PENDINGSPELL_WORKING
 //#define HONORBUDDY_GCD_IS_WORKING
 //#define USE_LUA_RANGECHECK
 //#define USE_LUA_POWERCHECK
@@ -2148,13 +2149,16 @@ namespace Singular.Helpers
         {
             get
             {
-#if WORKING
+#if HONORBUDDY_PENDINGSPELL_WORKING
                 return Me.CurrentPendingCursorSpell;
 #else
+                // offset from SpellIsTargeting LUA
                 int pendingSpellId = 0;
-                var pendingSpellPtr = StyxWoW.Memory.Read<IntPtr>((IntPtr)0xC83494, true);
+                var pendingSpellPtr = StyxWoW.Memory.Read<IntPtr>((IntPtr)0xC9D51C, true);
                 if (pendingSpellPtr != IntPtr.Zero)
                     pendingSpellId = StyxWoW.Memory.Read<int>(pendingSpellPtr + 32);
+
+                if (spell == null && pendingSpellId != 0)
 
                 return pendingSpellId == 0 ? null : WoWSpell.FromId(pendingSpellId);
 #endif

@@ -287,6 +287,7 @@ namespace Singular.Helpers
             double playerEnergy;
             double ER_Rate;
 
+
             playerEnergy = Lua.GetReturnVal<int>("return UnitMana(\"player\");", 0); // current Energy 
             ER_Rate = EnergyRegen();
             timetoEnergyCap = (100 - playerEnergy) * (1.0 / ER_Rate); // math 
@@ -1368,8 +1369,12 @@ namespace Singular.Helpers
         public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
             SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, bool skipWowCheck = false)
         {
+            // only need to check these at creation time
+            if (name == null || checkMovement == null || onUnit == null || requirements == null)
+                return new ActionAlwaysFail();
+
             return new Decorator(
-                ret => name != null && checkMovement != null && onUnit != null && requirements != null && name(ret) != null,
+                ret => name(ret) != null,
                 new Throttle(
                     new PrioritySelector(
 
@@ -1405,7 +1410,7 @@ namespace Singular.Helpers
 
                                 // check we can cast it on target without checking for movement
                                 // if (!Spell.CanCastHack(_spell, cctx.unit, true, false, allow == LagTolerance.Yes))
-                                if (!CanCastHack(cctx.name, cctx.unit, skipWowCheck))
+                                if (!CanCastHack( sfr, cctx.unit, skipWowCheck))
                                 {
                                     if (SingularSettings.Instance.EnableDebugLoggingGCD)
                                         Logger.WriteDebug("skipping Spell.Cast({0},[{1}]) because CanCastHack failed", cctx.unit.SafeName(), cctx.spell.Name);

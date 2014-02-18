@@ -175,6 +175,7 @@ namespace Singular.ClassSpecific.Rogue
                                 && Common.AoeCount <= 1
                                 && Me.ComboPoints >= 4
                                 && Me.CurrentTarget.HasMyAura("Revealing Strike")),
+//                              && Me.CurrentTarget.HasBleedDebuff()),
 
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints == 5),
 

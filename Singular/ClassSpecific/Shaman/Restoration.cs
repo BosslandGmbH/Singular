@@ -408,7 +408,7 @@ namespace Singular.ClassSpecific.Shaman
 
             behavs.AddBehavior(HealthToPriority(ShamanSettings.Heal.SpiritLinkTotem) + 600, "Spirit Link Totem", "Spirit Link Totem",
                 new Decorator(
-                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
+                    ret => Me.Combat && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     Spell.Cast(
                         "Spirit Link Totem", ret => (WoWUnit)ret,
                         ret => HealerManager.Instance.TargetList.Count(
@@ -421,7 +421,7 @@ namespace Singular.ClassSpecific.Shaman
                 String.Format("Oh Shoot Heal @ {0}%", ShamanSettings.Heal.AncestralSwiftness),
                 "Ancestral Swiftness",
                 new Decorator(
-                    ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness,
+                    ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness,
                     new Sequence(
                         Spell.BuffSelf("Ancestral Swiftness"),
                         new PrioritySelector(
@@ -438,7 +438,7 @@ namespace Singular.ClassSpecific.Shaman
 
             behavs.AddBehavior(HealthToPriority(ShamanSettings.Heal.HealingTideTotem) + 400, "Healing Tide Totem", "Healing Tide Totem",
                 new Decorator(
-                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
+                    ret => (Me.Combat || ((WoWUnit)ret).Combat) && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     Spell.Cast(
                         "Healing Tide Totem",
                         on => Me,
@@ -953,12 +953,11 @@ namespace Singular.ClassSpecific.Shaman
                     {
                         WoWUnit healTarg = onUnit(ret);
                         WoWUnit target = Me.CurrentTarget;
-                        uint getaurastks = Me.GetAuraStacks("Tidal Waves");
                         uint actvstks = 0;
 
-                        WoWAura aura = Me.Auras
-                            .Where(kvp => kvp.Key == "Tidal Waves" && kvp.Value.TimeLeft != TimeSpan.Zero)
-                            .Select(kvp => kvp.Value).FirstOrDefault();
+                        WoWAura aura = Me.GetAllAuras()
+                            .Where(a => a.Name == "Tidal Waves" && a.TimeLeft != TimeSpan.Zero)
+                            .FirstOrDefault();
 
                         if (aura != null)
                         {
@@ -966,9 +965,6 @@ namespace Singular.ClassSpecific.Shaman
                             if (actvstks == 0)
                                 actvstks = 1;
                         }
-
-                        if (actvstks != getaurastks)
-                            Logger.WriteDebug(Color.Beige, "Inconsistancy Error:  Auras['Tidal Waves'] at {0} stacks != Me.GetAuraStacks('Tidal Waves') at {1} stacks", actvstks, getaurastks);
 
                         string shield;
 
@@ -981,11 +977,12 @@ namespace Singular.ClassSpecific.Shaman
                         else 
                             shield = "-none-";
 
-                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, combat={2}, twaves={3}, shield={4}",
+                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, combat={2}, twaves={3}, audtwaves={4}, shield={5}",
                             Me.HealthPercent,
                             Me.ManaPercent,
                             Me.Combat.ToYN(),
                             actvstks,
+                            _tidalWaveStacksAudit,
                             shield
                             );
 

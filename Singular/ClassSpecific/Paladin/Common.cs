@@ -197,7 +197,12 @@ namespace Singular.ClassSpecific.Paladin
 
             return new PrioritySelector(
                 new Decorator(
-                    req => Me.CurrentHolyPower >= 1 && Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth1 || Me.ActiveAuras.ContainsKey("Divine Purpose"),
+                    req => Me.HealthPercent <= Math.Max( PaladinSettings.SelfWordOfGloryHealth1, Math.Max( PaladinSettings.SelfWordOfGloryHealth2, PaladinSettings.SelfWordOfGloryHealth3))
+                        && Me.ActiveAuras.ContainsKey("Divine Purpose"),
+                    Spell.Cast("Word of Glory", onUnit)
+                    ),
+                new Decorator(
+                    req => Me.CurrentHolyPower >= 1 && Me.HealthPercent <= PaladinSettings.SelfWordOfGloryHealth1,
                     Spell.Cast("Word of Glory", onUnit)
                     ),
                 new Decorator(

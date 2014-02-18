@@ -712,7 +712,7 @@ namespace Singular.Helpers
             // return Lists.BossList.TrainingDummies.Contains(unit.Entry);
             int bannerId = StyxWoW.Me.IsHorde ? BannerOfTheAlliance : BannerOfTheHorde;
             return unit != null && unit.Level > 1 
-                && ((unit.CurrentHealth == 1 && unit.MaxHealth == 1) || unit.HasAura(bannerId));
+                && ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId));
         }
 
         /// <summary>

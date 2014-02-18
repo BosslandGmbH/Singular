@@ -317,7 +317,13 @@ namespace Singular.ClassSpecific.Shaman
                                     ret => StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock") &&
                                            StyxWoW.Me.Inventory.Equipped.OffHand != null && 
                                            StyxWoW.Me.Inventory.Equipped.OffHand.ItemInfo.ItemClass == WoWItemClass.Weapon),
-                                Spell.Cast("Fire Nova"),
+                                Spell.Buff("Fire Nova",
+                                    on => StyxWoW.Me.CurrentTarget,
+                                    ret => StyxWoW.Me.CurrentTarget.HasMyAura("Flame Shock") 
+                                        && Unit.NearbyUnfriendlyUnits.Count( 
+                                            u => u.IsTargetingMeOrPet 
+                                                && u.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) < 10 * 10) >= 3),
+
                                 Spell.Cast("Chain Lightning", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
                                 Spell.Cast("Stormstrike"),
                                 Movement.CreateMoveToMeleeBehavior(true)

@@ -349,6 +349,27 @@ namespace Singular
             return bot.Name;
         }
 
+        public static BotBase GetCurrentBotBase()
+        {
+            BotBase bot = TreeRoot.Current;
+            if (bot != null)
+            {
+                if ((bot is NewMixedMode.MixedModeEx))
+                {
+                    NewMixedMode.MixedModeEx mmb = (NewMixedMode.MixedModeEx)bot;
+                    if (mmb != null)
+                    {
+                        if (mmb.SecondaryBot != null && mmb.SecondaryBot.RequirementsMet)
+                            bot = mmb.SecondaryBot;
+                        else
+                            bot = mmb.PrimaryBot;
+                    }
+                }
+            }
+
+            return bot;
+        }
+
         public static bool IsBotInUse(params string[] nameSubstrings)
         {
             string botName = GetBotName().ToUpper();

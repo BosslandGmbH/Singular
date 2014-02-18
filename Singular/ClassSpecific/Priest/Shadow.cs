@@ -86,9 +86,9 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
-                        Spell.BuffSelf("Shadowform"),
-
                         Spell.BuffSelf("Power Word: Shield", ret => PriestSettings.UseShieldPrePull && !Me.HasAura("Weakened Soul")),
+
+                        Spell.BuffSelf("Shadowform"),
 
                         Spell.Buff("Devouring Plague", true),
                         Spell.Buff("Vampiric Touch", true),
@@ -412,7 +412,7 @@ namespace Singular.ClassSpecific.Priest
                             ret => StyxWoW.Me.ManaPercent <= PriestSettings.HymnofHopeMana && Spell.GetSpellCooldown("Shadowfiend").TotalMilliseconds > 0,
                             cancel => false),
 
-                        Spell.BuffSelf("Power Infusion", req => !Me.IsMoving && !Me.CurrentTarget.IsMoving && Spell.CanCastHack("Shadow Word: Pain", Me.CurrentTarget, skipWowCheck: true)),
+                        Spell.BuffSelf("Power Infusion", req => !Me.IsMoving && Spell.CanCastHack("Shadow Word: Pain", Me.CurrentTarget, skipWowCheck: true) && !Me.CurrentTarget.IsMoving),
                         Spell.Buff("Devouring Plague", true, ret => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= (Me.CurrentTarget.IsBoss() ? 3 : PriestSettings.NormalContextOrbs)),
                         Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3, cancel => false),
 

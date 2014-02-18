@@ -88,13 +88,6 @@ namespace Singular.Settings
         [Description("Will only use Mind Flay while manapercent is above this value")]
         public double MindFlayMana { get; set; }
 
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Shadow")]
-        [DisplayName("Shield Health Percent")]
-        [Description("Use PW:Shield below this %")]
-        public double ShieldHealthPercent { get; set; }
-
 /*
         [Setting]
         [DefaultValue(15)]
@@ -168,8 +161,15 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Shield Pre-Pull")]
-        [Description("Use PW:Shield pre-pull. This setting is not used in Mind Spike rotation")]
+        [Description("Use PW:Shield pre-pull.")]
         public bool UseShieldPrePull { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Common")]
+        [DisplayName("Shield Health Percent")]
+        [Description("Use PW:Shield below this %")]
+        public double ShieldHealthPercent { get; set; }
 
         [Setting]
         [DefaultValue(00)]

@@ -648,6 +648,7 @@ VoidShift               Void Shift
                             new PrioritySelector(
 
                                 Helpers.Common.CreateDismount("Pulling"),
+                                Spell.BuffSelf("Power Word: Shield", ret => Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && PriestSettings.UseShieldPrePull && !Me.HasAura("Weakened Soul")),
                                 Helpers.Common.CreateInterruptBehavior(),
                                 Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),

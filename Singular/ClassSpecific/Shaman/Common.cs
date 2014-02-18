@@ -264,14 +264,21 @@ namespace Singular.ClassSpecific.Shaman
                             && SpellManager.HasSpell(((Imbue)ret).ToSpellName())
                             && Spell.CanCastHack(((Imbue)ret).ToSpellName(), null),
                         new Sequence(
-                            new Action(ret => Logger.WriteDebug(Color.Pink, "Main hand currently imbued: " + ((Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id).ToString())),
+                            new Action(ret => Logger.WriteDebug(Color.Pink, "Main hand [" 
+                                + (Me.Inventory.Equipped.MainHand == null ? "-null-" : Me.Inventory.Equipped.MainHand.Name )
+                                + " #" + (Me.Inventory.Equipped.MainHand == null ? 0 : Me.Inventory.Equipped.MainHand.Entry ) 
+                                + "] currently imbued: " + ((Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id).ToString())),
                             new Action(ret => Lua.DoString("CancelItemTempEnchantment(1)")),
                             new WaitContinue(1,
                                 ret => Me.Inventory.Equipped.MainHand != null && (Imbue)Me.Inventory.Equipped.MainHand.TemporaryEnchantment.Id == Imbue.None,
                                 new ActionAlwaysSucceed()),
                             new DecoratorContinue(ret => ((Imbue)ret) != Imbue.None,
                                 new Sequence(
-                                    new Action(ret => Logger.Write(Color.Pink, "Imbuing main hand weapon with " + ((Imbue)ret).ToString())),
+                                    new Action(ret => Logger.Write(Color.Pink, 
+                                        "Imbuing main hand ["
+                                        + " #" + (Me.Inventory.Equipped.MainHand == null ? 0 : Me.Inventory.Equipped.MainHand.Entry)
+                                        + "] weapon with " + ((Imbue)ret).ToString())
+                                        ),
                                     new Action(ret => SpellManager.Cast(((Imbue)ret).ToSpellName(), null)),
                                     new Action(ret => SetNextAllowedImbueTime())
                                     )
@@ -293,14 +300,20 @@ namespace Singular.ClassSpecific.Shaman
                             && SpellManager.HasSpell(((Imbue)ret).ToSpellName())
                             && Spell.CanCastHack(((Imbue)ret).ToSpellName(), null),
                         new Sequence(
-                            new Action(ret => Logger.WriteDebug(Color.Pink, "Off hand currently imbued: " + ((Imbue)Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id).ToString())),
+                            new Action(ret => Logger.WriteDebug(Color.Pink, "Off hand ["
+                                + (Me.Inventory.Equipped.OffHand == null ? "-null-" : Me.Inventory.Equipped.OffHand.Name)
+                                + " #" + (Me.Inventory.Equipped.OffHand == null ? 0 : Me.Inventory.Equipped.OffHand.Entry) 
+                                + "] currently imbued: " + ((Imbue)Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id).ToString())),
                             new Action(ret => Lua.DoString("CancelItemTempEnchantment(2)")),
                             new WaitContinue(1,
                                 ret => Me.Inventory.Equipped.OffHand != null && (Imbue)Me.Inventory.Equipped.OffHand.TemporaryEnchantment.Id == Imbue.None,
                                 new ActionAlwaysSucceed()),
                             new DecoratorContinue(ret => ((Imbue)ret) != Imbue.None,
                                 new Sequence(
-                                    new Action(ret => Logger.Write(System.Drawing.Color.Pink, "Imbuing Off hand weapon with " + ((Imbue)ret).ToString())),
+                                    new Action(ret => Logger.Write(System.Drawing.Color.Pink, "Imbuing Off hand ["
+                                        + (Me.Inventory.Equipped.OffHand == null ? "-null-" : Me.Inventory.Equipped.OffHand.Name)
+                                        + " #" + (Me.Inventory.Equipped.OffHand == null ? 0 : Me.Inventory.Equipped.OffHand.Entry)
+                                        + "] weapon with " + ((Imbue)ret).ToString())),
                                     new Action(ret => SpellManager.Cast(((Imbue)ret).ToSpellName(), null)),
                                     new Action(ret => SetNextAllowedImbueTime())
                                     )
@@ -361,7 +374,7 @@ namespace Singular.ClassSpecific.Shaman
         public static void SetNextAllowedImbueTime()
         {
             // 2 seconds to allow for 0.5 seconds plus latency for buff to appear
-            nextImbueAllowed = DateTime.Now + new TimeSpan(0, 0, 0, 0, 500); // 1500 + (int) StyxWoW.WoWClient.Latency << 1);
+            nextImbueAllowed = DateTime.Now + new TimeSpan(0, 0, 0, 0, 750); // 1500 + (int) StyxWoW.WoWClient.Latency << 1);
         }
 
         public static string ToSpellName(this Imbue i)

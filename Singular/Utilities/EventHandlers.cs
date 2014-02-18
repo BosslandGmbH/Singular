@@ -47,6 +47,11 @@ namespace Singular.Utilities
 
             // also hook wow error messages
             Lua.Events.AttachEvent("UI_ERROR_MESSAGE", HandleErrorMessage);
+
+            // hook LOOT_BIND_CONFIRM to handle popup appearing when applying certain spells to weapon
+            // Lua.Events.AttachEvent("AUTOEQUIP_BIND_CONFIRM", HandleLootBindConfirm);
+            // Lua.Events.AttachEvent("LOOT_BIND_CONFIRM", HandleLootBindConfirm);
+            Lua.Events.AttachEvent("END_BOUND_TRADEABLE", HandleEndBoundTradeable);
         }
 
         private static void InitializeLocalizedValues()
@@ -426,6 +431,19 @@ namespace Singular.Utilities
             {
                 dict.Add(localString, symbolicName);
             }
+        }
+
+        private static void HandleEndBoundTradeable(object sender, LuaEventArgs args)
+        {
+             // Since we hooked this in ctor, make sure we are the selected CC
+            if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
+                return;
+
+            string argval = args.Args[0].ToString();
+            Logger.Write(Color.LightGreen, "EndBoundTradeable: confirming '{0}'", argval);
+            string cmd = string.Format("EndBoundTradeable('{0}')", argval);
+            Logger.WriteDiagnostic("END_BOUND_TRADEABLE: confirm with \"{0}\"", cmd);
+            Lua.DoString(cmd);
         }
     }
 }

@@ -423,6 +423,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Movement")]
+        [DisplayName("Allow Melee Move Behind")]
+        [Description("Allow Singular to move melee classes to behind bosses, etc.")]
+        public bool MeleeMoveBehind { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Movement")]
         [DisplayName("Use Cast While Moving Buffs")]
         [Description("True: attempting to use a non-instant while moving will first cast Spiritwalker's Grace, Ice Floes, Kil'Jaedan's Cunning, etc.")]
         public bool UseCastWhileMovingBuffs { get; set; }

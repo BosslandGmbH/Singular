@@ -202,7 +202,7 @@ namespace Singular.Helpers
                         ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 75525),
                         // Alchemist's Flask
                         new Decorator(
-                            ret => ret != null,
+                            ret => ret != null && ((WoWItem)ret).CooldownTimeLeft == TimeSpan.Zero,
                             new Sequence(
                                 new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
                                 new Action(ret => ((WoWItem)ret).UseContainerItem()),

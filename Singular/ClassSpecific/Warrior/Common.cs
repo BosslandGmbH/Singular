@@ -104,6 +104,10 @@ namespace Singular.ClassSpecific.Warrior
         public static Composite CreateChargeBehavior()
         {
             _distanceChargeBehavior = Me.CombatReach + (TalentManager.HasGlyph("Long Charge") ? 30f : 25f);
+
+            if (!WarriorSettings.UseWarriorCloser)
+                return new ActionAlwaysFail();
+
             if (_singletonChargeBehavior == null)
             {
                 _singletonChargeBehavior = new Throttle(TimeSpan.FromMilliseconds(1500),

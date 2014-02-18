@@ -633,6 +633,7 @@ namespace Singular.ClassSpecific.Priest
                     new PrioritySelector(
                         CreateDiscDiagnosticOutputBehavior(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),
 
+                        Spell.BuffSelf("Power Word: Shield", ret => PriestSettings.UseShieldPrePull && !Me.HasAura("Weakened Soul")),
                         Helpers.Common.CreateInterruptBehavior(),
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
                         Spell.Cast("Shadow Word: Death", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && Me.IsSafelyFacing(u))),

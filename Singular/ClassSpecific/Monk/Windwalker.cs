@@ -145,7 +145,7 @@ namespace Singular.ClassSpecific.Monk
                         })
                     ),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
@@ -236,7 +236,7 @@ namespace Singular.ClassSpecific.Monk
                     })
                     ),
 
-                Spell.WaitForCast(FaceDuring.Yes),
+                Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),

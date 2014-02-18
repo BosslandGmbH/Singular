@@ -147,7 +147,7 @@ namespace Singular.ClassSpecific.Warrior
                         //Heroic Leap
                         Spell.CastOnGround("Heroic Leap",
                             on => StyxWoW.Me.CurrentTarget, 
-                            ret => MovementManager.IsClassMovementAllowed && StyxWoW.Me.CurrentTarget.Distance > 9 && PreventDoubleIntercept, 
+                            ret => WarriorSettings.UseWarriorCloser && MovementManager.IsClassMovementAllowed && StyxWoW.Me.CurrentTarget.Distance > 9 && PreventDoubleIntercept, 
                             false),
 
                         // ranged slow

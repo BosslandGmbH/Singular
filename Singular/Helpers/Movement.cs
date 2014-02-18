@@ -354,7 +354,7 @@ namespace Singular.Helpers
             return new Decorator(
                 ret =>
                 {
-                    if (MovementManager.IsMovementDisabled || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
+                    if (MovementManager.IsMovementDisabled || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank || !SingularSettings.Instance.MeleeMoveBehind)
                         return false;
                     var currentTarget = StyxWoW.Me.CurrentTarget;
                     if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry))

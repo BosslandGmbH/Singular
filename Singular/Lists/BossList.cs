@@ -80,22 +80,27 @@ namespace Singular.Lists
 
         private static readonly HashSet<uint> _avoidRear = new HashSet<uint>
             {
+                10184, // Onyxia in Onyxia's Lair
                 18105, // Ghaz'an in Underbog.
                 26723, // Keristrasza in Nexus
+                28859, // Malygos in The Eye of Eternity
+                28860, // Sartharion in The Obsidian Sanctum
                 31134, // Cyanigosa in Voilet Hold
+                43214, // Slabhide in The Stonecore,
                 43614, // Lockmaw in Lost City of the Tol'vir
                 54432, // Murozond in End Time
-                28860, // Sartharion in The Obsidian Sanctum
-                28859, // Malygos in The Eye of Eternity
-                10184, // Onyxia in Onyxia's Lair
                 56895, // Weak Spot in Gate of the Setting Sun
                 63191, // Garalon in Heart of Fear This boss is riding an invisible vehicle and facing is relative to vehicle's facing.
-                69465, // Jin'rokh the Breaker in Throne of Thunder
+				68036, // Durumu the Forgotten. Boss in Halls of Flesh-Shaping LFR
                 68476, // Horridon in Throne of Thunder
-                43214, // Slabhide in The Stonecore,
+                69465, // Jin'rokh the Breaker in Throne of Thunder
+                70212, // Forgotten Depths: Flaming Head
                 70235, // Forgotten Depths: Frozen Head 
                 70247, // Forgotten Depths: Venemous Head
-                70212, // Forgotten Depths: Flaming Head
+				71454, // Malkorok, a boss in 'The Underhold' LFR. Everyone needs to stack in front of boss during 2nd phase
+				71529, // Thok the Bloodthirsty, a big dinosaur with tail lash The UnderHold
+				72276, // Amalgam of Corruption, boss in Vale of Eternal Sorrows LFR
+				72661, // Zeal. mini-boss in Vale of Eternal Sorrows LFR.
             };
 
         // this list should only contain bosses that are not found in 5 mans and raids.

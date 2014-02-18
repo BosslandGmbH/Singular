@@ -422,6 +422,15 @@ namespace Singular
 
             if (Me.IsInGroup())
             {
+                if (HealerManager.NeedHealTargeting && CurrentWoWContext != WoWContext.Normal)
+                {
+                    BotBase bot = GetCurrentBotBase();
+                    if (bot != null && (bot.PulseFlags & PulseFlags.Targeting) != PulseFlags.Targeting)
+                    {
+                        HealerManager.Instance.Pulse();
+                    }
+                }
+
                 if (Group.MeIsTank && CurrentWoWContext == WoWContext.Instances)
                     TankManager.Instance.Pulse();
             }
@@ -474,7 +483,7 @@ namespace Singular
                         playerInfo = string.Format("Y, Friend={0}, IsPvp={1}, CtstPvp={2}, FfaPvp={3}", Me.IsHorde == p.IsHorde, p.IsPvPFlagged, p.ContestedPvPFlagged, p.IsFFAPvPFlagged);
                     }
 
-                    Logger.WriteDebug(description + ": changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, trivial={5}, player={6}, attackable={7}, neutral={8}, hostile={9}, entry={10}, faction={11}, loss={12}, facing={13}, blacklist={14}, combat={15}" + info,
+                    Logger.WriteDebug(description + ": changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, trivial={5}, player={6}, attackable={7}, neutral={8}, hostile={9}, entry={10}, faction={11}, loss={12}, facing={13}, blacklist={14}, combat={15}, flying={16}, abovgrnd={17}" + info,
                         unit.SafeName(),
                         unit.HealthPercent,
                         unit.MaxHealth,
@@ -491,7 +500,9 @@ namespace Singular
                         unit.InLineOfSpellSight.ToYN(),
                         Me.IsSafelyFacing(unit).ToYN(),
                         Blacklist.Contains(unit.Guid, BlacklistFlags.Combat).ToYN(),
-                        unit.Combat.ToYN()
+                        unit.Combat.ToYN(),
+                        unit.IsFlying.ToYN(),
+                        unit.IsAboveTheGround().ToYN()
                         );
                 }
             }

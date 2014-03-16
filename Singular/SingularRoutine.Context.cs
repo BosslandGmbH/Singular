@@ -44,11 +44,17 @@ namespace Singular
         internal static bool IsPokeBuddyActive { get; set; }
         internal static bool IsManualMovementBotActive { get; set; }
 
+        internal static WoWContext _cachedContext = WoWContext.None;
+
         internal static WoWContext CurrentWoWContext
         {
             get
             {
-                return DetermineCurrentWoWContext;
+                return _cachedContext;
+            }
+            set
+            {
+                _cachedContext = value;
             }
         }
 
@@ -64,38 +70,40 @@ namespace Singular
             }
         }
 
-        private static WoWContext DetermineCurrentWoWContext
+        private static void DetermineCurrentWoWContext()
         {
-            get
+            CurrentWoWContext = _DetermineCurrentWoWContext();
+        }
+
+        private static WoWContext _DetermineCurrentWoWContext()
+        {
+            if (!StyxWoW.IsInGame)
+                return WoWContext.None;
+
+            if (ForcedContext != WoWContext.None)
+                return ForcedContext;
+
+            Map map = StyxWoW.Me.CurrentMap;
+
+            if (map.IsBattleground || map.IsArena)
             {
-                if (!StyxWoW.IsInGame)
-                    return WoWContext.None;
-
-                if (ForcedContext != WoWContext.None)
-                    return ForcedContext;
-
-                Map map = StyxWoW.Me.CurrentMap;
-
-                if (map.IsBattleground || map.IsArena)
-                {
-                    return WoWContext.Battlegrounds;
-                }
-
-                if (Me.IsInGroup())
-                {
-                    if (Me.IsInInstance)
-                    {
-                        return WoWContext.Instances;
-                    }
-
-                    if (Group.Tanks.Any())
-                    {
-                        return WoWContext.Instances;
-                    }
-                }
-
-                return WoWContext.Normal;
+                return WoWContext.Battlegrounds;
             }
+
+            if (Me.IsInGroup())
+            {
+                if (Me.IsInInstance)
+                {
+                    return WoWContext.Instances;
+                }
+
+                if (Group.Tanks.Any())
+                {
+                    return WoWContext.Instances;
+                }
+            }
+
+            return WoWContext.Normal;
         }
 
         public static WoWContext TrainingDummyBehaviors { get; set; }
@@ -124,27 +132,27 @@ namespace Singular
                 _contextEventSubscribed = true;
             }
 
-            var current = DetermineCurrentWoWContext;
+            DetermineCurrentWoWContext();
 
             // Can't update the context when it doesn't exist.
-            if (current == WoWContext.None)
+            if (CurrentWoWContext == WoWContext.None)
                 return;
 
-            if(current != _lastContext && OnWoWContextChanged!=null)
+            if(CurrentWoWContext != _lastContext && OnWoWContextChanged!=null)
             {
                 // store values that require scanning lists
                 UpdateContextStateValues();
                 DescribeContext();
                 try
                 {
-                    OnWoWContextChanged(this, new WoWContextEventArg(current, _lastContext));
+                    OnWoWContextChanged(this, new WoWContextEventArg(CurrentWoWContext, _lastContext));
                 }
                 catch
                 {
                     // Eat any exceptions thrown.
                 }
 
-                _lastContext = current;
+                _lastContext = CurrentWoWContext;
                 _lastMapId = Me.MapId;
             }
             else if (_lastMapId != Me.MapId)

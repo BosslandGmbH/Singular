@@ -91,6 +91,7 @@ namespace Singular.ClassSpecific.Mage
                  Safers.EnsureTarget(),
                  Common.CreateStayAwayFromFrozenTargetsBehavior(),
                  Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                 Movement.CreateFaceTargetBehavior( 5f, true),
                  Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                  new Decorator(
@@ -136,7 +137,7 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
 
-                        new Decorator(ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10).Count() > 2 && !Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.IsFrozen()),
+                        new Decorator(ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10).Count() > 2 && !Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.TreatAsFrozen()),
                             new PrioritySelector(
                                 // Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 new Throttle(1,
@@ -146,7 +147,7 @@ namespace Singular.ClassSpecific.Mage
                                         )
                                     ),
                                 Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
-                                Spell.Cast("Frozen Orb", req => Spell.UseAOE && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 150))),
+                                Spell.Cast("Frozen Orb", req => Spell.UseAOE && Me.IsSafelyFacing(Me.CurrentTarget, 5f) && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 20))),
                                 Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.Cast("Ice Lance", ret => Me.HasAura("Fingers of Frost") && Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) < 4),
                                 Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 4),
@@ -254,29 +255,18 @@ namespace Singular.ClassSpecific.Mage
                                 CastFreeze(on => Me.CurrentTarget),
                                 Spell.BuffSelf(
                                 "Frost Nova",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.IsFrozen())
+                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.TreatAsFrozen())
                                     )
                                 )
                             ),
 
-                        Spell.CastOnGround("Ring of Frost", onUnit => Me.CurrentTarget, req => Me.CurrentTarget.IsFrozen() && Me.CurrentTarget.SpellDistance() < 30, true),
+                        Spell.CastOnGround("Ring of Frost", onUnit => Me.CurrentTarget, req => Me.CurrentTarget.TreatAsFrozen() && Me.CurrentTarget.SpellDistance() < 30, true),
 
                         Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < 80),
 
                         Common.CreateMagePolymorphOnAddBehavior(),
 
-                        // Cooldowns
-                         new Sequence(
-                            Spell.Cast("Evocation", on => Me, req => Me.ManaPercent < 30, cancel => false),
-                            new WaitContinue( TimeSpan.FromMilliseconds(500), until => !Common.HasTalent(MageTalents.Invocation) || Me.HasAura("Invoker's Energy"), new ActionAlwaysFail())
-                            ),
-
                         // Stack some for burst if possible
-                         new Sequence(
-                            Spell.Cast("Evocation", on => Me, req => Common.HasTalent(MageTalents.Invocation) && !Me.HasAura("Invoker's Energy"), cancel => false),
-                            new Wait( TimeSpan.FromMilliseconds(500), until => Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
-                            ),
-
                          new Decorator(
                              req => (Me.HasAura("Invoker's Energy") || !Common.HasTalent(MageTalents.Invocation)),
                              new PrioritySelector(
@@ -319,13 +309,22 @@ namespace Singular.ClassSpecific.Mage
                              ),
 
                          // Rotation
+                         new Decorator(
+                             req => Me.CurrentTarget.IsRooted() && !Spell.IsSpellOnCooldown("Frozen Orb"),
+                             new PrioritySelector(
+                                 ctx => Me.IsSafelyFacing(Me.CurrentTarget, 7.5f),
+                                 new Decorator( req => !(bool) req, Movement.CreateFaceTargetBehavior( 7.5f)),
+                                 Spell.Cast("Frozen Orb", req => (bool) req)
+                                 )
+                             ),
+
                          Spell.Cast("Frost Bomb", ret => Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3),
-                         Spell.Cast("Deep Freeze", ret => Me.ActiveAuras.ContainsKey("Fingers of Frost") || Me.CurrentTarget.IsFrozen()),
+                         Spell.Cast("Deep Freeze", ret => Me.ActiveAuras.ContainsKey("Fingers of Frost") || Me.CurrentTarget.TreatAsFrozen()),
 
                          Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Brain Freeze")),
 
                          Spell.Cast("Ice Lance",
-                             ret => Me.ActiveAuras.ContainsKey("Fingers of Frost") || Me.CurrentTarget.IsFrozen() || (Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura())),
+                             ret => Me.ActiveAuras.ContainsKey("Fingers of Frost") || Me.CurrentTarget.TreatAsFrozen() || (Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura())),
 
                          Spell.Cast("Frostbolt")
                          )
@@ -343,6 +342,7 @@ namespace Singular.ClassSpecific.Mage
         {
             return new PrioritySelector(
                 Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                Movement.CreateFaceTargetBehavior( 5f),
                 Spell.WaitForCastOrChannel(FaceDuring.Yes),
 
                 new Decorator(
@@ -377,18 +377,12 @@ namespace Singular.ClassSpecific.Mage
 
                         Movement.CreateEnsureMovementStoppedBehavior(25f),
 
-                        // nether tempest in CombatBuffs
-                        Spell.Cast("Frozen Orb", req => Spell.UseAOE && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 150))),
-                        Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.HasAura("Frostbolt", 3) || Me.CurrentTarget.HasAuraExpired("Frostbolt", 3)),
-                        new Throttle( 1,
-                            new Decorator( 
-                                ret => !Me.HasAura("Fingers of Frost", 2),
-                                CastFreeze( on => Clusters.GetBestUnitForCluster(Unit.UnfriendlyUnitsNearTarget(8), ClusterType.Radius, 8))
-                                )
-                            ),
+                        Spell.Cast("Frozen Orb", req => Spell.UseAOE && Me.GetAuraStacks("Fingers of Frost") < 2 && Me.IsSafelyFacing(Me.CurrentTarget, 15f) && !Unit.NearbyUnfriendlyUnits.Any(u => u.IsSensitiveDamage() && Me.IsSafelyFacing(u, 20))),
                         Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Brain Freeze")),
-                        Spell.Cast("Ice Lance", ret => (Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura()) || Me.ActiveAuras.ContainsKey("Fingers of Frost")),
-                        Spell.Cast("Frostbolt")
+                        Spell.Cast("Ice Lance", ret => (Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura()) || Me.GetAuraStacks("Fingers of Frost") > 0),
+                        Spell.Cast("Frostbolt"),
+
+                        Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Frostbolt"))
                         )
                     ),
 
@@ -504,7 +498,7 @@ namespace Singular.ClassSpecific.Mage
                         on => _locFreeze,
                         ret => Me.Pet.ManaPercent >= 12
                             && Me.Pet.Location.Distance(_locFreeze) < 45
-                            && !Me.CurrentTarget.IsFrozen()
+                            && !Me.CurrentTarget.TreatAsFrozen()
                         )
                     )
                 );
@@ -563,7 +557,7 @@ namespace Singular.ClassSpecific.Mage
                             log += string.Format(", frostjaw={0}", (long)target.GetAuraTimeLeft("Frostjaw", true).TotalMilliseconds);
                         else if (target.HasAura("Ice Ward"))
                             log += string.Format(", iceward={0}", (long)target.GetAuraTimeLeft("Ice Ward", true).TotalMilliseconds);
-                        else if (target.IsFrozen())
+                        else if (target.TreatAsFrozen())
                             log += string.Format(", isfrozen=Yes");
                     }
 

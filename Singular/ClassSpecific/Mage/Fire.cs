@@ -151,7 +151,7 @@ namespace Singular.ClassSpecific.Mage
                         Common.CreateMagePolymorphOnAddBehavior(),
 
                         Spell.Cast("Deep Freeze",
-                             ret => Me.CurrentTarget.IsFrozen()),
+                             ret => Me.CurrentTarget.TreatAsFrozen()),
 
                         Spell.Cast("Counterspell", ret => Me.CurrentTarget.IsCasting && Me.CurrentTarget.CanInterruptCurrentSpellCast),
 
@@ -163,7 +163,7 @@ namespace Singular.ClassSpecific.Mage
                                 Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
                                 Spell.Cast("Pyroblast", 
                                     ret => Me.ActiveAuras.ContainsKey("Pyroblast!") 
-                                        || (Me.CurrentTarget.IsFrozen() && !Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.Guid != Me.CurrentTargetGuid))
+                                        || (Me.CurrentTarget.TreatAsFrozen() && !Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.Guid != Me.CurrentTargetGuid))
                                         || (Me.CurrentTarget.TimeToDeath() > 15 && !Me.CurrentTarget.HasAura("Pyroblast"))),
                                 Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
                                 Spell.Cast("Fire Blast", ret => !SpellManager.HasSpell("Inferno Blast")),
@@ -173,7 +173,7 @@ namespace Singular.ClassSpecific.Mage
                             ),
 
                         // 
-                        Spell.Cast("Ice Lance", ret => ((Me.IsMoving && Spell.HaveAllowMovingWhileCastingAura() ) || Me.CurrentTarget.IsFrozen()) && Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
+                        Spell.Cast("Ice Lance", ret => ((Me.IsMoving && Spell.HaveAllowMovingWhileCastingAura() ) || Me.CurrentTarget.TreatAsFrozen()) && Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
                         Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Fireball") || Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire))
                         )
                     ),
@@ -211,10 +211,9 @@ namespace Singular.ClassSpecific.Mage
                         Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < 80),
 
                         // Cooldowns
-                        Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
                         Spell.BuffSelf("Mirror Image"),
                         Spell.BuffSelf("Mage Ward", ret => Me.HealthPercent <= 75),
-                        Spell.Cast("Deep Freeze", ret => Me.CurrentTarget.IsFrozen()),
+                        Spell.Cast("Deep Freeze", ret => Me.CurrentTarget.TreatAsFrozen()),
                         Spell.Cast("Counter Spell", ret => (Me.CurrentTarget.Class == WoWClass.Paladin ||Me.CurrentTarget.Class == WoWClass.Priest || Me.CurrentTarget.Class == WoWClass.Druid || Me.CurrentTarget.Class == WoWClass.Shaman) && Me.CurrentTarget.IsCasting && Me.CurrentTarget.HealthPercent >= 20),
                         Spell.Cast("Dragon's Breath",
                             ret => Me.IsSafelyFacing(Me.CurrentTarget, 90) &&
@@ -332,7 +331,7 @@ namespace Singular.ClassSpecific.Mage
                             Me.IsSafelyFacing(target),
                             target.InLineOfSpellSight,
                             target.GetAuraTimeLeft("Living Bomb").TotalMilliseconds,
-                            target.IsFrozen()
+                            target.TreatAsFrozen()
                             );
 
                         if (Common.HasTalent(MageTalents.NetherTempest))

@@ -181,7 +181,7 @@ namespace Singular.ClassSpecific.Paladin
                             new PrioritySelector(
                                 Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose")),
                                 Spell.Cast("Judgment", ret => Common.HasTalent(PaladinTalents.SanctifiedWrath) && Me.HasAura("Avenging Wrath")),
-                                Spell.Cast("Hammer of the Righteous", ret => Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 8 && !u.HasAura("Weakened Blows"))),
+                                Spell.Cast("Hammer of the Righteous"),
                                 Spell.Cast("Judgment"),
                                 Spell.Cast("Avenger's Shield"),
                                 Spell.Cast("Consecration", ret => !Me.IsMoving),
@@ -197,20 +197,24 @@ namespace Singular.ClassSpecific.Paladin
                             ),
 
                         //Single target
-                        Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose")),
-                        Spell.Cast("Hammer of the Righteous", ret => Spell.UseAOE && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
-                        Spell.Cast("Judgment", ret => SpellManager.HasSpell("Sanctified Wrath") && Me.HasAura("Avenging Wrath")),
+                        Spell.OffGCD( Spell.Cast("Shield of the Righteous", ret => Me.CurrentHolyPower >= 3 || Me.ActiveAuras.ContainsKey("Divine Purpose"))),
+
+                        Spell.Cast("Crusader Strike", req => !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
+                        Spell.Cast("Judgment", ret => Common.HasTalent(PaladinTalents.SanctifiedWrath) && Me.HasAura("Avenging Wrath")),
+
                         Spell.Cast("Crusader Strike"),
                         Spell.Cast("Judgment"),
                         Spell.Cast("Avenger's Shield", ret => Spell.UseAOE),
-                        Spell.Cast("Consecration", ret => Spell.UseAOE && !Me.IsMoving),
-                        Spell.Cast("Hammer of Wrath", ret => Me.CurrentTarget.HealthPercent < 20),
+
                         /// level 90 talent if avail
                         Spell.Cast("Holy Prism", ret => Spell.UseAOE),           // target enemy for Single target
-                        Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Spell.UseAOE && Me.GotTarget, false ),       // no mana cost
+                        Spell.CastOnGround("Light's Hammer", on => Me.CurrentTarget, ret => Spell.UseAOE && Me.GotTarget, false),       // no mana cost
                         Spell.Cast("Execution Sentence", ret => Me.CurrentTarget.HealthPercent < 20),               // no mana cost
+
+                        Spell.Cast("Holy Wrath"),
+                        Spell.Cast("Hammer of Wrath", ret => Me.CurrentTarget.HealthPercent < 20),
+                        Spell.Cast("Consecration", ret => Spell.UseAOE && !Me.IsMoving)
                         /// back to normal
-                        Spell.Cast("Holy Wrath")
                         )
                     ),
 

@@ -731,7 +731,7 @@ namespace Singular.ClassSpecific.Priest
                     ),
 
                 new Decorator(
-                    ret => Me.Combat && (!Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe) || HealerManager.AllowHealerDPS()),
+                    ret => Me.Combat && HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
 
                         Helpers.Common.EnsureReadyToAttackFromMediumRange(),

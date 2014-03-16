@@ -62,6 +62,8 @@ namespace Singular.ClassSpecific.Shaman
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
+                        Common.CreateShamanDpsHealBehavior(),
+
                         Rest.CreateDefaultRestBehaviour("Healing Surge", "Ancestral Spirit"),
 
                         Common.CreateShamanMovementBuff()
@@ -81,14 +83,8 @@ namespace Singular.ClassSpecific.Shaman
         }
 
 
-        [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Normal | WoWContext.Instances)]
+        [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanElemental)]
         public static Composite CreateElementalHeal()
-        {
-            return Common.CreateShamanDpsHealBehavior( );
-        }
-
-        [Behavior(BehaviorType.Heal, WoWClass.Shaman, WoWSpec.ShamanElemental, WoWContext.Battlegrounds )]
-        public static Composite CreateElementalPvPHeal()
         {
             return Common.CreateShamanDpsHealBehavior( );
         }
@@ -112,8 +108,6 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CreateShamanDpsShieldBehavior(),
 
-                        Totems.CreateTotemsBehavior(),
-
                         // grinding or questing, if target meets these cast Flame Shock if possible
                         // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
                         // 2. area has another player competing for mobs (we want to tag the mob quickly)
@@ -121,11 +115,15 @@ namespace Singular.ClassSpecific.Shaman
                             ret => StyxWoW.Me.CurrentTarget.Distance < 12
                                 || ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).Any(p => p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 40 * 40),
                             new PrioritySelector(
+                                // have a big attack loaded up, so don't waste it
+                                Spell.Cast("Earth Shock", ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
                                 Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst")),
                                 Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand)),
                                 Spell.Cast("Earth Shock", ret => !SpellManager.HasSpell("Flame Shock"))
                                 )
                             ),
+
+                        Totems.CreateTotemsBehavior(),
 
                         // have a big attack loaded up, so don't waste it
                         Spell.Cast("Earth Shock", ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),
@@ -136,6 +134,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         // we are moving so throw an instant of some type
                         Spell.Buff("Flame Shock", true, req => SpellManager.HasSpell("Lava Burst")),
+                        Spell.Buff("Lava Burst", true, req => Me.GotTarget && Me.CurrentTarget.HasMyAura("Flame Shock")),
                         Spell.Cast("Earth Shock"),
                         Spell.Cast("Unleash Weapon", ret => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand))
                         )

@@ -148,9 +148,11 @@ namespace Singular.GUI
             cboHealContext.Items.Clear();
             if (cls == WoWClass.Shaman)
             {
-                cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Battleground));
-                cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Instance));
-                cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().Raid));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().RestoBattleground));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().RestoInstance));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Raids, WoWSpec.ShamanRestoration, SingularSettings.Instance.Shaman().RestoRaid));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Battlegrounds, WoWSpec.None, SingularSettings.Instance.Shaman().OffhealBattleground));
+                cboHealContext.Items.Add(new HealContextItem(HealingContext.Instances, WoWSpec.None, SingularSettings.Instance.Shaman().OffhealPVE));
             }
 
             if (cls == WoWClass.Druid)
@@ -201,6 +203,32 @@ namespace Singular.GUI
                     {
                         cboHealContext.SelectedItem = ctx;
                         break;
+                    }
+                }
+            }
+
+            if (cboHealContext.SelectedItem == null && cboHealContext.Items.Count > 0)
+            {
+                foreach (var obj in cboHealContext.Items)
+                {
+                    HealContextItem ctx = (HealContextItem)obj;
+                    if (ctx.Spec == WoWSpec.None)
+                    {
+                        if (ctx.Context == SingularRoutine.CurrentHealContext)
+                        {
+                            cboHealContext.SelectedItem = ctx;
+                            break;
+                        }
+                        if (ctx.Context != HealingContext.Battlegrounds && HealingContext.Battlegrounds != SingularRoutine.CurrentHealContext)
+                        {
+                            cboHealContext.SelectedItem = ctx;
+                            break;
+                        }
+                        if (SingularRoutine.CurrentHealContext == HealingContext.Normal && ctx.Spec == WoWSpec.PriestDiscipline && ctx.Context == HealingContext.Instances)
+                        {
+                            cboHealContext.SelectedItem = ctx;
+                            break;
+                        }
                     }
                 }
             }
@@ -310,18 +338,13 @@ namespace Singular.GUI
             // poitype   distance 
             sb.Append( BotPoi.Current.Type.ToString());
 
-            WoWObject o;
             try {
-                o = BotPoi.Current.AsObject;
+                WoWObject o = BotPoi.Current.AsObject;
+                if (o != null)
+                    sb.Append(" @ " + o.Distance.ToString("F1") + " yds - " + o.SafeName());
             }
             catch {
-                o = null;
             }
-
-            if (o != null)
-                sb.Append(" @ " + o.Distance.ToString("F1") + " yds - " + o.SafeName());
-            else if (BotPoi.Current.Type != PoiType.None)
-                sb.Append(" @ " + BotPoi.Current.Location.Distance(StyxWoW.Me.Location).ToString("F1") + " yds - " + BotPoi.Current.Name );
 
             lblPoi.Text = sb.ToString();
 
@@ -336,18 +359,31 @@ namespace Singular.GUI
                     if (++i == 5)
                         break;
                 }
-                catch (System.AccessViolationException)
-                {
-                }
-                catch (Styx.InvalidObjectPointerException)
+                catch 
                 {
                 }
             }
             lblTargets.Text = sb.ToString();
 
             // update list of Heal Targets
+            sb = new StringBuilder();
             if (HealerManager.NeedHealTargeting)
             {
+                try
+                {
+                    WoWUnit tank = HealerManager.TankToStayNear;
+                    if (tank == null)
+                        sb.Append("None");
+                    else
+                        sb.Append(tank.SafeName().AlignLeft(22) + "- " + tank.HealthPercent.ToString("F1").AlignRight(5) + "% @ " + tank.Distance.ToString("F1").AlignRight(5) + " yds");
+                }
+                catch
+                {
+                    sb.Append("Error");
+                }
+
+                lblTankToStayNear.Text = sb.ToString();
+
                 i = 0;
                 sb = new StringBuilder();
                 foreach (WoWUnit u in HealerManager.Instance.TargetList)
@@ -358,10 +394,7 @@ namespace Singular.GUI
                         if (++i == 5)
                             break;
                     }
-                    catch (System.AccessViolationException)
-                    {
-                    }
-                    catch (Styx.InvalidObjectPointerException)
+                    catch
                     {
                     }
                 }
@@ -530,6 +563,13 @@ namespace Singular.GUI
 
         public override string ToString()
         {
+            if (Spec == WoWSpec.None)
+            {
+                if ( Context == HealingContext.Battlegrounds )
+                    return "Offheal - Battlegrounds";
+                return "Offheal - Group/Companion";
+            }
+
             return Spec.ToString().CamelToSpaced().Trim() + " - " + Context.ToString();
         }
 

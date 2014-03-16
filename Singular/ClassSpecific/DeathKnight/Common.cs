@@ -311,7 +311,9 @@ namespace Singular.ClassSpecific.DeathKnight
                             ret => Me.HasAura( "Blood Charge", 5) 
                                 && (BloodRuneSlotsActive == 0 || FrostRuneSlotsActive == 0 || UnholyRuneSlotsActive == 0)),
 
-                        Spell.Cast("Plague Leech", ret => CanCastPlagueLeech)
+                        Spell.Cast("Plague Leech", ret => CanCastPlagueLeech),
+
+                        Spell.BuffSelf("Horn of Winter", ret => !Me.HasPartyBuff(PartyBuffType.AttackPower))
                     )
                 );
         }

@@ -71,8 +71,8 @@ namespace Singular.ClassSpecific.Druid
         }
 
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
-        public static Composite CreateFeralPreCombatBuffForSymbiosis( )
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Battlegrounds, 2)]
+        public static Composite CreateFeralPreCombatBuffForSymbiosisBattlegrounds( )
         {
             return Common.CreateDruidCastSymbiosis(on => GetFeralBestSymbiosisTargetForBattlegrounds());
         }
@@ -84,6 +84,24 @@ namespace Singular.ClassSpecific.Druid
                 ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Shaman)
                 ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior)
                 ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight))));
+        }
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Instances, 2)]
+        public static Composite CreateFeralPreCombatBuffForSymbiosisInstances()
+        {
+            return Common.CreateDruidCastSymbiosis(on => GetFeralBestSymbiosisTargetForInstances());
+        }
+
+        private static WoWPlayer GetFeralBestSymbiosisTargetForInstances()
+        {
+            return (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Specialization == WoWSpec.PaladinHoly)
+                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Specialization == WoWSpec.PaladinProtection)
+                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Specialization == WoWSpec.WarriorProtection)
+                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Monk)
+                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Priest)
+                ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Shaman)
+                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior)
+                ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight)))))));
         }
 
         [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]
@@ -353,31 +371,75 @@ namespace Singular.ClassSpecific.Druid
                                 // 2. Keep Savage Roar up
                                 CastSavageRoar( on => Me.CurrentTarget, req => Me.HasAuraExpired("Savage Roar", 2) && (Me.ComboPoints > 0 || TalentManager.HasGlyph("Savagery"))),
 
+#if INITIAL
                                 new Throttle(
                                     new Decorator(
                                         req => Me.HasAura("Savage Roar") && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
                                         new Sequence(
                                             Spell.BuffSelf("Tiger's Fury", req => !Me.HasAura("Berserk") && (!Spell.IsSpellOnCooldown("Berserk") || Spell.GetSpellCooldown("Berserk").TotalSeconds > 15)),
-                                            new Decorator(
+                                            new Action( r => Logger.WriteDebug("Burst(Instance): Tiger Fury cast, so check if burst needed")),
+                                            // if TF (its off GCD) succeeded, do all Burst checks now
+                                            new DecoratorContinue( 
+                                                req => !Me.CurrentTarget.IsBoss(),
+                                                new Action( r => Logger.WriteDebug("Burst(Instance): not a boss so skipping"))
+                                                ),
+                                            new DecoratorContinue(
                                                 req => Me.CurrentTarget.IsBoss(),
                                                 new PrioritySelector(
-                                                    Spell.OffGCD( Spell.BuffSelf("Nature's Vigil", req => Spell.GetSpellCooldown("Berserk").TotalSeconds > 90)),
+                                                    new Action(r => { Logger.WriteDebug("Burst(Instance): IsBoss, so trying burst buffs"); return RunStatus.Failure; }),
+                                                    new PrioritySelector(
+                                                        ctx => (int) Spell.GetSpellCooldown("Berserk").TotalSeconds,
+                                                        new Action( r=> { Logger.WriteDebug("Burst(Instance): Berserk has {0} secs on cooldown remaining", (int) r); return RunStatus.Failure; }),
+                                                        Spell.OffGCD(Spell.BuffSelf("Nature's Vigil", req => ((int) req) > 85))
+                                                        ),
                                                     new Decorator(
                                                         req => Spell.CanCastHack("Berserk", Me, skipWowCheck: true),
                                                         new PrioritySelector(
+                                                            new Action(r => { Logger.WriteDebug("Burst(Instance): Berserk available, so trying max burst buffs"); return RunStatus.Failure; }),
                                                             Spell.OffGCD(Spell.BuffSelf("Berserk") ),
                                                             Spell.OffGCD(Spell.BuffSelf("Incarnation: King of the Jungle")),
                                                             Spell.OffGCD(Spell.BuffSelf("Nature's Vigil")),
                                                             Spell.OffGCD(Spell.Cast("Force of Nature"))
                                                             )
-                                                        )
+                                                        ),
+                                                    // succeed if we are here regardless to finish Sequence
+                                                    new Action( r => Logger.WriteDebug("Burst(Instance): end of burst buffs"))
                                                     )
                                                 ),
 
+                                            // fail this Sequence if it hasn't already since all casts are Off GCD
                                             new ActionAlwaysFail()
                                             )
                                         )
                                     ),
+#else
+                                Spell.OffGCD(
+                                    new Decorator(
+                                        req => Me.HasAura("Savage Roar") && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                                        new Sequence(
+                                            // Tigers Fury if no Berserk aura active and a cooldown isn't about to become available
+                                            Spell.BuffSelf( "Tiger's Fury", 
+                                                req => !Me.HasAura("Berserk") 
+                                                    && !Spell.GetSpellCooldown("Berserk").TotalSeconds.Between(double.Epsilon, 5)
+                                                    && !Spell.GetSpellCooldown("Nature's Vigil").TotalSeconds.Between(double.Epsilon, 5)),
+                                            // following only if Tiger's Fury cast successful
+                                            new PrioritySelector(
+                                                Spell.OffGCD(Spell.BuffSelf("Nature's Vigil", req => Spell.GetSpellCooldown("Berserk").TotalSeconds > 30)),
+                                                new Sequence(
+                                                    Spell.BuffSelf("Berserk", req => !Spell.GetSpellCooldown("Nature's Vigil").TotalSeconds.Between(double.Epsilon, 30)),
+                                                    new PrioritySelector(
+                                                        Spell.OffGCD(Spell.BuffSelf("Incarnation: King of the Jungle")),
+                                                        Spell.OffGCD(Spell.BuffSelf("Nature's Vigil")),
+                                                        Spell.OffGCD(Spell.Cast("Force of Nature"))
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        // fall through since off gcd
+                                    ),
+
+#endif
 
                                 // 4. Use Nature’s Swiftness/Healing touch to generate Wrath of Cenarius procs when GCD will not cause energy cap*
                                 // 5. Use Predatory Swiftness to generate Dream of Cenarius procs when GCD will not cause energy cap, preferably at 4CP.**

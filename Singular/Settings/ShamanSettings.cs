@@ -20,28 +20,50 @@ namespace Singular.Settings
 
         #region Context Late Loading Wrappers
 
-        private ShamanHealSettings _battleground;
-        private ShamanHealSettings _instance;
-        private ShamanHealSettings _raid;
+        private ShamanRestoHealSettings _restobattleground;
+        private ShamanRestoHealSettings _restoinstance;
+        private ShamanRestoHealSettings _restoraid;
+        private ShamanOffHealSettings _offhealbattleground;
+        private ShamanOffHealSettings _offhealpve;
 
         [Browsable(false)]
-        public ShamanHealSettings Battleground { get { return _battleground ?? (_battleground = new ShamanHealSettings( HealingContext.Battlegrounds )); } }
+        public ShamanRestoHealSettings RestoBattleground { get { return _restoinstance ?? (_restoinstance = new ShamanRestoHealSettings(HealingContext.Battlegrounds)); } }
 
         [Browsable(false)]
-        public ShamanHealSettings Instance { get { return _instance ?? (_instance = new ShamanHealSettings(HealingContext.Instances)); } }
+        public ShamanRestoHealSettings RestoInstance { get { return _restoinstance ?? (_restoinstance = new ShamanRestoHealSettings(HealingContext.Instances)); } }
 
         [Browsable(false)]
-        public ShamanHealSettings Raid { get { return _raid ?? (_raid = new ShamanHealSettings(HealingContext.Raids)); } }
+        public ShamanRestoHealSettings RestoRaid { get { return _restoraid ?? (_restoraid = new ShamanRestoHealSettings(HealingContext.Raids)); } }
 
         [Browsable(false)]
-        public ShamanHealSettings Heal { get { return HealLookup(Singular.SingularRoutine.CurrentWoWContext); } }
-        
-        public ShamanHealSettings HealLookup( WoWContext ctx)
+        public ShamanOffHealSettings OffhealBattleground { get { return _offhealbattleground ?? (_offhealbattleground = new ShamanOffHealSettings(HealingContext.Battlegrounds)); } }
+
+        [Browsable(false)]
+        public ShamanOffHealSettings OffhealPVE { get { return _offhealpve ?? (_offhealpve = new ShamanOffHealSettings(HealingContext.Instances)); } }
+
+        [Browsable(false)]
+        public ShamanRestoHealSettings RestoHealSettings { get { return RestoHealSettingsLookup(Singular.SingularRoutine.CurrentWoWContext); } }
+
+        public ShamanRestoHealSettings RestoHealSettingsLookup(WoWContext ctx)
         {
             if (ctx == WoWContext.Instances)
-                return StyxWoW.Me.CurrentMap.IsRaid ? Raid : Instance;
+                return StyxWoW.Me.GroupInfo.IsInRaid ? RestoRaid : RestoInstance;
 
-            return Battleground;
+            if (ctx == WoWContext.Battlegrounds)
+                return RestoBattleground;
+
+            return RestoInstance;
+        }
+
+        [Browsable(false)]
+        public ShamanOffHealSettings OffHealSettings { get { return OffHealSettingsLookup(Singular.SingularRoutine.CurrentWoWContext); } }
+
+        public ShamanOffHealSettings OffHealSettingsLookup(WoWContext ctx)
+        {
+            if (ctx == WoWContext.Battlegrounds)
+                return OffhealBattleground;
+
+            return OffhealPVE;
         }
 
         #endregion
@@ -55,13 +77,6 @@ namespace Singular.Settings
         [DisplayName("Use Ghost Wolf")]
         [Description("Cast Ghost Wolf while running on foot or indoors")]
         public bool UseGhostWolf { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
-        [DisplayName("Off-heal Allowed")]
-        [Description("Off-heal anyone below 30% or no healers nearby (never in raids)")]
-        public bool AllowOffHealHeal { get; set; }
 
         [Setting]
         [DefaultValue(false)]
@@ -200,15 +215,15 @@ namespace Singular.Settings
         #endregion
     }
 
-    internal class ShamanHealSettings : Singular.Settings.HealerSettings
+    internal class ShamanRestoHealSettings : Singular.Settings.HealerSettings
     {
-        private ShamanHealSettings()
+        private ShamanRestoHealSettings()
             : base("", HealingContext.None)
         {
         }
 
-        public ShamanHealSettings(HealingContext ctx)
-            : base("Shaman", ctx)
+        public ShamanRestoHealSettings(HealingContext ctx)
+            : base("ShamanResto", ctx)
         {
 
             // we haven't created a settings file yet,
@@ -276,7 +291,7 @@ namespace Singular.Settings
             // adjust Healing Surge if we have not previously 
             if (!HealingSurgeAdjusted && StyxWoW.Me.Level >= 60 && (ctx == HealingContext.Instances || ctx == HealingContext.Raids))
             {
-                if ( SavedToFile )
+                if (SavedToFile)
                     Logger.Write(Color.White, "Healing Surge % changed from {0} to {1} for {2}.  Visit Class Config and Save to make permanent.", HealingSurge, AncestralSwiftness + 1, ctx.ToString());
 
                 HealingSurge = AncestralSwiftness + 1;
@@ -423,4 +438,122 @@ namespace Singular.Settings
         public int TelluricHealthCancel { get; set; }
 
     }
+
+    internal class ShamanOffHealSettings : Singular.Settings.HealerSettings
+    {
+        private ShamanOffHealSettings()
+            : base("", HealingContext.None)
+        {
+        }
+
+        public ShamanOffHealSettings(HealingContext ctx)
+            : base("ShamanOffheal", ctx)
+        {
+
+            // we haven't created a settings file yet,
+            //  ..  so initialize values for various heal contexts
+
+            if (!SavedToFile)
+            {
+                if (ctx == Singular.HealingContext.Battlegrounds)
+                {
+                    ChainHeal = 90;
+                    HealingRain = 93;
+                    HealingSurge = 85;
+                    AncestralSwiftness = 40;
+                    HealingStreamTotem = 90;
+                    HealingTideTotem = 60;
+
+                    MinHealingRainCount = 3;
+                    MinChainHealCount = 3;
+                    MinHealingTideCount = 2;
+                }
+                else // use group/companion healing
+                {
+                    ChainHeal = 90;
+                    HealingRain = 93;
+                    HealingSurge = 80;
+                    AncestralSwiftness = 35;
+                    HealingStreamTotem = 90;
+                    HealingTideTotem = 60;
+
+                    MinHealingRainCount = 4;
+                    MinChainHealCount = 3;
+                    MinHealingTideCount = 2;
+                }
+            }
+
+            SavedToFile = true;
+        }
+
+        [Setting]
+        [Browsable(false)]
+        [DefaultValue(false)]
+        public bool SavedToFile { get; set; }
+
+        [Setting]
+        [DefaultValue(92)]
+        [Category("OffHeal")]
+        [DisplayName("% Chain Heal")]
+        [Description("Health % to cast this ability at. Must heal Min 2 people in party. Set to 0 to disable.")]
+        public int ChainHeal { get; set; }
+
+        [Setting]
+        [DefaultValue(91)]
+        [Category("OffHeal")]
+        [DisplayName("% Healing Rain")]
+        [Description("Health % to cast this ability at. Must heal Min of 3 people in party. Set to 0 to disable.")]
+        public int HealingRain { get; set; }
+
+        [Setting]
+        [DefaultValue(16)]
+        [Category("OffHeal")]
+        [DisplayName("% Healing Surge")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HealingSurge { get; set; }
+
+        [Setting]
+        [DefaultValue(15)]
+        [Category("OffHeal")]
+        [DisplayName("% Oh Shoot!")]
+        [Description("Health % to cast Oh Shoot Heal (Ancestral Swiftness + Healing Surge).  Disabled if set to 0, on cooldown, or talent not selected.")]
+        public int AncestralSwiftness { get; set; }
+
+        [Setting]
+        [DefaultValue(95)]
+        [Category("OffHeal")]
+        [DisplayName("% Healing Stream Totem")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HealingStreamTotem { get; set; }
+
+        [Setting]
+        [DefaultValue(70)]
+        [Category("Talents")]
+        [DisplayName("Healing Tide Totem %")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int HealingTideTotem { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("OffHeal")]
+        [DisplayName("Healing Rain Min Count")]
+        [Description("Min number of players below Healing Rain % in area")]
+        public int MinHealingRainCount { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("OffHeal")]
+        [DisplayName("Chain Heal Min Count")]
+        [Description("Min number of players healed")]
+        public int MinChainHealCount { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("OffHeal")]
+        [DisplayName("Healing Tide Min Count")]
+        [Description("Min number of players healed")]
+        public int MinHealingTideCount { get; set; }
+
+    }
+
 }

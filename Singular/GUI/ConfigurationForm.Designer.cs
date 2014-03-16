@@ -62,6 +62,8 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.lblTankToStayNear = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabClass.SuspendLayout();
@@ -74,6 +76,7 @@
             this.groupBox2.SuspendLayout();
             this.grpAuxTargeting.SuspendLayout();
             this.grpFooter.SuspendLayout();
+            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -214,6 +217,7 @@
             // 
             // tabDebug
             // 
+            this.tabDebug.Controls.Add(this.groupBox1);
             this.tabDebug.Controls.Add(this.groupBox3);
             this.tabDebug.Controls.Add(this.groupBox5);
             this.tabDebug.Controls.Add(this.groupBox2);
@@ -326,7 +330,7 @@
             this.groupBox2.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
             this.groupBox2.Location = new System.Drawing.Point(8, 50);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(313, 87);
+            this.groupBox2.Size = new System.Drawing.Size(313, 77);
             this.groupBox2.TabIndex = 0;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Target List";
@@ -347,9 +351,9 @@
             // 
             this.grpAuxTargeting.Controls.Add(this.lblAuxTargets);
             this.grpAuxTargeting.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.grpAuxTargeting.Location = new System.Drawing.Point(8, 143);
+            this.grpAuxTargeting.Location = new System.Drawing.Point(8, 178);
             this.grpAuxTargeting.Name = "grpAuxTargeting";
-            this.grpAuxTargeting.Size = new System.Drawing.Size(313, 104);
+            this.grpAuxTargeting.Size = new System.Drawing.Size(313, 78);
             this.grpAuxTargeting.TabIndex = 1;
             this.grpAuxTargeting.TabStop = false;
             this.grpAuxTargeting.Text = "Other Targeting";
@@ -444,6 +448,28 @@
             this.label1.TabIndex = 4;
             this.label1.Text = "Singular";
             // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.lblTankToStayNear);
+            this.groupBox1.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
+            this.groupBox1.Location = new System.Drawing.Point(7, 133);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(313, 38);
+            this.groupBox1.TabIndex = 1;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Tank to Stay Near";
+            // 
+            // lblTankToStayNear
+            // 
+            this.lblTankToStayNear.AutoSize = true;
+            this.lblTankToStayNear.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTankToStayNear.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.lblTankToStayNear.Location = new System.Drawing.Point(6, 16);
+            this.lblTankToStayNear.Name = "lblTankToStayNear";
+            this.lblTankToStayNear.Size = new System.Drawing.Size(35, 14);
+            this.lblTankToStayNear.TabIndex = 0;
+            this.lblTankToStayNear.Text = "None";
+            // 
             // ConfigurationForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -476,6 +502,8 @@
             this.grpAuxTargeting.PerformLayout();
             this.grpFooter.ResumeLayout(false);
             this.grpFooter.PerformLayout();
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -515,5 +543,7 @@
         private System.Windows.Forms.CheckBox chkDisableDebug;
         private System.Windows.Forms.ComboBox cboForceUseOf;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.Label lblTankToStayNear;
     }
 }

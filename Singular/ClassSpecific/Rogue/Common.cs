@@ -162,7 +162,26 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
-                CreateStealthBehavior( ret => Me.GotTarget && !Unit.IsTrivial(Me.CurrentTarget) && !IsStealthed && Me.CurrentTarget.Distance < ( Me.CurrentTarget.IsNeutral() && !HasTalent(RogueTalents.CloakAndDagger) ? 8 : 40 )),
+                CreateStealthBehavior( 
+                    ret => {
+                        if (!Me.GotTarget || Unit.IsTrivial(Me.CurrentTarget))
+                            return false;
+
+                        if (IsStealthed)
+                            return false;
+                        
+                        float dist = Me.CurrentTarget.SpellDistance();
+                        if (HasTalent(RogueTalents.CloakAndDagger) && dist < 42)
+                            return true;
+
+                        if (dist < 9)
+                            return true;
+
+                        if (dist < 32 && !Me.CurrentTarget.IsNeutral())
+                            return true;
+
+                        return false;
+                    }),
 
                 CreateRogueRedirectBehavior(),
 
@@ -359,8 +378,11 @@ namespace Singular.ClassSpecific.Rogue
             if (Dynamics.CompositeBuilder.CurrentBehaviorType != BehaviorType.Pull)
                 return new ActionAlwaysFail();
 
+            if (RogueSettings.SapAddDistance == 0)
+                return new ActionAlwaysFail();
+
             return new Decorator(
-                req => IsStealthed && Me.GotTarget,
+                req => IsStealthed && Me.GotTarget && SpellManager.HasSpell("Sap"),
                 new PrioritySelector(
                     ctx => GetBestSapTarget(),
                     new Decorator(

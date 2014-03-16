@@ -424,7 +424,7 @@ namespace Singular.ClassSpecific.Warlock
                         && onUnit(ret).InLineOfSpellSight,
                     new Action(ret =>
                     {
-                        Logger.Write(string.Format("Casting Soul Swap on {0}", onUnit(ret).SafeName()));
+                        Logger.Write(string.Format("*Soul Swap on {0}", onUnit(ret).SafeName()));
                         SpellManager.Cast("Soul Swap", onUnit(ret));
                     })
                     )

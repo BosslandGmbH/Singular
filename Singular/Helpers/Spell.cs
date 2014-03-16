@@ -59,9 +59,9 @@ namespace Singular.Helpers
         public static void LogCast(string sname, WoWUnit unit, double health, double dist)
         {
             if (unit.IsMe)
-                Logger.Write("Casting {0} on Me @ {1:F1}%", sname, health);
+                Logger.Write("*{0} on Me @ {1:F1}%", sname, health);
             else
-                Logger.Write("Casting {0} on {1} @ {2:F1}% at {3:F1} yds", sname, unit.SafeName(), health, dist);
+                Logger.Write("*{0} on {1} @ {2:F1}% at {3:F1} yds", sname, unit.SafeName(), health, dist);
         }
 
         public static WoWDynamicObject GetGroundEffectBySpellId(int spellId)
@@ -1720,7 +1720,7 @@ namespace Singular.Helpers
                         new Sequence(
                             new Action( ret => {
                                 CogContext cog = ret.CogContext();
-                                Logger.Write("Casting {0} {1}at {2:F1} yds {3}", spell, cog.targetDesc, cog.loc.Distance(StyxWoW.Me.Location), cog.loc);
+                                Logger.Write("*{0} {1}at {2:F1} yds {3}", spell, cog.targetDesc, cog.loc.Distance(StyxWoW.Me.Location), cog.loc);
                                 return SpellManager.Cast(spell) ? RunStatus.Success : RunStatus.Failure; 
                                 }),
 
@@ -2092,19 +2092,36 @@ namespace Singular.Helpers
         public static Composite Resurrect(string spellName)
         {
             return new PrioritySelector(
-                ctx => Unit.ResurrectablePlayers.FirstOrDefault(u => !Blacklist.Contains(u, BlacklistFlags.Combat)),
+                ctx => Unit.ResurrectablePlayers.FirstOrDefault(u => {
+                    try
+                    {
+                        if (u == null || !u.IsValid)
+                            return false;
+                        if (Blacklist.Contains(u, BlacklistFlags.Combat))
+                            return false;
+                        return true;
+                    }
+                    catch { }
+                    return false;
+                    }),
                 new Decorator(
                     ctx => ctx != null && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
                     new Sequence(
                         Cast(spellName, mov => true, ctx => (WoWPlayer)ctx, req => true, cancel => 
                             {
-                                if (((WoWUnit)cancel).IsAlive)
+                                try
                                 {
+                                    if (!((WoWUnit)cancel).IsAlive)
+                                        return false;
+
                                     Logger.Write(Color.White, "^Rez target brought back by someone else, cancelling....");
-                                    return true;
+                                }
+                                catch
+                                {
+                                    Logger.Write(Color.White, "^Rez target became invalid during cast, cancelling....");
                                 }
 
-                                return false;
+                                return true;
                             }),
                         new Action(ctx => Blacklist.Add((WoWPlayer)ctx, BlacklistFlags.Combat, TimeSpan.FromSeconds(30)))
                         )

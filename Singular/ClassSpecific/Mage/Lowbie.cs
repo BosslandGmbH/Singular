@@ -99,7 +99,7 @@ namespace Singular.ClassSpecific.Mage
                                 target.InLineOfSpellSight,
                                 (long)target.GetAuraTimeLeft("Frostfire Bolt", true).TotalMilliseconds,
                                 target.IsSlowed().ToYN(),
-                                target.IsFrozen().ToYN()
+                                target.TreatAsFrozen().ToYN()
                                 );
 
                             if (target.HasAura("Frost Nova"))

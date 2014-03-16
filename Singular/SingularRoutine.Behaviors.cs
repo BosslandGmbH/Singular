@@ -51,11 +51,8 @@ namespace Singular
         public bool RebuildBehaviors(bool silent = false)
         {
             // Logger.PrintStackTrace("RebuildBehaviors called.");
-
+            DetermineCurrentWoWContext();
             InitBehaviors();
-
-            // save single consistent copy for building behaves since CurrentWoWContext is dynamically evaluated
-            WoWContext context = CurrentWoWContext;
 
             // DO NOT UPDATE: This will cause a recursive event
             // Update the current context. Handled in SingularRoutine.Context.cs
@@ -71,30 +68,30 @@ namespace Singular
             }
 
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
-            if (!EnsureComposite( silent, true, context, BehaviorType.Combat))
+            if (!EnsureComposite( silent, true, CurrentWoWContext, BehaviorType.Combat))
             {
                 return false;
             }
 
-            if (!EnsureComposite( silent, true, context, BehaviorType.Pull))
+            if (!EnsureComposite( silent, true, CurrentWoWContext, BehaviorType.Pull))
             {
                 return false;
             }
 
             // If there's no class-specific resting, just use the default, which just eats/drinks when low.
-            EnsureComposite( silent, false, context, BehaviorType.Rest);
+            EnsureComposite( silent, false, CurrentWoWContext, BehaviorType.Rest);
             // if (TreeHooks.Instance.Hooks[HookName(BehaviorType.Rest)] == null)
             if (!TreeHooks.Instance.Hooks.ContainsKey(HookName(BehaviorType.Rest)) || TreeHooks.Instance.Hooks[HookName(BehaviorType.Rest)].Count <= 0)
                 TreeHooks.Instance.ReplaceHook(HookName(BehaviorType.Rest), Helpers.Rest.CreateDefaultRestBehaviour());
 
             // These are optional. If they're not implemented, we shouldn't stop because of it.
-            EnsureComposite( silent, false, context, BehaviorType.CombatBuffs);
-            EnsureComposite( silent, false, context, BehaviorType.Heal);
-            EnsureComposite( silent, false, context, BehaviorType.PullBuffs);
-            EnsureComposite( silent, false, context, BehaviorType.PreCombatBuffs);
-            EnsureComposite( silent, false, context, BehaviorType.Death);
+            EnsureComposite( silent, false, CurrentWoWContext, BehaviorType.CombatBuffs);
+            EnsureComposite( silent, false, CurrentWoWContext, BehaviorType.Heal);
+            EnsureComposite( silent, false, CurrentWoWContext, BehaviorType.PullBuffs);
+            EnsureComposite( silent, false, CurrentWoWContext, BehaviorType.PreCombatBuffs);
+            EnsureComposite( silent, false, CurrentWoWContext, BehaviorType.Death);
 
-            EnsureComposite(silent, false, context, BehaviorType.LossOfControl);
+            EnsureComposite(silent, false, CurrentWoWContext, BehaviorType.LossOfControl);
 
 #if SHOW_BEHAVIOR_LOAD_DESCRIPTION
             // display concise single line describing what behaviors we are loading

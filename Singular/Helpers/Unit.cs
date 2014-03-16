@@ -267,7 +267,24 @@ namespace Singular.Helpers
 
             // check for enemy players here as friendly only seems to work on npc's
             if (p.IsPlayer)
-                return p.ToPlayer().IsHorde != StyxWoW.Me.IsHorde;
+            {
+                WoWPlayer pp = p.ToPlayer();
+                if (pp.IsHorde == StyxWoW.Me.IsHorde)
+                {
+                    if (showReason)
+                        Logger.Write(invalidColor, "invalid attack player {0} not enemy", p.SafeName());
+                    return false;
+                }
+
+                if (pp.Guid == StyxWoW.Me.CurrentTargetGuid && !Unit.CanAttackCurrentTarget)
+                {
+                    if (showReason)
+                        Logger.Write(invalidColor, "invalid attack player {0} cannot be Attacked currently", p.SafeName());
+                    return false;
+                }
+
+                return true;
+            }
 
             // Ignore friendlies!
             if (p.IsFriendly)
@@ -281,13 +298,29 @@ namespace Singular.Helpers
                 return true;
 
             // If it is a pet/minion/totem, lets find the root of ownership chain
-            WoWUnit pOwner = GetPlayerParent(p);
+            WoWPlayer pOwner = GetPlayerParent(p);
 
             // ignore if owner is player, alive, and not blacklisted then ignore (since killing owner kills it)
-            if (pOwner != null && pOwner.IsAlive && !Blacklist.Contains(pOwner, BlacklistFlags.Combat))
+            if (pOwner != null && pOwner.IsAlive)
             {
-                if (showReason) Logger.Write(invalidColor, "invalid attack unit {0} has a Player as Parent", p.SafeName());
-                return false;
+                if (!ValidUnit(pOwner))
+                {
+                    if (showReason)
+                        Logger.Write(invalidColor, "invalid attack unit {0} not an attackable Player as Parent", p.SafeName());
+                    return false;
+                }
+                if (!Blacklist.Contains(pOwner, BlacklistFlags.Combat))
+                {
+                    if (showReason)
+                        Logger.Write(invalidColor, "valid attack unit {0} has an attackable Player as Parent", p.SafeName());
+                    return false;
+                }
+                if (!StyxWoW.Me.IsPvPFlagged)
+                {
+                    if (showReason)
+                        Logger.Write(invalidColor, "valid attackable player {0} but I am not PvP Flagged", p.SafeName());
+                    return false;
+                }
             }
 
             // And ignore critters (except for those ferocious ones) /non-combat pets
@@ -328,7 +361,7 @@ namespace Singular.Helpers
             return maxh <= TrivialHealth();
         }
 
-        public static WoWUnit GetPlayerParent(WoWUnit unit)
+        public static WoWPlayer GetPlayerParent(WoWUnit unit)
         {
             // If it is a pet/minion/totem, lets find the root of ownership chain
             WoWUnit pOwner = unit;
@@ -345,7 +378,7 @@ namespace Singular.Helpers
             }
 
             if (unit != pOwner && pOwner.IsPlayer)
-                return pOwner;
+                return pOwner as WoWPlayer;
 
             return null;
         }
@@ -510,7 +543,14 @@ namespace Singular.Helpers
         {
             // need to compare millisecs even though seconds are provided.  otherwise see it as expired 999 ms early because
             // .. of loss of precision
-            return SpellManager.HasSpell(spell) && u.GetAuraTimeLeft(aura, myAura).TotalSeconds <= (double) secs;
+            if ( !SpellManager.HasSpell(spell))
+                return false;
+            
+            TimeSpan timeLeft = u.GetAuraTimeLeft(aura, myAura);
+            if (timeLeft.TotalSeconds <= (double)secs)
+                return true;
+
+            return false;
         }
 
 
@@ -834,6 +874,7 @@ namespace Singular.Helpers
             return me.GroupInfo.IsInParty || me.GroupInfo.IsInRaid;
         }
 
+#if NO_LONGER_USED
         public static uint LocalGetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
         {
             // Reversing note: CGUnit_C::GetPredictedHeals
@@ -872,6 +913,7 @@ namespace Singular.Helpers
 
             public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
         }
+#endif
 
         private static bool lastMovingAwayAnswer = false;
         private static ulong guidLastMovingAwayCheck = 0;
@@ -920,6 +962,23 @@ namespace Singular.Helpers
         public static WoWUnit HighestHealthMobAttackingTank()
         {
             return MobsAttackingTank().OrderByDescending(u => u.HealthPercent).FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Calls the UnitCanAttack LUA to check if current target is attackable. This is
+        /// necessary because the WoWUnit.Attackable property returns 'true' when targeting
+        /// any enemy player including in Sanctuary, not PVP flagged, etc where a player
+        /// is not attackable
+        /// </summary>
+        public static bool CanAttackCurrentTarget
+        {
+            get
+            {
+                if (StyxWoW.Me.CurrentTarget == null)
+                    return false;
+
+                return Lua.GetReturnVal<bool>("return UnitCanAttack(\"player\",\"target\")", 0);
+            }
         }
     }
 

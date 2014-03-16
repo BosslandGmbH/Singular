@@ -351,6 +351,9 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveBehindTargetBehavior(SimpleBooleanDelegate requirements)
         {
+            if (requirements == null)
+                return new ActionAlwaysFail();
+
             return new Decorator(
                 ret =>
                 {
@@ -359,7 +362,8 @@ namespace Singular.Helpers
                     var currentTarget = StyxWoW.Me.CurrentTarget;
                     if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry))
                         return false;
-                    return currentTarget.Stunned || currentTarget.CurrentTarget != StyxWoW.Me;
+                    return (currentTarget.Stunned || currentTarget.CurrentTargetGuid != StyxWoW.Me.Guid)
+                        && requirements(ret);
                 },
                 new PrioritySelector(
                     ctx => CalculatePointBehindTarget(),

@@ -889,7 +889,7 @@ namespace Singular.ClassSpecific.Hunter
                     && onUnit(ret).SpellDistance() < 40
                     && SpellManager.HasSpell("Steady Shot"),
                 new Sequence(
-                    new Action(ret => Logger.Write("Casting Steady Shot on {0} @ {1:F1}% at {2:F1} yds", onUnit(ret).SafeName(), onUnit(ret).HealthPercent, onUnit(ret).Distance)),
+                    new Action(ret => Logger.Write("*Steady Shot on {0} @ {1:F1}% at {2:F1} yds", onUnit(ret).SafeName(), onUnit(ret).HealthPercent, onUnit(ret).Distance)),
                     new Action(ret => SpellManager.Cast("Steady Shot", onUnit(ret)))
                     )
                 );

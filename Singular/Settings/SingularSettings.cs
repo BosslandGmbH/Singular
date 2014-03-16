@@ -69,6 +69,14 @@ namespace Singular.Settings
         DPS = 4
     }
 
+    enum DpsOffHealWhen
+    {
+        Never = 0,
+        NoHealer,
+        NoHealerInRange,
+        Always
+    }
+
     internal class SingularSettings : Styx.Helpers.Settings
     {
         private static int entrycount = 0;
@@ -219,9 +227,9 @@ namespace Singular.Settings
 
             if (StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration)
             {
-                LogSettings("Shaman.Heal.Battleground", Shaman().Battleground);
-                LogSettings("Shaman.Heal.Instance", Shaman().Instance);
-                LogSettings("Shaman.Heal.Raid", Shaman().Raid);
+                LogSettings("Shaman.Heal.Battleground", Shaman().RestoBattleground);
+                LogSettings("Shaman.Heal.Instance", Shaman().RestoInstance);
+                LogSettings("Shaman.Heal.Raid", Shaman().RestoRaid);
             }
 
             if (StyxWoW.Me.Specialization == WoWSpec.PriestHoly)
@@ -603,6 +611,27 @@ namespace Singular.Settings
         #region Category: Group Healing / Support
 
         [Setting]
+        [DefaultValue(35)]
+        [Category("Group Healing/Support")]
+        [DisplayName("DPS Off-Heal Begin %")]
+        [Description("DPS Off-Heal starts if companion below % (never in raids)")]
+        public int DpsOffHealBeginPct { get; set; }
+
+        [Setting]
+        [DefaultValue(65)]
+        [Category("Group Healing/Support")]
+        [DisplayName("DPS Off-Heal Stop %")]
+        [Description("DPS heals ends if group above % and healer in range (never in raids)")]
+        public int DpsOffHealEndPct { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Group Healing/Support")]
+        [DisplayName("DPS Off-Heal Allowed")]
+        [Description("DPS will off-heal if health below Begin %.  Will leave off-heal mode if healer in range and group above End % health (never in raids)")]
+        public bool DpsOffHealAllowed { get; set; }
+
+        [Setting]
         [DefaultValue(95)]
         [Category("Group Healing/Support")]
         [DisplayName("Ignore Targets Health")]
@@ -613,14 +642,14 @@ namespace Singular.Settings
         [DefaultValue(75)]
         [Category("Group Healing/Support")]
         [DisplayName("Max Heal Target Range")]
-        [Description("Max distance that we will see a heal target (max value: 100)")]
+        [Description("Max distance we see heal targets (max value: 100), any beyond this are ignored")]
         public int MaxHealTargetRange { get; set; }
 
         [Setting]
         [DefaultValue(25)]
         [Category("Group Healing/Support")]
         [DisplayName("Stay Near Tank Range")]
-        [Description("Max distance from Tank before we move towards it (max value: 100)")]
+        [Description("Max combat distance from Tank before we move towards it (max value: 100)")]
         public int StayNearTankRange { get; set; }
 
         [Setting]

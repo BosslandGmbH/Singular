@@ -27,6 +27,30 @@ namespace Singular.ClassSpecific.Shaman
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
+        private static bool ShouldWeDropPullTotems
+        {
+            get
+            {
+                if (Me.GotTarget)
+                {
+                    if (Me.Specialization == WoWSpec.ShamanRestoration && Me.IsInGroup())
+                        return false;
+
+                    if (Me.Specialization == WoWSpec.ShamanEnhancement)
+                        return Me.CurrentTarget.Distance < Me.MeleeDistance(Me.CurrentTarget) + 10;
+
+                    float distCheck = Totems.GetTotemRange(WoWTotem.Searing);
+                    if (Me.CurrentTarget.IsMoving)
+                        distCheck -= 3.5f;
+
+                    if (Me.SpellDistance(Me.CurrentTarget) <= distCheck  )
+                        return true;
+                }
+
+                return false;
+            }
+        }
+
         private static bool ShouldWeDropTotemsYet
         {
             get
@@ -58,7 +82,12 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateTotemsBehavior()
         {
             if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+            {
+                if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull)
+                    return CreateTotemsNormalPullBehavior();
+
                 return CreateTotemsNormalBehavior();
+            }
 
             if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds )
                 return CreateTotemsPvPBehavior();
@@ -66,27 +95,80 @@ namespace Singular.ClassSpecific.Shaman
             return CreateTotemsInstanceBehavior();
         }
 
+        public static Composite CreateTotemsNormalPullBehavior()
+        {
+            if (Dynamics.CompositeBuilder.CurrentBehaviorType != BehaviorType.Pull)
+                return new ActionAlwaysFail();
+
+            return new PrioritySelector(              
+                // check in case more sophisticated totem cast needed
+                CreateTotemsNormalBehavior(),
+
+                // otherwise drop the DPS totem 
+                Spell.BuffSelf("Searing Totem", ret => ShouldWeDropPullTotems && !Exist(WoWTotemType.Fire))
+                );
+
+        }
+
         public static Composite CreateTotemsNormalBehavior()
         {
             // create Fire Totems behavior first, then wrap if needed
-            Composite fireTotemBehavior =
-                new PrioritySelector(
-                    Spell.BuffSelf("Fire Elemental",
-                        ret => Common.StressfulSituation && !SpellManager.CanBuff(WoWTotem.EarthElemental.ToSpellId(), false)),
+            PrioritySelector fireTotemBehavior = new PrioritySelector();
+            fireTotemBehavior.AddChild(
+                Spell.BuffSelf("Fire Elemental",
+                    ret => Common.StressfulSituation && !SpellManager.CanBuff(WoWTotem.EarthElemental.ToSpellId(), false))
+                );
 
-                    // note: Magma handled in AOE logic in Combat behaviors
-
-                    Spell.BuffSelf("Searing Totem",
-                        ret => Me.GotTarget 
-                            && Me.CurrentTarget.SpellDistance() < GetTotemRange(WoWTotem.Searing) - 2f 
-                            && !Exist( WoWTotemType.Fire))
+            if (Me.Specialization == WoWSpec.ShamanEnhancement)
+            {
+                fireTotemBehavior.AddChild( 
+                    Spell.BuffSelf("Magma Totem",
+                        ret => Spell.UseAOE 
+                            && !Exist( WoWTotem.FireElemental, WoWTotem.Magma )
+                            && Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count( u => u.DistanceSqr < 10 * 10) >= 3
+                        )
                     );
+            }
+
+            fireTotemBehavior.AddChild(
+                Spell.BuffSelf("Searing Totem",
+                    ret => {
+                        if (Me.GotTarget && (Me.CurrentTarget.SpellDistance() < GetTotemRange(WoWTotem.Searing) - 2f) && TotemIsKnown(WoWTotem.Searing))
+                        {
+                            if (!Exist(WoWTotemType.Fire))
+                            {
+                                Logger.WriteDebug("CreateNormalTotems: no Fire Totem so setting Searing Totem");
+                                return true;
+                            }
+                            WoWTotemInfo ti = GetTotem(WoWTotem.Searing);
+                            if (ti != null && ti.Expires < DateTime.Now + TimeSpan.FromSeconds(2))
+                            {
+                                Logger.WriteDebug("CreateNormalTotems: Searing Totem expires in {0} ms, refreshing", (int)(ti.Expires - DateTime.Now).TotalMilliseconds);
+                                return true;
+                            }
+                            ti = GetTotem(WoWTotem.Magma);
+                            if (ti != null)
+                            {
+                                int count = Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => u.DistanceSqr < 15 * 15);
+                                if (count < 2)
+                                {
+                                    Logger.WriteDebug("CreateNormalTotems: only {0} mobs nearby, replacing Magma Totem with Searing Totem", count);
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    }
+                    )
+                );
 
             if (Me.Specialization == WoWSpec.ShamanRestoration)
             {
-                fireTotemBehavior = new Decorator(
-                    ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid), 
-                    fireTotemBehavior
+                fireTotemBehavior = new PrioritySelector(
+                    new Decorator(
+                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !Unit.NearbyFriendlyPlayers.Any(u => u.IsInMyPartyOrRaid), 
+                        fireTotemBehavior
+                        )
                     );
             }
 
@@ -193,24 +275,94 @@ namespace Singular.ClassSpecific.Shaman
         public static Composite CreateTotemsInstanceBehavior()
         {
             // create Fire Totems behavior first, then wrap if needed
-            Composite fireTotemBehavior =
-                new PrioritySelector(
-                    new Action( r => {
-                        return RunStatus.Failure;
-                        }),
+            PrioritySelector fireTotemBehavior = new PrioritySelector();
 
-                    Spell.BuffSelf("Fire Elemental", ret => Me.CurrentTarget.IsBoss()),
-
-                    // Magma handled within each specs AoE support
-
-                    Spell.BuffSelf("Searing Totem",
-                        ret => Me.GotTarget
-                            && Me.CurrentTarget.SpellDistance() < GetTotemRange(WoWTotem.Searing) - 2f
-                            && (!Exist(WoWTotemType.Fire) || (GetTotem( WoWTotem.Searing) != null && GetTotem(WoWTotem.Searing).Expires < DateTime.Now + TimeSpan.FromSeconds(3))))
+            fireTotemBehavior.AddChild(
+                    Spell.Cast("Fire Elemental", ret => Me.CurrentTarget.IsBoss())
                     );
 
+            if (Me.Specialization == WoWSpec.ShamanEnhancement)
+            {
+                fireTotemBehavior.AddChild(
+                    Spell.Cast("Magma Totem",
+                        on => Me.CurrentTarget ?? Me,
+                        ret =>
+                        {
+                            if (!Spell.UseAOE)
+                                ;
+                            else if (!TotemIsKnown(WoWTotem.Searing))
+                                ;
+                            else if (Exist(WoWTotem.FireElemental))
+                                ; // Logger.WriteDebug("CreateInstanceTotems: FireElemental Totem exists, skipping Magma");
+                            else if (Exist(WoWTotem.Magma) && GetTotem(WoWTotem.Magma).Unit != null && Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => GetTotem(WoWTotem.Magma).Unit.SpellDistance(u) < 10) >= 3)
+                                ; // Logger.WriteDebug("CreateInstanceTotems: Magma Totem already exists, skipping Magma");
+                            else
+                            {
+                                int count = Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => u.SpellDistance() < 10);
+                                if (count < 3)
+                                    ; // Logger.WriteDebug("CreateInstanceTotems: only {0} mobs attacking us, skipping Magma Totem", count);
+                                else
+                                {
+                                    ; // Logger.WriteDebug("CreateInstanceTotems: {0} mobs attacking us, setting a Magma Totem now!!!", count);
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        }
+                        )
+                    );
+            }
+
             if (Me.Specialization == WoWSpec.ShamanRestoration)
-                fireTotemBehavior = new Decorator(ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !HealerManager.Instance.TargetList.Any(m => m.IsAlive), fireTotemBehavior);
+                fireTotemBehavior = new PrioritySelector(
+                    new Decorator(
+                        ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !HealerManager.Instance.TargetList.Any(m => m.IsAlive), 
+                        fireTotemBehavior
+                        )
+                    );
+            else
+                fireTotemBehavior.AddChild(
+                    Spell.Cast("Searing Totem",
+                        on => Me.CurrentTarget,
+                        ret => {
+                            if (Me.GotTarget && TotemIsKnown(WoWTotem.Searing))
+                            {
+                                float currDist = Me.CurrentTarget.SpellDistance();
+                                if ( currDist > GetTotemRange(WoWTotem.Searing))
+                                {
+                                    Logger.WriteDebug("CreateInstanceTotems: dist of {0:F1} out of range for Searing Totem, not setting", currDist);
+                                    return false;
+                                }
+
+                                if (!Exist(WoWTotemType.Fire))
+                                {
+                                    Logger.WriteDebug("CreateInstanceTotems: no Fire Totem so setting Searing Totem");
+                                    return true;
+                                }
+
+                                WoWTotemInfo ti = GetTotem(WoWTotem.Searing);
+                                if (ti != null && ti.Expires < DateTime.Now + TimeSpan.FromSeconds(2))
+                                {
+                                    Logger.WriteDebug("CreateInstanceTotems: Searing Totem expires in {0} ms, refreshing", (int)(ti.Expires - DateTime.Now).TotalMilliseconds);
+                                    return true;
+                                }
+                                ti = GetTotem(WoWTotem.Magma);
+                                if (ti != null)
+                                {
+                                    int count = Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => u.DistanceSqr < 15 * 15);
+                                    if (count < 2)
+                                    {
+                                        Logger.WriteDebug("CreateInstanceTotems: only {0} mobs nearby, replacing Magma Totem with Searing Totem", count);
+                                        return true;
+                                    }
+                                }
+                            }
+                            return false;
+                        }
+                        )
+                    );
+
 
             // now 
             return new PrioritySelector(
@@ -225,7 +377,8 @@ namespace Singular.ClassSpecific.Shaman
                     new PrioritySelector(
 
                         // earth totems
-                        Spell.BuffSelf(WoWTotem.EarthElemental.ToSpellId(),
+                        Spell.Cast(WoWTotem.EarthElemental.ToSpellId(),
+                            on => Me.CurrentTarget ?? Me,
                             ret => (Group.Tanks.Any(t => t.IsDead && t.Distance < 40)) && !Exist(WoWTotem.StoneBulwark)),
 
                         // Stone Bulwark handled in CombatBuffs with Astral Shift
@@ -264,10 +417,10 @@ namespace Singular.ClassSpecific.Shaman
                             ret => !Exist(WoWTotemType.Air),
                             new PrioritySelector(
                                 Spell.Cast("Grounding Totem",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
+                                    on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < 40 && u.IsTargetingMeOrPet && u.IsCasting)),
 
                                 Spell.Cast("Capacitor Totem",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))),
+                                    on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Distance < GetTotemRange(WoWTotem.Capacitor))),
 
                                 Spell.BuffSelf("Windwalk Totem",
                                     ret => Unit.HasAuraWithMechanic(StyxWoW.Me, WoWSpellMechanic.Rooted, WoWSpellMechanic.Snared))
@@ -371,8 +524,7 @@ namespace Singular.ClassSpecific.Shaman
         public static bool Exist(WoWTotem wtcheck)
         {
             WoWTotemInfo tiexist = GetTotem(wtcheck);
-            WoWTotem wtexist = tiexist.WoWTotem;
-            return wtcheck == wtexist && IsRealTotem(wtcheck);
+            return tiexist != null;
         }
 
         /// <summary>
@@ -453,7 +605,10 @@ namespace Singular.ClassSpecific.Shaman
         /// <returns>WoWTotemInfo reference</returns>
         public static WoWTotemInfo GetTotem(WoWTotem wt)
         {
-            return GetTotem(wt.ToType());
+            WoWTotemInfo ti = GetTotem(wt.ToType());
+            if (ti.WoWTotem != wt)
+                return null;
+            return ti;
         }
 
         /// <summary>
@@ -556,7 +711,7 @@ namespace Singular.ClassSpecific.Shaman
 
         public static int ToSpellId(this WoWTotem totem)
         {
-            return (int)(((long)totem) & ((1 << 32) - 1));
+            return (int)(((long)totem) & ((1L << 32) - 1));
         }
 
         public static WoWTotemType ToType(this WoWTotem totem)

@@ -29,9 +29,14 @@ namespace Singular.ClassSpecific.Mage
         private static WoWPoint locLastFrostArmor = WoWPoint.Empty;
         private static WoWPoint locLastIceBarrier = WoWPoint.Empty;
 
+        public static bool TreatAsFrozen(this WoWUnit unit)
+        {
+            return Me.HasAura("Brain Freeze") || unit.IsFrozen();
+        }
+
         public static bool IsFrozen(this WoWUnit unit)
         {
-            return Me.HasAura("Brain Freeze") || unit.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Frozen || (a.Spell.School == WoWSpellSchool.Frost && a.Spell.SpellEffects.Any(e => e.AuraType == WoWApplyAuraType.ModRoot)));
+            return unit.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Frozen || (a.Spell.School == WoWSpellSchool.Frost && a.Spell.SpellEffects.Any(e => e.AuraType == WoWApplyAuraType.ModRoot)));
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
@@ -102,7 +107,7 @@ namespace Singular.ClassSpecific.Mage
                         new Throttle( 1,
                             new Decorator(ret => !HaveManaGem && Spell.CanCastHack("Conjure Mana Gem"),
                                 new Sequence(
-                                    new Action(ret => Logger.Write("Casting Conjure Mana Gem")),
+                                    new Action(ret => Logger.Write("*Conjure Mana Gem")),
                                     new Action(ret => SpellManager.Cast(759))
                                     )
                                 )
@@ -179,13 +184,17 @@ namespace Singular.ClassSpecific.Mage
 
                     Spell.BuffSelf("Incanter's Ward", req => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any()),
                     Spell.BuffSelf("Ice Ward"),
-                    Spell.Cast("Evocation", mov => true, on => Me, ret => NeedEvocation, cancel => false),
+
+                    new Throttle( 3, Spell.Cast("Evocation", mov => true, on => Me, ret => NeedEvocation, cancel => false) ),
+                        // new Wait( 1, until => !HasTalent(MageTalents.Invocation) || Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
 
                     Dispelling.CreatePurgeEnemyBehavior("Spellsteal"),
                     // CreateMageSpellstealBehavior(),
 
                     Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
+                    // cast at most once per 6 seconds
+                    // prevent cast if No Path occurred in last 30 seconds
                     new Throttle( TimeSpan.FromMilliseconds(6000), Spell.CastOnGround("Rune of Power", on => Me, req => !Me.IsMoving && !Me.InVehicle && !Me.HasAura("Rune of Power") && Singular.Utilities.EventHandlers.LastNoPathFailure.AddSeconds(30) < DateTime.Now, false) ),
 
                     Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
@@ -675,7 +684,7 @@ namespace Singular.ClassSpecific.Mage
                 // for invocation talent, return true if buff has expired
                 bool hasInvocation = HasTalent(MageTalents.Invocation);
                 if ( hasInvocation)
-                    return Me.HasAuraExpired("Invoker's Energy", 1);
+                    return Me.HasAuraExpired("Evocation", "Invoker's Energy", 1);
 
                 // if low health, return true if we are glyphed (made sure no invocation or rune of power talented chars reach here already)
                 if (Me.HealthPercent < 40)

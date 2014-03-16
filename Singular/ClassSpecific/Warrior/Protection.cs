@@ -17,6 +17,8 @@ using Action = Styx.TreeSharp.Action;
 using Styx.WoWInternals.WoWObjects;
 
 using Styx.Common;
+using System.Drawing;
+using CommonBehaviors.Actions;
 
 namespace Singular.ClassSpecific.Warrior
 {
@@ -27,6 +29,15 @@ namespace Singular.ClassSpecific.Warrior
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static WarriorSettings WarriorSettings { get { return SingularSettings.Instance.Warrior(); } }
+
+        [Behavior(BehaviorType.Rest, WoWClass.Warrior, WoWSpec.WarriorProtection, WoWContext.All)]
+        public static Composite CreateProtectionRest()
+        {
+            return new PrioritySelector(
+                Singular.Helpers.Rest.CreateDefaultRestBehaviour(),
+                CheckThatShieldIsEquippedIfNeeded()
+                );
+        }
 
         [Behavior(BehaviorType.Pull, WoWClass.Warrior, WoWSpec.WarriorProtection, WoWContext.All)]
         public static Composite CreateProtectionNormalPull()
@@ -60,7 +71,18 @@ namespace Singular.ClassSpecific.Warrior
                                 )
                             ),
 
-                        Spell.Cast( "Shield Slam")
+                        Spell.Cast( "Shield Slam", req => HasShieldInOffHand ),
+
+                        // just in case user botting a Prot Warrior without a shield
+                        Spell.Cast("Revenge"),
+                        Spell.Cast("Devastate", ret => !((WoWUnit)ret).HasAura("Weakened Armor", 3)),
+                        Spell.Cast("Thunder Clap", ret => Spell.UseAOE && ((WoWUnit)ret).SpellDistance() < 8f && !((WoWUnit)ret).ActiveAuras.ContainsKey("Weakened Blows")),
+
+                        // filler to try and do something more than auto attack at this point
+                        Spell.Cast("Devastate"),
+                        Spell.Cast("Heroic Strike"),
+
+                        CheckThatShieldIsEquippedIfNeeded()
                         )
                     )
                 );
@@ -168,7 +190,7 @@ namespace Singular.ClassSpecific.Warrior
                             CreateTauntBehavior()
                             ),
 
-                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.Distance < 10 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
+                        Spell.Buff("Piercing Howl", ret => Me.CurrentTarget.SpellDistance() < 15 && Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
                         Spell.Buff("Hamstring", ret => Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.HasAnyAura("Piercing Howl", "Hamstring") && SingularSettings.Instance.Warrior().UseWarriorSlows),
 
                         Common.CreateDisarmBehavior(),
@@ -198,15 +220,15 @@ namespace Singular.ClassSpecific.Warrior
                                 Spell.Cast("Thunder Clap"),
                                 Spell.Cast("Bladestorm", ret => AoeCount >= 4),
                                 Spell.Cast("Shockwave", ret => Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 10f) >= 3),
-                                Spell.Cast("Dragon Roar", ret => Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)
+                                Spell.Cast("Dragon Roar", ret => Me.CurrentTarget.SpellDistance() <= 8 || Me.CurrentTarget.IsWithinMeleeRange)
                                 )
                             ),
 
                         // Generate Rage
-                        Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild ),
+                        Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                         Spell.Cast("Revenge", ret => Me.CurrentRage < RageBuild ),
                         Spell.Cast("Devastate", ret => !((WoWUnit)ret).HasAura("Weakened Armor", 3) && Unit.NearbyGroupMembers.Any(m => m.Class == WoWClass.Druid)),
-                        Spell.Cast("Thunder Clap", ret => ((WoWUnit)ret).Distance < 8f && !((WoWUnit)ret).ActiveAuras.ContainsKey("Weakened Blows")),
+                        Spell.Cast("Thunder Clap", ret => ((WoWUnit)ret).SpellDistance() < 8f && !((WoWUnit)ret).ActiveAuras.ContainsKey("Weakened Blows")),
 
                         // Filler
                         Spell.Cast("Devastate"),
@@ -238,11 +260,11 @@ namespace Singular.ClassSpecific.Warrior
 
                     Spell.Cast("Taunt", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault()),
 
-                    Spell.Cast("Storm Bolt", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(i => i.Distance < 30 && Me.IsSafelyFacing(i))),
+                    Spell.Cast("Storm Bolt", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(i => i.SpellDistance() < 30 && Me.IsSafelyFacing(i))),
 
                     Spell.Cast("Intervene", 
                         ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(
-                            m => Group.Healers.Any( h => m.CurrentTargetGuid == h.Guid && h.Distance < 25)),
+                            mob => Group.Healers.Any(healer => mob.CurrentTargetGuid == healer.Guid && healer.Distance < 25)),
                         ret => MovementManager.IsClassMovementAllowed && Group.Healers.Count( h => h.IsAlive && h.Distance < 40) == 1
                         )
                     )
@@ -322,6 +344,38 @@ namespace Singular.ClassSpecific.Warrior
             }
         }
 
+        private static Composite _checkShield = null;
+
+        public static Composite CheckThatShieldIsEquippedIfNeeded()
+        {
+            if (_checkShield == null)
+            {
+                _checkShield = new ThrottlePasses(60,
+                    new Sequence(
+                        new DecoratorContinue(
+                            ret => !Me.Disarmed && !HasShieldInOffHand && SpellManager.HasSpell("Shield Slam"),
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a Shield in offhand to cast Shield Slam", Me.Specialization.ToString().CamelToSpaced()))
+                            ),
+                        new ActionAlwaysFail()
+                        )
+                    );
+            }
+            return _checkShield;
+        }
+
+        public static bool HasShieldInOffHand
+        {
+            get
+            {
+                return IsShield(Me.Inventory.Equipped.OffHand);
+            }
+        }
+
+        public static bool IsShield(WoWItem hand)
+        {
+            return hand != null && hand.ItemInfo.ItemClass == WoWItemClass.Armor && hand.ItemInfo.InventoryType == InventoryType.Shield;
+        }
+
         private static Composite CreateDiagnosticOutputBehavior()
         {
             return new ThrottlePasses( 1,
@@ -346,5 +400,6 @@ namespace Singular.ClassSpecific.Warrior
         }
 
         #endregion
+
     }
 }

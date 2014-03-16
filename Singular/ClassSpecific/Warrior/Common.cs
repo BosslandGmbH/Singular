@@ -103,7 +103,12 @@ namespace Singular.ClassSpecific.Warrior
        
         public static Composite CreateChargeBehavior()
         {
-            _distanceChargeBehavior = Me.CombatReach + (TalentManager.HasGlyph("Long Charge") ? 30f : 25f);
+            // removed combatreach because of # of missed Charges
+            _distanceChargeBehavior = /*Me.CombatReach +*/ (TalentManager.HasGlyph("Long Charge") ? 30f : 25f);
+
+            if (!WarriorSettings.UseWarriorCloser)
+                return new ActionAlwaysFail();
+
 
             if (!WarriorSettings.UseWarriorCloser)
                 return new ActionAlwaysFail();
@@ -119,8 +124,7 @@ namespace Singular.ClassSpecific.Warrior
                             // note: use SpellDistance since charge is to a wowunit
                             Spell.Cast("Charge",
                                 ret => !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer")
-                                    && Me.CurrentTarget.Distance.Between( 8, _distanceChargeBehavior) 
-                                    && WarriorSettings.UseWarriorCloser),
+                                    && Me.CurrentTarget.Distance.Between( 8, _distanceChargeBehavior)),
 
                             //  Leap to close distance
                             // note: use Distance rather than SpellDistance since spell is to point on ground
@@ -128,8 +132,7 @@ namespace Singular.ClassSpecific.Warrior
                                 on => Me.CurrentTarget,
                                 req => !Me.HasAura("Charge")
                                     && Me.CurrentTarget.Distance.Between( 8, 40)
-                                    && !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer")
-                                    && WarriorSettings.UseWarriorCloser,
+                                    && !Me.CurrentTarget.HasAnyOfMyAuras("Charge Stun", "Warbringer"),
                                 false)
                             )
                         )

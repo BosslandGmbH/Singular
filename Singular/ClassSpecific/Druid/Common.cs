@@ -537,7 +537,7 @@ namespace Singular.ClassSpecific.Druid
                         // if (!Spell.CanCastHack(spell, on(ret), false, false, true))
                         //     return RunStatus.Failure;
 
-                        Logger.Write(string.Format("Casting Symbiosis: {0} on {1}", spell.Name, on(ret).SafeName()));
+                        Logger.Write(string.Format("*Symbiosis: {0} on {1}", spell.Name, on(ret).SafeName()));
                         if (!SpellManager.Cast(spell, on(ret)))
                         {
                             Logger.WriteDebug(Color.LightPink, "cast of Symbiosis: {0} on {1} failed!", spell.Name, on(ret).SafeName());

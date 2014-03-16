@@ -146,8 +146,6 @@ namespace Singular.ClassSpecific.Mage
                         // Movement.CreateEnsureMovementStoppedBehavior(35f),
                         Common.CreateMagePolymorphOnAddBehavior(),
 
-                        Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
-
                         new Action( r => {
                             useArcaneNow = false;
                             uint ac = Me.GetAuraStacks("Arcane Charge");
@@ -198,10 +196,9 @@ namespace Singular.ClassSpecific.Mage
 
                         // Defensive stuff
                         Spell.BuffSelf("Ice Block", ret => Me.HealthPercent < 10 && !Me.ActiveAuras.ContainsKey("Hypothermia")),
-                        Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.IsFrozen())),
+                        Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.Distance <= 11 && !u.TreatAsFrozen())),
                         Common.CreateMagePolymorphOnAddBehavior(),
 
-                        Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
                         Spell.BuffSelf("Arcane Power"),
                         Spell.BuffSelf("Mirror Image"),
                         Spell.BuffSelf("Flame Orb"),
@@ -250,16 +247,11 @@ namespace Singular.ClassSpecific.Mage
                             ),
 
                         // Movement.CreateEnsureMovementStoppedBehavior(35f),
-                        Spell.BuffSelf("Evocation", ret => Me.ManaPercent < 30),
 
                         // Living Bomb in CombatBuffs()
-                        Spell.Cast("Arcane Blast", 
-                            ret => !Me.HasAura("Arcane Charge", 6) || Me.HasAuraExpired("Arcane Charge", 3)),
-                        Spell.Cast("Arcane Barrage",  
-                            ret => Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura() && Me.HasAuraExpired("Arcane Charge", 2)),
                         Spell.Cast("Arcane Missiles", ret => Me.HasAura("Arcane Missiles!", 2)),
-                        Spell.Cast("Arcane Blast", ret => Me.ManaPercent >= 90),
-                        // Spell.Cast("Scorch", ret => Me.ManaPercent < 90),
+                        Spell.Cast("Arcane Barrage", ret => Me.GetAuraStacks("Arcane Charge") >= 4),
+                        Spell.Cast("Arcane Blast"),
 
                         Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast"))
                         )

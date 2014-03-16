@@ -150,15 +150,24 @@ namespace Singular.Helpers
 
                                 // check if current target is owned by a player
                                 WoWUnit pOwner = Unit.GetPlayerParent(Me.CurrentTarget);
-                                if (pOwner != null && Unit.ValidUnit(pOwner) && !Blacklist.Contains(pOwner, BlacklistFlags.Combat))
+                                if (pOwner != null)
                                 {
-                                    Logger.Write(targetColor, "Current target owned by a player.  Switching to " + pOwner.SafeName() + "!");
-                                    if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.Guid == Me.CurrentTarget.Guid)
-                                        BotPoi.Clear(string.Format("Singular detected {0} as Player Owned Pet", Me.CurrentTarget.SafeName()));
+                                    if (!Unit.CanAttackCurrentTarget)
+                                    {
+                                        Logger.Write(targetColor, "CurrentTarget " + Me.CurrentTarget.SafeName() + " is a non-attackable enemy player pet so clearing target!");
+                                        Blacklist.Add(Me.CurrentTargetGuid, BlacklistFlags.Pull | BlacklistFlags.Combat, TimeSpan.FromSeconds(60), "Unattackable Enemy Player Pet is CurrentTarget");
+                                        Me.ClearTarget();
+                                        return null;
+                                    }
+                                    else if (Unit.ValidUnit(pOwner) && !Blacklist.Contains(pOwner, BlacklistFlags.Combat))
+                                    {
+                                        Logger.Write(targetColor, "Current target owned by a player.  Switching to " + pOwner.SafeName() + "!");
+                                        if (BotPoi.Current.Type == PoiType.Kill && BotPoi.Current.Guid == Me.CurrentTarget.Guid)
+                                            BotPoi.Clear(string.Format("Singular detected {0} as Player Owned Pet", Me.CurrentTarget.SafeName()));
 
-                                    return pOwner;
+                                        return pOwner;
+                                    }
                                 }
-
 
                                 // no valid BotPoi, so let's check Targeting.FirstUnit which is Bots #1 choice
 #if IGNORE_TARGETING_UNLESS_SEARCHING_FOR_NEW_TARGET
@@ -194,26 +203,20 @@ namespace Singular.Helpers
                                 // at this point, just check its okay to kill currenttarget
                                 if (Blacklist.Contains(StyxWoW.Me.CurrentTargetGuid, BlacklistFlags.Combat))
                                 {
-                                    if (Me.CurrentTarget.Combat && Me.CurrentTarget.IsTargetingMeOrPet)
-                                    {
-                                        Logger.Write(targetColor, "Current target " + StyxWoW.Me.CurrentTarget.SafeName() + " blacklisted and Bot has no other targets!  Fighting this one and hoping Bot wakes up if its Evade bugged!");
-                                        return Me.CurrentTarget;
-                                    }
-
                                     Logger.Write(targetColor, "CurrentTarget " + Me.CurrentTarget.SafeName() + " blacklisted and not in combat with so clearing target!");
                                     Me.ClearTarget();
                                     return null;
                                 }
 
                                 // valid unit? keep it then
-                                if (Unit.ValidUnit(Me.CurrentTarget))
+                                if (Unit.ValidUnit(Me.CurrentTarget, showReason: true))
                                     return Me.CurrentTarget;
 
-                                // at this point, stick with it if in Targetlist
-                                if (Targeting.Instance.TargetList.Contains(Me.CurrentTarget))
+                                if (Me.CurrentTarget.IsPlayer && Me.IsHorde != Me.CurrentTarget.ToPlayer().IsHorde && !Unit.CanAttackCurrentTarget && !Battlegrounds.IsInsideBattleground )
                                 {
-                                    Logger.WriteDebug( targetColor, "EnsureTarget: failed validation but {0} is in TargetList, continuing...", Me.CurrentTarget.SafeName());
-                                    return Me.CurrentTarget;
+                                    Logger.Write(targetColor, "CurrentTarget " + Me.CurrentTarget.SafeName() + " is a non-attackable enemy player so clearing target!");
+                                    Blacklist.Add(Me.CurrentTargetGuid, BlacklistFlags.Pull | BlacklistFlags.Combat, TimeSpan.FromSeconds(15), "Unattackable Enemy Player is CurrentTarget");
+                                    Me.ClearTarget();
                                 }
 
                                 // otherwise, let's get a new one
@@ -381,7 +384,7 @@ namespace Singular.Helpers
                                         // ... but show a message about botbase still calling our Combat behavior with nothing to kill
                                         if ( DateTime.Now >= _timeNextInvalidTargetMessage)
                                         {
-                                            _timeNextInvalidTargetMessage = DateTime.Now + TimeSpan.FromSeconds(1);
+                                            _timeNextInvalidTargetMessage = DateTime.Now + TimeSpan.FromSeconds(5);
                                             Logger.Write(targetColor, "Bot TargetList is empty, no targets available");
                                         }
 
@@ -407,7 +410,7 @@ namespace Singular.Helpers
 
 #endregion
                         new Decorator(
-                            req => !Me.GotTarget || !Me.CurrentTarget.IsAlive, 
+                            req => !Me.GotTarget || !Unit.ValidUnit(Me.CurrentTarget), 
                             new Action( r => {
                                 if (_lastTargetMessageGuid != Me.CurrentTargetGuid || _nextTargetMessageTimer.IsFinished)
                                 {

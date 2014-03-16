@@ -87,7 +87,7 @@ namespace Singular.Helpers
                             new Sequence(
                                 new DecoratorContinue(ret => Me.IsMoving, Movement.CreateEnsureMovementStoppedBehavior(reason: "to cannibalize")),
                                 new Wait(1, ret => !Me.IsMoving, new ActionAlwaysSucceed()),
-                                new Action(ret => Logger.Write("Casting Cannibalize @ health:{0:F1}%{1}", Me.HealthPercent, (Me.PowerType != WoWPowerType.Mana) ? "" : string.Format(" mana:{0:F1}%", Me.ManaPercent))),
+                                new Action(ret => Logger.Write("*Cannibalize @ health:{0:F1}%{1}", Me.HealthPercent, (Me.PowerType != WoWPowerType.Mana) ? "" : string.Format(" mana:{0:F1}%", Me.ManaPercent))),
                                 new Action(ret => SpellManager.Cast("Cannibalize")),
 
                                 // wait until Cannibalize in progress

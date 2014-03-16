@@ -795,7 +795,7 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 HealerManager.CreateStayNearTankBehavior(),
                 new Decorator(
-                    req => !HealerManager.Instance.TargetList.Any(h => h.IsAlive && !h.IsMe && h.Distance < 40) || HealerManager.AllowHealerDPS(),
+                    req => HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
                         Helpers.Common.EnsureReadyToAttackFromLongRange(),
                         Spell.WaitForCastOrChannel(),

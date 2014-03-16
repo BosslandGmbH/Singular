@@ -52,7 +52,6 @@ namespace Singular.ClassSpecific.Shaman
 
         public static string BloodlustName { get { return Me.IsHorde ? "Bloodlust" : "Heroism"; } }
         public static string SatedName { get { return Me.IsHorde ? "Sated" : "Exhaustion"; } }
-        public static bool AnyHealersNearby { get { return Group.AnyHealerNearby; } }
 
         public static bool HasTalent(ShamanTalents tal)
         {
@@ -66,26 +65,6 @@ namespace Singular.ClassSpecific.Shaman
                 return SingularRoutine.CurrentWoWContext == WoWContext.Normal
                     && (Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= StressMobCount
                     || Unit.NearbyUnfriendlyUnits.Any(u => u.Combat && u.IsTargetingMeOrPet && (u.IsPlayer || (u.Elite && u.Level + 8 > Me.Level))));
-            }
-        }
-
-        public static bool ActingAsHealer
-        {
-            get
-            {
-                return ShamanSettings.AllowOffHealHeal
-                    && Me.IsInGroup() && !Me.GroupInfo.IsInRaid
-                    && !Common.AnyHealersNearby;
-            }
-        }
-
-        public static bool NeedToOffHealSomeone
-        {
-            get
-            {
-                return ShamanSettings.AllowOffHealHeal
-                    && Me.IsInGroup() && !Me.GroupInfo.IsInRaid
-                    && (!Common.AnyHealersNearby || Unit.NearbyGroupMembers.Any(m => m.IsAlive && m.HealthPercent < 30));
             }
         }
 
@@ -418,23 +397,25 @@ namespace Singular.ClassSpecific.Shaman
 
         public static Composite CreateShamanDpsShieldBehavior()
         {
-            return new PrioritySelector(
-                ctx => ActingAsHealer,
-                Spell.BuffSelf("Water Shield", ret => (bool)ret || Me.ManaPercent <= ShamanSettings.TwistWaterShield ),
-                Spell.BuffSelf("Lightning Shield", ret => !(bool)ret && Me.ManaPercent >= ShamanSettings.TwistDamageShield )
+            return new Throttle( 8,
+                new PrioritySelector(
+                    ctx => HealerManager.ActingAsOffHealer,
+                    Spell.BuffSelf("Water Shield", ret => (bool)ret || Me.ManaPercent <= ShamanSettings.TwistWaterShield ),
+                    Spell.BuffSelf("Lightning Shield", ret => !(bool)ret && Me.ManaPercent >= ShamanSettings.TwistDamageShield )
+                    )
                 );
         }
 
         public static Composite CreateShamanDpsHealBehavior()
         {
             Composite offheal;
-            if (!ShamanSettings.AllowOffHealHeal)
+            if (!SingularSettings.Instance.DpsOffHealAllowed)
                 offheal = new ActionAlwaysFail();
             else
             {
                 offheal = new Decorator(
-                    ret => NeedToOffHealSomeone,
-                    Restoration.CreateRestoShamanHealingOnlyBehavior(selfOnly: false)
+                    ret => HealerManager.ActingAsOffHealer,
+                    CreateDpsShamanOffHealBehavior()
                     );
             }
 
@@ -444,12 +425,12 @@ namespace Singular.ClassSpecific.Shaman
             // use predicted health for non-combat healing to reduce drinking downtime and help
             // .. avoid unnecessary heal casts
                     new Decorator(
-                        ret => !Me.Combat,
+                        ret => !Me.Combat,  // non-combat = top off health
                         Spell.Cast("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) < 85)
                         ),
 
                     new Decorator(
-                        ret => Me.Combat && !Spell.IsGlobalCooldown(),
+                        ret => Me.Combat,
 
                         new PrioritySelector(
 
@@ -467,41 +448,141 @@ namespace Singular.ClassSpecific.Shaman
                                     && Me.HealthPercent < ShamanSettings.SelfAncestralSwiftnessHeal,
                                 new Sequence(
                                     Spell.BuffSelf("Ancestral Swiftness"),
-                                    new Sequence(
-                                        Spell.Cast("Greater Healing Wave", ret => Me),
-                                        Spell.Cast("Healing Surge", ret => Me)
-                                        )
+                                    Spell.Cast("Healing Surge", ret => Me)
                                     )
-                                ),
+                                )
+                            )
+                        ),
 
-                            // include optional offheal behavior
-                            offheal,
+                    offheal
+                    )
+                );
+        }
 
-                            // use non-predicted health as a trigger for totems
-                            new Decorator(
-                                ret => !Common.AnyHealersNearby,
-                                new PrioritySelector(
-                                    Spell.BuffSelf(
-                                        "Healing Tide Totem",
-                                        ret => !Me.IsMoving
-                                            && Unit.GroupMembers.Any(
-                                                p => p.HealthPercent < ShamanSettings.HealingTideTotemPercent
-                                                    && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
-                                    Spell.BuffSelf( "Healing Stream Totem",
-                                        ret => !Me.IsMoving
-                                            && !Totems.Exist(WoWTotemType.Water)
-                                            && Unit.GroupMembers.Any(
-                                                p => p.HealthPercent < ShamanSettings.SelfHealingStreamTotem 
-                                                    && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide))),
 
-                                    // use actual health for following, not predicted as its a low health value
-                                    // .. and its okay for multiple heals at that point
-                                    Spell.Cast(
-                                        "Healing Surge",
-                                        mov => true,
-                                        on => Me,
-                                        req => Me.GetPredictedHealthPercent(true) <= ShamanSettings.SelfHealingSurge,
-                                        cancel => Me.HealthPercent > 90
+        #region DPS Off Heal
+        private static WoWUnit _moveToHealUnit = null;
+
+        public static Composite CreateDpsShamanOffHealBehavior()
+        {
+            HealerManager.NeedHealTargeting = true;
+            PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
+            int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, ShamanSettings.OffHealSettings.HealingSurge);
+
+            bool moveInRange = (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds);
+
+            Logger.WriteDebugInBehaviorCreate("Shaman Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
+/*
+            int dispelPriority = (SingularSettings.Instance.DispelDebuffs == RelativePriority.HighPriority) ? 999 : -999;
+            if (SingularSettings.Instance.DispelDebuffs != RelativePriority.None)
+                behavs.AddBehavior(dispelPriority, "Cleanse Spirit", null, Dispelling.CreateDispelBehavior());
+*/
+            #region Save the Group
+
+            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.AncestralSwiftness) + 500,
+                String.Format("Oh Shoot Heal @ {0}%", ShamanSettings.OffHealSettings.AncestralSwiftness),
+                null,
+                new Decorator(
+                    ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.OffHealSettings.AncestralSwiftness,
+                    new PrioritySelector(
+                        Spell.OffGCD(Spell.BuffSelf("Ancestral Swiftness")),
+                        Spell.Cast("Healing Surge", on => (WoWUnit)on, ret => !SpellManager.HasSpell("Greater Healing Wave"))
+                        )
+                    )
+                );
+
+            #endregion
+
+            #region AoE Heals
+
+            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.HealingTideTotem) + 400,
+                string.Format("Healing Tide Totem @ {0}% Count={1}", ShamanSettings.OffHealSettings.HealingTideTotem, ShamanSettings.OffHealSettings.MinHealingTideCount),
+                "Healing Tide Totem",
+                new Decorator(
+                    ret => (Me.Combat || ((WoWUnit)ret).Combat) && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
+                    Spell.Cast(
+                        "Healing Tide Totem",
+                        on => Me,
+                        req => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.OffHealSettings.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= ShamanSettings.OffHealSettings.MinHealingTideCount
+                        )
+                    )
+                );
+
+            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.HealingStreamTotem) + 300,
+                string.Format("Healing Stream Totem @ {0}%", ShamanSettings.OffHealSettings.HealingStreamTotem),
+                "Healing Stream Totem",
+                new Decorator(
+                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
+                    Spell.Cast(
+                        "Healing Stream Totem",
+                        on => (!Me.Combat || Totems.Exist(WoWTotemType.Water)) ? null : HealerManager.Instance.TargetList.FirstOrDefault(p => p.GetPredictedHealthPercent() < ShamanSettings.OffHealSettings.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingStream))
+                        )
+                    )
+                );
+
+            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.HealingRain) + 200,
+                string.Format("Healing Rain @ {0}% Count={1}", ShamanSettings.OffHealSettings.HealingRain, ShamanSettings.OffHealSettings.MinHealingRainCount),
+                "Healing Rain",
+                Spell.CastOnGround("Healing Rain", on => Restoration.GetBestHealingRainTarget(), req => HealerManager.Instance.TargetList.Count() > 1, false)
+                );
+
+            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.ChainHeal) + 100,
+                string.Format("Chain Heal @ {0}% Count={1}", ShamanSettings.OffHealSettings.ChainHeal, ShamanSettings.OffHealSettings.MinChainHealCount),
+                "Chain Heal",
+                Spell.Cast("Chain Heal", on => Restoration.GetBestChainHealTarget())
+                );
+
+            #endregion
+
+            #region Single Target Heals
+
+            behavs.AddBehavior(Restoration.HealthToPriority(ShamanSettings.OffHealSettings.HealingSurge),
+                string.Format("Healing Surge @ {0}%", ShamanSettings.OffHealSettings.HealingSurge),
+                "Healing Surge",
+                Spell.Cast("Healing Surge",
+                    mov => true,
+                    on => (WoWUnit)on,
+                    req => ((WoWUnit)req).GetPredictedHealthPercent() < ShamanSettings.OffHealSettings.HealingSurge,
+                    cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
+                    )
+                );
+
+            #endregion
+
+            behavs.OrderBehaviors();
+
+            if (Singular.Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Heal )
+                behavs.ListBehaviors();
+
+            return new PrioritySelector(
+                ctx => HealerManager.FindLowestHealthTarget(), // HealerManager.Instance.FirstUnit,
+
+                new Decorator(
+                    ret => ret != null && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).GetPredictedHealthPercent() <= 99),
+
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+
+                                Totems.CreateTotemsBehavior(),
+
+    /*
+                                Spell.Cast("Earth Shield",
+                                    ret => (WoWUnit)ret,
+                                    ret => ret is WoWUnit && Group.Tanks.Contains((WoWUnit)ret) && Group.Tanks.All(t => !t.HasMyAura("Earth Shield"))),
+    */
+
+                                behavs.GenerateBehaviorTree(),
+
+                                new Decorator(
+                                    ret => moveInRange,
+                                    new Sequence(
+                                        new Action(r => _moveToHealUnit = (WoWUnit)r),
+                                        new PrioritySelector(
+                                            Movement.CreateMoveToLosBehavior(on => _moveToHealUnit),
+                                            Movement.CreateMoveToUnitBehavior(on => _moveToHealUnit, 30f, 25f)
+                                            )
                                         )
                                     )
                                 )
@@ -510,6 +591,7 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
         }
+        #endregion
 
         public static DateTime GhostWolfRequest;
 

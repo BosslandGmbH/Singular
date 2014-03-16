@@ -291,7 +291,7 @@ namespace Singular.ClassSpecific.Priest
             if ( SpellManager.HasSpell( "Power Word: Solace"))
                 return Spell.Cast("Power Word: Solace", mov => false, on => Me.CurrentTarget, req => true, cancel => false);
 
-            return Spell.Cast("Holy Fire", mov => false, on => Me.CurrentTarget, req => true, cancel => false);
+            return Spell.Cast("Holy Fire", mov => false, on => Me.CurrentTarget, req => true);
         }
 
         internal static Composite CreateFadeBehavior()

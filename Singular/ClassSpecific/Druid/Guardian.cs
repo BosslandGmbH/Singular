@@ -190,7 +190,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new Throttle(7,
                 new Sequence(
-                    Spell.CastHack("Wild Charge", onUnit ?? (on => Me.CurrentTarget), ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.SpellDistance().Between( 10, 25)),
+                    Spell.CastHack("Wild Charge", onUnit ?? (on => Me.CurrentTarget), ret => MovementManager.IsClassMovementAllowed && (Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach).Between( 10, 25)),
                     new Action( ret => StopMoving.Clear() ),
                     new Wait(1, until => !Me.GotTarget || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                     )

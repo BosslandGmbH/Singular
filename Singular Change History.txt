@@ -1,3 +1,95 @@
+--- Release 3.0.0.3364 ---
+
+General
+
+*new* - Off-Healing - support for comprehensive off-healing added. Currently implemented for Shaman only; adding Druid, Monk, Paladin, and Priest in next release.  Settings in Class Config -> General will control when off-healing is activated.  Class specific settings on the Healing tab available for Off-Healing in PVP and Off-Healing in Groups
+
+*new* - Off-Healing - settings to control what Health % causes player to begin off healer, and a recovery Helath % which causes DPS to leave off healer mode when reached and a live Healer is within range 
+
+*new* - Off-Healing - support for group healing in Normal context (using Off-Heal)
+
+*new* - Off-Healign - support for including the Focus Target in the list of heal targets.  Useful for specific encounters where a quest profile or dungeon script needs to heal a specific NPC or other friendly target that is not a group member
+
+fixed - Heal Targeting - issue in Include and Remove heal target filters which were preventing inclusion of targets added by other filters in some circumstances
+
+change- Healers - Raids: ignores value of Allow Healer DPS setting in Raids. 
+
+change- CurrentContext: is now cached rather than determined dynamically each time it is checked.  refreshed each pulse or on map change
+
+fixed - Ressurrection of Group Members: exception that occurred if player being rezzed released during your cast or your toon or target is kicked from the dungeon
+
+
+Death Knight
+
+change- Horn of Winter - has been added to CombatBuffs. This change required for use with botbases or profiles that throw Death Knight into combat without invoking the Pull Behavior
+
+
+Druids
+
+change- Feral - Instances: Symbiosis will favor following priority: Holy Paladin > Prot Paladin > Prot Warrior > Monk > Priest > Shaman > Warrior > Death Knight
+
+fixed - Feral - Instances: improved use of cooldowns (previously was not making full use of Nature's Vigil or casting Tiger's Fury when other cooldowns were a few seconds from being available)
+
+fixed - Guardian - Wild Charge casts would often fail due to being out of range.  Range check revised so this error should be rare
+
+
+Mage
+
+fixed - Arcane - revised Instance rotation
+
+fixed - Frost - revised Instance rotation
+
+fixed - Frost - use of Frozen Orb in all contexts
+
+fixed - All Specs - Evocation being double cast
+
+
+Paladin
+
+change- Protection - revised spell priority to remove Hammer of the Righteous as opener on single targets
+
+change- Protection - revised spell priority to generate threat more quickly
+
+change- Protection - revised AOE spell priority to cast Hammer of the Righteous on cooldown
+
+
+Rogue 
+
+fixed - All Specs - Pull: level 10 and 11 toons no longer move towards Sap target while not knowing Sap spell
+
+change- All Specs - slight increase in range that Rogue will stealth at
+
+
+Shaman
+
+change- Elemental - Solo Pull: fast attack sequence (used for areas with other players questing/grinding) now casts attack prior to setting Totems
+
+change- Enhancement - Solo Pull: will cast Flame Shock if Unleash Flame is buffed or target is elite or non-trivial aoe pack
+
+change- Enhancement - Flame Shock will not be cast if AOE is disabled to avoid DoT splash from Lava Lash
+
+fixed - Enhancement - Instance AOE: revised to improve number of Fire Nova casts and damage
+
+fixed - All Specs - Totems: improved logic for dropping totems on Pull
+
+fixed - All Specs - correctly switches to Magma Totem for AOE combat
+
+fixed - All Specs - shield twisting (changing current shield) limited to one cast per 8 seconds
+
+fixed - All Specs - conversion of WoWTotemType to SpellID which was preventing cast of Searing Totem and would cause recast of Magma Totem before it expired
+
+
+Warrior
+
+fixed - All Specs - failed Charge casts due to being out of range should be greatly reduced
+
+*new* - Protection - "user error" displayed if attempting to bot a Prot Warrior without a shield equipped similar to warning for Subtlety and Assassination Rogues without daggers
+
+change- Protection - additional abilities added to Pull behavior at lower priority than Shield Slam as a fail safe for people botting Prot Warriors without a shield.
+
+fixed - Protection - adjusted range check on Thunder Clap, Dragon Roar, Piercing Howl, and Storm Bolt to factor in hitbox
+
+
 --- Release 3.0.0.3299 ---
 
 General
@@ -50,8 +142,6 @@ fixed - Resto - added check to only cast cooldowns when in Combat
 Warrior
 
 fixed - All Specs - will now suppress any and all closers if Use Charge/Heroic Leap is false
-
-
 
 
 --- Release 3.0.0.3253 ---

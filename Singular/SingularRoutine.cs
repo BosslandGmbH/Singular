@@ -420,20 +420,17 @@ namespace Singular
                     break;
             }
 
-            if (Me.IsInGroup())
+            if (HealerManager.NeedHealTargeting)
             {
-                if (HealerManager.NeedHealTargeting && CurrentWoWContext != WoWContext.Normal)
+                BotBase bot = GetCurrentBotBase();
+                if (bot != null && (bot.PulseFlags & PulseFlags.Targeting) != PulseFlags.Targeting)
                 {
-                    BotBase bot = GetCurrentBotBase();
-                    if (bot != null && (bot.PulseFlags & PulseFlags.Targeting) != PulseFlags.Targeting)
-                    {
-                        HealerManager.Instance.Pulse();
-                    }
+                    HealerManager.Instance.Pulse();
                 }
-
-                if (Group.MeIsTank && CurrentWoWContext == WoWContext.Instances)
-                    TankManager.Instance.Pulse();
             }
+
+            if (CurrentWoWContext == WoWContext.Instances && Me.IsInGroup() && Group.MeIsTank)
+                TankManager.Instance.Pulse();
 
             HotkeyDirector.Pulse();
         }

@@ -1,3 +1,43 @@
+--- Release 3.0.0.3382 ---
+
+General
+
+*new* - Heal Manager will include companions (summoned npcs) in heal list when solo or party (not raid). This will help with quests with an escort or other NPC assisting in completion that gets attacked when running a toon with healing abilities
+
+*new* - Setting added to Group Heal section of Class Config which allows enabling/disabling including companions in heal list (default=true)
+
+fixed - fixed issue with some summoned NPCs which turn hostile for quests not being targeted correctly
+	
+
+Druid
+
+fixed - All Specs - will no longer invoke shapeshift cancel and suppression logic intended for Questing when running with GatherBuddy.  This fixes issue created by GatherBuddy attempting to use items when flying and Singular attempting to help by cancelling flight form to allow it
+
+
+Monk
+
+change- Brewmaster - added support for AOE rotation while Solo.  
+
+
+Priest
+
+fixed - Holy - was not Pulling mobs if grinding/questing while Solo.  Yes you should do this as Shadow, but yes it should work as Holy.
+
+
+Rogue
+
+fixed - All Specs - change to Sap target priority to fix zig zagging between targes in boundary conditions (CurrentTarget and Sap Target each just out of range.)
+
+
+Shaman
+
+change - All Specs - will cast Totemic Recall prior to mounting unless in Battleground
+
+change - Elemental / Enhancement - Oh Shoot heal will now cast Healing Surge for Oh Shoot heal even if Ancestral Swiftness not known
+
+change - Elemental - Pull Behavior while solo now correctly determines players are in area competing for targets and uses instant pull
+
+
 --- Release 3.0.0.3364 ---
 
 General

@@ -440,29 +440,32 @@ namespace Singular.ClassSpecific.Shaman
         /// </remarks>
         public static Composite CreateRecallTotems()
         {
-            return new Decorator(
-                ret => Totems.NeedToRecallTotems,
-                new Throttle(
-                    new Styx.TreeSharp.Action( delegate
-                    {
-                        Logger.Write("Recalling totems!");
-                        if (SpellManager.HasSpell("Totemic Recall"))
-                        {
-                            SpellManager.Cast("Totemic Recall");
-                            return;
-                        }
+            return new Action(r => RecallTotems() ? RunStatus.Success : RunStatus.Failure);
+        }
 
-                        List<WoWTotemInfo> totems = StyxWoW.Me.Totems;
-                        foreach (WoWTotemInfo t in totems)
-                        {
-                            if (t != null && t.Unit != null)
-                            {
-                                DestroyTotem(t.Type);
-                            }
-                        }
-                    })
-                    )
-                );
+        public static bool RecallTotems()
+        {
+            if (Totems.NeedToRecallTotems)
+            {
+                Logger.Write("Recalling totems!");
+                if (SpellManager.HasSpell("Totemic Recall"))
+                {
+                    return SpellManager.Cast("Totemic Recall");
+                }
+
+                List<WoWTotemInfo> totems = StyxWoW.Me.Totems;
+                foreach (WoWTotemInfo t in totems)
+                {
+                    if (t != null && t.Unit != null)
+                    {
+                        DestroyTotem(t.Type);
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>

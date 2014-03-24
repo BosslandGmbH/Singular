@@ -112,8 +112,20 @@ namespace Singular.ClassSpecific.Shaman
                         // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
                         // 2. area has another player competing for mobs (we want to tag the mob quickly)
                         new Decorator(
-                            ret => StyxWoW.Me.CurrentTarget.Distance < 12
-                                || ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).Any(p => p.Location.DistanceSqr(StyxWoW.Me.CurrentTarget.Location) <= 40 * 40),
+                            ret =>{
+                                if (StyxWoW.Me.CurrentTarget.IsHostile && StyxWoW.Me.CurrentTarget.Distance < 12)
+                                {
+                                    Logger.WriteDiagnostic("NormalPull: fast pull since hostile target is {0:F1} yds away", StyxWoW.Me.CurrentTarget.Distance);
+                                    return true;
+                                }
+                                WoWPlayer nearby = ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).FirstOrDefault(p => !p.IsMe && p.DistanceSqr <= 40 * 40);
+                                if (nearby != null)
+                                {
+                                    Logger.WriteDiagnostic("NormalPull: fast pull since player {0} nearby @ {1:F1} yds", nearby.SafeName(), nearby.Distance);
+                                    return true;
+                                }
+                                return false;
+                                },
                             new PrioritySelector(
                                 // have a big attack loaded up, so don't waste it
                                 Spell.Cast("Earth Shock", ret => StyxWoW.Me.HasAura("Lightning Shield", 5)),

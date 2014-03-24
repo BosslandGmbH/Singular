@@ -55,7 +55,7 @@ namespace Singular.Helpers
                 // Self-heal if possible
                         new Decorator(
                             ret => spellHeal != null
-                                && Me.HealthPercent <= 85  // this eliminates unnecessary GetPredicted... checks
+                                && Me.HealthPercent <= 85  // not redundant... this eliminates unnecessary GetPredicted... checks
                                 && SpellManager.HasSpell(spellHeal) && Spell.CanCastHack(spellHeal, Me)
                                 && Me.GetPredictedHealthPercent(true) <= 85 && !Me.HasAnyAura("Drink", "Food"),
                             new PrioritySelector(

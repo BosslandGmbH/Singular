@@ -144,6 +144,39 @@ namespace Singular.ClassSpecific.Monk
 
                         Common.CreateGrappleWeaponBehavior(),
 
+                        // AOE
+                        new Decorator(
+                            req => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8) >= 3,
+                            new PrioritySelector(
+                                ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => Me.IsSafelyFacing(u,150f)),
+
+                                // cast heal in anticipation of damage
+                                Spell.Cast("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 4),
+
+                                new Decorator( 
+                                    req => req != null,
+                                    new PrioritySelector(
+                                        // throw debuff on them to hit themselves and slow
+                                        Spell.CastOnGround("Dizzying Haze", on => on as WoWUnit, req => Unit.NearbyUnfriendlyUnits.Any(u => !u.HasAura("Dizzying Haze") && u.SpellDistance(req as WoWUnit) < 8), false),
+
+                                        // throw DoT on them
+                                        Spell.Cast("Breath of Fire", 
+                                            ctx => Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8)
+                                                .Any(u => u.HasAura("Dizzying Haze") && !u.HasAura("Breath of Fire"))),
+
+                                        // aoe stuns (one per 3 seconds at most)
+                                        new Throttle(3,
+                                            new PrioritySelector(
+                                                Spell.Cast("Charging Ox Wave", ctx => HasTalent(MonkTalents.ChargingOxWave) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits.Where(u => !u.IsStunned()), ClusterType.Cone, 30) >= 3),
+                                                Spell.Cast("Leg Sweep", ctx => Unit.UnitsInCombatWithUsOrOurStuff(5).FirstOrDefault(u=>!u.IsStunned()), req => HasTalent(MonkTalents.LegSweep) )
+                                                )
+                                            ),
+                                        Spell.Cast(sp => HasTalent(MonkTalents.RushingJadeWind) ? "Rushing Jade Wind" : "Spinning Crane Kick")
+                                        )
+                                    )
+                                )
+                            ),
+
                         // execute if we can
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
@@ -219,7 +252,7 @@ namespace Singular.ClassSpecific.Monk
 
                         // AOE
                         new Decorator(
-                            req => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3,
+                            req => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8) >= 3,
                             new PrioritySelector(
                         // cast breath of fire to apply the dot.
                                 Spell.Cast("Breath of Fire", ctx => Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8).Count(u => u.HasAura("Dizzying Haze") && !u.HasAura("Breath of Fire")) >= 3),

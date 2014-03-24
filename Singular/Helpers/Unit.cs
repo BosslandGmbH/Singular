@@ -225,9 +225,14 @@ namespace Singular.Helpers
             get { return NearbyUnfriendlyUnits.Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingMyStuff()))); }
         }
 
+        public static IEnumerable<WoWUnit> UnitsInCombatWithUsOrOurStuff(int maxSpellDist)
+        {
+            return UnfriendlyUnits(maxSpellDist).Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingUs()))); 
+        }
+
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithUsOrOurStuff
         {
-            get { return NearbyUnfriendlyUnits.Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingUs()))); }
+            get { return UnitsInCombatWithUsOrOurStuff(40); }
         }
 
 
@@ -301,7 +306,8 @@ namespace Singular.Helpers
             WoWPlayer pOwner = GetPlayerParent(p);
 
             // ignore if owner is player, alive, and not blacklisted then ignore (since killing owner kills it)
-            if (pOwner != null && pOwner.IsAlive)
+            // .. following .IsMe check to prevent treating quest mob summoned by us that we need to kill as invalid 
+            if (pOwner != null && pOwner.IsAlive && !pOwner.IsMe)
             {
                 if (!ValidUnit(pOwner))
                 {

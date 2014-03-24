@@ -51,10 +51,27 @@ namespace Singular.Managers
 
         protected override List<WoWObject> GetInitialObjectList()
         {
+            List<WoWObject> heallist;
             // Targeting requires a list of WoWObjects - so it's not bound to any specific type of object. Just casting it down to WoWObject will work fine.
             // return ObjectManager.ObjectList.Where(o => o is WoWPlayer).ToList();
-            return ObjectManager.ObjectList.Where(o => o is WoWPlayer && o.ToPlayer().IsInMyRaid).ToList();
+            if (Me.GroupInfo.IsInRaid)
+                heallist = ObjectManager.ObjectList
+                    .Where(o => ((o is WoWPlayer && o.ToPlayer().IsInMyRaid)))
+                    .ToList();
+            else if (Me.GroupInfo.IsInParty)
+                heallist = ObjectManager.ObjectList
+                    .Where(o => ((o is WoWPlayer && o.ToPlayer().IsInMyRaid) || (SingularSettings.Instance.IncludeCompanionssAsHealTargets && o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet)))
+                    .ToList();
+            else
+                heallist = ObjectManager.ObjectList
+                    .Where(o => (SingularSettings.Instance.IncludeCompanionssAsHealTargets && o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet))
+                    .ToList();
+
+            return heallist;
         }
+
+        private static ulong lastCompanion = 0;
+        private static ulong lastFocus = 0;
 
         protected override void DefaultIncludeTargetsFilter(List<WoWObject> incomingUnits, HashSet<WoWObject> outgoingUnits)
         {
@@ -69,9 +86,14 @@ namespace Singular.Managers
                 {
                     if (incomingUnit.IsMe)
                         foundMe = true;
-
-                    if (incomingUnit.Guid == focusGuid)
+                    else if (incomingUnit.Guid == focusGuid)
                         foundFocus = true;
+                    else if (SingularSettings.Debug && incomingUnit.Guid != lastCompanion && SingularSettings.Instance.IncludeCompanionssAsHealTargets && incomingUnit is WoWUnit && incomingUnit.ToUnit().SummonedByUnitGuid == Me.Guid)
+                    {
+                        // temporary code only used to verify a companion found!
+                        lastCompanion = incomingUnit.Guid;
+                        Logger.WriteDebug( Color.White, "HealTargets: including found companion {0}#{1}", incomingUnit.Name, incomingUnit.Entry);
+                    }
 
                     outgoingUnits.Add(incomingUnit);
 
@@ -100,11 +122,20 @@ namespace Singular.Managers
             */
             try
             {
-                if (!foundFocus && Me.FocusedUnit != null)
+                if (Me.FocusedUnit != null && Me.FocusedUnit.IsFriendly )
                 {
-                    outgoingUnits.Add(StyxWoW.Me.FocusedUnit);
-                    if (Me.FocusedUnit.GotAlivePet)
-                        outgoingUnits.Add(Me.FocusedUnit.Pet);
+                    if (!foundFocus)
+                    {
+                        outgoingUnits.Add(StyxWoW.Me.FocusedUnit);
+                        if (Me.FocusedUnit.GotAlivePet)
+                            outgoingUnits.Add(Me.FocusedUnit.Pet);
+                    }
+
+                    if (SingularSettings.Debug && Me.FocusedUnit.Guid != lastFocus)
+                    {
+                        lastFocus = Me.FocusedUnit.Guid;
+                        Logger.WriteDebug(Color.White, "HealTargets: including focused unit {0}#{1}", Me.FocusedUnit.Name, Me.FocusedUnit.Entry);
+                    }
                 }
             }
             catch

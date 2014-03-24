@@ -667,6 +667,13 @@ namespace Singular.Settings
         public bool IncludePetsAsHealTargets { get; set; }
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Include Summoned NPCs as Heal Targets")]
+        [Description("True: Include Escorts and Summoned Companions as Healing targets")]
+        public bool IncludeCompanionssAsHealTargets { get; set; }
+
+        [Setting]
         [DefaultValue(RelativePriority.LowPriority)]
         [Category("Group Healing/Support")]
         [DisplayName("Dispel Debufs")]

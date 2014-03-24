@@ -446,8 +446,8 @@ namespace Singular.ClassSpecific.Shaman
                             new Decorator(
                                 ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
                                     && Me.HealthPercent < ShamanSettings.SelfAncestralSwiftnessHeal,
-                                new Sequence(
-                                    Spell.BuffSelf("Ancestral Swiftness"),
+                                new PrioritySelector(
+                                    Spell.OffGCD( Spell.BuffSelf("Ancestral Swiftness") ),
                                     Spell.Cast("Healing Surge", ret => Me)
                                     )
                                 )
@@ -542,7 +542,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Healing Surge",
                     mov => true,
                     on => (WoWUnit)on,
-                    req => ((WoWUnit)req).GetPredictedHealthPercent() < ShamanSettings.OffHealSettings.HealingSurge,
+                    req => ((WoWUnit)req).GetPredictedHealthPercent(true) < ShamanSettings.OffHealSettings.HealingSurge,
                     cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
                     )
                 );

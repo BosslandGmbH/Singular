@@ -381,18 +381,20 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret => onUnit != null && onUnit(ret) != null 
+                    ret => onUnit != null && onUnit(ret) != null
                         && (require == null || require(ret))
-                        && onUnit(ret).DistanceSqr < (40*40) 
+                        && onUnit(ret).DistanceSqr < (40 * 40)
                         && SpellManager.HasSpell(trapName) && Spell.GetSpellCooldown(trapName) == TimeSpan.Zero,
                     new Sequence(
-                        new Action(ret => Logger.WriteDebug("Trap: use trap launcher requested: {0}", useLauncher )),
+                        ctx => onUnit(ctx),
+
+                        new Action(ret => Logger.WriteDebug("Trap: use trap launcher requested: {0}", useLauncher)),
 
                         // add or remove trap launcher based upon parameter 
                         new PrioritySelector(
                             new Decorator(ret => useLauncher && Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
-                            Spell.BuffSelf("Trap Launcher", req => useLauncher ),
-                            new Decorator(ret => !useLauncher, new Action( ret => Me.CancelAura( "Trap Launcher")))
+                            Spell.BuffSelf("Trap Launcher", req => useLauncher),
+                            new Decorator(ret => !useLauncher, new Action(ret => Me.CancelAura("Trap Launcher")))
                             ),
 
                         // wait for launcher to appear (or dissappear) as required
@@ -400,22 +402,54 @@ namespace Singular.ClassSpecific.Hunter
                             new Wait(TimeSpan.FromMilliseconds(500),
                                 until => (!useLauncher && !Me.HasAura("Trap Launcher")) || (useLauncher && Me.HasAura("Trap Launcher")),
                                 new ActionAlwaysSucceed()),
-                            new Action( ret => {
+                            new Action(ret =>
+                            {
                                 Logger.WriteDebug("Trap: FAILURE! unable to {0} the Trap Launcher aura", useLauncher ? "Buff" : "Cancel");
                                 return RunStatus.Failure;
-                                })
+                            })
                             ),
 
-                        new Action(ret => Logger.WriteDebug("Trap: launcher aura present = {0}", Me.HasAura("Trap Launcher"))),
-                        new Action(ret => Logger.WriteDebug("Trap: cancast = {0}", Spell.CanCastHack(trapName, onUnit(ret)))),
-                        
-                        new Action(ret => Logger.Write( Color.PowderBlue, "^{0} trap: {1} on {2}", useLauncher ? "Launch" : "Set", trapName, onUnit(ret).SafeName())),
-                        // Spell.Cast( trapName, ctx => onUnit(ctx)),
-                        new Action(ret => SpellManager.Cast(trapName, onUnit(ret))),
-
+                        new Action(ret => {
+                            WoWUnit unit = (WoWUnit)ret;
+                            try {
+                                if (unit == null || !unit.IsValid)
+                                {
+                                    Logger.WriteDebug("Trap: targeted unit for trap is invalid");
+                                    return RunStatus.Failure;
+                                }
+                                }
+                            catch {}
+                            
+                            Logger.WriteDebug("Trap: launcher aura present = {0}", Me.HasAura("Trap Launcher"));
+                            Logger.WriteDebug("Trap: cancast = {0}", Spell.CanCastHack(trapName, onUnit(ret)));
+                            Logger.Write(Color.PowderBlue, "^{0} trap: {1} on {2}", useLauncher ? "Launch" : "Set", trapName, onUnit(ret).SafeName());
+                            SpellManager.Cast(trapName, onUnit(ret));
+                            return RunStatus.Success;
+                            }),
                         Helpers.Common.CreateWaitForLagDuration(),
-                        new Action(ctx => SpellManager.ClickRemoteLocation(onUnit(ctx).Location)),
-                        new Action(ret => Logger.WriteDebug("Trap: Complete!"))
+                        new Action(ctx => {
+                            // since we delay after saving the WoWUnit in context,
+                            // .. assume it may be invalid at this point
+                            try
+                            {
+                                WoWUnit unit = (WoWUnit) ctx;
+                                if (unit != null && unit.IsValid)
+                                    Logger.WriteDiagnostic("Trap: error occurred - unit went invalid while waiting to click 1");
+                                else if (!SpellManager.ClickRemoteLocation(unit.Location))
+                                    Logger.WriteDiagnostic("Trap: error occurred - unable to click location");
+                                else
+                                {
+                                    new Action(ret => Logger.WriteDebug("Trap: Complete!"));
+                                    return RunStatus.Success;
+                                }
+
+                            }
+                            catch
+                            {
+                                Logger.WriteDiagnostic("Trap: error occurred - unit went invalid while waiting to click 2");
+                            }
+                            return RunStatus.Failure;
+                            })
                         )
                     )
                 );
@@ -435,14 +469,49 @@ namespace Singular.ClassSpecific.Hunter
                             new ActionAlwaysSucceed()
                             ),
                         new Wait( TimeSpan.FromMilliseconds(500), ret => Me.HasAura("Trap Launcher"), new ActionAlwaysSucceed()),
-                        new Action(ret => Logger.WriteDebug("AddTrap: launcher aura present = {0}", Me.HasAura("Trap Launcher"))),
-                        new Action(ret => Logger.WriteDebug("AddTrap: cancast = {0}", Spell.CanCastHack(trapName, (WoWUnit)ret))),
-                        // Spell.Cast( trapName, ctx => (WoWUnit) ctx),
-                        new Action(ret => Logger.Write( Color.PowderBlue , "^Launch add trap: {0} on {1}", trapName, ((WoWUnit) ret).SafeName())),
-                        new Action(ret => SpellManager.Cast( trapName, (WoWUnit) ret)),
+                        new Action(ret => {
+                            WoWUnit unit = (WoWUnit)ret;
+                            try
+                            {
+                                if (unit != null && unit.IsValid)
+                                {
+                                    Logger.WriteDebug("AddTrap: launcher aura present = {0}", Me.HasAura("Trap Launcher"));
+                                    Logger.WriteDebug("AddTrap: cancast = {0}", Spell.CanCastHack(trapName, unit));
+                                    Logger.Write(Color.PowderBlue, "^Launch add trap: {0} on {1}", trapName, unit.SafeName());
+                                    if (SpellManager.Cast(trapName, unit))
+                                        return RunStatus.Success;
+                                    Logger.WriteDebug("AddTrap: cast of trap failed");
+                                }
+                            }
+                            catch { 
+                                Logger.WriteDebug("AddTrap: unit targeted went invalid before cast");
+                            }
+                            return RunStatus.Failure;
+                            }),
                         Helpers.Common.CreateWaitForLagDuration(),
-                        new Action(ctx => SpellManager.ClickRemoteLocation(((WoWUnit)ctx).Location)),
-                        new Action(ret => Logger.WriteDebug("AddTrap: Complete!"))
+                        new Action(ctx => {
+                            // since we delay after saving the WoWUnit in context,
+                            // .. assume it may be invalid at this point
+                            try
+                            {
+                                WoWUnit unit = (WoWUnit) ctx;
+                                if (unit != null && unit.IsValid)
+                                    Logger.WriteDiagnostic("AddTrap: error occurred - unit went invalid while waiting to click 1");
+                                else if (!SpellManager.ClickRemoteLocation(unit.Location))
+                                    Logger.WriteDiagnostic("AddTrap: error occurred - unable to click location");
+                                else
+                                {
+                                    new Action(ret => Logger.WriteDebug("AddTrap: Complete!"));
+                                    return RunStatus.Success;
+                                }
+
+                            }
+                            catch
+                            {
+                                Logger.WriteDiagnostic("AddTrap: error occurred - unit went invalid while waiting to click 2");
+                            }
+                            return RunStatus.Failure;
+                            })
                         )
                     )
                 );
@@ -984,6 +1053,43 @@ namespace Singular.ClassSpecific.Hunter
             // && !Unit.NearbyGroupMembers.Any( g => g.CurrentTargetGuid == u.Guid);
             return good;
         }
+
+        public static DateTime GhostWolfRequest;
+
+        public static Decorator CreateHunterMovementBuff()
+        {
+            return new Decorator(
+                ret => // SingularSettings.Instance. &&
+                    !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown()
+                    && MovementManager.IsClassMovementAllowed
+                    && SingularRoutine.CurrentWoWContext != WoWContext.Instances
+                    && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
+                    && Me.IsAlive
+                    && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport && !Me.IsSwimming
+                    && !Me.HasAura("Aspect of the Cheetah")
+                    && SpellManager.HasSpell("Aspect of the Cheetah")
+                    && BotPoi.Current != null
+                    && BotPoi.Current.Type != PoiType.None
+                    && BotPoi.Current.Type != PoiType.Hotspot
+                    && TalentManager.HasGlyph("Aspect of the Cheetah")
+                    && BotPoi.Current.Location.Distance(Me.Location) > 60
+                    && !Me.IsAboveTheGround()
+                    && !Me.IsFlying,
+
+                new Sequence(
+                    new Action(r => Logger.WriteDebug("HunterMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount{3} riding={4}",
+                        BotPoi.Current.Type,
+                        BotPoi.Current.Location.Distance(Me.Location),
+                        Me.IsIndoors.ToYN(),
+                        Mount.CanMount().ToYN(),
+                        Me.GetSkill(SkillLine.Riding).CurrentValue
+                        )),
+                    Spell.BuffSelf("Aspect of the Cheetah"),
+                    Helpers.Common.CreateWaitForLagDuration()
+                    )
+                );
+        }
+
     }
 
     enum HunterTalents

@@ -399,17 +399,20 @@ namespace Singular.Utilities
                 }
             }
 
-            if ( !SingularRoutine.IsManualMovementBotActive && (StyxWoW.Me.Class == WoWClass.Druid || StyxWoW.Me.Class == WoWClass.Shaman))
+            //  !SingularRoutine.IsManualMovementBotActive
+            if ( SingularRoutine.IsQuestBotActive)
             {
-                if (LocalizedShapeshiftMessages.ContainsKey(args.Args[0].ToString()))
+                if (StyxWoW.Me.Class == WoWClass.Shaman || (StyxWoW.Me.Class == WoWClass.Druid && StyxWoW.Me.Shapeshift != ShapeshiftForm.FlightForm && StyxWoW.Me.Shapeshift != ShapeshiftForm.EpicFlightForm))
                 {
-                    string symbolicName = LocalizedShapeshiftMessages[args.Args[0].ToString()];
-                    SuppressShapeshiftUntil = DateTime.Now.Add(TimeSpan.FromSeconds(30));
-                    Logger.Write(Color.White, "/cancel{0} - due to Red Shapeshift Error '{1}', suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
-                    Lua.DoString("CancelShapeshiftForm()");
-                    handled = true;
+                    if (LocalizedShapeshiftMessages.ContainsKey(args.Args[0].ToString()))
+                    {
+                        string symbolicName = LocalizedShapeshiftMessages[args.Args[0].ToString()];
+                        SuppressShapeshiftUntil = DateTime.Now.Add(TimeSpan.FromSeconds(30));
+                        Logger.Write(Color.White, "/cancel{0} - due to Red Shapeshift Error '{1}', suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
+                        Lua.DoString("CancelShapeshiftForm()");
+                        handled = true;
+                    }
                 }
-
             }
 
             if (!handled && SingularSettings.Debug)

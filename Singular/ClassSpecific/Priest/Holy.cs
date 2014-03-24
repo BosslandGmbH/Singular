@@ -638,7 +638,7 @@ VoidShift               Void Shift
                     ),
 
                 new Decorator(
-                    ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal ||  Me.Combat && HealerManager.AllowHealerDPS(),
+                    ret => HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
                         Helpers.Common.EnsureReadyToAttackFromMediumRange(),
                         Spell.WaitForCastOrChannel(),

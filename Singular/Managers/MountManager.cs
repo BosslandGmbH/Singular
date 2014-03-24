@@ -53,6 +53,12 @@ namespace Singular.Managers
                 }
             }
 
+            if (StyxWoW.Me.Class == WoWClass.Shaman && SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && ClassSpecific.Shaman.Totems.NeedToRecallTotems )
+            {
+                Logger.WriteDiagnostic("OnMountUp: recalling totems since about to mount");
+                ClassSpecific.Shaman.Totems.RecallTotems();
+            }
+
             // help HB out and stop immediately if we allow mount to proceed
             if (e.Cancel == false && StyxWoW.Me.IsMoving && Mount.CanMount())
             {

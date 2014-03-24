@@ -421,15 +421,22 @@ namespace Singular.ClassSpecific.Rogue
 
             if (RogueSettings.SapAddDistance > 0)
             {
-                closestTarget = Unit.UnfriendlyUnitsNearTarget(RogueSettings.SapAddDistance)
-                     .Where(u => u.Guid != Me.CurrentTargetGuid && !u.IsSensitiveDamage() && IsUnitViableForSap(u))
-                     .OrderBy(u => u.Location.DistanceSqr(Me.CurrentTarget.Location))
-                     .ThenBy(u => u.DistanceSqr)
-                     .FirstOrDefault();
-
-                if (closestTarget != null)
+                // stick with our target if we thought it was a good choice previously 
+                // ... (to avoid zig zag back and forth at boundary distance conditions)
+                if (_lastSapTarget != 0 && Me.CurrentTargetGuid == _lastSapTarget)
+                    closestTarget = Me.CurrentTarget;
+                else
                 {
-                    msg = string.Format("^Sap: {0} @ {1:F1} yds from target to avoid aggro while hitting target", closestTarget.SafeName(), closestTarget.Location.Distance(Me.CurrentTarget.Location));
+                    closestTarget = Unit.UnfriendlyUnitsNearTarget(RogueSettings.SapAddDistance)
+                         .Where(u => u.Guid != Me.CurrentTargetGuid && !u.IsSensitiveDamage() && IsUnitViableForSap(u))
+                         .OrderBy(u => u.Location.DistanceSqr(Me.CurrentTarget.Location))
+                         .ThenBy(u => u.DistanceSqr)
+                         .FirstOrDefault();
+
+                    if (closestTarget != null)
+                    {
+                        msg = string.Format("^Sap: {0} @ {1:F1} yds from target to avoid aggro while hitting target", closestTarget.SafeName(), closestTarget.Location.Distance(Me.CurrentTarget.Location));
+                    }
                 }
             }
 

@@ -1,3 +1,22 @@
+--- Release 3.0.0.3391 ---
+
+General
+
+fixed - Pets - Pet spell APIs were indicating pet abilities available before Level 10.  Now requires character to be Level 10 before allowing casts of pet spells
+
+
+Monk
+
+*new* - All Specs - Solo: setting added to cast Leg Sweep on cooldown 
+
+
+Shaman
+
+fixed - All Specs - Searing Totem: bug in return from HonorBuddy WoWTotem.Expires API causing Shaman to spam Searing Totem.  Temporarily worked around by disabling refresh logic and only casting Searing Totem if it doesn't exist
+
+fixed - Enhance/Elem - Solo: no longer requires a healer in range to leave Off Healing mode while Solo
+
+
 --- Release 3.0.0.3382 ---
 
 General

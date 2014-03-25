@@ -135,6 +135,8 @@ namespace Singular.ClassSpecific.Monk
 
                 Helpers.Common.CreateAutoAttack(true),
 
+                Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
+
                 new Decorator( 
                     ret => StyxWoW.Me.HasAura( "Fists of Fury")
                         && !Unit.NearbyUnfriendlyUnits.Any( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)),

@@ -601,15 +601,22 @@ namespace Singular.Managers
                 if (Me.GroupInfo.IsInRaid)
                     return true;
 
-                WoWUnit healer = Group.Healers.FirstOrDefault(h => h.IsAlive && h.Distance < SingularSettings.Instance.MaxHealTargetRange);
-                if (healer == null)
-                    return false;
+                WoWUnit healer = null;
+                if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+                {
+                    healer = Group.Healers.FirstOrDefault(h => h.IsAlive && h.Distance < SingularSettings.Instance.MaxHealTargetRange);
+                    if (healer == null)
+                        return false;
+                }
 
                 WoWUnit lowest = FindLowestHealthTarget();
                 if (lowest != null && lowest.HealthPercent <= SingularSettings.Instance.DpsOffHealEndPct)
                     return false;
 
-                Logger.WriteDiagnostic("DisableOffHeal: leaving off-heal mode since lowest target is {0} @ {1:F1}% and {2} is {3:F1} yds away", lowest.SafeName(), lowest.HealthPercent, healer.SafeName(), healer.Distance);
+                if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                    Logger.WriteDiagnostic("DisableOffHeal: leaving off-heal mode since lowest target is {0} @ {1:F1}% and solo", lowest.SafeName(), lowest.HealthPercent);
+                else 
+                    Logger.WriteDiagnostic("DisableOffHeal: leaving off-heal mode since lowest target is {0} @ {1:F1}% and {2} is {3:F1} yds away", lowest.SafeName(), lowest.HealthPercent, healer.SafeName(), healer.Distance);
                 return true;
             }
         }

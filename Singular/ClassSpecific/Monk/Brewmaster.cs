@@ -144,6 +144,8 @@ namespace Singular.ClassSpecific.Monk
 
                         Common.CreateGrappleWeaponBehavior(),
 
+                        Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
+
                         // AOE
                         new Decorator(
                             req => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8) >= 3,

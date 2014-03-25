@@ -342,9 +342,10 @@ namespace Singular.ClassSpecific.Shaman
                                 }
 
                                 WoWTotemInfo ti = GetTotem(WoWTotem.Searing);
-                                if (ti != null && ti.Expires < DateTime.Now + TimeSpan.FromSeconds(2))
+                                // if (ti.Unit != null && ti.Expires < (DateTime.Now + TimeSpan.FromSeconds(2)))
+                                if (ti != null && ti.Expired)
                                 {
-                                    Logger.WriteDebug("CreateInstanceTotems: Searing Totem expires in {0} ms, refreshing", (int)(ti.Expires - DateTime.Now).TotalMilliseconds);
+                                    Logger.WriteDebug("CreateInstanceTotems: Searing Totem expired! expires={0}, current={1}, refreshing", ti.Expires.ToString("MM/dd/yyyy hh:mm:ss.fff"), DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss.fff"));
                                     return true;
                                 }
                                 ti = GetTotem(WoWTotem.Magma);

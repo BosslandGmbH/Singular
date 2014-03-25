@@ -74,6 +74,12 @@ namespace Singular.Settings
         [Description("True: use Grapple Weapon on cooldown; False: do not cast")]
         public bool UseGrappleWeapon { get; set; }
 
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Leg Sweep immediately in Normal Context")]
+        [Description("Stun mobs while Solo immediately to reduce damage taken")]
+        public bool StunMobsWhileSolo { get; set; }
 
         #endregion
 

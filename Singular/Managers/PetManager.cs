@@ -112,13 +112,20 @@ namespace Singular.Managers
 
         public static bool CanCastPetAction(string action)
         {
-            WoWPetSpell petAction = PetSpells.FirstOrDefault(p => p.ToString() == action);
-            if (petAction == null || petAction.Spell == null)
-            {
+            if (StyxWoW.Me.Level < 10)
                 return false;
-            }
 
-            return !petAction.Spell.Cooldown;
+            WoWPetSpell petAction = PetSpells.FirstOrDefault(p => p.ToString() == action);
+            if (petAction == null)
+                return false;
+
+            if (petAction.Cooldown)
+                return false;
+
+            if (petAction.Spell != null)
+                return petAction.Spell.CanCast;
+
+            return Lua.GetReturnVal<bool>(string.Format("return GetPetActionSlotUsable({0})", petAction.ActionBarIndex + 1), 0);
         }
 
         public static void CastPetAction(string action)

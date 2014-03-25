@@ -139,6 +139,8 @@ namespace Singular.ClassSpecific.Monk
                                 onu => Unit.NearbyUnfriendlyUnits
                                     .FirstOrDefault(u => u.IsCasting && u.Distance.Between(9, 20) && Me.IsSafelyFacing(u))),
 
+                            Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange ),
+
                             Spell.Cast("Fists of Fury",
                                 ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 2),
 

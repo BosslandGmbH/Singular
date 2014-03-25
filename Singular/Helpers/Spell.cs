@@ -2204,6 +2204,34 @@ namespace Singular.Helpers
             int cd = Lua.GetReturnVal<int>("return GetSpellBaseCooldown(" + spell.Id.ToString() + ")", 0);
             return cd;
         }
+
+        public static bool IsSpellUsable(string spellName)
+        {
+            string usablecmd = string.Format("return IsUsableSpell(\"{0}\")", spellName);
+            List<string> ret = Lua.GetReturnValues(usablecmd);
+            if (ret == null || !ret.Any())
+            {
+                if (SingularSettings.DebugSpellCanCast)
+                    Logger.WriteFile(LogLevel.Diagnostic, "IsSpellUsable[{0}]: check failed with null", spellName);
+                return false;
+            }
+
+            return ret[0] == "1";
+        }
+
+        public static bool IsSpellUsable(int spellId)
+        {
+            string usablecmd = string.Format("return IsUsableSpell({0})", spellId);
+            List<string> ret = Lua.GetReturnValues(usablecmd);
+            if (ret == null || !ret.Any())
+            {
+                if (SingularSettings.DebugSpellCanCast)
+                    Logger.WriteFile(LogLevel.Diagnostic, "IsSpellUsable[#{0}]: check failed with null", spellId);
+                return false;
+            }
+
+            return ret[0] == "1";
+        }
     }
 
     /// <summary>

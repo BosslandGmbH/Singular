@@ -414,7 +414,8 @@ namespace Singular.ClassSpecific.Warlock
                         new Sequence(
                             new Action(ret => Logger.WriteDebug("Summon Pet:  waiting {0:F0} on dismount timer for live {1} to appear", PetManager.PetSummonAfterDismountTimer.TimeLeft.TotalMilliseconds, GetBestPet().ToString())),
                             new WaitContinue(
-                                TimeSpan.FromDays(1),    // really large value... use PetSummonAfterDismountTimer to control wait duration instead
+								// wait for up to [PetSummonAfterDismountTimer] + 1 sec tolerance
+								PetManager.PetSummonAfterDismountTimer.WaitTime + TimeSpan.FromSeconds(1), 
                                 ret => GetCurrentPet() != WarlockPet.None || GetBestPet() == WarlockPet.None || PetManager.PetSummonAfterDismountTimer.IsFinished, 
                                 new Sequence(
                                     new Action( ret => Logger.WriteDebug("Summon Pet:  found '{0}' after waiting", GetCurrentPet().ToString())),

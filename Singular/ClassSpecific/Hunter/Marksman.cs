@@ -73,7 +73,7 @@ namespace Singular.ClassSpecific.Hunter
                                 Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, ret => true),
                                 Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
                                 BuffSteadyFocus(),
-                                Spell.Cast("Aimed Shot", ret => Me.HasAura("Master Marksman", 3)),
+                                Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!")),
                                 Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
                                 Common.CastSteadyShot(on => Me.CurrentTarget)
                                 )
@@ -84,7 +84,7 @@ namespace Singular.ClassSpecific.Hunter
                         Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
                         BuffSteadyFocus(),
                         Spell.Cast("Chimera Shot"),
-                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Master Marksman", 3)),
+                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!")),
 
                         Spell.Cast("Arcane Shot",
                             ret => Me.HasAura("Thrill of the Hunt")
@@ -120,17 +120,17 @@ namespace Singular.ClassSpecific.Hunter
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
                         Helpers.Common.CreateInterruptBehavior(),
-                        // Helpers.Common.CreateInterruptBehavior(),
+                // Helpers.Common.CreateInterruptBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
 
-                        Common.CreateHunterPvpCrowdControl(),                      
+                        Common.CreateHunterPvpCrowdControl(),
 
                         Spell.Cast("Tranquilizing Shot", ctx => Me.CurrentTarget.HasAura("Enraged")),
 
                         Spell.Buff("Concussive Shot",
                             ret => Me.CurrentTarget.CurrentTargetGuid == Me.Guid
-                                && !Me.CurrentTarget.IsWithinMeleeRange ),
+                                && !Me.CurrentTarget.IsWithinMeleeRange),
 
                         // Defensive Stuff
                         Spell.Cast("Intimidation",
@@ -144,16 +144,16 @@ namespace Singular.ClassSpecific.Hunter
                         Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
                         BuffSteadyFocus(),
                         Spell.Cast("Chimera Shot"),
-                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Master Marksman", 3)),
+                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!")),
 
                         // don't use long casts in PVP
-                        // Spell.Cast("Aimed Shot", ret => Me.CurrentFocus > 60),
+                // Spell.Cast("Aimed Shot", ret => Me.CurrentFocus > 60),
                         Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 50),
                         Common.CastSteadyShot(on => Me.CurrentTarget)
                         )
                     ),
 
-                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+                Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 35f, 30f)
                 );
         }
 

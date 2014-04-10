@@ -35,9 +35,10 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueRest()
         {
             return new PrioritySelector(
-                CreateStealthBehavior( ret => RogueSettings.StealthIfEating && StyxWoW.Me.HasAura("Food")),
-                Rest.CreateDefaultRestBehaviour( ),
                 CreateRogueOpenBoxes(),
+
+                CreateStealthBehavior(ret => RogueSettings.StealthIfEating && StyxWoW.Me.HasAura("Food")),
+                Rest.CreateDefaultRestBehaviour( ),
 
                 CheckThatDaggersAreEquippedIfNeeded(),
 
@@ -475,6 +476,9 @@ namespace Singular.ClassSpecific.Rogue
             if (unit.IsCrowdControlled())
                 return false;
 
+            if (!unit.InLineOfSpellSight)
+                return false;
+
             return true;
         }
 
@@ -759,8 +763,7 @@ namespace Singular.ClassSpecific.Rogue
                         && Me.CurrentTarget.IsAlive
                         && !Me.CurrentTarget.IsPlayer
                         && (Me.CurrentTarget.IsWithinMeleeRange || (TalentManager.HasGlyph("Pick Pocket") && Me.CurrentTarget.SpellDistance() < 10))
-                        && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsUndead)
-                        && !Blacklist.Contains( Me.CurrentTarget, BlacklistFlags.Node),
+                        && IsMobPickPocketable(Me.CurrentTarget),
                     new Sequence(
                         new Action( r => { StopMoving.Now(); } ),
                         new Wait( TimeSpan.FromMilliseconds(500), until => !Me.IsMoving, new ActionAlwaysSucceed()),
@@ -772,6 +775,12 @@ namespace Singular.ClassSpecific.Rogue
                         )
                     )
                 );
+        }
+
+        private static bool IsMobPickPocketable(WoWUnit unit)
+        {
+            return (unit.IsHumanoid || unit.IsUndead)
+                && !Blacklist.Contains(unit, BlacklistFlags.Node);
         }
 
         public static Composite CreateRogueFeintBehavior()
@@ -850,14 +859,15 @@ namespace Singular.ClassSpecific.Rogue
             return new Decorator(
                 ret => RogueSettings.UsePickLock,
                 new PrioritySelector(
-                    new Decorator( 
-                        ret => !IsStealthed 
-                            && SpellManager.HasSpell("Pick Lock") 
-                            && Spell.CanCastHack("Pick Lock", Me)
-                            && AutoLootIsEnabled(),
+                    new Decorator(
+                        ret => !IsStealthed && !Me.IsFlying && !Me.Mounted && SpellManager.HasSpell("Pick Lock") && AutoLootIsEnabled(),
                         new Sequence(
                             new Action( r => { box = FindLockedBox();  return box == null ? RunStatus.Failure : RunStatus.Success; }),
-                            new Action( r => Logger.Write( "/pick lock on {0} #{1}", box.Name, box.Entry)),
+                            new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to Pick Lock"),
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Action(r => Logger.Write("/pick lock on {0} #{1}", box.Name, box.Entry)),
                             new Action( r => { return SpellManager.Cast( "Pick Lock", Me) ? RunStatus.Success : RunStatus.Failure; }),
                             new Action( r => Logger.WriteDebug( "picklock: wait for spell on cursor")),
                             new Wait( 1, ret => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
@@ -921,7 +931,8 @@ namespace Singular.ClassSpecific.Rogue
             return Me.CarriedItems
                 .Where(b => b != null && b.IsValid && b.ItemInfo != null
                     && b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
-                    && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    // && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    && b.ItemInfo.MiscClass == WoWItemMiscClass.Junk
                     && b.ItemInfo.Level <= Me.Level
                     && !b.IsOpenable
                     && b.Usable
@@ -939,7 +950,8 @@ namespace Singular.ClassSpecific.Rogue
             return Me.CarriedItems
                 .Where(b => b != null && b.IsValid && b.ItemInfo != null
                     && b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
-                    && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    // && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    && b.ItemInfo.MiscClass == WoWItemMiscClass.Junk
                     && b.IsOpenable
                     && b.Usable
                     && b.Cooldown <= 0
@@ -979,6 +991,44 @@ namespace Singular.ClassSpecific.Rogue
             88165,	// Vine-Cracked Junkbox
         };
 
+
+
+        internal static Composite CreateRoguePullSkipNonPickPocketableMob()
+        {
+            return new Action( r => {
+                if (RogueSettings.UsePickPocket && RogueSettings.PickPocketOnlyPull && !Me.IsInGroup())
+                {
+                    if (!Me.GotTarget)
+                        return RunStatus.Success;
+                
+                    if (!Me.CurrentTarget.IsHumanoid && !Me.CurrentTarget.IsUndead)
+                    {
+                        if (!Blacklist.Contains(Me.CurrentTarget.Guid, BlacklistFlags.Pull))
+                            Blacklist.Add(Me.CurrentTarget.Guid, BlacklistFlags.Pull, TimeSpan.FromSeconds(180), "cannot Pick Pocket this mob");
+
+                        if (Me.CurrentTarget.Guid == BotPoi.Current.Guid)
+                            BotPoi.Clear();
+
+                        Me.ClearTarget();
+                        return RunStatus.Success;
+                    }
+                }
+
+                return RunStatus.Failure;
+            });
+        }
+
+        internal static Composite CreateRoguePullPickPocketButDontAttack()
+        {
+            return new Decorator(
+                req => RogueSettings.PickPocketOnlyPull && RogueSettings.UsePickPocket,
+                new PrioritySelector(
+                    Common.CreateRoguePickPocket(),
+                    new Action( r => Blacklist.Add( Me.CurrentTarget, BlacklistFlags.Pull, TimeSpan.FromMinutes( 5))),
+                    new ActionAlwaysSucceed()                
+                    )
+                );
+        }
     }
 
 

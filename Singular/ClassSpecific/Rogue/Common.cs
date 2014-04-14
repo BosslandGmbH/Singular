@@ -19,6 +19,7 @@ using Styx.CommonBot.POI;
 using System.Collections.Generic;
 using Styx.Helpers;
 using System.Drawing;
+using Styx.Common;
 
 namespace Singular.ClassSpecific.Rogue
 {
@@ -35,9 +36,10 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueRest()
         {
             return new PrioritySelector(
-                CreateStealthBehavior( ret => RogueSettings.StealthIfEating && StyxWoW.Me.HasAura("Food")),
-                Rest.CreateDefaultRestBehaviour( ),
                 CreateRogueOpenBoxes(),
+
+                CreateStealthBehavior(ret => RogueSettings.StealthIfEating && StyxWoW.Me.HasAura("Food")),
+                Rest.CreateDefaultRestBehaviour( ),
 
                 CheckThatDaggersAreEquippedIfNeeded(),
 
@@ -330,6 +332,52 @@ namespace Singular.ClassSpecific.Rogue
 
         }
 
+        /// <summary>
+        /// replaces Spell.CanCastHack for use with Openers for Rogues.  The property information for Ambush,
+        /// Garrote, and Cheap Shot does not get updated when Cloak and Dagger is taken resulting it remaining
+        /// as a melee spell with max/min range of 0 and 0.  this class specific cancast routine accounts for
+        /// use of those spells
+        /// </summary>
+        /// <param name="sfr"></param>
+        /// <param name="unit"></param>
+        /// <param name="skipWoWCheck"></param>
+        /// <returns></returns>
+        public static bool RogueCanCastOpener(SpellFindResults sfr, WoWUnit unit, bool skipWoWCheck = false)
+        {
+            const int AMBUSH = 8676;
+            const int CHEAPSHOT = 1833;
+            const int GARROTE = 703;
+
+            WoWSpell spell = sfr.Override ?? sfr.Original;
+            if (( spell.Id == AMBUSH || spell.Id == CHEAPSHOT || spell.Id == GARROTE))
+            {
+                if (HasTalent( RogueTalents.CloakAndDagger) && !unit.IsWithinMeleeRange)
+                {
+                    // check if in cloak and dagger range
+                    if (unit.SpellDistance() > 40)
+                    {
+                        if (SingularSettings.DebugSpellCanCast)
+                            Logger.WriteFile(LogLevel.Diagnostic, "RogueCanCastOpener[{0}]: target @ {1:F1} yds is more than 40 yds away", spell.Name, unit.SpellDistance());
+                        return false;
+                    }
+
+                    if (Spell.CanCastHackWillOurMovementInterrupt(spell, unit))
+                        return false;
+
+                    if (Spell.CanCastHackIsCastInProgress(spell, unit))
+                        return false;
+
+                    if (!Spell.CanCastHackHaveEnoughPower(spell, unit))
+                        return false;
+
+                    Logger.Write(Color.White, "^Cloak and Dagger: attempting a ranged {0} from {1:F1} yds", spell.Name, unit.SpellDistance());
+                    return true;
+                }
+            }
+
+            return Spell.CanCastHack(sfr, unit, false);
+        }
+
         public static Composite CreateRogueMoveBehindTarget()
         {
             return new Decorator(
@@ -475,6 +523,9 @@ namespace Singular.ClassSpecific.Rogue
             if (unit.IsCrowdControlled())
                 return false;
 
+            if (!unit.InLineOfSpellSight)
+                return false;
+
             return true;
         }
 
@@ -530,9 +581,9 @@ namespace Singular.ClassSpecific.Rogue
                             )
                         ),
 
-                    Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) || (Common.HasTalent( RogueTalents.CloakAndDagger) && IsActuallyStealthed)),
-                    Spell.Cast("Garrote", ret => (!Me.IsSafelyBehind(Me.CurrentTarget)) || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed)),
-                    Spell.Cast("Cheap Shot", ret => (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed))
+                    Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Me.IsSafelyBehind(Me.CurrentTarget) || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed), canCast: RogueCanCastOpener),
+                    Spell.Cast(sp => "Garrote", chkMov => false, on => Me.CurrentTarget, req => !Me.IsSafelyBehind(Me.CurrentTarget) || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed), canCast: RogueCanCastOpener),
+                    Spell.Cast(sp => "Cheap Shot", chkMov => false, on => Me.CurrentTarget, req => (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed), canCast: RogueCanCastOpener)
                     )
                 );
         }
@@ -759,8 +810,7 @@ namespace Singular.ClassSpecific.Rogue
                         && Me.CurrentTarget.IsAlive
                         && !Me.CurrentTarget.IsPlayer
                         && (Me.CurrentTarget.IsWithinMeleeRange || (TalentManager.HasGlyph("Pick Pocket") && Me.CurrentTarget.SpellDistance() < 10))
-                        && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsUndead)
-                        && !Blacklist.Contains( Me.CurrentTarget, BlacklistFlags.Node),
+                        && IsMobPickPocketable(Me.CurrentTarget),
                     new Sequence(
                         new Action( r => { StopMoving.Now(); } ),
                         new Wait( TimeSpan.FromMilliseconds(500), until => !Me.IsMoving, new ActionAlwaysSucceed()),
@@ -772,6 +822,12 @@ namespace Singular.ClassSpecific.Rogue
                         )
                     )
                 );
+        }
+
+        private static bool IsMobPickPocketable(WoWUnit unit)
+        {
+            return (unit.IsHumanoid || unit.IsUndead)
+                && !Blacklist.Contains(unit, BlacklistFlags.Node);
         }
 
         public static Composite CreateRogueFeintBehavior()
@@ -850,14 +906,15 @@ namespace Singular.ClassSpecific.Rogue
             return new Decorator(
                 ret => RogueSettings.UsePickLock,
                 new PrioritySelector(
-                    new Decorator( 
-                        ret => !IsStealthed 
-                            && SpellManager.HasSpell("Pick Lock") 
-                            && Spell.CanCastHack("Pick Lock", Me)
-                            && AutoLootIsEnabled(),
+                    new Decorator(
+                        ret => !IsStealthed && !Me.IsFlying && !Me.Mounted && SpellManager.HasSpell("Pick Lock") && AutoLootIsEnabled(),
                         new Sequence(
                             new Action( r => { box = FindLockedBox();  return box == null ? RunStatus.Failure : RunStatus.Success; }),
-                            new Action( r => Logger.Write( "/pick lock on {0} #{1}", box.Name, box.Entry)),
+                            new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to Pick Lock"),
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Action(r => Logger.Write("/pick lock on {0} #{1}", box.Name, box.Entry)),
                             new Action( r => { return SpellManager.Cast( "Pick Lock", Me) ? RunStatus.Success : RunStatus.Failure; }),
                             new Action( r => Logger.WriteDebug( "picklock: wait for spell on cursor")),
                             new Wait( 1, ret => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
@@ -921,7 +978,8 @@ namespace Singular.ClassSpecific.Rogue
             return Me.CarriedItems
                 .Where(b => b != null && b.IsValid && b.ItemInfo != null
                     && b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
-                    && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    // && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    && b.ItemInfo.MiscClass == WoWItemMiscClass.Junk
                     && b.ItemInfo.Level <= Me.Level
                     && !b.IsOpenable
                     && b.Usable
@@ -939,7 +997,8 @@ namespace Singular.ClassSpecific.Rogue
             return Me.CarriedItems
                 .Where(b => b != null && b.IsValid && b.ItemInfo != null
                     && b.ItemInfo.ItemClass == WoWItemClass.Miscellaneous
-                    && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    // && b.ItemInfo.ContainerClass == WoWItemContainerClass.Container
+                    && b.ItemInfo.MiscClass == WoWItemMiscClass.Junk
                     && b.IsOpenable
                     && b.Usable
                     && b.Cooldown <= 0
@@ -979,6 +1038,44 @@ namespace Singular.ClassSpecific.Rogue
             88165,	// Vine-Cracked Junkbox
         };
 
+
+
+        internal static Composite CreateRoguePullSkipNonPickPocketableMob()
+        {
+            return new Action( r => {
+                if (RogueSettings.UsePickPocket && RogueSettings.PickPocketOnlyPull && !Me.IsInGroup())
+                {
+                    if (!Me.GotTarget)
+                        return RunStatus.Success;
+                
+                    if (!Me.CurrentTarget.IsHumanoid && !Me.CurrentTarget.IsUndead)
+                    {
+                        if (!Blacklist.Contains(Me.CurrentTarget.Guid, BlacklistFlags.Pull))
+                            Blacklist.Add(Me.CurrentTarget.Guid, BlacklistFlags.Pull, TimeSpan.FromSeconds(180), "cannot Pick Pocket this mob");
+
+                        if (Me.CurrentTarget.Guid == BotPoi.Current.Guid)
+                            BotPoi.Clear();
+
+                        Me.ClearTarget();
+                        return RunStatus.Success;
+                    }
+                }
+
+                return RunStatus.Failure;
+            });
+        }
+
+        internal static Composite CreateRoguePullPickPocketButDontAttack()
+        {
+            return new Decorator(
+                req => RogueSettings.PickPocketOnlyPull && RogueSettings.UsePickPocket,
+                new PrioritySelector(
+                    Common.CreateRoguePickPocket(),
+                    new Action( r => Blacklist.Add( Me.CurrentTarget, BlacklistFlags.Pull, TimeSpan.FromMinutes( 5))),
+                    new ActionAlwaysSucceed()                
+                    )
+                );
+        }
     }
 
 

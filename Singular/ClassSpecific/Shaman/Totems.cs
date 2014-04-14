@@ -116,50 +116,18 @@ namespace Singular.ClassSpecific.Shaman
             PrioritySelector fireTotemBehavior = new PrioritySelector();
             fireTotemBehavior.AddChild(
                 Spell.BuffSelf("Fire Elemental",
-                    ret => Common.StressfulSituation && !SpellManager.CanBuff(WoWTotem.EarthElemental.ToSpellId(), false))
+                    ret => Common.StressfulSituation && !Exist(WoWTotem.EarthElemental) && !Spell.CanCastHack("Earth Elemental"))
                 );
 
             if (Me.Specialization == WoWSpec.ShamanEnhancement)
             {
-                fireTotemBehavior.AddChild( 
-                    Spell.BuffSelf("Magma Totem",
-                        ret => Spell.UseAOE 
-                            && !Exist( WoWTotem.FireElemental, WoWTotem.Magma )
-                            && Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count( u => u.DistanceSqr < 10 * 10) >= 3
-                        )
+                fireTotemBehavior.AddChild(
+                    Spell.Cast("Magma Totem", on => Me.CurrentTarget ?? Me, ret => IsMagmaTotemNeeded())
                     );
             }
 
             fireTotemBehavior.AddChild(
-                Spell.BuffSelf("Searing Totem",
-                    ret => {
-                        if (Me.GotTarget && (Me.CurrentTarget.SpellDistance() < GetTotemRange(WoWTotem.Searing) - 2f) && TotemIsKnown(WoWTotem.Searing))
-                        {
-                            if (!Exist(WoWTotemType.Fire))
-                            {
-                                Logger.WriteDebug("CreateNormalTotems: no Fire Totem so setting Searing Totem");
-                                return true;
-                            }
-                            WoWTotemInfo ti = GetTotem(WoWTotem.Searing);
-                            if (ti != null && ti.Expires < DateTime.Now + TimeSpan.FromSeconds(2))
-                            {
-                                Logger.WriteDebug("CreateNormalTotems: Searing Totem expires in {0} ms, refreshing", (int)(ti.Expires - DateTime.Now).TotalMilliseconds);
-                                return true;
-                            }
-                            ti = GetTotem(WoWTotem.Magma);
-                            if (ti != null)
-                            {
-                                int count = Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => u.DistanceSqr < 15 * 15);
-                                if (count < 2)
-                                {
-                                    Logger.WriteDebug("CreateNormalTotems: only {0} mobs nearby, replacing Magma Totem with Searing Totem", count);
-                                    return true;
-                                }
-                            }
-                        }
-                        return false;
-                    }
-                    )
+                Spell.BuffSelf("Searing Totem", ret => IsSearingTotemNeeded() )
                 );
 
             if (Me.Specialization == WoWSpec.ShamanRestoration)
@@ -284,33 +252,7 @@ namespace Singular.ClassSpecific.Shaman
             if (Me.Specialization == WoWSpec.ShamanEnhancement)
             {
                 fireTotemBehavior.AddChild(
-                    Spell.Cast("Magma Totem",
-                        on => Me.CurrentTarget ?? Me,
-                        ret =>
-                        {
-                            if (!Spell.UseAOE)
-                                ;
-                            else if (!TotemIsKnown(WoWTotem.Searing))
-                                ;
-                            else if (Exist(WoWTotem.FireElemental))
-                                ; // Logger.WriteDebug("CreateInstanceTotems: FireElemental Totem exists, skipping Magma");
-                            else if (Exist(WoWTotem.Magma) && GetTotem(WoWTotem.Magma).Unit != null && Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => GetTotem(WoWTotem.Magma).Unit.SpellDistance(u) < 10) >= 3)
-                                ; // Logger.WriteDebug("CreateInstanceTotems: Magma Totem already exists, skipping Magma");
-                            else
-                            {
-                                int count = Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => u.SpellDistance() < 10);
-                                if (count < 3)
-                                    ; // Logger.WriteDebug("CreateInstanceTotems: only {0} mobs attacking us, skipping Magma Totem", count);
-                                else
-                                {
-                                    ; // Logger.WriteDebug("CreateInstanceTotems: {0} mobs attacking us, setting a Magma Totem now!!!", count);
-                                    return true;
-                                }
-                            }
-
-                            return false;
-                        }
-                        )
+                    Spell.Cast("Magma Totem", on => Me.CurrentTarget ?? Me, ret => IsMagmaTotemNeeded())
                     );
             }
 
@@ -323,45 +265,7 @@ namespace Singular.ClassSpecific.Shaman
                     );
             else
                 fireTotemBehavior.AddChild(
-                    Spell.Cast("Searing Totem",
-                        on => Me.CurrentTarget,
-                        ret => {
-                            if (Me.GotTarget && TotemIsKnown(WoWTotem.Searing))
-                            {
-                                float currDist = Me.CurrentTarget.SpellDistance();
-                                if ( currDist > GetTotemRange(WoWTotem.Searing))
-                                {
-                                    Logger.WriteDebug("CreateInstanceTotems: dist of {0:F1} out of range for Searing Totem, not setting", currDist);
-                                    return false;
-                                }
-
-                                if (!Exist(WoWTotemType.Fire))
-                                {
-                                    Logger.WriteDebug("CreateInstanceTotems: no Fire Totem so setting Searing Totem");
-                                    return true;
-                                }
-
-                                WoWTotemInfo ti = GetTotem(WoWTotem.Searing);
-                                // if (ti.Unit != null && ti.Expires < (DateTime.Now + TimeSpan.FromSeconds(2)))
-                                if (ti != null && ti.Expired)
-                                {
-                                    Logger.WriteDebug("CreateInstanceTotems: Searing Totem expired! expires={0}, current={1}, refreshing", ti.Expires.ToString("MM/dd/yyyy hh:mm:ss.fff"), DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss.fff"));
-                                    return true;
-                                }
-                                ti = GetTotem(WoWTotem.Magma);
-                                if (ti != null)
-                                {
-                                    int count = Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => u.DistanceSqr < 15 * 15);
-                                    if (count < 2)
-                                    {
-                                        Logger.WriteDebug("CreateInstanceTotems: only {0} mobs nearby, replacing Magma Totem with Searing Totem", count);
-                                        return true;
-                                    }
-                                }
-                            }
-                            return false;
-                        }
-                        )
+                    Spell.Cast("Searing Totem", ret => IsSearingTotemNeeded())
                     );
 
 
@@ -380,7 +284,20 @@ namespace Singular.ClassSpecific.Shaman
                         // earth totems
                         Spell.Cast(WoWTotem.EarthElemental.ToSpellId(),
                             on => Me.CurrentTarget ?? Me,
-                            ret => (Group.Tanks.Any(t => t.IsDead && t.Distance < 40)) && !Exist(WoWTotem.StoneBulwark)),
+                            ret => {
+                                if (Exist(WoWTotem.StoneBulwark))
+                                    return false;
+
+                                WoWUnit deadTank = Group.Tanks.FirstOrDefault(t => t.IsDead && t.Distance < 70);
+                                if (deadTank == null)
+                                    return false;
+
+                                if (!Spell.CanCastHack("Earth Elemental"))
+                                    return false;
+
+                                Logger.Write(Color.White, "^Earth Elemental Totem: setting since {0} is dead", deadTank.SafeName());
+                                return true;
+                            }),
 
                         // Stone Bulwark handled in CombatBuffs with Astral Shift
 
@@ -431,6 +348,81 @@ namespace Singular.ClassSpecific.Shaman
                     )
                 );
 
+        }
+
+        private static bool IsSearingTotemNeeded()
+        {
+            if (Me.GotTarget && TotemIsKnown(WoWTotem.Searing))
+            {
+                WoWTotemInfo ti = GetTotem(WoWTotemType.Fire);
+                if (!Exist(ti))
+                {
+                    Logger.WriteDebug("IsSearingTotemNeeded: no Fire Totem so setting Searing Totem");
+                    return true;
+                }
+
+                if (ti.WoWTotem == WoWTotem.Searing)
+                {
+                    /*
+                    if (ti.Unit != null && ti.Expires < (DateTime.Now + TimeSpan.FromSeconds(2)))
+                    {
+                        Logger.WriteDebug("IsSearingTotemNeeded: Searing Totem expired! expires={0}, current={1}, refreshing", ti.Expires.ToString("MM/dd/yyyy hh:mm:ss.fff"), DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss.fff"));
+                        return true;
+                    }
+                    */
+                    float currDist = ti.Unit.SpellDistance(Me.CurrentTarget);
+                    if (currDist > GetTotemRange(WoWTotem.Searing))
+                    {
+                        Logger.WriteDebug("IsSearingTotemNeeded: Searing Totem is {0:F1} yds from CurrentTarget, refreshing", currDist);
+                        return true;
+                    }
+                }
+
+                if (ti.WoWTotem == WoWTotem.Magma)
+                {
+                    int count = Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => u.DistanceSqr < 15 * 15);
+                    if (count < 3)
+                    {
+                        Logger.WriteDebug("IsSearingTotemNeeded: only {0} mobs nearby, replacing Magma Totem with Searing Totem", count);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static bool IsMagmaTotemNeeded()
+        {
+            if (Spell.UseAOE && Me.GotTarget && TotemIsKnown(WoWTotem.Magma))
+            {
+                WoWTotemInfo ti = GetTotem(WoWTotemType.Fire);
+
+                if (ti.WoWTotem == WoWTotem.FireElemental)
+                    return false;
+
+                // for existing magma return no cast needed if it has enough mobs
+                float rangeCheck = rangeCheck = Totems.GetTotemRange(WoWTotem.Magma);
+                if (ti.WoWTotem == WoWTotem.Magma)
+                {
+                    int existcount = Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => ti.Unit.SpellDistance(u) < rangeCheck);
+                    if (existcount >= 3)
+                        return false;
+                }
+
+                // so no good magma in range, so now check if we want one to be
+                int nearcount = Unit.NearbyUnitsInCombatWithUsOrOurStuff.Count(u => u.SpellDistance() < rangeCheck);
+                if (nearcount < 3)
+                    return false;
+
+                if (ti.WoWTotem == WoWTotem.Magma)
+                    Logger.WriteDebug("IsMagmaTotemNeeded: existing Magma out of range, resetting since {0} mobs near me", nearcount);
+                else
+                    Logger.WriteDebug("IsMagmaTotemNeeded: found {0} mobs near me, setting Magma", nearcount);
+
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>

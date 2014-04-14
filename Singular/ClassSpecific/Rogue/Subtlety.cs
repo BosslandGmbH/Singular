@@ -33,6 +33,7 @@ namespace Singular.ClassSpecific.Rogue
                 Helpers.Common.CreateDismount("Pulling"),
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
                 Safers.EnsureTarget(),
+                Common.CreateRoguePullSkipNonPickPocketableMob(),
                 Common.CreateRogueControlNearbyEnemyBehavior(),
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
@@ -43,6 +44,8 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
 
                         CreateSubteltyDiagnosticOutputBehavior("Pull"),
+
+                        Common.CreateRoguePullPickPocketButDontAttack(),
 
                         Common.CreateRogueOpenerBehavior(),
                         Common.CreatePullMobMovingAwayFromMe(),
@@ -112,7 +115,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Buff("Rupture", true, ret => Me.ComboPoints >= 5),
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5),
 
-                        Spell.Cast("Ambush", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.IsStealthed),
+                        Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.IsStealthed, canCast: Common.RogueCanCastOpener),
                         Spell.Buff("Hemorrhage"),
                         Spell.Cast("Backstab", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.HasDaggerInMainHand),
                         Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
@@ -140,7 +143,7 @@ namespace Singular.ClassSpecific.Rogue
                 
                 Spell.WaitForCastOrChannel(),
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown(),
+                    ret => Me.GotTarget && !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
                         // updated time to death tracking values before we need them

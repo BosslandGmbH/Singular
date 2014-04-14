@@ -60,7 +60,7 @@ namespace Singular
         // this is no guarantee that the bot is in combat
         InCombat = Heal | CombatBuffs | Combat,
         // this is no guarantee that the bot is out of combat
-        OutOfCombat = Rest | PreCombatBuffs | PullBuffs | PreCombatBuffs | Death,
+        OutOfCombat = Rest | PreCombatBuffs | PullBuffs | Death,
 
         All = Rest | PreCombatBuffs | PullBuffs | Pull | Heal | CombatBuffs | Combat | LossOfControl | Death,
     }

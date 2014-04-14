@@ -34,13 +34,14 @@ namespace Singular.ClassSpecific.Rogue
 
         #region Normal Rotation
 
-        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Normal | WoWContext.Battlegrounds | WoWContext.Instances )]
+        [Behavior(BehaviorType.Pull, WoWClass.Rogue, WoWSpec.RogueAssassination, WoWContext.Normal | WoWContext.Battlegrounds | WoWContext.Instances)]
         public static Composite CreateAssaRoguePull()
         {
             return new PrioritySelector(
                 Helpers.Common.CreateDismount("Pulling"),
                 Common.CreateRoguePullBuffs(),      // needed because some Bots not calling this behavior
                 Safers.EnsureTarget(),
+                Common.CreateRoguePullSkipNonPickPocketableMob(),
                 Common.CreateRogueControlNearbyEnemyBehavior(),
                 Common.CreateRogueMoveBehindTarget(),
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
@@ -51,14 +52,15 @@ namespace Singular.ClassSpecific.Rogue
                     new PrioritySelector(
 
                         new Action(ret => { Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-
                         CreateAssaDiagnosticOutputBehavior("Pull"),
-                        Common.CreateRogueOpenerBehavior(),
 
+                        Common.CreateRoguePullPickPocketButDontAttack(),
+
+                        Common.CreateRogueOpenerBehavior(),
                         Common.CreatePullMobMovingAwayFromMe(),
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
-                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers ),
+                        Spell.Cast("Mutilate", req => Common.HasTwoDaggers),
 
                         AssaCastSinisterStrike()
                         )

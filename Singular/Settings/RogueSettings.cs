@@ -136,6 +136,13 @@ namespace Singular.Settings
         public bool UseSpeedBuff { get; set; }
 
         [Setting]
+        [DefaultValue(false)]
+        [Category("Pick Pocket")]
+        [DisplayName("Pick Pocket Only - Disable Pull")]
+        [Description("Attempt to Pick Pocket but not enter Combat")]
+        public bool PickPocketOnlyPull { get; set; }
+
+        [Setting]
         [DefaultValue(true)]
         [Category("Pick Pocket")]
         [DisplayName("Use Pick Pocket")]

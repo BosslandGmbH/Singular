@@ -109,6 +109,7 @@ namespace Singular.Helpers
                                 if (BotPoi.Current.Type == PoiType.Kill)
                                 {
                                     unit = BotPoi.Current.AsObject.ToUnit();
+#if WE_SHOULD_VALIDATE_BOTPOI
                                     if (Unit.ValidUnit(unit, showReason: true ))
                                     {
                                         if (StyxWoW.Me.CurrentTargetGuid != unit.Guid)
@@ -117,8 +118,16 @@ namespace Singular.Helpers
                                         return unit;
                                     }
 
-                                    // Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " not valid --- clearing");
-                                    BotPoi.Clear("Singular detected invalid mob as BotPoi");
+#else
+                                    if (unit != null && unit.IsValid && !unit.IsDead)
+                                    {
+                                        if (unit.Guid != StyxWoW.Me.CurrentTargetGuid)
+                                            Logger.Write(targetColor, "Switching to BotPoi: " + unit.SafeName() + "!");
+                                        return unit;
+                                    }
+#endif
+                                    Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " not valid --- clearing");
+
                                 }
 #endif
                                 // Go below if current target is null or dead. We have other checks to deal with that

@@ -103,33 +103,33 @@ namespace Singular.Settings
                 _instance = this;
 
                 bool fileExists = ConfigVersion != null;
-                Version current = SingularRoutine.GetSingularVersion();
-                Version cfgver = null;
+                Version verSourceCode = SingularRoutine.GetSingularVersion();
+                Version verConfigFile = null;
 
                 // if version is null, set to current value
                 if (ConfigVersion == null)
-                    ConfigVersion = current.ToString();
+                    ConfigVersion = verSourceCode.ToString();
 
                 try
                 {
-                    cfgver = new Version(ConfigVersion);
+                    verConfigFile = new Version(ConfigVersion);
                 }
                 catch
                 {
-                    cfgver = current;
+                    verConfigFile = verSourceCode;
                 }
 
-                if (cfgver < current)
+                if (verConfigFile < verSourceCode)
                 {
                     Logger.WriteFile("Settings: updating config file from verion {0}", ConfigVersion.ToString());
-                    if (new Version("3.0.0.3080") < current)
+                    if (new Version("3.0.0.3080") < verSourceCode)
                     {
                         Logger.WriteFile("Settings: applying {0} related changes", new Version("3.0.0.3080").ToString());
                         UseFrameLock = true;
                         DisableInQuestVehicle = false;
                     }
 
-                    if (new Version("3.0.0.3173") < current)
+                    if (new Version("3.0.0.3173") < verSourceCode)
                     {
                         Logger.WriteFile("Settings: applying {0} related changes", new Version("3.0.0.3173").ToString());
                         if ( MinHealth == 65)
@@ -138,7 +138,7 @@ namespace Singular.Settings
                             MinMana = 50;
                     }
 
-                    ConfigVersion = current.ToString();
+                    ConfigVersion = verSourceCode.ToString();
                     Logger.WriteFile("Settings: config file upgrade to {0} complete", ConfigVersion.ToString());
 
                     // now handle any calculated default values
@@ -361,6 +361,14 @@ namespace Singular.Settings
         [Browsable(false)]
         [Setting]
         public string ConfigVersion { get; set; }
+
+        [Browsable(false)]
+        [Setting]
+        [DefaultValue(450)]
+        [Category("Advanced")]
+        [DisplayName("Spell Throttle")]
+        [Description("Time between same instance of spell cast can be repeated")]
+        public int SameSpellThrottle { get; set; }
             
         #endregion 
 

@@ -291,7 +291,7 @@ namespace Singular.Helpers
 				ctx => StyxWoW.Me.CurrentTarget,
 				new Decorator(
 					ret => !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
-					CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss && !((WoWUnit)ctx).IsMoving)
+					CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss() && !((WoWUnit)ctx).IsMoving)
 					),
                 new Decorator(
                     ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,

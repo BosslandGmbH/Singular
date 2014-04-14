@@ -1,3 +1,31 @@
+--- Release 3.0.0.3410 ---
+
+General
+
+fixed - Targeting Critters: will no longer validate the kill target identified by the BotPOI.  If the bot has set one, then Singular will honor without verifying as this should already have been done by HBCore or the BotBase.  This fixes issues with quests which require killing critters, such as Marsh Frog Legs
+
+
+Rogues
+
+fixed - All Specs - Cloak and Dagger: was missing some opportunities to cast opener at range due to API still indicating spells maximum range is melee.  Changed to use different casting and validation method so Cloak and Dagger used more frequently.  Also added log output indicating when it is specifically used.  
+
+fixed - All Specs - Rest Behavior: changed use of Pick Lock and opening boxes during rest to highest priority.  Previously was stealthing as highest priority if Stealth While Eating setting enabled
+
+fixed - All Specs - PUll Behavior: when Sap Adds is enabled, will now correctly select targets within line of sight
+
+fixed - All Specs - Pick Lock: will now find all lockboxes in inventory.  Previously was ignoring them as they appear to no longer be identified as containers by API
+
+fixed - Subtlety - Instances Behavior: fixed exception occurring when no current target was selected
+
+
+Shaman
+
+fixed - All Specs - Searing Totem spam: an issue with the time returned by API indicating when Searing Totem expires was always in the past causing Singular to refresh immediately.  Rather than refreshing during last tick, will refresh when it has expired to prevent totem cast spam
+
+change- All Specs - Totems: simplification of logic used to check criteria for when different totems are set.  Should yield consistent results for setting Magma/Searing as appropriate
+
+
+
 --- Release 3.0.0.3391 ---
 
 General

@@ -1,3 +1,35 @@
+--- Release 3.0.0.3427 ---
+
+Paladin
+
+*new* - All Specs - will cast Blinding Light when solo or battleground. Cast if current target is player facing you or 3+ mobs attacking you
+
+
+Warrior
+
+fixed - Protection - fixed exceptions causing failed pulls and some erratic movement with some Quest Behaviors
+
+
+
+--- Release 3.0.0.3421 ---
+
+General
+
+fixed - exception occurring when checking Auras and unit goes invalid
+
+
+Hunter
+
+fixed - All Specs - bug preventing Traps from being set when using Launcher
+
+
+Rogue
+
+*new* - All Specs - Pick Pocket Only Pull setting (usable only with Grind Bot or profiles designed specifically for pick pocketing only.)  Will only pick pocket mobs and avoid combat whenever possible.  Must be solo (disabled if in party/raid)
+
+fixed - All Specs - Pick Lock: now correctly recognizes Heavy Junkbox
+
+
 --- Release 3.0.0.3410 ---
 
 General

@@ -87,6 +87,9 @@ namespace Singular.ClassSpecific.Paladin
                             new PrioritySelector(
                                 Helpers.Common.CreateAutoAttack(true),
                                 Helpers.Common.CreateInterruptBehavior(),
+
+                                Common.CreatePaladinBlindingLightBehavior(),
+
                                 Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),
                                 Spell.Buff("Judgment"),
                                 Spell.Cast("Hammer of Wrath"),

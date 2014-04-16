@@ -75,8 +75,8 @@ namespace Singular.ClassSpecific.Warrior
 
                         // just in case user botting a Prot Warrior without a shield
                         Spell.Cast("Revenge"),
-                        Spell.Cast("Devastate", ret => !((WoWUnit)ret).HasAura("Weakened Armor", 3)),
-                        Spell.Cast("Thunder Clap", ret => Spell.UseAOE && ((WoWUnit)ret).SpellDistance() < 8f && !((WoWUnit)ret).ActiveAuras.ContainsKey("Weakened Blows")),
+                        Spell.Cast("Devastate", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
+                        Spell.Cast("Thunder Clap", ret => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 8f && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
 
                         // filler to try and do something more than auto attack at this point
                         Spell.Cast("Devastate"),
@@ -227,8 +227,8 @@ namespace Singular.ClassSpecific.Warrior
                         // Generate Rage
                         Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
                         Spell.Cast("Revenge", ret => Me.CurrentRage < RageBuild ),
-                        Spell.Cast("Devastate", ret => !((WoWUnit)ret).HasAura("Weakened Armor", 3) && Unit.NearbyGroupMembers.Any(m => m.Class == WoWClass.Druid)),
-                        Spell.Cast("Thunder Clap", ret => ((WoWUnit)ret).SpellDistance() < 8f && !((WoWUnit)ret).ActiveAuras.ContainsKey("Weakened Blows")),
+                        Spell.Cast("Devastate", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3) && Unit.NearbyGroupMembers.Any(m => m.Class == WoWClass.Druid)),
+                        Spell.Cast("Thunder Clap", ret => Me.CurrentTarget.SpellDistance() < 8f && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
 
                         // Filler
                         Spell.Cast("Devastate"),

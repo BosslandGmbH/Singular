@@ -158,6 +158,8 @@ namespace Singular.ClassSpecific.Paladin
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        Common.CreatePaladinBlindingLightBehavior(),
+
                         // Taunts - if reckoning on cooldown, throw some damage at them
                         new Decorator(
                             ret => SingularSettings.Instance.EnableTaunting

@@ -216,6 +216,31 @@ namespace Singular.ClassSpecific.Paladin
                 );
         }
 
+        public static Composite CreatePaladinBlindingLightBehavior()
+        {
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                return new ActionAlwaysFail();
+
+            return Spell.Cast(
+                sp => "Blinding Light",
+                mov => true,
+                on => Me.CurrentTarget,
+                req =>
+                {
+                    if (!Spell.UseAOE)
+                        return false;
+                    if (Unit.UnitsInCombatWithUsOrOurStuff(10).Count(u => u.IsSafelyFacing(Me, 130f)) > 2)
+                        return true;
+                    if (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.SpellDistance() < 10 && Me.CurrentTarget.IsFacing(Me))
+                        return true;
+                    return false;
+                },
+                cancel => Me.CurrentTarget.IsPlayer && (Me.CurrentTarget.SpellDistance() > 10 || !Me.CurrentTarget.IsFacing(Me))
+                );
+
+
+        }
+
         public static bool HasTalent(PaladinTalents tal)
         {
             return TalentManager.IsSelected((int)tal);

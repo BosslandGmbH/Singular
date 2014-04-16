@@ -134,6 +134,8 @@ namespace Singular.ClassSpecific.Paladin
                                 )
                             ),
 
+                        Common.CreatePaladinBlindingLightBehavior(),
+
                         new Decorator(
                             ret => _mobCount >= 2 && Spell.UseAOE,
                             new PrioritySelector(

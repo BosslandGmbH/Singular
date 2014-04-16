@@ -432,24 +432,36 @@ namespace Singular.ClassSpecific.Hunter
                             // .. assume it may be invalid at this point
                             try
                             {
+                                Logger.WriteDiagnostic("-- trap click entry --");
                                 WoWUnit unit = (WoWUnit) ctx;
                                 if (unit == null)
                                     Logger.WriteDiagnostic("Trap: error occurred - unit went null while waiting to click 1A");
                                 else if (!unit.IsValid)
                                     Logger.WriteDiagnostic("Trap: error occurred - unit went invalid while waiting to click 1B");
-                                else if (!SpellManager.ClickRemoteLocation(unit.Location))
-                                    Logger.WriteDiagnostic("Trap: error occurred - unable to click location");
                                 else
                                 {
-                                    new Action(ret => Logger.WriteDebug("Trap: Complete!"));
-                                    return RunStatus.Success;
-                                }
+                                    bool b = false;
+                                    try 
+                                    {
+                                        b = SpellManager.ClickRemoteLocation(unit.Location);
+                                    }
+                                    catch 
+                                    {
+                                        Logger.WriteDiagnostic("Trap: exception in ClickRemote");
+                                    }
 
+                                    if (b)
+                                    {
+                                        Logger.WriteDiagnostic("Trap: Complete!");
+                                        return RunStatus.Success;
+                                    }
+                                }
                             }
                             catch
                             {
-                                Logger.WriteDiagnostic("Trap: error occurred - unit went invalid while waiting to click 2");
                             }
+
+                            Logger.WriteDiagnostic("Trap: error occurred - unit went invalid while waiting to click 2");
                             return RunStatus.Failure;
                             })
                         )

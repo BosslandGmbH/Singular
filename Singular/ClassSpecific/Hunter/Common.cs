@@ -433,8 +433,10 @@ namespace Singular.ClassSpecific.Hunter
                             try
                             {
                                 WoWUnit unit = (WoWUnit) ctx;
-                                if (unit != null && unit.IsValid)
-                                    Logger.WriteDiagnostic("Trap: error occurred - unit went invalid while waiting to click 1");
+                                if (unit == null)
+                                    Logger.WriteDiagnostic("Trap: error occurred - unit went null while waiting to click 1A");
+                                else if (!unit.IsValid)
+                                    Logger.WriteDiagnostic("Trap: error occurred - unit went invalid while waiting to click 1B");
                                 else if (!SpellManager.ClickRemoteLocation(unit.Location))
                                     Logger.WriteDiagnostic("Trap: error occurred - unable to click location");
                                 else

@@ -139,7 +139,7 @@ namespace Singular.Settings
         [DefaultValue(false)]
         [Category("Pick Pocket")]
         [DisplayName("Pick Pocket Only - Disable Pull")]
-        [Description("Attempt to Pick Pocket but not enter Combat")]
+        [Description("Caution: use only with profiles designed for grinding.  Does not work with most Questing profiles")]
         public bool PickPocketOnlyPull { get; set; }
 
         [Setting]

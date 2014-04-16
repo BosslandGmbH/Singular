@@ -166,7 +166,7 @@ namespace Singular.ClassSpecific.Rogue
                 // new Action( r => { Logger.WriteDebug("PullBuffs -- stealthed={0}", Stealthed ); return RunStatus.Failure; } ),
                 CreateStealthBehavior( 
                     ret => {
-                        if (!Me.GotTarget || Unit.IsTrivial(Me.CurrentTarget))
+                        if (!Me.GotTarget || (Unit.IsTrivial(Me.CurrentTarget) && !RogueSettings.PickPocketOnlyPull))
                             return false;
 
                         if (IsStealthed)
@@ -467,7 +467,7 @@ namespace Singular.ClassSpecific.Rogue
             string msg = "";
             WoWUnit closestTarget = null;
 
-            if (RogueSettings.SapAddDistance > 0)
+            if (RogueSettings.SapAddDistance > 0 && (!RogueSettings.PickPocketOnlyPull || !RogueSettings.UsePickPocket || SingularRoutine.CurrentWoWContext != WoWContext.Normal))
             {
                 // stick with our target if we thought it was a good choice previously 
                 // ... (to avoid zig zag back and forth at boundary distance conditions)
@@ -1026,6 +1026,7 @@ namespace Singular.ClassSpecific.Rogue
             13918,	// Reinforced Locked Chest
             5760,	// Eternium Lockbox
             12033,	// Thaurissan Family Jewels
+            16885,  // Heavy Junkbox
             29569,	// Strong Junkbox
             31952,	// Khorium Lockbox
             43575,	// Reinforced Junkbox
@@ -1048,13 +1049,30 @@ namespace Singular.ClassSpecific.Rogue
                     if (!Me.GotTarget)
                         return RunStatus.Success;
                 
+                    if (BotPoi.Current.Type == PoiType.Kill && !StyxWoW.Me.Combat && Blacklist.Contains(BotPoi.Current.Guid, BlacklistFlags.Node | BlacklistFlags.Pull))
+                    {
+                        if (StyxWoW.Me.CurrentTargetGuid == BotPoi.Current.Guid)
+                        {
+                            Logger.WriteDebug("SkipMob: ClearTarget - pickpocket only and target already picked");
+                            Me.ClearTarget();
+                        }
+
+                        WoWUnit unit = BotPoi.Current.AsObject.ToUnit();
+                        if (unit != null && unit.IsValid)
+                            BotPoi.Clear(string.Format("Singular: pickpocket only and {0} is in Blacklist", unit.SafeName()));
+                        else
+                            BotPoi.Clear("Singular: pickpocket only and invalid mob in Blacklist");
+
+                        return RunStatus.Success;
+                    }
+
                     if (!Me.CurrentTarget.IsHumanoid && !Me.CurrentTarget.IsUndead)
                     {
                         if (!Blacklist.Contains(Me.CurrentTarget.Guid, BlacklistFlags.Pull))
-                            Blacklist.Add(Me.CurrentTarget.Guid, BlacklistFlags.Pull, TimeSpan.FromSeconds(180), "cannot Pick Pocket this mob");
+                            Blacklist.Add(Me.CurrentTarget.Guid, BlacklistFlags.Pull, TimeSpan.FromSeconds(180), "Singular: cannot Pick Pocket this mob");
 
                         if (Me.CurrentTarget.Guid == BotPoi.Current.Guid)
-                            BotPoi.Clear();
+                            BotPoi.Clear("Singular: cannot pick pocket this mob");
 
                         Me.ClearTarget();
                         return RunStatus.Success;
@@ -1071,8 +1089,12 @@ namespace Singular.ClassSpecific.Rogue
                 req => RogueSettings.PickPocketOnlyPull && RogueSettings.UsePickPocket,
                 new PrioritySelector(
                     Common.CreateRoguePickPocket(),
-                    new Action( r => Blacklist.Add( Me.CurrentTarget, BlacklistFlags.Pull, TimeSpan.FromMinutes( 5))),
-                    new ActionAlwaysSucceed()                
+                    new Action(r =>
+                    {
+                        if (Blacklist.Contains(Me.CurrentTarget, BlacklistFlags.Node) && !Blacklist.Contains(Me.CurrentTarget, BlacklistFlags.Pull))
+                            Blacklist.Add(Me.CurrentTarget, BlacklistFlags.Pull, TimeSpan.FromMinutes(3), "Singular: picked mobs pocket");
+                    }),
+                    new ActionAlwaysSucceed()
                     )
                 );
         }

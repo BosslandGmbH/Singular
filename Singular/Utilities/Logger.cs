@@ -158,16 +158,23 @@ namespace Singular
 
         public static void PrintStackTrace(string reason = "Debug")
         {
+            // add +1 to level to begin with caller
+            PrintStackTrace(1, 10, reason);
+        }
+
+        public static void PrintStackTrace(int levelsUp, int levelsCnt, string reason)
+        {
             WriteDebug("Stack trace for " + reason);
             var stackTrace = new StackTrace(true);
             StackFrame[] stackFrames = stackTrace.GetFrames();
             // Start at frame 1 (just before this method entrance)
-            for (int i = 1; i < Math.Min(stackFrames.Length, 10); i++)
+            for (int i = 1 + levelsUp; i < Math.Min(stackFrames.Length, levelsCnt); i++)
             {
                 StackFrame frame = stackFrames[i];
                 WriteDebug(string.Format("\tCaller {0}: {1} in {2} line {3}", i, frame.GetMethod().Name, Path.GetFileName(frame.GetFileName()), frame.GetFileLineNumber()));
             }
         }
+
 
         /// <summary>
         /// write behavior creation message to log window and file

@@ -336,6 +336,15 @@ namespace Singular.Settings
         }
 
         [Browsable(false)]
+        public static bool DebugStopMoving
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+        [Browsable(false)]
         public static bool Trace
         {
             get

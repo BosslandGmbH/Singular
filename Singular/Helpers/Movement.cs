@@ -351,13 +351,19 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveBehindTargetBehavior(SimpleBooleanDelegate requirements)
         {
+            if ( !SingularSettings.Instance.MeleeMoveBehind)
+                return new ActionAlwaysFail();
+
             if (requirements == null)
+                return new ActionAlwaysFail();
+
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
                 return new ActionAlwaysFail();
 
             return new Decorator(
                 ret =>
                 {
-                    if (MovementManager.IsMovementDisabled || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank || !SingularSettings.Instance.MeleeMoveBehind)
+                    if (MovementManager.IsMovementDisabled || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
                         return false;
                     var currentTarget = StyxWoW.Me.CurrentTarget;
                     if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry))
@@ -532,31 +538,37 @@ namespace Singular.Helpers
             if (stopMovingNow )
             {
                 if (!StyxWoW.Me.IsMoving)
-                    Logger.WriteDebug(Color.White, "StopMoving: character already stopped, clearing stop {0} request", Type);
+                {
+                    if (SingularSettings.DebugStopMoving)
+                        Logger.WriteDebug(Color.White, "StopMoving STOP: character already stopped, clearing {0} stop request", Type);
+                }
                 else
                 {
                     Navigator.PlayerMover.MoveStop();
 
-                    string line = string.Format("StopMoving: {0}", Type);
-                    if ( Type == StopType.Location)
-                        line += string.Format(", within {0:F1} yds of {1}", StyxWoW.Me.Location.Distance(Point), Point);
-                    else if ( Type == StopType.RangeOfLocation )
-                        line += string.Format(", within {0:F1} yds of {1} @ {2:F1} yds", Range, Point, StyxWoW.Me.Location.Distance(Point));
-                    else if ( Unit ==  null || !Unit.IsValid )
-                        line += ", unit == null";
-                    else if ( Type == StopType.LosOfUnit)
-                        line += string.Format(", have LoSS of {0} @ {1:F1} yds", Unit.SafeName(), Unit.Distance );
-                    else if ( Type == StopType.MeleeRangeOfUnit)
-                        line += string.Format(", within melee range of {0} @ {1:F1} yds", Unit.SafeName(), Unit.Distance);
-                    else if ( Type == StopType.RangeOfUnit)
-                        line += string.Format(", within {0:F1} yds of {1} @ {2:F1} yds", Range, Unit.SafeName(), Unit.Distance);
+                    if (SingularSettings.DebugStopMoving)
+                    {
+                        string line = string.Format("StopMoving STOP: {0}", Type);
+                        if (Type == StopType.Location)
+                            line += string.Format(", within {0:F1} yds of {1}", StyxWoW.Me.Location.Distance(Point), Point);
+                        else if (Type == StopType.RangeOfLocation)
+                            line += string.Format(", within {0:F1} yds of {1} @ {2:F1} yds", Range, Point, StyxWoW.Me.Location.Distance(Point));
+                        else if (Unit == null || !Unit.IsValid)
+                            line += ", unit == null";
+                        else if (Type == StopType.LosOfUnit)
+                            line += string.Format(", have LoSS of {0} @ {1:F1} yds", Unit.SafeName(), Unit.Distance);
+                        else if (Type == StopType.MeleeRangeOfUnit)
+                            line += string.Format(", within melee range of {0} @ {1:F1} yds", Unit.SafeName(), Unit.Distance);
+                        else if (Type == StopType.RangeOfUnit)
+                            line += string.Format(", within {0:F1} yds of {1} @ {2:F1} yds", Range, Unit.SafeName(), Unit.Distance);
 
-                    if (callerLine > 0)
-                        line += ", source: " + callerFile + " - line: " + callerLine;
-                    else if (callerLine == 0)
-                        line += ", method: " + callerName;
+                        if (callerLine > 0)
+                            line += ", source: " + callerFile + " @ " + callerLine + " [" + callerName + "]";
+                        else if (callerLine == 0)
+                            line += ", method: " + callerName;
 
-                    Logger.WriteDebug(Color.White, line);
+                        Logger.WriteDebug(Color.White, line);
+                    }
                 }
 
                 Clear();
@@ -568,15 +580,20 @@ namespace Singular.Helpers
             if (MovementManager.IsMovementDisabled)
                 return;
 
-            if (SingularSettings.Debug)
+            if (SingularSettings.DebugStopMoving)
             {
-                StackFrame frame = new StackFrame(3);
+                int levelsUp = 2;
+                if (type == StopType.None)
+                    levelsUp++;
+
+                StackFrame frame = new StackFrame(levelsUp);
                 if (frame != null)
                 {
                     MethodBase method = frame.GetMethod();
                     callerName = method.DeclaringType.FullName + "." + method.Name;
                     callerFile = frame.GetFileName();
                     callerLine = frame.GetFileLineNumber();
+                    Logger.WriteDebug(Color.DeepPink, "StopMoving SET: type={0} at {1} @ {2} [{3}]", type, callerFile, callerLine, callerName);
                 }
                 else
                 {

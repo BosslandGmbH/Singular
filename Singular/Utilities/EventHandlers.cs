@@ -235,7 +235,7 @@ namespace Singular.Utilities
                             else
                             {
                                 Logger.WriteDebug("[CombatLog] {0} has no pockets, blacklisting from pick pocket for 2 minutes", unit.SafeName());
-                                Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2));
+                                Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2), "Singular: has no pockets to pick");
                             }
                         }
                     }
@@ -394,7 +394,7 @@ namespace Singular.Utilities
                 {
                     WoWUnit unit = StyxWoW.Me.CurrentTarget;
                     Logger.WriteDebug("[WowErrorMessage] already pick pocketed {0}, blacklisting from pick pocket for 2 minutes", unit.SafeName());
-                    Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2));
+                    Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2), "Singular: already pick pocketed mob");
                     handled = true;
                 }
             }

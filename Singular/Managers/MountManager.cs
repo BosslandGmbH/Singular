@@ -59,12 +59,13 @@ namespace Singular.Managers
                 ClassSpecific.Shaman.Totems.RecallTotems();
             }
 
+			// Note: This causes issues if another delegate called after Singular's cancels mount up resulting in shuttering.
             // help HB out and stop immediately if we allow mount to proceed
-            if (e.Cancel == false && StyxWoW.Me.IsMoving && Mount.CanMount())
-            {
-                Logger.WriteDebug( Color.White, "OnMountUp: stopping to help HB mount quicker (fewer failed mount attempts)");
-                StopMoving.Now();
-            }
+			//if (e.Cancel == false && StyxWoW.Me.IsMoving && Mount.CanMount())
+			//{
+			//	Logger.WriteDebug( Color.White, "OnMountUp: stopping to help HB mount quicker (fewer failed mount attempts)");
+			//	StopMoving.Now();
+			//}
         }
     }
 }

@@ -24,6 +24,7 @@ namespace Singular.Utilities
     public static class EventHandlers
     {
         private static bool _combatLogAttached;
+        private static bool _combatFilterAdded;
 
         public static void Init()
         {
@@ -109,6 +110,11 @@ namespace Singular.Utilities
 
         public static Dictionary<ulong, int> MobsThatEvaded = new Dictionary<ulong, int>();
 
+        public static WoWUnit AttackingEnemyPlayer { get; set; }
+        public static DateTime LastAttackedByEnemyPlayer { get; set; }
+
+        public static DateTime LastRedErrorMessage { get; set; }
+
         /// <summary>
         /// the value of localized values for testing certain types of spell failures
         /// </summary>
@@ -123,41 +129,73 @@ namespace Singular.Utilities
 
         private static void AttachCombatLogEvent()
         {
-            if (_combatLogAttached)
-                return;
+            if (_combatLogAttached || _combatFilterAdded)
+                DetachCombatLogEvent();
 
             // DO NOT EDIT THIS UNLESS YOU KNOW WHAT YOU'RE DOING!
             // This ensures we only capture certain combat log events, not all of them.
             // This saves on performance, and possible memory leaks. (Leaks due to Lua table issues.)
             Lua.Events.AttachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
+            _combatLogAttached = true;
 
-            string filterCriteria =
+            string filterCriteria = "return";
+
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal && SingularSettings.Instance.TargetWorldPvpRegardless)
+                filterCriteria += 
+                    " ("
+                    + " args[8] == UnitGUID('player')"
+                    + " and args[8] ~= args[4]"
+                    + ")"
+                    + " or";
+                // filterCriteria += " (args[8] == UnitGUID('player') and args[8] ~= args[4] and 0x000 == bit.band(tonumber('0x'..strsub(guid, 3,5)),0x00f)) or";
+
+            filterCriteria += 
+                " ("
+                + " args[4] == UnitGUID('player')"
+                + " and"
+                +   " ("
+                +   " args[2] == 'SPELL_MISSED'"
+                +   " or args[2] == 'RANGE_MISSED'"
+                +   " or args[2] == 'SWING_MISSED'"
+                +   " or args[2] == 'SPELL_CAST_FAILED'"
+                +   " )"
+                +" )";
+            /*
+            filterCriteria =
                 "return args[4] == UnitGUID('player')"
                 + " and (args[2] == 'SPELL_MISSED'"
                 + " or args[2] == 'RANGE_MISSED'"
                 + " or args[2] == 'SWING_MISSED'"
                 + " or args[2] == 'SPELL_CAST_FAILED')";
-
-            if (!Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", filterCriteria ))
+            */
+            _combatFilterAdded = Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", filterCriteria);
+            if (!_combatFilterAdded)
             {
                 Logger.Write( "ERROR: Could not add combat log event filter! - Performance may be horrible, and things may not work properly!");
             }
 
             Logger.WriteDebug("Attached combat log");
-            _combatLogAttached = true;
         }
         
         private static void DetachCombatLogEvent()
         {
-            if (!_combatLogAttached)
-                return;
+            if (_combatFilterAdded)
+            {
+                Logger.WriteDebug("Removed combat log filter");
+                Lua.Events.RemoveFilter("COMBAT_LOG_EVENT_UNFILTERED");
+                _combatFilterAdded = false;
+            }
 
-            Logger.WriteDebug("Removed combat log filter");
-            Lua.Events.RemoveFilter("COMBAT_LOG_EVENT_UNFILTERED");
-            Logger.WriteDebug("Detached combat log");
-            Lua.Events.DetachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
-            _combatLogAttached = false;
+            if (_combatLogAttached)
+            {
+                Logger.WriteDebug("Detached combat log");
+                Lua.Events.DetachEvent("COMBAT_LOG_EVENT_UNFILTERED", HandleCombatLog);
+                _combatLogAttached = false;
+            }
         }
+
+
+        static ulong guidLastEnemy;
 
         private static void HandleCombatLog(object sender, LuaEventArgs args)
         {
@@ -165,9 +203,33 @@ namespace Singular.Utilities
             if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
                 return;
 
+            // convert args to usable form
             var e = new CombatLogEventArgs(args.EventName, args.FireTimeStamp, args.Args);
-            if (e.SourceGuid != StyxWoW.Me.Guid)
+
+            if (e.DestGuid == StyxWoW.Me.Guid)
+            {
+                if (e.SourceGuid != StyxWoW.Me.Guid)
+                {
+                    WoWUnit enemy = e.SourceUnit;
+                    if (Unit.ValidUnit(enemy) && enemy.IsPlayer)
+                    {
+                        AttackingEnemyPlayer = enemy;
+                        LastAttackedByEnemyPlayer = DateTime.Now;
+
+                        // if (guidLastEnemy != enemy.Guid)
+                        {
+                            guidLastEnemy = enemy.Guid;
+                            string extra = "";
+                            if (e.Args.GetUpperBound(0) >= 12)
+                                extra = string.Format(" with {0}", e.SpellName);
+
+                            Logger.WriteDiagnostic("GankDetect: attacked by Level {0} {1}{2}", enemy.Level, enemy.SafeName(), extra);
+                        }
+                    }
+                }
+
                 return;
+            }
 
             // Logger.WriteDebug("[CombatLog] " + e.Event + " - " + e.SourceName + " - " + e.SpellName);
 
@@ -387,6 +449,7 @@ namespace Singular.Utilities
                 return;
 
             bool handled = false;
+            LastRedErrorMessage = DateTime.Now;
 
             if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket && args.Args[0].ToString() == LocalizedAlreadyPickPocketedError)
             {

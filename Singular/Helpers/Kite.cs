@@ -17,6 +17,7 @@ using System.Drawing;
 using Styx.WoWInternals;
 using Styx.Helpers;
 using Styx.Common;
+using Styx.CommonBot.POI;
 
 
 namespace Singular.Helpers
@@ -846,10 +847,22 @@ namespace Singular.Helpers
             ChooseSafestAvailable = true;
         }
 
+        /// <summary>
+        /// Does minimal testing to see if a WoWUnit should be treated as an enemy.  Avoids 
+        /// searching lists (such as TargetList)
+        /// </summary>
+        /// <param name="u"></param>
+        /// <returns></returns>
         public static bool IsEnemy(WoWUnit u)
         {
-            if (u == null || !u.CanSelect || !u.Attackable || !u.IsAlive || u.IsNonCombatPet || u.IsCritter)
+            if (u == null || !u.CanSelect || !u.Attackable || !u.IsAlive || u.IsNonCombatPet)
                 return false;
+
+            if (BotPoi.Current.Guid == u.Guid && BotPoi.Current.Type == PoiType.Kill)
+                return true;
+
+            if (u.IsCritter && u.ThreatInfo.ThreatValue == 0)
+                return true;
 
             if (!u.IsPlayer)
                 return u.IsHostile || u.Aggro || u.PetAggro;
@@ -859,7 +872,7 @@ namespace Singular.Helpers
             if (Battlegrounds.IsInsideBattleground)
                 return p.BattlefieldArenaFaction != Me.BattlefieldArenaFaction;
 */
-            return p.IsHorde != Me.IsHorde;
+            return p.IsHostile || p.IsHorde != Me.IsHorde;
         }
 
         public static IEnumerable<WoWUnit> AllEnemyMobs

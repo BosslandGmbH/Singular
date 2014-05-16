@@ -42,6 +42,10 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Common.CreateDarkSuccorBehavior(),
 
+                        Common.CreateSoulReaperHasteBuffBehavior(),
+
+                        Common.CreateDarkSimulacrumBehavior(),
+
                         // Symbiosis
                         Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
 
@@ -191,18 +195,25 @@ namespace Singular.ClassSpecific.DeathKnight
             return new PrioritySelector(
 
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Movement.CreateMoveToMeleeTightBehavior(true),
                 Spell.WaitForCastOrChannel(),
-
 
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateAutoAttack(true),
+
+                        Spell.Cast("Necrotic Strike", ret => Me.DeathRuneCount > 0),
+
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateGetOverHereBehavior(),
 
                         Common.CreateDarkSuccorBehavior(),
+
+                        Common.CreateSoulReaperHasteBuffBehavior(),
+
+                        Common.CreateDarkSimulacrumBehavior(),
 
                         // Symbiosis
                         Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
@@ -248,8 +259,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                    !StyxWoW.Me.GotAlivePet || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")),
                         Spell.Cast("Horn of Winter")
                         )
-                    ),
-                Movement.CreateMoveToMeleeBehavior(true)
+                    )
                 );
         }
 

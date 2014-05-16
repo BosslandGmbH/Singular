@@ -158,6 +158,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(false)]
         [Category("Common")]
+        [DisplayName("Use Aquatic Form")]
+        [Description("Cast Aquatic Form for faster movement while Swimming")]
+        public bool UseAquaticForm { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
         [DisplayName("Use Travel Form")]
         [Description("Cast Travel Form (or Cat Form) for faster movement while running on foot")]
         public bool UseTravelForm { get; set; }

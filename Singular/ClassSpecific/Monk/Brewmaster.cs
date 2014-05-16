@@ -107,7 +107,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.BuffSelf("Guard", ctx => Me.HasAura("Power Guard")),
                         Spell.BuffSelf("Elusive Brew", ctx => MonkSettings.UseElusiveBrew && Me.HasAura("Elusive Brew", MonkSettings.ElusiveBrewMinumumCount)),
                         Spell.Cast("Chi Brew", ctx => UseChiBrew),
-                        Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4)
+                        Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 3)
                         )
                     )
                 );
@@ -153,7 +153,7 @@ namespace Singular.ClassSpecific.Monk
                                 ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => Me.IsSafelyFacing(u,150f)),
 
                                 // cast heal in anticipation of damage
-                                Spell.Cast("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 4),
+                                Spell.Cast("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 3),
 
                                 new Decorator( 
                                     req => req != null,
@@ -258,7 +258,7 @@ namespace Singular.ClassSpecific.Monk
                             new PrioritySelector(
                         // cast breath of fire to apply the dot.
                                 Spell.Cast("Breath of Fire", ctx => Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8).Count(u => u.HasAura("Dizzying Haze") && !u.HasAura("Breath of Fire")) >= 3),
-                                Spell.Cast("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 4),
+                                Spell.Cast("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 3),
                         // aoe stuns
                                 Spell.Cast("Charging Ox Wave", ctx => TalentManager.IsSelected((int)MonkTalents.ChargingOxWave) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 30) >= 3),
                                 Spell.Cast("Leg Sweep", ctx => TalentManager.IsSelected((int)MonkTalents.LegSweep))

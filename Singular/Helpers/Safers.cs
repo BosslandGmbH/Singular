@@ -18,6 +18,7 @@ using Action = Styx.TreeSharp.Action;
 using Styx.Helpers;
 using System;
 using Styx.Common.Helpers;
+using Singular.Utilities;
 
 namespace Singular.Helpers
 {
@@ -100,16 +101,43 @@ namespace Singular.Helpers
                                     return Me.CurrentTarget;   // pass our currenttarget to skip setting or switching
                                 }
 #endregion
+                              
+#region WORLD_PVP_FIRST_AND_FOREMOST
+                                if (SingularRoutine.CurrentWoWContext == WoWContext.Normal && SingularSettings.Instance.TargetWorldPvpRegardless)
+                                {
+                                    // if on an enemy player, stay there
+                                    if (Me.GotTarget && Me.CurrentTarget.IsPlayer && Unit.ValidUnit( Me.CurrentTarget))
+                                        return Me.CurrentTarget;
+
+                                    // if attacked in last 60 seconds, go after them
+                                    if ((DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 60)
+                                    {
+                                        WoWUnit ganker = EventHandlers.AttackingEnemyPlayer;
+                                        if (Unit.ValidUnit(ganker))
+                                        {
+                                            if (!Me.GotTarget || !Me.CurrentTarget.IsPlayer || !Unit.ValidUnit(Me.CurrentTarget))
+                                            {
+                                                if (ganker != Me.CurrentTarget)
+                                                {
+                                                    Logger.Write(targetColor, "Switching to Ganker: " + ganker.SafeName() + " who attacked us first!");
+                                                    BotPoi.Current = new BotPoi(ganker, PoiType.Kill);
+                                                }
+
+                                                return ganker;
+                                            }
+                                        }
+                                    }
+                                }
+#endregion
 
 #if ALWAYS_SWITCH_TO_BOTPOI
+                                WoWUnit unit;
                                 // Check botpoi (our top priority.)  we switch to BotPoi if a kill type exists and not blacklisted
                                 // .. if blacklisted, clear the poi to give bot a chance to do something smarter
                                 // .. if we are already fighting it, we keep fighting it, end of story
-                                WoWUnit unit;
                                 if (BotPoi.Current.Type == PoiType.Kill)
                                 {
                                     unit = BotPoi.Current.AsObject.ToUnit();
-#if WE_SHOULD_VALIDATE_BOTPOI
                                     if (Unit.ValidUnit(unit, showReason: true ))
                                     {
                                         if (StyxWoW.Me.CurrentTargetGuid != unit.Guid)
@@ -118,16 +146,8 @@ namespace Singular.Helpers
                                         return unit;
                                     }
 
-#else
-                                    if (unit != null && unit.IsValid && !unit.IsDead)
-                                    {
-                                        if (unit.Guid != StyxWoW.Me.CurrentTargetGuid)
-                                            Logger.Write(targetColor, "Switching to BotPoi: " + unit.SafeName() + "!");
-                                        return unit;
-                                    }
-#endif
                                     Logger.Write(targetColor, "BotPOI " + unit.SafeName() + " not valid --- clearing");
-
+                                    BotPoi.Clear( string.Format("Singular: {0} invalid target", unit.SafeName()));
                                 }
 #endif
                                 // Go below if current target is null or dead. We have other checks to deal with that
@@ -275,7 +295,7 @@ namespace Singular.Helpers
                                             Logger.Write(targetColor, "Current target invalid. Switching to Tanks target " + rafLeader.CurrentTarget.SafeName() + "!");
                                             return rafLeader.CurrentTarget;
                                         }
-
+/*
                                         // if we have BotPoi then try it
                                         if (SingularRoutine.CurrentWoWContext != WoWContext.Normal && BotPoi.Current.Type == PoiType.Kill)
                                         {
@@ -301,7 +321,7 @@ namespace Singular.Helpers
                                                 return unit;
                                             }
                                         }
-
+*/
                                         // Look for agrroed mobs next. prioritize by IsPlayer, Relative Distance, then Health
                                         var target = Targeting.Instance.TargetList
                                             .Where(
@@ -320,7 +340,7 @@ namespace Singular.Helpers
                                             Logger.Write(targetColor, "Current target invalid. Switching to aggroed mob " + target.SafeName() + "!");
                                             return target;
                                         }
-
+/*
                                         // if we have BotPoi then try it
                                         if (SingularRoutine.CurrentWoWContext == WoWContext.Normal && BotPoi.Current.Type == PoiType.Kill)
                                         {
@@ -340,13 +360,8 @@ namespace Singular.Helpers
                                                 Logger.Write(targetColor, "Current Kill POI is blacklisted. Clearing POI " + unit.SafeName() + "!");
                                                 BotPoi.Clear("Singular detected Unit is Blacklisted");
                                             }
-                                            else
-                                            {
-                                                Logger.Write(targetColor, "Current target invalid. Switching to POI " + unit.SafeName() + "!");
-                                                return unit;
-                                            }
                                         }
-
+*/
                                         // now anything in the target list or a Player
                                         target = Targeting.Instance.TargetList
                                             .Where(
@@ -423,7 +438,7 @@ namespace Singular.Helpers
                             new Action( r => {
                                 if (_lastTargetMessageGuid != Me.CurrentTargetGuid || _nextTargetMessageTimer.IsFinished)
                                 {
-                                    Logger.Write(targetColor, "EnsureTarget: no valid target set -- skipping spell priority");
+                                    Logger.Write(targetColor, "EnsureTarget: no valid target set by " + SingularRoutine.GetBotName() + " -- skipping " + Dynamics.CompositeBuilder.CurrentBehaviorType.ToString() + " spell priority");
                                     _nextTargetMessageTimer.Reset();
                                 }
 

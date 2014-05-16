@@ -43,17 +43,24 @@ namespace Singular.ClassSpecific.DeathKnight
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateAutoAttack(true),
+
+                        Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.IsPlayer && Me.DeathRuneCount > 0),
+
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateGetOverHereBehavior(),
 
                         Common.CreateDarkSuccorBehavior(),
 
+                        Common.CreateSoulReaperHasteBuffBehavior(),
+
+                        Common.CreateDarkSimulacrumBehavior(),
+
                         // Symbiosis
                         Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
 
                         // Cooldowns
-                        Spell.BuffSelf("Pillar of Frost"),
+                        Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange),
 
                         // Start AoE section
                         new PrioritySelector(
@@ -74,22 +81,22 @@ namespace Singular.ClassSpecific.DeathKnight
                             new PrioritySelector(
                                 // Execute
                                 Spell.Cast("Soul Reaper", ret => Me.CurrentTarget.HealthPercent < 35),
+
                                 // Diseases
                                 Common.CreateApplyDiseases(),
 
                                 // Killing Machine
-                                Spell.Cast("Frost Strike",
-                                            ret =>
-                                            !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) &&
-                                            Me.HasAura(KillingMachine)),
-                                Spell.Cast("Obliterate",
-                                            ret =>
-                                            Me.HasAura(KillingMachine) && Common.UnholyRuneSlotsActive == 2),
+                                new Decorator(
+                                    req => Me.HasAura(KillingMachine),
+                                    new PrioritySelector(
+                                        Spell.Cast("Frost Strike", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
+                                        Spell.Cast("Obliterate", ret => Common.UnholyRuneSlotsActive == 2)
+                                        )
+                                    ),
+
                                 // RP Capped
-                                Spell.Cast("Frost Strike",
-                                            ret =>
-                                            !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) &&
-                                            NeedToDumpRunicPower ),
+                                Spell.Cast("Frost Strike", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && NeedToDumpRunicPower ),
+
                                 // Rime Proc
                                 Spell.Cast( sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.HasAura("Freezing Fog")),
 
@@ -162,17 +169,27 @@ namespace Singular.ClassSpecific.DeathKnight
                     req => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateAutoAttack(true),
+
+                        Spell.Cast("Necrotic Strike", ret => Me.DeathRuneCount > 0),
+
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateDarkSuccorBehavior(),
 
                         Common.CreateGetOverHereBehavior(),
 
+                        Common.CreateSoulReaperHasteBuffBehavior(),
+
+                        Common.CreateDarkSimulacrumBehavior(),
+
+                        Common.CreateSoulReaperHasteBuffBehavior(),
+
                         // Symbiosis
                         Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
 
                         // Cooldowns
-                        Spell.BuffSelf("Pillar of Frost"),
+                        Spell.BuffSelf("Pillar of Frost", req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange),
+                
                         // Start AoE section
                         new PrioritySelector(
                             ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(12f).ToList(),
@@ -180,13 +197,13 @@ namespace Singular.ClassSpecific.DeathKnight
                                 ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
                                 new PrioritySelector(
                                     Spell.Cast("Gorefiend's Grasp"),
-                                    Spell.Cast("Remorseless Winter"),
-                                    Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.HasAuraExpired("Necrotic Strike", 1)),
-                                    CreateFrostAoeBehavior(),
-                                    Movement.CreateMoveToMeleeBehavior(true)
+                                    Spell.Cast("Remorseless Winter")
                                     )
                                 )
                             ),
+
+                        Spell.Cast("Necrotic Strike", ret => Me.DeathRuneCount > 0 || Me.CurrentTarget.HasAuraExpired("Necrotic Strike", 1)),
+
                         // *** Dual Weld Single Target Priority
                         new Decorator(ctx => IsDualWielding,
                                       new PrioritySelector(
@@ -247,7 +264,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         )
                     ),
 
-                Movement.CreateMoveToMeleeBehavior(true)
+                Movement.CreateMoveToMeleeTightBehavior(true)
                 );
         }
 
@@ -261,6 +278,7 @@ namespace Singular.ClassSpecific.DeathKnight
             return new PrioritySelector(
 
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Movement.CreateMoveToMeleeTightBehavior(true),
                 Spell.WaitForCastOrChannel(),
 
                 new Decorator(
@@ -378,9 +396,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                 )
                             )
                         )
-                    ),
+                    )
 
-                Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
 

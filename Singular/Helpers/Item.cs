@@ -112,6 +112,18 @@ namespace Singular.Helpers
             return item.Usable && item.Cooldown <= 0;
         }
 
+        public static WoWSpell GetItemSpell(WoWItem item)
+        {
+            string spellName = Lua.GetReturnVal<string>("return GetItemSpell(" + item.Entry + ")", 0);
+            if (string.IsNullOrEmpty(spellName))
+            {
+                return null;
+            }
+
+            int spellId = Lua.GetReturnVal<int>("return GetSpellBookItemInfo('" + spellName + "')", 1);
+            return WoWSpell.FromId(spellId);
+        }
+
         private static void UseItem(WoWItem item)
         {
             Logger.Write( Color.DodgerBlue, "Using item: " + item.Name);
@@ -193,10 +205,12 @@ namespace Singular.Helpers
 
         public static Composite CreateUseAlchemyBuffsBehavior()
         {
+            if (!SingularSettings.Instance.UseAlchemyFlasks)
+                return new ActionAlwaysFail();
+
             return new PrioritySelector(
                 new Decorator(
-                    ret => SingularSettings.Instance.UseAlchemyFlasks 
-                        && StyxWoW.Me.GetSkill(SkillLine.Alchemy) != null && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 
+                    ret => StyxWoW.Me.GetSkill(SkillLine.Alchemy) != null && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 
                         && !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")), // don't try to use the flask if we already have or if we're using a better one
                     new PrioritySelector(
                         ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 75525),
@@ -212,6 +226,82 @@ namespace Singular.Helpers
                         )
                     )
                 );
+        }
+
+        private static DateTime suppressScrollsUntil = DateTime.MinValue;
+
+        public static Composite CreateUseScrollsBehavior()
+        {
+            if (!SingularSettings.Instance.UseScrolls)
+                return new PrioritySelector();
+
+            return new Decorator(
+                req => IsScrollNeeded(),
+                CreateUseBestScroll()
+                );
+        }
+
+        private static bool IsScrollNeeded()
+        {
+            if (suppressScrollsUntil > DateTime.Now)
+                return false;
+
+            if (Me.Auras.Any(a => a.Value.ApplyAuraType == WoWApplyAuraType.ModStat))
+                return false;
+
+            return true;
+        }
+
+        public struct ScrollContext
+        {
+            public WoWItem scroll;
+            public DateTime usedAt;
+        }
+
+        private static Composite CreateUseBestScroll()
+        {
+            return new Sequence(
+                ctx =>
+                {
+                    ScrollContext sc = new ScrollContext();
+                    sc.scroll = FindBestScroll();
+                    return sc;
+                },
+
+                new Decorator(
+                    req => req != null && ((ScrollContext)req).scroll != null,
+                    new Action(r => Logger.WriteDebug("UseBestScroll: will attempt to use {0} #{1}", ((ScrollContext)r).scroll.Name, ((ScrollContext)r).scroll.Entry))
+                    ),
+
+                new Action(r =>
+                    {
+                        ScrollContext sc = (ScrollContext)r;
+                        sc.usedAt = DateTime.Now;
+                        UseItem(sc.scroll);
+                    }),
+
+                new WaitContinue(
+                    TimeSpan.FromMilliseconds(250),
+                    until => Utilities.EventHandlers.LastRedErrorMessage > ((ScrollContext) until).usedAt,
+                    new Action(r => {
+                        int suppressFor = 5;
+                        suppressScrollsUntil = DateTime.Now.AddMinutes(suppressFor);
+                        Logger.WriteDebug("UseBestScroll: suppressing Scroll Use for {0} minutes due to WoWRedError encountered", suppressFor);
+                        return RunStatus.Failure;
+                        })
+                    )
+                );
+        }
+
+        private static WoWItem FindBestScroll()
+        {
+            Styx.StatType primary = Me.GetPrimaryStat();
+            WoWItem scroll = FindFirstUsableItemBySpell(primary.ToString());
+            if (scroll == null)
+                scroll = FindFirstUsableItemBySpell("Stamina");
+            if (scroll == null && primary == StatType.Intellect)
+                scroll = FindFirstUsableItemBySpell("Spirit");
+            return scroll;
         }
 
         // 
@@ -241,7 +331,6 @@ namespace Singular.Helpers
             }
             return false;
         }
-
 
         public static void WriteCharacterGearAndSetupInfo()
         {
@@ -274,6 +363,8 @@ namespace Singular.Helpers
                 Logger.WriteFile("SpellPen:    {0}", ss.SpellPen);
                 Logger.WriteFile("PvP Resil:   {0}", ss.Resilience);
                 Logger.WriteFile("PvP Power:   {0}", ss.PvpPower);
+                Logger.WriteFile("");
+                Logger.WriteFile("PrimaryStat: {0}", Me.GetPrimaryStat() );
                 Logger.WriteFile("");
             }
 

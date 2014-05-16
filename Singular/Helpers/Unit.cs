@@ -15,6 +15,7 @@ using System.Diagnostics;
 using Styx.Common.Helpers;
 using System.Drawing;
 using Styx.WoWInternals.DBC;
+using Styx.CommonBot.POI;
 
 namespace Singular.Helpers
 {
@@ -329,23 +330,51 @@ namespace Singular.Helpers
                 }
             }
 
-            // And ignore critters (except for those ferocious ones) /non-combat pets
+            // And ignore non-combat pets
             if (p.IsNonCombatPet)
             {
                 if (showReason) Logger.Write(invalidColor, "{0} is a Noncombat Pet", p.SafeName());
                 return false;
             }
 
-            // And ignore critters (except for those ferocious ones) /non-combat pets
-            if (p.IsCritter && p.ThreatInfo.ThreatValue == 0 && !p.IsTargetingMyRaidMember)
+            // And ignore critters (except for those ferocious ones or if set as BotPoi)
+            if (IsIgnorableCritter(p))
             {
                 if (showReason) Logger.Write(invalidColor, "{0} is a Critter", p.SafeName());
                 return false;
             }
+
             /*
                         if (p.CreatedByUnitGuid != 0 || p.SummonedByUnitGuid != 0)
                             return false;
             */
+            return true;
+        }
+
+        /// <summary>
+        /// Checks if target is a Critter that can safely be ignored
+        /// </summary>
+        /// <param name="u"></param>
+        /// WoWUnit to check
+        /// <returns>true: can ignore safely, false: treat as attackable enemy</returns>
+        public static bool IsIgnorableCritter(WoWUnit u)
+        {
+            if (!u.IsCritter)
+                return false;
+
+            // good enemy if BotPoi
+            if (Styx.CommonBot.POI.BotPoi.Current.Guid == u.Guid && Styx.CommonBot.POI.BotPoi.Current.Type == Styx.CommonBot.POI.PoiType.Kill)
+                return false;
+
+            // good enemy if Targeting
+            if (Targeting.Instance.TargetList.Contains(u))
+                return false;
+
+            // good enemy if Threat towards us
+            if (u.ThreatInfo.ThreatValue != 0 && u.IsTargetingMyRaidMember)
+                return false;
+
+            // Nah, just a harmless critter
             return true;
         }
 
@@ -651,8 +680,11 @@ namespace Singular.Helpers
         public static void CancelAura(this WoWUnit unit, string aura)
         {
             WoWAura a = unit.GetAuraByName( aura );
-            if (a != null && a.Cancellable )
+            if (a != null && a.Cancellable)
+            {
                 a.TryCancelAura();
+                Logger.Write( Color.White, "/cancelaura: {0} #{1}", a.Name, a.SpellId);
+            }
         }
 
         public static bool IsNeutral(this WoWUnit unit)

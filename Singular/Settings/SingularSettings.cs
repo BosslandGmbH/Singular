@@ -715,7 +715,7 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Group Healing/Support")]
         [DisplayName("Healer DPS Allow")]
-        [Description("Allow Healer to DPS. Does not affect Atonement/Telluric Currents/etc casts.  Ignored in Raids")]
+        [Description("Allow Healer to DPS. Does not affect Atonement/Telluric Currents/Dream of Cenarius/etc casts.  Forced to false in Raids")]
         public bool HealerCombatAllow { get; set; }
 
         [Setting]
@@ -747,6 +747,13 @@ namespace Singular.Settings
         [DisplayName("Use Flasks")]
         [Description("Uses Alchemist Flasks (of the North, of Enhancement...)")]
         public bool UseAlchemyFlasks { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Items")]
+        [DisplayName("Use Scrolls of ...")]
+        [Description("Uses Scrolls present in bags that temporarily buff a useful stat. Uses those buffing primary stat first, then Scrolls of Stamina")]
+        public bool UseScrolls { get; set; }
 
         [Setting]
         [DefaultValue(TrinketUsage.Never)]
@@ -817,6 +824,13 @@ namespace Singular.Settings
         [DisplayName("Targeting by Singular")]
         [Description("None: disabled, Enable: intelligent switching; Auto: disable for DungeonBuddy/manual Assist Bots, otherwise intelligent switching.")]
         public TargetingStyle TypeOfTargeting { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Targeting")]
+        [DisplayName("Target World PVP Regardless")]
+        [Description("True: additional logic enabled to immediately attack enemy player; False: attacks based upon Targeting priority list.  Only effects behavior when Solo")]
+        public bool TargetWorldPvpRegardless { get; set; }
 
         #endregion
 

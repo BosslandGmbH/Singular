@@ -216,6 +216,7 @@ namespace Singular
                         new PrioritySelector(
                             Spell.WaitForGcdOrCastOrChannel(),
                             Item.CreateUseAlchemyBuffsBehavior(),
+                            Item.CreateUseScrollsBehavior(),
                     // Generic.CreateFlasksBehaviour(),
                             new HookExecutor(HookName(BehaviorType.PreCombatBuffs))
                             )
@@ -613,18 +614,19 @@ namespace Singular
 
     public class CallWatch : PrioritySelector
     {
-        public static DateTime LastCall { get; set; }
-        public static ulong CountCall { get; set; }
-        public static double WarnTime { get; set; }
-        public static TimeSpan SinceLast
+        public static double SecondsBetweenWarnings { get; set; }
+
+        public static DateTime LastCallToSingular { get; set; }
+        public static ulong CountCallsToSingular { get; set; }
+        public static TimeSpan TimeSpanSinceLastCall
         {
             get
             {
                 TimeSpan since;
-                if (LastCall == DateTime.MinValue)
+                if (LastCallToSingular == DateTime.MinValue)
                     since = TimeSpan.Zero;
                 else
-                    since = DateTime.Now - LastCall;
+                    since = DateTime.Now - LastCallToSingular;
                 return since;
             }
         }
@@ -639,17 +641,17 @@ namespace Singular
                 return;
 
             _init = true;
-            LastCall = DateTime.MinValue;
+            LastCallToSingular = DateTime.MinValue;
 
             SingularRoutine.OnBotEvent += (src, arg) =>
             {
                 // reset time on Start
                 if (arg.Event == SingularBotEvent.BotStart)
-                    LastCall = DateTime.Now;
+                    LastCallToSingular = DateTime.Now;
                 else if (arg.Event == SingularBotEvent.BotStop)
                 {
-                    TimeSpan since = SinceLast;
-                    if (since.TotalSeconds >= WarnTime)
+                    TimeSpan since = TimeSpanSinceLastCall;
+                    if (since.TotalSeconds >= SecondsBetweenWarnings)
                     {
                         Logger.WriteDiagnostic(Color.HotPink, "info: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
                     }
@@ -662,8 +664,8 @@ namespace Singular
         {
             Initialize();
 
-            if (WarnTime == 0)
-                WarnTime = 5;
+            if (SecondsBetweenWarnings == 0)
+                SecondsBetweenWarnings = 5;
 
             Name = name;
         }
@@ -698,12 +700,12 @@ namespace Singular
         public override RunStatus Tick(object context)
         {
             RunStatus ret;
-            CountCall++;
+            CountCallsToSingular++;
 
             if (SingularSettings.Debug)
             {
-                TimeSpan since = SinceLast;
-                if (since.TotalSeconds > WarnTime && LastCall != DateTime.MinValue)
+                TimeSpan since = TimeSpanSinceLastCall;
+                if (since.TotalSeconds > SecondsBetweenWarnings && LastCallToSingular != DateTime.MinValue)
                     Logger.WriteDebug(Color.HotPink, "info: {0:F1} seconds since BotBase last called Singular (now in {1})", since.TotalSeconds, Name);
             }
 
@@ -719,7 +721,7 @@ namespace Singular
                 Logger.WriteDebug(Color.DodgerBlue, "leave: {0}, took {1} ms", Name, (ulong)(DateTime.Now - started).TotalMilliseconds);
             }
 
-            LastCall = DateTime.Now;
+            LastCallToSingular = DateTime.Now;
             return ret;
         }
 

@@ -133,7 +133,8 @@ namespace Singular.ClassSpecific.Druid
                                 Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => Me.CurrentTarget.Distance < 35),
                                 Spell.Cast("Moonfire", ret => Me.CurrentTarget.Distance < 40),
                                 Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 27f, 22f)
-                                )),
+                                )
+                            ),
 
                         Spell.BuffSelf("Cat Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
@@ -171,7 +172,7 @@ namespace Singular.ClassSpecific.Druid
             // save WC for later if Dash is active. also throttle to deal with possible pathing issues
             return new Throttle(7,
                 new Sequence(
-                    Spell.CastHack("Wild Charge", ret => MovementManager.IsClassMovementAllowed && !Me.HasAura("Dash")),
+                    Spell.CastHack("Wild Charge", ret => MovementManager.IsClassMovementAllowed && !Me.HasAura("Dash") && (Me.CurrentTarget.Distance + Me.CurrentTarget.CombatReach).Between(10, 25)),
                     new Wait(1, until => !Me.GotTarget || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                     )
                 );

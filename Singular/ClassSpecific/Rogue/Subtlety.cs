@@ -107,15 +107,13 @@ namespace Singular.ClassSpecific.Rogue
                                 && !Me.HasAuraExpired("Slice and Dice", 3)
                                 && Me.ComboPoints < 2),
 
-                        // lets try a big hit if stealthed and behind before anything
-                        Spell.Cast("Ambush", ret => HasTalent(RogueTalents.Subterfuge) && Me.HasAura("Subterfuge") && Common.IsStealthed && Me.IsSafelyBehind(Me.CurrentTarget)),
-
-                        Spell.Cast("Slice and Dice",  on => Me,  ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
-
+                        Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
                         Spell.Buff("Rupture", true, ret => Me.ComboPoints >= 5),
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints >= 5),
 
-                        Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.IsStealthed, canCast: Common.RogueCanCastOpener),
+                        // lets try a big hit if stealthed and behind before anything
+                        Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Common.IsAmbushNeeded(), canCast: Common.RogueCanCastOpener),
+
                         Spell.Buff("Hemorrhage"),
                         Spell.Cast("Backstab", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.HasDaggerInMainHand),
                         Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
@@ -169,7 +167,7 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Buff("Rupture", true, ret => Me.ComboPoints == 5),
                         Spell.Cast("Eviscerate", ret => Me.ComboPoints == 5),
 
-                        Spell.Cast("Ambush", ret => Me.CurrentTarget.MeIsBehind && (Me.HasAura("Shadow Dance") || Me.HasAura("Stealth"))),
+                        Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Common.IsAmbushNeeded(), canCast: Common.RogueCanCastOpener),
                         Spell.Buff("Hemorrhage"),
                         Spell.Cast("Backstab", ret => Me.CurrentTarget.MeIsBehind && Common.HasDaggerInMainHand ),
                         Spell.Cast("Hemorrhage", ret => !Me.CurrentTarget.MeIsBehind || !Common.HasDaggerInMainHand),

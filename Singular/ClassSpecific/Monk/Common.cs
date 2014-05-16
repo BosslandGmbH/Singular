@@ -60,6 +60,13 @@ namespace Singular.ClassSpecific.Monk
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, (WoWSpec)int.MaxValue, WoWContext.All, 2)]
         public static Composite CreateMonkCombatBuffs()
         {
+            UnitSelectionDelegate onunitRop;
+
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                onunitRop = on => Unit.UnfriendlyUnits(8).Any(u => u.CurrentTargetGuid == Me.Guid && u.IsPlayer) ? Me : Group.Healers.FirstOrDefault( h => h.SpellDistance() < 40 && Unit.UnfriendlyUnits((int) h.Distance2D + 8).Any( u => u.CurrentTargetGuid == h.Guid && u.SpellDistance(h) < 8));
+            else // Instances and Normal - just protect self
+                onunitRop = on => Unit.UnfriendlyUnits(8).Count(u => u.CurrentTargetGuid == Me.Guid) > 1 ? Me : null;
+
             return new PrioritySelector(
                 
                 Spell.BuffSelf( "Legacy of the White Tiger"),
@@ -70,11 +77,7 @@ namespace Singular.ClassSpecific.Monk
                     new PrioritySelector(               
                         // check our individual buffs here
                         Spell.Buff("Disable", ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect( WoWApplyAuraType.ModDecreaseSpeed)),
-
-                        Spell.BuffSelf( "Ring of Peace", 
-                            ret => Me.GotTarget 
-                                && Me.CurrentTarget.SpellDistance() < 8
-                                && (Me.CurrentTarget.IsPlayer || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() > 1))
+                        Spell.Buff("Ring of Peace", onunitRop)
                         )
                     ),
 

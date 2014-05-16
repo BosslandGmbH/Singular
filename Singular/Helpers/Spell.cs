@@ -158,24 +158,25 @@ namespace Singular.Helpers
         /// combat reaches (hitboxes)
         /// </summary>
         /// <param name="unit">unit</param>
-        /// <param name="other">Me if null, otherwise second unit</param>
+        /// <param name="target">Me if null, otherwise second unit</param>
         /// <returns></returns>
-        public static float SpellDistance(this WoWUnit unit, WoWUnit other = null)
+        public static float SpellDistance(this WoWUnit unit, WoWUnit target = null)
         {
             // abort if mob null
             if (unit == null)
                 return 0;
 
             // optional arg implying Me, then make sure not Mob also
-            if (other == null)
-                other = StyxWoW.Me;
+            if (target == null)
+                target = StyxWoW.Me;
 
+            if (target.IsMe)
+            {
+                target = unit;
+                unit = StyxWoW.Me;
+            }
 
-            // pvp, then keep it close
-            float dist = other.Location.Distance(unit.Location);
-//            dist -= other.CombatReach + unit.CombatReach;
-            float reach = other.IsMe ? unit.CombatReach : other.CombatReach;
-            dist -= reach;
+            float dist = target.Location.Distance(unit.Location) - target.CombatReach;
             return Math.Max(0, dist);
         }
 
@@ -184,18 +185,25 @@ namespace Singular.Helpers
         /// </summary>
         /// <param name="unit">unit</param>
         /// <param name="baseSpellRange"></param>
-        /// <param name="other">Me if null, otherwise second unit</param>
+        /// <param name="target">Me if null, otherwise second unit</param>
         /// <returns></returns>
-        public static float SpellRange(this WoWUnit unit, float baseSpellRange, WoWUnit other = null)
+        public static float SpellRange(this WoWUnit unit, float baseSpellRange, WoWUnit target = null)
         {
             // abort if mob null
             if (unit == null)
                 return 0;
 
             // optional arg implying Me, then make sure not Mob also
-            if (other == null)
-                other = StyxWoW.Me;
-            return baseSpellRange + other.CombatReach + unit.CombatReach;
+            if (target == null)
+                target = StyxWoW.Me;
+
+            if (target.IsMe)
+            {
+                target = unit;
+                unit = StyxWoW.Me;
+            }
+           
+            return baseSpellRange + target.CombatReach;
         }
 
         public static TimeSpan GetSpellCastTime(string s)
@@ -255,7 +263,7 @@ namespace Singular.Helpers
             if (spell.MaxRange == 0)
                 return 0;
             // 0.1 margin for error
-            return unit != null ? spell.MaxRange + unit.CombatReach + StyxWoW.Me.CombatReach : spell.MaxRange;
+            return unit != null ? spell.MaxRange + unit.CombatReach : spell.MaxRange;
         }
 
         public static float ActualMaxRange(string name, WoWUnit unit)
@@ -282,7 +290,7 @@ namespace Singular.Helpers
                 return 0;
 
             // some code was using 1.66666675f instead of Me.CombatReach ?
-            return unit != null ? spell.MinRange + unit.CombatReach + StyxWoW.Me.CombatReach : spell.MinRange;
+            return unit != null ? spell.MinRange + unit.CombatReach : spell.MinRange;
         }
 
         public static double TimeToEnergyCap()
@@ -1960,7 +1968,7 @@ namespace Singular.Helpers
             {
                 if (Me.Shapeshift == ShapeshiftForm.Cat || Me.Shapeshift == ShapeshiftForm.Bear || Me.Shapeshift == ShapeshiftForm.DireBear)
                 {
-                    if (spell.IsHealingSpell)
+                    if (spell.IsHeal())
                     {
                         formSwitch = true;
                         currentPower = Me.CurrentMana;

@@ -244,7 +244,7 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             ret => (Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 20)) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMyStuff()) >= 3,
                             new PrioritySelector(
-                                Spell.BuffSelf("Dark Soul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction),
+                                Spell.BuffSelf("Dark S  oul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction),
                                 Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && Destruction.CurrentBurningEmbers >= 30),
                                 Spell.BuffSelf("Dark Soul: Knowledge", ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800)
                                 )

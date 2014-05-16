@@ -14,6 +14,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using System.Drawing;
+using System.Collections.Generic;
 
 namespace Singular.ClassSpecific.DeathKnight
 {
@@ -187,7 +188,27 @@ namespace Singular.ClassSpecific.DeathKnight
             return new Decorator(
                 ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
                 new PrioritySelector(
-                    Spell.BuffSelf("Icebound Fortitude", ret => Me.HealthPercent < Settings.IceboundFortitudePercent)
+
+                    new PrioritySelector(
+                        new Decorator(req => Settings.AutoClearAuraWithDarkSimulacrum && Me.HasMyAura("Ice Block"), new Action(r => Me.CancelAura("Ice Block"))),
+
+                        new Sequence(
+                            Spell.BuffSelf("Hand of Protection", req => Me.HasAura("Touch of Karma") || Me.IsCrowdControlled()),
+                            new Wait( 1, until => Me.HasAura("Hand of Protection") && Me.HealthPercent > 10, new ActionAlwaysFail())
+                            ),
+                        new Decorator( req => Settings.AutoClearAuraWithDarkSimulacrum && Me.HasMyAura("Hand of Protection") && Me.HealthPercent > 10, new Action( r => Me.CancelAura("Hand of Protection"))),
+
+                        new Sequence(
+                            Spell.BuffSelf("Divine Shield", req => Me.HasAura("Touch of Karma") || Me.IsCrowdControlled()),
+                            new Wait( 1, until => Me.HasAura("Divine Shield") && Me.HealthPercent > 10, new ActionAlwaysSucceed())
+                            ),
+                        new Decorator( req => Settings.AutoClearAuraWithDarkSimulacrum && Me.HasMyAura("Divine Shield") && Me.HealthPercent > 10, new Action( r => Me.CancelAura("Divine Shield")))
+                        ),
+
+                    Spell.BuffSelf("Icebound Fortitude", ret => Me.HealthPercent < Settings.IceboundFortitudePercent),
+
+                    Spell.BuffSelf("Lichborne", ret => Me.HasAuraWithEffect( WoWApplyAuraType.ModFear) || Me.Fleeing )
+
                     )
                 );
         }
@@ -260,6 +281,19 @@ namespace Singular.ClassSpecific.DeathKnight
             return new Decorator(
                 req => !Me.GotTarget || !Me.CurrentTarget.IsTrivial(),
                 new PrioritySelector(
+
+                    // *** Dark Simulacrum saved abilities ***
+                    new Decorator(
+                        req => Spell.CanCastHack("Ice Block") && Me.HasAuraWithEffect(WoWApplyAuraType.PeriodicDamage, WoWApplyAuraType.PeriodicDamagePercent),
+                        new Sequence(
+                            Spell.BuffSelf("Ice Block"),
+                            new Action(r => Logger.Write(Color.DodgerBlue, "^Ice Block"))
+                            )
+                        ),
+
+                    Spell.BuffSelf("Hand of Freedom", req => Me.IsRooted() || Me.IsSlowed()),
+
+
                     // *** Defensive Cooldowns ***
                     // Anti-magic shell - no cost and doesnt trigger GCD 
                         Spell.BuffSelf("Anti-Magic Shell",
@@ -400,7 +434,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TaggedByMe || (!Me.CurrentTarget.TaggedByOther && Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull && SingularRoutine.CurrentWoWContext != WoWContext.Instances))
                     ),
                 new DecoratorContinue( ret => Me.IsMoving, new Action(ret => StopMoving.Now())),
-                new WaitContinue( 1, until => Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
+                new WaitContinue( 1, until => !Me.GotTarget || Me.CurrentTarget.IsWithinMeleeRange, new ActionAlwaysSucceed())
                 );
         }
 
@@ -415,7 +449,7 @@ namespace Singular.ClassSpecific.DeathKnight
             {
                 if (Common.SelectedPresence == DeathKnightPresence.Blood && TalentManager.HasGlyph("Dark Succor"))
                 {
-                    Logger.Write(Color.White, "User Error:  Glyph of Dark Succor does not proc with Blood Presence");
+                    Logger.Write(Color.White, "User Error:  Glyph of Dark Succor does not proc in Blood Presence -- glyph socket wasted");
                 }
             }
 
@@ -432,6 +466,142 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Action( r => Logger.WriteDebug( Color.White, "Dark Succor ({0} ms left) influenced Death Strike coming....", (int) Me.GetAuraTimeLeft("Dark Succor").TotalMilliseconds  )),
                     Spell.Cast("Death Strike")
                     )
+                );
+        }
+
+        private static bool IsValidDarkSimulacrumTarget(WoWUnit u)
+        {
+            return u.PowerType == WoWPowerType.Mana && Me.IsSafelyFacing(u, 150) && u.InLineOfSpellSight;
+        }
+
+        public static WoWSpell GetDarkSimulacrumStolenSpell()
+        {
+            SpellFindResults sfr;
+            if (!SpellManager.FindSpell("Dark Simulacrum", out sfr))
+                return null;
+            return sfr.Override;
+        }
+
+        public static bool HasDarkSimulacrumSpell(string spellName)
+        {
+            WoWSpell stolenSpell = GetDarkSimulacrumStolenSpell();
+            if (stolenSpell == null)
+                return false;
+            return stolenSpell.Name.Equals(spellName, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public static Composite CreateDarkSimulacrumBehavior()
+        {
+            if (Settings.TargetWithDarkSimulacrum == DarkSimulacrumTarget.None)
+                return new ActionAlwaysFail();
+
+            UnitSelectionDelegate onUnit;
+            if (Settings.TargetWithDarkSimulacrum == DarkSimulacrumTarget.All || WoWContext.Normal == SingularRoutine.CurrentWoWContext)
+                onUnit = ctx =>
+                {
+                    if (Me.GotTarget && IsValidDarkSimulacrumTarget(Me.CurrentTarget))
+                        return Me.CurrentTarget;
+                    return Unit.NearbyUnitsInCombatWithUsOrOurStuff.FirstOrDefault(u => IsValidDarkSimulacrumTarget(u));
+                };
+            else // Healers
+                onUnit = ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff
+                    .FirstOrDefault(
+                        u => u.IsPlayer
+                            && (u.ToPlayer().Specialization == WoWSpec.DruidRestoration
+                                || u.ToPlayer().Specialization == WoWSpec.MonkMistweaver
+                                || u.ToPlayer().Specialization == WoWSpec.PaladinHoly
+                                || u.ToPlayer().Specialization == WoWSpec.PriestDiscipline
+                                || u.ToPlayer().Specialization == WoWSpec.PriestHoly
+                                || u.ToPlayer().Specialization == WoWSpec.ShamanRestoration)
+                            && IsValidDarkSimulacrumTarget(u)
+                        );
+
+            return new PrioritySelector(
+
+                Spell.Cast("Dark Simulacrum", onUnit, req => !Me.HasMyAura("Dark Simulacrum")),
+
+                new Throttle(45,
+                    new Decorator(
+                        req => Me.HasMyAura("Dark Simulacrum"),
+                        new Action(r =>
+                        {
+                            WoWSpell stolenSpell = GetDarkSimulacrumStolenSpell();
+                            if (stolenSpell == null)
+                                return RunStatus.Failure;
+                            string strType = "";
+                            if (stolenSpell.IsHeal())
+                                strType = "heal ";
+                            else if (stolenSpell.IsDamageRedux())
+                                strType = "buff ";
+
+                            Logger.Write(Color.DodgerBlue, "^Dark Simulacrum: we gained {0}[{1}] #{2}", strType, stolenSpell.Name, stolenSpell.Id);
+                            return RunStatus.Success;
+                        })
+                        )
+                    ),
+                new PrioritySelector(
+                    ctx =>
+                    {
+                        /*
+                        if (!Me.HasMyAura("Dark Simulacrum"))
+                            return null;
+                        */
+                        SpellFindResults sfr;
+                        if (!SpellManager.FindSpell("Dark Simulacrum", out sfr))
+                            return null;
+                        if (sfr.Override == null)
+                            return null;
+
+                        // suppress cast for certain ones we will specifically reference in combat buffs, etc
+                        if (dontImmediatelyCastThese.Contains(sfr.Override.Id))
+                            return null;
+
+                        // if a heal, then target self or friendly as appropriate
+                        bool isHeal = sfr.Override.IsHeal();
+                        if (isHeal)
+                        {
+                            if (Me.HealthPercent < 60)
+                                return Me;
+
+                            return Unit.GroupMembers
+                                .Where(u => u.HealthPercent < 90 && u.Distance < sfr.Override.MaxRange && u.InLineOfSpellSight)
+                                .OrderBy(u => (int)u.HealthPercent)
+                                .FirstOrDefault();
+                        }
+
+                        if (sfr.Override.IsDamageRedux())
+                            return Me;
+
+                        // otherwise, cast immediately on enemy
+                        return Me.CurrentTarget;
+                    },
+
+                    Spell.Cast("Dark Simulacrum", on => (WoWUnit)on)
+                    )
+                );
+        }
+
+        private static HashSet<int> dontImmediatelyCastThese = new HashSet<int>()
+        {
+            1022,   // Hand of Protection
+            45438,  // Ice Block
+            642,    // Divine Shield
+            1044,   // Hand of Freedom
+        };
+
+        public static Composite CreateSoulReaperHasteBuffBehavior()
+        {
+            return new PrioritySelector(
+                ctx =>
+                {
+                    WoWUnit totem = ObjectManager.GetObjectsOfTypeFast<WoWUnit>()
+                        .Where(u => u.IsTotem && u.SummonedByUnit != null && u.SummonedByUnit.IsPlayer && u.SummonedByUnit.Class == WoWClass.Shaman 
+                            && Unit.ValidUnit(u.SummonedByUnit) && u.IsWithinMeleeRange && Me.IsSafelyFacing(u, 150) && u.InLineOfSpellSight)
+                        .FirstOrDefault();
+                    return totem;
+                },
+
+                Spell.Cast("Soul Reaper", on => (WoWUnit)on, req => req != null && !Me.HasAura("Soul Reaper"))
                 );
         }
 

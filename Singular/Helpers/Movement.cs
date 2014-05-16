@@ -19,6 +19,7 @@ using Singular.Managers;
 using System.Drawing;
 using Styx.CommonBot;
 using System.Reflection;
+using Styx.WoWInternals;
 
 namespace Singular.Helpers
 {
@@ -154,31 +155,53 @@ namespace Singular.Helpers
                 new Action( ret => 
                 {
                     WoWUnit unit = toUnit(ret);
+                    WoWMovement.MovementDirection strafe = WoWMovement.MovementDirection.None;
+                    const int StrafeTime = 150;
+
+                    if (unit.Distance < 0.1)
+                    {
+                        strafe = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
+                        Logger.WriteDebug("FaceTarget: {0} for {1} ms since too close to target @ {2:F2} yds", strafe, StrafeTime, unit.Distance);
+                        WoWMovement.Move(strafe, TimeSpan.FromMilliseconds(StrafeTime));
+                    }
 
                     if (SingularSettings.Debug)
                         Logger.WriteDebug("FaceTarget: facing since more than {0} degrees", (long) viewDegrees);
 
                     unit.Face();
 
+                    RunStatus rslt;
+
                     if (!waitForFacing)
-                        return RunStatus.Failure;
+                        rslt = RunStatus.Failure;
 
                     // even though we may want a tighter conical facing check, allow
                     // .. behavior to continue if 150 or better so we can cast while turning
-                    if (StyxWoW.Me.IsSafelyFacing(unit, 150f))
-                        return RunStatus.Failure;
+                    else if (StyxWoW.Me.IsSafelyFacing(unit, 150f))
+                        rslt = RunStatus.Failure;
 
                     // special handling for when consumed by Direglob and other mobs we are inside/on top of 
                     // .. as facing sometimes won't matter
-                    if (StyxWoW.Me.InVehicle)
+                    else if (StyxWoW.Me.InVehicle)
                     {
                         Logger.WriteDebug("FaceTarget: don't wait to face {0} since in vehicle", unit.SafeName());
-                        return RunStatus.Failure;
+                        rslt = RunStatus.Failure;
                     }
-
+                    else
+                    {
+                        Logger.WriteDebug("FaceTarget: now facing {0}", unit.SafeName());
+                        rslt = RunStatus.Success;
+                    }
+/*
+                    if (strafe != WoWMovement.MovementDirection.None)
+                    {
+                        Logger.WriteDebug("FaceTarget: cancelling strafe for target @ {0:F2} yds", unit.Distance);
+                        WoWMovement.MoveStop(strafe);
+                    }
+*/
                     // otherwise, indicate behavior complete so begins again while
                     // .. waiting for facing to occur
-                    return RunStatus.Success;
+                    return rslt;
                 })
                 );
         }
@@ -288,11 +311,11 @@ namespace Singular.Helpers
                 );
 #else
             return new PrioritySelector(
-				ctx => StyxWoW.Me.CurrentTarget,
-				new Decorator(
-					ret => !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
-					CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss() && !((WoWUnit)ctx).IsMoving)
-					),
+                ctx => StyxWoW.Me.CurrentTarget,
+                new Decorator(
+                    ret => !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
+                    CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss() && !((WoWUnit)ctx).IsMoving)
+                    ),
                 new Decorator(
                     ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,
                     new Sequence(
@@ -310,7 +333,33 @@ namespace Singular.Helpers
 #endif
         }
 
-        public static bool InMoveToMeleeStopRange( WoWUnit unit)
+        /// <summary>
+        /// Creates a move to melee range behavior.  Tests .IsWithinMeleeRange so we know whether WoW thinks
+        /// we are within range, which is more important than our distance calc.  For players keep moving 
+        /// until 2 yds away so we stick to them in pvp
+        /// </summary>
+        /// <param name="stopInRange"></param>
+        /// <returns></returns>
+        public static Composite CreateMoveToMeleeTightBehavior(bool stopInRange)
+        {
+            return new PrioritySelector(
+                ctx => StyxWoW.Me.CurrentTarget,
+                new Decorator(
+                    ret => !MovementManager.IsMovementDisabled && ret != null && !InMoveToMeleeStopRange(ret as WoWUnit),
+                    new Sequence(
+                        new Action(ret =>
+                        {
+                            MoveResult result = Navigator.MoveTo(((WoWUnit)ret).Location);
+                            Logger.WriteDebug(Color.White, "MoveInTight({0}): towards {1} @ {2:F1} yds", result.ToString(), ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).Distance);
+                        }),
+                        new Action(ret => StopMoving.InMeleeRangeOfUnit(((WoWUnit)ret))),
+                        new ActionAlwaysFail()
+                        )
+                    )
+                );
+        }
+
+        public static bool InMoveToMeleeStopRange(WoWUnit unit)
         {
             if (unit == null || !unit.IsValid)
                 return false;

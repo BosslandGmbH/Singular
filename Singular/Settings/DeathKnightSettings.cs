@@ -18,6 +18,13 @@ namespace Singular.Settings
         Unholy
     }
 
+    public enum DarkSimulacrumTarget
+    {
+        None = 0,
+        All,
+        HealersOnly
+    }
+
     internal class DeathKnightSettings : Styx.Helpers.Settings
     {
         public DeathKnightSettings()
@@ -86,6 +93,20 @@ namespace Singular.Settings
         [Category("Common")]
         [DisplayName("Death Strike Emergency Percent [DPS]")]
         public int DeathStrikeEmergencyPercent { get; set; }
+
+        [Setting]
+        [DefaultValue(DarkSimulacrumTarget.All)]
+        [Category("Common")]
+        [DisplayName("Dark Simulacrum Target")]
+        [Description("None: disabled, All: targets everyone, HealersOnly: targets only healers in PVP / everything in PVE")]
+        public DarkSimulacrumTarget TargetWithDarkSimulacrum { get; set; }
+
+        [Setting]
+        [DefaultValue(false)]
+        [Category("Common")]
+        [DisplayName("Dark Simulacrum Auto Clear Aura")]
+        [Description("True: clear Hand of Protection, Ice Block, etc. immediately after use (used as a quick cleanse); False: doe not clear")]
+        public bool AutoClearAuraWithDarkSimulacrum { get; set; }
 
         [Setting]
         [DefaultValue(30)]

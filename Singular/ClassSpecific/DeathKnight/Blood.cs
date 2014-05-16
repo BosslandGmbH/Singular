@@ -127,6 +127,10 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Common.CreateDarkSuccorBehavior(),
 
+                        Common.CreateDarkSimulacrumBehavior(),
+
+                        Common.CreateSoulReaperHasteBuffBehavior(),
+
                         Spell.Buff("Chains of Ice",
                             ret => StyxWoW.Me.CurrentTarget.Fleeing && !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
@@ -227,6 +231,10 @@ namespace Singular.ClassSpecific.DeathKnight
                                 ret => StyxWoW.Me.CurrentTarget.DistanceSqr > 10 * 10),
 
                             Common.CreateDarkSuccorBehavior(),
+
+                            Common.CreateSoulReaperHasteBuffBehavior(),
+
+                            Common.CreateDarkSimulacrumBehavior(),
 
                             // Start AoE section
                             Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),

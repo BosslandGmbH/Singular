@@ -384,37 +384,103 @@ namespace Singular.ClassSpecific.Druid
         {
             return new Throttle( 5,
                 new Decorator(
-                    ret => DruidSettings.UseTravelForm
-                        && !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown()
+                    req =>  !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown()
                         && MovementManager.IsClassMovementAllowed
                         && SingularRoutine.CurrentWoWContext != WoWContext.Instances
-                        && Me.IsMoving // (DateTime.Now - GhostWolfRequest).TotalMilliseconds < 1000
+                        && Me.IsMoving 
                         && Me.IsAlive
-                        && !Me.OnTaxi && !Me.InVehicle && !Me.Mounted && !Me.IsOnTransport && !Me.IsSwimming && !Me.HasAnyAura("Travel Form", "Flight Form")
-                        && !Utilities.EventHandlers.IsShapeshiftSuppressed 
-                        && SpellManager.HasSpell("Cat Form")
+                        && !Me.OnTaxi 
+                        && !Me.InVehicle 
+                        && !Me.IsOnTransport
+                        && !Utilities.EventHandlers.IsShapeshiftSuppressed
                         && BotPoi.Current != null
                         && BotPoi.Current.Type != PoiType.None
                         && BotPoi.Current.Type != PoiType.Hotspot
-                        && BotPoi.Current.Location.Distance(Me.Location) > 10
-                        && (BotPoi.Current.Location.Distance(Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance || (Me.IsIndoors && !Mount.CanMount()) || (Me.GetSkill(SkillLine.Riding).CurrentValue == 0))
-                        && !Me.IsAboveTheGround(),
+                        && !Me.IsAboveTheGround()
+                        ,
                     new Sequence(
-                        new Action(r => Logger.WriteDebug("DruidMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount={3} riding={4}",
-                            BotPoi.Current.Type,
-                            BotPoi.Current.Location.Distance(Me.Location),
-                            Me.IsIndoors.ToYN(),
-                            Mount.CanMount().ToYN(),
-                            Me.GetSkill(SkillLine.Riding).CurrentValue
-                            )),
                         new PrioritySelector(
-                            new Decorator( req => Spell.CanCastHack("Travel Form", Me, false) && Me.IsOutdoors, Spell.BuffSelf( "Travel Form")),
-                            Spell.BuffSelf("Cat Form")
+                            new Decorator(
+                                ret => DruidSettings.UseTravelForm
+                                    && !Me.Mounted
+                                    && !Me.IsSwimming && !Me.HasAnyAura("Travel Form", "Flight Form")
+                                    && SpellManager.HasSpell("Cat Form")
+                                    && BotPoi.Current.Location.Distance(Me.Location) > 10
+                                    && (BotPoi.Current.Location.Distance(Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance || (Me.IsIndoors && !Mount.CanMount()) || (Me.GetSkill(SkillLine.Riding).CurrentValue == 0))
+                                    ,
+                                new Sequence(
+                                    new Action(r => Logger.WriteDebug("DruidMoveBuff: poitype={0} poidist={1:F1} indoors={2} canmount={3} riding={4}",
+                                        BotPoi.Current.Type,
+                                        BotPoi.Current.Location.Distance(Me.Location),
+                                        Me.IsIndoors.ToYN(),
+                                        Mount.CanMount().ToYN(),
+                                        Me.GetSkill(SkillLine.Riding).CurrentValue
+                                        )),
+                                    new PrioritySelector(
+                                        Spell.BuffSelf( "Travel Form", req => Me.IsOutdoors && BotPoi.Current.Type != PoiType.Kill),
+                                        Spell.BuffSelf("Cat Form")
+                                        )
+                                    )
+                                ),
+                            new Decorator( 
+                                req => AllowAquaticForm 
+                                    && BotPoi.Current.Location.Distance(Me.Location) >= 10
+                                    && !StyxWoW.Me.HasAura("Aquatic Form")
+                                    && Spell.CanCastHack("Aquatic Form", Me, false), 
+                                Spell.BuffSelf( "Aquatic Form")
+                                )
                             ),
-                        Helpers.Common.CreateWaitForLagDuration()
+
+                            Helpers.Common.CreateWaitForLagDuration()
                         )
                     )
                 );
+        }
+
+        public static bool AllowAquaticForm
+        {
+            get
+            {
+                const int ABYSSAL_SEAHORSE = 75207;
+                const int SUBDUED_SEAHORSE = 98718;
+                const int SEA_TURTLE = 64731;
+
+                if (!DruidSettings.UseAquaticForm)
+                    return false;
+
+                if (!Me.IsSwimming)
+                    return false;
+
+                if (!Me.HasAura("Aquatic Form"))
+                {
+                    if (Me.Combat)
+                    return false;
+
+                    if (!SpellManager.HasSpell("Aquatic Form"))
+                        return false;
+
+                    MirrorTimerInfo breath = StyxWoW.Me.GetMirrorTimerInfo(MirrorTimerType.Breath);
+                    if (!breath.IsVisible)
+                    {
+                        if (Me.Mounted && (Me.MountDisplayId == ABYSSAL_SEAHORSE || Me.MountDisplayId == SUBDUED_SEAHORSE || Me.MountDisplayId == SEA_TURTLE))
+                            return false;
+                    }
+
+                    Mount.MountWrapper mount = Mount.Mounts.FirstOrDefault(m => m.IsSummoned);
+                    Logger.WriteDebug("DruidSwimBuff: breathvisible={0} canmount={1} mounted={2} mountdispid={3} creatureid={4} spellid={5} name={6} type={7}",
+                        breath.IsVisible.ToYN(),
+                        Mount.CanMount().ToYN(),
+                        Me.Mounted.ToYN(),
+                        Me.MountDisplayId,
+                        mount == null ? 0 : mount.CreatureId,
+                        mount == null ? 0 : mount.CreatureSpellId,
+                        mount == null ? "n/a" : mount.Name,
+                        mount == null ? "n/a" : mount.Type.ToString()
+                        );
+                }
+
+                return true;
+            }
         }
 
         public static Composite CreateMoveBehindTargetWhileProwling()

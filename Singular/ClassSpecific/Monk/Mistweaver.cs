@@ -85,7 +85,7 @@ namespace Singular.ClassSpecific.Monk
 
                         new PrioritySelector(
                             Common.CreateGrappleWeaponBehavior(),
-                            Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40),
+                            Spell.Cast( sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => Me.CurrentTarget.SpellDistance() < 40, cancel => false), 
                             Spell.Cast("Provoke", ret => !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance < 40),
                             Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12),
                             Spell.Cast("Jab")
@@ -153,7 +153,7 @@ namespace Singular.ClassSpecific.Monk
                             Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
 
                             Spell.Cast("Expel Harm", ret => Me.CurrentChi < (Me.MaxChi - 2) || Me.HealthPercent < 80),
-                            // Spell.Cast("Crackling Jade Lightning", req => !Me.IsMoving ),
+                            Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => Me.CurrentTarget.SpellDistance() < 40, cancel => false),
                             Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
                             )
                         ),

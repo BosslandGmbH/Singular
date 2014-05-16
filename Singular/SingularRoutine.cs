@@ -152,6 +152,13 @@ namespace Singular
                 return;
             }
 
+            //
+            if (IsPluginEnabled("DrinkPotions"))
+            {
+                Logger.Write(Color.White, "info: disabling DrinkPotions plugin, conflicts with Singular potion support");
+                SetPluginEnabled("DrinkPotions", false);
+            }
+
             Logger.WriteDebug(Color.White, "Verified behaviors can be created!");
             Logger.Write("Initialization complete!");
         }
@@ -379,13 +386,13 @@ namespace Singular
             // check time since last call and be sure user knows if Singular isn't being called
             if (SingularSettings.Debug)
             {
-                TimeSpan since = CallWatch.SinceLast;
-                if (since.TotalSeconds > (4 * CallWatch.WarnTime))
+                TimeSpan since = CallWatch.TimeSpanSinceLastCall;
+                if (since.TotalSeconds > (4 * CallWatch.SecondsBetweenWarnings))
                 {
                     if (!Me.IsGhost && !Me.Mounted && !Me.IsFlying && DateTime.Now > _nextNoCallMsgAllowed)
                     {
                         Logger.WriteDebug(Color.HotPink, "info: {0:F0} seconds since {1} BotBase last called Singular", since.TotalSeconds, GetBotName());
-                        _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.WarnTime);
+                        _nextNoCallMsgAllowed = DateTime.Now.AddSeconds(4 * CallWatch.SecondsBetweenWarnings);
                     }
                 }
             }

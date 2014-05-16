@@ -134,7 +134,20 @@ namespace Singular.ClassSpecific.Warlock
 
                         CreateAoeBehavior(),
 
-                        // Noxxic
+                        new Decorator(
+                            req =>
+                            {
+                                if (Me.HasAnyAura("Dark Soul: Instability", "Skull Banner", "Toxic Power", "Expanded Mind"))
+                                    return true;
+                                return false;
+                            },
+                            new PrioritySelector(
+                                Spell.Cast("Shadowburn", req => Me.CurrentTarget.HealthPercent < 20),
+                                Spell.Cast("Chaos Bolt", req => Me.CurrentTarget.HealthPercent < 20)
+                                )
+                            ),
+
+                // Noxxic
                         new Decorator(
                             req => WarlockSettings.DestructionSpellPriority == Singular.Settings.WarlockSettings.SpellPriority.Noxxic,
                             new PrioritySelector(
@@ -160,7 +173,7 @@ namespace Singular.ClassSpecific.Warlock
                                     {
                                         if (CurrentBurningEmbers >= 35)
                                             return true;
-                                        if (Me.HasAnyAura("Dark Soul: Instability", "Skull Banner"))
+                                        if (Me.HasAnyAura("Dark Soul: Instability", "Skull Banner", "Toxic Power", "Expanded Mind"))
                                             return true;
                                         if (Me.CurrentTarget.TimeToDeath(99) < 3)
                                             return true;

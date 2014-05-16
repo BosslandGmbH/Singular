@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Bots.DungeonBuddy.Helpers;
 using Styx;
 using Styx.WoWInternals.WoWObjects;
+using Bots.DungeonBuddy.Helpers;
 
 namespace Singular.Helpers
 {

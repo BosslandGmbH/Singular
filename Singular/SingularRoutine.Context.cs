@@ -12,6 +12,7 @@ using Singular.Settings;
 using Styx.WoWInternals.WoWObjects;
 using Styx.WoWInternals;
 using Styx.Common;
+using Styx.Plugins;
 
 namespace Singular
 {
@@ -176,7 +177,7 @@ namespace Singular
             bool questBot= IsBotInUse("Quest");
             bool bgBot= IsBotInUse("BGBuddy", "BG Bot");
             bool dungeonBot= IsBotInUse("DungeonBuddy");
-            bool petHack = IsPluginActive("Pokébuddy", "Pokehbuddy");
+            bool petHack = IsPluginEnabled("Pokébuddy", "Pokehbuddy");
             bool manualBot = IsBotInUse("LazyRaider", "Raid Bot", "Tyrael");
 
             bool changed = false;
@@ -384,14 +385,47 @@ namespace Singular
             return nameSubstrings.Any( s => botName.Contains(s.ToUpper()));
         }
 
-        public static bool IsPluginActive(params string[] nameSubstrings)
+        public static PluginContainer FindPlugin(string pluginName)
         {
+#if OLD_PLUGIN_CHECK
             var lowerNames = nameSubstrings.Select(s => s.ToLowerInvariant()).ToList();
             bool res = Styx.Plugins.PluginManager.Plugins.Any(p => p.Enabled && lowerNames.Contains(p.Name.ToLowerInvariant()));
             return res;
+#else
+            foreach (PluginContainer pi in Styx.Plugins.PluginManager.Plugins)
+            {
+                if (pluginName.Equals(pi.Name, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return pi;
+                }
+            }
+            return null;
+#endif
         }
 
-        private static int GetInstanceDifficulty( )
+        public static bool IsPluginEnabled(params string[] nameSubstrings)
+        {
+            foreach (string s in nameSubstrings)
+            {
+                PluginContainer pi = FindPlugin(s);
+                if (pi != null)
+                    return pi.Enabled;
+            }
+            return false;
+        }
+
+        public static bool SetPluginEnabled(string s, bool enabled)
+        {
+            PluginContainer pi = FindPlugin(s);
+            if (pi != null)
+            {
+                pi.Enabled = enabled;
+                return true;
+            }
+            return false;
+        }
+
+        private static int GetInstanceDifficulty()
         {
 			int diffidx = Lua.GetReturnVal<int>("local _,_,d=GetInstanceInfo() if d ~= nil then return d end return 1", 0);
             return diffidx;

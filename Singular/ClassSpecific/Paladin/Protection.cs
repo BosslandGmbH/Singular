@@ -50,7 +50,7 @@ namespace Singular.ClassSpecific.Paladin
                         Helpers.Common.CreateAutoAttack(true),
                         Spell.BuffSelf("Sacred Shield"),
                         Spell.Cast("Judgment"),
-                        Spell.Cast("Avenger's Shield", ret => Spell.UseAOE ),
+                        Spell.Cast("Avenger's Shield", ret => Spell.UseAOE),
                         Spell.Cast("Reckoning", ret => !Me.CurrentTarget.IsPlayer)
                         )
                     ),
@@ -167,9 +167,10 @@ namespace Singular.ClassSpecific.Paladin
                                 && TankManager.Instance.NeedToTaunt.FirstOrDefault().InLineOfSpellSight,
                             new Throttle(TimeSpan.FromMilliseconds(1500),
                                 new PrioritySelector(
-                                    Spell.Cast("Reckoning", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault()),
-                                    Spell.Cast("Avenger's Shield", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(), req => Spell.UseAOE ),
-                                    Spell.Cast("Judgment", ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault())
+                                    ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(e => e.SpellDistance() < 30),
+                                    Spell.Cast("Reckoning", ctx => (WoWUnit) ctx),
+                                    Spell.Cast("Avenger's Shield", ctx => (WoWUnit)ctx, req => Spell.UseAOE),
+                                    Spell.Cast("Judgment", ctx => (WoWUnit)ctx)
                                     )
                                 )
                             ),

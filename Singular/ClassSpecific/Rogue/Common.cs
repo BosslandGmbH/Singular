@@ -32,6 +32,14 @@ namespace Singular.ClassSpecific.Rogue
         public static bool IsStealthed { get { return Me.HasAnyAura("Stealth", "Shadow Dance", "Vanish"); } }
         public static bool IsActuallyStealthed { get { return Me.HasAnyAura("Stealth", "Vanish"); } }
 
+        public static bool CloakAndDagger( WoWUnit unit)
+        { 
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal && RogueSettings.UsePickPocket && unit != null && IsMobPickPocketable(unit))
+                return false;
+
+            return HasTalent(RogueTalents.CloakAndDagger); 
+        }
+
         [Behavior(BehaviorType.Rest, WoWClass.Rogue)]
         public static Composite CreateRogueRest()
         {
@@ -173,7 +181,7 @@ namespace Singular.ClassSpecific.Rogue
                             return false;
                         
                         float dist = Me.CurrentTarget.SpellDistance();
-                        if (HasTalent(RogueTalents.CloakAndDagger) && dist < 42)
+                        if (dist < 42 && CloakAndDagger(Me.CurrentTarget))
                             return true;
 
                         if (dist < 9)
@@ -351,7 +359,7 @@ namespace Singular.ClassSpecific.Rogue
             WoWSpell spell = sfr.Override ?? sfr.Original;
             if (( spell.Id == AMBUSH || spell.Id == CHEAPSHOT || spell.Id == GARROTE))
             {
-                if (HasTalent( RogueTalents.CloakAndDagger) && !unit.IsWithinMeleeRange)
+                if (CloakAndDagger(unit) && !unit.IsWithinMeleeRange)
                 {
                     // check if in cloak and dagger range
                     if (unit.SpellDistance() > 40)
@@ -581,11 +589,41 @@ namespace Singular.ClassSpecific.Rogue
                             )
                         ),
 
-                    Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Me.IsSafelyBehind(Me.CurrentTarget) || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed), canCast: RogueCanCastOpener),
-                    Spell.Cast(sp => "Garrote", chkMov => false, on => Me.CurrentTarget, req => !Me.IsSafelyBehind(Me.CurrentTarget) || (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed), canCast: RogueCanCastOpener),
-                    Spell.Cast(sp => "Cheap Shot", chkMov => false, on => Me.CurrentTarget, req => (Common.HasTalent(RogueTalents.CloakAndDagger) && IsActuallyStealthed), canCast: RogueCanCastOpener)
+                    new Decorator(
+                        req => IsStealthed,
+                        new PrioritySelector(
+                            Spell.Cast(sp => "Garrote", chkMov => false, on => Me.CurrentTarget, req => IsGarroteNeeded() && (Me.CurrentTarget.IsCasting || Me.CurrentTarget.GetPrimaryStat() == StatType.Intellect), canCast: RogueCanCastOpener),
+                            Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => IsAmbushNeeded(), canCast: RogueCanCastOpener),
+                            Spell.Cast(sp => "Cheap Shot", chkMov => false, on => Me.CurrentTarget, req => IsCheapShotNeeded(), canCast: RogueCanCastOpener),
+                            Spell.Cast(sp => "Garrote", chkMov => false, on => Me.CurrentTarget, req => IsGarroteNeeded(), canCast: RogueCanCastOpener)
+                            )
+                        )
                     )
                 );
+        }
+
+        public static bool IsAmbushNeeded()
+        {
+            if (IsStealthed)
+            {
+                if (Me.IsSafelyBehind(Me.CurrentTarget))
+                    return true;
+
+                if (CloakAndDagger(Me.CurrentTarget) && IsActuallyStealthed)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsCheapShotNeeded()
+        {
+            return IsStealthed || (CloakAndDagger(Me.CurrentTarget) && IsActuallyStealthed);
+        }
+
+        private static bool IsGarroteNeeded()
+        {
+            return (IsStealthed && !Me.IsSafelyBehind(Me.CurrentTarget)) || (CloakAndDagger(Me.CurrentTarget) && IsActuallyStealthed);
         }
 
         public static Composite CreateRogueBlindOnAddBehavior()
@@ -790,16 +828,28 @@ namespace Singular.ClassSpecific.Rogue
                 return new ActionAlwaysFail();
             }
 
-            if (HasTalent(RogueTalents.CloakAndDagger) && RogueSettings.UsePickPocket && !RogueSettings.AllowPickPocketInCombat)
+            // issue following messagess only for Pull Behavior
+            if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Pull)
             {
-                Logger.Write(Color.White, "warning:  Pick Pocket disabled due to Cloak and Dagger talent - enable Allow Pick Pocket In Combat setting to allow use");
-                return new ActionAlwaysFail();
-            }
+                if (HasTalent(RogueTalents.CloakAndDagger) && RogueSettings.UsePickPocket)
+                {
+                    if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                    {
+                        Logger.Write(Color.White, "warning:  Cloak and Dagger will be skipped on Pick Pocketable mobs.  Disable Pick Pocket for ranged Ambush, Cheap Shot, and Garrote on all mobs.");
+                        return new ActionAlwaysFail();
+                    }
+                    else
+                    {
+                        Logger.Write(Color.White, "warning:  Cloak and Dagger will greatly reduce Pick Pocket usage.");
+                        return new ActionAlwaysFail();
+                    }
+                }
 
-            if (!AutoLootIsEnabled())
-            {
-                Logger.Write(Color.White, "warning:  Auto Loot is off, so Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
-                return new ActionAlwaysFail();
+                if (!AutoLootIsEnabled())
+                {
+                    Logger.Write(Color.White, "warning:  Auto Loot is off, so Pick Pocket disabled - to allow Pick Pocket by Singular, enable your Auto Loot setting");
+                    return new ActionAlwaysFail();
+                }
             }
 
             return new Throttle(5,
@@ -985,7 +1035,8 @@ namespace Singular.ClassSpecific.Rogue
                     && b.Usable
                     && b.Cooldown <= 0
                     && !Blacklist.Contains(b.Guid, BlacklistFlags.Node)
-                    && _boxes.Contains(b.Entry))
+                    && _boxes.ContainsKey(b.Entry)
+                    && (_boxes[b.Entry] <= 0 || _boxes[b.Entry] <= (Me.Level * 5)))
                 .FirstOrDefault();
         }
 
@@ -1003,40 +1054,53 @@ namespace Singular.ClassSpecific.Rogue
                     && b.Usable
                     && b.Cooldown <= 0
                     && !Blacklist.Contains(b.Guid, BlacklistFlags.Loot)
-                    && _boxes.Contains(b.Entry))
+                    && _boxes.ContainsKey(b.Entry))
                 .FirstOrDefault();
         }
 
-        private static HashSet<uint> _boxes = new HashSet<uint>()
+        /// <summary>
+        /// following class added to work around bugs in return values for Lockboxes
+        /// currently, Titanium Lockbox returns it requires Level 78.  Its lockpick 
+        /// skill level required is 400, which a rogue gets at 80.  Since the Skill Level
+        /// reported for this item is 0, this prevents spamming picklock attempts on
+        /// a box that a 78-79 rogue cannot open
+        /// </summary>
+        class LockboxInfo
         {
-            4632,	// Ornate Bronze Lockbox
-            6354,	// Small Locked Chest
-            16882,	// Battered Junkbox
-            4633,	// Heavy Bronze Lockbox
-            4634,	// Iron Lockbox
-            6355,	// Sturdy Locked Chest
-            16883,	// Worn Junkbox
-            4636,	// Strong Iron Lockbox
-            4637,	// Steel Lockbox
-            16884,	// Sturdy Junkbox
-            4638,	// Reinforced Steel Lockbox
-            13875,	// Ironbound Locked Chest
-            5758,	// Mithril Lockbox
-            5759,	// Thorium Lockbox
-            13918,	// Reinforced Locked Chest
-            5760,	// Eternium Lockbox
-            12033,	// Thaurissan Family Jewels
-            16885,  // Heavy Junkbox
-            29569,	// Strong Junkbox
-            31952,	// Khorium Lockbox
-            43575,	// Reinforced Junkbox
-            43622,	// Froststeel Lockbox
-            43624,	// Titanium Lockbox
-            45986,	// Tiny Titanium Lockbox
-            63349,	// Flame-Scarred Junkbox
-            68729,	// Elementium Lockbox
-            88567,	// Ghost Iron Lockbox
-            88165,	// Vine-Cracked Junkbox
+            public uint Entry;  // id of lockbox
+            public int Level;   // non-zero = skilllevel required, 0 = skip skilllevel check
+        }
+
+        private static Dictionary<uint, int> _boxes = new Dictionary<uint, int>()
+        {
+            { 4632, 0 },     // Ornate Bronze Lockbox
+            { 6354, 0 },	    // Small Locked Chest
+            { 16882, 0 },	// Battered Junkbox
+            { 4633, 0 },	    // Heavy Bronze Lockbox
+            { 4634, 0 },	    // Iron Lockbox
+            { 6355, 0 },	    // Sturdy Locked Chest
+            { 16883, 0 },	// Worn Junkbox
+            { 4636, 0 },	    // Strong Iron Lockbox
+            { 4637, 0 },	    // Steel Lockbox
+            { 16884, 0 },	// Sturdy Junkbox
+            { 4638, 0 },	    // Reinforced Steel Lockbox
+            { 13875, 0 },	// Ironbound Locked Chest
+            { 5758, 0 },	    // Mithril Lockbox
+            { 5759, 0 },	    // Thorium Lockbox
+            { 13918, 0 },	// Reinforced Locked Chest
+            { 5760, 0 },	    // Eternium Lockbox
+            { 12033, 0 },	// Thaurissan Family Jewels
+            { 16885, 0 },    // Heavy Junkbox
+            { 29569, 0 },	// Strong Junkbox
+            { 31952, 0 },	// Khorium Lockbox
+            { 43575, 0 },	// Reinforced Junkbox
+            { 43622, 0 },	// Froststeel Lockbox
+            { 43624, 400 },	// Titanium Lockbox
+            { 45986, 0 },	// Tiny Titanium Lockbox
+            { 63349, 0 },	// Flame-Scarred Junkbox
+            { 68729, 0 },	// Elementium Lockbox
+            { 88567, 0 },	// Ghost Iron Lockbox
+            { 88165, 0 }	// Vine-Cracked Junkbox
         };
 
 
@@ -1048,7 +1112,10 @@ namespace Singular.ClassSpecific.Rogue
                 {
                     if (!Me.GotTarget)
                         return RunStatus.Success;
-                
+
+                    if (Me.CurrentTarget.IsPlayer)
+                        return RunStatus.Success;
+
                     if (BotPoi.Current.Type == PoiType.Kill && !StyxWoW.Me.Combat && Blacklist.Contains(BotPoi.Current.Guid, BlacklistFlags.Node | BlacklistFlags.Pull))
                     {
                         if (StyxWoW.Me.CurrentTargetGuid == BotPoi.Current.Guid)
@@ -1061,7 +1128,7 @@ namespace Singular.ClassSpecific.Rogue
                         if (unit != null && unit.IsValid)
                             BotPoi.Clear(string.Format("Singular: pickpocket only and {0} is in Blacklist", unit.SafeName()));
                         else
-                            BotPoi.Clear("Singular: pickpocket only and invalid mob in Blacklist");
+                            Styx.CommonBot.POI.BotPoi.Clear("Singular: pickpocket only and invalid mob in Blacklist");
 
                         return RunStatus.Success;
                     }
@@ -1085,17 +1152,16 @@ namespace Singular.ClassSpecific.Rogue
 
         internal static Composite CreateRoguePullPickPocketButDontAttack()
         {
-            return new Decorator(
-                req => RogueSettings.PickPocketOnlyPull && RogueSettings.UsePickPocket,
-                new PrioritySelector(
-                    Common.CreateRoguePickPocket(),
-                    new Action(r =>
-                    {
-                        if (Blacklist.Contains(Me.CurrentTarget, BlacklistFlags.Node) && !Blacklist.Contains(Me.CurrentTarget, BlacklistFlags.Pull))
-                            Blacklist.Add(Me.CurrentTarget, BlacklistFlags.Pull, TimeSpan.FromMinutes(3), "Singular: picked mobs pocket");
+            if (!RogueSettings.PickPocketOnlyPull || !RogueSettings.UsePickPocket)
+                return new ActionAlwaysFail();
+
+            return new PrioritySelector(
+                Common.CreateRoguePickPocket(),
+                new Action(r => {
+                    if (Blacklist.Contains(Me.CurrentTarget, BlacklistFlags.Node) && !Blacklist.Contains(Me.CurrentTarget, BlacklistFlags.Pull))
+                        Blacklist.Add(Me.CurrentTarget, BlacklistFlags.Pull, TimeSpan.FromMinutes(3), "Singular: picked mobs pocket");
                     }),
-                    new ActionAlwaysSucceed()
-                    )
+                new ActionAlwaysSucceed()
                 );
         }
     }

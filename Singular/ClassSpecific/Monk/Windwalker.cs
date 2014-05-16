@@ -76,7 +76,7 @@ namespace Singular.ClassSpecific.Monk
                             ret => RollTimer.IsFinished,
                             new PrioritySelector(
                                 Spell.Cast("Provoke", ret => !Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance.Between( 10, 40)),
-                                Spell.Cast("Crackling Jade Lightning", ret => !Me.IsMoving && Me.CurrentTarget.Distance < 40)
+                                Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40, cancel => false)
                                 )
                             ),
 
@@ -87,11 +87,21 @@ namespace Singular.ClassSpecific.Monk
                         )
                     ),
 
-                new Decorator( 
-                    ret => Me.CurrentTarget.IsAboveTheGround(), 
-                    new Sequence(
-                        new Action(r => Logger.WriteDebug("Target appears airborne: flying={0} aboveground={1} dist={2:F1} zdiff={2:F1}", Me.CurrentTarget.IsFlying.ToYN(), Me.CurrentTarget.IsAboveTheGround().ToYN())),
-                        Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 35f, 30f)
+                //Shoot flying targets
+                new Decorator(
+                    ret => Me.CurrentTarget.IsAboveTheGround(),
+                    new PrioritySelector(
+                        new Action(r =>
+                        {
+                            Logger.WriteDebug("Target appears airborne: flying={0} aboveground={1}",
+                                Me.CurrentTarget.IsFlying.ToYN(),
+                                Me.CurrentTarget.IsAboveTheGround().ToYN()
+                                );
+                            return RunStatus.Failure;
+                        }),
+                        Spell.Cast("Spinning Fire Blossom", req => Me.CurrentTarget.SpellDistance() < 50 && Me.IsSafelyFacing(Me.CurrentTarget,5f)),
+                        Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40, cancel => false),
+                        Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                         )
                     )
                 );
@@ -120,7 +130,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
                         Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
                         Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
-                        Spell.BuffSelf("Zen Sphere", ctx => Me.HealthPercent < 90 && Me.CurrentChi >= 4),
+                        Spell.BuffSelf("Zen Sphere", ctx => Me.HealthPercent < 90 && Me.CurrentChi >= 3),
                         Spell.Cast("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 10) >= 2)
                         )
                     )
@@ -248,6 +258,9 @@ namespace Singular.ClassSpecific.Monk
 
                         Helpers.Common.CreateInterruptBehavior(),
 
+                        // ranged attack on the run
+                        Spell.Cast("Spinning Fire Blossom", req => Me.IsMoving && Me.CurrentTarget.SpellDistance().Between(10,50) && Me.IsSafelyFacing(Me.CurrentTarget,5f) && Me.IsSafelyBehind( Me.CurrentTarget)),
+
                         Common.CreateGrappleWeaponBehavior(),
 
                         Spell.Cast("Leg Sweep", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && !u.IsCrowdControlled())),
@@ -338,7 +351,7 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
                 Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
                 Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
-                Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 4),
+                Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 3),
                 Spell.BuffSelf("Invoke Xuen, the White Tiger", ret => !Me.IsMoving && Me.CurrentTarget.IsBoss() && Me.CurrentTarget.IsWithinMeleeRange)
                 );
         }

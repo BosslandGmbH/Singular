@@ -59,8 +59,44 @@ namespace Singular.ClassSpecific.Mage
                             new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
                             ),
 
+            #region PULL WITH INSTANT IF NEEDED
+                        new Decorator(
+                            ret =>
+                            {
+                                WoWPlayer nearby = ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).FirstOrDefault(p => !p.IsMe && p.DistanceSqr <= 40 * 40);
+                                if (nearby != null)
+                                {
+                                    Logger.WriteDiagnostic("NormalPull: doing fast pull since player {0} nearby @ {1:F1} yds", nearby.SafeName(), nearby.Distance);
+                                    return true;
+                                }
+                                return false;
+                            },
+                            new PrioritySelector(
+                                Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
+                                Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),
+                                Spell.Cast("Ice Lance"),
+                                Spell.Cast("Fire Blast")
+                                )
+                            ),
+            #endregion
+
+                        // Pull with Ice Lance if trivial or FoF built up
+                        Spell.Cast("Ice Lance", ret => Me.HasAura("Fingers of Frost") || Me.CurrentTarget.IsTrivial()),
+
+                        // Otherwise.... lets set a Bomb first
+                        new Decorator(
+                            req => !Me.CurrentTarget.IsTrivial(),
+                            new PrioritySelector(
+                                Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
+                                Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),
+                                Spell.Buff("Frost Bomb", true, on => Me.CurrentTarget, req => true, 0)
+                                )
+                            ),
+
                         Spell.Cast("Frostbolt", ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
-                        Spell.Cast("Frostfire Bolt")
+                        Spell.Cast("Frostfire Bolt"),
+                        Spell.Cast("Ice Lance"),
+                        Spell.Cast("Fire Blast")
                         )
                     ),
 

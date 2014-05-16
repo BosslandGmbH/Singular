@@ -1,3 +1,77 @@
+--- Release 3.0.0.3478 ---
+
+General
+
+*new* - Detects if the 'DrinkPotions' plug-in and disables. This plugin interferes with Singular's use of potions which can be controlled via Class Config settings.  This includes distinguishing between healing spells and attack spells.  Will use heals on group if Death Knight does not need.  
+
+fixed - issue with HB .IsFacing returning false when on top of target (distance of 0.0).  Will now randomly choose a strafe and move briefly to get slight distance and enable proper function of Facing APIs again.
+
+*new* - setting added and logic to control fighting back immediately when attacked by a player and solo. Questing and other BotBases may still override this behavior.  Will also now log when attacked by a player in World PVP only.  Set Target World PVP Regardless to false to disable
+
+fixed - boundary condition of casting a spell right at its maximum range but failing 
+
+fixed - targeting issue created by recent change which was attacking the BotPoi for a quest where the profile is not controlling this behavior
+
+fixed - revised critter targeting prevention logic
+
+
+Death Knight
+
+*new* - All Specs - support for Dark Simulacrum.  Will detect type of spell gained and attempt to use appropriately.  Uses Hand of Protection and Divine Shield when loss of control or Touch of Karma present. Will use Ice Block to clear DoTs.  Hand of Freedom on self only.  Settings allow controlling what type of targets to use Dark Simulacrum on.
+
+fixed - All Specs - exception sometimes occurring if target clear during a Death Grip 
+
+*new* - All Specs - during combat will cast Soul Reaper on nearby low max-health targets (like Totems) to gain haste buff
+
+change- PVP - Necrotic Strike moved to highest priority
+
+fixed - Frost - Pillar of Frost was being cast as soon as enemy targeted wasting some of the buff since target did not have to be within melee range
+
+
+Druid
+
+*new* - All Specs - now supports Aquatic Form when swimming.  Setting added which defaults to false (turned off) since it could potentially interfere with some types of Quests.  Recognizes if you have an underwater mount (like Subdued Searhorse) and suppresses
+
+
+Mage
+
+*new* - Frost - support for pull with Instants.  Automatically determines if needed based upon if there are other players in area competing for mobs or the mobs are trivial
+
+
+Monk
+
+change- All Specs - will now cast Zen Sphere if talented at 3 chi (down from 4)
+
+change- All Specs - Ring of Peace now more sophisticated. PVP: will cast on self or nearby healers if needed.  Other: will cast on self when attacked by 2 or more mobs
+
+fixed - All Specs - Crackling Jade Lightning is no longer interrupted immediately after cast by movement
+
+*new* - Windwalker - now uses Spinning Fire Blossom for pulling aerial mobs.  Will also cast on enemy that is running away from you 
+
+
+Paladin
+
+fixed - Protection - now correctly range checks mobs that are targeted for taunting when taunts enabled
+
+
+Rogues
+
+*new* - All Specs - will intelligently suppress use of range opener (CLoak and Dagger) when solo with Pick Pocket enabled and targeting a Pick Pocket eligible mob
+
+fixed - All Specs - should make more frequent use of Cloak and Dagger as SpellManager continued to report spells as being melee range
+
+fixed - All Specs - problem with Pick Lock on lockboxes
+
+
+Warlock
+
+change- Destruction - now detects Toxic Power and Expanded Mind trinket buffs and will force cast of Shadowburn / Chaos Bolt if available
+
+
+
+
+
+
 --- Release 3.0.0.3427 ---
 
 Paladin

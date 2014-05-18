@@ -1,3 +1,36 @@
+--- Release 3.0.0.3494 ---
+
+General
+
+fixed - Infrequent issue where some classes were not attacking in PVP against same faction
+
+
+Druid
+
+fixed - All Specs - in some cases was not detecting Swift Flight Form was active and would switch to Travel Form or Cat Form
+
+fixed - Feral - added additional checks to PreCombatBuff behavior in the event it was called by BotBase or Quest Behavior while flying to avoid casting Cat Form
+
+fixed - All Specs - fixed target selection for Symbiosis to exclude enemy players in battlegrounds/arena that are same faction
+
+
+Mage
+
+fixed - All Specs - fixed to allow use of Time Warp when dueling
+
+
+Rogue
+
+fixed - All Specs - fixed issue occurring if target changed during Pick Pocket usage
+
+fixed - All Specs - issue with Pick Lock and opening unlocked boxes
+
+fixed - All Specs - spam sometimes occurring due to attempting to pick locks while flying
+
+*new* - All Specs - setting Post-Pick Pocket Pause.  Controls how many minutes after a successful pick pocket to blacklist the mob from subsequent pick pocket attempts. Default is 3 minutes.
+
+
+
 --- Release 3.0.0.3478 ---
 
 General

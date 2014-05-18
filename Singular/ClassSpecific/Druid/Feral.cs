@@ -203,8 +203,20 @@ namespace Singular.ClassSpecific.Druid
                     // cast cat form 
                     // since this check comes while not in combat (so will be doing other things like Questing) need to add some checks:
                     // - only if Moving
+                    // - only if Not Swimming
+                    // - only if Not Flying
+                    // - only if Not in one of the various forms for travel 
                     // - only if No Recent Shapefhift Error (since form may have resulted from error in picking up Quest, completing Quest objectives, or turning in Quest)
-                    new Throttle(10, Spell.BuffSelf("Cat Form", ret => Me.IsMoving && !Utilities.EventHandlers.IsShapeshiftSuppressed && !Me.IsSwimming && !Me.HasAnyAura("Travel Form", "Aquatic Form"))),
+                    new Throttle(
+                        10, 
+                        Spell.BuffSelf( 
+                            "Cat Form", 
+                            req => !Utilities.EventHandlers.IsShapeshiftSuppressed
+                                && Me.IsMoving
+                                && !Me.IsFlying && !Me.IsSwimming 
+                                && !Me.HasAnyShapeshift( ShapeshiftForm.Travel, ShapeshiftForm.Aqua, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
+                            )
+                        ),
 
                     Common.CreateProwlBehavior(
                         ret => DruidSettings.ProwlAlways

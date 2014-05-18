@@ -1520,7 +1520,13 @@ namespace Singular.Helpers
                                 ret =>
                                 {
                                     CastContext cctx = ret.CastContext();
-                                    if ((cctx.spell.CastTime == 0 && Spell.GcdTimeLeft.TotalMilliseconds > 750) || Me.CurrentCastTimeLeft.TotalMilliseconds > 750 || Me.CurrentChannelTimeLeft.TotalMilliseconds > 750)
+                                    if (cctx.spell.CastTime == 0 && Spell.GcdTimeLeft.TotalMilliseconds > 750)
+                                        return true;
+
+                                    if (Me.CurrentCastTimeLeft.TotalMilliseconds > 750)
+                                        return true;
+
+                                    if (Me.CurrentChannelTimeLeft.TotalMilliseconds > 750)
                                         return true;
 
                                     return false;
@@ -1537,6 +1543,7 @@ namespace Singular.Helpers
                                     ret => cancel == null || ret.CastContext().spell.CastTime == 0,
                                     new Action(r =>
                                     {
+                                        CastContext cctx = r.CastContext();
                                         // Logger.WriteDebug("Spell.Cast(\"{0}\"): no cancel delegate", cctx.spell.Name);
                                         return RunStatus.Success;
                                     })

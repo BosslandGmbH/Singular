@@ -241,7 +241,7 @@ namespace Singular.Helpers
                                 if (Unit.ValidUnit(Me.CurrentTarget, showReason: true))
                                     return Me.CurrentTarget;
 
-                                if (Me.CurrentTarget.IsPlayer && Me.IsHorde != Me.CurrentTarget.ToPlayer().IsHorde && !Unit.CanAttackCurrentTarget && !Battlegrounds.IsInsideBattleground )
+                                if (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.IsHostile && !Unit.CanAttackCurrentTarget && !Battlegrounds.IsInsideBattleground )
                                 {
                                     Logger.Write(targetColor, "CurrentTarget " + Me.CurrentTarget.SafeName() + " is a non-attackable enemy player so clearing target!");
                                     Blacklist.Add(Me.CurrentTargetGuid, BlacklistFlags.Pull | BlacklistFlags.Combat, TimeSpan.FromSeconds(15), "Unattackable Enemy Player is CurrentTarget");

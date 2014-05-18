@@ -63,6 +63,7 @@ namespace Singular
             MovementManager.Init();
              // SoulstoneManager.Init();   // switch to using Death behavior
             Dispelling.Init();
+            PartyBuff.Init();
             Singular.Lists.BossList.Init();
 
             //Logger.Write("Combat log event handler started.");

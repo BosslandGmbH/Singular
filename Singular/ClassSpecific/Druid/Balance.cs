@@ -327,7 +327,7 @@ namespace Singular.ClassSpecific.Druid
 
                         // Spread MF/IS on Rouges / Feral Druids first
                         Common.CreateFaerieFireBehavior(
-                            on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || p.HasAura("Cat Form")) && !p.HasAnyAura("Faerie Fire", "Faerie Swarm") && p.Distance < 35 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight), 
+                            on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || Me.Shapeshift == ShapeshiftForm.Cat) && !p.HasAnyAura("Faerie Fire", "Faerie Swarm") && p.Distance < 35 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight), 
                             req => true),
 
                         // More DoTs!!  Dot EVERYTHING (including pets) to boost Shooting Stars proc chance

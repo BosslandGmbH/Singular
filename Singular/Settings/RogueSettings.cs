@@ -150,6 +150,13 @@ namespace Singular.Settings
         public bool UsePickPocket { get; set; }
 
         [Setting]
+        [DefaultValue(3)]
+        [Category("Pick Pocket")]
+        [DisplayName("Post-Pick Pocket Pause")]
+        [Description("Minutes to blacklist target after successful Pick Pocket. Does not prevent Combat with target")]
+        public int SuccessfulPostPickPocketBlacklistMinutes { get; set; }
+
+        [Setting]
         [DefaultValue(200)]
         [Category("Pick Pocket")]
         [DisplayName("Post-Pick Pocket Pause")]

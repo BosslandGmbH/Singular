@@ -403,7 +403,8 @@ namespace Singular.ClassSpecific.Druid
                             new Decorator(
                                 ret => DruidSettings.UseTravelForm
                                     && !Me.Mounted
-                                    && !Me.IsSwimming && !Me.HasAnyAura("Travel Form", "Flight Form")
+                                    && !Me.IsSwimming 
+                                    && !Me.HasAnyShapeshift( ShapeshiftForm.Travel, ShapeshiftForm.FlightForm, ShapeshiftForm.EpicFlightForm)
                                     && SpellManager.HasSpell("Cat Form")
                                     && BotPoi.Current.Location.Distance(Me.Location) > 10
                                     && (BotPoi.Current.Location.Distance(Me.Location) < Styx.Helpers.CharacterSettings.Instance.MountDistance || (Me.IsIndoors && !Mount.CanMount()) || (Me.GetSkill(SkillLine.Riding).CurrentValue == 0))
@@ -425,7 +426,7 @@ namespace Singular.ClassSpecific.Druid
                             new Decorator( 
                                 req => AllowAquaticForm 
                                     && BotPoi.Current.Location.Distance(Me.Location) >= 10
-                                    && !StyxWoW.Me.HasAura("Aquatic Form")
+                                    && Me.Shapeshift != ShapeshiftForm.Aqua
                                     && Spell.CanCastHack("Aquatic Form", Me, false), 
                                 Spell.BuffSelf( "Aquatic Form")
                                 )
@@ -451,7 +452,7 @@ namespace Singular.ClassSpecific.Druid
                 if (!Me.IsSwimming)
                     return false;
 
-                if (!Me.HasAura("Aquatic Form"))
+                if (Me.Shapeshift != ShapeshiftForm.Aqua)
                 {
                     if (Me.Combat)
                     return false;
@@ -542,7 +543,7 @@ namespace Singular.ClassSpecific.Druid
             if (p.IsHorde != Me.IsHorde)
                 return false;
 
-            if (Blacklist.Contains(p.Guid, BlacklistFlags.Combat))
+            if (p.IsHostile)
                 return false;
 
             if (!p.IsAlive)
@@ -552,6 +553,9 @@ namespace Singular.ClassSpecific.Druid
                 return false;
 
             if (p.Combat)
+                return false;
+
+            if (Blacklist.Contains(p.Guid, BlacklistFlags.Combat))
                 return false;
 
             if (p.Distance > 28)

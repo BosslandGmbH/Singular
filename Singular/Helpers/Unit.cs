@@ -687,6 +687,13 @@ namespace Singular.Helpers
             }
         }
 
+        public static bool HasAnyShapeshift(this WoWUnit unit, params ShapeshiftForm[] forms)
+        {
+            ShapeshiftForm currentForm = StyxWoW.Me.Shapeshift;
+            return forms.Any( f => f == currentForm);
+        }
+
+
         public static bool IsNeutral(this WoWUnit unit)
         {
             return unit.GetReactionTowards(StyxWoW.Me) == WoWUnitReaction.Neutral;

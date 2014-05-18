@@ -835,7 +835,7 @@ namespace Singular.ClassSpecific.Rogue
                 {
                     if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
                     {
-                        Logger.Write(Color.White, "warning:  Cloak and Dagger will be skipped on Pick Pocketable mobs.  Disable Pick Pocket for ranged Ambush, Cheap Shot, and Garrote on all mobs.");
+                        Logger.Write(Color.White, "warning:  Cloak and Dagger will be skipped on Pick Pocketable mobs.  Turn off 'Use Pick Pocket' to always use ranged Ambush, Cheap Shot, and Garrote.");
                         return new ActionAlwaysFail();
                     }
                     else
@@ -862,12 +862,13 @@ namespace Singular.ClassSpecific.Rogue
                         && (Me.CurrentTarget.IsWithinMeleeRange || (TalentManager.HasGlyph("Pick Pocket") && Me.CurrentTarget.SpellDistance() < 10))
                         && IsMobPickPocketable(Me.CurrentTarget),
                     new Sequence(
+                        ctx => Me.CurrentTarget, 
                         new Action( r => { StopMoving.Now(); } ),
                         new Wait( TimeSpan.FromMilliseconds(500), until => !Me.IsMoving, new ActionAlwaysSucceed()),
                         new WaitContinue(TimeSpan.FromMilliseconds(RogueSettings.PrePickPocketPause), req => false, new ActionAlwaysSucceed()),
-                        Spell.Cast("Pick Pocket", on => Me.CurrentTarget),
+                        Spell.Cast("Pick Pocket", on => (WoWUnit) on),
                         new WaitContinue( TimeSpan.FromMilliseconds( RogueSettings.PostPickPocketPause), req => false, new ActionAlwaysSucceed()),
-                        new Action( r => Blacklist.Add( Me.CurrentTarget, BlacklistFlags.Node, TimeSpan.FromMinutes( 2))),
+                        new Action( r => Blacklist.Add( Me.CurrentTarget, BlacklistFlags.Node, TimeSpan.FromMinutes(RogueSettings.SuccessfulPostPickPocketBlacklistMinutes), string.Format("Singular: do not pick pocket {0} again for {1}", ((WoWUnit)r).SafeName() ))),
                         new ActionAlwaysFail() // not on the GCD, so fail
                         )
                     )
@@ -954,41 +955,39 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueOpenBoxes()
         {
             return new Decorator(
-                ret => RogueSettings.UsePickLock,
-                new PrioritySelector(
-                    new Decorator(
-                        ret => !IsStealthed && !Me.IsFlying && !Me.Mounted && SpellManager.HasSpell("Pick Lock") && AutoLootIsEnabled(),
-                        new Sequence(
-                            new Action( r => { box = FindLockedBox();  return box == null ? RunStatus.Failure : RunStatus.Success; }),
-                            new PrioritySelector(
-                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to Pick Lock"),
-                                new ActionAlwaysSucceed()
-                                ),
-                            new Action(r => Logger.Write("/pick lock on {0} #{1}", box.Name, box.Entry)),
-                            new Action( r => { return SpellManager.Cast( "Pick Lock", Me) ? RunStatus.Success : RunStatus.Failure; }),
-                            new Action( r => Logger.WriteDebug( "picklock: wait for spell on cursor")),
-                            new Wait( 1, ret => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
-                            new Action( r => Logger.WriteDebug( "picklock: use item")),
-                            new Action( r => box.Use() ),
-                            new Action(r => Blacklist.Add(box.Guid, BlacklistFlags.Node, TimeSpan.FromSeconds(30))),
-                            new Action(r => Logger.WriteDebug("picklock: wait for spell in progress")),
-                            new Wait( 1, ret => Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
-                            new Action( r => Logger.WriteDebug( "picklock: wait for spell to complete")),
-                            new Wait( 6, ret => !Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
-                            Helpers.Common.CreateWaitForLagDuration()
-                            )
-                        ),
+                ret => RogueSettings.UsePickLock && !Me.IsFlying && !Me.Mounted && !IsStealthed && SpellManager.HasSpell("Pick Lock") && AutoLootIsEnabled(),
 
-                    new Action( r => { box = FindUnlockedBox();  return RunStatus.Failure; }),
-                    new Decorator(
-                        ret => box != null && AutoLootIsEnabled(),
-                        new Sequence(
-                            new Action(r => Logger.WriteDebug( "openbox: wait for it to be openable")),
-                            new Wait(2, ret => box.IsOpenable && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), new Action(r => box.UseContainerItem())),
-                            new Action(r => Logger.WriteDebug("openbox: box now opened")),
-                            new Action(r => Blacklist.Add(box.Guid, BlacklistFlags.Loot, TimeSpan.FromSeconds(30))),
-                            Helpers.Common.CreateWaitForLagDuration()
-                            )
+                new PrioritySelector(
+                    // open unlocked box
+                    new Sequence(
+                        new Action(r => { box = FindUnlockedBox(); return box == null ? RunStatus.Failure : RunStatus.Success; }),
+                        new Action(r => Logger.Write(Color.White, "/open: unlocked {0} #{1}", box.Name, box.Entry)),
+                        new Wait(2, ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
+                        new Action(r => Logger.WriteDebug("openbox: no spell cast or gcd")),
+                        new Action(r => box.UseContainerItem()),
+                        new Action(r => Logger.WriteDebug("openbox: box now opened")),
+                        new Action(r => Blacklist.Add(box.Guid, BlacklistFlags.Loot, TimeSpan.FromMinutes(30), "Singular: to prevent redundant open attempt")),
+                        Helpers.Common.CreateWaitForLagDuration()
+                        ),
+                    // pick lock on a locked box
+                    new Sequence(
+                        new Action( r => { box = FindLockedBox();  return box == null ? RunStatus.Failure : RunStatus.Success; }),
+                        new PrioritySelector(
+                            Movement.CreateEnsureMovementStoppedBehavior(reason: "to Pick Lock"),
+                            new ActionAlwaysSucceed()
+                            ),
+                        new Action(r => Logger.Write(Color.White, "/pick lock: {0} #{1}", box.Name, box.Entry)),
+                        new Action( r => { return SpellManager.Cast( "Pick Lock", Me) ? RunStatus.Success : RunStatus.Failure; }),
+                        new Action( r => Logger.WriteDebug( "picklock: wait for spell on cursor")),
+                        new Wait( 1, ret => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
+                        new Action( r => Logger.WriteDebug( "picklock: use item")),
+                        new Action( r => box.Use() ),
+                        new Action(r => Blacklist.Add(box.Guid, BlacklistFlags.Node, TimeSpan.FromSeconds(30), "Singular: to prevent redundant pick lock attempt")),
+                        new Action(r => Logger.WriteDebug("picklock: wait for spell in progress")),
+                        new Wait( 1, ret => Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
+                        new Action( r => Logger.WriteDebug( "picklock: wait for spell to complete")),
+                        new Wait( 6, ret => !Spell.IsCastingOrChannelling(), new ActionAlwaysSucceed()),
+                        Helpers.Common.CreateWaitForLagDuration()
                         )
                     )
                 );

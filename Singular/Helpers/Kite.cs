@@ -872,7 +872,7 @@ namespace Singular.Helpers
             if (Battlegrounds.IsInsideBattleground)
                 return p.BattlefieldArenaFaction != Me.BattlefieldArenaFaction;
 */
-            return p.IsHostile || p.IsHorde != Me.IsHorde;
+            return p.IsHostile; // || p.IsHorde != Me.IsHorde;
         }
 
         public static IEnumerable<WoWUnit> AllEnemyMobs

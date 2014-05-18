@@ -12,7 +12,6 @@ using Action = Styx.TreeSharp.Action;
 
 namespace Singular.Helpers
 {
-
     /*
      * Apply Aura: Mod Rating (33554432) Value: 5
      * Apply Aura: Mod Stat - % (Strength, Agility, Intellect) Value: 5
@@ -304,6 +303,35 @@ namespace Singular.Helpers
                     );
         }
 
+        #region Handle Faction Specific Name for Bloodlust
+
+        /// <summary>
+        /// spell name to use for Bloodlust
+        /// </summary>
+        public static string BloodlustSpellName { get; set; }
+
+        /// <summary>
+        /// debuff name to use for Bloodlust cooldown
+        /// </summary>
+        public static string SatedDebuffName { get; set; }
+
+        /// <summary>
+        /// determine the name of the spell to use.  Should be called during Combat Routine initialization. Doesn't change so no need to repeat
+        /// </summary>
+        public static void SetBloodlustSpellInformation()
+        {
+            if (StyxWoW.Me.IsHorde)
+            {
+                BloodlustSpellName = "Bloodlust";
+                SatedDebuffName = "Sated";
+            }
+            else
+            {
+                BloodlustSpellName = "Heroism";
+                SatedDebuffName = "Exhaustion";
+            }
+        }
+
         /// <summary>
         /// true: we have a Bloodlust-like buff, typically indicating we should cast 
         /// other long cooldown abilities that we save for such an occassion
@@ -312,8 +340,18 @@ namespace Singular.Helpers
         {
             get
             {
-                return StyxWoW.Me.HasAnyAura(StyxWoW.Me.IsHorde ? "Bloodlust" : "Heroism", "Time Warp", "Ancient Hysteria");
+                return StyxWoW.Me.HasAnyAura(BloodlustSpellName, "Time Warp", "Ancient Hysteria");
             }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// one time initialization of PartyBuff info
+        /// </summary>
+        internal static void Init()
+        {
+            SetBloodlustSpellInformation();
         }
     }
 }

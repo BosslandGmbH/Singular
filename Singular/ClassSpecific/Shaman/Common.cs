@@ -50,9 +50,6 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Status and Config Helpers
 
-        public static string BloodlustName { get { return Me.IsHorde ? "Bloodlust" : "Heroism"; } }
-        public static string SatedName { get { return Me.IsHorde ? "Sated" : "Exhaustion"; } }
-
         public static bool HasTalent(ShamanTalents tal)
         {
             return TalentManager.IsSelected((int)tal);
@@ -87,7 +84,7 @@ namespace Singular.ClassSpecific.Shaman
                 if (friends < 3 || enemies < 3)
                     return false;
 
-                int readyfriends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive && !f.HasAnyAura(SatedName, "Temporal Displacement"));
+                int readyfriends = Unit.NearbyFriendlyPlayers.Count(f => f.IsAlive && !f.HasAnyAura(PartyBuff.SatedDebuffName, "Temporal Displacement"));
                 if (readyfriends < 3)
                     return false;
 
@@ -127,6 +124,7 @@ namespace Singular.ClassSpecific.Shaman
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Shaman, (WoWSpec)int.MaxValue, WoWContext.Normal | WoWContext.Instances, 1)]
         public static Composite CreateShamanCombatBuffs()
         {
+
             return new Decorator(
                 req => !Unit.IsTrivial( Me.CurrentTarget),
                 new PrioritySelector(
@@ -169,19 +167,27 @@ namespace Singular.ClassSpecific.Shaman
                         ),
 
                     new Decorator(
-                        ret => ShamanSettings.UseBloodlust
-                            && MovementManager.IsClassMovementAllowed,
+                        ret => ShamanSettings.UseBloodlust && MovementManager.IsClassMovementAllowed,
+                        Spell.BuffSelf(
+                            PartyBuff.BloodlustSpellName,
+                            req => {
+                                // when Solo, use it if in a stressful fight
+                                if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                                {
+                                    if (Unit.GroupMembers.Any(m => m.IsAlive && m.Distance < 100))
+                                        return false;
 
-                        new PrioritySelector(
-                            Spell.BuffSelf(Common.BloodlustName,
-                                ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
-                                    && !Unit.GroupMembers.Any(m => m.IsAlive && m.Distance < 100)
-                                    && Common.StressfulSituation),
+                                    return Common.StressfulSituation;
+                                }
 
-                            Spell.BuffSelf(Common.BloodlustName,
-                                ret => SingularRoutine.CurrentWoWContext == WoWContext.Instances
-                                    && !Me.GroupInfo.IsInRaid
-                                    && Me.CurrentTarget.IsBoss())
+                                // should be manually cast when LazyRaiding, or by DungeonBuddy
+                                if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                                {
+                                    return !Me.GroupInfo.IsInRaid && Me.CurrentTarget.IsBoss();
+                                }
+
+                                return false;
+                                }
                             )
                         ),
 
@@ -216,7 +222,7 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.Cast("Hex", onUnit => (WoWUnit)onUnit)
                     ),
 
-                Spell.BuffSelf(Common.BloodlustName,
+                Spell.BuffSelf(PartyBuff.BloodlustSpellName,
                     ret => ShamanSettings.UseBloodlust
                         && MovementManager.IsClassMovementAllowed
                         && IsPvpFightWorthLusting),

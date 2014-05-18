@@ -451,9 +451,9 @@ namespace Singular.ClassSpecific.Mage
 
                 if (!Me.GroupInfo.IsInRaid && Me.GotTarget)
                 {
-                    if (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 45 || (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHorde != Me.IsHorde))
+                    if (Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 45 || (Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile))
                     {
-                        return !Me.HasAnyAura("Temporal Displacement", Shaman.Common.SatedName);
+                        return !Me.HasAnyAura("Temporal Displacement", PartyBuff.SatedDebuffName);
                     }
                 }
 

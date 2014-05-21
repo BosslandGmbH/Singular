@@ -1,3 +1,10 @@
+--- Release 3.0.0.3502 ---
+
+General
+
+change - Throttled some movement messages to once per sec rather than spamming each tick
+
+
 --- Release 3.0.0.3494 ---
 
 General

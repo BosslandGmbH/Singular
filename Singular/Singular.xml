@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>05/18/2014 11:46:18</ScanTime>
+  <ScanTime>05/21/2014 16:00:43</ScanTime>
   <FileList>
     <File Hash="31280" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="31490" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -12,7 +12,7 @@
     <File Hash="41401" Name="ClassSpecific\Druid\Feral.cs" />
     <File Hash="14225" Name="ClassSpecific\Druid\Guardian.cs" />
     <File Hash="5925" Name="ClassSpecific\Druid\Lowbie.cs" />
-    <File Hash="55680" Name="ClassSpecific\Druid\Resto.cs" />
+    <File Hash="55724" Name="ClassSpecific\Druid\Resto.cs" />
     <File Hash="9580" Name="ClassSpecific\Generic.cs" />
     <File Hash="9964" Name="ClassSpecific\Hunter\BeastMaster.cs" />
     <File Hash="58919" Name="ClassSpecific\Hunter\Common.cs" />
@@ -74,7 +74,7 @@
     <File Hash="3800" Name="Helpers\Group.cs" />
     <File Hash="27250" Name="Helpers\Item.cs" />
     <File Hash="65334" Name="Helpers\Kite.cs" />
-    <File Hash="31992" Name="Helpers\Movement.cs" />
+    <File Hash="33319" Name="Helpers\Movement.cs" />
     <File Hash="16970" Name="Helpers\Party.cs" />
     <File Hash="7948" Name="Helpers\Pet.cs" />
     <File Hash="4771" Name="Helpers\PVP.cs" />
@@ -117,7 +117,7 @@
     <File Hash="4602" Name="Settings\WarriorSettings.cs" />
     <File Hash="33411" Name="SingularRoutine.Behaviors.cs" />
     <File Hash="2036" Name="SingularRoutine.BotEvents.cs" />
-    <File Hash="16834" Name="SingularRoutine.Context.cs" />
+    <File Hash="18613" Name="SingularRoutine.Context.cs" />
     <File Hash="22677" Name="SingularRoutine.cs" />
     <File Hash="2587" Name="SingularRoutine.Version.cs" />
     <File Hash="3212" Name="Utilities\CombatLog.cs" />

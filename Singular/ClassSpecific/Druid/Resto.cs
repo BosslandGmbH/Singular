@@ -73,9 +73,11 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateRestoDruidHealOnlyBehavior(bool selfOnly, bool moveInRange)
         {
             HealerManager.NeedHealTargeting = true;
-            const uint mapleSeedId = 17034;
 
             return CreateHealingOnlyBehavior(selfOnly, moveInRange);
+
+#if OLD_STUFF_SAVED_BUT_NOT_USED
+            const uint mapleSeedId = 17034;
 
             return new
                 PrioritySelector(
@@ -173,6 +175,7 @@ namespace Singular.ClassSpecific.Druid
                             ret => moveInRange,
                             Movement.CreateMoveToUnitBehavior(35f, ret => (WoWUnit)ret))
                         )));
+#endif
         }
 
         private static WoWUnit _moveToHealTarget = null;

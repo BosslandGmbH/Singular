@@ -25,6 +25,9 @@ namespace Singular.Helpers
 {
     internal static class Movement
     {
+        private static MoveContext MoveContext(this object ctx) { return (MoveContext)ctx; }
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
         /// <summary>
         ///  Creates a behavior that does nothing more than check if we're in Line of Sight of the target; and if not, move towards the target.
         /// </summary>
@@ -34,7 +37,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveToLosBehavior()
         {
-            return CreateMoveToLosBehavior(ret => StyxWoW.Me.CurrentTarget);
+            return CreateMoveToLosBehavior(ret => Me.CurrentTarget);
         }
 
         public static Composite CreateMoveToLosBehavior(UnitSelectionDelegate toUnit)
@@ -93,23 +96,27 @@ namespace Singular.Helpers
             if (range == float.MaxValue)
             {
                 return new Decorator(
-                    ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.IsMoving,
+                    ret => !MovementManager.IsMovementDisabled && Me.IsMoving,
                     new Sequence(
-                        new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping! {0}", reason ?? "")),
+                        new Throttle( 1, TimeSpan.FromSeconds(1), RunStatus.Success,
+                            new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping! {0}", reason ?? ""))
+                            ),
                         new Action(ret => StopMoving.Now())
                         )
                     );
             }
 
             if (onUnit == null)
-                onUnit = del => StyxWoW.Me.CurrentTarget;
+                onUnit = del => Me.CurrentTarget;
 
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled
-                    && StyxWoW.Me.IsMoving
+                    && Me.IsMoving
                     && (onUnit(ret) == null || onUnit(ret).Distance < range),
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range))),
+                    new Throttle( 1, TimeSpan.FromSeconds(1), RunStatus.Success,
+                        new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range)))
+                        ),
                     new Action(ret => StopMoving.Now())
                     )
                 );
@@ -123,10 +130,10 @@ namespace Singular.Helpers
         {
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled
-                    && StyxWoW.Me.IsMoving
-                    && InMoveToMeleeStopRange(StyxWoW.Me.CurrentTarget),
+                    && Me.IsMoving
+                    && InMoveToMeleeStopRange(Me.CurrentTarget),
                 new Sequence(
-                    new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStoppedWithinMelee: stopping because {0}", !StyxWoW.Me.GotTarget ? "No CurrentTarget" : string.Format("target at {0:F1} yds", StyxWoW.Me.CurrentTarget.Distance))),
+                    new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStoppedWithinMelee: stopping because {0}", !Me.GotTarget ? "No CurrentTarget" : string.Format("target at {0:F1} yds", Me.CurrentTarget.Distance))),
                     new Action(ret => StopMoving.Now())
                     )
                 );
@@ -141,7 +148,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateFaceTargetBehavior(float viewDegrees = 70f, bool waitForFacing = true)
         {
-            return CreateFaceTargetBehavior(ret => StyxWoW.Me.CurrentTarget, viewDegrees, waitForFacing );
+            return CreateFaceTargetBehavior(ret => Me.CurrentTarget, viewDegrees, waitForFacing );
         }
 
         public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 100f, bool waitForFacing = true)
@@ -149,9 +156,9 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled 
                     && toUnit != null && toUnit(ret) != null 
-                    && !StyxWoW.Me.IsMoving 
+                    && !Me.IsMoving 
                     && !toUnit(ret).IsMe 
-                    && !StyxWoW.Me.IsSafelyFacing(toUnit(ret), viewDegrees),
+                    && !Me.IsSafelyFacing(toUnit(ret), viewDegrees),
                 new Action( ret => 
                 {
                     WoWUnit unit = toUnit(ret);
@@ -177,12 +184,12 @@ namespace Singular.Helpers
 
                     // even though we may want a tighter conical facing check, allow
                     // .. behavior to continue if 150 or better so we can cast while turning
-                    else if (StyxWoW.Me.IsSafelyFacing(unit, 150f))
+                    else if (Me.IsSafelyFacing(unit, 150f))
                         rslt = RunStatus.Failure;
 
                     // special handling for when consumed by Direglob and other mobs we are inside/on top of 
                     // .. as facing sometimes won't matter
-                    else if (StyxWoW.Me.InVehicle)
+                    else if (Me.InVehicle)
                     {
                         Logger.WriteDebug("FaceTarget: don't wait to face {0} since in vehicle", unit.SafeName());
                         rslt = RunStatus.Failure;
@@ -217,7 +224,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveToTargetBehavior(bool stopInRange, float range)
         {
-            return CreateMoveToTargetBehavior(stopInRange, range, ret => StyxWoW.Me.CurrentTarget);
+            return CreateMoveToTargetBehavior(stopInRange, range, ret => Me.CurrentTarget);
         }
 
         /// <summary>
@@ -234,7 +241,7 @@ namespace Singular.Helpers
         {
             return
                 new Decorator(
-                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret) != StyxWoW.Me && !Spell.IsCastingOrChannelling(),
+                    ret => onUnit != null && onUnit(ret) != null && onUnit(ret) != Me && !Spell.IsCastingOrChannelling(),
                     CreateMoveToLocationBehavior(ret => onUnit(ret).Location, stopInRange, ret => onUnit(ret).SpellRange(range)));
         }
 
@@ -274,7 +281,7 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveToMeleeBehavior(bool stopInRange)
         {
-            return CreateMoveToMeleeBehavior(ret => StyxWoW.Me.CurrentTarget.Location, stopInRange);
+            return CreateMoveToMeleeBehavior(ret => Me.CurrentTarget.Location, stopInRange);
         }
 #else
 
@@ -292,18 +299,18 @@ namespace Singular.Helpers
                 ret => !MovementManager.IsMovementDisabled,
                 new PrioritySelector(
                     new Decorator(
-                        ret => stopInRange && InMoveToMeleeStopRange(StyxWoW.Me.CurrentTarget),
+                        ret => stopInRange && InMoveToMeleeStopRange(Me.CurrentTarget),
                         new PrioritySelector(
                             CreateEnsureMovementStoppedWithinMelee(),
                             new Action(ret => RunStatus.Success)
                             )
                         ),
                     new Decorator(
-                        ret => StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget.IsValid,
+                        ret => Me.CurrentTarget != null && Me.CurrentTarget.IsValid,
                         new Sequence(
-                            new Action(ret => Logger.WriteDebug(Color.White, "MoveToMelee: towards {0} @ {1:F1} yds", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance)),
-                            new Action(ret => Navigator.MoveTo(StyxWoW.Me.CurrentTarget.Location)),
-                            new Action(ret => StopMoving.InMeleeRangeOfUnit(StyxWoW.Me.CurrentTarget, and => InMoveToMeleeStopRange(StyxWoW.Me.CurrentTarget))),
+                            new Action(ret => Logger.WriteDebug(Color.White, "MoveToMelee: towards {0} @ {1:F1} yds", Me.CurrentTarget.SafeName(), Me.CurrentTarget.Distance)),
+                            new Action(ret => Navigator.MoveTo(Me.CurrentTarget.Location)),
+                            new Action(ret => StopMoving.InMeleeRangeOfUnit(Me.CurrentTarget, and => InMoveToMeleeStopRange(Me.CurrentTarget))),
                             new ActionAlwaysFail()
                             )
                         )
@@ -311,21 +318,24 @@ namespace Singular.Helpers
                 );
 #else
             return new PrioritySelector(
-                ctx => StyxWoW.Me.CurrentTarget,
+                ctx => Me.CurrentTarget,
                 new Decorator(
                     ret => !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
                     CreateMoveBehindTargetBehavior(ctx => ctx != null && ((WoWUnit)ctx).IsBoss() && !((WoWUnit)ctx).IsMoving)
                     ),
                 new Decorator(
-                    ret => !MovementManager.IsMovementDisabled && StyxWoW.Me.CurrentTarget != null && !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange,
+                    ret => !MovementManager.IsMovementDisabled && Me.CurrentTarget != null && !Me.CurrentTarget.IsWithinMeleeRange,
                     new Sequence(
-                        ctx => StyxWoW.Me.CurrentTarget,
-                        new Action(ret =>
-                        {
-                            MoveResult result = Navigator.MoveTo(((WoWUnit)ret).Location);
-                            Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", result.ToString(), ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).Distance);
-                        }),
-                        new Action(ret => StopMoving.InMeleeRangeOfUnit(((WoWUnit)ret))),
+                        ctx => new MoveContext(),
+                        new DecoratorContinue(
+                            req => SingularSettings.Debug,  // save time if debug = false 
+                            new Throttle( 1, TimeSpan.FromSeconds(1), RunStatus.Success,
+                                new Action(ret => {
+                                    Logger.WriteDebug(Color.White, "MoveToMelee({0}): towards {1} @ {2:F1} yds", MoveContext(ret).Result, MoveContext(ret).Unit.SafeName(), MoveContext(ret).Distance);
+                                    })
+                                )
+                            ),
+                        new Action(ret => StopMoving.InMeleeRangeOfUnit(MoveContext(ret).Unit)),
                         new ActionAlwaysFail()
                         )
                     )
@@ -343,15 +353,20 @@ namespace Singular.Helpers
         public static Composite CreateMoveToMeleeTightBehavior(bool stopInRange)
         {
             return new PrioritySelector(
-                ctx => StyxWoW.Me.CurrentTarget,
+                ctx => Me.CurrentTarget,
                 new Decorator(
                     ret => !MovementManager.IsMovementDisabled && ret != null && !InMoveToMeleeStopRange(ret as WoWUnit),
                     new Sequence(
-                        new Action(ret =>
-                        {
-                            MoveResult result = Navigator.MoveTo(((WoWUnit)ret).Location);
-                            Logger.WriteDebug(Color.White, "MoveInTight({0}): towards {1} @ {2:F1} yds", result.ToString(), ((WoWUnit)ret).SafeName(), ((WoWUnit)ret).Distance);
-                        }),
+                        ctx => new MoveContext(),
+                        new DecoratorContinue(
+                            req => SingularSettings.Debug,  // save time if debug = false 
+                            new Throttle(1, TimeSpan.FromSeconds(1), RunStatus.Success,
+                                new Action(ret =>
+                                {
+                                    Logger.WriteDebug(Color.White, "MoveInTight({0}): towards {1} @ {2:F1} yds", MoveContext(ret).Result, MoveContext(ret).Unit.SafeName(), MoveContext(ret).Distance);
+                                })
+                                )
+                            ),
                         new Action(ret => StopMoving.InMeleeRangeOfUnit(((WoWUnit)ret))),
                         new ActionAlwaysFail()
                         )
@@ -414,18 +429,18 @@ namespace Singular.Helpers
                 {
                     if (MovementManager.IsMovementDisabled || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
                         return false;
-                    var currentTarget = StyxWoW.Me.CurrentTarget;
+                    var currentTarget = Me.CurrentTarget;
                     if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry))
                         return false;
-                    return (currentTarget.Stunned || currentTarget.CurrentTargetGuid != StyxWoW.Me.Guid)
+                    return (currentTarget.Stunned || currentTarget.CurrentTargetGuid != Me.Guid)
                         && requirements(ret);
                 },
                 new PrioritySelector(
                     ctx => CalculatePointBehindTarget(),
                     new Decorator(
-                        req => Navigator.CanNavigateFully(StyxWoW.Me.Location, (WoWPoint)req, 4),
+                        req => Navigator.CanNavigateFully(Me.Location, (WoWPoint)req, 4),
                         new Sequence(
-                            new Action(ret => Logger.WriteDebug(Color.White, "MoveBehind: behind {0} @ {1:F1} yds", StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.Distance)),
+                            new Action(ret => Logger.WriteDebug(Color.White, "MoveBehind: behind {0} @ {1:F1} yds", Me.CurrentTarget.SafeName(), Me.CurrentTarget.Distance)),
                             new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint)),
                             new Action(behindPoint => StopMoving.AtLocation((WoWPoint)behindPoint))
                             )
@@ -436,11 +451,11 @@ namespace Singular.Helpers
 
         public static WoWPoint CalculatePointBehindTarget()
         {
-            float facing = StyxWoW.Me.CurrentTarget.Rotation;
+            float facing = Me.CurrentTarget.Rotation;
             facing += WoWMathHelper.DegreesToRadians(180); // was 150 ?
             facing = WoWMathHelper.NormalizeRadian(facing);
 
-            return StyxWoW.Me.CurrentTarget.Location.RayCast(facing, Spell.MeleeRange - 2f);
+            return Me.CurrentTarget.Location.RayCast(facing, Spell.MeleeRange - 2f);
         }
 
         #endregion
@@ -470,7 +485,7 @@ namespace Singular.Helpers
                     new PrioritySelector(
                         new Decorator(
                 // Give it a little more than 1/2 a yard buffer to get it right. CTM is never 'exact' on where we land. So don't expect it to be.
-                            ret => stopInRange && StyxWoW.Me.Location.Distance(location(ret)) < range(ret),
+                            ret => stopInRange && Me.Location.Distance(location(ret)) < range(ret),
                             new PrioritySelector(
                                 CreateEnsureMovementStoppedBehavior(),
                 // In short; if we're not moving, just 'succeed' here, so we break the tree.
@@ -514,15 +529,15 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => SingularSettings.Instance.UseRacials
                     && !MovementManager.IsMovementDisabled
-                    && StyxWoW.Me.IsAlive
-                    && StyxWoW.Me.IsMoving
-                    && !StyxWoW.Me.Mounted
-                    && !StyxWoW.Me.IsOnTransport
-                    && !StyxWoW.Me.OnTaxi
-                    && StyxWoW.Me.Race == WoWRace.Worgen
-                    && !StyxWoW.Me.HasAnyAura("Darkflight")
-                    && (BotPoi.Current == null || BotPoi.Current.Type == PoiType.None || BotPoi.Current.Location.Distance(StyxWoW.Me.Location) > 10)
-                    && !StyxWoW.Me.IsAboveTheGround(),
+                    && Me.IsAlive
+                    && Me.IsMoving
+                    && !Me.Mounted
+                    && !Me.IsOnTransport
+                    && !Me.OnTaxi
+                    && Me.Race == WoWRace.Worgen
+                    && !Me.HasAnyAura("Darkflight")
+                    && (BotPoi.Current == null || BotPoi.Current.Type == PoiType.None || BotPoi.Current.Location.Distance(Me.Location) > 10)
+                    && !Me.IsAboveTheGround(),
 
                 new PrioritySelector(
                     Spell.WaitForCast(),
@@ -559,6 +574,8 @@ namespace Singular.Helpers
             LosOfUnit
         }
 
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
         static StopMoving()
         {
             Clear();
@@ -586,7 +603,7 @@ namespace Singular.Helpers
 
             if (stopMovingNow )
             {
-                if (!StyxWoW.Me.IsMoving)
+                if (!Me.IsMoving)
                 {
                     if (SingularSettings.DebugStopMoving)
                         Logger.WriteDebug(Color.White, "StopMoving STOP: character already stopped, clearing {0} stop request", Type);
@@ -599,9 +616,9 @@ namespace Singular.Helpers
                     {
                         string line = string.Format("StopMoving STOP: {0}", Type);
                         if (Type == StopType.Location)
-                            line += string.Format(", within {0:F1} yds of {1}", StyxWoW.Me.Location.Distance(Point), Point);
+                            line += string.Format(", within {0:F1} yds of {1}", Me.Location.Distance(Point), Point);
                         else if (Type == StopType.RangeOfLocation)
-                            line += string.Format(", within {0:F1} yds of {1} @ {2:F1} yds", Range, Point, StyxWoW.Me.Location.Distance(Point));
+                            line += string.Format(", within {0:F1} yds of {1} @ {2:F1} yds", Range, Point, Me.Location.Distance(Point));
                         else if (Unit == null || !Unit.IsValid)
                             line += ", unit == null";
                         else if (Type == StopType.LosOfUnit)
@@ -665,12 +682,12 @@ namespace Singular.Helpers
 
         public static void AtLocation(WoWPoint pt, SimpleBooleanDelegate and = null)
         {
-            Set( StopType.Location, null, pt, 0, at => StyxWoW.Me.Location.Distance(pt) <= 1, and);
+            Set( StopType.Location, null, pt, 0, at => Me.Location.Distance(pt) <= 1, and);
         }
 
         public static void InRangeOfLocation(WoWPoint pt, double range, SimpleBooleanDelegate and = null)
         {
-            Set(StopType.RangeOfLocation, null, pt, range, at => StyxWoW.Me.Location.Distance(pt) <= range, and);
+            Set(StopType.RangeOfLocation, null, pt, range, at => Me.Location.Distance(pt) <= range, and);
         }
 
         public static void InRangeOfUnit(WoWUnit unit, double range, SimpleBooleanDelegate and = null)
@@ -699,6 +716,35 @@ namespace Singular.Helpers
             Set(StopType.AsSoonAsPossible, null, WoWPoint.Empty, 0, at => true, and);
         }
     }
+
+   public class MoveContext 
+    {
+        public WoWPoint Location { get; set; }
+        public WoWUnit Unit { get; set; }
+        public MoveResult Result { get; set; }
+
+        public float Distance { get { return Location.Distance(StyxWoW.Me.Location); } }
+
+        public MoveContext()
+            : this( StyxWoW.Me.CurrentTarget)
+        {
+        }
+
+        public MoveContext(WoWUnit unit)
+        {
+            Unit = unit;
+            Location = Unit.Location;
+            Result = Navigator.MoveTo(Location);
+        }
+
+        public MoveContext(WoWPoint loc)
+        {
+            Unit = null;
+            Location = loc;
+            Result = Navigator.MoveTo(Location);
+        }
+    }
+
 
     public delegate WoWPoint LocationRetriever(object context);
 

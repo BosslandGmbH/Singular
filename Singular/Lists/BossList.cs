@@ -88,6 +88,7 @@ namespace Singular.Lists
                 31134, // Cyanigosa in Voilet Hold
                 43214, // Slabhide in The Stonecore,
                 43614, // Lockmaw in Lost City of the Tol'vir
+                43875, // Asaad in Vortext Pinnacle
                 54432, // Murozond in End Time
                 56895, // Weak Spot in Gate of the Setting Sun
                 63191, // Garalon in Heart of Fear This boss is riding an invisible vehicle and facing is relative to vehicle's facing.

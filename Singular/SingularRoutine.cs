@@ -148,7 +148,7 @@ namespace Singular
 
             // create silently since Start button will create a context change (at least first Start)
             // .. which will build behaviors again
-            if (!Instance.RebuildBehaviors(true))
+            if (!Instance.RebuildBehaviors())
             {
                 return;
             }
@@ -193,16 +193,16 @@ namespace Singular
                     Logger.Write("Installation: integrity verified for {0}", GetSingularVersion());
                 else
                 {
-                    Logger.Write(Color.HotPink, "Installation: modified by user - forum support may not available", singularName);
-                    Logger.WriteFile("=== following {0} files with issues ===", fcerrors.Count);
+                    Logger.Write(Color.HotPink, "Installation: modified by user - forum support may not be available", singularName);
+                    Logger.WriteFile("=== following {0} differ from Singular distribution ===", fcerrors.Count);
                     foreach (var fc in fcerrors)
                     {
                         if ( !File.Exists( fc.Name ))
-                            Logger.WriteFile(Styx.Common.LogLevel.Diagnostic, "   deleted: {0} {1}", fc.Size, fc.Name);
+                            Logger.WriteDiagnostic("   deleted: {0} {1}", fc.Size, fc.Name);
                         else if ( certified.Filelist.Any( f => 0 == String.Compare( f.Name, fc.Name, true)))
-                            Logger.WriteFile(Styx.Common.LogLevel.Diagnostic, "   changed: {0} {1}", fc.Size, fc.Name);
+                            Logger.WriteDiagnostic("   changed: {0} {1}", fc.Size, fc.Name);
                         else
-                            Logger.WriteFile(Styx.Common.LogLevel.Diagnostic, "   inserted {0} {1}", fc.Size, fc.Name);
+                            Logger.WriteDiagnostic("   inserted {0} {1}", fc.Size, fc.Name);
                     }
                     Logger.WriteFile(Styx.Common.LogLevel.Diagnostic, "");
                 }
@@ -535,7 +535,7 @@ namespace Singular
 
         public static bool UpdateDiagnosticCastingState( bool retVal = false)
         {
-            if (SingularSettings.Debug && SingularSettings.Instance.EnableDebugLoggingGCD)
+            if (SingularSettings.Debug && SingularSettings.DebugSpellCasting)
             {
                 if (_lastIsGCD != Spell.IsGlobalCooldown())
                 {

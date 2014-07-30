@@ -29,6 +29,7 @@ namespace Singular.ClassSpecific.Warlock
         private static int _mobCount;
         public static readonly WaitTimer demonFormRestTimer = new WaitTimer(TimeSpan.FromSeconds(3));
 
+        private static DateTime _lastSoulFire = DateTime.MinValue;
 
         #region Normal Rotation
 
@@ -69,11 +70,41 @@ namespace Singular.ClassSpecific.Warlock
 
                         // even though AOE spell, keep on CD for single target unless AoE turned off
                         new Decorator(
-                            ret => Spell.UseAOE && Common.GetCurrentPet() == WarlockPet.Felguard,
+                            ret => Spell.UseAOE && WarlockSettings.FelstormMobCount > 0 && Common.GetCurrentPet() == WarlockPet.Felguard && !Spell.IsSpellOnCooldown("Command Demon") && Me.Pet.GotTarget,
                             new Sequence(
                                 new PrioritySelector(
-                                    Pet.CreateCastPetAction("Felstorm", ret => !Common.HasTalent(WarlockTalents.GrimoireOfSupremacy)),
-                                    Pet.CreateCastPetAction("Wrathstorm", ret => Common.HasTalent(WarlockTalents.GrimoireOfSupremacy))
+                                    ctx =>
+                                    {
+                                        int mobCount = Unit.UnfriendlyUnits().Where(t => Me.Pet.SpellDistance(t) < 8f).Count();
+                                        if (mobCount > 0)
+                                        {
+                                            // try not to waste Felstorm if mob will die soon anyway
+                                            if (mobCount == 1)
+                                            {
+                                                if (Me.Pet.CurrentTargetGuid == Me.CurrentTargetGuid && !Me.CurrentTarget.IsPlayer && Me.CurrentTarget.TimeToDeath() < 6)
+                                                {
+                                                    Logger.WriteDebug("Felstorm: found {0} mobs within 8 yds of Pet, but saving Felstorm since it will die soon", mobCount, !Me.Pet.GotTarget ? -1f : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
+                                                    return 0;
+                                                }
+                                            }
+
+                                            if (SingularSettings.Debug)
+                                                Logger.WriteDebug("Felstorm: found {0} mobs within 8 yds of Pet; Pet is {1:F1} yds from its target", mobCount, !Me.Pet.GotTarget ? -1f : Me.Pet.SpellDistance(Me.Pet.CurrentTarget));
+                                        }
+                                        return mobCount;
+                                    },
+                                    Spell.Cast("Wrathstorm", req => ((int)req) >= WarlockSettings.FelstormMobCount),
+                                    Spell.Cast("Felstorm", req => ((int)req) >= WarlockSettings.FelstormMobCount)
+                /*
+                                                    ,
+                                                    new Decorator(
+                                                        req => Me.Pet.GotTarget && !Me.Pet.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModHealingReceived),
+                                                        new PrioritySelector(
+                                                            Spell.Cast( "Mortal Cleave", req => (int)req < WarlockSettings.FelstormMobCount || Spell.IsSpellOnCooldown("Felstorm")),
+                                                            Spell.Cast( "Legion Strike", req => (int) req < WarlockSettings.FelstormMobCount || Spell.IsSpellOnCooldown("Felstorm"))
+                                                            )
+                                                        )
+                */
                                     ),
                                 new ActionAlwaysFail()  // no GCD on Felstorm, allow to fall through
                                 )
@@ -153,7 +184,19 @@ namespace Singular.ClassSpecific.Warlock
 
             #region Single Target
 
-                        new Throttle( TimeSpan.FromMilliseconds(2400), Spell.Cast("Soul Fire", mov => true, on => Me.CurrentTarget, req => Me.HasAura("Molten Core"), cancel => false)),
+                // when 2 stacks present, don't throttle cast
+                        new Sequence(
+                            ctx =>
+                            {
+                                uint stacks = Me.GetAuraStacks("Molten Core");
+                                if (stacks > 0 && (DateTime.Now - _lastSoulFire).TotalMilliseconds < 250)
+                                    stacks--;
+                                return stacks;
+                            },
+                            Spell.Cast("Soul Fire", mov => true, on => Me.CurrentTarget, req => ((uint)req) > 0, cancel => false),
+                            new Action(r => _lastSoulFire = DateTime.Now)
+                            ),
+
 
                         new Decorator(
                             ret => Me.HasAura("Metamorphosis"),
@@ -206,12 +249,13 @@ namespace Singular.ClassSpecific.Warlock
         private static Composite CreateHandOfGuldanBehavior()
         {
             return new Throttle(
-                TimeSpan.FromMilliseconds(500),
+                TimeSpan.FromMilliseconds(2000),
                 new Decorator( 
                     ret => Me.CurrentTarget.HasAuraExpired("Hand of Gul'dan", "Shadowflame", 1),
                     new PrioritySelector(
-                        Spell.CastOnGround("Hand of Gul'dan", on => Me.CurrentTarget, ret => Me.GotTarget && TalentManager.HasGlyph("Hand of Gul'dan")),
-                        Spell.Cast("Hand of Gul'dan", req => !TalentManager.HasGlyph("Hand of Gul'dan"))
+                        ctx => TalentManager.HasGlyph("Hand of Gul'dan"),
+                        Spell.CastOnGround("Hand of Gul'dan", on => Me.CurrentTarget, req => Me.GotTarget && (bool)req),
+                        Spell.Cast("Hand of Gul'dan", req => !(bool) req)
                         )
                     )
                 );
@@ -224,18 +268,33 @@ namespace Singular.ClassSpecific.Warlock
 
             if (!hasAura && Me.GotTarget)
             {
+                string msg = "";
                 // check if we need Doom and have enough fury for 2 secs in form plus cast
                 if (CurrentDemonicFury >= 72 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom") && DoesCurrentTargetDeserveToGetDoom())
+                {
                     shouldCast = true;
+                    msg = "true, because target needs Doom";
+                }
                 // check if we have Corruption and we need to dump fury
-                else if (CurrentDemonicFury >= WarlockSettings.FurySwitchToDemon && !Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
+                else if (CurrentDemonicFury >= WarlockSettings.FurySwitchToDemon && !Me.CurrentTarget.HasKnownAuraExpired("Corruption", secs: 0, myAura: true))
+                {
                     shouldCast = true;
+                    msg = "true, because Fury above " + WarlockSettings.FurySwitchToDemon.ToString() + " and has Corruption";
+                }
                 else if (Me.HasAnyAura("Dark Soul: Knowledge", "Perfect Aim"))
+                {
                     shouldCast = true;
-                
+                    msg = "true, because has Dark Soul";
+                }
+
                 // if we need to cast, check that we can
                 if (shouldCast)
+                {
+                    if (SingularSettings.Debug && !String.IsNullOrWhiteSpace(msg))
+                        Logger.WriteDebug("Apply Metamorphosis: " + msg);
+
                     shouldCast = Spell.CanCastHack("Metamorphosis", Me, false);
+                }
             }
 
             return shouldCast;
@@ -262,19 +321,41 @@ namespace Singular.ClassSpecific.Warlock
 
             if (hasAura && Me.GotTarget)
             {
+                string msg = "";
+
                 // switch back if not enough fury to cast anything (abc - always be casting)
                 if (CurrentDemonicFury < 40)
+                {
                     shouldCancel = true;
+                    msg = "true, because Fury < 40";
+                }
                 // check if we should stay in demon form because of buff
                 else if (Me.HasAnyAura("Dark Soul: Knowledge", "Perfect Aim"))
+                {
                     shouldCancel = false;
+                    msg = "false, because Dark Soul or Perfect Aim active";
+                }
                 // check if we should stay in demon form because of Doom falling off
-                else if ( CurrentDemonicFury >= 60 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom"))
+                else if (CurrentDemonicFury >= 60 && Me.CurrentTarget.HasAuraExpired("Metamorphosis: Doom", "Doom"))
+                {
                     shouldCancel = false;
+                    msg = "false, because Doom has expired on target";
+                }
                 // finally... now check if we should cancel 
-                else if ( CurrentDemonicFury < WarlockSettings.FurySwitchToCaster && Me.CurrentTarget.HasKnownAuraExpired("Corruption"))
+                else if ( Me.CurrentTarget.HasKnownAuraExpired("Corruption", 0, myAura: true))
+                {
                     shouldCancel = true;
+                    msg = "true, because Corruption fell off target";
+                }
+                else if (CurrentDemonicFury < WarlockSettings.FurySwitchToCaster)
+                {
+                    shouldCancel = true;
+                    msg = "true, because Fury < " + WarlockSettings.FurySwitchToCaster.ToString();
+                }
+
                 // do not need to check CanCast() on the cancel since we cancel the aura...
+                if (SingularSettings.Debug && !String.IsNullOrWhiteSpace(msg))
+                    Logger.WriteDebug("Cancel Metamorphosis: " + msg);
             }
 
             return shouldCancel;

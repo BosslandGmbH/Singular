@@ -57,6 +57,8 @@ namespace Singular
         LossOfControl = 0x80,
         Death = 0x100,
 
+        Initialize = 0x200,     // initializer method (return is ignored)
+
         // this is no guarantee that the bot is in combat
         InCombat = Heal | CombatBuffs | Combat,
         // this is no guarantee that the bot is out of combat

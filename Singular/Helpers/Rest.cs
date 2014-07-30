@@ -214,7 +214,7 @@ namespace Singular.Helpers
         private static bool WaitForRegenIfNoFoodDrink()
         {
             // never wait in a battleground
-            if  (Me.CurrentMap.IsBattleground)
+            if (Me.CurrentMap.IsBattleground)
                 return false;
 
             // always wait for health to regen

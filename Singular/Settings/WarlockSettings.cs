@@ -76,6 +76,13 @@ namespace Singular.Settings
         public bool UseDisarm { get; set; }
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Create Soulwell If In Group")]
+        [Description("Creates a Soulwell if in a Group at certain point (Battlefield start, etc)")]
+        public bool CreateSoulwell { get; set; }
+
+        [Setting]
         [DefaultValue(20)]
         [Category("Common")]
         [DisplayName("Drain Life%")]
@@ -116,6 +123,13 @@ namespace Singular.Settings
         [DisplayName("Switch to Demon Fury Level")]
         [Description("Go Demon above this Demonic Fury value (0 - 1000)")]
         public int FurySwitchToDemon { get; set; }
+
+        [Setting]
+        [DefaultValue(1)]
+        [Category("Demonology")]
+        [DisplayName("Felstorm Mob Count")]
+        [Description("0: disable ability, otherwise mob count required within 8 yds.  Controls Wrathstorm also")]
+        public int FelstormMobCount { get; set; }
 
         [Setting]
         [DefaultValue(true)]

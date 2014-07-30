@@ -52,7 +52,8 @@ namespace Singular.ClassSpecific.Monk
                     Spell.BuffSelf("Dematerialize"),
                     Spell.BuffSelf("Nimble Brew", ret => Me.Stunned || Me.Fleeing || Me.HasAuraWithMechanic( WoWSpellMechanic.Horrified )),
                     Spell.BuffSelf("Dampen Harm", ret => Me.Stunned && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any()),
-                    Spell.BuffSelf("Tiger's Lust", ret => Me.Rooted && !Me.HasAuraWithEffect( WoWApplyAuraType.ModIncreaseSpeed))
+                    Spell.BuffSelf("Tiger's Lust", ret => Me.Rooted && !Me.HasAuraWithEffect( WoWApplyAuraType.ModIncreaseSpeed)),
+                    Spell.BuffSelf("Life Cocoon", req => Me.Stunned && TalentManager.HasGlyph("Life Cocoon") && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any())
                     )
                 );
         }
@@ -76,7 +77,7 @@ namespace Singular.ClassSpecific.Monk
                     req => !Unit.IsTrivial(Me.CurrentTarget),
                     new PrioritySelector(               
                         // check our individual buffs here
-                        Spell.Buff("Disable", ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect( WoWApplyAuraType.ModDecreaseSpeed)),
+                        Spell.Buff("Disable", ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.ToPlayer().IsHostile && !Me.CurrentTarget.HasAuraWithEffect(WoWApplyAuraType.ModDecreaseSpeed)),
                         Spell.Buff("Ring of Peace", onunitRop)
                         )
                     ),
@@ -366,19 +367,25 @@ namespace Singular.ClassSpecific.Monk
                 return new ActionAlwaysFail();
 
             return new Throttle(15,
-                Spell.Cast("Grapple Weapon", on =>
-                {
-                    if (Spell.IsSpellOnCooldown("Grapple Weapon"))
-                        return null;
-
-                    WoWUnit unit = Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(
-                        u => u.SpellDistance() < 40
-                            && !Me.CurrentTarget.Disarmed
-                            && !Me.CurrentTarget.IsCrowdControlled()
-                            && Me.IsSafelyFacing(u, 150)
-                            );
-                    return unit;
-                })
+                new Sequence(
+                    ctx => Me.Inventory.Equipped.MainHand,
+                    Spell.Cast("Grapple Weapon", on =>
+                    {
+                        if (Spell.IsSpellOnCooldown("Grapple Weapon"))
+                            return null;
+                        
+                        WoWUnit unit = Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(
+                            u => u.IsHumanoid  
+                                && u.SpellDistance() < 40
+                                && !Me.CurrentTarget.Disarmed
+                                && !Me.CurrentTarget.IsCrowdControlled()
+                                && Me.IsSafelyFacing(u, 150)
+                                );
+                        return unit;
+                    }),
+                    new Wait( TimeSpan.FromMilliseconds(350), until => Me.Inventory.Equipped.MainHand != (WoWItem) until, new ActionAlwaysSucceed()),
+                    new Action( mh => Logger.Write(Color.White, "/grappleweapon: equipped [{0}] #{1}", Me.Inventory.Equipped.MainHand.Name, Me.Inventory.Equipped.MainHand.Entry ))
+                    )
                 );
         }
 

@@ -78,11 +78,16 @@ namespace Singular
         /// <param name="args">replacement parameter values</param>
         public static void WriteDebug(Color clr, string message, params object[] args)
         {
-            System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);
-
             if (SingularSettings.Debug)
             {
-                Logging.Write(newColor, "(Singular) " + message, args);
+                if (SingularSettings.Instance.DebugOutput == DebugOutputDest.FileOnly)
+                    Logging.WriteToFileSync(LogLevel.Normal, "(Singular) " + message, args);
+
+                else // if (SingularSettings.Instance.DebugOutput == DebugOutputDest.WindowAndFile)
+                {
+                    System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);                    
+                    Logging.Write(newColor, "(Singular) " + message, args);
+                }
             }
         }
 
@@ -92,7 +97,7 @@ namespace Singular
         /// <param name="message">message text</param>
         public static void WriteFile(string message)
         {
-            WriteFile(LogLevel.Verbose, message);
+            WriteFile(LogLevel.Normal, message);
         }
 
         /// <summary>
@@ -102,7 +107,7 @@ namespace Singular
         /// <param name="args">replacement parameter values</param>
         public static void WriteFile(string message, params object[] args)
         {
-            WriteFile(LogLevel.Diagnostic, message, args);
+            WriteFile(LogLevel.Normal, message, args);
         }
 
         /// <summary>
@@ -137,7 +142,8 @@ namespace Singular
         }
 
         /// <summary>
-        /// write message to log window if Singular Debug Enabled setting true
+        /// output a diagnostic message.  message is always written to log file, but is also written
+        /// to log window if Debug enabled
         /// </summary>
         /// <param name="clr">color of message in window</param>
         /// <param name="message">message text with embedded parameters</param>
@@ -146,13 +152,13 @@ namespace Singular
         {
             System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);
 
-            if (SingularSettings.Debug)
+            if (SingularSettings.Instance.DebugOutput == DebugOutputDest.WindowAndFile)
             {
                 Logging.Write(newColor, "(Singular) " + message, args);
             }
             else
             {
-                WriteFile(LogLevel.Diagnostic, "(Singular) " + message, args);
+                WriteFile("(Singular) " + message, args);
             }
         }
 

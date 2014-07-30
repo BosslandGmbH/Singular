@@ -101,7 +101,8 @@ namespace Singular.ClassSpecific.Monk
                                 var nearbyGroupMembers = Me.RaidMembers.Where(r => !r.IsMe && r.Distance <= 10).ToList();
                                 return nearbyGroupMembers.Any() && nearbyGroupMembers.Average(u => u.HealthPercent) <= MonkSettings.AvertHarmGroupHealthPct;
                             }),
-                        Spell.BuffSelf("Zen Meditation", ctx => Targeting.Instance.FirstUnit != null && Targeting.Instance.FirstUnit.IsCasting),
+
+                        Spell.BuffSelf("Zen Meditation", req => Targeting.Instance.TargetList.Any( u => u.IsCasting && u.CurrentTargetGuid != Me.Guid && Me.GroupInfo.IsInCurrentRaid(u.CurrentTargetGuid) && u.SpellDistance(u.CurrentTarget) < 20)),
 
                         Spell.BuffSelf("Fortifying Brew", ctx => Me.HealthPercent <= MonkSettings.FortifyingBrewPercent),
                         Spell.BuffSelf("Guard", ctx => Me.HasAura("Power Guard")),
@@ -173,7 +174,7 @@ namespace Singular.ClassSpecific.Monk
                                                 Spell.Cast("Leg Sweep", ctx => Unit.UnitsInCombatWithUsOrOurStuff(5).FirstOrDefault(u=>!u.IsStunned()), req => HasTalent(MonkTalents.LegSweep) )
                                                 )
                                             ),
-                                        Spell.Cast(sp => HasTalent(MonkTalents.RushingJadeWind) ? "Rushing Jade Wind" : "Spinning Crane Kick")
+                                        Spell.Cast(sp => HasTalent(MonkTalents.RushingJadeWind) ? "Rushing Jade Wind" : "Spinning Crane Kick", req => Spell.UseAOE)
                                         )
                                     )
                                 )
@@ -277,8 +278,8 @@ namespace Singular.ClassSpecific.Monk
                             req => Me.CurrentChi < Me.MaxChi,
                             new PrioritySelector(
                                 Spell.Cast("Keg Smash", ctx => Me.MaxChi - Me.CurrentChi >= 2),
-                                Spell.Cast("Rushing Jade Wind", ctx =>  HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
-                                Spell.Cast("Spinning Crane Kick", ctx => Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
+                                Spell.Cast("Rushing Jade Wind", req => Spell.UseAOE && HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
+                                Spell.Cast("Spinning Crane Kick", req => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
 
                                 // jab with power strike talent is > expel Harm if off CD.
                                 new Decorator(ctx => TalentManager.IsSelected((int)MonkTalents.PowerStrikes) && Me.MaxChi - Me.CurrentChi >= 2 && Spell.CanCastHack("Jab") && powerStrikeTimer.IsFinished,

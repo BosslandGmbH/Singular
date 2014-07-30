@@ -311,7 +311,7 @@ namespace Singular.ClassSpecific.Shaman
             return new PrioritySelector(
 
                 Spell.WaitForCastOrChannel(),
-                CreateRestoDiagnosticOutputBehavior(on => Me.CurrentTarget),
+                CreateRestoDiagnosticOutputBehavior(on => HealerManager.FindLowestHealthTarget()),
                 
                 HealerManager.CreateStayNearTankBehavior(),
 
@@ -808,7 +808,7 @@ namespace Singular.ClassSpecific.Shaman
                     return false;
                 }
 
-                Logger.WriteDebug("Tidal Waves={0} and Audit={1} while casting {2}", stacks, TidalWaveAuditCount(), castId);
+                Logger.WriteDebug("Tidal Waves={0} and Audit={1} while casting={2}, gcd={3}", stacks, TidalWaveAuditCount(), castId, Spell.IsGlobalCooldown().ToYN());
                 return true;
             }
         }
@@ -944,14 +944,14 @@ namespace Singular.ClassSpecific.Shaman
 
         #region Diagnostics
 
-        private static Composite CreateRestoDiagnosticOutputBehavior( UnitSelectionDelegate onUnit )
+        private static Composite CreateRestoDiagnosticOutputBehavior( UnitSelectionDelegate onHealUnit )
         {
             return new ThrottlePasses(1,1,
                 new Decorator(
                     ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
-                        WoWUnit healTarg = onUnit(ret);
+                        WoWUnit healTarg = onHealUnit(ret);
                         WoWUnit target = Me.CurrentTarget;
                         uint actvstks = 0;
 

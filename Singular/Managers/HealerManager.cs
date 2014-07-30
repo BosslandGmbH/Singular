@@ -31,7 +31,9 @@ namespace Singular.Managers
 
     internal class HealerManager : HealTargeting
     {
+        private delegate void HealerCancelDpsLogDelegate(Color clr, string message, params object[] args);
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+        private static HmmContext Hmm(object ctx) { return (HmmContext)ctx; }
 
         private static readonly WaitTimer _tankReset = WaitTimer.ThirtySeconds;
 
@@ -51,21 +53,29 @@ namespace Singular.Managers
 
         protected override List<WoWObject> GetInitialObjectList()
         {
-            List<WoWObject> heallist;
             // Targeting requires a list of WoWObjects - so it's not bound to any specific type of object. Just casting it down to WoWObject will work fine.
             // return ObjectManager.ObjectList.Where(o => o is WoWPlayer).ToList();
-            if (Me.GroupInfo.IsInRaid)
-                heallist = ObjectManager.ObjectList
-                    .Where(o => ((o is WoWPlayer && o.ToPlayer().IsInMyRaid)))
-                    .ToList();
-            else if (Me.GroupInfo.IsInParty)
-                heallist = ObjectManager.ObjectList
-                    .Where(o => ((o is WoWPlayer && o.ToPlayer().IsInMyRaid) || (SingularSettings.Instance.IncludeCompanionssAsHealTargets && o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet)))
-                    .ToList();
+            List<WoWObject> heallist;
+            if (Me.GroupInfo.IsInRaid || Me.GroupInfo.IsInParty)
+            {
+                if (!SingularSettings.Instance.IncludeCompanionssAsHealTargets)
+                    heallist = ObjectManager.ObjectList
+                        .Where(o => o is WoWPlayer && o.ToPlayer().IsInMyRaid)
+                        .ToList();
+                else
+                    heallist = ObjectManager.ObjectList
+                        .Where(o => (o is WoWPlayer && o.ToPlayer().IsInMyRaid) || (o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet))
+                        .ToList();
+            }
             else
-                heallist = ObjectManager.ObjectList
-                    .Where(o => (SingularSettings.Instance.IncludeCompanionssAsHealTargets && o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet))
+            {
+                if (!SingularSettings.Instance.IncludeCompanionssAsHealTargets)
+                    heallist = new List<WoWObject>() { Me };
+                else
+                    heallist = ObjectManager.ObjectList
+                    .Where(o => o is WoWUnit && o.ToUnit().SummonedByUnitGuid == Me.Guid && !o.ToUnit().IsPet)
                     .ToList();
+            }
 
             return heallist;
         }
@@ -248,7 +258,7 @@ namespace Singular.Managers
                     prio.Score -= u.HealthPercent * 5;
 
                     // If they're out of range, give them a bit lower score.
-                    if (u.Location.DistanceSqr(myLoc) > 40 * 40)
+                    if (u.Location.DistanceSqr(myLoc) > 41 * 41)
                     {
                         prio.Score -= 50f;
                     }
@@ -267,10 +277,16 @@ namespace Singular.Managers
                         prio.Score += 100f;
                     }
 
+                    // Give myself more weight. If the Healer dies, we all die. KEEP YOURSELF UP!
+                    if (Me.Guid == u.Guid && WoWPartyMember.GroupRole.Healer == (Me.Role & WoWPartyMember.GroupRole.Healer))
+                    {
+                        prio.Score += 100f;
+                    }
+
                     // Give flag carriers more weight in battlegrounds. We need to keep them alive!
                     if (inBg && u.IsPlayer && u.Auras.Keys.Any(a => a.ToLowerInvariant().Contains("flag")))
                     {
-                        prio.Score += 100f;
+                        prio.Score += 125f;
                     }
                 }
                 catch (System.AccessViolationException)
@@ -338,6 +354,22 @@ namespace Singular.Managers
         }
 
         /// <summary>
+        /// finds the lowest health target in HealerManager.  HealerManager updates the list over multiple pulses, resulting in 
+        /// the .FirstUnit entry often being at higher health than later entries.  This method dynamically searches the current
+        /// list and returns the lowest at this moment.
+        /// </summary>
+        /// <returns></returns>
+        public static WoWUnit FindHighestPriorityTarget()
+        {
+            WoWUnit target = Group.Tanks.Union( Group.Healers )
+                .Where( t => t.IsAlive && t.HealthPercent < 35 && t.SpellDistance() < 40)
+                .OrderBy( k => k.HealthPercent )
+                .FirstOrDefault();
+
+            return target ?? FindLowestHealthTarget();    
+        }
+
+        /// <summary>
         /// check if Healer should be permitted to do straight DPS abilities (with purpose to damage and not indirect heal, buff, mana return, etc.)
         /// </summary>
         /// <returns></returns>
@@ -364,7 +396,7 @@ namespace Singular.Managers
         }
 
         /// <summary>
-        /// check whether a healer DPS cast in progress should be cancelled
+        /// check whether a healer DPS be cancelled
         /// </summary>
         /// <returns></returns>
         public static bool CancelHealerDPS()
@@ -379,23 +411,31 @@ namespace Singular.Managers
                 return false;
 
             // allow casts that are close to finishing to finish regardless
-            if (Spell.IsCastingOrChannelling() && Me.CurrentCastTimeLeft.TotalMilliseconds < 333)
+            bool castInProgress = Spell.IsCastingOrChannelling();
+            if (castInProgress && Me.CurrentCastTimeLeft.TotalMilliseconds < 333 && Me.CurrentChannelTimeLeft.TotalMilliseconds < 333)
             {
                 Logger.WriteDebug("CancelHealerDPS: suppressing /cancel since less than 333 ms remaining");
                 return false;
             }
 
             // use a window less than actual to avoid cast/cancel/cast/cancel due to mana hovering at setting level
+            string action = castInProgress ? "/cancel" : "!do-not-dps";
+            HealerCancelDpsLogDelegate logdelegate ;
+            if (castInProgress)
+                logdelegate = Logger.Write;
+            else
+                logdelegate = Logger.WriteDebug;
+
             if (Me.ManaPercent < (SingularSettings.Instance.HealerCombatMinMana - 3))
             {
-                Logger.WriteDebug("CancelHealerDPS: /cancel because Mana={0:F1}% fell below Min={1}%", Me.ManaPercent, SingularSettings.Instance.HealerCombatMinMana);
+                logdelegate(Color.Orange, "{0} because Mana={1:F1}% fell below Min={2}%", action, Me.ManaPercent, SingularSettings.Instance.HealerCombatMinMana);
                 return true;
             }
 
             // check if group health has dropped below setting
             if (HealerManager.Instance.FirstUnit != null && HealerManager.Instance.FirstUnit.HealthPercent < SingularSettings.Instance.HealerCombatMinHealth)
             {
-                Logger.WriteDebug("CancelHealerDPS: /cancel because {0} @ {1:F1}% health fell below Min={2}%", HealerManager.Instance.FirstUnit.SafeName(), HealerManager.Instance.FirstUnit.HealthPercent, SingularSettings.Instance.HealerCombatMinHealth);
+                logdelegate(Color.Orange, "{0} because {1} @ {2:F1}% health fell below Min={3}%", action, HealerManager.Instance.FirstUnit.SafeName(), HealerManager.Instance.FirstUnit.HealthPercent, SingularSettings.Instance.HealerCombatMinHealth);
                 return true;
             }
 
@@ -409,7 +449,7 @@ namespace Singular.Managers
 
             if (!Spell.CanCastHack(spell, Me, skipWowCheck: true))
             {
-                if (!SingularSettings.DebugSpellCanCast)
+                if (!SingularSettings.DebugSpellCasting)
                     Logger.WriteDebug("GetBestCoverageTarget: CanCastHack says NO to [{0}]", spell);
                 return null;
             }
@@ -453,7 +493,7 @@ namespace Singular.Managers
                     return t.Player;
                 }
 
-                if (SingularSettings.DebugSpellCanCast)
+                if (SingularSettings.DebugSpellCasting)
                 {
                     Logger.WriteDebug("GetBestCoverageTarget('{0}'): not enough found - {1} with {2} nearby under {3}%", spell, t.Player.SafeName(), t.Count, health);
                 }
@@ -494,20 +534,37 @@ namespace Singular.Managers
             }
         }
 
-        private static int moveNearTank { get; set; }
-        private static int stopNearTank { get; set; }
-
-        public static Composite CreateStayNearTankBehavior()
+        /// <summary>
+        /// stays within range of Tank as they move.  settings configurable by user.
+        /// </summary>
+        /// <param name="gapCloser">ability to close distance more quickly than running (such as Roll)</param>
+        /// <returns></returns>
+        public static Composite CreateStayNearTankBehavior(Composite gapCloser = null)
         {
+            int moveNearTank;
+            int stopNearTank;
+
+            if (gapCloser == null)
+                gapCloser = new ActionAlwaysFail();
+
             if (!SingularSettings.Instance.StayNearTank)
                 return new ActionAlwaysFail();
 
             if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                 return new ActionAlwaysFail();
 
-            moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRange);
-            stopNearTank = Math.Max( moveNearTank / 2, moveNearTank - 5);
+            if ((Dynamics.CompositeBuilder.CurrentBehaviorType & BehaviorType.InCombat) != (BehaviorType) 0)
+            {
+                moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeCombat);
+                stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
+            }
+            else
+            {
+                moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeRest);
+                stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
+            }
 
+            Logger.WriteDebug("StayNearTank in {0}: will move towards at {1} yds and stop if within {2} yds", Dynamics.CompositeBuilder.CurrentBehaviorType, moveNearTank, stopNearTank);
             return new PrioritySelector(
                 ctx => HealerManager.TankToStayNear,
                 // no healing needed, then move within heal range of tank
@@ -515,10 +572,85 @@ namespace Singular.Managers
                     ret => ((WoWUnit)ret) != null,
                     new Sequence(
                         new PrioritySelector(
+                            gapCloser,
                             Movement.CreateMoveToLosBehavior(unit => ((WoWUnit)unit)),
-                            Movement.CreateMoveToUnitBehavior(unit => ((WoWUnit)unit), moveNearTank, stopNearTank),
-                            Movement.CreateEnsureMovementStoppedBehavior(stopNearTank, unit => (WoWUnit)unit, "in heal range of tank")
+                            Movement.CreateMoveToUnitBehavior(unit => ((WoWUnit)unit), moveNearTank, stopNearTank)
+                            // , Movement.CreateEnsureMovementStoppedBehavior(stopNearTank, unit => (WoWUnit)unit, "in heal range of tank")
                             ),
+                        new ActionAlwaysFail()
+                        )
+                    )
+                );
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="gapCloser"></param>
+        /// <returns></returns>
+        public static Composite CreateMeleeHealerMovementBehavior(Composite gapCloser = null)
+        {
+            int moveNearTank;
+            int stopNearTank;
+
+            if (gapCloser == null)
+                gapCloser = new ActionAlwaysFail();
+
+            if (!SingularSettings.Instance.StayNearTank)
+                return new ActionAlwaysFail();
+
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+                return new ActionAlwaysFail();
+
+            bool incombat = (Dynamics.CompositeBuilder.CurrentBehaviorType & BehaviorType.InCombat) != (BehaviorType)0;
+            if (incombat)
+            {
+                moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeCombat);
+                stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
+            }
+            else
+            {
+                moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeRest);
+                stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
+            }
+
+            if (gapCloser == null)
+                gapCloser = new ActionAlwaysFail();
+
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+                return new ActionAlwaysFail();
+
+            moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeCombat);
+            stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
+
+            if (!SingularSettings.Instance.StayNearTank)
+            {
+                return Movement.CreateMoveBehindTargetBehavior();
+            }
+           
+            return new PrioritySelector(
+                ctx => (bool) (Me.Combat && Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget)),
+                new Decorator(
+                    ret => (bool)ret,
+                    new Sequence(
+                        new PrioritySelector(
+                            ctx => Me.CurrentTarget,
+                            gapCloser,
+                            Movement.CreateMoveToLosBehavior(),
+                            Movement.CreateMoveToMeleeBehavior(true),
+                            // to account for Mistweaver Monks facing Soothing Mist target automatically
+                            new Decorator(
+                                req => !Spell.IsChannelling(),
+                                Movement.CreateFaceTargetBehavior()
+                                )
+                            ),                        
+                        new ActionAlwaysFail()
+                        )
+                    ),
+                new Decorator(
+                    ret => !(bool)ret,
+                    new Sequence(
+                        CreateStayNearTankBehavior(gapCloser),
                         new ActionAlwaysFail()
                         )
                     )
@@ -642,6 +774,35 @@ namespace Singular.Managers
         }
 
         #endregion  
+    }
+
+    /// <summary>
+    /// cached result of loc(ret), desc(ret), etc for Spell.CastOnGround.  for expensive queries (such as Cluster.GetBestUnitForCluster()) we want to avoid
+    /// performing them multiple times.  in some cases we were caching that locally in the context parameter of a wrapping PrioritySelector
+    /// but doing it here enforces for all calls, so will reduce list scans and cycles required even for targets selected by auras present/absent
+    /// </summary>
+    internal class HmmContext
+    {
+        internal WoWPoint loc;
+        internal WoWUnit target;
+        internal WoWUnit tank;
+        internal bool behind;
+        internal object context;
+
+        // always create passing the existing context so it is preserved for delegate usage
+        internal HmmContext(object ctx)
+        {
+            context = ctx;
+        }
+
+        // always create passing the existing context so it is preserved for delegate usage
+        internal HmmContext(WoWUnit tank, WoWUnit target, object ctx)
+        {
+            this.tank = tank;
+            this.target = target;
+            this.context = ctx;
+            behind = target != null && target.IsBoss() && !Singular.Lists.BossList.AvoidRearBosses.Contains(target.Entry);
+        }
     }
 
     class PrioritizedBehaviorList

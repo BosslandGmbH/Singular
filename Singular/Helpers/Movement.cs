@@ -112,7 +112,7 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled
                     && Me.IsMoving
-                    && (onUnit(ret) == null || onUnit(ret).Distance < range),
+                    && (onUnit(ret) == null || (onUnit(ret).Distance < range && onUnit(ret).InLineOfSpellSight)),
                 new Sequence(
                     new Throttle( 1, TimeSpan.FromSeconds(1), RunStatus.Success,
                         new Action(ret => Logger.WriteDebug(Color.White, "EnsureMovementStopped: stopping because {0}", onUnit(ret) == null ? "No CurrentTarget" : string.Format("target @ {0:F1} yds, stop range: {1:F1}", onUnit(ret).Distance, range)))
@@ -153,9 +153,12 @@ namespace Singular.Helpers
 
         public static Composite CreateFaceTargetBehavior(UnitSelectionDelegate toUnit, float viewDegrees = 100f, bool waitForFacing = true)
         {
+            if (toUnit == null)
+                return new ActionAlwaysFail();
+
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled 
-                    && toUnit != null && toUnit(ret) != null 
+                    && toUnit(ret) != null 
                     && !Me.IsMoving 
                     && !toUnit(ret).IsMe 
                     && !Me.IsSafelyFacing(toUnit(ret), viewDegrees),
@@ -168,7 +171,7 @@ namespace Singular.Helpers
                     if (unit.Distance < 0.1)
                     {
                         strafe = (((int)DateTime.Now.Second) & 1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
-                        Logger.WriteDebug("FaceTarget: {0} for {1} ms since too close to target @ {2:F2} yds", strafe, StrafeTime, unit.Distance);
+                        Logger.Write( Color.White, "FaceTarget: {0} for {1} ms since too close to target @ {2:F2} yds", strafe, StrafeTime, unit.Distance);
                         WoWMovement.Move(strafe, TimeSpan.FromMilliseconds(StrafeTime));
                     }
 
@@ -400,7 +403,7 @@ namespace Singular.Helpers
         ///   Created 2/12/2011.
         /// </remarks>
         /// <returns>.</returns>
-        public static Composite CreateMoveBehindTargetBehavior()
+        public static Composite CreateMoveBehindTargetBehavior(Composite gapCloser = null)
         {
             return CreateMoveBehindTargetBehavior(ret => true);
         }
@@ -413,7 +416,7 @@ namespace Singular.Helpers
         /// </remarks>
         /// <param name="requirements">Aditional requirments.</param>
         /// <returns>.</returns>
-        public static Composite CreateMoveBehindTargetBehavior(SimpleBooleanDelegate requirements)
+        public static Composite CreateMoveBehindTargetBehavior(SimpleBooleanDelegate requirements, Composite gapCloser = null)
         {
             if ( !SingularSettings.Instance.MeleeMoveBehind)
                 return new ActionAlwaysFail();
@@ -424,13 +427,16 @@ namespace Singular.Helpers
             if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
                 return new ActionAlwaysFail();
 
+            if (gapCloser == null)
+                gapCloser = new ActionAlwaysFail();
+
             return new Decorator(
                 ret =>
                 {
                     if (MovementManager.IsMovementDisabled || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
                         return false;
                     var currentTarget = Me.CurrentTarget;
-                    if (currentTarget == null || currentTarget.MeIsSafelyBehind || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry))
+                    if (currentTarget == null || Me.IsBehind(currentTarget) || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry))
                         return false;
                     return (currentTarget.Stunned || currentTarget.CurrentTargetGuid != Me.Guid)
                         && requirements(ret);
@@ -438,11 +444,15 @@ namespace Singular.Helpers
                 new PrioritySelector(
                     ctx => CalculatePointBehindTarget(),
                     new Decorator(
-                        req => Navigator.CanNavigateFully(Me.Location, (WoWPoint)req, 4),
+                        req => Navigator.CanNavigateFully(Me.Location, (WoWPoint)req),
                         new Sequence(
                             new Action(ret => Logger.WriteDebug(Color.White, "MoveBehind: behind {0} @ {1:F1} yds", Me.CurrentTarget.SafeName(), Me.CurrentTarget.Distance)),
                             new Action(behindPoint => Navigator.MoveTo((WoWPoint)behindPoint)),
-                            new Action(behindPoint => StopMoving.AtLocation((WoWPoint)behindPoint))
+                            new Action(behindPoint => StopMoving.AtLocation((WoWPoint)behindPoint)),
+                            new PrioritySelector(
+                                gapCloser,
+                                new ActionAlwaysSucceed()
+                                )
                             )
                         )
                     )
@@ -474,27 +484,33 @@ namespace Singular.Helpers
         /// <returns>.</returns>
         public static Composite CreateMoveToLocationBehavior(LocationRetriever location, bool stopInRange, DynamicRangeRetriever range)
         {
-            // Do not fuck with this. It will ensure we stop in range if we're supposed to.
-            // Otherwise it'll stick to the targets ass like flies on dog shit.
-            // Specifying a range of, 2 or so, will ensure we're constantly running to the target. Specifying 0 will cause us to spin in circles around the target
-            // or chase it down like mad. (PVP oriented behavior)
-            return
-                new Decorator(
-                // Don't run if the movement is disabled.
-                    ret => !MovementManager.IsMovementDisabled,
-                    new PrioritySelector(
-                        new Decorator(
-                // Give it a little more than 1/2 a yard buffer to get it right. CTM is never 'exact' on where we land. So don't expect it to be.
-                            ret => stopInRange && Me.Location.Distance(location(ret)) < range(ret),
-                            new PrioritySelector(
-                                CreateEnsureMovementStoppedBehavior(),
-                // In short; if we're not moving, just 'succeed' here, so we break the tree.
-                                new Action(ret => RunStatus.Success)
+            return new Decorator(
+                ret => !MovementManager.IsMovementDisabled,
+                new PrioritySelector(
+                    new Decorator(
+                        req => stopInRange,
+                        new PrioritySelector(
+                            new Action( r => {
+                                if (StopMoving.Type != StopMoving.StopType.RangeOfLocation || location(r) != StopMoving.Point || range(r) != StopMoving.Range )
+                                    StopMoving.InRangeOfLocation(location(r), range(r));
+                                return RunStatus.Failure;
+                            }),
+                            new Decorator(
+                                req => Me.Location.Distance(location(req)) < range(req),
+                                CreateEnsureMovementStoppedBehavior()
                                 )
-                            ),
-                        new Action(ret => Navigator.MoveTo(location(ret))),
-                        new Action(ret => StopMoving.InRangeOfLocation(location(ret), range(ret)))
-                        ));
+                            )
+                        ),
+                    new Decorator(
+                        req => Me.Location.Distance(location(req)) > range(req),
+                        new Action(r => {
+                            string s = stopInRange ? string.Format("MoveInRangeOfLoc({0:F1} yds)", range(r)) : "MoveToLocation";
+                            Logger.WriteDebug(Color.White, s + ": towards {0} @ {1:F1} yds", location(r),  range(r));
+                            Navigator.MoveTo(location(r));
+                        })
+                        )
+                    )
+                );
         }
 
         #endregion
@@ -692,7 +708,7 @@ namespace Singular.Helpers
 
         public static void InRangeOfUnit(WoWUnit unit, double range, SimpleBooleanDelegate and = null)
         {
-            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, range, at => Unit == null || !Unit.IsValid || Unit.SpellDistance() <= range, and);
+            Set(StopType.RangeOfUnit, unit, WoWPoint.Empty, range, at => Unit == null || !Unit.IsValid || (Unit.SpellDistance() <= range && Unit.InLineOfSpellSight), and);
         }
 
         public static void InMeleeRangeOfUnit(WoWUnit unit, SimpleBooleanDelegate and = null)

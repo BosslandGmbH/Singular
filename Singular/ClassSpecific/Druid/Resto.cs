@@ -353,7 +353,7 @@ namespace Singular.ClassSpecific.Druid
                         );
                 else
                     behavs.AddBehavior(HealthToPriority(DruidSettings.Heal.Ironbark) + PriHighBase, "Ironbark - Tank @ " + DruidSettings.Heal.Ironbark + "%", "Ironbark",
-                        Spell.Buff("Ironbark", on => RaFHelper.Leader == (WoWUnit)on && ((WoWUnit)on).IsAlive && ((WoWUnit)on).HealthPercent < DruidSettings.Heal.Ironbark)
+                        Spell.Buff("Ironbark", on => Group.Tanks.FirstOrDefault(u => u.IsAlive && u.HealthPercent < DruidSettings.Heal.CenarionWard && !u.HasAura("Ironbark")))
                         );
             }
 
@@ -364,8 +364,8 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Buff("Cenarion Ward", on => (WoWUnit)on, req => ((WoWUnit)req).HealthPercent < DruidSettings.Heal.CenarionWard)
                         );
                 else
-                    behavs.AddBehavior(HealthToPriority(DruidSettings.Heal.CenarionWard) + PriHighBase, "Cenarion Ward - Tank @ " + DruidSettings.Heal.CenarionWard + "%", "Cenarion Ward",
-                        Spell.Buff("Cenarion Ward", on => RaFHelper.Leader == (WoWUnit)on && ((WoWUnit)on).IsAlive && ((WoWUnit)on).HealthPercent < DruidSettings.Heal.CenarionWard)
+                    behavs.AddBehavior(HealthToPriority(DruidSettings.Heal.CenarionWard) + PriHighBase, "Cenarion Ward - Tanks @ " + DruidSettings.Heal.CenarionWard + "%", "Cenarion Ward",
+                        Spell.Buff("Cenarion Ward", on => Group.Tanks.FirstOrDefault( u => u.IsAlive && u.HealthPercent < DruidSettings.Heal.CenarionWard && !u.HasAura("Cenarion Ward")))
                         );
             }
 
@@ -377,7 +377,7 @@ namespace Singular.ClassSpecific.Druid
                         );
                 else
                     behavs.AddBehavior(HealthToPriority(DruidSettings.Heal.NaturesVigil) + PriHighBase, "Nature's Vigil - Tank @ " + DruidSettings.Heal.NaturesVigil + "%", "Nature's Vigil",
-                        Spell.Buff("Nature's Vigil", on => RaFHelper.Leader == (WoWUnit)on && ((WoWUnit)on).IsAlive && ((WoWUnit)on).HealthPercent < DruidSettings.Heal.NaturesVigil)
+                        Spell.Buff("Nature's Vigil", on => Group.Tanks.FirstOrDefault(u => u.IsAlive && u.HealthPercent < DruidSettings.Heal.NaturesVigil && !u.HasAura("Nature's Vigil")))
                         );
             }
 

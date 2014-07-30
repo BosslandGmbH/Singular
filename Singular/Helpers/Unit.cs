@@ -173,15 +173,18 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///   Gets the nearby unfriendly units within 40 yards.
+        ///   Gets the nearby unfriendly units within specified range.  if no range specified, 
+        ///   includes all unfriendly units
         /// </summary>
         /// <value>The nearby unfriendly units.</value>
-        public static IEnumerable<WoWUnit> UnfriendlyUnits(int maxSpellDist)
+        public static IEnumerable<WoWUnit> UnfriendlyUnits(int maxSpellDist = -1)
         {
             bool useTargeting = (SingularRoutine.IsDungeonBuddyActive || (SingularRoutine.IsQuestBotActive && StyxWoW.Me.IsInInstance));
 
             if (useTargeting)
             {
+                if ( maxSpellDist == -1)
+                    return Targeting.Instance.TargetList.Where(u => u != null && ValidUnit(u));
                 return Targeting.Instance.TargetList.Where(u => u != null && ValidUnit(u) && u.SpellDistance() < maxSpellDist);
             }
 
@@ -195,7 +198,7 @@ namespace Singular.Helpers
                 if (type == typeWoWUnit || type == typeWoWPlayer)
                 {
                     WoWUnit t = objectList[i] as WoWUnit;
-                    if (t != null && ValidUnit(t) && t.SpellDistance() < maxSpellDist )
+                    if (t != null && ValidUnit(t) && (maxSpellDist == -1 || t.SpellDistance() < maxSpellDist ))
                     {
                         list.Add(t);
                     }
@@ -570,6 +573,18 @@ namespace Singular.Helpers
 
 
         /// <summary>
+        /// aura considered expired if spell of same name as aura is known and aura not present or has less than specified time remaining
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <param name="aura">name of aura with spell of same name that applies</param>
+        /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
+        public static bool HasAuraExpired(this WoWUnit u, string aura, TimeSpan tm, bool myAura = true)
+        {
+            return u.HasAuraExpired(aura, aura, tm, myAura);
+        }
+
+
+        /// <summary>
         /// aura considered expired if spell is known and aura not present or has less than specified time remaining
         /// </summary>
         /// <param name="u">unit</param>
@@ -578,13 +593,26 @@ namespace Singular.Helpers
         /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
         public static bool HasAuraExpired(this WoWUnit u, string spell, string aura, int secs = 3, bool myAura = true)
         {
+            return HasAuraExpired( u, spell, aura, TimeSpan.FromSeconds(3), myAura);
+        }
+
+
+        /// <summary>
+        /// aura considered expired if spell is known and aura not present or has less than specified time remaining
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <param name="spell">spell that applies aura</param>
+        /// <param name="aura">aura</param>
+        /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
+        public static bool HasAuraExpired(this WoWUnit u, string spell, string aura, TimeSpan tm, bool myAura = true)
+        {
             // need to compare millisecs even though seconds are provided.  otherwise see it as expired 999 ms early because
             // .. of loss of precision
-            if ( !SpellManager.HasSpell(spell))
+            if (!SpellManager.HasSpell(spell))
                 return false;
-            
+
             TimeSpan timeLeft = u.GetAuraTimeLeft(aura, myAura);
-            if (timeLeft.TotalSeconds <= (double)secs)
+            if (timeLeft.TotalSeconds <= tm.TotalSeconds)
                 return true;
 
             return false;
@@ -592,8 +620,8 @@ namespace Singular.Helpers
 
 
         /// <summary>
-        /// aura considered expired if aura not present or less than specified time remaining.  differs from HasAuraExpired since it
-        /// assumes you have learned the spell which applies it already
+        /// aura considered expired if aura not present or less than specified time remaining.  
+        /// differs from HasAuraExpired since it assumes you have learned the spell which applies it already
         /// </summary>
         /// <param name="u">unit</param>
         /// <param name="aura">aura</param>
@@ -1148,7 +1176,7 @@ namespace Singular.Helpers
                         if (timeNow != lastReportedTime || guid != StyxWoW.Me.CurrentTargetGuid )
                         {
                             lastReportedTime = timeNow;
-                            Logger.WriteFile(LogLevel.Diagnostic, "TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}", 
+                            Logger.WriteFile( "TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}", 
                                 StyxWoW.Me.CurrentTarget.SafeName(),
                                 StyxWoW.Me.CurrentTarget.Guid,
                                 StyxWoW.Me.CurrentTarget.Entry, 

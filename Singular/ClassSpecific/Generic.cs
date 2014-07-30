@@ -139,7 +139,10 @@ namespace Singular.ClassSpecific
             if ( !SingularSettings.Instance.UseRacials || !pri.Children.Any() )
                 return new ActionAlwaysFail();
 
-            return new Throttle(TimeSpan.FromMilliseconds(250), pri );
+            return new Throttle(
+                TimeSpan.FromMilliseconds(250), 
+                new Decorator( req => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(), pri )
+                );
         }
 
         private static Composite CreateCombatRacialInRangeBehavior()

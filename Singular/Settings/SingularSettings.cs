@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using Singular.Helpers;
 using Styx.CommonBot;
 using Styx.WoWInternals;
+using System.Drawing;
 
 namespace Singular.Settings
 {
@@ -75,6 +76,13 @@ namespace Singular.Settings
         NoHealer,
         NoHealerInRange,
         Always
+    }
+
+    enum DebugOutputDest
+    {
+        None = 0,
+        FileOnly = 1,
+        WindowAndFile = 3
     }
 
     internal class SingularSettings : Styx.Helpers.Settings
@@ -152,6 +160,13 @@ namespace Singular.Settings
                     }
                 }
             }
+
+            // Validate settings
+            //===================================================================================
+            StayNearTankRangeCombat = Validate.IntValue("StayNearTankRangeCombat", 5, 100, StayNearTankRangeCombat );
+            StayNearTankRangeRest = Validate.IntValue("StayNearTankRangeRest", 5, 100, StayNearTankRangeRest);
+
+
 
             entrycount--;
         }
@@ -322,16 +337,16 @@ namespace Singular.Settings
         {
             get
             {
-                return GlobalSettings.Instance.LogLevel >= Styx.Common.LogLevel.Verbose && !Instance.DisableDebugLogging;
+                return Instance.DebugOutput != DebugOutputDest.None;
             }
         }
 
         [Browsable(false)]
-        public static bool DebugSpellCanCast
+        public static bool DebugSpellCasting
         {
             get
             {
-                return GlobalSettings.Instance.LogLevel >= Styx.Common.LogLevel.Diagnostic && !Instance.DisableDebugLogging;
+                return Debug && Instance.EnableDebugSpellCasting;
             }
         }
 
@@ -383,14 +398,18 @@ namespace Singular.Settings
 
         #region Category: Debug
 
+        // code should reference SingularSettings.DebugSpellCasting
+        //
         [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
         [Category("Debug")]
-        [DisplayName("Debug Logging GCD")]
-        [Description("Enables logging of GCD/Casting in Singular. Debug Logging setting must also be true")]
-        public bool EnableDebugLoggingGCD { get; set; }
+        [DisplayName("Debug Spell Casting Detection")]
+        [Description("Enables logging of GCD/Cast/Channeling in Singular. Debug Logging setting must also be true")]
+        public bool EnableDebugSpellCasting { get; set; }
 
+        // code should reference SingularSettings.Trace
+        //
         [Browsable(false)]
         [Setting]
         [DefaultValue(false)]
@@ -399,13 +418,14 @@ namespace Singular.Settings
         [Description("EXTREMELY VERBOSE!! Enables logging of entry/exit into each behavior. Only use if instructed or you prefer slower response times!")]
         public bool EnableDebugTrace { get; set; }
 
-        [Browsable(false)]
+        // code should reference SingularSettings.Debug
+        //
         [Setting]
-        [DefaultValue(false)]
+        [DefaultValue(DebugOutputDest.FileOnly)]
         [Category("Debug")]
-        [DisplayName("Disable Debug Logging")]
-        [Description("Disables debug logging by Singular. Will suppress debug output even when enabled by other means")]
-        public bool DisableDebugLogging { get; set; }
+        [DisplayName("Debug Output")]
+        [Description("None: disable debug logic, FileOnly: debug output to file, WindowAndFile: debug output to log window and file")]
+        public DebugOutputDest DebugOutput { get; set; }
 
         #endregion
 
@@ -628,6 +648,13 @@ namespace Singular.Settings
         #region Category: Group Healing / Support
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Use Soulwell")]
+        [Description("Use any nearby Soulwell from your group when out of Healthstones")]
+        public bool UseSoulwell { get; set; }
+
+        [Setting]
         [DefaultValue(35)]
         [Category("Group Healing/Support")]
         [DisplayName("DPS Off-Heal Begin %")]
@@ -665,9 +692,16 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(25)]
         [Category("Group Healing/Support")]
-        [DisplayName("Stay Near Tank Range")]
+        [DisplayName("Stay Near Tank - Combat Range")]
         [Description("Max combat distance from Tank before we move towards it (max value: 100)")]
-        public int StayNearTankRange { get; set; }
+        public int StayNearTankRangeCombat { get; set; }
+
+        [Setting]
+        [DefaultValue(15)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Stay Near Tank - Noncombat")]
+        [Description("Max combat distance from Tank before we move towards it (max value: 100)")]
+        public int StayNearTankRangeRest { get; set; }
 
         [Setting]
         [DefaultValue(true)]
@@ -920,6 +954,23 @@ namespace Singular.Settings
         internal HotkeySettings Hotkeys() { return _hotkeySettings ?? (_hotkeySettings = new HotkeySettings()); }
 
         #endregion
+
+        class Validate 
+        {
+            public static int IntValue( string name, int minValue, int maxValue, int setting)
+            {
+                if (!setting.Between( minValue, maxValue))
+                {
+                    int newValue = setting;
+                    newValue = Math.Max( minValue, newValue);
+                    newValue = Math.Min( maxValue, newValue);
+                    Logger.Write(Color.Yellow, "warning: Singular setting '{0}' value of {1} out of range, changing to {2}", name, setting, newValue);
+                    setting = newValue;
+                }
+
+                return setting;
+            }
+        }
     }
 
 }

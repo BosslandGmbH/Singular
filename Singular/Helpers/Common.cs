@@ -603,5 +603,54 @@ namespace Singular.Helpers
                 );
         }
 
+        private static DateTime timeMoveToSoulwell = DateTime.MinValue;
+
+        public static Composite CreateUseSoulwellBehavior(SimpleBooleanDelegate requirements = null)
+        {
+            if (!SingularSettings.Instance.UseSoulwell)
+                return new ActionAlwaysFail();
+
+            if (requirements == null)
+                requirements = req => true;
+
+            // throttle to minimize the impact of the list searches to once every interval
+            return new Decorator(
+                req => !MovementManager.IsMovementDisabled && DoWeNeedHealthstones && requirements(req),
+                new PrioritySelector(
+                    ctx => ClassSpecific.Warlock.Common.Soulwell,
+                    new Decorator(
+                        req => (req as WoWGameObject) != null,
+                        new PrioritySelector(
+                            new Throttle(
+                                TimeSpan.FromMilliseconds(500), 
+                                new Action( r => 
+                                { 
+                                    Logger.WriteDebug("Soulwell: moving towards @ {0:F1} yds", (r as WoWGameObject).Distance); 
+                                    return RunStatus.Failure; 
+                                })
+                                ),
+                            Movement.CreateMoveToLocationBehavior( loc => (loc as WoWGameObject).Location, true, range => (range as WoWGameObject).InteractRange - 0.5f),
+                            new Sequence(
+                                new Action( r=> 
+                                {
+                                    Logger.Write( Color.White, "^Interact with Soulwell");
+                                    (r as WoWGameObject).Interact();
+                                }),
+                                new WaitContinue( TimeSpan.FromSeconds(1), until => ClassSpecific.Warlock.Common.HaveHealthStone, new ActionAlwaysSucceed())
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+
+        public static bool DoWeNeedHealthstones 
+        { 
+            get
+            {
+                return !Me.Combat && !Me.Mounted && !Me.BagsFull && !ClassSpecific.Warlock.Common.HaveHealthStone;
+            }
+        }
     }
 }

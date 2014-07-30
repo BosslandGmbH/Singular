@@ -52,11 +52,20 @@ namespace Singular
         {
             // Logger.PrintStackTrace("RebuildBehaviors called.");
             DetermineCurrentWoWContext();
-            InitBehaviors();
+            InitBehaviorPropertyOverrrides();
 
             // DO NOT UPDATE: This will cause a recursive event
             // Update the current context. Handled in SingularRoutine.Context.cs
             //UpdateContext();
+
+            if (!silent)
+            {
+                Logger.WriteFile("");
+                Logger.WriteFile("Invoked Initilization Methods");
+                Logger.WriteFile("======================================================");
+            }
+
+            CompositeBuilder.InvokeInitializers(Me.Class, Me.Specialization, CurrentWoWContext, silent);
 
             // special behavior - reset KitingBehavior hook prior to calling class specific createion
             TreeHooks.Instance.ReplaceHook(HookName("KitingBehavior"), new ActionAlwaysFail());
@@ -64,7 +73,9 @@ namespace Singular
             if (!silent)
             {
                 Logger.WriteFile("");
-                Logger.WriteFile("{0} {1} {2}", "Pri".AlignRight(4), "Context".AlignLeft(15), "Method");
+                // Logger.WriteFile("{0} {1} {2}", "Pri".AlignRight(4), "Context".AlignLeft(15), "Method");
+                Logger.WriteFile("Behaviors Created in Priority Order");
+                Logger.WriteFile("======================================================");
             }
 
             // If these fail, then the bot will be stopped. We want to make sure combat/pull ARE implemented for each class.
@@ -128,7 +139,7 @@ namespace Singular
         /// initialize all base behaviors.  replaceable portion which will vary by context is represented by a single
         /// HookExecutor that gets assigned elsewhere (typically EnsureComposite())
         /// </summary>
-        private void InitBehaviors()
+        private void InitBehaviorPropertyOverrrides()
         {
             // be sure to turn off -- routines needing it will enable when rebuilt
             TankManager.NeedTankTargeting = false;
@@ -189,7 +200,10 @@ namespace Singular
                         ret => !Me.IsFlying && AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                         new PrioritySelector(
                             // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
-                            Spell.WaitForGcdOrCastOrChannel(),
+                            new Decorator(
+                                req => !OkToCallBehaviorsWithCurrentCastingStatus(),
+                                Spell.WaitForGcdOrCastOrChannel()
+                                ),
 
                             // lost control in Rest -- force a RunStatus.Failure so we don't loop in Rest
                             new Sequence(
@@ -214,7 +228,11 @@ namespace Singular
                             && !SingularSettings.Instance.DisableNonCombatBehaviors
                             && AllowNonCombatBuffing(),
                         new PrioritySelector(
-                            Spell.WaitForGcdOrCastOrChannel(),
+                            new Decorator(
+                                req => !OkToCallBehaviorsWithCurrentCastingStatus(),
+                                Spell.WaitForGcdOrCastOrChannel()
+                                ),
+                            Helpers.Common.CreateUseSoulwellBehavior(),
                             Item.CreateUseAlchemyBuffsBehavior(),
                             Item.CreateUseScrollsBehavior(),
                     // Generic.CreateFlasksBehaviour(),
@@ -227,7 +245,7 @@ namespace Singular
             _pullBuffsBehavior = new LockSelector(
                 new CallWatch("PullBuffs",
                     new Decorator(
-                        ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                        ret => AllowBehaviorUsage() && OkToCallBehaviorsWithCurrentCastingStatus(),
                         new HookExecutor(HookName(BehaviorType.PullBuffs))
                         )
                     )
@@ -236,7 +254,7 @@ namespace Singular
             _combatBuffsBehavior = new LockSelector(
                 new CallWatch("CombatBuffs",
                     new Decorator(
-                        ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                        ret => AllowBehaviorUsage() && OkToCallBehaviorsWithCurrentCastingStatus(),
                         new PrioritySelector(
                             new Decorator(ret => !HotkeyDirector.IsCombatEnabled, new ActionAlwaysSucceed()),
                             Generic.CreateUseTrinketsBehaviour(),
@@ -256,7 +274,7 @@ namespace Singular
                         new HookExecutor(HookName("KitingBehavior"))
                         ),
                     new Decorator(
-                        ret => AllowBehaviorUsage() && !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                        ret => AllowBehaviorUsage() && OkToCallBehaviorsWithCurrentCastingStatus(),
                         new HookExecutor(HookName(BehaviorType.Heal))
                         )
                     )
@@ -303,13 +321,27 @@ namespace Singular
                         ret => AllowBehaviorUsage(),
                         new PrioritySelector(
                             new Action(r => { ResetCurrentTarget(); return RunStatus.Failure; }),
-                            Spell.WaitForGcdOrCastOrChannel(),
+                            new Decorator(
+                                req => !OkToCallBehaviorsWithCurrentCastingStatus(),
+                                Spell.WaitForGcdOrCastOrChannel()
+                                ),
                             new HookExecutor(HookName(BehaviorType.Death))
                             )
                         )
                     )
                 );
 
+        }
+
+        private static bool OkToCallBehaviorsWithCurrentCastingStatus()
+        {
+            if (StyxWoW.Me.Specialization == WoWSpec.MonkMistweaver)
+                return true;
+
+            if (!Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling())
+                return true;
+
+            return false;
         }
 
         private static bool HaveWeLostControl

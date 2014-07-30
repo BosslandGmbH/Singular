@@ -55,7 +55,7 @@ namespace Singular.ClassSpecific.Monk
                             ),
 #endif
                         new Decorator(
-                            ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12,
+                            ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.SpellDistance() > 10,
                             new Throttle( 1,
                                 new Sequence(
                                     new PrioritySelector(
@@ -75,7 +75,7 @@ namespace Singular.ClassSpecific.Monk
                         new Decorator(
                             ret => RollTimer.IsFinished,
                             new PrioritySelector(
-                                Spell.Cast("Provoke", ret => !Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.Combat && Me.CurrentTarget.Distance.Between( 10, 40)),
+                                Spell.Cast("Provoke", ret => !Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.Combat && Me.CurrentTarget.SpellDistance().Between( 10, 40)),
                                 Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40, cancel => false)
                                 )
                             ),
@@ -99,7 +99,7 @@ namespace Singular.ClassSpecific.Monk
                                 );
                             return RunStatus.Failure;
                         }),
-                        Spell.Cast("Spinning Fire Blossom", req => Me.CurrentTarget.SpellDistance() < 50 && Me.IsSafelyFacing(Me.CurrentTarget,5f)),
+                        Spell.Cast("Spinning Fire Blossom", req => Spell.UseAOE && Me.CurrentTarget.SpellDistance() < 50 && Me.IsSafelyFacing(Me.CurrentTarget, 5f)),
                         Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40, cancel => false),
                         Movement.CreateMoveToUnitBehavior(on => StyxWoW.Me.CurrentTarget, 27f, 22f)
                         )
@@ -168,7 +168,7 @@ namespace Singular.ClassSpecific.Monk
                         Helpers.Common.CreateInterruptBehavior(),
 
                         new Decorator(
-                            ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.Distance > 12,
+                            ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && !Me.CurrentTarget.IsAboveTheGround() && Me.CurrentTarget.SpellDistance() > 10,
                             new Throttle(1,
                                 new Sequence(
                                     new PrioritySelector(
@@ -199,7 +199,7 @@ namespace Singular.ClassSpecific.Monk
                             ret => Unit.NearbyUnfriendlyUnits.Count( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 2),
 
                         Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 4),
-                        Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
+                        Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
 
                         Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")),
 
@@ -259,7 +259,7 @@ namespace Singular.ClassSpecific.Monk
                         Helpers.Common.CreateInterruptBehavior(),
 
                         // ranged attack on the run
-                        Spell.Cast("Spinning Fire Blossom", req => Me.IsMoving && Me.CurrentTarget.SpellDistance().Between(10,50) && Me.IsSafelyFacing(Me.CurrentTarget,5f) && Me.IsSafelyBehind( Me.CurrentTarget)),
+                        Spell.Cast("Spinning Fire Blossom", req => Spell.UseAOE && Me.IsMoving && Me.CurrentTarget.SpellDistance().Between(10, 50) && Me.IsSafelyFacing(Me.CurrentTarget, 5f) && Me.IsSafelyBehind(Me.CurrentTarget)),
 
                         Common.CreateGrappleWeaponBehavior(),
 
@@ -281,7 +281,7 @@ namespace Singular.ClassSpecific.Monk
                             ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
 
                         Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 4),
-                        Spell.Cast("Spinning Crane Kick", ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
+                        Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
 
                         Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
                                     
@@ -305,10 +305,10 @@ namespace Singular.ClassSpecific.Monk
                             ),
 
                         new Decorator(
-                            ret => MovementManager.IsClassMovementAllowed && Me.IsSafelyFacing(Me.CurrentTarget, 10f) && Me.CurrentTarget.Distance > 10,
+                            ret => MovementManager.IsClassMovementAllowed && Me.IsSafelyFacing(Me.CurrentTarget, 10f) && Me.CurrentTarget.SpellDistance() > 10,
                             new PrioritySelector(
                                 Spell.Cast("Flying Serpent Kick",  ret => TalentManager.HasGlyph("Flying Serpent Kick")),
-                                Spell.Cast("Roll", ret =>  !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > 12 && !Me.HasAura("Flying Serpent Kick"))
+                                Spell.Cast("Roll", ret =>  !MonkSettings.DisableRoll && Me.CurrentTarget.SpellDistance() > 10 && !Me.HasAura("Flying Serpent Kick"))
                                 )
                             )
                         )
@@ -432,7 +432,7 @@ namespace Singular.ClassSpecific.Monk
                     new Sequence(
                         new PrioritySelector(
                             Spell.Cast("Flying Serpent Kick", ret => TalentManager.HasGlyph("Flying Serpent Kick")),
-                            Spell.Cast("Roll", ret =>  !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > 12 && !Me.HasAnyAura("Flying Serpent Kick"))
+                            Spell.Cast("Roll", ret =>  !MonkSettings.DisableRoll && Me.CurrentTarget.SpellDistance() > 10 && !Me.HasAnyAura("Flying Serpent Kick"))
                             )
                         )
                     )

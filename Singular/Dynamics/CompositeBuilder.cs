@@ -27,6 +27,69 @@ namespace Singular.Dynamics
 
         private static List<MethodInfo> _methods = new List<MethodInfo>();
 
+
+        public static void InvokeInitializers(WoWClass wowClass, WoWSpec spec, WoWContext context, bool silent = false)
+        {
+            BehaviorType behavior = BehaviorType.Initialize;
+
+            if (context == WoWContext.None)
+            {
+                return;
+            }
+
+            SilentBehaviorCreation = silent;
+
+            // only load methods once
+            if (_methods.Count <= 0)
+            {
+                // Logger.WriteDebug("Singular Behaviors: building method list");
+                foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
+                {
+                    // All behavior methods should not be generic, and should have zero parameters, with their return types being of type Composite.
+                    _methods.AddRange(
+                        type.GetMethods(BindingFlags.Static | BindingFlags.Public).Where(
+                            mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(
+                                mi => mi.ReturnType.IsAssignableFrom(typeof(Composite))));
+                }
+                Logger.WriteFile("Singular Behaviors: Added " + _methods.Count + " behaviors");
+            }
+
+            // find all initialization methods for this class/spec/context
+            var matchedMethods = new Dictionary<BehaviorAttribute, MethodInfo>();
+            foreach (MethodInfo mi in _methods)
+            {
+                // If the behavior is set as ignore. Don't use it? Duh?
+                if (mi.GetCustomAttributes(typeof(IgnoreBehaviorCountAttribute), false).Any())
+                    continue;
+
+                // If there's no behavior attrib, then move along.
+                foreach (var a in mi.GetCustomAttributes(typeof(BehaviorAttribute), false))
+                {
+                    var attribute = a as BehaviorAttribute;
+                    if (attribute == null)
+                        continue;
+
+                    // Check if our Initialization behavior matches. If not, don't add it!
+                    if (IsMatchingMethod(attribute, wowClass, spec, behavior, context))
+                    {
+                        matchedMethods.Add( attribute, mi);
+                    }
+                }
+            }
+
+            // invoke each initialization behavior in priority order
+            foreach (var kvp in matchedMethods.OrderByDescending(mm => mm.Key.PriorityLevel))
+            {
+                CurrentBehaviorType = behavior;
+                if (!silent)
+                    Logger.WriteFile("{0} {1} {2}", kvp.Key.PriorityLevel.ToString().AlignRight(4), behavior.ToString().AlignLeft(15), kvp.Value.Name);
+                kvp.Value.Invoke(null, null);
+                CurrentBehaviorType = 0;
+            }
+
+            return;
+        }
+
         public static Composite GetComposite(WoWClass wowClass, WoWSpec spec, BehaviorType behavior, WoWContext context, out int behaviourCount, bool silent = false)
         {
             if (context == WoWContext.None)
@@ -39,20 +102,6 @@ namespace Singular.Dynamics
 
             SilentBehaviorCreation = silent;
             behaviourCount = 0;
-            if (_methods.Count <= 0)
-            {
-                // Logger.WriteDebug("Singular Behaviors: building method list");
-                foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
-                {
-                    // All behavior methods should not be generic, and should have zero parameters, with their return types being of type Composite.
-                    _methods.AddRange(
-                        type.GetMethods(BindingFlags.Static | BindingFlags.Public).Where(
-                            mi => !mi.IsGenericMethod && mi.GetParameters().Length == 0).Where(
-                                mi => mi.ReturnType.IsAssignableFrom(typeof (Composite))));
-                }
-                Logger.WriteFile("Singular Behaviors: Added " + _methods.Count + " behaviors");
-            }
-
             var matchedMethods = new Dictionary<BehaviorAttribute, Composite>();
 
             foreach (MethodInfo mi in _methods)

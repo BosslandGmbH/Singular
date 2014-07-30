@@ -364,8 +364,8 @@ namespace Singular.ClassSpecific.Rogue
                     // check if in cloak and dagger range
                     if (unit.SpellDistance() > 40)
                     {
-                        if (SingularSettings.DebugSpellCanCast)
-                            Logger.WriteFile(LogLevel.Diagnostic, "RogueCanCastOpener[{0}]: target @ {1:F1} yds is more than 40 yds away", spell.Name, unit.SpellDistance());
+                        if (SingularSettings.DebugSpellCasting)
+                            Logger.WriteFile("RogueCanCastOpener[{0}]: target @ {1:F1} yds is more than 40 yds away", spell.Name, unit.SpellDistance());
                         return false;
                     }
 
@@ -525,7 +525,7 @@ namespace Singular.ClassSpecific.Rogue
             if (unit.Combat)
                 return false;
 
-            if (!(Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon))
+            if (!(unit.IsHumanoid || unit.IsBeast || unit.IsDemon || unit.IsDragon))
                 return false;
 
             if (unit.IsCrowdControlled())
@@ -996,6 +996,12 @@ namespace Singular.ClassSpecific.Rogue
         private static bool AutoLootIsEnabled()
         {
             List<string> option = Lua.GetReturnValues("return GetCVar(\"AutoLootDefault\")");
+            return option != null && !string.IsNullOrEmpty(option[0]) && option[0] == "1";
+        }
+
+        private static bool AutoSelfCastIsEnabled()
+        {
+            List<string> option = Lua.GetReturnValues("return GetCVar(\"autoSelfCast\")");
             return option != null && !string.IsNullOrEmpty(option[0]) && option[0] == "1";
         }
 

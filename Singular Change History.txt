@@ -1,3 +1,90 @@
+--- Release 3.0.0.3554 ---
+
+General
+
+change- Debug Output: the default is to write debug output to the Log File only. This will assist new users that encounter a problem as their log will include the info, but it will not spam the Log Window with that detail.  Advanced users encountering no problems should change this to None
+
+change- Class Config: new Debug Output dropdown list replaces the previous Debug Enabled checkbox.  You can now choose from None, File Only, or Window+File as the destination for debug statements.
+
+change- Class Config: the Class Specific tab label will now have the name of the class instead
+
+*new* - Use Soulwell behavior: if a soulwell created by a group member is within 25 yds and toon does not have any Healthstones, Singular will move towards the Soulwell and interact.  A setting is added to Class Config - General to turn this off (on by default)
+
+fixed - Movement: stop at range logic was not checking if target was in line of spell sight.  this logic was primarily used by ranged healers 
+
+change- Spell Cast messages: will use a different color to indicate if spell is a heal
+
+fixed - Spell Cast logic: revised some checks and handling for recognition of when spell cast just initiated actually begins.  Previously was returning prior to cast commencing which caused problems for some spell priorities
+
+*new* - Added Asaad i Vortex Pinnacle to list of bosses we should not move behind due to its quick facing changes
+
+fixed - Racial spell not available log spam
+
+change- Heal Targets: increased priority/weight of Me as a heal target if in a Healer Role
+
+*new* - Healer Movement: will now support use of gap closer ability when following Tank (currently only Roll implemented for Mistweaver.)  
+
+
+Druid
+
+fixed - Resto - will now target any Tank for spells favoring that role rather than only Leader.  This fixes problems where used with a botbase that does not set a Leader
+
+
+Mage
+
+fixed - Lowbie - will no longer cast Frost Nova if in range of neutral mobs that are not attacking us
+
+
+Monk
+
+fixed - All Specs - added AOE permitted check to use of Spinning Crane Kick and Rushing Jade Wind
+
+change- Brewmaster - Zen Meditation now cast if hostile in range is casting and not targeting Monk
+
+*new* - Mistweaver - will cast Life Cocoon while stunned if glyphed 
+
+fixed - All Specs - Grapple Weapon used only on Humanoids and targets within range
+
+fixed - Mistweaver - cast in progress logic during behaviors that broke Mistweavers use of Soothing Mist combinations.   
+
+*new* - Mistweaver - movement logic to close on Heal or DPS target revised to support use of Roll when sufficient distance away
+
+*new* - Mistweaver - rewrite of healing logic.  Settings for context specific healing (Battlegrounds, Instances, Raids) now available from Class Config.  
+
+*new* - Mistweaver - rewrite of DPS logic.  Will now favor Melee combat until Crackling Jade Lightning learned, where it switches to ranged combat
+
+fixed - Mistweaver - conflict between DPS target facing and Soothing Mist auto-facing heal target
+
+fixed - Windwalker - distance check used for Roll now factors in hitbox, so will see improved use of Roll against large mobs (so primarily dungeons/raids)
+
+
+Rogue
+
+fixed - All Specs - exception occurring if debug logic was enabled
+
+fixed - All Specs - Sap target validation logic bug
+
+
+Shaman
+
+fixed - Resto - incorrect heal target was being displayed in some debug messages
+
+
+Warlock
+
+*new* - All Specs - support for Create Soulwell.  Will create during prep phase of Battlegrounds if none exists.  Will also cast when in a group and Warlock is out of stones and a group member is nearby.  May be disabled via Class Config in the Warlock section
+
+fixed - Demonology - Felstorm/Wrathstorm bug preventing cast in some cases. Additional logic to not cast this cooldown if only one mob and it will die soon
+
+*new* - Demonology - Felstorm Mob Count setting in Class Config to control # of mobs required (Default=1)
+
+fixed - Demonology - bug preveting back to back casts of Soul Fire when two stacks of Molten Core exist
+
+fixed - Demonology - was casting two (2) Hand of Gul'dan after Pull due to lag in time from cast to when missle travels and debuff applied.
+
+fixed - Demonology - bug causing it to remain in Demon form after Fury drops below the Switch to Caster config amount
+
+
 --- Release 3.0.0.3502 ---
 
 General

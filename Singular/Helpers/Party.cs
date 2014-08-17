@@ -344,6 +344,18 @@ namespace Singular.Helpers
             }
         }
 
+        /// <summary>
+        /// true: we have a Sated-like debuff, indicating we are prevented from benefitting
+        /// from a Bloodlust buff until it expires
+        /// </summary>
+        public static bool WeHaveSatedDebuff
+        {
+            get
+            {
+                return StyxWoW.Me.HasAnyAura(SatedDebuffName, "Temporal Displacement", "Insanity");
+            }
+        }
+
         #endregion
 
         /// <summary>

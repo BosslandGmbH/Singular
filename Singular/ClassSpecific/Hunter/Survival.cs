@@ -26,7 +26,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
 
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                Common.CreateHunterEnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -47,8 +47,6 @@ namespace Singular.ClassSpecific.Hunter
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
                         Helpers.Common.CreateInterruptBehavior(),
-
-                        Helpers.Common.CreateAutoAttack(true),
 
                         Common.CreateHunterNormalCrowdControl(),
 
@@ -102,7 +100,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
 
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                Common.CreateHunterEnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -120,8 +118,6 @@ namespace Singular.ClassSpecific.Hunter
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
                         Helpers.Common.CreateInterruptBehavior(),
-
-                        Helpers.Common.CreateAutoAttack(true),
 
                         Common.CreateHunterPvpCrowdControl(),                      
 

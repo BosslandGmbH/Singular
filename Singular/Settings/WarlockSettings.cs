@@ -48,7 +48,7 @@ namespace Singular.Settings
         public WarlockPet Pet { get; set; }
 
         [Setting]
-        [DefaultValue(40)]
+        [DefaultValue(60)]
         [Category("Pet")]
         [DisplayName("Health Funnel at %")]
         [Description("Pet Health % to begin Health Funnel in combat")]

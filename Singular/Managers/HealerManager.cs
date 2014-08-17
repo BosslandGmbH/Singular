@@ -31,6 +31,11 @@ namespace Singular.Managers
 
     internal class HealerManager : HealTargeting
     {
+        public const int EmergencyHealPercent = 35;
+        public const int EmergencyHealOutOfDanger = 45;
+
+        private static WoWUnit _SavingHealUnit;
+
         private delegate void HealerCancelDpsLogDelegate(Color clr, string message, params object[] args);
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static HmmContext Hmm(object ctx) { return (HmmContext)ctx; }
@@ -318,6 +323,43 @@ namespace Singular.Managers
                 select pi.Guid);
         }
 
+        public static WoWUnit SavingHealUnit
+        {
+            get
+            {
+                if (_SavingHealUnit != null && SavingHealTimer.IsFinished)
+                {
+                    try
+                    {
+                        // note: need to use HealthPercent (not GetPredictedHealthPercent() so we know they are out of danger
+                        if (_SavingHealUnit.IsValid && _SavingHealUnit.HealthPercent < EmergencyHealOutOfDanger && _SavingHealUnit.SpellDistance() < 40f)
+                            SavingHealTimer.Reset();
+                        else
+                        {
+                            Logger.WriteDiagnostic("SavingHealUnit: reset since {0} @ {1:F1}% and out of danger", _SavingHealUnit.SafeName(), _SavingHealUnit.HealthPercent);
+                            _SavingHealUnit = null;
+                        }
+                    }
+                    catch
+                    {
+                        _SavingHealUnit = null;
+                    }
+                }
+                return _SavingHealUnit;
+            }
+
+            set
+            {
+                _SavingHealUnit = value;
+                if (_SavingHealUnit != null)
+                {
+                    SavingHealTimer.Reset();
+                    Logger.WriteDiagnostic("SavingHealUnit: next heal forced to target {0} @ {1:F1}%", value.SafeName(), value.HealthPercent);
+                }
+            }
+        }
+
+        private static readonly WaitTimer SavingHealTimer = new WaitTimer(TimeSpan.FromMilliseconds(1500));
         /// <summary>
         /// finds the lowest health target in HealerManager.  HealerManager updates the list over multiple pulses, resulting in 
         /// the .FirstUnit entry often being at higher health than later entries.  This method dynamically searches the current
@@ -420,22 +462,17 @@ namespace Singular.Managers
 
             // use a window less than actual to avoid cast/cancel/cast/cancel due to mana hovering at setting level
             string action = castInProgress ? "/cancel" : "!do-not-dps";
-            HealerCancelDpsLogDelegate logdelegate ;
-            if (castInProgress)
-                logdelegate = Logger.Write;
-            else
-                logdelegate = Logger.WriteDebug;
 
             if (Me.ManaPercent < (SingularSettings.Instance.HealerCombatMinMana - 3))
             {
-                logdelegate(Color.Orange, "{0} because Mana={1:F1}% fell below Min={2}%", action, Me.ManaPercent, SingularSettings.Instance.HealerCombatMinMana);
+                Logger.WriteDebug(Color.Orange, "{0} because my Mana={1:F1}% fell below Min={2}%", action, Me.ManaPercent, SingularSettings.Instance.HealerCombatMinMana);
                 return true;
             }
 
             // check if group health has dropped below setting
             if (HealerManager.Instance.FirstUnit != null && HealerManager.Instance.FirstUnit.HealthPercent < SingularSettings.Instance.HealerCombatMinHealth)
             {
-                logdelegate(Color.Orange, "{0} because {1} @ {2:F1}% health fell below Min={3}%", action, HealerManager.Instance.FirstUnit.SafeName(), HealerManager.Instance.FirstUnit.HealthPercent, SingularSettings.Instance.HealerCombatMinHealth);
+                Logger.WriteDebug(Color.Orange, "{0} because {1} @ {2:F1}% health fell below Min={3}%", action, HealerManager.Instance.FirstUnit.SafeName(), HealerManager.Instance.FirstUnit.HealthPercent, SingularSettings.Instance.HealerCombatMinHealth);
                 return true;
             }
 
@@ -620,21 +657,19 @@ namespace Singular.Managers
             if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                 return new ActionAlwaysFail();
 
-            moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeCombat);
-            stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
-
             if (!SingularSettings.Instance.StayNearTank)
             {
                 return Movement.CreateMoveBehindTargetBehavior();
             }
            
             return new PrioritySelector(
-                ctx => (bool) (Me.Combat && Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget)),
+                ctx => (Me.Combat && Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget))
+                    ? Me.CurrentTarget
+                    : null,
                 new Decorator(
-                    ret => (bool)ret,
+                    ret => ret != null,
                     new Sequence(
                         new PrioritySelector(
-                            ctx => Me.CurrentTarget,
                             gapCloser,
                             Movement.CreateMoveToLosBehavior(),
                             Movement.CreateMoveToMeleeBehavior(true),
@@ -648,7 +683,7 @@ namespace Singular.Managers
                         )
                     ),
                 new Decorator(
-                    ret => !(bool)ret,
+                    ret => ret == null,
                     new Sequence(
                         CreateStayNearTankBehavior(gapCloser),
                         new ActionAlwaysFail()
@@ -711,7 +746,7 @@ namespace Singular.Managers
                 WoWUnit first = HealerManager.Instance.FirstUnit;
                 if (first != null)
                 {
-                    double health = first.GetPredictedHealthPercent(includeMyHeals: true);
+                    double health = first.PredictedHealthPercent(includeMyHeals: true);
                     if (health < SingularSettings.Instance.DpsOffHealBeginPct)
                     {
                         Logger.WriteDiagnostic("EnableOffHeal: entering off-heal mode since {0} @ {1:F1}%", first.SafeName(), health);

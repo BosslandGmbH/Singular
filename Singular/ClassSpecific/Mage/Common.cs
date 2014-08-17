@@ -573,8 +573,14 @@ namespace Singular.ClassSpecific.Mage
         /// <param name="nonfacingAttack">behavior while running away (back to target - instants only)</param>
         /// <param name="jumpturnAttack">behavior while facing target during jump turn (instants only)</param>
         /// <returns></returns>
-        public static Composite CreateMageAvoidanceBehavior(Composite nonfacingAttack = null, Composite jumpturnAttack = null)
+        public static Composite CreateMageAvoidanceBehavior(Composite nonfacingAttack = null, Composite jumpturnAttack = null, SimpleBooleanDelegate needDisengage= null, SimpleBooleanDelegate needKiting = null )
         {
+            if (needDisengage == null)
+                needDisengage = req => Kite.IsDisengageWantedByUserSettings();
+
+            if (needKiting == null)
+                needKiting = req => Kite.IsKitingWantedByUserSettings();
+
             Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jumpturnAttack);
 
             PrioritySelector pri = new PrioritySelector();
@@ -584,7 +590,7 @@ namespace Singular.ClassSpecific.Mage
                 int distBlink = TalentManager.HasGlyph("Blink") ? 28 : 20;
                 pri.AddChild(
                     new Decorator(
-                        ret => Kite.IsDisengageWantedByUserSettings(),
+                        ret => needDisengage(ret),
                         new PrioritySelector(
                             Disengage.CreateDisengageBehavior("Blink", Disengage.Direction.Frontwards, distBlink, CreateSlowMeleeBehavior()),
                             Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
@@ -597,7 +603,7 @@ namespace Singular.ClassSpecific.Mage
             {
                 pri.AddChild(
                     new Decorator(
-                        ret => Kite.IsKitingWantedByUserSettings(),
+                        ret => needKiting(ret),
                         new Sequence(
                             new Action( r => Logger.WriteDebug("MageAvoidance: requesting KITING!!!")),
                             Kite.BeginKitingBehavior()

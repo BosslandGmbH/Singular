@@ -205,6 +205,32 @@ namespace Singular
             return float.MaxValue;
         }
 
+        private static string _lastGetPredictedError;
+        public static float PredictedHealthPercent(this WoWUnit u, bool includeMyHeals = false)
+        {
+            float ph = u.GetPredictedHealthPercent(includeMyHeals);
+            if (ph > 100f || ph < 0f)
+            {
+                float hp = (float)u.HealthPercent;
+                if (SingularSettings.Debug && hp < 99.95f)
+                {
+                    // note: added some simple caching of last erro to reduce message spam.
+                    // .. once this error occurs at a certain health %, it appears to persist 
+                    // .. for awhile
+                    string msg = string.Format("Error=WoWUnit.GetPredictedHealthPercent({0}) returned {1:F1}% for {2} with HealthPercent={3:F1}%", includeMyHeals, ph, u.SafeName(), hp);
+                    if (msg != _lastGetPredictedError)
+                    {
+                        _lastGetPredictedError = msg;
+                        Logger.WriteDebug(System.Drawing.Color.Pink, msg);
+                    }
+                }
+
+                return hp;
+            }
+
+            return ph;
+        }
+
         /// <summary>
         /// converts bool to Y or N string
         /// </summary>

@@ -181,6 +181,7 @@ namespace Singular.Managers
                 RebuildNeeded = false;
                 Logger.Write(Color.White, "TalentManager: Rebuilding behaviors due to changes detected.");
                 Update();   // reload talents just in case
+                SingularRoutine.DescribeContext();
                 SingularRoutine.Instance.RebuildBehaviors();
                 return true;
             }

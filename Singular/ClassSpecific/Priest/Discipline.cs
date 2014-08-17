@@ -72,7 +72,7 @@ namespace Singular.ClassSpecific.Priest
                 // Make sure we're healing OOC too!
                 CreateDiscHealOnlyBehavior(false, false),
                 // now buff our movement if possible
-                Common.CreatePriestMovementBuff("Rest")
+                Common.CreatePriestMovementBuffOnTank("Rest")
                 );
         }
 
@@ -246,7 +246,9 @@ namespace Singular.ClassSpecific.Priest
                         req => (Me.Combat || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds) && HealerManager.Instance.TargetList.Count(h => h.HealthPercent < PriestSettings.DiscHeal.AtonementAbovePercent) < PriestSettings.DiscHeal.AtonementAboveCount,
                         new PrioritySelector(
                             HealerManager.CreateAttackEnsureTarget(),
-                            CreateDiscAtonementMovement(),
+
+                             CreateDiscAtonementMovement(),
+
                             new Decorator(
                                 req => Unit.ValidUnit(Me.CurrentTarget),
                                 new PrioritySelector(
@@ -534,8 +536,10 @@ namespace Singular.ClassSpecific.Priest
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && ret != null,
                     behavs.GenerateBehaviorTree()
-                    ),
+                    )
 
+#if OLD_TANK_FOLLOW_CODE
+                ,
                 new Decorator(
                     ret => moveInRange,
                     Movement.CreateMoveToUnitBehavior(
@@ -543,6 +547,7 @@ namespace Singular.ClassSpecific.Priest
                         35f
                         )
                     )
+#endif
                 );
         }
 
@@ -585,7 +590,7 @@ namespace Singular.ClassSpecific.Priest
 
                     Spell.Cast("Flash Heal",
                         ctx => Me,
-                        ret => !Me.Combat && Me.GetPredictedHealthPercent(true) <= 85 && !SkipForSpiritShell(Me))
+                        ret => !Me.Combat && Me.PredictedHealthPercent(includeMyHeals: true) <= 85 && !SkipForSpiritShell(Me))
                     )
                 );
         }
@@ -672,7 +677,14 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Buff("Shadow Word: Pain", req => Me.CurrentTarget.HasAuraExpired("Shadow Word: Pain", 1) && Me.CurrentTarget.TimeToDeath(99) >= 8),
                         Spell.Buff("Shadow Word: Pain", true, on =>
                         {
-                            WoWUnit unit = Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && u.IsTargetingMeOrPet && !u.HasMyAura("Shadow Word: Pain") && !u.IsCrowdControlled());
+                            WoWUnit unit = Unit.NearbyUnfriendlyUnits
+                                .FirstOrDefault(
+                                    u => (u.TaggedByMe || u.Aggro) 
+                                        && u.Guid != Me.CurrentTargetGuid 
+                                        && u.IsTargetingMeOrPet 
+                                        && !u.HasMyAura("Shadow Word: Pain") 
+                                        && !u.IsCrowdControlled()
+                                    );
                             return unit;
                         }),
                         Spell.Cast("Penance", mov => true, on => Me.CurrentTarget, req => true, cancel => false),
@@ -723,7 +735,15 @@ namespace Singular.ClassSpecific.Priest
 
                 CreateDiscDiagnosticOutputBehavior(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),
 
-                HealerManager.CreateStayNearTankBehavior(),
+                HealerManager.CreateStayNearTankBehavior(
+                    new Decorator(
+                        unit => unit != null 
+                            && ((unit as WoWUnit).SpellDistance() > SingularSettings.Instance.StayNearTankRangeCombat + 20 
+                                || ((unit as WoWUnit).IsMoving && (unit as WoWUnit).MeIsSafelyBehind && (unit as WoWUnit).SpellDistance() > SingularSettings.Instance.StayNearTankRangeCombat + 10))
+                            && Me.IsSafelyFacing(unit as WoWUnit, 60f),
+                        Common.CreatePriestMovementBuff()
+                        )
+                    ),
 
                 new Decorator(
                     ret => Unit.NearbyGroupMembers.Any(m => m.IsAlive && !m.IsMe),
@@ -734,7 +754,11 @@ namespace Singular.ClassSpecific.Priest
                     ret => Me.Combat && HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
 
-                        Helpers.Common.EnsureReadyToAttackFromMediumRange(),
+                        new Decorator(
+                            req => !SingularSettings.Instance.StayNearTank,
+                            Helpers.Common.EnsureReadyToAttackFromMediumRange()
+                            ),
+
                         Movement.CreateFaceTargetBehavior(),
                         Spell.WaitForCastOrChannel(),
 
@@ -836,7 +860,12 @@ namespace Singular.ClassSpecific.Priest
 
         private static Composite CreateDiscAtonementMovement()
         {
-            return Helpers.Common.EnsureReadyToAttackFromMediumRange();
+            // return Helpers.Common.EnsureReadyToAttackFromMediumRange();
+            
+            if (SingularSettings.Instance.StayNearTank)
+                return Movement.CreateFaceTargetBehavior();
+
+            return CreateDiscAtonementMovement();
         }
 
         #region Diagnostics
@@ -873,7 +902,7 @@ namespace Singular.ClassSpecific.Priest
                                 line += string.Format(", target={0} th={1:F1}%/{2:F1}%,  @ {3:F1} yds, combat={4}, tloss={5}, pw:s={6}, renew={7}, spiritsh={8}",
                                     healtarget.SafeName(),
                                     healtarget.HealthPercent,
-                                    healtarget.GetPredictedHealthPercent(true),
+                                    healtarget.PredictedHealthPercent(includeMyHeals: true),
                                     healtarget.Distance,
                                     healtarget.Combat.ToYN(),
                                     healtarget.InLineOfSpellSight,

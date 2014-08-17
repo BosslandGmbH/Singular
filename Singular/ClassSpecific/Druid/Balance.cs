@@ -140,7 +140,7 @@ namespace Singular.ClassSpecific.Druid
 
                             new PrioritySelector(
                                 Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation")),
-                                Spell.Cast("Healing Touch", mov => true, on => Me, req => Me.GetPredictedHealthPercent(true) < 90, req => Me.HealthPercent > 95)
+                                Spell.Cast("Healing Touch", mov => true, on => Me, req => Me.PredictedHealthPercent(includeMyHeals: true) < 90, req => Me.HealthPercent > 95)
                                 )
                             )
                         ),
@@ -208,20 +208,20 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        new Decorator( 
-                            ret => Me.HealthPercent < 40 && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any( u => u.IsWithinMeleeRange),
-                            CreateDruidAvoidanceBehavior( CreateSlowMeleeBehavior(), null, null)
+                        new Decorator(
+                            ret => Me.HealthPercent < 40 && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.IsWithinMeleeRange),
+                            CreateDruidAvoidanceBehavior(CreateSlowMeleeBehavior(), null, null)
                             ),
 
                         // Spell.Buff("Entangling Roots", ret => Me.CurrentTarget.Distance > 12),
-                        Spell.Buff("Faerie Swarm", ret => Me.CurrentTarget.IsMoving &&  Me.CurrentTarget.Distance > 20),
+                        Spell.Buff("Faerie Swarm", ret => Me.CurrentTarget.IsMoving && Me.CurrentTarget.Distance > 20),
 
                         Spell.BuffSelf("Innervate",
                             ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
 
                         // yes, only 8yds because we are knocking back only if close to melee range
-                        Spell.Cast( "Typhoon", 
-                            ret => Clusters.GetClusterCount( Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8f) >= 1),
+                        Spell.Cast("Typhoon",
+                            ret => Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8f) >= 1),
 
                         Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
 
@@ -231,15 +231,54 @@ namespace Singular.ClassSpecific.Druid
 
                                 // CreateMushroomSetAndDetonateBehavior(),
 
-                                Spell.OffGCD( Spell.Cast("Force of Nature", req => !Me.CurrentTarget.IsTrivial() && Me.CurrentTarget.TimeToDeath() > 8) ),
+                                Spell.OffGCD(Spell.Cast("Force of Nature", req => !Me.CurrentTarget.IsTrivial() && Me.CurrentTarget.TimeToDeath() > 8)),
 
                                 // Starfall:  verify either not glyphed -or- at least 3 targets have DoT
-                                Spell.Cast("Starfall", req => !TalentManager.HasGlyph("Guided Stars") || Unit.NearbyUnfriendlyUnits.Count( u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")) >= 3),
+                                Spell.Cast("Starfall", req => !TalentManager.HasGlyph("Guided Stars") || Unit.NearbyUnfriendlyUnits.Count(u => u.HasAnyOfMyAuras("Sunfire", "Moonfire")) >= 3),
 
                                 new PrioritySelector(
                                     ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
                                     Spell.Cast("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
-                                    Spell.Cast("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2)))
+                                    Spell.Cast("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2))),
+
+                                    new Sequence(
+                                        Spell.CastOnGround("Hurricane", on => Me.CurrentTarget, req => Me.HealthPercent > 40 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3, false),
+                                        new Wait(
+                                            TimeSpan.FromMilliseconds(500),
+                                            until => Spell.IsChannelling(),
+                                            new ActionAlwaysSucceed()
+                                            ),
+                                        new Wait(
+                                            TimeSpan.FromSeconds(10),
+                                            until =>
+                                            {
+                                                if (!Spell.IsChannelling())
+                                                    return true;
+                                                if (Me.HealthPercent < 30)
+                                                {
+                                                    return true;
+                                                }
+                                                int cnt = Unit.NearbyUnfriendlyUnits.Count( u => u.HasMyAura("Hurricane"));
+                                                if ( cnt <= 2)
+                                                {
+                                                    Logger.Write("/cancel Hurricane since only {0} targets effected", cnt);
+                                                    return true;
+                                                }
+
+                                                return false;
+                                            },
+                                            new ActionAlwaysSucceed()
+                                            ),
+                                        new DecoratorContinue(
+                                            req => Spell.IsChannelling(),
+                                            new Action( r => SpellManager.StopCasting())
+                                            ),
+                                        new WaitContinue(
+                                            TimeSpan.FromMilliseconds(500),
+                                            until => !Spell.IsChannelling(),
+                                            new ActionAlwaysSucceed()
+                                            )
+                                        )
                                     )
                                 )
                             ),
@@ -267,8 +306,8 @@ namespace Singular.ClassSpecific.Druid
 
                         new PrioritySelector(
                             ctx => GetEclipseDirection() == EclipseType.Lunar,
-                            Spell.Cast("Starfire", ret => !(bool) ret ),
-                            Spell.Cast("Wrath", ret => (bool) ret)
+                            Spell.Cast("Starfire", ret => !(bool)ret),
+                            Spell.Cast("Wrath", ret => (bool)ret)
                             )
                         )
                     )

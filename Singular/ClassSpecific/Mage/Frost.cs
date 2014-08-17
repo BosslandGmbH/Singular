@@ -202,15 +202,18 @@ namespace Singular.ClassSpecific.Mage
                         Spell.Cast("Frostfire Bolt", ret => Me.HasAura("Brain Freeze")),
                         Spell.Cast("Ice Lance", ret => Me.ActiveAuras.ContainsKey("Fingers of Frost") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
-                        new Decorator(
-                            ret => Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() <= 12 && !u.IsCrowdControlled() && u.CurrentTargetGuid == Me.Guid),
-                            new Sequence(
-                                new PrioritySelector(
-                                    CastFreeze(on => Me.CurrentTarget),
-                                    Spell.BuffSelf("Frost Nova")
-                                    ),
-                                new Action(r => Logger.WriteDebug("MageAvoidance: move after freezing targets! requesting KITING!!!")),
-                                Common.CreateMageAvoidanceBehavior(null, null)
+                        new PrioritySelector(
+                            ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.SpellDistance() <= 12 && !u.IsCrowdControlled() && u.CurrentTargetGuid == Me.Guid),
+                            new Decorator(
+                                ret => ret != null,
+                                new Sequence(
+                                    new PrioritySelector(
+                                        CastFreeze(on => (WoWUnit) on, req => !Unit.UnfriendlyUnits().Any(u => (req as WoWUnit).Location.Distance(u.Location) < 12 && u.IsCrowdControlled())),
+                                        Spell.BuffSelf("Frost Nova", req => !Unit.UnfriendlyUnits(12).Any(u => u.IsCrowdControlled()))
+                                        ),
+                                    new Action(r => Logger.WriteDebug("MageAvoidance: move after freezing targets! requesting KITING!!!")),
+                                    Common.CreateMageAvoidanceBehavior(null, null, dis => (dis as WoWUnit).IsFrozen(), kite => (kite as WoWUnit).IsFrozen())
+                                    )
                                 )
                             ),
 
@@ -521,11 +524,17 @@ namespace Singular.ClassSpecific.Mage
         /// </summary>
         /// <param name="onUnit">target to cast on</param>
         /// <returns></returns>
-        public static Composite CastFreeze( UnitSelectionDelegate onUnit )
+        public static Composite CastFreeze( UnitSelectionDelegate onUnit, SimpleBooleanDelegate require = null)
         {
+            if (onUnit == null)
+                return new ActionAlwaysFail();
+
+            if (require == null)
+                require = req => true;
+
             return new Sequence(
                 new Decorator( 
-                    ret => onUnit != null && onUnit(ret) != null, 
+                    ret => onUnit(ret) != null && require(ret), 
                     new Action( ret => _locFreeze = onUnit(ret).Location)
                     ),
                 new Throttle( TimeSpan.FromMilliseconds(250),

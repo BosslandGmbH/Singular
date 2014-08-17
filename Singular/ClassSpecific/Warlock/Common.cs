@@ -789,7 +789,6 @@ namespace Singular.ClassSpecific.Warlock
                             )
                         ),
                     new Decorator( ret => Spell.CanCastHack( "Health Funnel", Me.Pet), new ActionAlwaysSucceed()),
-                    new Action(ret => Logger.WriteDebug("*Health Funnel on Pet @ {0:F1}%", Me.Pet.HealthPercent)),
                     new PrioritySelector(
                         Spell.Cast(ret => "Health Funnel", mov => false, on => Me.Pet, req => Me.HasAura( "Soulburn") || TalentManager.HasGlyph("Health Funnel")),
                         Spell.Cast(ret => "Health Funnel", mov => true, on => Me.Pet, req => true, cancel => !Me.GotAlivePet || Me.Pet.HealthPercent >= petMaxHealth)

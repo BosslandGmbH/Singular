@@ -392,7 +392,7 @@ namespace Singular.ClassSpecific.Shaman
                     "Unleash Elements",
                     Spell.Buff("Unleash Elements",
                         ret => (WoWUnit)ret,
-                        ret => (Me.IsMoving || ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness)
+                        ret => (Me.IsMoving || ((WoWUnit)ret).PredictedHealthPercent() < ShamanSettings.Heal.AncestralSwiftness)
                             && Common.IsImbuedForHealing(Me.Inventory.Equipped.MainHand)
                             ));
             }
@@ -412,7 +412,7 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.Cast(
                         "Spirit Link Totem", ret => (WoWUnit)ret,
                         ret => HealerManager.Instance.TargetList.Count(
-                            p => p.GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.SpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= ShamanSettings.RestoHealSettings.MinSpiritLinkCount
+                            p => p.PredictedHealthPercent() < ShamanSettings.RestoHealSettings.SpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= ShamanSettings.RestoHealSettings.MinSpiritLinkCount
                         )
                     )
                 );
@@ -421,7 +421,7 @@ namespace Singular.ClassSpecific.Shaman
                 String.Format("Oh Shoot Heal @ {0}%", ShamanSettings.RestoHealSettings.AncestralSwiftness),
                 "Ancestral Swiftness",
                 new Decorator(
-                    ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.AncestralSwiftness,
+                    ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).PredictedHealthPercent() < ShamanSettings.RestoHealSettings.AncestralSwiftness,
                     new Sequence(
                         Spell.BuffSelf("Ancestral Swiftness"),
                         new PrioritySelector(
@@ -442,7 +442,7 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.Cast(
                         "Healing Tide Totem",
                         on => Me,
-                        req => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= ShamanSettings.RestoHealSettings.MinHealingTideCount
+                        req => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.PredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= ShamanSettings.RestoHealSettings.MinHealingTideCount
                         )
                     )
                 );
@@ -452,7 +452,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
                         "Healing Stream Totem",
-                        on => (!Me.Combat || Totems.Exist(WoWTotemType.Water)) ? null : HealerManager.Instance.TargetList.FirstOrDefault(p => p.GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingStream))
+                        on => (!Me.Combat || Totems.Exist(WoWTotemType.Water)) ? null : HealerManager.Instance.TargetList.FirstOrDefault(p => p.PredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingStream))
                         )
                     )
                 );
@@ -530,14 +530,14 @@ namespace Singular.ClassSpecific.Shaman
             #region Single Target Heals
 
             behavs.AddBehavior(HealthToPriority(ShamanSettings.RestoHealSettings.GreaterHealingWave), "Greater Healing Wave", "Greater Healing Wave",
-                new Decorator( ret => ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.GreaterHealingWave,
+                new Decorator( ret => ((WoWUnit)ret).PredictedHealthPercent() < ShamanSettings.RestoHealSettings.GreaterHealingWave,
                     new Sequence(
                         BuffUnleashLife(on => (WoWUnit) on),
                         new WaitContinue(TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
                         Spell.Cast("Greater Healing Wave",
                             mov => true, 
                             on => (WoWUnit)on, 
-                            req => ((WoWUnit)req).GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.GreaterHealingWave, 
+                            req => ((WoWUnit)req).PredictedHealthPercent() < ShamanSettings.RestoHealSettings.GreaterHealingWave, 
                             cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal),
                         new Action( r => TidalWaveConsume() )
                         )
@@ -549,7 +549,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Healing Wave",
                             mov => true,
                             on => (WoWUnit)on,
-                            req => ((WoWUnit)req).GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingWave,
+                            req => ((WoWUnit)req).PredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingWave,
                             cancel => {
                                 if (((WoWUnit)cancel).HealthPercent > cancelHeal)
                                     return true;
@@ -565,7 +565,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.Cast("Healing Surge",
                             mov => true,
                             on => (WoWUnit)on,
-                            req => ((WoWUnit)req).GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingSurge,
+                            req => ((WoWUnit)req).PredictedHealthPercent() < ShamanSettings.RestoHealSettings.HealingSurge,
                             cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal),
                     new Action(r => TidalWaveConsume())
                     )
@@ -577,10 +577,10 @@ namespace Singular.ClassSpecific.Shaman
 
             behavs.AddBehavior(HealthToPriority( ShamanSettings.RestoHealSettings.Ascendance) + 100, "Ascendance", "Ascendance",
                 new Decorator(
-                    ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
+                    ret => ShamanSettings.UseAscendance && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid),
                     Spell.BuffSelf(
                         "Ascendance",
-                        ret => HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.Ascendance) >= ShamanSettings.RestoHealSettings.MinAscendanceCount 
+                        ret => HealerManager.Instance.TargetList.Count(p => p.PredictedHealthPercent() < ShamanSettings.RestoHealSettings.Ascendance) >= ShamanSettings.RestoHealSettings.MinAscendanceCount 
                         )
                     )
                 );
@@ -599,7 +599,7 @@ namespace Singular.ClassSpecific.Shaman
                 CreateRestoDiagnosticOutputBehavior( ret => (WoWUnit)ret),
 
                 new Decorator(
-                    ret => ret != null && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).GetPredictedHealthPercent() <= 99),
+                    ret => ret != null && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).PredictedHealthPercent() <= 99),
 
                     new PrioritySelector(
                         new Decorator(
@@ -742,7 +742,7 @@ namespace Singular.ClassSpecific.Shaman
             {
                 // TODO: Decide if we want to do this differently to ensure we take into account the T12 4pc bonus. (Not removing RT when using CH)
                 return HealerManager.Instance.TargetList
-                    .Where(u => u.IsAlive && u.DistanceSqr < 40*40 && u.GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.ChainHeal)
+                    .Where(u => u.IsAlive && u.DistanceSqr < 40*40 && u.PredictedHealthPercent() < ShamanSettings.RestoHealSettings.ChainHeal)
                     .Select(u => (WoWUnit)u);
             }
         }
@@ -753,7 +753,7 @@ namespace Singular.ClassSpecific.Shaman
             {
                 // TODO: Decide if we want to do this differently to ensure we take into account the T12 4pc bonus. (Not removing RT when using CH)
                 return HealerManager.Instance.TargetList
-                    .Where(u => u.IsAlive && u.DistanceSqr < 40 * 40 && u.GetPredictedHealthPercent() < ShamanSettings.RestoHealSettings.ChainHeal && u.HasMyAura("Riptide"))
+                    .Where(u => u.IsAlive && u.DistanceSqr < 40 * 40 && u.PredictedHealthPercent() < ShamanSettings.RestoHealSettings.ChainHeal && u.HasMyAura("Riptide"))
                     .Select(u => (WoWUnit)u);
             }
         }
@@ -951,7 +951,6 @@ namespace Singular.ClassSpecific.Shaman
                     ret => SingularSettings.Debug,
                     new Action(ret =>
                     {
-                        WoWUnit healTarg = onHealUnit(ret);
                         WoWUnit target = Me.CurrentTarget;
                         uint actvstks = 0;
 
@@ -977,37 +976,65 @@ namespace Singular.ClassSpecific.Shaman
                         else 
                             shield = "-none-";
 
-                        string line = string.Format(".... h={0:F1}%/m={1:F1}%, combat={2}, twaves={3}, audtwaves={4}, shield={5}",
+                        string line = string.Format(".... h={0:F1}%/m={1:F1}%,combat={2},move={3},twaves={4},audtwaves={5},shield={6}",
                             Me.HealthPercent,
                             Me.ManaPercent,
                             Me.Combat.ToYN(),
+                            Me.IsMoving.ToYN(),
                             actvstks,
                             _tidalWaveStacksAudit,
                             shield
                             );
 
-                        if (healTarg == null)
-                            line += ", heal=(null)";
-                        else if (!healTarg.IsValid)
-                            line += ", heal=(invalid)";
-                        else
-                            line += string.Format(", heal={0} hh={1:F1}% @ {2:F1} yds, hcombat={3}, tph={4:F1}%, tloss={5}, eshield={6}, riptide={7}",
-                                healTarg.SafeName(),
-                                healTarg.HealthPercent,
-                                healTarg.Distance,
-                                healTarg.Combat.ToYN(),
-                                healTarg.GetPredictedHealthPercent(true),
-                                healTarg.InLineOfSpellSight,
-                                (healTarg.GetAuraStacks("Earth Shield") > 0).ToYN(),
-                                (long)healTarg.GetAuraTimeLeft("Riptide").TotalMilliseconds
-                                );
+                        WoWUnit healTarg = onHealUnit(ret);
+                        if (Me.IsInGroup() || (Me.FocusedUnitGuid != 0 && healTarg == Me.FocusedUnit))
+                        {
+                            if (healTarg == null)
+                                line += ", heal=(null)";
+                            else if (!healTarg.IsValid)
+                                line += ", heal=(invalid)";
+                            else
+                                line += string.Format(",heal={0} hh={1:F1}% @ {2:F1} yds,hcombat={3},hph={4:F1}%,htloss={5},eshield={6},riptide={7}",
+                                    healTarg.SafeName(),
+                                    healTarg.HealthPercent,
+                                    healTarg.Distance,
+                                    healTarg.Combat.ToYN(),
+                                    healTarg.PredictedHealthPercent(),
+                                    healTarg.InLineOfSpellSight,
+                                    (healTarg.GetAuraStacks("Earth Shield") > 0).ToYN(),
+                                    (long)healTarg.GetAuraTimeLeft("Riptide").TotalMilliseconds
+                                    );
+
+                            if (SingularSettings.Instance.StayNearTank)
+                            {
+                                WoWUnit tank = HealerManager.TankToStayNear;
+                                if (tank == null)
+                                    line += ",tank=(null)";
+                                else if (!tank.IsAlive)
+                                    line += ",tank=(dead)";
+                                else
+                                {
+                                    float hh = (float)tank.HealthPercent;
+                                    float hph = tank.PredictedHealthPercent();
+                                    line += string.Format(",tank={0} {1:F1}% @ {2:F1} yds,tph={3:F1}%,tcombat={4},tmove={5},tloss={6}",
+                                        tank.SafeName(),
+                                        hh,
+                                        tank.SpellDistance(),
+                                        hph,
+                                        tank.Combat.ToYN(),
+                                        tank.IsMoving.ToYN(),
+                                        tank.InLineOfSpellSight.ToYN()
+                                        );
+                                }
+                            }
+                        }
 
                         if (target == null)
                             line += ", target=(null)";
                         else if (!target.IsValid)
                             line += ", target=(invalid)";
                         else
-                            line += string.Format(", target={0} th={1:F1}%, {2:F1} yds, face={3} tloss={4}, fs={5}",
+                            line += string.Format(",target={0} th={1:F1}%,{2:F1} yds,face={3},tloss={4},fs={5}",
                                 target.SafeName(),
                                 target.HealthPercent,
                                 target.Distance,

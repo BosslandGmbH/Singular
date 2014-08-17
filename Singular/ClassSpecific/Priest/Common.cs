@@ -64,7 +64,7 @@ namespace Singular.ClassSpecific.Priest
 
                         Spell.BuffSelf("Shadowform"),
 
-                        CreatePriestMovementBuff("PreCombat")
+                        CreatePriestMovementBuffOnTank("PreCombat")
                         )
                     )
                 );
@@ -91,15 +91,18 @@ namespace Singular.ClassSpecific.Priest
                    !unit.HasAura("Commanding Shout");
         }
 
-        public static Decorator CreatePriestMovementBuff()
+        public static Composite CreatePriestMovementBuff()
         {
+            if (!SpellManager.HasSpell("Angelic Feather") && !TalentManager.IsSelected((int)PriestTalents.BodyAndSoul))
+                return new ActionAlwaysFail();
+
             return new Decorator(
                 ret => MovementManager.IsClassMovementAllowed
                     && StyxWoW.Me.IsAlive
+                    && Me.IsMoving
                     && !StyxWoW.Me.Mounted
                     && !StyxWoW.Me.IsOnTransport
                     && !StyxWoW.Me.OnTaxi
-                    && (SpellManager.HasSpell("Angelic Feather") || TalentManager.IsSelected((int)PriestTalents.BodyAndSoul))
                     && !StyxWoW.Me.HasAnyAura("Angelic Feather", "Body and Soul")
                     && !StyxWoW.Me.IsAboveTheGround(),
 
@@ -118,11 +121,13 @@ namespace Singular.ClassSpecific.Priest
                                     ret => SpellManager.HasSpell("Angelic Feather")
                                         && !StyxWoW.Me.HasAura("Angelic Feather"),
                                     new Sequence(
-                // new Action( ret => Logger.Write( "Speed Buff for {0}", mode ) ),
-                                        Spell.CastOnGround("Angelic Feather",
-                                            on => StyxWoW.Me,
-                                            ret => true,
-                                            false),
+                                        Spell.CastOnGround(
+                                            "Angelic Feather", 
+                                            loc => Me.Location.RayCast(Me.RenderFacing, 1.5f), 
+                                            req => true, 
+                                            waitForSpell: false, 
+                                            tgtDescRtrv:  desc => string.Format("Speed Boost on {0}", Me.SafeName())
+                                            ),
                                         Helpers.Common.CreateWaitForLagDuration(orUntil => Spell.GetPendingCursorSpell != null),
                                         new Action(ret => Lua.DoString("SpellStopTargeting()"))
                                         )
@@ -147,7 +152,7 @@ namespace Singular.ClassSpecific.Priest
             return hotTarget;
         }
 
-        public static Composite CreatePriestMovementBuff(string mode, bool checkMoving = true)
+        public static Composite CreatePriestMovementBuffOnTank(string mode, bool checkMoving = true)
         {
             return new PrioritySelector(
 
@@ -160,7 +165,13 @@ namespace Singular.ClassSpecific.Priest
                             ctx => Group.Tanks.FirstOrDefault( t => t.IsAlive && t.IsMoving && !t.Combat && !t.HasAnyAura("Body and Soul", "Angelic Feather") && t.SpellDistance() < 40),
                             Spell.Buff("Power Word: Shield", on => (WoWUnit) on, req => HasTalent(PriestTalents.BodyAndSoul) && !((WoWUnit)req).HasAura("Weakened Soul")),
                             new Sequence(
-                                Spell.CastOnGround("Angelic Feather", on => (WoWUnit) on, req => true, waitForSpell: false),
+                                Spell.CastOnGround(
+                                    "Angelic Feather", 
+                                    loc => (loc as WoWUnit).Location.RayCast((loc as WoWUnit).RenderFacing, 1.5f),
+                                    req => req != null, 
+                                    waitForSpell: false,
+                                    tgtDescRtrv: desc => string.Format("Speed Boost Tank {0}", (desc as WoWUnit).SafeName())
+                                    ),
                                 Helpers.Common.CreateWaitForLagDuration(orUntil => Spell.GetPendingCursorSpell != null),
                                 new Action(ret => Lua.DoString("SpellStopTargeting()"))
                                 )

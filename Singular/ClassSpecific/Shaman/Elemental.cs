@@ -259,7 +259,7 @@ namespace Singular.ClassSpecific.Shaman
                                 Spell.Cast( "Unleash Elements", ret => Common.IsImbuedForDPS( Me.Inventory.Equipped.MainHand)),
                                 Spell.Cast( "Elemental Blast"),
                                 Spell.Cast( "Lava Burst"),
-                                Spell.BuffSelf("Ascendance"),       // this is more to buff following sequence since we leave burst after Earth Shock
+                                Spell.BuffSelf("Ascendance", req => ShamanSettings.UseAscendance),       // this is more to buff following sequence since we leave burst after Earth Shock
                                 Spell.Cast( "Earth Shock")
                                 // Spell.Cast( "Lightning Bolt")       // filler in case Shocks on cooldown
                                 )
@@ -341,10 +341,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 
-                        new Sequence(
-                            Spell.Cast("Ascendance", req => Me.CurrentTarget.IsBoss() && Me.CurrentTarget.SpellDistance() < 40 && !Me.IsMoving ),
-                            new ActionAlwaysFail()  // Ascendance off the GCD, so fall through
-                            ),
+                        Spell.OffGCD(Spell.Cast("Ascendance", req => ShamanSettings.UseAscendance && Me.CurrentTarget.IsBoss() && Me.CurrentTarget.SpellDistance() < 40 && !Me.IsMoving)),
 
                         Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => false),
                         Spell.Cast("Earth Shock",

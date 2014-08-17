@@ -24,34 +24,19 @@ namespace Singular.ClassSpecific.Monk
     public class Mistweaver
     {
         private const int SOOTHING_MIST = 115175;
-        public const int EmergencyHealPercent = 35;
-        public const int EmergencyHealOutOfDanger = 45;
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static MonkSettings MonkSettings { get { return SingularSettings.Instance.Monk(); } }
         public static bool HasTalent(MonkTalents tal) { return TalentManager.IsSelected((int)tal); }
 
-        private static WoWUnit SavingHealUnit;
-        private static readonly WaitTimer SavingHealTimer = new WaitTimer(TimeSpan.FromMilliseconds(1500));
+
+        private static bool RangedAttacks { get; set; }
 
         public static WoWUnit MyHealTarget
         {
             get
             {
-                WoWUnit target = null;
-
-                if (!SavingHealTimer.IsFinished)
-                    target = SavingHealUnit;
-
-                // ctx => selfOnly ? StyxWoW.Me : HealerManager.FindLowestHealthTarget(),
-                // ctx => selfOnly ? StyxWoW.Me : HealerManager.Instance.FirstUnit,
-                // ctx => selfOnly ? StyxWoW.Me : HealerManager.FindHighestPriorityTarget(),
-                return target ?? HealerManager.FindHighestPriorityTarget();
-            }
-            set
-            {
-                SavingHealUnit = value;
-                SavingHealTimer.Reset();
+                return HealerManager.SavingHealUnit ?? HealerManager.FindHighestPriorityTarget();
             }
         }
 
@@ -60,15 +45,30 @@ namespace Singular.ClassSpecific.Monk
         private static string SpinningCraneKick { get; set; }
         private static int minDistRollAllowed { get; set; }
 
+        private static bool glyphedRenewingMist { get; set; }
+        private static bool glyphedManaTea { get; set; }
+
         [Behavior(BehaviorType.Initialize, WoWClass.Monk, WoWSpec.MonkMistweaver)]
         public static Composite MonkMistweaverInitialize()
         {
             SpinningCraneKick = HasTalent(MonkTalents.RushingJadeWind) ? "Rushing Jade Wind" : "Spinning Crane Kick";
             if (SpellManager.HasSpell(SpinningCraneKick))
-                Logger.Write("Using {0}", SpinningCraneKick);
+                Logger.Write("[spinning crane kick] Using Rushing Jade Wind");
 
-            minDistRollAllowed = SpellManager.HasSpell("Crackling Jade Lightning") ? 45 : 12;
-            Logger.Write("Must be atleast {0} yds away for Roll", minDistRollAllowed);
+            RangedAttacks = SpellManager.HasSpell("Crackling Jade Lightning");
+            Logger.Write("[dps distance] Will DPS from {0}", RangedAttacks ? "Range" : "Melee");
+
+            minDistRollAllowed = RangedAttacks ? 45 : 12;
+            Logger.Write("[roll distance] Must be atleast {0} yds away for Roll", minDistRollAllowed);
+
+            glyphedManaTea = TalentManager.HasGlyph("Mana Tea");
+            if (glyphedManaTea)
+                Logger.Write("[glyph of mana tea] Recognize as Instant Cast");
+
+            glyphedRenewingMist = TalentManager.HasGlyph("Renewing Mist");
+            if (glyphedRenewingMist)
+                Logger.Write("[glyph of renewing mist] Using 40 yd hop distance");
+            
             return null;
         }
 
@@ -262,7 +262,7 @@ namespace Singular.ClassSpecific.Monk
                                     )
                                 ),
 
-                            Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
+                            Spell.Cast("Rushing Jade Wind", ctx => Spell.UseAOE && HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
                             Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
 
                             // chi dump
@@ -275,7 +275,8 @@ namespace Singular.ClassSpecific.Monk
                             )
                         ),
 
-                    Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > minDistRollAllowed)
+                    // Spell.Cast("Roll", ret => MovementManager.IsClassMovementAllowed && !MonkSettings.DisableRoll && Me.CurrentTarget.Distance > minDistRollAllowed)
+                    Common.CreateMonkCloseDistanceBehavior()
                     )
                 );
         }
@@ -308,8 +309,6 @@ namespace Singular.ClassSpecific.Monk
                             new Decorator(
                                 ret => !Spell.IsGlobalCooldown(),
                                 new PrioritySelector(
-
-                                    CreateMistweaverMoveToEnemyTarget(),
 
                                     new Decorator(
                                         req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
@@ -405,7 +404,9 @@ namespace Singular.ClassSpecific.Monk
                 CreateMistweaverWaitForCast(),
                 CreateMistWeaverDiagnosticOutputBehavior(on => MyHealTarget),
 
-                HealerManager.CreateMeleeHealerMovementBehavior(
+
+                HealerManager.CreateMeleeHealerMovementBehavior( Common.CreateMonkCloseDistanceBehavior( min => 10, on => (WoWUnit) on)),
+/*
                     new Decorator(
                         unit => MovementManager.IsClassMovementAllowed
                             && !MonkSettings.DisableRoll
@@ -414,7 +415,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Roll")
                         )
                     ),
-
+*/
                 new Decorator(
                     ret => Me.Combat && HealerManager.AllowHealerDPS(),
                     new PrioritySelector(
@@ -596,7 +597,7 @@ namespace Singular.ClassSpecific.Monk
                 CreateMistWeaverDiagnosticOutputBehavior(ret => (WoWUnit)ret),
 
                 new Decorator(
-                    ret => ret != null && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).GetPredictedHealthPercent() <= 99),
+                    ret => ret != null && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).PredictedHealthPercent() <= 99),
 
                     new PrioritySelector(
                         new Decorator(
@@ -629,7 +630,7 @@ namespace Singular.ClassSpecific.Monk
                                     )
                                 )
 #endif
- new Decorator(
+                                new Decorator(
                                     ret => moveInRange,
                                     new Sequence(
                                         new Action(r => _moveToHealUnit = (WoWUnit)r),
@@ -675,7 +676,7 @@ namespace Singular.ClassSpecific.Monk
                     Spell.Cast(
                         "Spirit Link Totem", ret => (WoWUnit)ret,
                         ret => HealerManager.Instance.TargetList.Count(
-                            p => p.GetPredictedHealthPercent() < MonkSettings.MistHealSettings.SpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= MonkSettings.MistHealSettings.MinSpiritLinkCount
+                            p => p.PredictedHealthPercent() < MonkSettings.MistHealSettings.SpiritLinkTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.SpiritLink)) >= MonkSettings.MistHealSettings.MinSpiritLinkCount
                         )
                     )
                 );
@@ -686,7 +687,7 @@ namespace Singular.ClassSpecific.Monk
                     String.Format("Thunder Focus Heal Single Target @ {0}%", MonkSettings.MistHealSettings.ThunderFocusHealSingle),
                     "Thunder Focus Tea",
                     new Decorator(
-                        ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).GetPredictedHealthPercent() < MonkSettings.MistHealSettings.ThunderFocusHealSingle,
+                        ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).PredictedHealthPercent() < MonkSettings.MistHealSettings.ThunderFocusHealSingle,
                         new Sequence(
                             EnsureSoothingMistOnTarget(on => (WoWUnit)on),
                             Spell.OffGCD(Spell.BuffSelf("Thunder Focus Tea")),
@@ -735,7 +736,7 @@ namespace Singular.ClassSpecific.Monk
                             if (!Spell.CanCastHack("Thunder Focus Tea"))
                                 return false;
 
-                            int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.GetPredictedHealthPercent() < MonkSettings.MistHealSettings.ThunderFocusHealGroup);
+                            int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() < MonkSettings.MistHealSettings.ThunderFocusHealGroup);
                             if (count >= MonkSettings.MistHealSettings.CountThunderFocusHealGroup)
                             {
                                 Logger.WriteDebug("ThunderFocus: found {0} below {1}%", MonkSettings.MistHealSettings.CountThunderFocusHealGroup, MonkSettings.MistHealSettings.ThunderFocusHealGroup);
@@ -767,7 +768,7 @@ namespace Singular.ClassSpecific.Monk
                             on => on as WoWUnit,
                             req =>
                             {
-                                int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.GetPredictedHealthPercent() < MonkSettings.MistHealSettings.UpliftGroup);
+                                int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() < MonkSettings.MistHealSettings.UpliftGroup);
                                 if (count >= MonkSettings.MistHealSettings.CountUpliftGroup)
                                 {
                                     Logger.WriteDebug("Uplift: found {0} with Renewing Mist (needed {1})", count, MonkSettings.MistHealSettings.CountUpliftGroup);
@@ -785,7 +786,7 @@ namespace Singular.ClassSpecific.Monk
                     String.Format("Chi Wave on {0} targets @ {1}%", MonkSettings.MistHealSettings.CountChiWave, MonkSettings.MistHealSettings.ChiWave),
                     "Chi Wave",
                     new Decorator(
-                        req => (req as WoWUnit).GetPredictedHealthPercent() < MonkSettings.MistHealSettings.ChiWave,
+                        req => (req as WoWUnit).PredictedHealthPercent() < MonkSettings.MistHealSettings.ChiWave,
                         Spell.Cast("Chi Wave", on => GetBestChiWaveTarget())
                         )
                     );
@@ -801,7 +802,7 @@ namespace Singular.ClassSpecific.Monk
                 HealthToPriority(MonkSettings.MistHealSettings.LifeCocoon) + 100,
                 String.Format("Life Cocoon @ {0}%", MonkSettings.MistHealSettings.LifeCocoon),
                 "Life Cocoon",
-                Spell.Buff("Life Cocoon", on => (WoWUnit)on, req => (Me.Combat || (req as WoWUnit).Combat) && (req as WoWUnit).GetPredictedHealthPercent(true) < MonkSettings.MistHealSettings.LifeCocoon)
+                Spell.Buff("Life Cocoon", on => (WoWUnit)on, req => (Me.Combat || (req as WoWUnit).Combat) && (req as WoWUnit).PredictedHealthPercent(includeMyHeals: true) < MonkSettings.MistHealSettings.LifeCocoon)
                 );
 
             #endregion
@@ -814,7 +815,7 @@ namespace Singular.ClassSpecific.Monk
                 String.Format("Healing Sphere @ {0}%", MonkSettings.MistHealSettings.HealingSphere),
                 "Healing Sphere",
                 new Decorator(
-                    req => (req as WoWUnit).GetPredictedHealthPercent(true) < MonkSettings.MistHealSettings.HealingSphere,
+                    req => (req as WoWUnit).PredictedHealthPercent(includeMyHeals: true) < MonkSettings.MistHealSettings.HealingSphere,
                     new Sequence(
                         Spell.CastOnGround("Healing Sphere", on => (WoWUnit)on, req => true, false),
                         new Wait(TimeSpan.FromMilliseconds(350), until => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
@@ -835,7 +836,7 @@ namespace Singular.ClassSpecific.Monk
                     "Soothing Mist",
                     mov => true,
                     on => (WoWUnit)on,
-                    req => !Me.IsMoving && !IsChannelingSoothingMist((WoWUnit)req) && ((WoWUnit)req).GetPredictedHealthPercent() < MonkSettings.MistHealSettings.SoothingMist
+                    req => !Me.IsMoving && !IsChannelingSoothingMist((WoWUnit)req) && ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.SoothingMist
                     )
                 );
 
@@ -844,10 +845,24 @@ namespace Singular.ClassSpecific.Monk
                 String.Format("Enveloping Mist @ {0}%", MonkSettings.MistHealSettings.EnvelopingMist),
                 "Enveloping Mist",
                 new Decorator(
-                    req => ((WoWUnit)req).GetPredictedHealthPercent() < MonkSettings.MistHealSettings.EnvelopingMist,
+                    req => ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.EnvelopingMist,
                     new Sequence(
                         EnsureSoothingMistOnTarget(on => on as WoWUnit),
-                        Spell.Cast("Enveloping Mist", on => (WoWUnit)on)
+                        new PrioritySelector(
+                            Spell.Cast("Enveloping Mist", on => (WoWUnit)on),
+                            Spell.Cast("Surging Mist", on => (WoWUnit)on, req => {
+                                if (Spell.IsSpellOnCooldown("Enveloping Mist"))
+                                    Logger.WriteDebug("EnvelopingMist: on cooldown, so casting Surging Mist", Me.CurrentChi);
+                                else if (Me.CurrentChi < 3)
+                                    Logger.WriteDebug("EnvelopingMist: casting Surging Mist since only {0} Chi", Me.CurrentChi);
+                                else
+                                {
+                                    Logger.WriteDebug("EnvelopingMist: no idea why I cannot cast");
+                                    return false;
+                                }
+                                return true;
+                                })
+                            )
                         )
                     )
                 );
@@ -857,7 +872,7 @@ namespace Singular.ClassSpecific.Monk
                 String.Format("Surging Mist @ {0}%", MonkSettings.MistHealSettings.SurgingMist),
                 "Surging Mist",
                 new Decorator(
-                    req => ((WoWUnit)req).GetPredictedHealthPercent() < MonkSettings.MistHealSettings.SurgingMist,
+                    req => ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.SurgingMist,
                     new Sequence(
                         EnsureSoothingMistOnTarget(on => on as WoWUnit),
                         Spell.Cast("Surging Mist", on => (WoWUnit)on)
@@ -899,7 +914,7 @@ namespace Singular.ClassSpecific.Monk
                 HealthToPriority(MonkSettings.MistHealSettings.LifeCocoon) + 800,
                 String.Format("Life Cocoon @ {0}%", MonkSettings.MistHealSettings.LifeCocoon),
                 "Life Cocoon",
-                Spell.Buff("Life Cocoon", on => (WoWUnit)on, req => (Me.Combat || (req as WoWUnit).Combat) && (req as WoWUnit).GetPredictedHealthPercent(true) < MonkSettings.MistHealSettings.LifeCocoon)
+                Spell.Buff("Life Cocoon", on => (WoWUnit)on, req => (Me.Combat || (req as WoWUnit).Combat) && (req as WoWUnit).PredictedHealthPercent(includeMyHeals: true) < MonkSettings.MistHealSettings.LifeCocoon)
                 );
 
             if (!selfOnly)
@@ -959,7 +974,7 @@ namespace Singular.ClassSpecific.Monk
                 String.Format("Chi Wave on {0} targets @ {1}%", MonkSettings.MistHealSettings.CountChiWave, MonkSettings.MistHealSettings.ChiWave),
                 "Chi Wave",
                 new Decorator(
-                    req => (req as WoWUnit).GetPredictedHealthPercent() < MonkSettings.MistHealSettings.ChiWave,
+                    req => (req as WoWUnit).PredictedHealthPercent() < MonkSettings.MistHealSettings.ChiWave,
                     Spell.Cast("Chi Wave", on => GetBestChiWaveTarget())
                     )
                 );
@@ -996,7 +1011,7 @@ namespace Singular.ClassSpecific.Monk
                             on => on as WoWUnit,
                             req =>
                             {
-                                int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.GetPredictedHealthPercent() < MonkSettings.MistHealSettings.UpliftGroup);
+                                int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() < MonkSettings.MistHealSettings.UpliftGroup);
                                 if (count >= MonkSettings.MistHealSettings.CountUpliftGroup)
                                 {
                                     Logger.WriteDebug("Uplift: found {0} with Renewing Mist (needed {1})", count, MonkSettings.MistHealSettings.CountUpliftGroup);
@@ -1032,7 +1047,7 @@ namespace Singular.ClassSpecific.Monk
                     "Soothing Mist",
                     mov => true,
                     on => (WoWUnit)on,
-                    req => !Me.IsMoving && !IsChannelingSoothingMist((WoWUnit)req) && ((WoWUnit)req).GetPredictedHealthPercent() < MonkSettings.MistHealSettings.SoothingMist
+                    req => !Me.IsMoving && !IsChannelingSoothingMist((WoWUnit)req) && ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.SoothingMist
                     )
                 );
 
@@ -1041,7 +1056,7 @@ namespace Singular.ClassSpecific.Monk
                 String.Format("Enveloping Mist @ {0}%", MonkSettings.MistHealSettings.EnvelopingMist),
                 "Enveloping Mist",
                 new Decorator(
-                    req => Me.CurrentChi >= 3 && ((WoWUnit)req).HasAuraExpired("Enveloping Mist") && ((WoWUnit)req).GetPredictedHealthPercent() < MonkSettings.MistHealSettings.EnvelopingMist,
+                    req => Me.CurrentChi >= 3 && ((WoWUnit)req).HasAuraExpired("Enveloping Mist") && ((WoWUnit)req).PredictedHealthPercent() < MonkSettings.MistHealSettings.EnvelopingMist,
                     new Sequence(
                         EnsureSoothingMistOnTarget(on => on as WoWUnit),
                         Spell.Cast("Enveloping Mist", on => (WoWUnit)on)
@@ -1099,7 +1114,7 @@ namespace Singular.ClassSpecific.Monk
             {
                 // TODO: Decide if we want to do this differently to ensure we take into account the T12 4pc bonus. (Not removing RT when using CH)
                 return HealerManager.Instance.TargetList
-                    .Where(u => u.IsAlive && u.DistanceSqr < 40 * 40 && u.GetPredictedHealthPercent() < MonkSettings.MistHealSettings.ChiWave)
+                    .Where(u => u.IsAlive && u.DistanceSqr < 40 * 40 && u.PredictedHealthPercent() < MonkSettings.MistHealSettings.ChiWave)
                     .Select(u => (WoWUnit)u);
             }
         }
@@ -1111,13 +1126,17 @@ namespace Singular.ClassSpecific.Monk
 
                 new Decorator(
                     req => IsChannelingSoothingMist(req as WoWUnit),
-                    new ActionAlwaysSucceed()
+                    new Action( r => Logger.WriteDiagnostic("EnsureSmoothingMist: already being cast on {0}", (r as WoWUnit).SafeName()))
                     ),
 
                 new Sequence(
+                    new Action( r => Logger.WriteDebug("EnsureSmoothingMist: about to cast Soothing Mist on {0}", (r as WoWUnit).SafeName())),
                     Spell.Cast("Soothing Mist", mov => true, on => on as WoWUnit, req => !Me.IsMoving),
+                    new Action(r => Logger.WriteDebug("EnsureSmoothingMist: wait until channeling Soothing Mist active")),
                     new Wait(TimeSpan.FromMilliseconds(500), until => IsChannelingSoothingMist(), new ActionAlwaysSucceed()),
-                    new Wait(TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed())
+                    new Action(r => Logger.WriteDebug("EnsureSmoothingMist: wait until GCD completes")),
+                    new Wait(TimeSpan.FromMilliseconds(1500), until => !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed()),
+                    new Action(r => Logger.WriteDebug("EnsureSmoothingMist: is now on {0}", (r as WoWUnit).SafeName()))
                     )
                 );
         }
@@ -1196,7 +1215,7 @@ namespace Singular.ClassSpecific.Monk
 
         private static WoWUnit GetBestRenewingMistTarget()
         {
-            int distHop = TalentManager.HasGlyph("Renewing Mist") ? 40 : 20;
+            int distHop = glyphedRenewingMist ? 40 : 20;
             WoWUnit ripTarget = Clusters.GetBestUnitForCluster(NonRenewingMistPlayers, ClusterType.Chained, distHop);
             if (ripTarget != null)
                 Logger.WriteDebug("GetBestRenewingMistTarget: found optimal target {0}, hasmyaura={1} with {2} ms left", ripTarget.SafeName(), ripTarget.HasMyAura("Riptide"), (int)ripTarget.GetAuraTimeLeft("Riptide").TotalMilliseconds);
@@ -1209,7 +1228,7 @@ namespace Singular.ClassSpecific.Monk
             get
             {
                 return HealerManager.Instance.TargetList
-                    .Where(u => u.IsAlive && !u.HasMyAura("Renewing Mist") && u.DistanceSqr < 40 * 40 && u.GetPredictedHealthPercent() < MonkSettings.MistHealSettings.RenewingMist)
+                    .Where(u => u.IsAlive && !u.HasMyAura("Renewing Mist") && u.DistanceSqr < 40 * 40 && u.PredictedHealthPercent() < MonkSettings.MistHealSettings.RenewingMist)
                     .Select(u => (WoWUnit)u);
             }
         }
@@ -1251,7 +1270,7 @@ namespace Singular.ClassSpecific.Monk
                                         )
                                     ),
 
-                                // check if we need to cancel cast in progress
+                                // check if target healed and we need to cancel
                                 new DecoratorContinue(
                                     req => (req as WoWUnit).HealthPercent > 99,
                                     new Sequence(
@@ -1267,33 +1286,49 @@ namespace Singular.ClassSpecific.Monk
                                         )
                                     ),
 
-                                // check if we need to cancel cast in progress due to 
-                                // .. high priority target requiring saving heal
+                                // check if higher priority target with lower health needs us, so we cancel
+                                // NOTE: all health checks here should be HealthPercent, not GetPredictedHealthPercent()
                                 new DecoratorContinue(
                                     req => {
-                                        // if channel target is above 40 or its not a healer/tank, check if a healer/tank needs saving heal
+                                        bool surgmistTargetNotPriority = false;
+                                        string surgmistTargetMessage = "";
+                                        // if channel target out of danger and not a healer/tank, check if a healer/tank needs saving heal
                                         WoWPartyMember pm = Me.GroupInfo.RaidMembers.FirstOrDefault( p => p.Guid == (req as WoWUnit).Guid);
-                                        if ( pm == null 
-                                            || !(pm.HasRole(WoWPartyMember.GroupRole.Tank) || pm.HasRole(WoWPartyMember.GroupRole.Healer))
-                                            || (req as WoWUnit).GetPredictedHealthPercent() > EmergencyHealOutOfDanger)
+                                        if ( pm == null)
                                         {
-                                            // cancel if a tank or healer < 35
-                                            pm = Me.GroupInfo.RaidMembers
-                                                .FirstOrDefault(p => p != null && Me.Location.Distance(p.Location3D) < 60 
-                                                    && (p.HasRole(WoWPartyMember.GroupRole.Healer) || p.HasRole(WoWPartyMember.GroupRole.Healer)) 
-                                                    && p.ToPlayer() != null && p.ToPlayer().IsAlive && p.ToPlayer().GetPredictedHealthPercent() < EmergencyHealPercent);
-                                            if (pm != null)
+                                            surgmistTargetNotPriority = true;
+                                            surgmistTargetMessage = "MistweaverWaitForCast: surging mist target {0} not a Raid Member";
+                                        }
+                                        else if ( !pm.HasRole(WoWPartyMember.GroupRole.Tank) && !pm.HasRole(WoWPartyMember.GroupRole.Healer))
+                                        {
+                                            surgmistTargetNotPriority = true;
+                                            surgmistTargetMessage = "MistweaverWaitForCast: surging mist target {0} not a Tank or Healer";
+                                        }
+                                        else if ( (req as WoWUnit).HealthPercent > HealerManager.EmergencyHealOutOfDanger)
+                                        {
+                                            surgmistTargetNotPriority = true;
+                                            surgmistTargetMessage = "MistweaverWaitForCast: surging mist target {0} @ {1:F1}%";
+                                        }
+                                        
+                                        if (surgmistTargetNotPriority)
+                                        {
+                                            WoWUnit cancelFor = Group.Tanks.FirstOrDefault(t => t.IsAlive && t.HealthPercent < HealerManager.EmergencyHealPercent && t.SpellDistance() < 40 && t.InLineOfSpellSight);
+                                            if (cancelFor == null)
+                                                cancelFor = Group.Healers.FirstOrDefault(h => h.IsAlive && h.HealthPercent < HealerManager.EmergencyHealPercent && h.SpellDistance() < 40 && h.InLineOfSpellSight);
+                                            if (cancelFor != null)
                                             {
-                                                WoWUnit unit = pm.ToPlayer();
-                                                if (unit != null)
-                                                {
-                                                    Logger.Write(System.Drawing.Color.OrangeRed, "/cancel: {0} on {1} @ {2:F1}% because {3} @ {4:F1}% needs saving heal", Me.ChanneledSpell.Name, (req as WoWUnit).SafeName(), (req as WoWUnit).HealthPercent, unit.SafeName(), unit.HealthPercent);
-                                                    SpellManager.StopCasting();
-                                                    MyHealTarget = unit;
-                                                    return true;
-                                                }
+                                                Logger.WriteDiagnostic(surgmistTargetMessage, (req as WoWUnit).SafeName(), (req as WoWUnit).HealthPercent);
+                                                if (req == null)
+                                                    Logger.Write(System.Drawing.Color.OrangeRed, "/cancel: {0} because {1} @ {2:F1}% needs saving heal", Me.ChanneledSpell.Name, cancelFor.SafeName(), cancelFor.HealthPercent);
+                                                else
+                                                    Logger.Write(System.Drawing.Color.OrangeRed, "/cancel: {0} on {1} @ {2:F1}% because {3} @ {4:F1}% needs saving heal", Me.ChanneledSpell.Name, (req as WoWUnit).SafeName(), (req as WoWUnit).HealthPercent, cancelFor.SafeName(), cancelFor.HealthPercent);
+
+                                                SpellManager.StopCasting();
+                                                HealerManager.SavingHealUnit = cancelFor;
+                                                return true;
                                             }
                                         }
+
                                         return false;
                                         },
                                     new Wait(
@@ -1331,13 +1366,12 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMistweaverMoveToEnemyTarget()
         {
             return new PrioritySelector(
-                ctx => SpellManager.HasSpell("Crackling Jade Lightning"),
                 new Decorator(
-                    req => (bool)req,
+                    req => RangedAttacks,
                     Helpers.Common.EnsureReadyToAttackFromLongRange()
                     ),
                 new Decorator(
-                    req => !(bool)req,
+                    req => !RangedAttacks,
                     Helpers.Common.EnsureReadyToAttackFromMelee()
                     )
                 );
@@ -1347,7 +1381,6 @@ namespace Singular.ClassSpecific.Monk
 
         private static Composite CreateManaTeaBehavior()
         {
-            bool glyphedManaTea = TalentManager.HasGlyph("Mana Tea");
 
             return new PrioritySelector(
 
@@ -1370,8 +1403,8 @@ namespace Singular.ClassSpecific.Monk
 
                         return Me.ManaPercent < MonkSettings.ManaTeaPercent;
                         },
-                    cancel => Me.ManaPercent > 90 
-                        || (Me.ManaPercent > 7 && cancel != null && (cancel as WoWUnit).HealthPercent >= EmergencyHealOutOfDanger)
+                    cancel => Me.ManaPercent > 90
+                        || (Me.ManaPercent > 7 && cancel != null && (cancel as WoWUnit).HealthPercent >= HealerManager.EmergencyHealOutOfDanger)
                     )
                 );
         }
@@ -1433,7 +1466,7 @@ namespace Singular.ClassSpecific.Monk
 
                     new PrioritySelector(
 
-                        new Decorator(ret => _targetHeal != null && _targetHeal.GetPredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
+                        new Decorator(ret => _targetHeal != null && _targetHeal.PredictedHealthPercent() <= SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
                 
                             new PrioritySelector(
 
@@ -1541,38 +1574,69 @@ namespace Singular.ClassSpecific.Monk
                     RunStatus.Failure,
                     new Action(ret =>
                     {
-                        WoWUnit healTarg = onUnit(ret);
                         WoWUnit target = Me.CurrentTarget;
 
-                        string line = "....";
-                        line += string.Format(" h={0:F1}%/m={1:F1}%, moving={2}, combat={3}, chi={4}, tigerpwr={5}, manatea={6}, muscle={7}",
+                        string line = "...";
+                        line += string.Format(" h={0:F1}%/m={1:F1}%/c={2},move={3},combat={4},tigerpwr={5},mtea={6},muscle={7}",
                             Me.HealthPercent,
                             Me.ManaPercent,
+                            Me.CurrentChi,
                             Me.IsMoving.ToYN(),
                             Me.Combat.ToYN(),
-                            Me.CurrentChi,
                             (long)target.GetAuraTimeLeft("Tiger Power").TotalMilliseconds,
                             Me.GetAuraStacks("Mana Tea"),
                             (long)target.GetAuraTimeLeft("Muscle Memory").TotalMilliseconds
                             );
 
+                        WoWUnit healTarg = onUnit(ret);
                         if (Me.IsInGroup() || (Me.FocusedUnitGuid != 0 && healTarg == Me.FocusedUnit))
                         {
                             if (healTarg == null)
-                                line += ", heal=(null)";
+                                line += ",heal=(null)";
                             else if (!healTarg.IsValid)
-                                line += ", heal=(invalid)";
+                                line += ",heal=(invalid)";
                             else
-                                line += string.Format(", vmist={0}, zeal={1}, heal={2} {3:F1}% @ {4:F1} yds, hcombat={5}, tph={6:F1}%, tloss={7}",
+                            {
+                                float hh = (float) healTarg.HealthPercent;
+                                float hph= healTarg.PredictedHealthPercent();
+                                line += string.Format(",vmist={0},zeal={1},heal={2} {3:F1}% @ {4:F1} yds,hph={5:F1}%,hcombat={6},tloss={7}",
                                     Me.GetAuraStacks("Vital Mists"),
-                                    (long)target.GetAuraTimeLeft("Serpent's Zeal").TotalMilliseconds,
+                                    (long)Me.GetAuraTimeLeft("Serpent's Zeal").TotalMilliseconds,
                                     healTarg.SafeName(),
-                                    healTarg.HealthPercent,
-                                    healTarg.Distance,
+                                    hh,
+                                    healTarg.SpellDistance(),
+                                    hph,
                                     healTarg.Combat.ToYN(),
-                                    healTarg.GetPredictedHealthPercent(true),
                                     healTarg.InLineOfSpellSight.ToYN()
                                     );
+                                if (hph > 100)
+                                    line += ",Error=GetPredictedHealth > 100";
+                                else if (hph < 0)
+                                    line += ",Error=GetPredictedHealth < 0";
+                            }
+
+                            if (SingularSettings.Instance.StayNearTank)
+                            {
+                                WoWUnit tank = HealerManager.TankToStayNear;
+                                if (tank == null)
+                                    line += ",tank=(null)";
+                                else if (!tank.IsAlive)
+                                    line += ",tank=(dead)";
+                                else
+                                {
+                                    float hh = (float)tank.HealthPercent;
+                                    float hph = tank.PredictedHealthPercent();
+                                    line += string.Format(",tank={0} {1:F1}% @ {2:F1} yds,tph={3:F1}%,tcombat={4},tmove={5},tloss={6}",
+                                        tank.SafeName(),
+                                        hh,
+                                        tank.SpellDistance(),
+                                        hph,
+                                        tank.Combat.ToYN(),
+                                        tank.IsMoving.ToYN(),
+                                        tank.InLineOfSpellSight.ToYN()
+                                        );
+                                }
+                            }
                         }
 
                         if (target == null)

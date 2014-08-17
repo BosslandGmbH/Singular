@@ -404,6 +404,25 @@ namespace Singular.Helpers
                                             return agroMob;
                                         }
     */
+                                        // Look for agrroed mobs not in targetlist for some reason next. prioritize by IsPlayer, Relative Distance, then Health
+                                        target = Unit.UnfriendlyUnits()
+                                            .Where(
+                                                p => !Blacklist.Contains(p, BlacklistFlags.Combat)
+                                                && Unit.ValidUnit(p)
+                                                    // && p.DistanceSqr <= 40 * 40  // dont restrict check to 40 yds
+                                                && (p.Aggro || p.PetAggro || (p.Combat && p.GotTarget && (p.IsTargetingMeOrPet || p.IsTargetingMyRaidMember))))
+                                            .OrderBy(u => u.IsPlayer)
+                                            .ThenBy(u => CalcDistancePriority(u))
+                                            .ThenBy(u => u.HealthPercent)
+                                            .FirstOrDefault();
+
+                                        if (target != null)
+                                        {
+                                            // Return the closest one to us
+                                            Logger.Write(targetColor, "Current target invalid. Switching to Unfriendly mob " + target.SafeName() + " attacking us!");
+                                            return target;
+                                        }
+
                                         // And there's nothing left, so just return null, kthx.
                                         // ... but show a message about botbase still calling our Combat behavior with nothing to kill
                                         if ( DateTime.Now >= _timeNextInvalidTargetMessage)

@@ -55,7 +55,7 @@ namespace Singular.ClassSpecific.Druid
                 new Decorator(
                     ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
                         && Me.HasAura("Predatory Swiftness")
-                        && (Me.GetPredictedHealthPercent(true) < 95),
+                        && (Me.PredictedHealthPercent(includeMyHeals: true) < 95),
                     new PrioritySelector(
                         new Action(r => { Logger.WriteDebug("Druid Rest Swift Heal @ {0:F1}% and moving:{1} in form:{2}", Me.HealthPercent, Me.IsMoving, Me.Shapeshift); return RunStatus.Failure; }),
                         Spell.Cast("Healing Touch",

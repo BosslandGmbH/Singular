@@ -272,7 +272,7 @@ namespace Singular.ClassSpecific.Druid
                 behavs.AddBehavior(797, "Swiftmend Direct @ " + DruidSettings.Heal.SwiftmendDirectHeal + "%", "Swiftmend",
                     new Decorator(
                         ret => (!Spell.IsSpellOnCooldown("Swiftmend") || Spell.GetCharges("Force of Nature") > 0)
-                            && ((WoWUnit)ret).GetPredictedHealthPercent(true) < DruidSettings.Heal.SwiftmendDirectHeal
+                            && ((WoWUnit)ret).PredictedHealthPercent(includeMyHeals: true) < DruidSettings.Heal.SwiftmendDirectHeal
                             && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid)
                             && Spell.CanCastHack("Rejuvenation", (WoWUnit)ret, skipWowCheck: true),
                         new Sequence(
@@ -717,24 +717,24 @@ namespace Singular.ClassSpecific.Druid
                 ctx => selfOnly || !Me.IsInGroup() ? StyxWoW.Me : HealerManager.FindLowestHealthTarget(), // HealerManager.Instance.FirstUnit,
 
                 new Decorator( 
-                    req => req != null && ((WoWUnit)req).Combat && ((WoWUnit)req).GetPredictedHealthPercent(true) < SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
+                    req => req != null && ((WoWUnit)req).Combat && ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
                     CreateRestoDruidHealOnlyBehavior()
                     ),
 
                 new Decorator(
-                    req => req != null && !((WoWUnit)req).Combat && ((WoWUnit)req).GetPredictedHealthPercent(true) < SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
+                    req => req != null && !((WoWUnit)req).Combat && ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < SingularSettings.Instance.IgnoreHealTargetsAboveHealth,
 
                     new Sequence(
-                        new Action(on => Logger.WriteDebug("NonCombatHeal on {0}: health={1:F1}% predicted={2:F1}% +mine={3:F1}", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent, ((WoWUnit)on).GetPredictedHealthPercent(false), ((WoWUnit)on).GetPredictedHealthPercent(true))),
+                        new Action(on => Logger.WriteDebug("NonCombatHeal on {0}: health={1:F1}% predicted={2:F1}% +mine={3:F1}", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent, ((WoWUnit)on).PredictedHealthPercent(), ((WoWUnit)on).PredictedHealthPercent(includeMyHeals: true))),
                         new PrioritySelector(
                             // BUFFS First
-                            Spell.Buff("Rejuvenation", true, on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 95, 1),
-                            Spell.Buff("Regrowth", true, on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 80 && !TalentManager.HasGlyph("Regrowth"), 1),
+                            Spell.Buff("Rejuvenation", true, on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 95, 1),
+                            Spell.Buff("Regrowth", true, on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 80 && !TalentManager.HasGlyph("Regrowth"), 1),
 
                             // Direct Heals After
-                            Spell.Cast("Healing Touch", on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 65),
-                            Spell.Cast("Regrowth", on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 75),
-                            Spell.Cast("Nourish", on => (WoWUnit)on, req => ((WoWUnit)req).GetPredictedHealthPercent(true) < 85),
+                            Spell.Cast("Healing Touch", on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 65),
+                            Spell.Cast("Regrowth", on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 75),
+                            Spell.Cast("Nourish", on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 85),
 
                             // if Moving, spread Rejuv around on those that need to be topped off
                             new Decorator(

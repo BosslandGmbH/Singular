@@ -14,6 +14,7 @@ using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
 using Singular.Settings;
 using Singular.Managers;
+using Styx.Common.Helpers;
 
 namespace Singular.ClassSpecific.Monk
 {
@@ -237,8 +238,162 @@ namespace Singular.ClassSpecific.Monk
                     )
                 );
         }
-
+         
         private static bool wasMonkSpellQueued = false;
+
+        // delay casting instant ranged abilities if we just cast Roll/FSK
+        public readonly static WaitTimer RollTimer = new WaitTimer(TimeSpan.FromMilliseconds(1500));
+
+
+        public static Composite CreateMonkCloseDistanceBehavior( SimpleIntDelegate minDist = null, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate canReq = null)
+        {
+            /*
+            new Decorator(
+                unit => (unit as WoWUnit).SpellDistance() > 10
+                    && Me.IsSafelyFacing(unit as WoWUnit, 5f),
+                Spell.Cast("Roll")
+                )
+            */
+
+            if (!MovementManager.IsClassMovementAllowed)
+                return new ActionAlwaysFail();
+
+            bool hasFSKGlpyh = TalentManager.HasGlyph("Flying Serpent Kick");
+            bool hasTigersLust = HasTalent(MonkTalents.TigersLust);
+
+            if (minDist == null)
+                minDist = min => Me.Combat ? 10 : 12;
+
+            if (onUnit == null)
+                onUnit = on => Me.CurrentTarget;
+
+            if (canReq == null)
+                canReq = req => true;
+
+            return new Throttle( 1,
+                new PrioritySelector(
+                    ctx => onUnit(ctx),
+                    new Decorator(
+                        req => {
+                            if (!canReq(req))
+                                return false;
+
+                            float dist = Me.SpellDistance(req as WoWUnit);
+                            if ( dist <= minDist(req))
+                                return false;
+
+                            if ((req as WoWUnit).IsAboveTheGround())
+                                return false;
+
+                            float facingPrecision = (req as WoWUnit).SpellDistance() < 15 ? 6f : 4f;
+                            if (!Me.IsSafelyFacing(req as WoWUnit, facingPrecision))
+                                return false;
+
+                            WoWPoint hit;
+                            bool? isObstructed = Movement.MeshTraceline(Me.Location, (req as WoWUnit).Location, out hit);
+                            if (isObstructed == null || isObstructed == true)
+                                return false;
+
+                            return true;
+                            },
+                        new PrioritySelector(
+                            Spell.BuffSelf(
+                                "Tiger's Lust", 
+                                req => hasTigersLust 
+                                    && !Me.HasAuraWithEffect(WoWApplyAuraType.ModIncreaseSpeed)
+                                    && Me.HasAuraWithEffect(WoWApplyAuraType.ModRoot, WoWApplyAuraType.ModDecreaseSpeed)
+                                ),
+                            new Sequence( 
+                                Spell.Cast(
+                                    "Flying Serpent Kick", 
+                                    on => (WoWUnit) on,
+                                    ret => Me.Specialization == WoWSpec.MonkWindwalker
+                                        && !Me.Auras.ContainsKey("Flying Serpent Kick")
+                                        && ((ret as WoWUnit).SpellDistance() > 25 || Spell.IsSpellOnCooldown("Roll"))
+                                    ),
+                                /* wait until in progress */
+                                new PrioritySelector(
+                                    new Wait(
+                                        TimeSpan.FromMilliseconds(750),
+                                        until => Me.Auras.ContainsKey("Flying Serpent Kick"),
+                                        new Action( r => Logger.WriteDebug("CloseDistance: Flying Serpent Kick detected towards {0} @ {1:F1} yds in progress", (r as WoWUnit).SafeName(), (r as WoWUnit).SpellDistance()))
+                                        ),
+                                    new Action( r => {
+                                        Logger.WriteDebug("CloseDistance: did not see Flying Serpent Kick aura appear - lag?");
+                                        return RunStatus.Failure;
+                                        })
+                                    ),
+
+                                /* cancel when in range */
+                                new Wait( 
+                                    2,
+                                    until => {
+                                        if (!Me.Auras.ContainsKey("Flying Serpent Kick"))
+                                        {
+                                            Logger.WriteDebug("CloseDistance: Flying Serpent Kick completed on {0} @ {1:F1} yds", (until as WoWUnit).SafeName(), (until as WoWUnit).SpellDistance());
+                                            return true;
+                                        }
+
+                                        if (!hasFSKGlpyh && (until as WoWUnit).IsWithinMeleeRange)
+                                        {
+                                            Logger.Write(Color.White, "/cancel Flying Serpent Kick in melee range of {0} @ {1:F1} yds", (until as WoWUnit).SafeName(), (until as WoWUnit).SpellDistance());
+                                            return true;
+                                        }
+
+                                        if ((until as WoWUnit).IsBehind(Me))
+                                        {
+                                            Logger.Write(Color.White, "/cancel Flying Serpent Kick flew past {0} @ {1:F1} yds", (until as WoWUnit).SafeName(), (until as WoWUnit).SpellDistance());
+                                            return true;
+                                        }
+
+                                        return false;
+                                        },
+                                    new PrioritySelector(
+                                        new Decorator(
+                                            req => !Me.Auras.ContainsKey("Flying Serpent Kick"),
+                                            new ActionAlwaysSucceed()
+                                            ),
+                                        new Sequence(
+                                            new Action( r => {
+                                                Logger.WriteDebug("CloseDistance: casting Flying Serpent Kick to cancel");
+                                                SpellManager.Cast("Flying Serprent Kick");
+                                            }),
+                                            /* wait until cancel takes effect */
+                                            new PrioritySelector(
+                                                new Wait(
+                                                    TimeSpan.FromMilliseconds(450),
+                                                    until => !Me.Auras.ContainsKey("Flying Serpent Kick"),
+                                                    new Action( r => Logger.WriteDebug("CloseDistance: Flying Serpent Kick aura no longer exists"))
+                                                    ),
+                                                new Action( r => {
+                                                    Logger.WriteDebug("CloseDistance: error - Flying Serpent Kick was not removed - lag?");
+                                                    })
+                                                )
+                                            )
+                                        )
+                                    )
+                                ),
+
+                            Spell.BuffSelf("Tiger's Lust", req => hasTigersLust ),
+
+                            new Sequence(
+                                Spell.Cast("Roll", on => (WoWUnit)on, req => !MonkSettings.DisableRoll),
+                                new Wait(
+                                    TimeSpan.FromMilliseconds(350), 
+                                    until => Me.Auras.ContainsKey("Roll"),
+                                    new Action(r => Logger.WriteDebug("CloseDistance: Roll in progress"))
+                                    ),
+                                new Wait(
+                                    TimeSpan.FromMilliseconds(850), 
+                                    until => !Me.Auras.ContainsKey("Roll"),
+                                    new Action(r => Logger.WriteDebug("CloseDistance: Roll has ended"))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+        }
 
         public static WoWObject FindClosestSphere(SphereType typ, float range)
         {
@@ -368,25 +523,70 @@ namespace Singular.ClassSpecific.Monk
 
             return new Throttle(15,
                 new Sequence(
-                    ctx => Me.Inventory.Equipped.MainHand,
-                    Spell.Cast("Grapple Weapon", on =>
-                    {
+                    ctx => {
+                        WoWUnit target;
                         if (Spell.IsSpellOnCooldown("Grapple Weapon"))
-                            return null;
-                        
-                        WoWUnit unit = Unit.NearbyUnitsInCombatWithMeOrMyStuff.FirstOrDefault(
-                            u => u.IsHumanoid  
-                                && u.SpellDistance() < 40
-                                && !Me.CurrentTarget.Disarmed
-                                && !Me.CurrentTarget.IsCrowdControlled()
-                                && Me.IsSafelyFacing(u, 150)
-                                );
-                        return unit;
-                    }),
-                    new Wait( TimeSpan.FromMilliseconds(350), until => Me.Inventory.Equipped.MainHand != (WoWItem) until, new ActionAlwaysSucceed()),
-                    new Action( mh => Logger.Write(Color.White, "/grappleweapon: equipped [{0}] #{1}", Me.Inventory.Equipped.MainHand.Name, Me.Inventory.Equipped.MainHand.Entry ))
+                            target = null;
+                        else
+                            target = Unit.NearbyUnitsInCombatWithMeOrMyStuff
+                                        .FirstOrDefault(u => IsGrappleWeaponCandidate(u) && u.SpellDistance() < 40 && Me.IsSafelyFacing(u, 150));
+                        return new CtxGrapple( target);
+                    },
+
+                    Spell.Cast("Grapple Weapon", on => (on as CtxGrapple).target),
+
+                    // if cast successful, make sure we return success to Throttle even if Wait for weapon fails
+                    new PrioritySelector(
+                        new Sequence(
+                            new Wait( TimeSpan.FromMilliseconds(350), until => Me.Inventory.Equipped.MainHand != (until as CtxGrapple).mainhand, new ActionAlwaysSucceed()),
+                            new Action( mh => Logger.Write(Color.White, "/grappleweapon: equipped [{0}] #{1}", Me.Inventory.Equipped.MainHand.Name, Me.Inventory.Equipped.MainHand.Entry ))
+                            ),
+                        new PrioritySelector(
+                            ctx => Me.GetAllAuras().FirstOrDefault(a => a.SpellId == 123231 || a.SpellId == 123232 || a.SpellId == 123234),
+                            new Decorator(
+                                req => req != null,
+                                new Action( r => Logger.Write( Color.White, "/grappleweapon: received buff [{0}] #{1}", (r as WoWAura).Name, (r as WoWAura).SpellId))
+                                ),
+                            new Action(r => Blacklist.Add((r as CtxGrapple).target.IsPlayer ? (r as CtxGrapple).target.Guid : (r as CtxGrapple).target.Entry, BlacklistFlags.Node, TimeSpan.FromDays(7), "Singular: failed Grapple Weapon on this target"))
+                            )
+                        )
                     )
                 );
+        }
+
+        class CtxGrapple
+        {
+            public WoWUnit target { get; set; }
+            public WoWItem mainhand { get; set; }
+
+            public CtxGrapple( WoWUnit t)
+            {
+                mainhand = Me.Inventory.Equipped.MainHand;
+                target = t;
+            }
+        }
+
+        private static bool IsGrappleWeaponCandidate(WoWUnit u)
+        {
+            if (u.IsPlayer)
+            {
+                if (Blacklist.Contains(u.Guid, BlacklistFlags.Node))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!u.IsHumanoid || Blacklist.Contains(u.Entry, BlacklistFlags.Node))
+                {
+                    return false;
+                }
+            }
+
+            if (u.CurrentTarget.Disarmed || u.CurrentTarget.IsCrowdControlled())
+                return false;
+
+            return true;
         }
 
         public static Composite CreateChiBurstBehavior()

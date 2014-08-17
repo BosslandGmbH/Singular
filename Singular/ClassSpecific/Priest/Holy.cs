@@ -42,7 +42,7 @@ namespace Singular.ClassSpecific.Priest
                 // Make sure we're healing OOC too!
                 CreateHolyHealOnlyBehavior(false, false),
                 // now buff our movement if possible
-                Common.CreatePriestMovementBuff("Rest")
+                Common.CreatePriestMovementBuffOnTank("Rest")
                 );
         }
 
@@ -569,7 +569,7 @@ VoidShift               Void Shift
 
                     Spell.Cast("Flash Heal",
                         ctx => Me,
-                        ret => !Me.Combat && Me.GetPredictedHealthPercent(true) <= 85)
+                        ret => !Me.Combat && Me.PredictedHealthPercent(includeMyHeals: true) <= 85)
                     )
                 );
         }
@@ -580,15 +580,20 @@ VoidShift               Void Shift
             return new PrioritySelector(
                 new PrioritySelector(
                     ctx => {
+                        if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                            return "Chakra: Chastise";
+
                         if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
                             return "Chakra: Serenity";
 
                         int groupSize = Unit.NearbyGroupMembers.Count(m => m.IsAlive);
-                        if (groupSize >= 8)
-                            return "Chakra: Sanctuary";
                         if (groupSize <= 6)
                             return "Chakra: Serenity";
-                        return "Chakra: Chastise";
+
+                        if (groupSize >= 8)
+                            return "Chakra: Sanctuary";
+
+                        return Me.HasAura("Chakra: Serenity") ? "Chakra: Serenity" : "Chakra: Sanctuary";
                     },
 
                     Spell.Cast( spell=>(string)spell, on => Me, req => !Me.HasAura((string) req))
@@ -654,6 +659,18 @@ VoidShift               Void Shift
                                 Spell.Cast("Shadow Word: Death", ret => StyxWoW.Me.CurrentTarget.HealthPercent <= 20),
                                 Spell.Buff("Shadow Word: Pain", true),
                                 Spell.Buff("Holy Word: Chastise", ret => StyxWoW.Me.HasAura( "Chakra: Chastise")),
+                                Spell.Buff("Shadow Word: Pain", true, on =>
+                                {
+                                    WoWUnit unit = Unit.NearbyUnfriendlyUnits
+                                        .FirstOrDefault(
+                                            u => (u.TaggedByMe || u.Aggro)
+                                                && u.Guid != Me.CurrentTargetGuid
+                                                && u.IsTargetingMeOrPet
+                                                && !u.HasMyAura("Shadow Word: Pain")
+                                                && !u.IsCrowdControlled()
+                                            );
+                                    return unit;
+                                }),
                                 Common.CreateHolyFireBehavior(),
                                 Spell.Cast("Smite", mov => true, on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS())
                                 )
@@ -695,7 +712,7 @@ VoidShift               Void Shift
                                 line += string.Format(", target={0} th={1:F1}%/{2:F1}%,  @ {3:F1} yds, combat={4}, tloss={5}, pw:s={6}, renew={7}",
                                     healtarget.SafeName(),
                                     healtarget.HealthPercent,
-                                    healtarget.GetPredictedHealthPercent(true),
+                                    healtarget.PredictedHealthPercent(includeMyHeals: true),
                                     healtarget.Distance,
                                     healtarget.Combat.ToYN(),
                                     healtarget.InLineOfSpellSight,

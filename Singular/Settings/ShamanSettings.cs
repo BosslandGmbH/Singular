@@ -93,6 +93,13 @@ namespace Singular.Settings
         public bool UseWeaponImbues { get; set; }
 
         [Setting]
+        [DefaultValue(true)]
+        [Category("Common")]
+        [DisplayName("Use Ascendance")]
+        [Description("True: Automatically cast Ascendance as needed, False: never cast Ascendance (left for User Control)")]
+        public bool UseAscendance { get; set; }
+
+        [Setting]
         [DefaultValue(15)]
         [Category("Common")]
         [DisplayName("Twist Water Shield Mana %")]

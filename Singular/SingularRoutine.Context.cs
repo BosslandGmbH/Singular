@@ -124,9 +124,9 @@ namespace Singular
                     {
                         // check if any of the bot detection values have changed which we use to 
                         // .. conditionally build trees
+                        DescribeContext();
                         if (UpdateContextStateValues())
                         {
-                            // DescribeContext();
                             RebuildBehaviors();
                         }
                     }
@@ -216,7 +216,7 @@ namespace Singular
             return changed;
         } 
 
-        static void DescribeContext()
+        public static void DescribeContext()
         {
             string sRace = Me.Race.ToString().CamelToSpaced();
             if (Me.Race == WoWRace.Pandaren)

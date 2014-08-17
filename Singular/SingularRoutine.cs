@@ -20,6 +20,8 @@ using Styx.Common;
 using Singular.Settings;
 
 using Styx.Common.Helpers;
+using Styx.CommonBot.POI;
+using System.Text;
 
 namespace Singular
 {
@@ -65,6 +67,8 @@ namespace Singular
             Dispelling.Init();
             PartyBuff.Init();
             Singular.Lists.BossList.Init();
+
+            Targeting.Instance.WeighTargetsFilter += PullMoreWeighTargetsFilter;
 
             //Logger.Write("Combat log event handler started.");
             // Do this now, so we ensure we update our context when needed.
@@ -134,6 +138,7 @@ namespace Singular
             OnWoWContextChanged += (orig, ne) =>
                 {
                     Logger.Write(Color.White, "Context changed, re-creating behaviors");
+                    SingularRoutine.DescribeContext();
                     RebuildBehaviors();
                     Spell.GcdInitialize();
                     Singular.Lists.BossList.Init();
@@ -162,6 +167,19 @@ namespace Singular
 
             Logger.WriteDebug(Color.White, "Verified behaviors can be created!");
             Logger.Write("Initialization complete!");
+        }
+
+        private void PullMoreWeighTargetsFilter(List<Targeting.TargetPriority> units)
+        {
+            if (SingularSettings.Instance.PullMoreMobCount > 1 && Me.Combat)
+            {
+                foreach (Styx.CommonBot.Targeting.TargetPriority p in units)
+                {
+                    WoWUnit u = p.Object.ToUnit();
+                    if (BotPoi.Current != null && BotPoi.Current.Guid == u.Guid && !u.IsPlayer && !u.IsTagged)
+                        p.Score += 500;
+                }
+            }
         }
 
         private static void WriteSupportInfo()
@@ -405,6 +423,8 @@ namespace Singular
             // check and output casting state information
             UpdateDiagnosticCastingState();
 
+            UpdatePullMoreConditionals();
+
             // Update the current context, check if we need to rebuild any behaviors.
             UpdateContext();
 
@@ -413,6 +433,9 @@ namespace Singular
 
             // Output if Target changed 
             CheckCurrentTarget();
+
+            // Output if Pet or Pet Target changed
+            CheckCurrentPet();
 
             // Pulse our StopAt manager
             StopMoving.Pulse();
@@ -443,14 +466,45 @@ namespace Singular
             HotkeyDirector.Pulse();
         }
 
+        private static ulong _lastPetGuid = 0;
+        private static bool _lastPetAlive;
+
+        private void CheckCurrentPet()
+        {
+            if (!SingularSettings.Debug)
+                return;
+
+            if (Me.Pet == null)
+            {
+                if (_lastPetGuid != 0)
+                {
+                    _lastPetGuid = 0;
+                    if (SingularSettings.Debug)
+                        Logger.WriteDebug("YourCurrentPet: (none)");
+                }
+            }
+            else 
+            {
+                // check for change in current pet
+                if ( Me.Pet.Guid != _lastPetGuid || Me.Pet.IsAlive != _lastPetAlive)
+                {
+                    _lastPetGuid = Me.Pet.Guid;
+                    _lastPetAlive = Me.Pet.IsAlive;
+                    Logger.WriteDebug("YourCurrentPet: #{0}, Name={1}, Level={2}, Type={3}, Talents={4}", Me.PetNumber, Me.Pet.Name, Me.Pet.Level, Me.Pet.CreatureType, PetManager.GetPetTalentTree());
+                }
+
+                // now check pets target
+                CheckTarget(Me.Pet.CurrentTarget, ref _lastCheckPetsTargetGuid, "PetsCurrentTarget", (x) => { });
+            }
+
+        }
+
         private static ulong _lastCheckCurrTargetGuid = 0;
         private static ulong _lastCheckPetsTargetGuid = 0;
 
         private void CheckCurrentTarget()
         {
             CheckTarget(Me.CurrentTarget, ref _lastCheckCurrTargetGuid, "YourCurrentTarget", OnPlayerTargetChange);
-            if (SingularSettings.Debug && Me.GotAlivePet)
-                CheckTarget(Me.Pet.CurrentTarget, ref _lastCheckPetsTargetGuid, "PetsCurrentTarget", (x) => { });
         }
 
 
@@ -486,6 +540,14 @@ namespace Singular
                     {
                         WoWPlayer p = unit.ToPlayer();
                         playerInfo = string.Format("Y, Friend={0}, IsPvp={1}, CtstPvp={2}, FfaPvp={3}", Me.IsHorde == p.IsHorde, p.IsPvPFlagged, p.ContestedPvPFlagged, p.IsFFAPvPFlagged);
+                    }
+                    else
+                    {
+                        info += string.Format(", tagme={0}, tagother={1}, tapall={2}",
+                            unit.TaggedByMe.ToYN(),
+                            unit.TaggedByOther.ToYN(),
+                            unit.TappedByAllThreatLists.ToYN()
+                            );
                     }
 
                     Logger.WriteDebug(description + ": changed to: {0} h={1:F1}%, maxh={2}, d={3:F1} yds, box={4:F1}, boss={5}, trivial={6}, player={7}, attackable={8}, neutral={9}, hostile={10}, entry={11}, faction={12}, loss={13}, facing={14}, blacklist={15}, combat={16}, flying={17}, abovgrnd={18}" + info,
@@ -532,7 +594,7 @@ namespace Singular
         private static bool _lastIsGCD = false;
         private static bool _lastIsCasting = false;
         private static bool _lastIsChanneling = false;
-
+        private static DateTime _nextAbcWarning = DateTime.MinValue;
         public static bool UpdateDiagnosticCastingState( bool retVal = false)
         {
             if (SingularSettings.Debug && SingularSettings.DebugSpellCasting)
@@ -551,6 +613,21 @@ namespace Singular
                 {
                     _lastIsChanneling = Spell.IsChannelling();
                     Logger.WriteDebug("ChannelingState:  Channeling={0} ChannelTimeLeft={1}", _lastIsChanneling, (int)Me.CurrentChannelTimeLeft.TotalMilliseconds);
+                }
+
+                /// Special: provide diagnostics if healer 
+                if ( HealerManager.NeedHealTargeting && (_nextAbcWarning < DateTime.Now) && !Me.IsCasting && !Me.IsChanneling && !Spell.IsGlobalCooldown(LagTolerance.No))
+                {
+                    WoWUnit low = HealerManager.FindLowestHealthTarget();
+                    if (low != null )
+                    {
+                        float lh = low.PredictedHealthPercent();
+                        if ((SingularSettings.Instance.HealerCombatAllow && HealerManager.CancelHealerDPS()) || (!SingularSettings.Instance.HealerCombatAllow && lh < 70))
+                        {
+                            Logger.WriteDebug("Healer ABC Warning: no cast in progress detected, low health {0} {1:F1}% @ {2:F1} yds", low.SafeName(), lh, low.SpellDistance());
+                            _nextAbcWarning = DateTime.Now + TimeSpan.FromSeconds(1);
+                        }
+                    }
                 }
             }
             return retVal;

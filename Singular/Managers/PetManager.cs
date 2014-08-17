@@ -52,6 +52,11 @@ namespace Singular.Managers
 
         public static bool HavePet { get { return StyxWoW.Me.GotAlivePet; } }
 
+        public static string GetPetTalentTree()
+        {
+            return Lua.GetReturnVal<string>("return GetPetTalentTree()", 0);
+        }
+
         public static string WantedPet { get; set; }
 
         internal static void Pulse()
@@ -85,7 +90,7 @@ namespace Singular.Managers
                         PetSummonAfterDismountTimer.Reset();
                         _petGuid = StyxWoW.Me.Pet.Guid;
 
-                        Logger.WriteDebug("---PetSpells Loaded---");
+                        Logger.WriteDebug("---PetSpells Loaded for: {0} Pet ---", PetManager.GetPetTalentTree());
                         foreach (var sp in PetSpells)
                         {
                             if (sp.Spell == null)
@@ -108,6 +113,16 @@ namespace Singular.Managers
             {
                 PetSpells.Clear();
             }
+        }
+
+        public static bool Attack(WoWUnit unit)
+        {
+            if ( unit == null || StyxWoW.Me.Pet == null || StyxWoW.Me.Pet.CurrentTargetGuid == unit.Guid)
+                return false;
+
+            Logger.Write(Color.White, "/petattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+            PetManager.CastPetAction("Attack", unit);
+            return true;
         }
 
         public static bool CanCastPetAction(string action)
@@ -134,7 +149,7 @@ namespace Singular.Managers
             if (spell == null)
                 return;
 
-            Logger.Write(string.Format("[Pet] Casting {0}", action));
+            Logger.Write(Color.DeepSkyBlue, "[Pet] Casting {0}", action);
             Lua.DoString("CastPetAction({0})", spell.ActionBarIndex + 1);
         }
 
@@ -151,7 +166,7 @@ namespace Singular.Managers
             if (spell == null)
                 return;
 
-            Logger.Write(string.Format("[Pet] Casting {0} on {1}", action, on.SafeName()));
+            Logger.Write(Color.DeepSkyBlue, "[Pet] Casting {0} on {1} @ {2:F1} yds", action, on.SafeName(), on.SpellDistance());
             WoWUnit save = StyxWoW.Me.FocusedUnit;
             StyxWoW.Me.SetFocus(on);
             Lua.DoString("CastPetAction({0}, 'focus')", spell.ActionBarIndex + 1);
@@ -224,7 +239,7 @@ namespace Singular.Managers
                 case WoWClass.Warlock:
                     if (Spell.CanCastHack("Summon " + petName))
                     {
-                        Logger.Write(string.Format("[Pet] Calling out my {0}", petName));
+                        Logger.Write(Color.DeepSkyBlue, "[Pet] Calling out my {0}", petName);
                         bool result = SpellManager.Cast("Summon " + petName);
                         return result;
                     }
@@ -233,7 +248,7 @@ namespace Singular.Managers
                 case WoWClass.Mage:
                     if (Spell.CanCastHack("Summon Water Elemental"))
                     {
-                        Logger.Write("[Pet] Calling out Water Elemental");
+                        Logger.Write(Color.DeepSkyBlue, "[Pet] Calling out Water Elemental");
                         bool result = SpellManager.Cast("Summon Water Elemental");
                         return result;
                     }
@@ -244,7 +259,7 @@ namespace Singular.Managers
                     {
                         if (!StyxWoW.Me.GotAlivePet)
                         {
-                            Logger.Write(string.Format("[Pet] Calling out pet #{0}", petName));
+                            Logger.Write(Color.DeepSkyBlue, "[Pet] Calling out pet #{0}", petName);
                             bool result = SpellManager.Cast("Call Pet " + petName);
                             return result;
                         }

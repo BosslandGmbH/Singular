@@ -1,6 +1,11 @@
 ﻿#region
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Globalization;
+using System.Drawing;
+
 using Singular.Helpers;
 using Singular.Managers;
 using Styx;
@@ -11,10 +16,7 @@ using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Common = Singular.ClassSpecific.Druid.Common;
 using Singular.Settings;
-using System.Globalization;
 using Styx.Common;
-using System.Drawing;
-using System.Collections.Generic;
 using Styx.Common.Helpers;
 
 #endregion
@@ -53,6 +55,9 @@ namespace Singular.Utilities
             // Lua.Events.AttachEvent("AUTOEQUIP_BIND_CONFIRM", HandleLootBindConfirm);
             // Lua.Events.AttachEvent("LOOT_BIND_CONFIRM", HandleLootBindConfirm);
             Lua.Events.AttachEvent("END_BOUND_TRADEABLE", HandleEndBoundTradeable);
+
+            Lua.Events.AttachEvent("PARTY_MEMBER_DISABLE", HandlePartyMemberDisable);
+            Lua.Events.AttachEvent("PARTY_MEMBER_ENABLE", HandlePartyMemberEnable);
         }
 
         private static void InitializeLocalizedValues()
@@ -148,7 +153,11 @@ namespace Singular.Utilities
                     + ")"
                     + " or";
                 // filterCriteria += " (args[8] == UnitGUID('player') and args[8] ~= args[4] and 0x000 == bit.band(tonumber('0x'..strsub(guid, 3,5)),0x00f)) or";
+            else if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
+                filterCriteria +=
+                    " (args[2] == 'UNIT_DIED') or";
 
+            // standard portion of filter
             filterCriteria += 
                 " ("
                 + " args[4] == UnitGUID('player')"
@@ -160,14 +169,7 @@ namespace Singular.Utilities
                 +   " or args[2] == 'SPELL_CAST_FAILED'"
                 +   " )"
                 +" )";
-            /*
-            filterCriteria =
-                "return args[4] == UnitGUID('player')"
-                + " and (args[2] == 'SPELL_MISSED'"
-                + " or args[2] == 'RANGE_MISSED'"
-                + " or args[2] == 'SWING_MISSED'"
-                + " or args[2] == 'SPELL_CAST_FAILED')";
-            */
+
             _combatFilterAdded = Lua.Events.AddFilter("COMBAT_LOG_EVENT_UNFILTERED", filterCriteria);
             if (!_combatFilterAdded)
             {
@@ -242,11 +244,7 @@ namespace Singular.Utilities
 
                 // spell_cast_failed only passes filter in Singular debug mode
                 case "SPELL_CAST_FAILED":
-                    if ( !SingularSettings.Debug)
-                        Logger.WriteFile("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14] );
-                    else
-                        Logger.WriteDebug("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14]);
-
+                    Logger.WriteDiagnostic("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14] );
                     if ( e.Args[14].ToString() == LocalizedLineOfSightFailure )
                     {
                         ulong guid = 0;
@@ -372,6 +370,18 @@ namespace Singular.Utilities
                         }
                     }
                     break;
+
+                case "UNIT_DIED":
+                    try 
+                    { 
+                        WoWUnit corpse = e.SourceUnit;
+                        WoWPartyMember pm = Unit.GroupMemberInfos.First( m => m.Guid == corpse.Guid);
+                        Logger.WriteDiagnostic( "Combat Log: Role={0} {1} Died!", pm.Role & (~WoWPartyMember.GroupRole.Leader), corpse.SafeName());                    
+                    }
+                    catch 
+                    {
+                    }
+                    break;
             }
         }
 
@@ -451,12 +461,17 @@ namespace Singular.Utilities
             bool handled = false;
             LastRedErrorMessage = DateTime.Now;
 
+            if (SingularSettings.Debug)
+            {
+                Logger.WriteDebug("[WoWRedError] {0}", args.Args[0].ToString());
+            }
+
             if (StyxWoW.Me.Class == WoWClass.Rogue && SingularSettings.Instance.Rogue().UsePickPocket && args.Args[0].ToString() == LocalizedAlreadyPickPocketedError)
             {
                 if (StyxWoW.Me.GotTarget)
                 {
                     WoWUnit unit = StyxWoW.Me.CurrentTarget;
-                    Logger.WriteDebug("[WowErrorMessage] already pick pocketed {0}, blacklisting from pick pocket for 2 minutes", unit.SafeName());
+                    Logger.WriteDebug("WowRedError Handler: already pick pocketed {0}, blacklisting from pick pocket for 2 minutes", unit.SafeName());
                     Blacklist.Add(unit.Guid, BlacklistFlags.Node, TimeSpan.FromMinutes(2), "Singular: already pick pocketed mob");
                     handled = true;
                 }
@@ -471,18 +486,65 @@ namespace Singular.Utilities
                     {
                         string symbolicName = LocalizedShapeshiftMessages[args.Args[0].ToString()];
                         SuppressShapeshiftUntil = DateTime.Now.Add(TimeSpan.FromSeconds(30));
-                        Logger.Write(Color.White, "/cancel{0} - due to Red Shapeshift Error '{1}', suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
+                        Logger.Write(Color.White, "/cancel{0} - due to Error '{1}', suppress form until {2}!", StyxWoW.Me.Shapeshift.ToString().CamelToSpaced(), symbolicName, SuppressShapeshiftUntil.ToString("HH:mm:ss.fff"));
                         Lua.DoString("CancelShapeshiftForm()");
                         handled = true;
                     }
                 }
             }
+        }
 
-            if (!handled && SingularSettings.Debug)
+        private static void HandlePartyMemberEnable(object sender, LuaEventArgs args)
+        {
+            // Since we hooked this in ctor, make sure we are the selected CC
+            if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
+                return;
+
+            WoWPartyMember pm = Unit.GroupMemberInfos.FirstOrDefault(g => g.ToPlayer() != null && string.Equals(g.ToPlayer().Name, args.Args[0].ToString(), StringComparison.InvariantCulture));
+            string name = "(null)";
+            string status = "(unknown)";
+
+            if (pm == null)
             {
-                Logger.WriteDebug("[WoWRedError] {0}", args.Args[0].ToString());
+                Logger.WriteDiagnostic("Group Member: {0} enabled but could not be found", args.Args[0].ToString());
+            }
+            else
+            {
+                WoWUnit o = ObjectManager.GetObjectByGuid<WoWUnit>(pm.Guid);
+                name = o.Name;
+                status = "Alive";
+                Logger.WriteDiagnostic("Group Member {0}: {1} {2}", pm.RaidRank, name, status);
             }
         }
+
+
+        private static void HandlePartyMemberDisable(object sender, LuaEventArgs args)
+        {
+            // Since we hooked this in ctor, make sure we are the selected CC
+            if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
+                return;
+
+            WoWPartyMember pm = Unit.GroupMemberInfos.FirstOrDefault(g => g.ToPlayer() != null && string.Equals(g.ToPlayer().Name, args.Args[0].ToString(), StringComparison.InvariantCulture));
+            string name = "(null)";
+            string status = "(unknown)";
+
+            if (pm == null)
+            {
+                Logger.WriteDiagnostic("Group Member: {0} disabled but could not be found", args.Args[0].ToString());
+            }
+            else
+            {
+                WoWUnit o = ObjectManager.GetObjectByGuid<WoWUnit>(pm.Guid);
+                name = o.Name;
+                if (!o.IsAlive)
+                    status = "Died!";
+                else if (!pm.IsOnline)
+                    status = "went Offline";
+
+                Logger.WriteDiagnostic("Group Member {0}: {1} {2}", pm.RaidRank, name, status);
+            }
+        }
+
 
         private static string GetSymbolicLocalizeValue(string symbolicName)
         {

@@ -51,7 +51,7 @@ namespace Singular.ClassSpecific.Monk
                     new PrioritySelector(
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
-                        Spell.CastOnGround("Dizzying Haze", on => Me.CurrentTarget, req => Unit.UnfriendlyUnitsNearTarget(8).Count() > 1, waitForSpell: false),
+                        CreateDizzyingHazeSingleton(),
                         CreateCloseDistanceBehavior(),
                         Spell.Cast("Tiger Palm"),
                         Spell.Cast("Expel Harm", ret => Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10),
@@ -59,6 +59,24 @@ namespace Singular.ClassSpecific.Monk
                         )
                     )
                 );
+        }
+
+        private static Composite _dishaze = null;
+        private static Composite CreateDizzyingHazeSingleton()
+        {
+            if (_dishaze == null)
+            {
+                _dishaze = new Throttle(
+                    TimeSpan.FromMilliseconds(2500),
+                    new PrioritySelector(
+                        ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.SpellDistance() > 15 || (u.IsMoving && !u.IsWithinMeleeRange && Me.IsSafelyBehind(u)))),
+                        Spell.CastOnGround("Dizzying Haze", on => on as WoWUnit, req => true, false)
+                        )
+                    );
+
+            }
+
+            return _dishaze;
         }
 
         [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Normal)]
@@ -73,7 +91,7 @@ namespace Singular.ClassSpecific.Monk
                     new PrioritySelector(
                         Helpers.Common.CreateInterruptBehavior(),
                         CreateCloseDistanceBehavior(),
-                        Spell.CastOnGround("Dizzying Haze", on => Me.CurrentTarget, req => Unit.UnfriendlyUnitsNearTarget(8).Count() > 1, waitForSpell: false),
+                        CreateDizzyingHazeSingleton(),
                         Spell.Cast("Tiger Palm"),
                         Spell.Cast("Expel Harm", ret => Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10),
                         Spell.Cast("Jab")
@@ -108,7 +126,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.BuffSelf("Guard", ctx => Me.HasAura("Power Guard")),
                         Spell.BuffSelf("Elusive Brew", ctx => MonkSettings.UseElusiveBrew && Me.HasAura("Elusive Brew", MonkSettings.ElusiveBrewMinumumCount)),
                         Spell.Cast("Chi Brew", ctx => UseChiBrew),
-                        Spell.BuffSelf("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.CurrentChi >= 3)
+                        Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90)
                         )
                     )
                 );
@@ -134,6 +152,9 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateBrewmasterMonkNormalCombat()
         {
             return new PrioritySelector(
+
+                Movement.CreatePositionMobsInFront(),
+
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Spell.WaitForCastOrChannel(),
 
@@ -145,7 +166,9 @@ namespace Singular.ClassSpecific.Monk
 
                         Common.CreateGrappleWeaponBehavior(),
 
-                        Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
+                        // keep these auras up!
+                        Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power", 1) || (SpellManager.HasSpell("Brewmaster Training") && Me.HasKnownAuraExpired("Power Guard", 1))),
+                        Spell.Cast("Blackout Kick", ctx => SpellManager.HasSpell("Brewmaster Training") && Me.HasKnownAuraExpired("Shuffle", 1)),
 
                         // AOE
                         new Decorator(
@@ -154,13 +177,13 @@ namespace Singular.ClassSpecific.Monk
                                 ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault( u => Me.IsSafelyFacing(u,150f)),
 
                                 // cast heal in anticipation of damage
-                                Spell.Cast("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 3),
+                                Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90),
 
                                 new Decorator( 
                                     req => req != null,
                                     new PrioritySelector(
                                         // throw debuff on them to hit themselves and slow
-                                        Spell.CastOnGround("Dizzying Haze", on => on as WoWUnit, req => Unit.NearbyUnfriendlyUnits.Any(u => !u.HasAura("Dizzying Haze") && u.SpellDistance(req as WoWUnit) < 8), false),
+                                        CreateDizzyingHazeSingleton(),
 
                                         // throw DoT on them
                                         Spell.Cast("Breath of Fire", 
@@ -170,8 +193,8 @@ namespace Singular.ClassSpecific.Monk
                                         // aoe stuns (one per 3 seconds at most)
                                         new Throttle(3,
                                             new PrioritySelector(
-                                                Spell.Cast("Charging Ox Wave", ctx => HasTalent(MonkTalents.ChargingOxWave) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits.Where(u => !u.IsStunned()), ClusterType.Cone, 30) >= 3),
-                                                Spell.Cast("Leg Sweep", ctx => Unit.UnitsInCombatWithUsOrOurStuff(5).FirstOrDefault(u=>!u.IsStunned()), req => HasTalent(MonkTalents.LegSweep) )
+                                                Spell.Cast("Charging Ox Wave", ctx => HasTalent(MonkTalents.ChargingOxWave) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits.Where(u => !u.IsStunned()), ClusterType.Cone, 30) >= (Me.HealthPercent > 50 ? 3 : 1)),
+                                                Spell.Cast("Leg Sweep", req => HasTalent(MonkTalents.LegSweep) && Unit.UnitsInCombatWithUsOrOurStuff(5).Count(u => !u.IsStunned()) >= (Me.HealthPercent > 50 ? 3 : 1))
                                                 )
                                             ),
                                         Spell.Cast(sp => HasTalent(MonkTalents.RushingJadeWind) ? "Rushing Jade Wind" : "Spinning Crane Kick", req => Spell.UseAOE)
@@ -183,11 +206,26 @@ namespace Singular.ClassSpecific.Monk
                         // execute if we can
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
+                        // stun if configured to do so
+                        Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
+
                         // make sure I have aggro.
                         Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
                         Spell.Cast("Keg Smash", ctx => Me.CurrentChi < (Me.MaxChi - 2)),
-                        // use dizzying only if target not in range of keg smash and running away
-                        Spell.CastOnGround("Dizzying Haze", on => Me.CurrentTarget, req => Me.CurrentTarget.IsMoving && !Me.IsWithinMeleeRange && Me.IsSafelyBehind(Me.CurrentTarget), waitForSpell: false),
+
+                        // use dizzying only if target not in range of keg smash and running away or further than roll distance
+                        // ... avoid crowd controlled targets 
+                        new Throttle( TimeSpan.FromMilliseconds(2500),                           
+                            Spell.CastOnGround(
+                                "Dizzying Haze", 
+                                on => Me.CurrentTarget, 
+                                req => !Me.CurrentTarget.HasMyAura("Dizzying Haze")
+                                    && !Me.CurrentTarget.IsCrowdControlled()
+                                    && (Me.CurrentTarget.SpellDistance() > 15 || (Me.CurrentTarget.IsMoving && !Me.CurrentTarget.IsWithinMeleeRange && Me.IsSafelyBehind(Me.CurrentTarget))), 
+                                waitForSpell: false
+                                )
+                            ),
+
                         Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
                         Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
                         Spell.Cast("Jab"),
@@ -212,7 +250,9 @@ namespace Singular.ClassSpecific.Monk
 
                 Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
                 // slow if current target running away
-                Spell.CastOnGround("Dizzying Haze", on => Me.CurrentTarget, req => Me.CurrentTarget.IsMoving && !Me.IsWithinMeleeRange && Me.IsSafelyBehind(Me.CurrentTarget), waitForSpell: false),
+                new Throttle( TimeSpan.FromMilliseconds(1500),                           
+                    Spell.CastOnGround("Dizzying Haze", on => Me.CurrentTarget, req => Me.CurrentTarget.IsMoving && !Me.IsWithinMeleeRange && Me.IsSafelyBehind(Me.CurrentTarget), waitForSpell: false)
+                    ),
                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
                 Spell.Cast("Jab")
@@ -251,15 +291,17 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Keg Smash", req => Me.MaxChi - Me.CurrentChi >= 2 && Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 8).Any(u => !u.HasAura("Weakened Blows"))),
 
                         // taunt if needed
-                        Spell.CastOnGround("Dizzying Haze", on => TankManager.Instance.NeedToTaunt.FirstOrDefault(), req => TankManager.Instance.NeedToTaunt.Any(), false),
+                        new Throttle( TimeSpan.FromMilliseconds(1500),                           
+                            Spell.CastOnGround("Dizzying Haze", on => TankManager.Instance.NeedToTaunt.FirstOrDefault(), req => TankManager.Instance.NeedToTaunt.Any(), false)
+                            ),
 
                         // AOE
                         new Decorator(
-                            req => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8) >= 3,
+                            req => Spell.UseAOE && Unit.UnfriendlyUnits(8).Count() >= 3,
                             new PrioritySelector(
                         // cast breath of fire to apply the dot.
                                 Spell.Cast("Breath of Fire", ctx => Clusters.GetCluster(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 8).Count(u => u.HasAura("Dizzying Haze") && !u.HasAura("Breath of Fire")) >= 3),
-                                Spell.Cast("Zen Sphere", ctx => TalentManager.IsSelected((int)MonkTalents.ZenSphere) && Me.HealthPercent < 90 && Me.HasAura("Zen Sphere") && Me.CurrentChi >= 3),
+                                Spell.BuffSelf("Zen Sphere", ctx => HasTalent( MonkTalents.ZenSphere) && Me.HealthPercent < 90),
                         // aoe stuns
                                 Spell.Cast("Charging Ox Wave", ctx => TalentManager.IsSelected((int)MonkTalents.ChargingOxWave) && Clusters.GetClusterCount(Me, Unit.NearbyUnfriendlyUnits, ClusterType.Cone, 30) >= 3),
                                 Spell.Cast("Leg Sweep", ctx => TalentManager.IsSelected((int)MonkTalents.LegSweep))

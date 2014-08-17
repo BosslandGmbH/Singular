@@ -31,7 +31,7 @@ namespace Singular.ClassSpecific.Priest
             return new PrioritySelector(
                 Spell.BuffSelf("Dispersion", ret => Me.ManaPercent < SingularSettings.Instance.MinMana && Me.IsSwimming ),
                 Rest.CreateDefaultRestBehaviour("Flash Heal", "Resurrection"),
-                Common.CreatePriestMovementBuff("Rest")
+                Common.CreatePriestMovementBuffOnTank("Rest")
                 );
 
         }
@@ -71,7 +71,7 @@ namespace Singular.ClassSpecific.Priest
 
                 Spell.Cast("Flash Heal",
                     ctx => Me,
-                    ret => !Me.Combat && Me.GetPredictedHealthPercent(true) <= 85)
+                    ret => !Me.Combat && Me.PredictedHealthPercent(includeMyHeals: true) <= 85)
                 );
         }
 

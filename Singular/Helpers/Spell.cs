@@ -45,6 +45,7 @@ namespace Singular.Helpers
     public delegate bool SimpleBooleanDelegate(object context);
     public delegate string SimpleStringDelegate(object context);
     public delegate int SimpleIntDelegate(object context);
+    public delegate float SimpleFloatDelegate(object context);
 
 
     internal static class Spell
@@ -64,14 +65,14 @@ namespace Singular.Helpers
             Color clr;
 
             if (isHeal)
-                clr = Color.LightGreen;
+                clr = LogColor.SpellHeal;
             else
-                clr = Color.DodgerBlue;
+                clr = LogColor.SpellNonHeal;
 
             if (unit.IsMe)
-                Logger.Write("*{0} on Me @ {1:F1}%", sname, health);
+                Logger.Write(clr, "*{0} on Me @ {1:F1}%", sname, health);
             else
-                Logger.Write("*{0} on {1} @ {2:F1}% at {3:F1} yds", sname, unit.SafeName(), health, dist);
+                Logger.Write(clr, "*{0} on {1} @ {2:F1}% at {3:F1} yds", sname, unit.SafeName(), health, dist);
         }
 
         public static WoWDynamicObject GetGroundEffectBySpellId(int spellId)
@@ -166,26 +167,30 @@ namespace Singular.Helpers
         /// get the effective distance between two mobs accounting for their 
         /// combat reaches (hitboxes)
         /// </summary>
-        /// <param name="unit">unit</param>
-        /// <param name="target">Me if null, otherwise second unit</param>
-        /// <returns></returns>
-        public static float SpellDistance(this WoWUnit unit, WoWUnit target = null)
+        /// <param name="unit">toon originating spell/ability.  If no destination specified then assume 'Me' originates and 'unit' is the target</param>
+        /// <param name="atTarget">target of spell.  if null, assume 'unit' is target of spell cast by 'Me'</param>
+        /// <returns>normalized attack distance</returns>
+        public static float SpellDistance(this WoWUnit unit, WoWUnit atTarget = null)
         {
             // abort if mob null
             if (unit == null)
                 return 0;
 
-            // optional arg implying Me, then make sure not Mob also
-            if (target == null)
-                target = StyxWoW.Me;
+            // when called as SomeUnit.SpellDistance()
+            // .. convert to SomeUnit.SpellDistance(Me)
+            if (atTarget == null)
+                atTarget = StyxWoW.Me;
 
-            if (target.IsMe)
+            // when called as SomeUnit.SpellDistance(Me) then
+            // .. convert to Me.SpellDistance(SomeUnit)
+            if (atTarget.IsMe)
             {
-                target = unit;
+                atTarget = unit;
                 unit = StyxWoW.Me;
             }
 
-            float dist = target.Location.Distance(unit.Location) - target.CombatReach;
+            // only use CombatReach of destination target 
+            float dist = atTarget.Location.Distance(unit.Location) - atTarget.CombatReach;
             return Math.Max(0, dist);
         }
 
@@ -910,7 +915,8 @@ namespace Singular.Helpers
                                 if (Spell.CanCastHack(sfr, castOnUnit, skipWowCheck: true))
                                 {
                                     WoWSpell spell = sfr.Override ?? sfr.Original;
-                                    LogCast(spell.Name, castOnUnit, spell.IsHealingSpell);
+                                    // LogCast(spell.Name, castOnUnit, spell.IsHealingSpell);
+                                    LogCast(spell.Name, castOnUnit, spell.IsHeal());
                                     if (SpellManager.Cast(spell, castOnUnit))
                                     {
                                         return RunStatus.Success;
@@ -1491,7 +1497,7 @@ namespace Singular.Helpers
                                 // save status of queueing spell (lag tolerance - the prior spell still completing)
                                 cctx.IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
 
-                                LogCast(cctx.spell.Name, cctx.unit, cctx.health, cctx.distance, cctx.spell.IsHealingSpell);
+                                LogCast(cctx.spell.Name, cctx.unit, cctx.health, cctx.distance, cctx.spell.IsHeal());
                                 if (!SpellManager.Cast(cctx.spell, cctx.unit))
                                 {
                                     Logger.Write(Color.LightPink, "cast of {0} on {1} failed!", cctx.spell.Name, cctx.unit.SafeName());

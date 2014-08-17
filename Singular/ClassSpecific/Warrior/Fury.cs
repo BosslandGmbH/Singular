@@ -120,19 +120,6 @@ namespace Singular.ClassSpecific.Warrior
 
                         CreateDiagnosticOutputBehavior("Combat"),
 
-                        // Low level support
-                        new Decorator(ret => StyxWoW.Me.Level < 30,
-                            new PrioritySelector(
-                                Common.CreateVictoryRushBehavior(),
-                                Spell.Cast("Execute"),
-                                Spell.Cast("Bloodthirst"),
-                                Spell.Cast("Wild Strike"),
-                        //rage dump
-                                Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50 && Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) > 3),
-                                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60)
-                                )
-                            ),
-
                         // Dispel Bubbles
                         new Decorator(
                             ret => StyxWoW.Me.CurrentTarget.IsPlayer && (StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Ice Block") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Hand of Protection") || StyxWoW.Me.CurrentTarget.ActiveAuras.ContainsKey("Divine Shield")),
@@ -170,14 +157,33 @@ namespace Singular.ClassSpecific.Warrior
                         // AOE 
                         // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)
                         new Decorator(  // Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
-                            ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count( u => u.Distance <= (u.MeleeDistance() + 3) ) >= 3,
+                            ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count( u => u.SpellDistance() < 8 ) >= 3,
                         
                             new PrioritySelector(
                                 Spell.Cast("Dragon Roar"),
                         // Only pop RB when we have a few stacks of meat cleaver. Increased DPS by quite a bit.
                                 Spell.Cast("Raging Blow", ret => StyxWoW.Me.CurrentTarget.IsWithinMeleeRange && StyxWoW.Me.HasAura("Meat Cleaver", 3)),
                                 Spell.Cast("Whirlwind"),
+                                Spell.Cast("Thunder Clap", req => !SpellManager.HasSpell("Whirlwind")),
                                 Spell.Cast("Cleave")
+                                )
+                            ),
+
+                        // Low level support
+                        new Decorator(ret => StyxWoW.Me.Level < 30,
+                            new PrioritySelector(
+                                Common.CreateVictoryRushBehavior(),
+
+                                // apply weakened blows if a mob attacking us other than our current target
+                                Spell.Cast("Thunder Clap", ret => Unit.UnfriendlyUnits().Any(u => u.IsWithinMeleeRange && u.Guid != Me.CurrentTargetGuid && !u.HasAura("Weakened Blows"))),
+
+                                Spell.Cast("Execute"),
+                                Spell.Cast("Bloodthirst"),
+                                Spell.Cast("Wild Strike"),
+
+                                //rage dump
+                                Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50 && Unit.UnfriendlyUnits().Any(u => u.Guid != Me.CurrentTargetGuid && u.DistanceSqr < 8 * 8)),
+                                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60)
                                 )
                             ),
 

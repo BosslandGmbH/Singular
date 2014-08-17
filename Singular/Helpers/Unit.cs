@@ -837,7 +837,14 @@ namespace Singular.Helpers
         /// <returns>true if targeting your guys, false if not</returns>
         public static bool IsTargetingMyStuff(this WoWUnit u)
         {
-            return u.IsTargetingMeOrPet || u.IsTargetingAnyMinion;
+            return u.IsTargetingMeOrPet 
+                || u.IsTargetingAnyMinion 
+                || (u.GotTarget && u.CurrentTarget.IsCompanion());
+        }
+
+        public static bool IsCompanion(this WoWUnit u)
+        {
+            return u.CreatedByUnitGuid == StyxWoW.Me.Guid;
         }
 
         /// <summary>

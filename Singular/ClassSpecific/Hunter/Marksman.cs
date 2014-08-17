@@ -30,7 +30,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateMarksmanHunterNormalPullAndCombat()
         {
             return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                Common.CreateHunterEnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -48,8 +48,6 @@ namespace Singular.ClassSpecific.Hunter
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
                         Helpers.Common.CreateInterruptBehavior(),
-
-                        Helpers.Common.CreateAutoAttack(true),
 
                         Common.CreateHunterNormalCrowdControl(),
 
@@ -105,7 +103,7 @@ namespace Singular.ClassSpecific.Hunter
         public static Composite CreateMarksmanHunterPvPPullAndCombat()
         {
             return new PrioritySelector(
-                Helpers.Common.EnsureReadyToAttackFromLongRange(),
+                Common.CreateHunterEnsureReadyToAttackFromLongRange(),
 
                 Spell.WaitForCastOrChannel(),
 
@@ -121,8 +119,6 @@ namespace Singular.ClassSpecific.Hunter
 
                         Helpers.Common.CreateInterruptBehavior(),
                 // Helpers.Common.CreateInterruptBehavior(),
-
-                        Helpers.Common.CreateAutoAttack(true),
 
                         Common.CreateHunterPvpCrowdControl(),
 

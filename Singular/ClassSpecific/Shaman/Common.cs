@@ -191,7 +191,7 @@ namespace Singular.ClassSpecific.Shaman
                             )
                         ),
 
-                    Spell.BuffSelf("Ascendance", ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal && Common.StressfulSituation),
+                    Spell.BuffSelf("Ascendance", ret => ShamanSettings.UseAscendance && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Common.StressfulSituation),
 
                     Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust)
 
@@ -228,7 +228,7 @@ namespace Singular.ClassSpecific.Shaman
                         && IsPvpFightWorthLusting),
 
                 Spell.BuffSelf("Ascendance",
-                    ret => ((Me.GotTarget && Me.CurrentTarget.HealthPercent > 70) || Unit.NearbyUnfriendlyUnits.Count() > 1)),
+                    ret => ShamanSettings.UseAscendance && ((Me.GotTarget && Me.CurrentTarget.HealthPercent > 70) || Unit.NearbyUnfriendlyUnits.Count() > 1)),
 
                 Spell.BuffSelf("Elemental Mastery", ret => !PartyBuff.WeHaveBloodlust)
 
@@ -432,7 +432,7 @@ namespace Singular.ClassSpecific.Shaman
             // .. avoid unnecessary heal casts
                     new Decorator(
                         ret => !Me.Combat,  // non-combat = top off health
-                        Spell.Cast("Healing Surge", ret => Me, ret => Me.GetPredictedHealthPercent(true) < 85)
+                        Spell.Cast("Healing Surge", ret => Me, ret => Me.PredictedHealthPercent(includeMyHeals: true) < 85)
                         ),
 
                     new Decorator(
@@ -489,7 +489,7 @@ namespace Singular.ClassSpecific.Shaman
                 String.Format("Oh Shoot Heal @ {0}%", ShamanSettings.OffHealSettings.AncestralSwiftness),
                 null,
                 new Decorator(
-                    ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).GetPredictedHealthPercent() < ShamanSettings.OffHealSettings.AncestralSwiftness,
+                    ret => (Me.Combat || ((WoWUnit)ret).Combat) && ((WoWUnit)ret).PredictedHealthPercent() < ShamanSettings.OffHealSettings.AncestralSwiftness,
                     new PrioritySelector(
                         Spell.OffGCD(Spell.BuffSelf("Ancestral Swiftness")),
                         Spell.Cast("Healing Surge", on => (WoWUnit)on, ret => !SpellManager.HasSpell("Greater Healing Wave"))
@@ -509,7 +509,7 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.Cast(
                         "Healing Tide Totem",
                         on => Me,
-                        req => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.GetPredictedHealthPercent() < ShamanSettings.OffHealSettings.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= ShamanSettings.OffHealSettings.MinHealingTideCount
+                        req => Me.Combat && HealerManager.Instance.TargetList.Count(p => p.PredictedHealthPercent() < ShamanSettings.OffHealSettings.HealingTideTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingTide)) >= ShamanSettings.OffHealSettings.MinHealingTideCount
                         )
                     )
                 );
@@ -521,7 +521,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid,
                     Spell.Cast(
                         "Healing Stream Totem",
-                        on => (!Me.Combat || Totems.Exist(WoWTotemType.Water)) ? null : HealerManager.Instance.TargetList.FirstOrDefault(p => p.GetPredictedHealthPercent() < ShamanSettings.OffHealSettings.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingStream))
+                        on => (!Me.Combat || Totems.Exist(WoWTotemType.Water)) ? null : HealerManager.Instance.TargetList.FirstOrDefault(p => p.PredictedHealthPercent() < ShamanSettings.OffHealSettings.HealingStreamTotem && p.Distance <= Totems.GetTotemRange(WoWTotem.HealingStream))
                         )
                     )
                 );
@@ -548,7 +548,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.Cast("Healing Surge",
                     mov => true,
                     on => (WoWUnit)on,
-                    req => ((WoWUnit)req).GetPredictedHealthPercent(true) < ShamanSettings.OffHealSettings.HealingSurge,
+                    req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < ShamanSettings.OffHealSettings.HealingSurge,
                     cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
                     )
                 );
@@ -564,7 +564,7 @@ namespace Singular.ClassSpecific.Shaman
                 ctx => HealerManager.FindLowestHealthTarget(), // HealerManager.Instance.FirstUnit,
 
                 new Decorator(
-                    ret => ret != null && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).GetPredictedHealthPercent() <= 99),
+                    ret => ret != null && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).PredictedHealthPercent() <= 99),
 
                     new PrioritySelector(
                         new Decorator(

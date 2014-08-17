@@ -208,21 +208,54 @@ namespace Singular.Helpers
             if (!SingularSettings.Instance.UseAlchemyFlasks)
                 return new ActionAlwaysFail();
 
-            return new PrioritySelector(
+            return new ThrottlePasses(
+                1,
+                TimeSpan.FromSeconds(5),
+                RunStatus.Failure,
                 new Decorator(
-                    ret => StyxWoW.Me.GetSkill(SkillLine.Alchemy) != null && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400 
-                        && !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")), // don't try to use the flask if we already have or if we're using a better one
-                    new PrioritySelector(
-                        ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 75525),
-                        // Alchemist's Flask
-                        new Decorator(
-                            ret => ret != null && ((WoWItem)ret).CooldownTimeLeft == TimeSpan.Zero,
-                            new Sequence(
-                                new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                Helpers.Common.CreateWaitForLagDuration(stopIf => StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")))
+                    req => !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") && !aura.Key.StartsWith("Flask of ") && aura.Key != "Visions of Insanity"), 
+                    new Sequence(
+                        new PrioritySelector(
+                            new Decorator(
+                                req => StyxWoW.Me.GetSkill(SkillLine.Alchemy) != null && StyxWoW.Me.GetSkill(SkillLine.Alchemy).CurrentValue >= 400,
+                                new PrioritySelector(
+                                    ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 75525),
+                                    // Alchemist's Flask
+                                    new Decorator(
+                                        ret => ret != null,
+                                        new PrioritySelector(
+                                            new Decorator(
+                                                req => ((WoWItem)req).CooldownTimeLeft == TimeSpan.Zero,
+                                                new Sequence(
+                                                    new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                                    new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                                    Helpers.Common.CreateWaitForLagDuration(stopIf => StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")))
+                                                    )
+                                                ),
+                                            new ActionAlwaysSucceed()
+                                            )
+                                        )
+                                    )
+                                ),
+                            new Decorator(
+                                ret => Me.Level >= 85,
+                                new PrioritySelector(
+                                    ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 86569),
+                                    // Crystal of Insanity
+                                    new Decorator(
+                                        ret => ret != null && ((WoWItem)ret).CooldownTimeLeft == TimeSpan.Zero,
+                                        new Sequence(
+                                            new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                            new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                            Helpers.Common.CreateWaitForLagDuration(stopIf => StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")))
+                                            )
+                                        )
+                                    )
                                 )
-                            )
+                            ),
+
+                        // force this behavior to continue
+                        new ActionAlwaysFail()
                         )
                     )
                 );
@@ -585,7 +618,7 @@ namespace Singular.Helpers
         {
             return new Decorator( 
 
-                ret => SingularSettings.Instance.UseBandages && Me.GetPredictedHealthPercent(true) < 95 && SpellManager.HasSpell( "First Aid") && !Me.HasAura( "Recently Bandaged") && !Me.ActiveAuras.Any( a => a.Value.IsHarmful ),
+                ret => SingularSettings.Instance.UseBandages && Me.PredictedHealthPercent(includeMyHeals: true) < 95 && SpellManager.HasSpell( "First Aid") && !Me.HasAura( "Recently Bandaged") && !Me.ActiveAuras.Any( a => a.Value.IsHarmful ),
 
                 new PrioritySelector(
 

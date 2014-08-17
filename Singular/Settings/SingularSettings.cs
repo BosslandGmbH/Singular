@@ -85,6 +85,15 @@ namespace Singular.Settings
         WindowAndFile = 3
     }
 
+    enum PullMoreTargetType
+    {
+        None = 0,
+        LikeCurrent,
+        Hostile,
+        All
+    }
+
+
     internal class SingularSettings : Styx.Helpers.Settings
     {
         private static int entrycount = 0;
@@ -475,6 +484,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Movement")]
+        [DisplayName("Keep Melee Mobs Front")]
+        [Description("Allow Singular to move melee classes to keep melee attackers in front.  Works only in Normal (Solo) context")]
+        public bool MeleeKeepMobsInFront { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Movement")]
         [DisplayName("Use Cast While Moving Buffs")]
         [Description("True: attempting to use a non-instant while moving will first cast Spiritwalker's Grace, Ice Floes, Kil'Jaedan's Cunning, etc.")]
         public bool UseCastWhileMovingBuffs { get; set; }
@@ -779,7 +795,7 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Items")]
         [DisplayName("Use Flasks")]
-        [Description("Uses Alchemist Flasks (of the North, of Enhancement...)")]
+        [Description("Uses flasks not consumed on use (Alchemist Flasks, Crystal of Insanity, others ...?)")]
         public bool UseAlchemyFlasks { get; set; }
 
         [Setting]
@@ -869,6 +885,55 @@ namespace Singular.Settings
         #endregion
 
         #region Category: Enemy Control
+
+        [Setting]
+        [DefaultValue(PullMoreTargetType.All)]
+        [Category("Enemy Control")]
+        [DisplayName("Pull More Target Type")]
+        [Description("None: disabled, Current: like CurrentTarget; Hostile: any hostile target; Any: any nearby valid target")]
+        public PullMoreTargetType PullMoreTargetType { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Enemy Control")]
+        [DisplayName("Pull More Count")]
+        [Description("Pull more until in combat with this many, then finish them off before acquiring more")]
+        public int PullMoreMobCount { get; set; }
+
+        [Setting]
+        [DefaultValue(35)]
+        [Category("Enemy Control")]
+        [DisplayName("Pull More Dist Melee")]
+        [Description("For Melee Characters: Maximum distance of adds which will be pulled")]
+        public int PullMoreDistMelee { get; set; }
+
+        [Setting]
+        [DefaultValue(55)]
+        [Category("Enemy Control")]
+        [DisplayName("Pull More Dist Ranged")]
+        [Description("For Ranged Characters: Maximum distance of adds which will be pulled")]
+        public int PullMoreDistRanged { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Enemy Control")]
+        [DisplayName("Pull More Health %")]
+        [Description("Pull more unless Health % below this")]
+        public int PullMoreMinHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(12)]
+        [Category("Enemy Control")]
+        [DisplayName("Pull More Tagged Timeout (secs)")]
+        [Description("Pull more will timeout an individual pull if not tagged by this many seconds")]
+        public int PullMoreTimeOut { get; set; }
+
+        [Setting]
+        [DefaultValue(45)]
+        [Category("Enemy Control")]
+        [DisplayName("Pull More Max Time (secs)")]
+        [Description("Pull more for this duration, then suppress Pull More behavior until no longer in combat")]
+        public int PullMoreMaxTime { get; set; }
 
         [Setting]
         [DefaultValue(CheckTargets.Current)]

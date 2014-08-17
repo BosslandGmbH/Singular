@@ -214,7 +214,7 @@ namespace Singular.ClassSpecific.Druid
                             return false;
                         if (Me.Specialization == WoWSpec.DruidGuardian && Me.HasAura("Heart of the Wild") && Me.HealthPercent < 95)
                             return true;
-                        return !Group.MeIsTank && Me.GetPredictedHealthPercent(true) < DruidSettings.SelfRejuvenationHealth;
+                        return !Group.MeIsTank && Me.PredictedHealthPercent(includeMyHeals: true) < DruidSettings.SelfRejuvenationHealth;
                     }),
 
                 Spell.Cast( "Healing Touch", on => 
@@ -230,14 +230,14 @@ namespace Singular.ClassSpecific.Druid
                                 target = null;  
                             // heal others if needed
                             else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds || (Me.GotTarget && Me.CurrentTarget.IsPlayer))
-                                target = Unit.GroupMembers.Where(p => p.IsAlive && p.GetPredictedHealthPercent() < DruidSettings.PredSwiftnessPvpHeal && p.DistanceSqr < 40 * 40).FirstOrDefault();
+                                target = Unit.GroupMembers.Where(p => p.IsAlive && p.PredictedHealthPercent() < DruidSettings.PredSwiftnessPvpHeal && p.DistanceSqr < 40 * 40).FirstOrDefault();
                             // heal anyone if buff about to expire
                             else if (Me.GetAuraTimeLeft("Predatory Swiftness", true).TotalMilliseconds.Between(500, 2000))
-                                target = Unit.GroupMembers.Where(p => p.IsAlive && p.DistanceSqr < 40 * 40 && p.HealthPercent < 30).OrderBy(k => k.GetPredictedHealthPercent()).FirstOrDefault();
+                                target = Unit.GroupMembers.Where(p => p.IsAlive && p.DistanceSqr < 40 * 40 && p.HealthPercent < 30).OrderBy(k => k.PredictedHealthPercent()).FirstOrDefault();
 
                             if (target != null)
                             {
-                                Logger.WriteDebug("PredSwift Heal @ actual:{0:F1}% predict:{1:F1}% and moving:{2} in form:{3}", target.HealthPercent, target.GetPredictedHealthPercent(true), target.IsMoving, target.Shapeshift);
+                                Logger.WriteDebug("PredSwift Heal @ actual:{0:F1}% predict:{1:F1}% and moving:{2} in form:{3}", target.HealthPercent, target.PredictedHealthPercent(includeMyHeals: true), target.IsMoving, target.Shapeshift);
                             }
                         }
                         return target;
@@ -314,7 +314,7 @@ namespace Singular.ClassSpecific.Druid
             if (SingularRoutine.CurrentWoWContext == WoWContext.Normal || Me.HealthPercent < 40)
                 return Me;
 
-            return Unit.NearbyFriendlyPlayers.Where(p=>p.IsAlive).OrderBy(k=>k.GetPredictedHealthPercent(false)).FirstOrDefault();
+            return Unit.NearbyFriendlyPlayers.Where(p=>p.IsAlive).OrderBy(k=>k.PredictedHealthPercent()).FirstOrDefault();
         }
 
         #endregion
@@ -329,11 +329,11 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 new Decorator(
                     ret => !Me.HasAura("Drink") && !Me.HasAura("Food")
-                        && Me.GetPredictedHealthPercent(true) < (Me.Shapeshift == ShapeshiftForm.Normal ? 85 : SingularSettings.Instance.MinHealth)
+                        && Me.PredictedHealthPercent(includeMyHeals: true) < (Me.Shapeshift == ShapeshiftForm.Normal ? 85 : SingularSettings.Instance.MinHealth)
                         && ((Me.HasAuraExpired("Rejuvenation", 1) && Spell.CanCastHack("Rejuvenation", Me)) || Spell.CanCastHack("Healing Touch", Me)),
                     new PrioritySelector(
                         Movement.CreateEnsureMovementStoppedBehavior( reason:"to heal"),
-                        new Action(r => { Logger.WriteDebug("Rest Heal @ actual:{0:F1}% predict:{1:F1}% and moving:{2} in form:{3}", Me.HealthPercent, Me.GetPredictedHealthPercent(true), Me.IsMoving, Me.Shapeshift ); return RunStatus.Failure; }),
+                        new Action(r => { Logger.WriteDebug("Rest Heal @ actual:{0:F1}% predict:{1:F1}% and moving:{2} in form:{3}", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Me.Shapeshift ); return RunStatus.Failure; }),
                         Spell.BuffSelf("Rejuvenation", req => !SpellManager.HasSpell("Healing Touch")),
                         Spell.Cast("Healing Touch",
                             mov => true,

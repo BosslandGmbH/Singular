@@ -73,6 +73,25 @@ namespace Singular.ClassSpecific.Hunter
 
         #endregion
 
+        /// <summary>
+        /// Hunter specific version of EnsureReadyToAttackFromLongRange() which will
+        /// have pet attack earlier in sequence
+        /// </summary>
+        /// <returns></returns>
+        public static Composite CreateHunterEnsureReadyToAttackFromLongRange()
+        {
+            return new PrioritySelector(
+                Safers.EnsureTarget(),
+                Helpers.Common.CreateAutoAttack(true),
+                Movement.CreateMoveToLosBehavior(),
+                Helpers.Common.CreateDismount(Dynamics.CompositeBuilder.CurrentBehaviorType.ToString()),   // should be Pull or Combat 99% of the time
+                Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 40, 36),
+                Movement.CreateEnsureMovementStoppedBehavior(36f),
+                Movement.CreateFaceTargetBehavior()
+                );
+        }
+
+
         [Behavior(BehaviorType.Rest, WoWClass.Hunter)]
         public static Composite CreateHunterRest()
         {

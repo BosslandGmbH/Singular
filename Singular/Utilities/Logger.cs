@@ -11,6 +11,16 @@ using Styx.Helpers;
 
 namespace Singular
 {
+    public static class LogColor
+    {
+        public static Color Normal = Color.Green;
+        public static Color Hilite = Color.White;
+        public static Color SpellHeal = Color.LightGreen;
+        public static Color SpellNonHeal = Color.DodgerBlue;
+        public static Color Debug = Color.Orange;
+        public static Color Diagnostic = Color.Yellow;
+    }
+
     public static class Logger
     {
         static int lineNo = 0;
@@ -149,11 +159,10 @@ namespace Singular
         /// <param name="message">message text with embedded parameters</param>
         /// <param name="args">replacement parameter values</param>
         public static void WriteDiagnostic(Color clr, string message, params object[] args)
-        {
-            System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B);
-
+        {           
             if (SingularSettings.Instance.DebugOutput == DebugOutputDest.WindowAndFile)
             {
+                System.Windows.Media.Color newColor = System.Windows.Media.Color.FromArgb(clr.A, clr.R, clr.G, clr.B); 
                 Logging.Write(newColor, "(Singular) " + message, args);
             }
             else

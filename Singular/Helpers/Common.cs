@@ -16,6 +16,7 @@ using Singular.ClassSpecific;
 using Styx.WoWInternals.WoWObjects;
 using Singular.ClassSpecific.Warlock;
 using System.Drawing;
+using Styx.CommonBot.POI;
 
 namespace Singular.Helpers
 {
@@ -58,12 +59,17 @@ namespace Singular.Helpers
         {
             PrioritySelector prio = new PrioritySelector();
             // const int spellIdAutoShot = 75;
-            bool autoAttack = Me.Class == WoWClass.DeathKnight
-                || (Me.Class == WoWClass.Druid && Me.Specialization != WoWSpec.DruidRestoration)
-                || Me.Class == WoWClass.Monk
-                || (Me.Class == WoWClass.Paladin && Me.Specialization != WoWSpec.PaladinHoly)
+            bool autoAttack = 
+                   Me.Specialization == WoWSpec.None
+                || Me.Class == WoWClass.DeathKnight
+                || Me.Specialization == WoWSpec.DruidGuardian
+                || Me.Specialization == WoWSpec.DruidFeral
+                || Me.Specialization == WoWSpec.MonkBrewmaster
+                || Me.Specialization == WoWSpec.MonkWindwalker
+                || Me.Specialization == WoWSpec.PaladinProtection
+                || Me.Specialization == WoWSpec.PaladinRetribution
                 || Me.Class == WoWClass.Rogue
-                || (Me.Class == WoWClass.Shaman && Me.Specialization != WoWSpec.ShamanRestoration)
+                || Me.Specialization == WoWSpec.ShamanEnhancement
                 || Me.Class == WoWClass.Warrior;
 
             if (autoAttack)
@@ -71,9 +77,11 @@ namespace Singular.Helpers
                 prio.AddChild(
                     new Throttle(TimeSpan.FromMilliseconds(500),
                         new Decorator(
-                            ret => !StyxWoW.Me.IsAutoAttacking, // && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
+                            ret => !StyxWoW.Me.IsAutoAttacking && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange, // && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
                             new Action(ret =>
                                 {
+                                    WoWUnit unit = Me.CurrentTarget;
+                                    Logger.Write(Color.White, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
                                     Lua.DoString("StartAttack()");
                                     return RunStatus.Failure;
                                 })
@@ -82,44 +90,71 @@ namespace Singular.Helpers
                     );
             }
 
-            if ( includePet && (SingularRoutine.CurrentWoWContext != WoWContext.Normal || !SingularSettings.Instance.PetTankAdds ))
+            if ( includePet)
             {
-                // pet assist: always keep pet on my target
-                prio.AddChild( 
-                    new ThrottlePasses(TimeSpan.FromMilliseconds(500),
-                        new Decorator(
-                            // check pet targeting same target as Me
-                            ret => Me.GotAlivePet && (!Me.Pet.GotTarget || Me.Pet.CurrentTargetGuid != Me.CurrentTargetGuid),
-                            new Action( delegate
-                                {
-                                    PetManager.CastPetAction("Attack", Me.CurrentTarget);
-                                    return RunStatus.Failure;
-                                })
-                            )
-                        )
-                    );
-            }
-
-            if ( includePet && SingularRoutine.CurrentWoWContext == WoWContext.Normal && SingularSettings.Instance.PetTankAdds )
-            {
-                // pet tank: if pet's target isn't targeting Me, check if we should switch to one that is targeting Me
-                prio.AddChild(
-                    new ThrottlePasses(TimeSpan.FromMilliseconds(500),
-                        new Decorator(
-                            ret => Me.GotAlivePet && (!Me.Pet.GotTarget || Me.Pet.CurrentTarget.CurrentTargetGuid != Me.Guid),
-                            new PrioritySelector(
-                                ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && u.GotTarget && u.CurrentTarget.IsMe).FirstOrDefault() ?? Me.CurrentTarget,
-                                new Decorator(
-                                    ret => ret != null && Me.Pet.CurrentTargetGuid != ((WoWUnit)ret).Guid,
-                                    new Action(r => {
-                                        PetManager.CastPetAction("Attack", (WoWUnit)r);
+                if (SingularRoutine.CurrentWoWContext != WoWContext.Normal || !SingularSettings.Instance.PetTankAdds)
+                {
+                    // pet assist: always keep pet on my target
+                    prio.AddChild(
+                        new ThrottlePasses(
+                            1, 
+                            TimeSpan.FromMilliseconds(500),
+                            RunStatus.Failure,
+                            new Decorator(
+                        // check pet targeting same target as Me
+                                ret => Me.GotAlivePet && (!Me.Pet.GotTarget || Me.Pet.CurrentTargetGuid != Me.CurrentTargetGuid),
+                                new Action(delegate
+                                    {
+                                        PetManager.Attack(Me.CurrentTarget);
                                         return RunStatus.Failure;
+                                    })
+                                )
+                            )
+                        );
+                }
+                else
+                {
+                    // pet tank: if pet's target isn't targeting Me, check if we should switch to one that is targeting Me
+                    prio.AddChild(
+                        new ThrottlePasses(
+                            1,
+                            TimeSpan.FromMilliseconds(500),
+                            RunStatus.Failure,
+                            new Decorator(
+                                ret => Me.GotAlivePet && (!Me.Pet.GotTarget || Me.Pet.CurrentTarget.CurrentTargetGuid != Me.Guid),
+                                new PrioritySelector(
+                                    ctx => {
+                                        WoWUnit aggroedOnMe = 
+                                            Unit.NearbyUnfriendlyUnits
+                                                .Where(u => u.Combat && u.GotTarget && u.CurrentTarget.IsMe && !u.IsCrowdControlled())
+                                                .OrderBy(u => u.Location.DistanceSqr(Me.Pet.Location))
+                                                .FirstOrDefault(); 
+                                        return aggroedOnMe ?? Me.CurrentTarget;
+                                    },
+                                    new Decorator(
+                                        ret => ret != null && Me.Pet.CurrentTargetGuid != ((WoWUnit)ret).Guid,
+                                        new Action(r =>
+                                        {
+                                            if (SingularSettings.Debug)
+                                            {
+                                                string reason;
+                                                if (Me.CurrentTarget != null && (r as WoWUnit).Guid == Me.CurrentTargetGuid && Me.CurrentTarget.CurrentTargetGuid != Me.Guid)
+                                                    reason = "MyCurrTarget";
+                                                else
+                                                    reason = "PickupAggro";
+
+                                                Logger.WriteDebug("PetManager: [reason={0}] sending Pet at {1} @ {2:F1} yds from Pet", reason, (r as WoWUnit).SafeName(), Me.Pet.SpellDistance(r as WoWUnit));
+                                            }
+
+                                            PetManager.Attack(r as WoWUnit);
+                                            return RunStatus.Failure;
                                         })
+                                        )
                                     )
                                 )
                             )
-                        )
-                    );
+                        );
+                }
             }
 
             return prio;

@@ -33,6 +33,7 @@ namespace Singular.GUI
                 Logger.WriteDebug(Color.LightGreen, "Settings saved, rebuilding behaviors...");
                 HotkeyDirector.Update();
                 MovementManager.Update();
+                SingularRoutine.DescribeContext();
                 SingularRoutine.Instance.RebuildBehaviors();
                 SingularSettings.Instance.LogSettings();
             }

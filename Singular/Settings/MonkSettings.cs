@@ -215,12 +215,15 @@ namespace Singular.Settings
             {
                 if (ctx == Singular.HealingContext.Battlegrounds)
                 {
+                    HealFromMelee = false;
                 }
                 else if (ctx == Singular.HealingContext.Instances)
                 {
+                    HealFromMelee = true;
                 }
                 else if (ctx == Singular.HealingContext.Raids)
                 {
+                    HealFromMelee = true;
                 }
                 // omit case for WoWContext.Normal and let it use DefaultValue() values
             }
@@ -232,6 +235,13 @@ namespace Singular.Settings
         [Browsable(false)]
         [DefaultValue(false)]
         public bool SavedToFile { get; set; }
+
+        [Setting]
+        [DefaultValue(true)]
+        [Category("Movement")]
+        [DisplayName("Heal from Melee")]
+        [Description("true: move into Melee range, false: stay at Range")]
+        public bool HealFromMelee { get; set; }
 
         [Setting]
         [DefaultValue(99)]

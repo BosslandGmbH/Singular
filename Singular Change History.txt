@@ -1,3 +1,84 @@
+--- Release 3.0.0.3605 ---
+
+General
+
+fixed - HB GetPredictedHealthPercent - this HB API was returning higher health %'s than it should which resulted in every class/spec of Singular Healer to randomly not heal targets.  The most recent report of this was related to Resto Shaman not healing tanks after Riptide was applied, but this effected every class and spec. The workaround recognizes when an extremely large value is returned and uses the HealthPercent API instead.  That API however cannot see heals inbound on that target, so while nobody will die you will have increased overhealing and when self-healing unnecessary casts (since Singular cannot tell that the heal wasn't needed.)
+
+fixed - Class Config Settings - some setting changes (like trinket usage) were only recognized after stopping and restarting HonorBuddy.  This now works as expected allowing changes at any time without restart.
+
+*new* - Pull More! - feature which will pull multiple mobs after entering combat.  see the special write-up on this new feature for additional details
+
+*new* - Healer ABC messages - these are diagnostic "Always Be Casting" messages to help trouble shoot cases where your healer wasnt casting.  This was added to help identify the issues described above, but is being retained to help troubleshoot any future API issues.
+
+*new* - Auto Attack messages - when auto attack or pet attack initiated will now output a log entry
+
+change- Auto Attack - for melee characters will only start attack when within melee range
+
+*new* - Use Flasks setting - now controls both Alchemists Flasks and Crystal of Insanity
+
+fixed - a side-effect of moving within line of sight which was causing some stutter movement of ranged characters
+
+*new* - Keep Mobs in Front - setting to control if character should reposition if mobs are beating on its back to try to gather all in front.  Singular wide setting but only implemented for Brewmaster Monk presently
+
+fixed - Targeting - Singular was not picking up targets in combat with our pets or companions if the BotBase was not placing them in the TargetList (which they should.)  Singular now handles this
+
+
+Druid
+
+fixed - Balance - improved AOE priority which makes use of Hurricane (which will be needed for Pull More support)
+
+
+Hunter
+
+change- All Specs - Pet is now sent to attack higher in the priority which should result in Hunters taking slightly less dama
+
+
+Mage
+
+change- Frost - improved detection of multiple mobs
+
+
+Monk
+
+*new* - All Specs - improved Close Distance logic incorporating Roll, Tiger's Lust, and Flying Serpent Kick (glyphed and un-glpyhed)
+
+fixed - Brewmaster - Dizzying Haze spam.  
+
+fixed - All Specs - Zen Sphere still had check for required Chi from past versions; removed (since Chi no longer required)
+
+*new* - Brewmaster - when solo places a higher priority on maintaining Tiger Power and Shuffle buffs
+
+*new* - Mistweaver - support for *saving* heal - a heal on a lower priority target is cancelled if Tank or Healer drops below Emergency Heal setting
+
+change- Mistweaver - if Enveloping Mist should be cast but it is on cooldown, will cast a Surging Mist if spell available
+
+fixed - Mistweaver - code applying Soothing Mist when an Enveloping Mist or Surging Mist is needed now correctly handles GCD
+
+fixed - Windwalker - improved support for Invoke Xuen
+
+
+Priest
+
+fixed - All Specs - now casts Angelic Feather slightly in front of Priest (and Tank) so much less chance of feather being missed while moving
+
+*new* - Discipline - when following Tank, will cast speed buff if follow_distance + 20 or more away from Tank
+
+fixed - Holy - correctly uses Chakra: Chastise when solo. 
+
+fixed - Holy - correctly casts Shadow Word: Pain on nearby units in combat with Priest or group
+
+
+Shaman
+
+*new* - All Specs - setting to control Ascendance
+
+Warrior
+
+fixed - Fury - added use of Thunder Clap in lower level AOE situations (prior to learning Whirlwind)
+
+fixed - Al
+
+
 --- Release 3.0.0.3554 ---
 
 General

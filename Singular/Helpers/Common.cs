@@ -361,7 +361,7 @@ namespace Singular.Helpers
 
             #endregion
 
-            return new ThrottlePasses( 1, TimeSpan.FromMilliseconds(500),  
+            return new ThrottlePasses( 2, TimeSpan.FromMilliseconds(500),  
                 new Sequence(
                     actionSelectTarget,               
                     // majority of these are off GCD, so throttle all to avoid most fail messages
@@ -472,7 +472,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CreateWaitForLagDuration( CanRunDecoratorDelegate orUntil)
         {
-            return new WaitContinue(TimeSpan.FromMilliseconds((StyxWoW.WoWClient.Latency * 2) + 150), orUntil, new ActionAlwaysSucceed());
+            return new DynaWaitContinue(ts => TimeSpan.FromMilliseconds((StyxWoW.WoWClient.Latency * 2) + 150), orUntil, new ActionAlwaysSucceed());
         }
 
         #region Wait for Rez Sickness
@@ -493,7 +493,8 @@ namespace Singular.Helpers
         public static Composite EnsureReadyToAttackFromMelee()
         {
             PrioritySelector prio = new PrioritySelector(
-                Safers.EnsureTarget() ,
+                Movement.CreatePositionMobsInFront(),
+                Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
                 new Decorator(
@@ -540,6 +541,8 @@ namespace Singular.Helpers
         public static Composite EnsureReadyToAttackFromMediumRange( )
         {
             return new PrioritySelector(
+                Movement.CreatePositionMobsInFront(),
+
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),
@@ -556,6 +559,8 @@ namespace Singular.Helpers
         public static Composite EnsureReadyToAttackFromLongRange()
         {
             return new PrioritySelector(
+                Movement.CreatePositionMobsInFront(),
+
                 Safers.EnsureTarget(),
                 Movement.CreateMoveToLosBehavior(),
                 Movement.CreateFaceTargetBehavior(),

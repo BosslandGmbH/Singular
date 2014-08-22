@@ -421,8 +421,13 @@ namespace Singular.Managers
             if (ctx == WoWContext.Normal)
                 return true;
 
-            if (Me.GroupInfo.IsInRaid)
-                return false;
+            if (SingularRoutine.CurrentHealContext == HealingContext.Raids)
+            {
+                if (Me.Specialization != WoWSpec.MonkMistweaver || !SingularSettings.Instance.HealerCombatAllow)
+                {
+                    return false;
+                }
+            }
 
             double rangeCheck = SingularSettings.Instance.MaxHealTargetRange * SingularSettings.Instance.MaxHealTargetRange;
             if (!SingularSettings.Instance.HealerCombatAllow && Unit.GroupMembers.Any(m => m.IsAlive && !m.IsMe && m.Distance2DSqr < rangeCheck))
@@ -593,12 +598,12 @@ namespace Singular.Managers
             if ((Dynamics.CompositeBuilder.CurrentBehaviorType & BehaviorType.InCombat) != (BehaviorType) 0)
             {
                 moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeCombat);
-                stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
+                stopNearTank = (moveNearTank * 7) / 10;
             }
             else
             {
                 moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeRest);
-                stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
+                stopNearTank = (moveNearTank * 6) / 10;     // be slightly more elastic at rest
             }
 
             Logger.WriteDebug("StayNearTank in {0}: will move towards at {1} yds and stop if within {2} yds", Dynamics.CompositeBuilder.CurrentBehaviorType, moveNearTank, stopNearTank);
@@ -630,14 +635,14 @@ namespace Singular.Managers
             int moveNearTank;
             int stopNearTank;
 
-            if (gapCloser == null)
-                gapCloser = new ActionAlwaysFail();
-
-            if (!SingularSettings.Instance.StayNearTank)
-                return new ActionAlwaysFail();
-
             if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                 return new ActionAlwaysFail();
+
+            if (!SingularSettings.Instance.StayNearTank)
+                return Movement.CreateMoveBehindTargetBehavior();
+
+            if (gapCloser == null)
+                gapCloser = new ActionAlwaysFail();
 
             bool incombat = (Dynamics.CompositeBuilder.CurrentBehaviorType & BehaviorType.InCombat) != (BehaviorType)0;
             if (incombat)
@@ -651,17 +656,6 @@ namespace Singular.Managers
                 stopNearTank = Math.Max(moveNearTank / 2, moveNearTank - 5);
             }
 
-            if (gapCloser == null)
-                gapCloser = new ActionAlwaysFail();
-
-            if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
-                return new ActionAlwaysFail();
-
-            if (!SingularSettings.Instance.StayNearTank)
-            {
-                return Movement.CreateMoveBehindTargetBehavior();
-            }
-           
             return new PrioritySelector(
                 ctx => (Me.Combat && Me.CurrentTarget != null && Unit.ValidUnit(Me.CurrentTarget))
                     ? Me.CurrentTarget

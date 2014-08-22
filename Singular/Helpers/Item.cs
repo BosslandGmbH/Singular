@@ -65,22 +65,27 @@ namespace Singular.Helpers
 
         public static Composite UseEquippedTrinket(TrinketUsage usage)
         {
-            return new Throttle( TimeSpan.FromMilliseconds(250),
-                new PrioritySelector(
-                    new Decorator(
-                        ret => usage == SingularSettings.Instance.Trinket1Usage,
-                        UseEquippedItem( (uint) WoWInventorySlot.Trinket1 )
-                        ),
-                    new Decorator(
-                        ret => usage == SingularSettings.Instance.Trinket2Usage,
-                        UseEquippedItem( (uint) WoWInventorySlot.Trinket2 )
-                        ),
-                    new Decorator(
-                        ret => usage == SingularSettings.Instance.GloveUsage,
-                        UseEquippedItem( (uint) WoWInventorySlot.Hands )
-                        )
-                    )
-                );
+            PrioritySelector ps = new PrioritySelector();
+
+            if (SingularSettings.Instance.Trinket1Usage == usage)
+            {
+                ps.AddChild( UseEquippedItem( (uint) WoWInventorySlot.Trinket1 ));
+            }
+
+            if (SingularSettings.Instance.Trinket2Usage == usage)
+            {
+                ps.AddChild(UseEquippedItem((uint)WoWInventorySlot.Trinket2));
+            }
+
+            if (SingularSettings.Instance.GloveUsage == usage)
+            {
+                ps.AddChild(UseEquippedItem((uint)WoWInventorySlot.Hands));
+            }
+
+            if (!ps.Children.Any())
+                return new ActionAlwaysFail();
+
+            return ps;
         }
 
         /// <summary>
@@ -126,7 +131,7 @@ namespace Singular.Helpers
 
         private static void UseItem(WoWItem item)
         {
-            Logger.Write( Color.DodgerBlue, "Using item: " + item.Name);
+            Logger.Write( Color.White, "/use " + item.Name);
             item.Use();
         }
 
@@ -213,7 +218,7 @@ namespace Singular.Helpers
                 TimeSpan.FromSeconds(5),
                 RunStatus.Failure,
                 new Decorator(
-                    req => !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") && !aura.Key.StartsWith("Flask of ") && aura.Key != "Visions of Insanity"), 
+                    req => !StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") && !aura.Key.StartsWith("Flask of ") || aura.Key != "Visions of Insanity"), 
                     new Sequence(
                         new PrioritySelector(
                             new Decorator(
@@ -225,7 +230,7 @@ namespace Singular.Helpers
                                         ret => ret != null,
                                         new PrioritySelector(
                                             new Decorator(
-                                                req => ((WoWItem)req).CooldownTimeLeft == TimeSpan.Zero,
+                                                req => CanUseItem((WoWItem)req),
                                                 new Sequence(
                                                     new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
                                                     new Action(ret => ((WoWItem)ret).UseContainerItem()),
@@ -243,11 +248,18 @@ namespace Singular.Helpers
                                     ctx => StyxWoW.Me.CarriedItems.FirstOrDefault(i => i.Entry == 86569),
                                     // Crystal of Insanity
                                     new Decorator(
-                                        ret => ret != null && ((WoWItem)ret).CooldownTimeLeft == TimeSpan.Zero,
-                                        new Sequence(
-                                            new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
-                                            new Action(ret => ((WoWItem)ret).UseContainerItem()),
-                                            Helpers.Common.CreateWaitForLagDuration(stopIf => StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")))
+                                        ret => ret != null,
+                                        new PrioritySelector(
+                                            new Decorator( 
+                                                req => CanUseItem((WoWItem)req),
+                                                new Sequence(
+                                                    new Action(ret => Logger.Write(String.Format("Using {0}", ((WoWItem)ret).Name))),
+                                                    new Action(ret => ((WoWItem)ret).UseContainerItem()),
+                                                    Helpers.Common.CreateWaitForLagDuration(stopIf => StyxWoW.Me.Auras.Any(aura => aura.Key.StartsWith("Enhanced ") || aura.Key.StartsWith("Flask of ")))
+                                                    )
+                                                ),
+
+                                            new ActionAlwaysSucceed()
                                             )
                                         )
                                     )
@@ -476,7 +488,58 @@ namespace Singular.Helpers
 
             if (Me.Inventory.Equipped.Trinket2 != null)
                 Logger.WriteFile("Trinket2: {0} #{1}", Me.Inventory.Equipped.Trinket2.Name, Me.Inventory.Equipped.Trinket2.Entry);
+
+            if (Me.Inventory.Equipped.Hands != null)
+            {
+                WoWItem item = Me.Inventory.Equipped.Hands;
+                if (!item.Usable)
+                    Logger.WriteDiagnostic("Hands: {0} #{1} - are not usable and will be ignored", item.Name, item.Entry);
+                else 
+                {
+                    string itemSpell = Lua.GetReturnVal<string>("return GetItemSpell(" + item.Entry + ")",0);       
+                    if (string.IsNullOrEmpty(itemSpell))
+                        Logger.WriteDiagnostic("Hands: {0} #{1} - does not appear to have a usable enchant present and will be ignored", item.Name, item.Entry);
+                    else
+                        Logger.WriteFile("Hands: {0} #{1} - found [{2}] and will use as per user settings", item.Name, item.Entry, itemSpell);
+                }
+                
+                // debug logic:  try another method to check for Engineering Tinkers
+                foreach (var enchName in GloveEnchants)
+                {
+                    WoWItem.WoWItemEnchantment ench = item.GetEnchantment(enchName);
+                    if (ench != null)
+                        Logger.WriteFile("Hands (double check): {0} #{1} - found enchant [{2}] #{3} (debug info only)", item.Name, item.Entry, ench.Name, ench.Id);
+                }
+
+                item = Me.Inventory.Equipped.Waist;
+                if (item != null)
+                {
+                    foreach (var enchName in BeltEnchants)
+                    {
+                        WoWItem.WoWItemEnchantment ench = item.GetEnchantment(enchName);
+                        if (ench != null)
+                            Logger.WriteFile("Belt (double check): {0} #{1} - found enchant [{2}] #{3} (debug info only)", item.Name, item.Entry, ench.Name, ench.Id);
+                    }
+                }
+            }
         }
+
+        // should be an api to inspect gloves, but instead yal (yet another list)
+        internal static List<string> GloveEnchants = new List<string>() 
+        {
+            "Hyperspeed Accelerators",
+            "Hand-Mounted Pyro Rocket",
+            "Tazik Shocker",
+            "Synapse Springs",
+            "Phase Fingers",
+            "Incendiary Fireworks Launcher"
+        };
+
+        internal static List<string> BeltEnchants = new List<string>() 
+        {
+            "Nitro Boosts",
+            "Frag Belt"
+        };
 
         public static uint CalcTotalGearScore()
         {

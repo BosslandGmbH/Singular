@@ -28,7 +28,9 @@ namespace Singular.ClassSpecific
             // 
             // 
 
-            if (SingularSettings.Instance.Trinket1Usage == TrinketUsage.Never && SingularSettings.Instance.Trinket2Usage == TrinketUsage.Never)
+            if (SingularSettings.Instance.Trinket1Usage == TrinketUsage.Never
+                && SingularSettings.Instance.Trinket2Usage == TrinketUsage.Never
+                && SingularSettings.Instance.GloveUsage == TrinketUsage.Never )
             {
                 return new Action(ret => { return RunStatus.Failure; });
             }

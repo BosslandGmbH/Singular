@@ -134,43 +134,58 @@ namespace Singular.ClassSpecific.Monk
                 return new ActionAlwaysFail();
 
             return new Throttle(
-                TimeSpan.FromSeconds(5),
+                8,
                 new Decorator(
-                    req => !Me.IsMoving,
+                    req => !Spell.IsSpellOnCooldown("Summon Jade Serpent Statue") ,
+
                     new PrioritySelector(
-                        ctx =>
-                        {
-                            WoWUnit target = Group.Tanks
-                                .Where(t => t.IsAlive && t.Combat && t.GotTarget && t.CurrentTarget.IsHostile && t.SpellDistance(t.CurrentTarget) < 10 && t.DistanceSqr < 60 * 60 && t.InLineOfSight && t.InLineOfSpellSight)
-                                .OrderBy(k => k.DistanceSqr)
-                                .FirstOrDefault();
+                        ctx => _statue = FindStatue(),
 
-                            return target;
-                        },
                         new Decorator(
-                            req =>
-                            {
-                                _statue = FindStatue();
-                                if (_statue == null)
-                                    Logger.WriteDebug("JadeStatue:  my statue does not exist");
-                                else
-                                {
-                                    float dist = _statue.Location.Distance((req as WoWUnit).Location);
-                                    if (dist > 40)
-                                        Logger.WriteDebug("JadeStatue:  my statue is {0:F1} yds away from {1} (max 40 yds)", dist, (req as WoWUnit).SafeName());
-                                    else
-                                        return false;
-                                }
 
-                                // yep we need to cast
-                                return true;
-                            },
+                            req => (_statue == null || (Me.GotTarget && Me.CurrentTarget.Location.Distance(_statue.Location) > 35)),
 
-                            Spell.CastOnGround(
-                                "Summon Jade Serpent Statue",
-                                loc => Styx.Helpers.WoWMathHelper.CalculatePointFrom(Me.Location, (loc as WoWUnit).Location, (float)(loc as WoWUnit).Distance / 2),
-                                req => req != null,
-                                false
+                            new PrioritySelector(
+                                ctx => Clusters.GetBestUnitForCluster( Unit.GroupMembers.Where(g => g.IsAlive && g.Combat && g.IsMelee()), ClusterType.Radius, 30f),
+
+                                new Decorator(
+                                    req =>
+                                    {
+                                        if (req == null)
+                                            return false;
+
+                                        if (_statue == null)
+                                            Logger.WriteDebug("JadeStatue:  my statue does not exist");
+                                        else
+                                        {
+                                            float dist = _statue.Location.Distance((req as WoWUnit).Location);
+                                            if (dist > 40)
+                                                Logger.WriteDebug("JadeStatue:  my statue is {0:F1} yds away from {1} (max 40 yds)", dist, (req as WoWUnit).SafeName());
+                                            else if (_statue.Distance > 40)
+                                                Logger.WriteDebug("JadeStatue:  my statue is {0:F1} yds away from {1} (max 40 yds)", dist, Me.SafeName());
+                                            else
+                                                return false;
+                                        }
+
+                                        // yep we need to cast
+                                        return true;
+                                    },
+
+                                    Spell.CastOnGround(
+                                        "Summon Jade Serpent Statue",
+                                        loc => {
+                                            WoWPoint locTank = (loc as WoWUnit).Location;
+                                            WoWPoint locMe = Me.Location;
+                                            float dist = (float) locMe.Distance(locTank) * 2f / 3f;
+                                            dist = Math.Min(dist, 35f);
+                                            if (dist < 10)
+                                                dist = -10f;    // plant past tank if he is close to us
+                                            return Styx.Helpers.WoWMathHelper.CalculatePointFrom( locMe, locTank, (float)dist);
+                                            },
+                                        req => true,
+                                        false
+                                        )
+                                    )
                                 )
                             )
                         )
@@ -178,12 +193,21 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
+        private static int GetBattlegroundRoleWeight(WoWPartyMember o, int p)
+        {
+            if (o.HasRole(WoWPartyMember.GroupRole.Tank))
+                return p * 2;
+            if (o.HasRole(WoWPartyMember.GroupRole.Healer))
+                return p;
+            return 0;
+        }
+
         public static WoWUnit FindStatue()
         {
             const uint JADE_SERPENT_STATUE = 60849;
             ulong guidMe = Me.Guid;
             return ObjectManager.GetObjectsOfType<WoWUnit>()
-                .FirstOrDefault(u => u.Entry == JADE_SERPENT_STATUE && u.SummonedByUnitGuid == guidMe);
+                .FirstOrDefault(u => u.Entry == JADE_SERPENT_STATUE && u.CreatedByUnitGuid == guidMe);
         }
 
         #endregion
@@ -262,8 +286,7 @@ namespace Singular.ClassSpecific.Monk
                                     )
                                 ),
 
-                            Spell.Cast("Rushing Jade Wind", ctx => Spell.UseAOE && HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
-                            Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
+                            Spell.Cast(SpinningCraneKick, ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= MonkSettings.SpinningCraneKickCnt),
 
                             // chi dump
                             Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
@@ -352,8 +375,7 @@ namespace Singular.ClassSpecific.Monk
                                             )
                                         ),
 
-                                    Spell.Cast("Rushing Jade Wind", ctx => Spell.UseAOE && HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 3),
-                                    Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 3),
+                                    Spell.Cast(SpinningCraneKick, ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= MonkSettings.SpinningCraneKickCnt),
 
                                     // chi dump
                                     Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
@@ -431,11 +453,11 @@ namespace Singular.ClassSpecific.Monk
             #region Spinning Crane Kick progress handler
 
                         new Decorator(
-                            req => Me.HasAura(SpinningCraneKick),
+                            req => Me.HasAura("Spinning Crane Kick"),   // don't wait for Rushing Jade Wind since we can cast
                             new PrioritySelector(
                                 new Action(r =>
                                 {
-                                    Logger.WriteFile( SpinningCraneKick + ": in progress with {0} ms left", (long)Me.GetAuraTimeLeft("Spinning Crane Kick").TotalMilliseconds);
+                                    Logger.WriteFile( SpinningCraneKick + ": in progress with {0} ms left", (long)Me.GetAuraTimeLeft(SpinningCraneKick).TotalMilliseconds);
                                     return RunStatus.Failure;
                                 }),
                                 new Decorator(
@@ -483,8 +505,62 @@ namespace Singular.ClassSpecific.Monk
                                     Helpers.Common.CreateAutoAttack(true)
                                     ),
 
-                                Helpers.Common.CreateInterruptBehavior(),
+                                // I WANT CHI!!!
+                                Spell.Cast("Expel Harm", ret => Me.CurrentChi < Me.MaxChi),
 
+                                // deal with buffs as highest priority
+                                new Decorator(
+                                    req => Me.HasAura("Teachings of the Monastery"),
+                                    new PrioritySelector(
+
+                                        // lets keep up Muscle Memory
+                                        new Decorator(
+                                            req => !Me.HasAura("Muscle Memory"),
+                                            new Sequence(
+                                                Spell.Cast("Jab"),
+                                                Helpers.Common.CreateWaitForLagDuration(until => Me.HasAura("Muscle Memory"))
+                                                )
+                                            ),
+
+                                        // lets keep up Tiger Power and Serpent Zeal
+                                        new Decorator(
+                                            req => !Me.HasAura("Serpent Zeal") || !Me.HasAura("Tiger Power"),
+                                            new PrioritySelector(
+                                                // let's buff Muscle Memory if we need a Tiger Palm or Blackout Kick
+                                                new Decorator(
+                                                    req => !Me.HasAura("Muscle Memory"),
+                                                    new Sequence(
+                                                        Spell.Cast("Jab"),
+                                                        Helpers.Common.CreateWaitForLagDuration( until => Me.HasAura("Muscle Memory"))
+                                                        )
+                                                    ),
+                                                Spell.Cast("Tiger Palm", req => Me.HasKnownAuraExpired("Tiger Power") || Me.HasKnownAuraExpired("Vital Mists")),
+                                                Spell.Cast("Blackout Kick", req => Me.HasKnownAuraExpired("Serpent Zeal"))
+                                                )
+                                            ),
+
+                                        // if multiple targets, lets Blackout Kick
+                                        new Decorator(
+                                            req => HealerManager.Instance.FirstUnit != null
+                                                && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
+                                            new PrioritySelector(                                                
+                                                new Decorator(
+                                                    req => !Me.HasAura("Muscle Memory"),
+                                                    new Sequence(
+                                                        Spell.Cast("Jab"),
+                                                        Helpers.Common.CreateWaitForLagDuration(until => Me.HasAura("Muscle Memory"))
+                                                        )
+                                                    ),
+
+                                                Spell.Cast("Blackout Kick", req => Me.HasAura("Muscle Memory") )
+                                                )
+                                            )
+                                        )
+                                    ),
+                                        
+
+                                //        
+                                Helpers.Common.CreateInterruptBehavior(),
                                 Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
                                 // grapple weapon if target is within melee range of its target
@@ -502,28 +578,14 @@ namespace Singular.ClassSpecific.Monk
 
                                 Spell.Cast("Leg Sweep", ret => Spell.UseAOE && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
 
-                                // high priority on tiger power
-                                Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power")),
-
-                                // high priority on muscle memory 
-                                new Decorator(
-                                    req => Me.HasAura("Muscle Memory"),
-                                    new PrioritySelector(
-                                        Spell.Cast("Blackout Kick"),
-                                        Spell.Cast("Tiger Palm")
-                                        )
-                                    ),
-
                                 Spell.Cast(
                                     SpinningCraneKick,
-                                    ret => Spell.UseAOE && !HealerManager.AllowHealerDPS() && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8) >= 3
+                                    ret => Spell.UseAOE && HealerManager.AllowHealerDPS() && Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8) >= MonkSettings.SpinningCraneKickCnt
                                     ),
 
                                 // chi dump
                                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
-                                Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
-
-                                Spell.Cast("Expel Harm", ret => Me.CurrentChi < (Me.MaxChi - 2) || Me.HealthPercent < 80),
+                                Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
 
                                 Spell.Cast(
                                     "Crackling Jade Lightning",
@@ -597,7 +659,10 @@ namespace Singular.ClassSpecific.Monk
                 CreateMistWeaverDiagnosticOutputBehavior(ret => (WoWUnit)ret),
 
                 new Decorator(
-                    ret => ret != null && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).PredictedHealthPercent() <= 99),
+                    ret => ret != null 
+                        && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).PredictedHealthPercent() <= 99),
+                        // && HealerManager.SavingHealUnit == null
+                        // && (selfOnly || !MonkSettings.MistHealSettings.HealFromMelee || !Me.GotTarget || Me.CurrentTarget.IsWithinMeleeRange),
 
                     new PrioritySelector(
                         new Decorator(
@@ -705,7 +770,7 @@ namespace Singular.ClassSpecific.Monk
             #region High Priority Buff
 
             behavs.AddBehavior(
-                700,
+                899,
                 "Summon Jade Serpent Statue",
                 "Summon Jade Serpent Statue",
                 new Decorator(
@@ -736,7 +801,7 @@ namespace Singular.ClassSpecific.Monk
                             if (!Spell.CanCastHack("Thunder Focus Tea"))
                                 return false;
 
-                            int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() < MonkSettings.MistHealSettings.ThunderFocusHealGroup);
+                            int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() <= MonkSettings.MistHealSettings.ThunderFocusHealGroup);
                             if (count >= MonkSettings.MistHealSettings.CountThunderFocusHealGroup)
                             {
                                 Logger.WriteDebug("ThunderFocus: found {0} below {1}%", MonkSettings.MistHealSettings.CountThunderFocusHealGroup, MonkSettings.MistHealSettings.ThunderFocusHealGroup);
@@ -768,7 +833,7 @@ namespace Singular.ClassSpecific.Monk
                             on => on as WoWUnit,
                             req =>
                             {
-                                int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() < MonkSettings.MistHealSettings.UpliftGroup);
+                                int count = HealerManager.Instance.TargetList.Count(p => !p.HasAuraExpired("Renewing Mist", TimeSpan.FromMilliseconds(150)) && p.PredictedHealthPercent() <= MonkSettings.MistHealSettings.UpliftGroup);
                                 if (count >= MonkSettings.MistHealSettings.CountUpliftGroup)
                                 {
                                     Logger.WriteDebug("Uplift: found {0} with Renewing Mist (needed {1})", count, MonkSettings.MistHealSettings.CountUpliftGroup);
@@ -896,6 +961,9 @@ namespace Singular.ClassSpecific.Monk
                         req => (req as WoWUnit).HealthPercent < MonkSettings.MistHealSettings.Revival,
                         Spell.Cast("Revival", on =>
                         {
+                            if (Spell.IsSpellOnCooldown("Revival"))
+                                return null;
+
                             List<WoWUnit> revlist = HealerManager.Instance.TargetList
                                 .Where(u => u.HealthPercent < MonkSettings.MistHealSettings.Revival && u.DistanceSqr < 100 * 100 && u.InLineOfSpellSight)
                                 .ToList();
@@ -920,11 +988,11 @@ namespace Singular.ClassSpecific.Monk
             if (!selfOnly)
             {
                 behavs.AddBehavior(
-                    HealthToPriority(0) + 700,
+                    HealthToPriority(1) + 700,
                     "Summon Jade Serpent Statue",
                     "Summon Jade Serpent Statue",
                     new Decorator(
-                        req => Group.Tanks.Any(t => t.Combat && t.GotTarget && t.CurrentTarget.IsHostile && t.SpellDistance(t.CurrentTarget) < 10),
+                        req => Group.Tanks.Any(t => t.Combat && !t.IsMoving && t.GotTarget && t.CurrentTarget.IsHostile && t.SpellDistance(t.CurrentTarget) < 10),
                         CreateSummonJadeSerpentStatueBehavior()
                         )
                     );
@@ -984,7 +1052,7 @@ namespace Singular.ClassSpecific.Monk
                 String.Format("Instant Surging Mist (Vital Mists=5)"),
                 "Surging Mist",
                 new Decorator(
-                    req => Me.GetAuraStacks("Vital Mists") == 5 && !IsChannelingSoothingMist(),
+                    req => Me.GetAuraStacks("Vital Mists") == 5, // && !IsChannelingSoothingMist(), // not sure we care about channel here
                     Spell.Cast("Surging Mist", on => (WoWUnit)on)
                     )
                 );
@@ -1032,9 +1100,51 @@ namespace Singular.ClassSpecific.Monk
                     String.Format(SpinningCraneKick + " on {0} targets @ {1}%", MonkSettings.MistHealSettings.CountSpinningCraneKickGroup, MonkSettings.MistHealSettings.SpinningCraneKickGroup),
                     SpinningCraneKick,
                     Spell.Cast(
-                        "Spinning Crane Kick",
+                        SpinningCraneKick,
                         on => on as WoWUnit,
-                        ret => Spell.UseAOE && Me.CurrentChi < Me.MaxChi && HealerManager.AllowHealerDPS() && HealerManager.Instance.TargetList.Count(u => u.HealthPercent < MonkSettings.MistHealSettings.SpinningCraneKickGroup && u.SpellDistance() <= 8) >= MonkSettings.MistHealSettings.CountSpinningCraneKickGroup
+                        ret =>
+                        {
+                            if (Spell.IsSpellOnCooldown(SpinningCraneKick))
+                                return false;
+
+                            if (!Me.Combat)
+                                return false;
+
+                            if (!Spell.UseAOE)
+                                return false;
+
+                            if (Me.CurrentChi >= Me.MaxChi)
+                                return false;
+
+                            // count heal targets
+                            int countHeal = HealerManager.Instance.TargetList
+                                .Count(u => u.HealthPercent < MonkSettings.MistHealSettings.SpinningCraneKickGroup && u.SpellDistance() <= 8);
+                            if (countHeal >= MonkSettings.MistHealSettings.CountSpinningCraneKickGroup)
+                            {
+                                Logger.WriteDiagnostic("SpinningCraneKick: found {0} group members to heal", countHeal);
+                                return true;
+                            }
+
+                            if (HealerManager.AllowHealerDPS())
+                            {
+                                int countAttack = Unit.NearbyUnfriendlyUnits.Count(u => u.SpellDistance() <= 8);
+                                if (countAttack >= MonkSettings.SpinningCraneKickCnt)
+                                {
+                                    Logger.WriteDiagnostic("SpinningCraneKick: found enemy {0} targets to attack", countAttack);
+                                    return true;
+                                }
+
+                                float countMerge = countHeal + countAttack;
+                                float avgCountNeeded = (0f + MonkSettings.SpinningCraneKickCnt + MonkSettings.MistHealSettings.CountSpinningCraneKickGroup) / 2f;
+                                if (countMerge > avgCountNeeded)
+                                {
+                                    Logger.WriteDiagnostic("SpinningCraneKick: found combination of {0:F1} heal+attack targets, needed {1:F1}", countMerge, avgCountNeeded);
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        }
                         )
                     );
             }
@@ -1064,7 +1174,26 @@ namespace Singular.ClassSpecific.Monk
                     )
                 );
 
-            }
+            // healing sphere
+            behavs.AddBehavior(
+                HealthToPriority(MonkSettings.MistHealSettings.HealingSphere),
+                String.Format("Healing Sphere @ {0}%", MonkSettings.MistHealSettings.HealingSphere),
+                "Healing Sphere",
+                new Decorator(
+                    req => Me.IsMoving && (req as WoWUnit).PredictedHealthPercent(includeMyHeals: true) < MonkSettings.MistHealSettings.HealingSphere,
+                    new Sequence(
+                        Spell.CastOnGround("Healing Sphere", on => (WoWUnit)on, req => true, false),
+                        new Wait(TimeSpan.FromMilliseconds(350), until => Spell.GetPendingCursorSpell != null, new ActionAlwaysSucceed()),
+                        new Action(r =>
+                        {
+                            Logger.WriteDebug("HealingSphere: /cancel Pending Spell {0}", Spell.GetPendingCursorSpell.Name);
+                            Lua.DoString("SpellStopTargeting()");
+                        })
+                        )
+                    )
+                );
+
+        }
 
 
         public static WoWUnit GetBestChiWaveTarget()
@@ -1577,7 +1706,7 @@ namespace Singular.ClassSpecific.Monk
                         WoWUnit target = Me.CurrentTarget;
 
                         string line = "...";
-                        line += string.Format(" h={0:F1}%/m={1:F1}%/c={2},move={3},combat={4},tigerpwr={5},mtea={6},muscle={7}",
+                        line += string.Format(" h={0:F1}%/m={1:F1}%/c={2},move={3},combat={4},tigerpwr={5},mtea={6},muscle={7},statue={8:F1} yds",
                             Me.HealthPercent,
                             Me.ManaPercent,
                             Me.CurrentChi,
@@ -1585,7 +1714,8 @@ namespace Singular.ClassSpecific.Monk
                             Me.Combat.ToYN(),
                             (long)target.GetAuraTimeLeft("Tiger Power").TotalMilliseconds,
                             Me.GetAuraStacks("Mana Tea"),
-                            (long)target.GetAuraTimeLeft("Muscle Memory").TotalMilliseconds
+                            (long)target.GetAuraTimeLeft("Muscle Memory").TotalMilliseconds,
+                            (FindStatue() ?? Me).Distance
                             );
 
                         WoWUnit healTarg = onUnit(ret);
@@ -1626,14 +1756,15 @@ namespace Singular.ClassSpecific.Monk
                                 {
                                     float hh = (float)tank.HealthPercent;
                                     float hph = tank.PredictedHealthPercent();
-                                    line += string.Format(",tank={0} {1:F1}% @ {2:F1} yds,tph={3:F1}%,tcombat={4},tmove={5},tloss={6}",
+                                    line += string.Format(",tank={0} {1:F1}% @ {2:F1} yds,tph={3:F1}%,tcombat={4},tmove={5},tloss={6},tstatue={7:F1} yds",
                                         tank.SafeName(),
                                         hh,
                                         tank.SpellDistance(),
                                         hph,
                                         tank.Combat.ToYN(),
                                         tank.IsMoving.ToYN(),
-                                        tank.InLineOfSpellSight.ToYN()
+                                        tank.InLineOfSpellSight.ToYN(),
+                                        tank.Location.Distance((FindStatue() ?? tank).Location)
                                         );
                                 }
                             }

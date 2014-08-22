@@ -366,7 +366,10 @@ namespace Singular
                         new Decorator(
                             ret => !Me.IsFlying && AllowBehaviorUsage() && !SingularSettings.Instance.DisableNonCombatBehaviors,
                             new PrioritySelector(
-                    // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
+
+//                                TestDynaWait(),
+    
+                                // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
                                 new Decorator(
                                     req => !OkToCallBehaviorsWithCurrentCastingStatus(),
                                     Spell.WaitForGcdOrCastOrChannel()
@@ -816,13 +819,39 @@ namespace Singular
                     break;
             }
 
-            bool allow = SingularSettings.Instance.PullMoreTargetType != PullMoreTargetType.None
-                    && SingularSettings.Instance.PullMoreMobCount > 1
-                    && SingularRoutine.CurrentWoWContext == WoWContext.Normal;
-            
-            if (!allow)
+            bool allow = true;
+
+            if (SingularSettings.Instance.UsePullMore == PullMoreUsageType.None)
             {
-                Logger.WriteDiagnostic("Pull More: disabled by user configuration");
+                allow = false;
+                Logger.WriteDiagnostic("Pull More: disabled by user configuration (use:{0}, target:{1}, count:{2}",
+                    SingularSettings.Instance.UsePullMore,
+                    SingularSettings.Instance.PullMoreTargetType,
+                    SingularSettings.Instance.PullMoreMobCount
+                    );
+            }
+            else if (SingularSettings.Instance.UsePullMore == PullMoreUsageType.Auto && !SingularRoutine.IsGrindBotActive)
+            {
+                allow = false;
+                BotBase b = SingularRoutine.GetCurrentBotBase();
+                Logger.WriteDiagnostic("Pull More: disabled because use:{0} and botbase:{1} in use",
+                    SingularSettings.Instance.UsePullMore,
+                    b == null ? "(null)" : b.Name
+                    );
+            }
+            else if ( SingularSettings.Instance.PullMoreTargetType == PullMoreTargetType.None || SingularSettings.Instance.PullMoreMobCount <= 1)
+            {
+                allow = false;
+                Logger.WriteDiagnostic("Pull More: disabled by user configuration (use:{0}, target:{1}, count:{2}",
+                    SingularSettings.Instance.UsePullMore,
+                    SingularSettings.Instance.PullMoreTargetType,
+                    SingularSettings.Instance.PullMoreMobCount
+                    );                  
+            }
+            else if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+            {
+                allow = false;
+                Logger.WriteDiagnostic("Pull More: disabled automatically for Context = '{0}'", SingularRoutine.CurrentWoWContext);
             }
             else if (!SpellManager.HasSpell(needSpell))
             {
@@ -851,7 +880,7 @@ namespace Singular
             _rangePullMore = Me.IsMelee() ? SingularSettings.Instance.PullMoreDistMelee : SingularSettings.Instance.PullMoreDistRanged;
 
             return new Decorator(
-                req => _allowPullMoreUntil == DateTime.MinValue || _allowPullMoreUntil > DateTime.Now,
+                req => HotkeyDirector.IsPullMoreEnabled && (_allowPullMoreUntil == DateTime.MinValue || _allowPullMoreUntil > DateTime.Now),
 
                 new Sequence(
                     new PrioritySelector(
@@ -1021,6 +1050,74 @@ namespace Singular
         }
 
         #endregion 
+
+        private static Composite TestDynaWait()
+        {
+            return new PrioritySelector(
+                    new Sequence(
+                    new PrioritySelector(
+                        new Sequence(
+                            new DynaWait(ts => TimeSpan.FromSeconds(2), until => false, new ActionAlwaysSucceed(), true),
+                            new Action(r => { Logger.Write("1. Success - Test Failed"); return RunStatus.Success; })
+                            ),
+                        new Action(r => { Logger.Write("1. Failure - Test Succeeded!"); return RunStatus.Success; })
+                        ),
+                    new ActionAlwaysFail()
+                    ),
+                new Sequence(
+                    new PrioritySelector(
+                        new Sequence(
+                            new DynaWait(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysSucceed(), true),
+                            new Action(r => { Logger.Write("2. Success - Test Succeeded!"); return RunStatus.Success; })
+                            ),
+                        new Action(r => { Logger.Write("2. Failure - Test Failed"); return RunStatus.Success; })
+                        ),
+                    new ActionAlwaysFail()
+                    ),
+
+                new Sequence(
+                    new PrioritySelector(
+                        new Sequence(
+                            new DynaWait(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysFail(), true),
+                            new Action(r => { Logger.Write("3. Success - Test Failed"); return RunStatus.Success; })
+                            ),
+                        new Action(r => { Logger.Write("3. Failure - Test Succeeded!"); return RunStatus.Success; })
+                        ),
+                    new ActionAlwaysFail()
+                    ),
+                new Sequence(
+                    new PrioritySelector(
+                        new Sequence(
+                            new DynaWaitContinue(ts => TimeSpan.FromSeconds(2), until => false, new ActionAlwaysSucceed(), true),
+                            new Action(r => { Logger.Write("4. Success - Test Succeeded!"); return RunStatus.Success; })
+                            ),
+                        new Action(r => { Logger.Write("4. Failure - Test Failed"); return RunStatus.Success; })
+                        ),
+                    new ActionAlwaysFail()
+                    ),
+                new Sequence(
+                    new PrioritySelector(
+                        new Sequence(
+                            new DynaWaitContinue(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysSucceed(), true),
+                            new Action(r => { Logger.Write("5. Success - Test Succeeded!"); return RunStatus.Success; })
+                            ),
+                        new Action(r => { Logger.Write("5. Failure - Test Failed"); return RunStatus.Success; })
+                        ),
+                    new ActionAlwaysFail()
+                    ),
+
+                new Sequence(
+                    new PrioritySelector(
+                        new Sequence(
+                            new DynaWaitContinue(ts => TimeSpan.FromSeconds(2), until => true, new ActionAlwaysFail(), true),
+                            new Action(r => { Logger.Write("6. Success - Test Failed"); return RunStatus.Success; })
+                            ),
+                        new Action(r => { Logger.Write("6. Failure - Test Succeeded!"); return RunStatus.Success; })
+                        ),
+                    new ActionAlwaysFail()
+                    )
+                );
+        }
     }
 
     public class CallWatch : PrioritySelector

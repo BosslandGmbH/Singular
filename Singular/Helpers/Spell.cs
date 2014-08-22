@@ -47,6 +47,7 @@ namespace Singular.Helpers
     public delegate int SimpleIntDelegate(object context);
     public delegate float SimpleFloatDelegate(object context);
 
+    public delegate TimeSpan SimpleTimeSpanDelegate(object context);
 
     internal static class Spell
     {

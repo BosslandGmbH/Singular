@@ -131,40 +131,44 @@ namespace Singular.ClassSpecific.Hunter
             if (!HunterSettings.UseFetch || !TalentManager.HasGlyph("Fetch"))
                 return new ActionAlwaysFail();
 
-            return new PrioritySelector(
-                ctx => ObjectManager.GetObjectsOfType<WoWUnit>(true,false)
-                    .Where( u => u.IsDead && u.Lootable && u.CanLoot && u.Distance < 50 && !Blacklist.Contains(u.Guid, BlacklistFlags.Loot))
-                    .OrderBy( u => u.Distance)
-                    .ToList(),
-                new Decorator(
-                    req => Me.GotAlivePet && ((List<WoWUnit>)req).Any() && ((List<WoWUnit>)req).First().Distance > 10,
-                    new Sequence(
-                        new PrioritySelector(
-                            Movement.CreateMoveToUnitBehavior( to => ((List<WoWUnit>)to).FirstOrDefault(), 5f),
-                            new ActionAlwaysSucceed()
-                            ),
-                        Spell.Cast("Fetch", on => ((List<WoWUnit>)on).FirstOrDefault(), req => true ),
-                        new Action( r => Logger.WriteDebug( "first wait")),
-                        new Wait(TimeSpan.FromMilliseconds(1500), until => Me.Pet.IsMoving, new ActionAlwaysSucceed()),
-                        new Action(r => Logger.WriteDebug("second wait")),
-                        new Wait(TimeSpan.FromMilliseconds(3500), until => Me.Pet.IsCasting && Me.Pet.CastingSpell.Name == "Fetch", new ActionAlwaysSucceed()),
-                        new PrioritySelector(
-                            Movement.CreateEnsureMovementStoppedBehavior(reason: "to Fetch"),
-                            new ActionAlwaysSucceed()
-                            ),
-                        new Action(r => Logger.WriteDebug("third wait")),
-                        new Wait(1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
-                        new Action(r => Logger.WriteDebug("fourth wait")),
-                        new WaitContinue(TimeSpan.FromMilliseconds(2000), until => !Me.Pet.IsCasting && !((List<WoWUnit>)until).FirstOrDefault().CanLoot, new ActionAlwaysSucceed()),
-                        new Action(r => Logger.WriteDebug("done waiting")),
+            return new Decorator(
+                req => (!SingularRoutine.IsDungeonBuddyActive && CharacterSettings.Instance.LootMobs)
+                    || (SingularRoutine.IsDungeonBuddyActive && Bots.DungeonBuddy.Helpers.DungeonBuddySettings.Instance.LootMode != Bots.DungeonBuddy.Enums.LootMode.Off),
+                new PrioritySelector(
+                    ctx => ObjectManager.GetObjectsOfType<WoWUnit>(true,false)
+                        .Where( u => u.IsDead && u.Lootable && u.CanLoot && u.Distance < 50 && !Blacklist.Contains(u.Guid, BlacklistFlags.Loot))
+                        .OrderBy( u => u.Distance)
+                        .ToList(),
+                    new Decorator(
+                        req => Me.GotAlivePet && ((List<WoWUnit>)req).Any() && ((List<WoWUnit>)req).First().Distance > 10,
+                        new Sequence(
+                            new PrioritySelector(
+                                Movement.CreateMoveToUnitBehavior( to => ((List<WoWUnit>)to).FirstOrDefault(), 5f),
+                                new ActionAlwaysSucceed()
+                                ),
+                            Spell.Cast("Fetch", on => ((List<WoWUnit>)on).FirstOrDefault(), req => true ),
+                            new Action( r => Logger.WriteDebug( "first wait")),
+                            new Wait(TimeSpan.FromMilliseconds(1500), until => Me.Pet.IsMoving, new ActionAlwaysSucceed()),
+                            new Action(r => Logger.WriteDebug("second wait")),
+                            new Wait(TimeSpan.FromMilliseconds(3500), until => Me.Pet.IsCasting && Me.Pet.CastingSpell.Name == "Fetch", new ActionAlwaysSucceed()),
+                            new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior(reason: "to Fetch"),
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Action(r => Logger.WriteDebug("third wait")),
+                            new Wait(1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
+                            new Action(r => Logger.WriteDebug("fourth wait")),
+                            new WaitContinue(TimeSpan.FromMilliseconds(2000), until => !Me.Pet.IsCasting && !((List<WoWUnit>)until).FirstOrDefault().CanLoot, new ActionAlwaysSucceed()),
+                            new Action(r => Logger.WriteDebug("done waiting")),
 
-                        new Action( r => {
-                            WoWUnit looted = ((List<WoWUnit>)r).FirstOrDefault();
-                            if (looted != null && looted.IsValid)
-                                Blacklist.Add(looted.Guid, BlacklistFlags.Loot, TimeSpan.FromSeconds(5));
-                            if (BotPoi.Current.Type == PoiType.Loot && BotPoi.Current.Guid == looted.Guid)
-                                BotPoi.Clear();
-                        })
+                            new Action( r => {
+                                WoWUnit looted = ((List<WoWUnit>)r).FirstOrDefault();
+                                if (looted != null && looted.IsValid)
+                                    Blacklist.Add(looted.Guid, BlacklistFlags.Loot, TimeSpan.FromSeconds(5));
+                                if (BotPoi.Current.Type == PoiType.Loot && BotPoi.Current.Guid == looted.Guid)
+                                    BotPoi.Clear();
+                            })
+                            )
                         )
                     )
                 );

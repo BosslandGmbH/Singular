@@ -85,6 +85,13 @@ namespace Singular.Settings
         public Keys MovementToggle { get; set; }
 
         [Setting]
+        [DefaultValue(Keys.None)]
+        [Category("Hotkeys")]
+        [DisplayName("Key - Pull More")]
+        [Description("Enables/Disables Pull More Ability")]
+        public Keys PullMoreToggle { get; set; }
+
+        [Setting]
         [DefaultValue(false)]
         [Category("User Movement while Botting")]
         [DisplayName("Allow User Movement")]

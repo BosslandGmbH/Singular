@@ -45,8 +45,10 @@ namespace Singular
         internal static bool IsDungeonBuddyActive { get; set; }
         internal static bool IsPokeBuddyActive { get; set; }
         internal static bool IsManualMovementBotActive { get; set; }
+        internal static bool IsGrindBotActive { get; set; }
 
         internal static WoWContext _cachedContext = WoWContext.None;
+        internal static HealingContext _cachedHealCtx = HealingContext.None;
 
         internal static WoWContext CurrentWoWContext
         {
@@ -64,17 +66,20 @@ namespace Singular
         {
             get
             {
-                WoWContext ctx = CurrentWoWContext;
-                if (ctx == WoWContext.Instances && Me.GroupInfo.IsInRaid)
-                    return HealingContext.Raids;
-
-                return (HealingContext) ctx;
+                return _cachedHealCtx;
+            }
+            set
+            {
+                _cachedHealCtx = value;
             }
         }
 
         private static void DetermineCurrentWoWContext()
         {
             CurrentWoWContext = _DetermineCurrentWoWContext();
+            CurrentHealContext = (CurrentWoWContext == WoWContext.Instances && Me.GroupInfo.IsInRaid)
+                ? HealingContext.Raids
+                : (HealingContext)CurrentWoWContext;
         }
 
         private static WoWContext _DetermineCurrentWoWContext()
@@ -181,6 +186,9 @@ namespace Singular
             bool petHack = IsPluginEnabled("Pokébuddy", "Pokehbuddy");
             bool manualBot = IsBotInUse("LazyRaider", "Raid Bot", "Tyrael");
 
+            BotBase bot = GetCurrentBotBase();
+            bool grindBot = bot != null && bot.Name.ToUpper().Contains("GRIND");
+
             bool changed = false;
 
             if (questBot != IsQuestBotActive )
@@ -211,6 +219,12 @@ namespace Singular
             {
                 changed = true;
                 IsManualMovementBotActive = manualBot;
+            }
+
+            if (grindBot != IsGrindBotActive)
+            {
+                changed = true;
+                IsGrindBotActive = grindBot;
             }
 
             return changed;

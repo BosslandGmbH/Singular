@@ -571,6 +571,12 @@ namespace Singular.Helpers
                 );
         }
 
+        /// <summary>
+        /// top level movement behavior. detects if a mobs are hitting us in the back while Solo
+        /// and moves forward diagonally then faces to attempt to get all mobs in front of us.
+        /// this helps with being able to parry as well as any conal front attacks
+        /// </summary>
+        /// <returns></returns>
         public static Composite CreatePositionMobsInFront()
         {
             if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)

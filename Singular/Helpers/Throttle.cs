@@ -314,4 +314,172 @@ namespace Singular.Helpers
     }
 
 
+    public class DynaWait : Decorator
+    {
+
+        private bool _measure;
+        private DateTime _begin;
+        private DateTime _end;
+        private SimpleTimeSpanDelegate _span;
+
+        /// <summary>
+        ///   Creates a new Wait decorator using the specified timeout, run delegate, and child composite.
+        /// </summary>
+        /// <param name = "timeoutSeconds"></param>
+        /// <param name = "runFunc"></param>
+        /// <param name = "child"></param>
+        public DynaWait(SimpleTimeSpanDelegate span, CanRunDecoratorDelegate runFunc, Composite child, bool measure = false)
+            : base(runFunc, child)
+        {
+            _span = span;
+            _measure = measure;
+
+        }
+
+        public override void Start(object context)
+        {
+            _begin = DateTime.Now;
+            _end = DateTime.Now + _span(context);
+            base.Start(context);
+        }
+
+        public override void Stop(object context)
+        {
+            _end = DateTime.MinValue;
+            base.Stop(context);
+
+            if (_measure)
+            {
+                Logger.Write("Duration: {0:F0} ms", (DateTime.Now - _begin).TotalMilliseconds);
+            }
+        }
+
+        protected override IEnumerable<RunStatus> Execute(object context)
+        {
+            while (DateTime.Now < _end)
+            {
+                if (Runner != null)
+                {
+                    if (Runner(context))
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if (CanRun(context))
+                    {
+                        break;
+                    }
+                }
+
+                yield return RunStatus.Running;
+            }
+
+            if (DateTime.Now > _end)
+            {
+                yield return RunStatus.Failure;
+                yield break;
+            }
+
+            DecoratedChild.Start(context);
+            while (DecoratedChild.Tick(context) == RunStatus.Running)
+            {
+                yield return RunStatus.Running;
+            }
+
+            DecoratedChild.Stop(context);
+            if (DecoratedChild.LastStatus == RunStatus.Failure)
+            {
+                yield return RunStatus.Failure;
+                yield break;
+            }
+
+            yield return RunStatus.Success;
+            yield break;
+        }
+    }
+
+    public class DynaWaitContinue : Decorator
+    {
+        private bool _measure;
+        private DateTime _begin;
+        private DateTime _end;
+        private SimpleTimeSpanDelegate _span;
+
+        /// <summary>
+        ///   Creates a new Wait decorator using the specified timeout, run delegate, and child composite.
+        /// </summary>
+        /// <param name = "timeoutSeconds"></param>
+        /// <param name = "runFunc"></param>
+        /// <param name = "child"></param>
+        public DynaWaitContinue(SimpleTimeSpanDelegate span, CanRunDecoratorDelegate runFunc, Composite child, bool measure = false)
+            : base(runFunc, child)
+        {
+            _span = span;
+            _measure = measure;
+        }
+
+        public override void Start(object context)
+        {
+            _begin = DateTime.Now;
+            _end = DateTime.Now + _span(context);
+            base.Start(context);
+        }
+
+        public override void Stop(object context)
+        {
+            _end = DateTime.MinValue;
+            base.Stop(context);
+            if (_measure)
+            {
+                Logger.Write("Duration: {0:F0} ms", (DateTime.Now - _begin).TotalMilliseconds);
+            }
+        }
+
+        protected override IEnumerable<RunStatus> Execute(object context)
+        {
+            while (DateTime.Now < _end)
+            {
+                if (Runner != null)
+                {
+                    if (Runner(context))
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if (CanRun(context))
+                    {
+                        break;
+                    }
+                }
+
+                yield return RunStatus.Running;
+            }
+
+            if (DateTime.Now > _end)
+            {
+                yield return RunStatus.Success;
+                yield break;
+            }
+
+            DecoratedChild.Start(context);
+            while (DecoratedChild.Tick(context) == RunStatus.Running)
+            {
+                yield return RunStatus.Running;
+            }
+
+            DecoratedChild.Stop(context);
+            if (DecoratedChild.LastStatus == RunStatus.Failure)
+            {
+                yield return RunStatus.Failure;
+                yield break;
+            }
+
+            yield return RunStatus.Success;
+            yield break;
+        }
+    }
 }

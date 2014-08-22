@@ -124,7 +124,7 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
                         Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
                         Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
-                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
+                        Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPct),
                         Spell.BuffSelf("Zen Sphere", ctx => Me.HealthPercent < 90 && HasTalent(MonkTalents.ZenSphere)),
 
                         Spell.Cast(
@@ -212,7 +212,7 @@ namespace Singular.ClassSpecific.Monk
                             ret => Unit.NearbyUnfriendlyUnits.Count( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 2),
 
                         Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 4),
-                        Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
+                        Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= MonkSettings.SpinningCraneKickCnt),
 
                         Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")),
 
@@ -294,7 +294,7 @@ namespace Singular.ClassSpecific.Monk
                             ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u))),
 
                         Spell.Cast("Rushing Jade Wind", ctx => HasTalent(MonkTalents.RushingJadeWind) && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr <= 8 * 8) >= 4),
-                        Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= 4),
+                        Spell.Cast("Spinning Crane Kick", ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count(u => u.Distance <= 8) >= MonkSettings.SpinningCraneKickCnt),
 
                         Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
                                     
@@ -369,7 +369,7 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
                 Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
                 Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),
-                Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPercent),
+                Spell.Cast("Fortifying Brew", ctx => Me, ret => Me.HealthPercent <= SingularSettings.Instance.Monk().FortifyingBrewPct),
                 Spell.BuffSelf("Zen Sphere", ctx => HasTalent(MonkTalents.ZenSphere) && Me.HealthPercent < 90),
 
                 Spell.BuffSelf(
@@ -420,7 +420,7 @@ namespace Singular.ClassSpecific.Monk
                     return target;
                 }),
 
-                Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)MonkTalents.ChiWave) && Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent)
+                Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)MonkTalents.ChiWave) && Me.HealthPercent < MonkSettings.ChiWavePct)
                 );
         }
 

@@ -60,14 +60,14 @@ namespace Singular.Settings
         [Category("Common")]
         [DisplayName("Fortifying Brew Percent")]
         [Description("Fortifying Brew is used when health percent is at or below this value")]
-        public float FortifyingBrewPercent { get; set; }
+        public int FortifyingBrewPct { get; set; }
 
         [Setting]
         [DefaultValue(70)]
         [Category("Common")]
         [DisplayName("Chi Wave Percent")]
         [Description("Chi Wave is used when health percent is at or below this value")]
-        public float ChiWavePercent { get; set; }
+        public int ChiWavePct { get; set; }
 
         [Setting]
         [DefaultValue(false)]
@@ -82,6 +82,14 @@ namespace Singular.Settings
         [DisplayName("Leg Sweep immediately in Normal Context")]
         [Description("Stun mobs while Solo immediately to reduce damage taken")]
         public bool StunMobsWhileSolo { get; set; }
+
+        [Setting]
+        [DefaultValue(4)]
+        [Category("Common")]
+        [DisplayName("Spinning Crane Kick Count")]
+        [Description("Count of enemies in range to attack with Spinning Crane Kick / Rushing Jade Wind")]
+        public int SpinningCraneKickCnt { get; set; }
+
 
         #endregion
 

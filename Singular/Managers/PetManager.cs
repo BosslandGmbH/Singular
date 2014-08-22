@@ -149,7 +149,12 @@ namespace Singular.Managers
             if (spell == null)
                 return;
 
-            Logger.Write(Color.DeepSkyBlue, "[Pet] Casting {0}", action);
+            WoWUnit unit = StyxWoW.Me.CurrentTarget;
+            if (unit == null)
+                Logger.Write(Color.DeepSkyBlue, "[Pet] Casting {0}", action);
+            else 
+                Logger.Write(Color.DeepSkyBlue, "[Pet] Casting {0} on {1} @ {2:F1} yds", action, StyxWoW.Me.CurrentTarget.SafeName(), StyxWoW.Me.CurrentTarget.SpellDistance());
+
             Lua.DoString("CastPetAction({0})", spell.ActionBarIndex + 1);
         }
 

@@ -546,9 +546,9 @@ namespace Singular.ClassSpecific.Monk
                             new Decorator(
                                 req => req != null,
                                 new Action( r => Logger.Write( Color.White, "/grappleweapon: received buff [{0}] #{1}", (r as WoWAura).Name, (r as WoWAura).SpellId))
-                                ),
-                            new Action(r => Blacklist.Add((r as CtxGrapple).target.IsPlayer ? (r as CtxGrapple).target.Guid : (r as CtxGrapple).target.Entry, BlacklistFlags.Node, TimeSpan.FromDays(7), "Singular: failed Grapple Weapon on this target"))
-                            )
+                                )
+                            ),
+                        new Action(r => Blacklist.Add((r as CtxGrapple).target.IsPlayer ? (r as CtxGrapple).target.Guid : (r as CtxGrapple).target.Entry, BlacklistFlags.Node, TimeSpan.FromDays(7), "Singular: failed Grapple Weapon on this target"))
                         )
                     )
                 );
@@ -558,6 +558,7 @@ namespace Singular.ClassSpecific.Monk
         {
             public WoWUnit target { get; set; }
             public WoWItem mainhand { get; set; }
+            public WoWAura aura { get; set; }
 
             public CtxGrapple( WoWUnit t)
             {
@@ -602,7 +603,7 @@ namespace Singular.ClassSpecific.Monk
                     Spell.Cast("Chi Burst",
                         mov => true,
                         ctx => Me,
-                        ret => Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent,
+                        ret => Me.HealthPercent < MonkSettings.ChiWavePct,
                         cancel => false
                         )
                     );
@@ -614,7 +615,7 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Chi Burst",
                     mov => true,
                     ctx => Me,
-                    ret => Me.HealthPercent < SingularSettings.Instance.Monk().ChiWavePercent,
+                    ret => Me.HealthPercent < MonkSettings.ChiWavePct,
                     cancel => false
                     )
                 );

@@ -1,3 +1,39 @@
+--- Release 3.0.0.3629 ---
+
+General
+
+*new* - Pull More Usage setting - supports Off, Always, and Auto (default).  Auto will enable Pull More for use with Grind Bot and Grind Buddy, but Off for all others.
+
+*new* - Pull More Hotkey - can now disable/enable Pull More from user configurable hotkey.  This will only disable/enable whatever Pull More mode you have setup (meaning if you have it configured to be off, the hotkey cannot turn it on)
+
+fixed - Engineering Glove Tinker usage - no longer ignored if both trinkets are configured to Never
+
+*new* - Multi-mob Fight Positioning - when Solo, all classes/specs will now attempt to bunch mobs in front of them if in combat and 1 or more mobs are hitting its back
+
+change- Healers - when Stay Near Tank is enabled, the stop distance calculation has been refined to allow for movement to be more fluid, especially with larger follow distances
+
+
+Hunter 
+
+change- All Specs - Glyph of Fetch support is now disabled if using DungeonBuddy and Loot Mode = Off.  When not using DungeonBuddy, will disable if HonorBuddy Loot Mobs character setting is not enabled.
+
+
+Monk
+
+change- All Specs - new setting to control the number of mobs required for Spinning Crane Kick and Rushing Jade Wind
+
+fixed - All Specs - bug with Grapple where failed attempt did not blacklist the mob for subsequent casts
+
+fixed - Mistweaver - Summon Serprent Jade Statue should now automatically cast correctly
+
+change- Mistweaver - revision to healing priority to make better use of buffs from melee abilities and generate more Chi
+
+fixed - Mistweaver - no longer waits for Rushing Jade Wind to complete before next cast
+
+change- Mistweaver - will now factor in enemy targets to count along with heal targets when checking for Spinning Crane Kick
+
+
+
 --- Release 3.0.0.3605 ---
 
 General

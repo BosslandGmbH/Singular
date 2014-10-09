@@ -324,7 +324,7 @@ namespace Singular.ClassSpecific.Druid
 
                         Spell.Cast("Mangle"),
 
-                        Spell.OffGCD(Spell.Cast("Force of Nature", req => Me.Specialization != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
+                        Spell.OffGCD(Spell.Cast("Force of Nature", req => TalentManager.CurrentSpec != WoWSpec.DruidRestoration && Me.CurrentTarget.TimeToDeath() > 8)),
 
                         new Decorator(
                             ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > (Me.CurrentTarget.IsPlayer ? 10 : 15),

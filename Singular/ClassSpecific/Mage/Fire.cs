@@ -50,6 +50,9 @@ namespace Singular.ClassSpecific.Mage
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
+
+                        Common.CreateMagePullBuffs(),
+
                         Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
                         Spell.Cast("Inferno Blast", ret => Me.HasAura("Heating Up")), // Me.ActiveAuras.ContainsKey("Heating Up")),
                         //new Throttle( 3, Spell.Cast("Frostfire Bolt", req => Me.CurrentTarget.SpellDistance() > 20) ),
@@ -113,7 +116,7 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
 
-                        Common.CreateMageAvoidanceBehavior(null, null),
+                        Common.CreateMageAvoidanceBehavior(),
 
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
@@ -206,9 +209,11 @@ namespace Singular.ClassSpecific.Mage
                         // Spell.BuffSelf("Blink", ret => MovementManager.IsClassMovementAllowed && (Me.IsRooted() || Unit.NearbyUnitsInCombatWithMe.Any( u => u.IsWithinMeleeRange ))),
                         // Spell.BuffSelf("Mana Shield", ret => Me.HealthPercent <= 75),
 
-                        Common.CreateMageAvoidanceBehavior(null, null),
+                        Common.CreateMageAvoidanceBehavior(),
                 
                         Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < 80),
+
+                        Common.CreateMagePullBuffs(),
 
                         // Cooldowns
                         Spell.BuffSelf("Mirror Image"),
@@ -263,6 +268,8 @@ namespace Singular.ClassSpecific.Mage
 
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Common.CreateMagePullBuffs(),
 
                         // AoE comes first
                         new Decorator(

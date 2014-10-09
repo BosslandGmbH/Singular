@@ -242,7 +242,7 @@ namespace Singular.Managers
         {
             var tanks = GetMainTankGuids();
             var inBg = Battlegrounds.IsInsideBattleground;
-            var amHolyPally = StyxWoW.Me.Specialization == WoWSpec.PaladinHoly;
+            var amHolyPally = TalentManager.CurrentSpec == WoWSpec.PaladinHoly;
             var myLoc = Me.Location;
 
             foreach (TargetPriority prio in units)
@@ -423,7 +423,7 @@ namespace Singular.Managers
 
             if (SingularRoutine.CurrentHealContext == HealingContext.Raids)
             {
-                if (Me.Specialization != WoWSpec.MonkMistweaver || !SingularSettings.Instance.HealerCombatAllow)
+                if (TalentManager.CurrentSpec != WoWSpec.MonkMistweaver || !SingularSettings.Instance.HealerCombatAllow)
                 {
                     return false;
                 }
@@ -595,7 +595,7 @@ namespace Singular.Managers
             if (SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                 return new ActionAlwaysFail();
 
-            if ((Dynamics.CompositeBuilder.CurrentBehaviorType & BehaviorType.InCombat) != (BehaviorType) 0)
+            if (IsThisBehaviorCalledDuringCombat())
             {
                 moveNearTank = Math.Max(5, SingularSettings.Instance.StayNearTankRangeCombat);
                 stopNearTank = (moveNearTank * 7) / 10;
@@ -609,7 +609,60 @@ namespace Singular.Managers
             Logger.WriteDebug("StayNearTank in {0}: will move towards at {1} yds and stop if within {2} yds", Dynamics.CompositeBuilder.CurrentBehaviorType, moveNearTank, stopNearTank);
             return new PrioritySelector(
                 ctx => HealerManager.TankToStayNear,
+
                 // no healing needed, then move within heal range of tank
+                new ThrottlePasses(
+                    1,
+                    TimeSpan.FromSeconds(5),
+                    RunStatus.Failure,
+                        new Action( t => {
+                            if (SingularSettings.Debug)
+                            {
+                                WoWUnit tankToStayNear = (WoWUnit)t;
+                                if (t != null)
+                                {
+                                    ;
+                                }
+                                else if (!Group.Tanks.Any())
+                                    Logger.WriteDiagnostic(Color.HotPink, "TankToStayNear: no group members with Role=Tank");
+                                else
+                                {
+                                    Logger.WriteDebug(Color.HotPink, "TankToStayNear:  {0} tanks in group", Group.Tanks.Count());
+                                    int i = 0;
+                                    foreach (var tank in Group.Tanks.OrderByDescending(gt => gt == RaFHelper.Leader).ThenBy(gt => gt.DistanceSqr))
+                                    {
+                                        Logger.WriteDebug(Color.HotPink, "TankToStayNear[{0}]: {1} Health={2:F1}%, Dist={3:F1}, TankPt={4}, MePt={5}, TankMov={6}, MeMov={7}, LoS={8}, LoSS={9}, Combat={10}, MeCombat={11}, ",
+                                            i++,
+                                            tank.SafeName(),
+                                            tank.HealthPercent,
+                                            tank.SpellDistance(),
+                                            tank.Location,
+                                            Me.Location,
+                                            tank.IsMoving.ToYN(),
+                                            Me.IsMoving.ToYN(),
+                                            tank.InLineOfSight.ToYN(),
+                                            tank.InLineOfSpellSight.ToYN(),
+                                            tank.Combat.ToYN(),
+                                            Me.Combat.ToYN()
+                                            );
+                                    }
+
+                                    Logger.WriteDebug(Color.HotPink, "TankToStayNear: current TargetList has {0} units", Targeting.Instance.TargetList.Count());
+                                    i = 0;
+                                    foreach (var target in Targeting.Instance.TargetList)
+                                    {
+                                        Logger.WriteDebug(Color.HotPink, "CurrentTargets[{0}]: {1} {2:F1}% @ {3:F1}",
+                                            i++,
+                                            target.SafeName(),
+                                            target.HealthPercent,
+                                            target.SpellDistance()
+                                            );
+                                    }
+                                }
+                            }
+                            return RunStatus.Failure;
+                        })
+                    ),
                 new Decorator(
                     ret => ((WoWUnit)ret) != null,
                     new Sequence(
@@ -623,6 +676,11 @@ namespace Singular.Managers
                         )
                     )
                 );
+        }
+
+        private static bool IsThisBehaviorCalledDuringCombat()
+        {
+            return (Dynamics.CompositeBuilder.CurrentBehaviorType & BehaviorType.InCombat) != (BehaviorType)0;
         }
 
         /// <summary>

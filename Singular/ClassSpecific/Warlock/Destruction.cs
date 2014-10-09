@@ -91,7 +91,7 @@ namespace Singular.ClassSpecific.Warlock
                         Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
                         Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
                         Spell.Cast("Conflagrate"),
-                        Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire"), false),
+                        Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 
                         Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
                         Spell.Cast("Incinerate"),
@@ -154,7 +154,7 @@ namespace Singular.ClassSpecific.Warlock
                                 Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
                                 Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
                                 Spell.Cast("Conflagrate"),
-                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire"), false),
+                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 
                                 Spell.Cast("Chaos Bolt", ret => Me.CurrentTarget.HealthPercent >= 20 && BackdraftStacks < 3),
                                 Spell.Cast("Incinerate"),
@@ -185,7 +185,7 @@ namespace Singular.ClassSpecific.Warlock
 
                                 Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
                                 Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") >= 2),
-                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire"), false),
+                                Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 
                                 Spell.Cast("Chaos Bolt", ret =>
                                 {
@@ -241,7 +241,9 @@ namespace Singular.ClassSpecific.Warlock
                                     req => req != null 
                                         && _InstantRoF
                                         && !Me.HasAura( "Rain of Fire")
-                                        && 3 <= Unit.NearbyUnfriendlyUnits.Count(u => ((WoWUnit)req).Location.Distance(u.Location) <= 8))
+                                        && 3 <= Unit.UnfriendlyUnitsNearTarget((WoWUnit)req, 8).Count()
+                                        && !Unit.UnfriendlyUnitsNearTarget((WoWUnit)req, 8).Any(u => !u.Aggro || u.IsCrowdControlled())
+                                    )
                                 ),
 
                                 Spell.OffGCD(Spell.Buff("Fire and Brimstone", on => Me.CurrentTarget, req => Unit.NearbyUnfriendlyUnits.Count(u => Me.CurrentTarget.Location.Distance(u.Location) <= 10f) >= 4))

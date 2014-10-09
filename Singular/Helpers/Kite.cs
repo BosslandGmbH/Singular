@@ -18,10 +18,146 @@ using Styx.WoWInternals;
 using Styx.Helpers;
 using Styx.Common;
 using Styx.CommonBot.POI;
+using Styx.CommonBot.Routines;
 
 
 namespace Singular.Helpers
 {
+    /// <summary>
+    /// provides standard usage of Disengage and Kiting logic
+    /// </summary>
+    public static class Avoidance
+    {
+        private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
+        /// <summary>
+        /// create standard Avoidance behavior (disengage and/or kiting)
+        /// </summary>
+        /// <param name="disengageSpell">spellName to use for disengage</param>
+        /// <param name="disengageDist">distance spellName will jump</param>
+        /// <param name="disengageDir">direction spellName jumps</param>
+        /// <param name="crowdControl">behavior called to crowd control melee enemies or halt use of disengage</param>
+        /// <param name="needDisengage">delegate to check for using disgenage. defaults checking settings for health and # attackers</param>
+        /// <param name="needKiting">delegate to check for using kiting. defaults to checking settings for health and # attackers</param>
+        /// <param name="cancelKiting">delegate to check if kiting should be cancelled. defaults to checking no attackers that aren't crowd controlled</param>
+        /// <returns></returns>
+        public static Composite CreateAvoidanceBehavior(
+            string disengageSpell,
+            int disengageDist,
+            Disengage.Direction disengageDir,
+            Composite crowdControl,
+            SimpleBooleanDelegate needDisengage = null, 
+            SimpleBooleanDelegate needKiting = null, 
+            SimpleBooleanDelegate cancelKiting = null
+            )
+        {
+            PrioritySelector pri = new PrioritySelector();
+
+            // build default check for whether disengage is needed
+            if (needDisengage == null)
+            {
+                needDisengage = req =>
+                {
+                    if (!Kite.IsDisengageWantedByUserSettings() || !MovementManager.IsClassMovementAllowed || !SingularRoutine.IsAllowed(CapabilityFlags.Kiting))
+                        return false;
+
+                    if (Spell.IsSpellOnCooldown(disengageSpell) && (!SingularSettings.Instance.UseRacials || Spell.IsSpellOnCooldown("Rocket Jump")))
+                        return false;
+
+                    bool useDisengage = false;
+
+                    if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
+                    {
+                        int countMelee = Unit.UnitsInCombatWithUsOrOurStuff(7).Sum( u => !u.IsPlayer || !u.IsMelee() ? 1 : SingularSettings.Instance.DisengageMobCount);
+                        if (countMelee >= SingularSettings.Instance.DisengageMobCount)
+                            useDisengage = true;
+                        else if (Me.HealthPercent <= SingularSettings.Instance.DisengageHealth && countMelee > 0)
+                            useDisengage = true;
+                    }
+                    else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                    {
+                        useDisengage = Unit.UnfriendlyUnits(7).Any(u => u.IsMelee());
+                    }
+
+
+                    return useDisengage;
+                };
+            }
+
+            // standard disengage behavior, with class specific check to make sure parties are crowd controlled            
+            if (SingularSettings.Instance.DisengageAllowed)
+            {
+                Composite behavRocketJump = new ActionAlwaysFail();
+                if (SingularSettings.Instance.UseRacials && SpellManager.HasSpell("Rocket Jump"))
+                    behavRocketJump = Disengage.CreateDisengageBehavior("Rocket Jump", 20, Disengage.Direction.Frontwards, null);
+
+                pri.AddChild(
+                    new Decorator(
+                        ret => needDisengage(ret),
+                        new Sequence(
+                            crowdControl,   // return Failure if shouldnt disengage, otherwise Success to allow
+                            new PrioritySelector(
+                                new Action(r => { Logger.Write(Color.White, "^Avoidance: disengaging away from mobs!"); return RunStatus.Failure; } ),
+                                Disengage.CreateDisengageBehavior(disengageSpell, disengageDist, disengageDir, null),
+                                behavRocketJump
+                                )
+                            )
+                        )
+                    );
+            }
+
+            // build default needKiting check
+            if (needKiting == null)
+            {
+                needKiting = req =>
+                {
+                    if (!Kite.IsKitingWantedByUserSettings() || !MovementManager.IsClassMovementAllowed || !SingularRoutine.IsAllowed(CapabilityFlags.Kiting))
+                        return false;
+
+                    bool useKiting = false;
+                    int countMelee = Unit.UnitsInCombatWithUsOrOurStuff(7).Count();
+                    if (countMelee >= SingularSettings.Instance.KiteMobCount)
+                        useKiting = true;
+                    else if (Me.HealthPercent <= SingularSettings.Instance.KiteHealth && countMelee > 0)
+                        useKiting = true;
+
+                    return useKiting;
+                };
+            }
+
+            if (cancelKiting == null)
+            {
+                cancelKiting = req =>
+                {
+                    int countAttackers = Unit.UnitsInCombatWithUsOrOurStuff(7).Count();
+                    return (countAttackers == 0);
+                };
+            }
+
+            // add check to initiate kiting behavior
+            if (SingularSettings.Instance.KiteAllow)
+            {
+                pri.AddChild(
+                    new Decorator(
+                        ret => needKiting(ret),
+                        new Sequence(
+                            crowdControl,
+                            new Action(r => Logger.Write(Color.White, "^Avoidance: kiting away from mobs!")),
+                            Kite.BeginKitingBehavior()
+                            )
+                        )
+                    );
+            }
+
+            if (!pri.Children.Any())
+            {
+                return new ActionAlwaysFail();
+            }
+
+            return new Decorator(req => MovementManager.IsClassMovementAllowed, pri);
+        }
+    }
+
     /// <summary>
     /// class which implements kiting.  finds the closest safest spot that can be navigated to and moves there. 
     /// can be configured to perform behaviors while running away (back to target), while jump turning (facing target),
@@ -233,6 +369,7 @@ namespace Singular.Helpers
         {
             return SingularSettings.Instance.DisengageAllowed
                 && !MovementManager.IsMovementDisabled
+
                 && Me.HealthPercent < SingularSettings.Instance.DisengageHealth
                 && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count(m => m.SpellDistance() < SingularSettings.Instance.AvoidDistance) >= SingularSettings.Instance.DisengageMobCount;
         }
@@ -282,6 +419,7 @@ namespace Singular.Helpers
                 sa.LineOfSightMob = Me.CurrentTarget;
                 sa.CheckLineOfSightToSafeLocation = false;
                 sa.CheckSpellLineOfSightToMob = false;
+                sa.DirectPathOnly = true;   // faster to check direct path than navigable route
             }
             else
             {
@@ -294,6 +432,7 @@ namespace Singular.Helpers
                 sa.LineOfSightMob = Me.CurrentTarget;
                 sa.CheckLineOfSightToSafeLocation = false;
                 sa.CheckSpellLineOfSightToMob = false;
+                sa.DirectPathOnly = true;   // faster to check direct path than navigable route
             }
 
             safeSpot = sa.FindLocation();
@@ -796,6 +935,8 @@ namespace Singular.Helpers
         public float MaxScanDistance { get; set; }
         /// <summary><para>Increment added each repetition to MinScanDistance until MaxScanDistance reached.</para></summary>
         public float IncrementScanDistance { get; set; }
+        /// <summary>Direction to favor for disengage</summary>
+        public Disengage.Direction PreferredDirection { get; set; }
         /// <summary><para>Number of evenly spaced checks around perimter.  36 would yield 36 checks around perimeter spaced 10 degrees apart.</para></summary>
         public int RaysToCheck { get; set; }
         /// <summary>Minimum distance from safe spot to nearest enemy</summary>
@@ -812,6 +953,9 @@ namespace Singular.Helpers
         public bool CheckSpellLineOfSightToMob { get; set; }
         /// <summary>Require safe location to be within 40 yds of current target</summary>
         public bool CheckRangeToLineOfSightMob { get; set; }
+        /// <summary>Require direct line to destination.  Uses MeshTraceLine rather than CanFullyNavigate</summary>
+        public bool DirectPathOnly { get; set; }
+
         /// <summary>Select best navigable point available</summary>
         public bool ChooseSafestAvailable { get; set; }
 
@@ -826,6 +970,9 @@ namespace Singular.Helpers
             MinSafeDistance = 15;                       // radius of the minimal safe area at safe spot
             MobToRunFrom = NearestEnemyMobAttackingMe;  // trying to get away from this guy
             LineOfSightMob = Me.CurrentTarget;          // safe spot must have line of sight to this mob
+            DirectPathOnly = false;                 // allow CanFullyNavigate to walk around obstacles 
+
+            PreferredDirection = Disengage.Direction.Backwards;
 
             CheckLineOfSightToSafeLocation = true;
             CheckSpellLineOfSightToMob = LineOfSightMob != null;
@@ -937,13 +1084,19 @@ namespace Singular.Helpers
         {
             DateTime startFind = DateTime.Now;
             int countPointsChecked = 0;
+            int countFailDiff = 0;
+            int countFailTrace = 0;
             int countFailToPointNav = 0;
             int countFailRange = 0;
             int countFailSafe = 0;
             int countFailToPointLoS = 0;
             int countFailToMobLoS = 0;
+            TimeSpan spanTrace = TimeSpan.Zero;
+            TimeSpan spanNav = TimeSpan.Zero;
             double furthestNearMobDistSqr = 0f;
             WoWPoint ptFurthest = WoWPoint.Empty;
+            float facingFurthest = 0f;
+
             bool reallyCheckRangeToLineOfSightMob = CheckRangeToLineOfSightMob && Me.GotTarget;
             WoWPoint ptAdjOrigin = ptOrigin;
             // ptAdjOrigin.Z += 1f;   // comment out origin adjustment since using GetTraceLinePos()
@@ -955,11 +1108,23 @@ namespace Singular.Helpers
             mobLocations = AllEnemyMobLocationsToCheck;
             double minSafeDistSqr = MinSafeDistance * MinSafeDistance;
 
+#if OLD_WAY
             float baseDestinationFacing = MobToRunFrom == null ?
                                             Me.RenderFacing + (float)Math.PI
                                             : Styx.Helpers.WoWMathHelper.CalculateNeededFacing(MobToRunFrom.Location, Me.Location);
-
-            // Logger.WriteDebug( Color.Cyan, "SafeArea: search near {0:F0}d @ {1:F1} yds for mob free area", RadiansToDegrees(baseDestinationFacing), MinSafeDistance);
+#else
+            float baseDestinationFacing;          
+            if (PreferredDirection == Disengage.Direction.None && MobToRunFrom != null)
+                baseDestinationFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(MobToRunFrom.Location, Me.Location);
+            else if (PreferredDirection == Disengage.Direction.Frontwards)
+                baseDestinationFacing = Me.RenderFacing;
+            else // if (PreferredDirection == Disengage.Direction.Backwards)
+                baseDestinationFacing = Me.RenderFacing + (float)Math.PI;
+#endif
+            Logger.WriteDebug( Color.Cyan, "SafeArea: facing {0:F0} degrees, looking for safespot towards {1:F0} degrees",
+                WoWMathHelper.RadiansToDegrees(Me.RenderFacing),
+                WoWMathHelper.RadiansToDegrees(baseDestinationFacing)
+                );
 
             for (int arcIndex = 0; arcIndex < RaysToCheck; arcIndex++)
             {
@@ -971,12 +1136,39 @@ namespace Singular.Helpers
                 else
                     checkFacing -= arcIncrement * ((arcIndex >> 1) + 1);
 
+                checkFacing = WoWMathHelper.NormalizeRadian(checkFacing);
                 for (float distFromOrigin = MinScanDistance; distFromOrigin <= MaxScanDistance; distFromOrigin += IncrementScanDistance)
                 {
                     countPointsChecked++;
 
                     ptDestination = ptOrigin.RayCast(checkFacing, distFromOrigin);
-                    if (!Navigator.CanNavigateFully(Me.Location, ptDestination))
+
+                    Logger.WriteDebug("SafeArea: checking {0:F1} degrees at {1:F1} yds", WoWMathHelper.RadiansToDegrees(checkFacing), distFromOrigin);
+
+                    DateTime start = DateTime.Now;
+                    bool failTrace = Movement.MeshTraceline(Me.Location, ptDestination);
+                    spanTrace += DateTime.Now - start;
+
+                    bool failNav;
+                    if (DirectPathOnly)
+                    {
+                        failNav = failTrace;
+                        spanNav = spanTrace;
+                    }
+                    else
+                    {
+                        start = DateTime.Now;
+                        failNav = !Navigator.CanNavigateFully(Me.Location, ptDestination);
+                        spanNav += DateTime.Now - start;
+                    }
+
+                    if (failTrace)
+                        countFailTrace++;
+
+                    if (failTrace != failNav)
+                        countFailDiff++;
+
+                    if (failNav)
                     {
                         // Logger.WriteDebug( Color.Cyan, "Safe Location failed navigation check for degrees={0:F1} dist={1:F1}", RadiansToDegrees(checkFacing), distFromOrigin);
                         countFailToPointNav++;
@@ -990,6 +1182,7 @@ namespace Singular.Helpers
                         {
                             furthestNearMobDistSqr = minSafeDistSqr;
                             ptFurthest = ptDestination;     // set best available if others fail
+                            facingFurthest = checkFacing;
                         }
                     }
                     else
@@ -999,6 +1192,7 @@ namespace Singular.Helpers
                         {
                             furthestNearMobDistSqr = mobDistSqr;
                             ptFurthest = ptDestination;     // set best available if others fail
+                            facingFurthest = checkFacing;
                         }
                         if (mobDistSqr <= minSafeDistSqr)
                         {
@@ -1040,19 +1234,23 @@ namespace Singular.Helpers
 
                     Logger.WriteDebug(Color.Cyan, "SafeArea: Found mob-free location ({0:F1} yd radius) at degrees={1:F1} dist={2:F1} on point check# {3} at {4}, {5}, {6}", MinSafeDistance, WoWMathHelper.RadiansToDegrees(checkFacing), distFromOrigin, countPointsChecked, ptDestination.X, ptDestination.Y, ptDestination.Z);
                     Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.Now - startFind).TotalMilliseconds);
+                    Logger.WriteDebug(Color.Cyan, "SafeArea: meshtrace took {0:F0} ms / fullynav took {1:F0} ms", spanTrace.TotalMilliseconds, spanNav.TotalMilliseconds);
+                    Logger.WriteDebug(Color.Cyan, "SafeArea: stats for ({0:F1} yd radius) found within {1:F1} yds ({2} checked, {3} nav, {4} not safe, {5} range, {6} pt los, {7} mob los, {8} mesh trace)", MinSafeDistance, MaxScanDistance, countPointsChecked, countFailToPointNav, countFailSafe, countFailRange, countFailToPointLoS, countFailToMobLoS, countFailTrace);
                     return ptDestination;
                 }
             }
 
-            Logger.WriteDebug(Color.Cyan, "SafeArea: No mob-free location ({0:F1} yd radius) found within {1:F1} yds ({2} checked, {3} nav, {4} not safe, {5} range, {6} pt los, {7} mob los)", MinSafeDistance, MaxScanDistance, countPointsChecked, countFailToPointNav, countFailSafe, countFailRange, countFailToPointLoS, countFailToMobLoS);
+            Logger.WriteDebug(Color.Cyan, "SafeArea: No mob-free location ({0:F1} yd radius) found within {1:F1} yds ({2} checked, {3} nav, {4} not safe, {5} range, {6} pt los, {7} mob los, {8} mesh trace)", MinSafeDistance, MaxScanDistance, countPointsChecked, countFailToPointNav, countFailSafe, countFailRange, countFailToPointLoS, countFailToMobLoS, countFailTrace);
             if (ChooseSafestAvailable && ptFurthest != WoWPoint.Empty)
             {
                 Logger.WriteDebug(Color.Cyan, "SafeArea: choosing best available spot in {0:F1} yd radius where closest mob is {1:F1} yds", MinSafeDistance, Math.Sqrt(furthestNearMobDistSqr));
                 Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.Now - startFind).TotalMilliseconds);
+                Logger.WriteDebug(Color.Cyan, "SafeArea: meshtrace took {0:F0} ms / fullynav took {1:F0} ms", spanTrace.TotalMilliseconds, spanNav.TotalMilliseconds);
                 return ChooseSafestAvailable ? ptFurthest : WoWPoint.Empty;
             }
 
             Logger.WriteDebug(Color.Cyan, "SafeArea: processing took {0:F0} ms", (DateTime.Now - startFind).TotalMilliseconds);
+            Logger.WriteDebug(Color.Cyan, "SafeArea: meshtrace took {0:F0} ms / fullynav took {1:F0} ms", spanTrace.TotalMilliseconds, spanNav.TotalMilliseconds);
             return WoWPoint.Empty;
         }
 
@@ -1149,6 +1347,7 @@ namespace Singular.Helpers
     {
         public enum Direction
         {
+            None,
             Backwards,
             Frontwards
         }
@@ -1162,7 +1361,7 @@ namespace Singular.Helpers
         private static float needFacing;
         public static DateTime NextDisengageAllowed = DateTime.MinValue;
 
-        public static Composite CreateDisengageBehavior(string spell, Direction dir, int distance, Composite slowAttack)
+        public static Composite CreateDisengageBehavior(string spell, int distance, Direction dir, Composite slowAttack)
         {
             return new Decorator(
                 ret => CanWeDisengage(spell, dir, distance),
@@ -1171,12 +1370,12 @@ namespace Singular.Helpers
                         new Decorator(
                             ret => slowAttack != null,
                             new Sequence(
-                                new Action(r => Logger.WriteDebug("attempting to slow enemies")),
+                                new Action(r => Logger.WriteDebug("DIS: attempting to slow enemies")),
                                 slowAttack,
                                 new WaitContinue(TimeSpan.FromMilliseconds(1500), rdy => !Spell.IsCastingOrChannelling() && !Spell.IsGlobalCooldown(), new ActionAlwaysSucceed())
                                 )
                             ),
-                        new ActionAlwaysSucceed()
+                        new Action( r => Logger.WriteDebug("DIS: no slow attack given, skipping"))
                         ),
 
                     new Action(r => Logger.WriteDebug("face {0} safespot as needed", dir == Direction.Frontwards ? "towards" : "away from")),
@@ -1184,18 +1383,21 @@ namespace Singular.Helpers
                     {
                         origSpot = new WoWPoint(Me.Location.X, Me.Location.Y, Me.Location.Z);
                         if (dir == Direction.Frontwards)
-                            needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(Me.Location, safeSpot);
+                            needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(origSpot, safeSpot);
                         else
-                            needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(safeSpot, Me.Location);
+                            needFacing = Styx.Helpers.WoWMathHelper.CalculateNeededFacing(safeSpot, origSpot);
 
                         needFacing = WoWMathHelper.NormalizeRadian(needFacing);
                         float rotation = WoWMathHelper.NormalizeRadian(Math.Abs(needFacing - Me.RenderFacing));
-                        Logger.WriteDebug(Color.Cyan, "DIS: turning {0:F0} degrees {1} safe landing spot",
-                            WoWMathHelper.RadiansToDegrees(rotation), dir == Direction.Frontwards ? "towards" : "away from");
+                        Logger.WriteDebug(Color.Cyan, "DIS: turning {0:F0} degrees towards {1:F1} degrees and face {2} safe landing spot",
+                            WoWMathHelper.RadiansToDegrees(rotation),
+                            WoWMathHelper.RadiansToDegrees(needFacing), 
+                            dir == Direction.Frontwards ? "towards" : "away from"
+                            );
                         Me.SetFacing(needFacing);
                     }),
 
-                    new Action(r => Logger.WriteDebug("wait for facing to complete")),
+                    new Action(r => Logger.WriteDebug("DIS: wait for facing to complete")),
                     new PrioritySelector(
                         new Wait(new TimeSpan(0, 0, 1), ret => Me.IsDirectlyFacing(needFacing), new ActionAlwaysSucceed()),
                         new Action(ret =>
@@ -1212,7 +1414,7 @@ namespace Singular.Helpers
                         WoWMovement.StopFace();
                     }),
 
-                    new Action(r => Logger.WriteDebug("set time of {0} just prior", spell)),
+                    new Action(r => Logger.WriteDebug("DIS: set time of {0} just prior", spell)),
                     new Sequence(
                         new PrioritySelector(
                             Spell.BuffSelf(spell),
@@ -1227,7 +1429,7 @@ namespace Singular.Helpers
                         {
                             NextDisengageAllowed = DateTime.Now.Add(TimeSpan.FromMilliseconds(750));
                             Logger.WriteDebug(Color.Cyan, "DIS: finished {0} cast", spell);
-                            Logger.WriteDebug(Color.Cyan, "DIS: jumped {0:F1} yds away from orig={1} to curr={2}", Me.Location.Distance(safeSpot), origSpot, Me.Location);
+                            Logger.WriteDebug(Color.Cyan, "DIS: jumped {0:F1} yds to land {1:F1} yds away from safespot={2} at curr={3}", Me.Location.Distance(origSpot), Me.Location.Distance(safeSpot), safeSpot, Me.Location);
                             if (Kite.IsKitingActive())
                                 Kite.EndKiting(String.Format("BP: Interrupted by {0}", spell));
                             return RunStatus.Success;
@@ -1259,31 +1461,6 @@ namespace Singular.Helpers
             if (mobToGetAwayFrom == null)
                 return false;
 
-            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal)
-            {
-                List<WoWUnit> attackers = SafeArea.AllEnemyMobsAttackingMe.ToList();
-                if ((attackers.Sum(a => a.MaxHealth) / 3) < Me.MaxHealth && Me.HealthPercent > 40)
-                {
-                    return false;
-                }
-            }
-            else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-            {
-                switch (mobToGetAwayFrom.Class)
-                {
-                    default:
-                        return false;
-
-                    case WoWClass.DeathKnight:
-                    case WoWClass.Druid:
-                    case WoWClass.Monk:
-                    case WoWClass.Paladin:
-                    case WoWClass.Rogue:
-                    case WoWClass.Shaman:
-                        break;
-                }
-            }
-
             if (mobToGetAwayFrom.Distance > mobToGetAwayFrom.MeleeDistance() + 3f)
                 return false;
 
@@ -1295,6 +1472,7 @@ namespace Singular.Helpers
             sa.MobToRunFrom = mobToGetAwayFrom;
             sa.CheckLineOfSightToSafeLocation = true;
             sa.CheckSpellLineOfSightToMob = false;
+            sa.DirectPathOnly = true;
 
             safeSpot = sa.FindLocation();
             if (safeSpot == WoWPoint.Empty)

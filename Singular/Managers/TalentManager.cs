@@ -33,6 +33,8 @@ namespace Singular.Managers
             Lua.Events.AttachEvent("ACTIVE_TALENT_GROUP_CHANGED", UpdateTalentManager);
             Lua.Events.AttachEvent("PLAYER_SPECIALIZATION_CHANGED", UpdateTalentManager);
             Lua.Events.AttachEvent("LEARNED_SPELL_IN_TAB", UpdateTalentManager);
+
+            Update();
         }
 
         public static WoWSpec CurrentSpec { get; private set; }
@@ -46,6 +48,7 @@ namespace Singular.Managers
         private static int[] GlyphId { get; set; }
 
         private static WaitTimer EventRebuildTimer = new WaitTimer(TimeSpan.FromSeconds(1));
+        private static WaitTimer SpecChangeTestTimer = new WaitTimer(TimeSpan.FromSeconds(3));
 
         private static bool _Rebuild = false;
         private static bool RebuildNeeded 
@@ -80,6 +83,11 @@ namespace Singular.Managers
             return Glyphs.Any() && Glyphs.Contains(glyphName);
         }
 
+        /// <summary>
+        /// event handler for messages which should cause behaviors to be rebuilt
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
         private static void UpdateTalentManager(object sender, LuaEventArgs args)
         {
             // Since we hooked this in ctor, make sure we are the selected CC
@@ -93,6 +101,12 @@ namespace Singular.Managers
             Logger.WriteDebug("{0} Event Fired!", args.EventName);
 
             Update();
+
+            if (args.EventName == "PLAYER_SPECIALIZATION_CHANGED")
+            {
+                SpecChangeTestTimer.Reset();
+                Logger.WriteDiagnostic("TalentManager: receive a {0} event, currently {1} -- queueing check for new spec!", args.EventName, CurrentSpec);
+            }
 
             if (args.EventName == "PLAYER_LEVEL_UP")
             {
@@ -126,8 +140,13 @@ namespace Singular.Managers
                     break;
                 }
             }
+
+            Logger.WriteDebug(Color.White, "TalentManager: RebuildNeeded={0}", RebuildNeeded);
         }
 
+        /// <summary>
+        /// loads WOW Talent and Spec info into cached list
+        /// </summary>
         public static void Update()
         {
             // Keep the frame stuck so we can do a bunch of injecting at once.
@@ -176,7 +195,16 @@ namespace Singular.Managers
 
         public static bool Pulse()
         {
-            if (EventRebuildTimer.IsFinished && RebuildNeeded)
+            if (SpecChangeTestTimer.IsFinished)
+            {
+                if (CurrentSpec != TalentManager.CurrentSpec)
+                {
+                    RebuildNeeded = true;
+                    Logger.Write(Color.White, "TalentManager: Your character changed specializations!");
+                }
+            }
+
+            if (RebuildNeeded && EventRebuildTimer.IsFinished)
             {
                 RebuildNeeded = false;
                 Logger.Write(Color.White, "TalentManager: Rebuilding behaviors due to changes detected.");

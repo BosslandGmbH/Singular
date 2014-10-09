@@ -114,11 +114,18 @@ namespace Singular.ClassSpecific.Warrior
                 Helpers.Common.EnsureReadyToAttackFromMelee(),
                 Helpers.Common.CreateAutoAttack(false),
 
+                Spell.WaitForCast(FaceDuring.Yes),
+
+                Common.CheckIfWeShouldCancelBladestorm(),
+
                 new Decorator(
                     ret => !Spell.IsGlobalCooldown() && !StyxWoW.Me.HasAura("Bladestorm"),
                     new PrioritySelector(
 
                         CreateDiagnosticOutputBehavior("Combat"),
+
+                        // special "in combat" pull logic for mobs not tagged and out of melee range
+                        Common.CreateWarriorCombatPullMore(),
 
                         // Dispel Bubbles
                         new Decorator(
@@ -156,10 +163,12 @@ namespace Singular.ClassSpecific.Warrior
 
                         // AOE 
                         // -- check melee dist+3 rather than 8 so works for large hitboxes (8 is range of DR and WW)
+
                         new Decorator(  // Clusters.GetClusterCount(StyxWoW.Me, Unit.NearbyUnfriendlyUnits, ClusterType.Radius, 6f) >= 3,
-                            ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count( u => u.SpellDistance() < 8 ) >= 3,
-                        
+                            ret => Spell.UseAOE && Unit.NearbyUnfriendlyUnits.Count( u => u.SpellDistance() < 8 ) >= 3,                       
                             new PrioritySelector(
+                                Spell.BuffSelf("Bladestorm"),
+                                Spell.Cast("Shockwave"),
                                 Spell.Cast("Dragon Roar"),
                         // Only pop RB when we have a few stacks of meat cleaver. Increased DPS by quite a bit.
                                 Spell.Cast("Raging Blow", ret => StyxWoW.Me.CurrentTarget.IsWithinMeleeRange && StyxWoW.Me.HasAura("Meat Cleaver", 3)),
@@ -234,8 +243,16 @@ namespace Singular.ClassSpecific.Warrior
                 // Dump rage on WS
                 Spell.Cast("Wild Strike", ret => !WithinExecuteRange && TargetSmashed && BTCD.TotalSeconds >= 1),
 
-                // Dragon Roar basically on CD. It ignores armor, so no need to check if the target has CS
-                Spell.Cast("Dragon Roar", ret => StyxWoW.Me.CurrentTarget.Distance < 8),
+                // Use abilities that cost no rage, such as your tier 4 talents, etc
+                new Decorator(
+                    ret => Spell.UseAOE && Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.Distance < 8,
+                    new PrioritySelector(
+                        Spell.Cast("Dragon Roar"),
+                        Spell.Cast("Storm Bolt"),
+                        Spell.BuffSelf("Bladestorm"),
+                        Spell.Cast("Shockwave")
+                        )
+                    ),
 
                 // HT on CD. Why not? No GCD extra damage. :)
                 Spell.Cast("Heroic Throw"),

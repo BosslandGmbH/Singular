@@ -89,7 +89,7 @@ namespace Singular.Utilities
         internal static void HandleContextChanged(object sender, WoWContextEventArg e)
         {
             // Since we hooked this in ctor, make sure we are the selected CC
-            if (RoutineManager.Current.Name != SingularRoutine.Instance.Name)
+            if (RoutineManager.Current == null || RoutineManager.Current.Name != SingularRoutine.Instance.Name)
                 return;
 
             if (SingularSettings.Debug || (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds && !StyxWoW.Me.CurrentMap.IsRaid))

@@ -236,18 +236,8 @@ namespace Singular.ClassSpecific.Priest
         /// <returns></returns>
         public static Composite CreatePriestAvoidanceBehavior()
         {
-            return new PrioritySelector(
-                new Decorator(
-                    ret => MovementManager.IsClassMovementAllowed,
-                    Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
-                    ),
-                new Decorator(
-                    ret => MovementManager.IsClassMovementAllowed 
-                        && PriestSettings.AllowKiting
-                        && (Common.HasTalent(PriestTalents.AngelicFeather) || Common.HasTalent(PriestTalents.BodyAndSoul) || Common.HasTalent(PriestTalents.VoidTendrils )),
-                    Kite.BeginKitingBehavior(35)
-                    )
-                );
+            // use Rocket Jump if available
+            return Avoidance.CreateAvoidanceBehavior("", 0, Disengage.Direction.Frontwards, new ActionAlwaysSucceed());
         }
 
         public static Composite CreateSlowMeleeBehavior()

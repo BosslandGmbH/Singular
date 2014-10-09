@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite MonkMistweaverInitialize()
         {
             SpinningCraneKick = HasTalent(MonkTalents.RushingJadeWind) ? "Rushing Jade Wind" : "Spinning Crane Kick";
-            if (SpellManager.HasSpell(SpinningCraneKick))
+            if (HasTalent(MonkTalents.RushingJadeWind))
                 Logger.Write("[spinning crane kick] Using Rushing Jade Wind");
 
             RangedAttacks = SpellManager.HasSpell("Crackling Jade Lightning");
@@ -292,7 +292,36 @@ namespace Singular.ClassSpecific.Monk
                             Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
                             Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
 
-                            Spell.Cast("Expel Harm", ret => Me.CurrentChi < (Me.MaxChi - 2) || Me.HealthPercent < 80),
+                            Spell.Cast("Expel Harm", on =>
+                            {
+                                if (Spell.IsSpellOnCooldown("Expel Harm"))
+                                    return null;
+
+                                WoWUnit target = null;
+                                WoWUnit targetOffheal = null;
+
+                                if (Me.HealthPercent < MonkSettings.ExpelHarmHealth)
+                                    target = Me;
+                                else if (TalentManager.HasGlyph("Targeted Explusion"))
+                                {
+                                    targetOffheal = Unit.GroupMembers
+                                        .Where(p => p.IsAlive && p.DistanceSqr < 40 * 40)
+                                        .OrderBy(p => p.PredictedHealthPercent())
+                                        .FirstOrDefault();
+                                    target = targetOffheal;
+                                }
+
+                                if (target != null)
+                                    Logger.WriteDebug("Expel Harm:  Heal {0} @ actual:{1:F1}% predict:{2:F1}% and Me moving:{3}", target.SafeName(), target.HealthPercent, target.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving.ToYN());
+                                else if (Me.CurrentChi <= (Me.MaxChi - 2))
+                                {
+                                    target = targetOffheal ?? Me;
+                                    Logger.WriteDebug("Expel Harm:  Chi Build (Chi={0}) {1} @ actual:{2:F1}% predict:{3:F1}% and Me moving:{4}", Me.CurrentChi, target.SafeName(), target.HealthPercent, target.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving.ToYN());
+                                }
+
+                                return target;
+                            }),
+
                             Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => Me.CurrentTarget.SpellDistance() < 40, cancel => false),
                             Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
                             )

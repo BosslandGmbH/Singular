@@ -116,7 +116,7 @@ namespace Singular.Managers
 
                 // If we have NO threat on the mob. Taunt the fucking thing.
                 // Don't taunt fleeing mobs!
-                if (aggroDiff < 0 && !u.Fleeing)
+                if (aggroDiff < 0 && !u.Fleeing && !u.IsPlayer)
                 {
                     NeedToTaunt.Add(u);
                 }

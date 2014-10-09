@@ -25,6 +25,8 @@ using Styx.WoWInternals;
 using Styx.Common.Helpers;
 using System.Collections.Generic;
 
+using Singular.ClassSpecific.Monk;
+
 namespace Singular
 {
     partial class SingularRoutine
@@ -67,7 +69,7 @@ namespace Singular
                 Logger.WriteFile("======================================================");
             }
 
-            CompositeBuilder.InvokeInitializers(Me.Class, Me.Specialization, CurrentWoWContext, silent);
+            CompositeBuilder.InvokeInitializers(Me.Class, TalentManager.CurrentSpec, CurrentWoWContext, silent);
 
             // special behavior - reset KitingBehavior hook prior to calling class specific createion
             TreeHooks.Instance.ReplaceHook(HookName("KitingBehavior"), new ActionAlwaysFail());
@@ -126,7 +128,7 @@ namespace Singular
                 if (_restBehavior != null)
                     sMsg += (!string.IsNullOrEmpty(sMsg) ? "," : "") + " Rest";
 
-                Logger.Write(Color.LightGreen, "Loaded{0} behaviors for {1}: {2}", Me.Specialization.ToString().CamelToSpaced(), context.ToString(), sMsg);
+                Logger.Write(Color.LightGreen, "Loaded{0} behaviors for {1}: {2}", TalentManager.CurrentSpec.ToString().CamelToSpaced(), context.ToString(), sMsg);
             }
 #endif
             if (!silent)
@@ -173,12 +175,12 @@ namespace Singular
             _deathBehavior = new HookExecutor(HookName(BehaviorType.Death));
         }
 
-        private static bool OkToCallBehaviorsWithCurrentCastingStatus()
+        private static bool OkToCallBehaviorsWithCurrentCastingStatus(LagTolerance allow = LagTolerance.Yes)
         {
-            if (StyxWoW.Me.Specialization == WoWSpec.MonkMistweaver)
+            if (TalentManager.CurrentSpec == WoWSpec.MonkMistweaver)
                 return true;
 
-            if (!Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling())
+            if (!Spell.IsGlobalCooldown(allow) && !Spell.IsCastingOrChannelling(allow))
                 return true;
 
             return false;
@@ -361,6 +363,32 @@ namespace Singular
 
             if (behav == BehaviorType.Rest)
             {
+                Composite combatInRestCheck;
+                if (!SingularSettings.Debug)
+                    combatInRestCheck = new ActionAlwaysFail();
+                else
+                    combatInRestCheck = new Throttle(
+                        1,
+                        new ThrottlePasses(
+                            1, 
+                            TimeSpan.FromSeconds(1),
+                            RunStatus.Failure,
+                            new Decorator(
+                                req => Me.Combat,
+                                new Sequence(
+                                    new PrioritySelector(
+                                        new ThrottlePasses(
+                                            1, 5,
+                                            new Action(r => Logger.Write(Color.Yellow, "Bot Error: {0} or plugin called Rest behavior while in combat", SingularRoutine.GetBotName()))
+                                            ),
+                                        new Action(r => Logger.WriteDebug(Color.Yellow, "Bot Error: {0} or plugin called Rest behavior while in combat", SingularRoutine.GetBotName()))
+                                        ),
+                                    new ActionAlwaysFail()
+                                    )
+                                )
+                            )
+                        );
+
                 composite = new LockSelector(
                     new CallWatch("Rest",
                         new Decorator(
@@ -368,11 +396,13 @@ namespace Singular
                             new PrioritySelector(
 
 //                                TestDynaWait(),
-    
+
+                                combatInRestCheck,
+
                                 // new Action(r => { _guidLastTarget = 0; return RunStatus.Failure; }),
                                 new Decorator(
-                                    req => !OkToCallBehaviorsWithCurrentCastingStatus(),
-                                    Spell.WaitForGcdOrCastOrChannel()
+                                    req => !OkToCallBehaviorsWithCurrentCastingStatus(allow: LagTolerance.No),
+                                    new ActionAlwaysSucceed()
                                     ),
 
                                 // lost control in Rest -- force a RunStatus.Failure so we don't loop in Rest
@@ -394,6 +424,32 @@ namespace Singular
 
             if (behav == BehaviorType.PreCombatBuffs)
             {
+                Composite precombatInCombatCheck;
+                if (!SingularSettings.Debug)
+                    precombatInCombatCheck = new ActionAlwaysFail();
+                else
+                    precombatInCombatCheck = new Throttle(
+                        1,
+                        new ThrottlePasses(
+                            1,
+                            TimeSpan.FromSeconds(1),
+                            RunStatus.Failure,
+                            new Decorator(
+                                req => Me.Combat,
+                                new Sequence(
+                                    new PrioritySelector(
+                                        new ThrottlePasses(
+                                            1, 5,
+                                            new Action(r => Logger.Write(Color.Yellow, "Bot Error: {0} or plugin called PreCombatBuff behavior while in combat", SingularRoutine.GetBotName()))
+                                            ),
+                                        new Action(r => Logger.WriteDebug(Color.Yellow, "Bot Error: {0} or plugin called PreCombatBuff behavior while in combat", SingularRoutine.GetBotName()))
+                                        ),
+                                    new ActionAlwaysFail()
+                                    )
+                                )
+                            )
+                        );
+
                 composite = new LockSelector(
                     new CallWatch("PreCombat",
                         new Decorator(  // suppress non-combat buffing if standing around waiting on DungeonBuddy or BGBuddy queues
@@ -405,6 +461,7 @@ namespace Singular
                                     req => !OkToCallBehaviorsWithCurrentCastingStatus(),
                                     Spell.WaitForGcdOrCastOrChannel()
                                     ),
+                                Helpers.Common.CreateUseTableBehavior(),
                                 Helpers.Common.CreateUseSoulwellBehavior(),
                                 Item.CreateUseAlchemyBuffsBehavior(),
                                 Item.CreateUseScrollsBehavior(),
@@ -430,6 +487,18 @@ namespace Singular
 
             if (behav == BehaviorType.CombatBuffs)
             {
+                Composite behavHealingSpheres = new ActionAlwaysFail();
+                if (SingularSettings.Instance.MoveToSpheres)
+                {
+                    behavHealingSpheres = new ThrottlePasses(
+                        1, 1, 
+                        new Decorator(
+                            ret => Me.HealthPercent < SingularSettings.Instance.SphereHealthPercentInCombat && Singular.ClassSpecific.Monk.Common.AnySpheres(SphereType.Life, SingularSettings.Instance.SphereDistanceInCombat),
+                            Singular.ClassSpecific.Monk.Common.CreateMoveToSphereBehavior(SphereType.Life, SingularSettings.Instance.SphereDistanceInCombat)
+                            )
+                        );
+                }
+
                 composite = new LockSelector(
                     new CallWatch("CombatBuffs",
                         new Decorator(
@@ -439,6 +508,7 @@ namespace Singular
                                 Generic.CreateUseTrinketsBehaviour(),
                                 Generic.CreatePotionAndHealthstoneBehavior(),
                                 Generic.CreateRacialBehaviour(),
+                                behavHealingSpheres,
                                 composite ?? new ActionAlwaysFail()
                                 )
                             )
@@ -631,7 +701,7 @@ namespace Singular
 
         private static int _prevPullDistance = -1;
         private static Bots.Grind.BehaviorFlags _prevBehaviorFlags = Bots.Grind.BehaviorFlags.All;
-
+        private static Styx.CommonBot.Routines.CapabilityFlags _prevCapabilityFlags = Styx.CommonBot.Routines.CapabilityFlags.All;
         private static void MonitorPullDistance()
         {
             if (_prevPullDistance != CharacterSettings.Instance.PullDistance)
@@ -698,7 +768,9 @@ namespace Singular
         [Behavior(BehaviorType.Initialize, priority: 999)]
         public static Composite InitializeBehaviors()
         {
-            if (false == IsPullMoreAllowed())
+            IsPullMoreActive = IsPullMoreAllowed();
+
+            if (false == IsPullMoreActive)
                 Logger.Write("Pull More: will not pull additional mobs during Combat");
             else
             {
@@ -717,6 +789,8 @@ namespace Singular
         private static DateTime _timeoutPullMoreAt = DateTime.MaxValue;
         private static int _rangePullMore;
 
+        public static bool IsPullMoreActive { get; set; }
+
         private static void UpdatePullMoreConditionals()
         {
             // force to allow pulling more when out of combat
@@ -730,7 +804,7 @@ namespace Singular
         private static bool IsPullMoreAllowed()
         {
             string needSpell = "";
-            switch (Me.Specialization)
+            switch (TalentManager.CurrentSpec)
             {
                 case WoWSpec.DeathKnightBlood:
                 case WoWSpec.DeathKnightFrost:
@@ -748,6 +822,7 @@ namespace Singular
                     break;
 
                 case WoWSpec.DruidRestoration:
+                    needSpell = "Hurricane";
                     break;
 
                 case WoWSpec.HunterBeastMastery:
@@ -759,7 +834,7 @@ namespace Singular
                 case WoWSpec.MageArcane:
                 case WoWSpec.MageFire:
                 case WoWSpec.MageFrost:
-                    needSpell = "Death Strike";
+                    needSpell = "Arcane Explosion";
                     break;
 
                 case WoWSpec.MonkBrewmaster:
@@ -772,6 +847,7 @@ namespace Singular
                     break;
 
                 case WoWSpec.PaladinHoly:
+                    needSpell = "Holy Prism";
                     break;
 
                 case WoWSpec.PaladinProtection:
@@ -803,7 +879,7 @@ namespace Singular
                     break;
 
                 case WoWSpec.ShamanEnhancement:
-                    needSpell = "Lava Lash";
+                    needSpell = "Flame Shock";
                     break;
 
                 case WoWSpec.WarlockAffliction:
@@ -856,7 +932,7 @@ namespace Singular
             else if (!SpellManager.HasSpell(needSpell))
             {
                 allow = false;
-                Logger.WriteDiagnostic("Pull More: disabled for{0} characters until [{1}] is learned", Me.Specialization.ToString().CamelToSpaced(), needSpell);
+                Logger.WriteDiagnostic("Pull More: disabled for{0} characters until [{1}] is learned", TalentManager.CurrentSpec.ToString().CamelToSpaced(), needSpell);
             }
 
             return allow;
@@ -864,7 +940,7 @@ namespace Singular
 
         private static Composite CreatePullMorePullBuffs()
         {
-            if (IsPullMoreAllowed())
+            if (IsPullMoreActive)
                 return new ActionAlwaysFail();
 
             return new ActionAlwaysFail();
@@ -874,7 +950,7 @@ namespace Singular
 
         private static Composite CreatePullMorePull()
         {
-            if (false == IsPullMoreAllowed())
+            if (false == IsPullMoreActive)
                 return new ActionAlwaysFail();
 
             _rangePullMore = Me.IsMelee() ? SingularSettings.Instance.PullMoreDistMelee : SingularSettings.Instance.PullMoreDistRanged;
@@ -906,16 +982,18 @@ namespace Singular
                         new PrioritySelector(
 
                             ctx => Unit.UnitsInCombatWithUsOrOurStuff(40)
-                                .FirstOrDefault( u => u.TappedByAllThreatLists || (u.Elite && (u.Level + 8) > Me.Level)),
+                                .FirstOrDefault( u => u.TappedByAllThreatLists || (u.Elite && (u.Level + 8) > Me.Level) || (u.MaxHealth > (Me.MaxHealth * 2))),
 
                             new Decorator(
                                 req => req != null,
                                 new Action(r =>
                                 {
-                                    if ( (r as WoWUnit).TappedByAllThreatLists )
-                                        Logger.WriteDiagnostic(Color.White, "Pull More: attacked by important quest mob {0}, disabling pull more until killed", (r as WoWUnit).SafeName());
+                                    if ((r as WoWUnit).TappedByAllThreatLists)
+                                        Logger.WriteDiagnostic(Color.White, "Pull More: attacked by important quest mob {0} #{1}, disabling pull more until killed", (r as WoWUnit).SafeName(), (r as WoWUnit).Entry);
+                                    else if ((r as WoWUnit).Elite)
+                                        Logger.WriteDiagnostic(Color.White, "Pull More: attacking non-trivial Elite {0} #{1}, disabling pull more until killed", (r as WoWUnit).SafeName(), (r as WoWUnit).Entry);
                                     else
-                                        Logger.WriteDiagnostic(Color.White, "Pull More: attacked by non-trivial Elite {0}, disabling pull more until killed", (r as WoWUnit).SafeName());
+                                        Logger.WriteDiagnostic(Color.White, "Pull More: attacking non-trivial Mob {0} #{1} maxhealth {2}, disabling pull more until killed", (r as WoWUnit).SafeName(), (r as WoWUnit).Entry, (r as WoWUnit).MaxHealth);
 
                                     _allowPullMoreUntil = DateTime.Now;
                                 })
@@ -948,7 +1026,7 @@ namespace Singular
                                 {
                                     if (DateTime.Now > _timeoutPullMoreAt)
                                     {
-                                        Logger.Write(Color.White, "Could not pull add {0} @ {1:F1} yds within {2} seconds, blacklisting",
+                                        Logger.Write(Color.White, "Pull More: could not pull {0} @ {1:F1} yds within {2} seconds, blacklisting",
                                             unit.SafeName(),
                                             unit.SpellDistance(),
                                             SingularSettings.Instance.PullMoreTimeOut
@@ -960,7 +1038,7 @@ namespace Singular
                                     {
                                         if (DateTime.Now > _nextPullMoreWaitingMessage)
                                         {
-                                            Logger.WriteDebug("Pull More: waiting since current KillPoi {0}, target={1}, combat={2}, tagged={3}",
+                                            Logger.WriteDebug("Pull More: waiting since current KillPoi {0} not attacking me yet (target={1}, combat={2}, tagged={3})",
                                                 unit.SafeName(),
                                                 unit.GotTarget ? unit.SafeName() : "(null)",
                                                 unit.Combat.ToYN(),
@@ -980,7 +1058,12 @@ namespace Singular
                                     switch (SingularSettings.Instance.PullMoreTargetType)
                                     {
                                         case PullMoreTargetType.LikeCurrent:
-                                            factions = new HashSet<uint>(Unit.NearbyUnitsInCombatWithMeOrMyStuff.Select(u => u.FactionId).ToArray());
+                                            factions = new HashSet<uint>(
+                                                ObjectManager.GetObjectsOfType<WoWUnit>(allowInheritance: true, includeMeIfFound: false)
+                                                    .Where( u => u.TaggedByMe || u.Aggro || u.PetAggro)
+                                                    .Select( u => u.FactionId)
+                                                    .ToArray()
+                                                );
                                             whereClause = t => factions.Contains(t.FactionId);
                                             break;
 
@@ -1003,6 +1086,7 @@ namespace Singular
                                                 && (!t.Combat || (t.GotTarget && !t.CurrentTarget.IsPlayer && !t.CurrentTarget.IsPet))
                                                 && !Blacklist.Contains(t, BlacklistFlags.Pull | BlacklistFlags.Combat)
                                                 && Unit.ValidUnit(t)
+                                                && t.Level <= (Me.Level + 2)
                                                 && whereClause(t)
                                                 && t.SpellDistance() <= _rangePullMore
                                             )
@@ -1012,15 +1096,16 @@ namespace Singular
                                     // set target at botpoi
                                     if (nextPull != null && unit.Guid != nextPull.Guid)
                                     {
-                                        Logger.WriteDebug("Pull More: want more adds since current KillPoi {0}, target={1}, combat={2}, tagged={3}",
+                                        Logger.WriteDebug("Pull More: more adds allowed since current KillPoi {0}, target={1}, combat={2}, tagged={3}",
                                             unit.SafeName(),
                                             unit.GotTarget ? unit.SafeName() : "(null)",
                                             unit.Combat.ToYN(),
                                             unit.IsTagged.ToYN()
                                             );
 
-                                        Logger.Write(Color.White, "Pull More wants to aggro {0} @ {1:F1} yds", nextPull.SafeName(), nextPull.SpellDistance());
+                                        Logger.Write(Color.White, "Pull More: pull mob #{0} - {1} @ {2:F1} yds", mobCount, nextPull.SafeName(), nextPull.SpellDistance());
                                         BotPoi poi = new BotPoi(nextPull, PoiType.Kill, NavType.Run);
+                                        Logger.WriteDebug("Setting BotPoi to Kill {0}", nextPull.SafeName());
                                         Styx.CommonBot.POI.BotPoi.Current = poi;
                                         if (Styx.CommonBot.POI.BotPoi.Current.Guid != poi.Guid)
                                             Logger.WriteDiagnostic(Color.White, "Pull More: ERROR, could not set POI: Current: {0}, Wanted: {1}", Styx.CommonBot.POI.BotPoi.Current, poi);
@@ -1226,7 +1311,7 @@ namespace Singular
                 DateTime started = DateTime.Now;
                 Logger.WriteDebug(Color.DodgerBlue, "enter: {0}", Name);
                 ret = base.Tick(context);
-                Logger.WriteDebug(Color.DodgerBlue, "leave: {0}, took {1} ms", Name, (ulong)(DateTime.Now - started).TotalMilliseconds);
+                Logger.WriteDebug(Color.DodgerBlue, "leave: {0}, status={1} and took {2} ms", Name, ret.ToString(), (ulong)(DateTime.Now - started).TotalMilliseconds);
             }
 
             LastCallToSingular = DateTime.Now;

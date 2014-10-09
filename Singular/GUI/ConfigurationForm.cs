@@ -198,7 +198,7 @@ namespace Singular.GUI
             foreach (var obj in cboHealContext.Items)
             {
                 HealContextItem ctx = (HealContextItem)obj;
-                if (ctx.Spec == StyxWoW.Me.Specialization)
+                if (ctx.Spec == TalentManager.CurrentSpec)
                 {
                     if (ctx.Context == SingularRoutine.CurrentHealContext)
                     {

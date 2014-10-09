@@ -48,7 +48,7 @@ namespace Singular.ClassSpecific.Warlock
             return new PrioritySelector(
 
                 new Decorator(
-                    ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.HasAura("Metamorphosis") && Demonology.demonFormRestTimer.IsFinished,
+                    ret => TalentManager.CurrentSpec == WoWSpec.WarlockDemonology && Me.HasAura("Metamorphosis") && Demonology.demonFormRestTimer.IsFinished,
                     new Sequence(
                         new Action(ret => Logger.Write(Color.White, "^Cancel Metamorphosis at Rest")),
                         new Action(ret => Me.CancelAura("Metamorphosis")),
@@ -57,7 +57,7 @@ namespace Singular.ClassSpecific.Warlock
                     ),
 
                 new Decorator(
-                    ret => Me.Specialization == WoWSpec.WarlockAffliction && Me.HasAura("Soulburn"),
+                    ret => TalentManager.CurrentSpec == WoWSpec.WarlockAffliction && Me.HasAura("Soulburn"),
                     new Sequence(
                         new Action(ret => Logger.Write(Color.White, "^Cancel Soulburn at Rest")),
                         new Action(ret => Me.CancelAura("Soulburn")),
@@ -290,9 +290,9 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator(
                             ret => (Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss() || Me.CurrentTarget.TimeToDeath() > 20)) || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMyStuff()) >= 3,
                             new PrioritySelector(
-                                Spell.BuffSelf("Dark S  oul: Misery", ret => Me.Specialization == WoWSpec.WarlockAffliction),
-                                Spell.BuffSelf("Dark Soul: Instability", ret => Me.Specialization == WoWSpec.WarlockDestruction && Destruction.CurrentBurningEmbers >= 30),
-                                Spell.BuffSelf("Dark Soul: Knowledge", ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800)
+                                Spell.BuffSelf("Dark S  oul: Misery", ret => TalentManager.CurrentSpec == WoWSpec.WarlockAffliction),
+                                Spell.BuffSelf("Dark Soul: Instability", ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && Destruction.CurrentBurningEmbers >= 30),
+                                Spell.BuffSelf("Dark Soul: Knowledge", ret => TalentManager.CurrentSpec == WoWSpec.WarlockDemonology && Me.GetCurrentPower(WoWPowerType.DemonicFury) > 800)
                                 )
                             ),
 
@@ -449,6 +449,7 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new Decorator(
                 ret => !SingularSettings.Instance.DisablePetUsage
+                    && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning) 
                     && !Me.HasAura( "Grimoire of Sacrifice")        // don't summon pet if this buff active
                     && GetBestPet() != GetCurrentPet()
                     && Spell.CanCastHack( "Summon Imp"), 
@@ -496,12 +497,12 @@ namespace Singular.ClassSpecific.Warlock
 #region Instant Pet Summon Check
                             new PrioritySelector(
                                 new Decorator(
-                                    ret => Me.Specialization == WoWSpec.WarlockDemonology && Me.HasAura("Demonic Rebirth"),
+                                    ret => TalentManager.CurrentSpec == WoWSpec.WarlockDemonology && Me.HasAura("Demonic Rebirth"),
                                     new Action(r => Logger.Write(Color.White, "^Instant Summon Pet: Demonic Rebirth active!"))
                                     ),
                                 new Decorator(
                                     // need to check that no live pet here as FoX will only summon last living, so worthless if live pet (even if wrong one)
-                                    ret => Me.Specialization == WoWSpec.WarlockDestruction && !Me.GotAlivePet && Spell.CanCastHack("Flames of Xoroth", Me) && Warlock.Destruction.CurrentBurningEmbers >= 10,
+                                    ret => TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && !Me.GotAlivePet && Spell.CanCastHack("Flames of Xoroth", Me) && Warlock.Destruction.CurrentBurningEmbers >= 10,
                                     new Sequence(
                                         new Action(r => Logger.Write(Color.White, "^Instant Summon Pet: Flames of Xoroth!")),
                                         Spell.BuffSelf("Flames of Xoroth")
@@ -512,7 +513,7 @@ namespace Singular.ClassSpecific.Warlock
                                     new Action( r => Logger.Write(Color.White, "^Instant Summon Pet: Soulburn already active - should work!"))
                                     ),
                                 CreateCastSoulburn(ret => {
-                                    if (Me.Specialization == WoWSpec.WarlockAffliction)
+                                    if (TalentManager.CurrentSpec == WoWSpec.WarlockAffliction)
                                     {
                                         if (Me.CurrentSoulShards == 0)
                                             Logger.WriteDebug("CreateWarlockSummonPet:  no shards so instant pet summon not available");
@@ -585,14 +586,14 @@ namespace Singular.ClassSpecific.Warlock
             WarlockPet bestPet = SingularSettings.Instance.Warlock().Pet;
             if (bestPet != WarlockPet.None)
             {
-                if (Me.Specialization == WoWSpec.None)
+                if (TalentManager.CurrentSpec == WoWSpec.None)
                     return WarlockPet.Imp;
 
                 if (bestPet == WarlockPet.Auto)
                 {
-                    if (Me.Specialization == WoWSpec.WarlockDemonology)
+                    if (TalentManager.CurrentSpec == WoWSpec.WarlockDemonology)
                         bestPet = WarlockPet.Felguard;
-                    else if (Me.Specialization == WoWSpec.WarlockDestruction && Me.Level == Me.MaxLevel)
+                    else if (TalentManager.CurrentSpec == WoWSpec.WarlockDestruction && Me.Level == Me.MaxLevel)
                         bestPet = WarlockPet.Felhunter;
                     else if (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
                         bestPet = WarlockPet.Succubus;
@@ -770,7 +771,7 @@ namespace Singular.ClassSpecific.Warlock
                         new Decorator( ret => TalentManager.HasGlyph("Health Funnel"), new ActionAlwaysSucceed()),
 
                         CreateCastSoulburn(ret => {
-                            if (Me.Specialization == WoWSpec.WarlockAffliction)
+                            if (TalentManager.CurrentSpec == WoWSpec.WarlockAffliction)
                             {
                                 if (Me.CurrentSoulShards > 0 && Spell.CanCastHack("Soulburn", Me))
                                 {

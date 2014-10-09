@@ -57,7 +57,7 @@ namespace Singular.Helpers
 
         public static WoWUnit GetBestUnitForCluster(IEnumerable<WoWUnit> units, ClusterType type, float clusterRange)
         {
-            if (!units.Any())
+            if (units == null || !units.Any())
                 return null;
 
             switch (type)

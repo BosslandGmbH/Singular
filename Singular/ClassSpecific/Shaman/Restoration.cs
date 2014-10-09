@@ -786,7 +786,7 @@ namespace Singular.ClassSpecific.Shaman
                 const int GHW = 77472;
                 const int HS = 8004;
 
-                if ( Me.Level < 50 || Me.Specialization != WoWSpec.ShamanRestoration)
+                if ( Me.Level < 50 || TalentManager.CurrentSpec != WoWSpec.ShamanRestoration)
                     return false;
 
                 // WoWAura tw = Me.GetAuraByName("Tidal Waves");
@@ -976,7 +976,8 @@ namespace Singular.ClassSpecific.Shaman
                         else 
                             shield = "-none-";
 
-                        string line = string.Format(".... h={0:F1}%/m={1:F1}%,combat={2},move={3},twaves={4},audtwaves={5},shield={6}",
+                        string line = string.Format("[{0}] h={1:F1}%/m={2:F1}%,combat={3},move={4},twaves={5},audtwaves={6},shield={7}",
+                            Dynamics.CompositeBuilder.CurrentBehaviorType.ToString(),
                             Me.HealthPercent,
                             Me.ManaPercent,
                             Me.Combat.ToYN(),

@@ -72,6 +72,12 @@ namespace Singular.Settings
         [Description("True: Cast Slow Fall if falling")]
         public bool UseSlowFall { get; set; }
 
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Common")]
+        [DisplayName("Heal Water Elemental %")]
+        [Description("Pet Health % which we cast Frost Bolt to Heal")]
+        public int HealWaterElementalPct { get; set; }
 
         #endregion
 

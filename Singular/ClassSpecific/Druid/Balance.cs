@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using CommonBehaviors.Actions;
 using Styx.Pathing;
 using Styx.Common.Helpers;
+using Styx.CommonBot.Routines;
 
 namespace Singular.ClassSpecific.Druid
 {
@@ -173,8 +174,8 @@ namespace Singular.ClassSpecific.Druid
                             ret => Me.CurrentTarget.Distance < 12
                                 || ObjectManager.GetObjectsOfType<WoWPlayer>(false, false).Any(p => p.Location.DistanceSqr(Me.CurrentTarget.Location) <= 40 * 40),
                             new PrioritySelector(
-                                Spell.Cast("Sunfire", ret => GetEclipseDirection() == EclipseType.Solar),
-                                Spell.Cast("Moonfire")
+                                Spell.Buff("Sunfire", ret => GetEclipseDirection() == EclipseType.Solar),
+                                Spell.Buff("Moonfire")
                                 )
                             ),
 
@@ -183,9 +184,9 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Starsurge", on => Me.CurrentTarget, req => true, cancel => false),
                         Spell.Cast("Wrath", ret => GetEclipseDirection() == EclipseType.Solar),
 
-                        // we are moving so throw an instant of some type
-                        Spell.Cast("Sunfire", ret => GetEclipseDirection() == EclipseType.Solar),
-                        Spell.Cast("Moonfire")
+                        // we must be moving if here so throw an instant of some type
+                        Spell.Buff("Sunfire", ret => GetEclipseDirection() == EclipseType.Solar),
+                        Spell.Buff("Moonfire")
                         )
                     ),
 
@@ -238,47 +239,10 @@ namespace Singular.ClassSpecific.Druid
 
                                 new PrioritySelector(
                                     ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
-                                    Spell.Cast("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
-                                    Spell.Cast("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2))),
+                                    Spell.Buff("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
+                                    Spell.Buff("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2))),
 
-                                    new Sequence(
-                                        Spell.CastOnGround("Hurricane", on => Me.CurrentTarget, req => Me.HealthPercent > 40 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3, false),
-                                        new Wait(
-                                            TimeSpan.FromMilliseconds(500),
-                                            until => Spell.IsChannelling(),
-                                            new ActionAlwaysSucceed()
-                                            ),
-                                        new Wait(
-                                            TimeSpan.FromSeconds(10),
-                                            until =>
-                                            {
-                                                if (!Spell.IsChannelling())
-                                                    return true;
-                                                if (Me.HealthPercent < 30)
-                                                {
-                                                    return true;
-                                                }
-                                                int cnt = Unit.NearbyUnfriendlyUnits.Count( u => u.HasMyAura("Hurricane"));
-                                                if ( cnt <= 2)
-                                                {
-                                                    Logger.Write("/cancel Hurricane since only {0} targets effected", cnt);
-                                                    return true;
-                                                }
-
-                                                return false;
-                                            },
-                                            new ActionAlwaysSucceed()
-                                            ),
-                                        new DecoratorContinue(
-                                            req => Spell.IsChannelling(),
-                                            new Action( r => SpellManager.StopCasting())
-                                            ),
-                                        new WaitContinue(
-                                            TimeSpan.FromMilliseconds(500),
-                                            until => !Spell.IsChannelling(),
-                                            new ActionAlwaysSucceed()
-                                            )
-                                        )
+                                    CastHurricaneBehavior( on => Me.CurrentTarget)
                                     )
                                 )
                             ),
@@ -312,6 +276,56 @@ namespace Singular.ClassSpecific.Druid
                         )
                     )
                 );
+        }
+
+        private static Composite CastHurricaneBehavior( UnitSelectionDelegate onUnit)
+        {
+            return new Sequence(
+                ctx => onUnit(ctx),
+
+                Spell.CastOnGround("Hurricane", on => (WoWUnit) on, req => Me.HealthPercent > 40 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3, false),
+
+                new Wait(
+                    TimeSpan.FromMilliseconds(1000),
+                    until => Spell.IsCastingOrChannelling() && Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Hurricane")),
+                    new ActionAlwaysSucceed()
+                    ),
+                new Wait(
+                    TimeSpan.FromSeconds(10),
+                    until =>
+                    {
+                        if (!Spell.IsCastingOrChannelling())
+                        {
+                            Logger.Write("Hurricane: no longer casting");
+                            return true;
+                        }
+                        if (Me.HealthPercent < 30)
+                        {
+                            Logger.Write("/cancel Hurricane since my health at {0:F1}%", Me.HealthPercent);
+                            return true;
+                        }
+                        int cnt = Unit.NearbyUnfriendlyUnits.Count(u => u.HasMyAura("Hurricane"));
+                        if (cnt < 3)
+                        {
+                            Logger.Write("/cancel Hurricane since only {0} targets effected", cnt);
+                            return true;
+                        }
+
+                        return false;
+                    },
+                    new ActionAlwaysSucceed()
+                    ),
+                new DecoratorContinue(
+                    req => Spell.IsChannelling(),
+                    new Action(r => SpellManager.StopCasting())
+                    ),
+                new WaitContinue(
+                    TimeSpan.FromMilliseconds(500),
+                    until => !Spell.IsChannelling(),
+                    new ActionAlwaysSucceed()
+                    )
+                )
+            ;
         }
 
         #endregion
@@ -366,7 +380,7 @@ namespace Singular.ClassSpecific.Druid
 
                         // Spread MF/IS on Rouges / Feral Druids first
                         Common.CreateFaerieFireBehavior(
-                            on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || Me.Shapeshift == ShapeshiftForm.Cat) && !p.HasAnyAura("Faerie Fire", "Faerie Swarm") && p.Distance < 35 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight), 
+                            on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || p.Shapeshift == ShapeshiftForm.Cat) && !p.HasAnyAura("Faerie Fire", "Faerie Swarm") && p.Distance < 35 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight), 
                             req => true),
 
                         // More DoTs!!  Dot EVERYTHING (including pets) to boost Shooting Stars proc chance
@@ -456,9 +470,9 @@ namespace Singular.ClassSpecific.Druid
 
                                     new PrioritySelector(
                                         ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
-                                        Spell.Cast("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2))),
+                                        Spell.Buff("Sunfire", on => (WoWUnit) ((List<WoWUnit>)on).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2))),
                                         Spell.CastOnGround("Hurricane", on => Me.CurrentTarget, req => (!Spell.UseAOE ? 1 : Unit.UnfriendlyUnitsNearTarget(10f).Count()) > 3, false),
-                                        Spell.Cast("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2)))
+                                        Spell.Buff("Moonfire", on => (WoWUnit) ((List<WoWUnit>)on).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2)))
                                         )
                                     )
                                 )
@@ -468,12 +482,12 @@ namespace Singular.ClassSpecific.Druid
 
                         // make sure we always have DoTs 
                         new Sequence(
-                            Spell.Cast("Sunfire", ret => Me.CurrentTarget.HasAuraExpired("Sunfire", 2)),
+                            Spell.Buff("Sunfire", on => Me.CurrentTarget.HasAuraExpired("Sunfire", 2)),
                             new Action(ret => Logger.WriteDebug("Adding DoT:  Sunfire"))
                             ),
 
                         new Sequence(
-                            Spell.Cast("Moonfire", ret => Me.CurrentTarget.HasAuraExpired("Moonfire", 2)),
+                            Spell.Buff("Moonfire", on => Me.CurrentTarget.HasAuraExpired("Moonfire", 2)),
                             new Action(ret => Logger.WriteDebug("Adding DoT:  Moonfire"))
                             ),
 
@@ -533,7 +547,7 @@ namespace Singular.ClassSpecific.Druid
                 }),
 
                 new Sequence(
-                    Spell.Cast("Moonfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Lunar),
+                    Spell.Buff("Moonfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Lunar),
                     new Action(ret =>
                     {
                         newEclipseDotNeeded = false;
@@ -542,7 +556,7 @@ namespace Singular.ClassSpecific.Druid
                     ),
 
                 new Sequence(
-                    Spell.Cast("Sunfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Solar),
+                    Spell.Buff("Sunfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Solar),
                     new Action(ret =>
                     {
                         newEclipseDotNeeded = false;
@@ -661,24 +675,7 @@ namespace Singular.ClassSpecific.Druid
         /// <returns></returns>
         public static Composite CreateDruidAvoidanceBehavior(Composite slowAttack, Composite nonfacingAttack, Composite jumpturnAttack)
         {
-            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jumpturnAttack);
-
-            return new Decorator(
-                req => MovementManager.IsClassMovementAllowed,
-                new PrioritySelector(
-                    new Decorator(
-                        ret => Kite.IsDisengageWantedByUserSettings(),
-                        new PrioritySelector(
-                            Disengage.CreateDisengageBehavior("Wild Charge", Disengage.Direction.Backwards, 20, CreateSlowMeleeBehavior()),
-                            Disengage.CreateDisengageBehavior("Displacer Beast", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
-                            )
-                        ),
-                    new Decorator(
-                        ret => Kite.IsKitingWantedByUserSettings(),
-                        Kite.BeginKitingBehavior()
-                        )
-                    )
-                );
+            return Avoidance.CreateAvoidanceBehavior( "Wild Charge", 20, Disengage.Direction.Backwards, new ActionAlwaysSucceed() );
         }
 
         private static Composite CreateSlowMeleeBehavior()
@@ -690,11 +687,21 @@ namespace Singular.ClassSpecific.Druid
                     new PrioritySelector(
                         new Throttle( 2,
                             new PrioritySelector(
+                                new Decorator( 
+                                    req => (req as WoWUnit).IsCrowdControlled(),
+                                    new Action(r => Logger.WriteDebug("SlowMelee: closest mob already crowd controlled"))
+                                    ),
                                 Spell.CastOnGround("Ursol's Vortex", on => (WoWUnit)on, req => Me.GotTarget, false),
                                 Spell.Buff("Disorienting Roar", onUnit => (WoWUnit)onUnit, req => true),
                                 Spell.Buff("Mass Entanglement", onUnit => (WoWUnit)onUnit, req => true),
                                 Spell.Buff("Mighty Bash", onUnit => (WoWUnit)onUnit, req => true),
-                                new Throttle( 1, Spell.Buff("Faerie Swarm", onUnit => (WoWUnit)onUnit, req => true))
+                                new Throttle( 1, Spell.Buff("Faerie Swarm", onUnit => (WoWUnit)onUnit, req => true)),
+                                new Throttle( 2, Spell.Buff("Entangling Roots", false, on => (WoWUnit) on, req => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Any(u => u.Guid != (req as WoWUnit).Guid ))),
+                                new Sequence(
+                                    Spell.Cast("Typhoon", mov => false, on => (WoWUnit) on, req => (req as WoWUnit).SpellDistance() < 28 && Me.IsSafelyFacing((WoWUnit)req, 60)),
+                                    new WaitContinue(TimeSpan.FromMilliseconds(500), until => (until as WoWUnit).SpellDistance() > 30, new ActionAlwaysSucceed()),
+                                    new ActionAlwaysFail()
+                                    )
 /*
                                 new Sequence(                                   
                                     Spell.CastOnGround("Wild Mushroom",

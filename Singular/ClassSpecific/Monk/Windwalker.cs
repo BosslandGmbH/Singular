@@ -73,7 +73,7 @@ namespace Singular.ClassSpecific.Monk
                         Common.CreateGrappleWeaponBehavior(),
 
                         Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40, cancel => false),
-                        Spell.Cast("Provoke", ret => !Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.Combat && Me.CurrentTarget.SpellDistance().Between(10, 40)),
+                        Spell.Cast("Provoke", ret => !Me.CurrentTarget.IsPlayer && !Me.CurrentTarget.Combat && Me.CurrentTarget.SpellDistance().Between(20, 40)),
 
                         Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi || Me.HasAura("Combo Breaker: Blackout Kick")),
                         Spell.Cast("Tiger Palm", ret => (Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")) || Me.HasAura("Combo Breaker: Tiger Palm")),
@@ -308,14 +308,15 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi),
 
                         // close distance if at range
-                        new Decorator(
-                            ret => !Me.IsSafelyFacing( Me.CurrentTarget, 10f),
-                            new Action( ret => {
-                                // Logger.WriteDebug("WindWalkerMonk: Facing because turned more than 10 degrees");
-                                StyxWoW.Me.CurrentTarget.Face();
-                                return RunStatus.Failure;
-                                }) 
-                            ),
+                        Movement.CreateFaceTargetBehavior(10f, false),
+                        //new Decorator(
+                        //    ret => !Me.IsSafelyFacing( Me.CurrentTarget, 10f),
+                        //    new Action( ret => {
+                        //        // Logger.WriteDebug("WindWalkerMonk: Facing because turned more than 10 degrees");
+                        //        StyxWoW.Me.CurrentTarget.Face();
+                        //        return RunStatus.Failure;
+                        //        }) 
+                        //    ),
 #if USE_OLD_ROLL        
                         new Decorator(
                             ret => MovementManager.IsClassMovementAllowed && Me.IsSafelyFacing(Me.CurrentTarget, 10f) && Me.CurrentTarget.SpellDistance() > 10,
@@ -396,12 +397,6 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkHeal()
         {
             return new PrioritySelector(
-
-                // not likely, but if one close don't waste it
-                new Decorator(
-                    ret => Me.HealthPercent < 80 && Common.AnySpheres(SphereType.Life, MonkSettings.SphereDistanceInCombat ),
-                    Common.CreateMoveToSphereBehavior(SphereType.Life, MonkSettings.SphereDistanceInCombat)
-                    ),
 
                 Common.CreateHealingSphereBehavior(65),
 

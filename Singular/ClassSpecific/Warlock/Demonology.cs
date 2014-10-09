@@ -110,22 +110,13 @@ namespace Singular.ClassSpecific.Warlock
                                 )
                             ),
 
-                        new Decorator(
-                            ret => MovementManager.IsClassMovementAllowed
-                                && WarlockSettings.UseDemonicLeap
-                                && ((Me.HealthPercent < 50 && SingularRoutine.CurrentWoWContext == WoWContext.Normal) || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
-                                && Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.IsWithinMeleeRange),
-                            new PrioritySelector(
-                                Spell.Cast("Carrion Swarm", req => Me.HasAura("Metamorphosis")),
-                                Disengage.CreateDisengageBehavior("Demonic Leap", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
-                                )
-                            ),
+                        Avoidance.CreateAvoidanceBehavior("Demonic Leap", 20, Disengage.Direction.Frontwards, new ActionAlwaysSucceed() ),
 
             #region Felguard Use
 
  new Decorator(
                             ret => Common.GetCurrentPet() == WarlockPet.Felguard && Me.GotTarget && Me.CurrentTarget.Fleeing,
-                            Pet.CreateCastPetAction("Axe Toss")
+                            Pet.CastPetAction("Axe Toss")
                             ),
 
             #endregion

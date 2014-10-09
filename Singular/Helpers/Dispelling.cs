@@ -135,15 +135,15 @@ namespace Singular.Helpers
                 switch (StyxWoW.Me.Class)
                 {
                     case WoWClass.Druid:
-                        return StyxWoW.Me.Specialization == WoWSpec.DruidRestoration;
+                        return TalentManager.CurrentSpec == WoWSpec.DruidRestoration;
                     case WoWClass.Paladin:
-                        return StyxWoW.Me.Specialization == WoWSpec.PaladinHoly;
+                        return TalentManager.CurrentSpec == WoWSpec.PaladinHoly;
                     case WoWClass.Shaman:
                         return true;
                     case WoWClass.Priest:
                         return true;
                     case WoWClass.Monk: 
-                        return StyxWoW.Me.Specialization == WoWSpec.MonkMistweaver;
+                        return TalentManager.CurrentSpec == WoWSpec.MonkMistweaver;
                 }
                 return false;
             }
@@ -156,7 +156,7 @@ namespace Singular.Helpers
         public static DispelCapabilities GetDispellableTypesOnUnit(WoWUnit unit)
         {
             DispelCapabilities ret = DispelCapabilities.None;
-            foreach(var debuff in unit.Debuffs.Values)
+            foreach (var debuff in unit.Debuffs.Values)
             {
                 // abort if target has one of the auras we should be sure to leave alone
                 if (CleanseBlacklist.Instance.SpellList.Contains(debuff.SpellId))
@@ -216,17 +216,17 @@ namespace Singular.Helpers
                     prio.AddChild( Spell.Cast( "Detox", on => _unitDispel));
                     break;
                 case WoWClass.Priest:
-                    if ( StyxWoW.Me.Specialization == WoWSpec.PriestHoly || StyxWoW.Me.Specialization == WoWSpec.PriestDiscipline )
+                    if ( TalentManager.CurrentSpec == WoWSpec.PriestHoly || TalentManager.CurrentSpec == WoWSpec.PriestDiscipline )
                         prio.AddChild( Spell.Cast( "Purify", on => _unitDispel));
                     break;
                 case WoWClass.Druid:
-                    if ( StyxWoW.Me.Specialization == WoWSpec.DruidRestoration )
+                    if ( TalentManager.CurrentSpec == WoWSpec.DruidRestoration )
                         prio.AddChild( Spell.Cast( "Nature's Cure", on => _unitDispel));
                     else 
                         prio.AddChild( Spell.Cast( "Remove Corruption", on => _unitDispel));
                     break;
                 case WoWClass.Shaman:
-                    if ( StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration )
+                    if ( TalentManager.CurrentSpec == WoWSpec.ShamanRestoration )
                         prio.AddChild(Spell.Cast("Purify Spirit", on => _unitDispel));
                     else
                         prio.AddChild(Spell.Cast("Cleanse Spirit", on => _unitDispel));
@@ -236,9 +236,12 @@ namespace Singular.Helpers
                     break;
             }
 
-            return new Sequence(
-                new Action(r => _unitDispel = HealerManager.Instance.TargetList.FirstOrDefault(u => u.IsAlive && CanDispel(u))),
-                prio
+            return new Decorator(
+                req => SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.DefensiveDispel),
+                new Sequence(
+                    new Action(r => _unitDispel = HealerManager.Instance.TargetList.FirstOrDefault(u => u.IsAlive && CanDispel(u))),
+                    prio
+                    )
                 );
         }
 
@@ -252,6 +255,9 @@ namespace Singular.Helpers
                 mov => false,
                 on =>
                 {
+                    if (!SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.DefensiveDispel))
+                        return null;
+
                     WoWUnit unit = GetPurgeEnemyTarget(spellName);
                     if (unit != null)
                         Logger.WriteDebug("PurgeEnemy[{0}]:  found {1} has triggering aura, cancast={2}", spellName, unit.SafeName(), Spell.CanCastHack(spellName, unit));

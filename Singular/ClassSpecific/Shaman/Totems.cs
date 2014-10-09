@@ -33,10 +33,10 @@ namespace Singular.ClassSpecific.Shaman
             {
                 if (Me.GotTarget)
                 {
-                    if (Me.Specialization == WoWSpec.ShamanRestoration && Me.IsInGroup())
+                    if (TalentManager.CurrentSpec == WoWSpec.ShamanRestoration && Me.IsInGroup())
                         return false;
 
-                    if (Me.Specialization == WoWSpec.ShamanEnhancement)
+                    if (TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement)
                         return Me.CurrentTarget.Distance < Me.MeleeDistance(Me.CurrentTarget) + 10;
 
                     float distCheck = Totems.GetTotemRange(WoWTotem.Searing);
@@ -58,7 +58,7 @@ namespace Singular.ClassSpecific.Shaman
                 if ( !Me.Combat )
                     return false;
 
-                if ( Me.Specialization == WoWSpec.ShamanEnhancement )
+                if ( TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement )
                     return Me.GotTarget && Me.CurrentTarget.Distance < Me.MeleeDistance(Me.CurrentTarget) + 10;
 
                 if (SingularRoutine.CurrentWoWContext == WoWContext.Instances)
@@ -119,7 +119,7 @@ namespace Singular.ClassSpecific.Shaman
                     ret => Common.StressfulSituation && !Exist(WoWTotem.EarthElemental) && !Spell.CanCastHack("Earth Elemental"))
                 );
 
-            if (Me.Specialization == WoWSpec.ShamanEnhancement)
+            if (TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement)
             {
                 fireTotemBehavior.AddChild(
                     Spell.Cast("Magma Totem", on => Me.CurrentTarget ?? Me, ret => IsMagmaTotemNeeded())
@@ -130,7 +130,7 @@ namespace Singular.ClassSpecific.Shaman
                 Spell.BuffSelf("Searing Totem", ret => IsSearingTotemNeeded() )
                 );
 
-            if (Me.Specialization == WoWSpec.ShamanRestoration)
+            if (TalentManager.CurrentSpec == WoWSpec.ShamanRestoration)
             {
                 fireTotemBehavior = new PrioritySelector(
                     new Decorator(
@@ -193,7 +193,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.BuffSelf("Mana Tide Totem",
                             ret =>
                             {
-                                if (Me.Specialization != WoWSpec.ShamanRestoration)
+                                if (TalentManager.CurrentSpec != WoWSpec.ShamanRestoration)
                                     return false;
 
                                 // Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
@@ -249,14 +249,14 @@ namespace Singular.ClassSpecific.Shaman
                     Spell.Cast("Fire Elemental", ret => Me.CurrentTarget.IsBoss())
                     );
 
-            if (Me.Specialization == WoWSpec.ShamanEnhancement)
+            if (TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement)
             {
                 fireTotemBehavior.AddChild(
                     Spell.Cast("Magma Totem", on => Me.CurrentTarget ?? Me, ret => IsMagmaTotemNeeded())
                     );
             }
 
-            if (Me.Specialization == WoWSpec.ShamanRestoration)
+            if (TalentManager.CurrentSpec == WoWSpec.ShamanRestoration)
                 fireTotemBehavior = new PrioritySelector(
                     new Decorator(
                         ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget && !HealerManager.Instance.TargetList.Any(m => m.IsAlive), 
@@ -308,7 +308,7 @@ namespace Singular.ClassSpecific.Shaman
                         Spell.BuffSelf("Mana Tide Totem",
                             ret =>
                             {
-                                if (Me.Specialization != WoWSpec.ShamanRestoration)
+                                if (TalentManager.CurrentSpec != WoWSpec.ShamanRestoration)
                                     return false;
 
                                 // Logger.WriteDebug("Mana Tide Totem Check:  current mana {0:F1}%", Me.ManaPercent);
@@ -654,7 +654,7 @@ namespace Singular.ClassSpecific.Shaman
                     return 30f;
 
                 case WoWTotem.Searing:
-                    if (Me.Specialization == WoWSpec.ShamanElemental )
+                    if (TalentManager.CurrentSpec == WoWSpec.ShamanElemental )
                         return 35f;
                     return 20f;
 

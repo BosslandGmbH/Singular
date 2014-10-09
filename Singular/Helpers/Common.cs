@@ -60,16 +60,16 @@ namespace Singular.Helpers
             PrioritySelector prio = new PrioritySelector();
             // const int spellIdAutoShot = 75;
             bool autoAttack = 
-                   Me.Specialization == WoWSpec.None
+                   TalentManager.CurrentSpec == WoWSpec.None
                 || Me.Class == WoWClass.DeathKnight
-                || Me.Specialization == WoWSpec.DruidGuardian
-                || Me.Specialization == WoWSpec.DruidFeral
-                || Me.Specialization == WoWSpec.MonkBrewmaster
-                || Me.Specialization == WoWSpec.MonkWindwalker
-                || Me.Specialization == WoWSpec.PaladinProtection
-                || Me.Specialization == WoWSpec.PaladinRetribution
+                || TalentManager.CurrentSpec == WoWSpec.DruidGuardian
+                || TalentManager.CurrentSpec == WoWSpec.DruidFeral
+                || TalentManager.CurrentSpec == WoWSpec.MonkBrewmaster
+                || TalentManager.CurrentSpec == WoWSpec.MonkWindwalker
+                || TalentManager.CurrentSpec == WoWSpec.PaladinProtection
+                || TalentManager.CurrentSpec == WoWSpec.PaladinRetribution
                 || Me.Class == WoWClass.Rogue
-                || Me.Specialization == WoWSpec.ShamanEnhancement
+                || TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement
                 || Me.Class == WoWClass.Warrior;
 
             if (autoAttack)
@@ -304,7 +304,7 @@ namespace Singular.Helpers
             if (Me.Class == WoWClass.Paladin)
                 prioSpell.AddChild( Spell.Cast("Hammer of Justice", ctx => _unitInterrupt));
 
-            if (Me.Specialization == WoWSpec.DruidBalance )
+            if (TalentManager.CurrentSpec == WoWSpec.DruidBalance )
                 prioSpell.AddChild( Spell.Cast("Hammer of Justice", ctx => _unitInterrupt));
 
             if (Me.Class == WoWClass.Warrior) 
@@ -324,7 +324,7 @@ namespace Singular.Helpers
             if (TalentManager.HasGlyph("Fae Silence"))
                 prioSpell.AddChild(Spell.Cast("Faerie Fire", ctx => _unitInterrupt, req => Me.Shapeshift == ShapeshiftForm.Bear));
 
-            if (Me.Specialization == WoWSpec.PaladinProtection)
+            if (TalentManager.CurrentSpec == WoWSpec.PaladinProtection)
                 prioSpell.AddChild( Spell.Cast("Avenger's Shield", ctx => _unitInterrupt));
 
             if (Me.Class == WoWClass.Warrior && TalentManager.HasGlyph("Gag Order"))
@@ -350,13 +350,13 @@ namespace Singular.Helpers
             if (Me.Class == WoWClass.Hunter)
                 prioSpell.AddChild(Spell.Cast("Counter Shot", ctx => _unitInterrupt));
 
-            if (Me.Specialization == WoWSpec.HunterMarksmanship)
+            if (TalentManager.CurrentSpec == WoWSpec.HunterMarksmanship)
                 prioSpell.AddChild(Spell.Cast("Silencing Shot", ctx => _unitInterrupt));
 
             if (Me.Class == WoWClass.Druid)
                 prioSpell.AddChild( Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin));
 
-            if (Me.Specialization == WoWSpec.ShamanElemental || Me.Specialization == WoWSpec.ShamanEnhancement )
+            if (TalentManager.CurrentSpec == WoWSpec.ShamanElemental || TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement )
                 prioSpell.AddChild( Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => true));
 
             #endregion
@@ -461,7 +461,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CreateWaitForLagDuration()
         {
-            // return new WaitContinue(TimeSpan.FromMilliseconds((StyxWoW.WoWClient.Latency * 2) + 150), ret => false, new ActionAlwaysSucceed());
+            // return new WaitContinue(TimeSpan.FromMilliseconds((SingularRoutine.Latency * 2) + 150), ret => false, new ActionAlwaysSucceed());
             return CreateWaitForLagDuration(ret => false);
         }
 
@@ -472,7 +472,7 @@ namespace Singular.Helpers
         /// <returns></returns>
         public static Composite CreateWaitForLagDuration( CanRunDecoratorDelegate orUntil)
         {
-            return new DynaWaitContinue(ts => TimeSpan.FromMilliseconds((StyxWoW.WoWClient.Latency * 2) + 150), orUntil, new ActionAlwaysSucceed());
+            return new DynaWaitContinue(ts => TimeSpan.FromMilliseconds((SingularRoutine.Latency * 2) + 150), orUntil, new ActionAlwaysSucceed());
         }
 
         #region Wait for Rez Sickness
@@ -659,7 +659,7 @@ namespace Singular.Helpers
                 new PrioritySelector(
                     ctx => ClassSpecific.Warlock.Common.Soulwell,
                     new Decorator(
-                        req => (req as WoWGameObject) != null,
+                        req => (req as WoWGameObject) != null && (SingularSettings.Instance.SoulwellDistance == 0 || (req as WoWGameObject).Distance < SingularSettings.Instance.SoulwellDistance),
                         new PrioritySelector(
                             new Throttle(
                                 TimeSpan.FromMilliseconds(500), 
@@ -684,13 +684,111 @@ namespace Singular.Helpers
                 );
         }
 
-
-        public static bool DoWeNeedHealthstones 
-        { 
+        public static bool DoWeNeedHealthstones
+        {
             get
             {
                 return !Me.Combat && !Me.Mounted && !Me.BagsFull && !ClassSpecific.Warlock.Common.HaveHealthStone;
             }
         }
+
+        public static bool DoWeNeedBiscuits 
+        { 
+            get
+            {
+                if (!SingularSettings.Instance.UseTable)
+                    return false;
+                int drinksWanted = CharacterSettings.Instance.DrinkAmount;
+                int foodWanted = CharacterSettings.Instance.FoodAmount;
+                int biscuitsWanted = Math.Max(drinksWanted, foodWanted);
+
+                if (Me.Combat || Me.Mounted)
+                    return false;
+
+                if (ClassSpecific.Mage.Common.Gotfood)
+                    return false;
+
+                int slotsNeeded = (biscuitsWanted + 19) / 20;
+                if (Me.FreeNormalBagSlots < slotsNeeded)
+                    return false;
+
+                return true;
+            }
+        }
+
+       
+
+        private static DateTime timeMoveToTable = DateTime.MinValue;
+
+        public static Composite CreateUseTableBehavior(SimpleBooleanDelegate requirements = null)
+        {
+            if (!SingularSettings.Instance.UseTable)
+                return new ActionAlwaysFail();
+
+            if (requirements == null)
+                requirements = req => true;
+
+            // throttle to minimize the impact of the list searches to once every interval
+            return new Decorator(
+                req => !MovementManager.IsMovementDisabled && !ClassSpecific.Mage.Common.Gotfood && requirements(req),
+                new PrioritySelector(
+                    ctx => ClassSpecific.Mage.Common.MageTable,
+
+                    new Throttle(
+                        TimeSpan.FromSeconds(15),
+                        new Decorator(
+                            req => Me.FreeNormalBagSlots < 1,
+                            new Action( r=> Logger.Write(Color.White, "Refreshment Table:  !! Bags Full - skipping !!"))
+                            )
+                        ),
+
+                    // check if we have space
+                    new Decorator(
+                        req =>
+                        {
+                            int drinksWanted = CharacterSettings.Instance.DrinkAmount;
+                            int foodWanted = CharacterSettings.Instance.FoodAmount;
+                            int biscuitsWanted = Math.Max(drinksWanted, foodWanted);
+
+                            uint slotsNeeded = (uint) (biscuitsWanted + 19) / 20;
+                            uint slotsToFill = Me.FreeNormalBagSlots;
+
+                            if (slotsNeeded > slotsToFill)
+                            {
+                                Logger.Write(Color.White, "Refreshment Table: only {0} bag slots free - reducing amount we pickup", slotsToFill);
+                                slotsNeeded = slotsToFill;
+                            }
+                            
+                            return true;
+                        },
+                        new PrioritySelector(
+                            new Decorator(
+                                req => (req as WoWGameObject) != null && (SingularSettings.Instance.TableDistance == 0 || (req as WoWGameObject).Distance < SingularSettings.Instance.TableDistance),
+                                new PrioritySelector(
+                                    new Throttle(
+                                        TimeSpan.FromMilliseconds(500),
+                                        new Action(r =>
+                                        {
+                                            Logger.WriteDebug("Refreshment Table: moving towards @ {0:F1} yds", (r as WoWGameObject).Distance);
+                                            return RunStatus.Failure;
+                                        })
+                                        ),
+                                    Movement.CreateMoveToLocationBehavior(loc => (loc as WoWGameObject).Location, true, range => (range as WoWGameObject).InteractRange - 0.5f),
+                                    new Sequence(
+                                        new Action(r =>
+                                        {
+                                            Logger.Write(Color.White, "^Interact with Refreshment Table");
+                                            (r as WoWGameObject).Interact();
+                                        }),
+                                        Helpers.Common.CreateWaitForLagDuration()
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
     }
 }

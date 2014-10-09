@@ -24,6 +24,7 @@ using Tripper.Navigation;
 using Tripper.MeshMisc;
 using Tripper.RecastManaged.Detour;
 using Tripper.Tools.Math;
+using Styx.CommonBot.Routines;
 
 namespace Singular.Helpers
 {
@@ -164,6 +165,7 @@ namespace Singular.Helpers
 
             return new Decorator(
                 ret => !MovementManager.IsMovementDisabled 
+                    && !MovementManager.IsFacingDisabled
                     && toUnit(ret) != null 
                     && !Me.IsMoving 
                     && !toUnit(ret).IsMe 
@@ -439,7 +441,11 @@ namespace Singular.Helpers
             return new Decorator(
                 ret =>
                 {
-                    if (MovementManager.IsMovementDisabled || !requirements(ret) || Spell.IsCastingOrChannelling() || Group.MeIsTank)
+                    if (MovementManager.IsMovementDisabled 
+                        || !SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.MoveBehind) 
+                        || !requirements(ret) 
+                        || Spell.IsCastingOrChannelling() 
+                        || Group.MeIsTank)
                         return false;
                     var currentTarget = Me.CurrentTarget;
                     if (currentTarget == null || Me.IsBehind(currentTarget) || !currentTarget.IsAlive || BossList.AvoidRearBosses.Contains(currentTarget.Entry))
@@ -585,14 +591,17 @@ namespace Singular.Helpers
             if (!SingularSettings.Instance.MeleeKeepMobsInFront)
                 return new ActionAlwaysFail();
 
-            return new ThrottlePasses(
-                1,
-                TimeSpan.FromSeconds(2),
-                RunStatus.Failure,
-                new Decorator(
-                    req => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Any( u => u.IsWithinMeleeRange && !Me.IsSafelyFacing(u,160)),
-                    // CreateStrafe( 3f, TimeSpan.FromMilliseconds(500))
-                    CreateMoveToSide()
+            return new Decorator(
+                req => !MovementManager.IsMovementDisabled && Me.GotTarget && !Me.IsMoving,
+                new ThrottlePasses(
+                    1,
+                    TimeSpan.FromSeconds(2),
+                    RunStatus.Failure,
+                    new Decorator(
+                        req => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Any( u => u.IsWithinMeleeRange && !Me.IsSafelyFacing(u,160)),
+                        // CreateStrafe( 3f, TimeSpan.FromMilliseconds(500))
+                        CreateMoveToSide()
+                        )
                     )
                 );
         }
@@ -610,7 +619,7 @@ namespace Singular.Helpers
 
             internal CMTSData()
             {
-                Distance = (float) StyxWoW.Me.CurrentTarget.Distance;
+                Distance = (float) Math.Min( 5.0, StyxWoW.Me.CurrentTarget.Distance);
                 Facing = Me.RenderFacing;
                 Speed = Me.MovementInfo.RunSpeed;
                 MoveTime = Distance / Speed;
@@ -622,59 +631,63 @@ namespace Singular.Helpers
 
         public static Composite CreateMoveToSide( int maxTime = 1)
         {
-            return new Sequence(
+            return new Decorator(
 
-                ctx => new CMTSData(),
+                req => Me.GotTarget,
+                
+                new Sequence(
 
-                new Action(r =>
-                {
-                    CMTS(r).Direction = new Random().Next(1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
-                    float dirmultiplier = CMTS(r).Direction == WoWMovement.MovementDirection.StrafeLeft ? -1 : 1;
-                    float newFacing = CMTS(r).Facing + (dirmultiplier * ((float)Math.PI) / 2f);
-                    CMTS(r).Destination = Me.Location.RayCast(newFacing, CMTS(r).Distance);
+                    ctx => new CMTSData(),
 
-                    WoWPoint hit;  // for reqd param... don't really care about value
-                    bool? movementObstructed = MeshTraceline(CMTS(r).Origin, CMTS(r).Destination, out hit);
-                    if (movementObstructed == null || movementObstructed == false)
+                    new Action(r =>
                     {
-                        CMTS(r).Direction = CMTS(r).Direction != WoWMovement.MovementDirection.StrafeLeft ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
-                        dirmultiplier = -dirmultiplier;
-                        newFacing = CMTS(r).Facing + (dirmultiplier * ((float)Math.PI) / 2f);
+                        CMTS(r).Direction = new Random().Next(1) == 0 ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
+                        float dirmultiplier = CMTS(r).Direction == WoWMovement.MovementDirection.StrafeLeft ? -1 : 1;
+                        float newFacing = CMTS(r).Facing + (dirmultiplier * (float)Math.PI);    // PI = 90 degree turn, PI/2 is a 45 degree turn
                         CMTS(r).Destination = Me.Location.RayCast(newFacing, CMTS(r).Distance);
-                        movementObstructed = MeshTraceline(CMTS(r).Origin, CMTS(r).Destination, out hit);
-                        if (movementObstructed == null || movementObstructed == true)
+
+                        bool movementObstructed = MeshTraceline(CMTS(r).Origin, CMTS(r).Destination);
+                        if (movementObstructed == true)
                         {
-                            Logger.WriteDebug("MoveToSide: unable to move {0:F1} yds to either side of target", CMTS(r).Distance);
-                            return RunStatus.Failure;
+                            CMTS(r).Direction = CMTS(r).Direction != WoWMovement.MovementDirection.StrafeLeft ? WoWMovement.MovementDirection.StrafeLeft : WoWMovement.MovementDirection.StrafeRight;
+                            dirmultiplier = -dirmultiplier;
+                            newFacing = CMTS(r).Facing + (dirmultiplier * ((float)Math.PI) / 2f);
+                            CMTS(r).Destination = Me.Location.RayCast(newFacing, CMTS(r).Distance);
+                            movementObstructed = MeshTraceline(CMTS(r).Origin, CMTS(r).Destination);
+                            if (movementObstructed == true)
+                            {
+                                Logger.WriteDebug("MoveToSide: unable to move {0:F1} yds to either side of target", CMTS(r).Distance);
+                                return RunStatus.Failure;
+                            }
                         }
-                    }
 
-                    Logger.Write( Color.White, "MoveToSide: moving diagonally {0} for {1:F1} yds", CMTS(r).Direction.ToString().Substring(6), CMTS(r).Distance);
-                    Navigator.MoveTo(CMTS(r).Destination);
-                    CMTS(r).TimeToStop = DateTime.Now + TimeSpan.FromSeconds(CMTS(r).MoveTime);
-                    return RunStatus.Success;
-                }),
+                        Logger.Write( Color.White, "MoveToSide: moving diagonally {0} for {1:F1} yds", CMTS(r).Direction.ToString().Substring(6), CMTS(r).Distance);
+                        Navigator.MoveTo(CMTS(r).Destination);
+                        CMTS(r).TimeToStop = DateTime.Now + TimeSpan.FromSeconds(CMTS(r).MoveTime);
+                        return RunStatus.Success;
+                    }),
 
-                new WaitContinue(
-                    TimeSpan.FromMilliseconds(500), 
-                    until => Me.IsMoving,
-                    new Action(r => Logger.WriteDebug("MoveToSide: started diagonal movement"))
-                    ),
+                    new WaitContinue(
+                        TimeSpan.FromMilliseconds(500), 
+                        until => Me.IsMoving,
+                        new Action(r => Logger.WriteDebug("MoveToSide: started diagonal movement"))
+                        ),
 
-                new WaitContinue(
-                    TimeSpan.FromSeconds(3), 
-                    until => !Me.IsMoving || DateTime.Now > CMTS(until).TimeToStop,
-                    new Action(r => Logger.WriteDebug("MoveToSide: timed stop of diagonal movement {0} successful", Me.IsMoving ? "WAS NOT" : "was"))
-                    ),
+                    new WaitContinue(
+                        TimeSpan.FromSeconds(3), 
+                        until => !Me.IsMoving || DateTime.Now > CMTS(until).TimeToStop,
+                        new Action(r => Logger.WriteDebug("MoveToSide: timed stop of diagonal movement {0} successful", Me.IsMoving ? "WAS NOT" : "was"))
+                        ),
 
-                new Action(r => 
-                {
-                    if (Me.IsMoving)
+                    new Action(r => 
                     {
-                        Logger.WriteDebug("MoveToSide: forcefully stopping diagonal movement after {0:F2} seconds", CMTS(r).MoveTime);
-                        Navigator.PlayerMover.MoveStop();
-                    }
-                })
+                        if (Me.IsMoving)
+                        {
+                            Logger.WriteDebug("MoveToSide: forcefully stopping diagonal movement after {0:F2} seconds", CMTS(r).MoveTime);
+                            Navigator.PlayerMover.MoveStop();
+                        }
+                    })
+                    )
                 );
 
         }
@@ -693,16 +706,15 @@ namespace Singular.Helpers
                     float dirmultiplier = dir == WoWMovement.MovementDirection.StrafeLeft ? -1 : 1;
                     float newFacing = currFacing + (dirmultiplier * ((float)Math.PI) / 2f);
                     WoWPoint dst = Me.Location.RayCast(newFacing, maxDist);
-                    WoWPoint hit;  // for reqd param... don't really care about value
-                    bool? movementObstructed = MeshTraceline(src, dst, out hit);
-                    if (movementObstructed == null || movementObstructed == false)
+                    bool movementObstructed = MeshTraceline(src, dst);
+                    if (movementObstructed == true)
                     {
                         dir = dir == WoWMovement.MovementDirection.StrafeLeft ? WoWMovement.MovementDirection.StrafeRight : WoWMovement.MovementDirection.StrafeLeft;
                         dirmultiplier = -dirmultiplier;
                         newFacing = currFacing + (dirmultiplier * ((float)Math.PI) / 2f);
                         dst = Me.Location.RayCast(newFacing, maxDist);
-                        movementObstructed = MeshTraceline(src, dst, out hit);
-                        if (movementObstructed == null || movementObstructed == true)
+                        movementObstructed = MeshTraceline(src, dst);
+                        if (movementObstructed == true)
                         {
                             Logger.WriteDebug("CreateStafe: unable to strafe {0:F1} yds either direction", maxDist);
                             return RunStatus.Failure;
@@ -739,8 +751,21 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        /// This casts a walkable ray on the surface of the mesh from <c>wowPointSrc</c> to <c>wowPointDest</c> and
-        /// return value indicates whether a wall (disjointed polygon edge) was encountered
+        /// determines if there is an obstruction in a straight line from source point to destination.
+        /// </summary>
+        /// <param name="src">origin</param>
+        /// <param name="dest">destination</param>
+        /// <returns>true if obstruction or cannot determine, false if safe to walk</returns>
+        public static bool MeshTraceline(WoWPoint src, WoWPoint dest)
+        {
+            WoWPoint hit;
+            bool? pathObstructed = MeshTraceline(src, dest, out hit);
+            return pathObstructed == null || (bool) pathObstructed;
+        }
+
+        /// <summary>
+        /// Checks if obstruction exists in walkable ray on the surface of the mesh from <c>wowPointSrc</c> to <c>wowPointDest</c>. 
+        /// Return value indicates whether a wall (disjointed polygon edge) was encountered
         /// </summary>
         /// <param name="wowPointSrc"></param>
         /// <param name="wowPointDest"></param>

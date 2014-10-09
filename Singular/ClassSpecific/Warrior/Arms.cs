@@ -140,8 +140,10 @@ namespace Singular.ClassSpecific.Warrior
 
                 Spell.WaitForCast(FaceDuring.Yes),
 
+                Common.CheckIfWeShouldCancelBladestorm(),
+
                 new Decorator(
-                    ret => !Spell.IsGlobalCooldown() && !StyxWoW.Me.HasAura( "Bladestorm"),
+                    ret => !Spell.IsGlobalCooldown(),
 
                     new PrioritySelector(
                         
@@ -152,6 +154,9 @@ namespace Singular.ClassSpecific.Warrior
                         Common.CreateVictoryRushBehavior(),
 
                         Common.CreateDisarmBehavior(),
+
+                        // special "in combat" pull logic for mobs not tagged and out of melee range
+                        Common.CreateWarriorCombatPullMore(),
 
                         new Throttle(
                             new Decorator(
@@ -328,7 +333,6 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
-
         private static Composite CreateArmsAoeCombat(SimpleIntDelegate aoeCount)
         {
             return new PrioritySelector(
@@ -499,33 +503,37 @@ namespace Singular.ClassSpecific.Warrior
         private static Composite HeroicLeap()
         {
             return new Decorator(ret => Me.CurrentTarget.HasAura("Colossus Smash") && Spell.CanCastHack("Heroic Leap"),
-                new Action(ret =>
-                {
-                    var tpos = StyxWoW.Me.CurrentTarget.Location;
-                    var trot = StyxWoW.Me.CurrentTarget.Rotation;
-                    var leapRight = WoWMathHelper.CalculatePointAtSide(tpos, trot, 5, true);
-                    var leapLeft = WoWMathHelper.CalculatePointAtSide(tpos, trot, 5, true);
+                new Sequence(
+                    new Action(ret =>
+                    {
+                        var tpos = StyxWoW.Me.CurrentTarget.Location;
+                        var trot = StyxWoW.Me.CurrentTarget.Rotation;
+                        var leapRight = WoWMathHelper.CalculatePointAtSide(tpos, trot, 5, true);
+                        var leapLeft = WoWMathHelper.CalculatePointAtSide(tpos, trot, 5, true);
 
-                    var myPos = StyxWoW.Me.Location;
+                        var myPos = StyxWoW.Me.Location;
 
-                    var leftDist = leapLeft.Distance(myPos);
-                    var rightDist = leapRight.Distance(myPos);
+                        var leftDist = leapLeft.Distance(myPos);
+                        var rightDist = leapRight.Distance(myPos);
 
-                    var leapPos = WoWMathHelper.CalculatePointBehind(tpos, trot, 8);
+                        var leapPos = WoWMathHelper.CalculatePointBehind(tpos, trot, 8);
 
-                    if (leftDist > rightDist && leftDist <= 40 && leftDist >= 8)
-                        leapPos = leapLeft;
-                    else if (rightDist > leftDist && rightDist <= 40 && rightDist >= 8)
-                        leapPos = leapRight;
-                    else
-                        return RunStatus.Failure;
+                        if (leftDist > rightDist && leftDist <= 40 && leftDist >= 8)
+                            leapPos = leapLeft;
+                        else if (rightDist > leftDist && rightDist <= 40 && rightDist >= 8)
+                            leapPos = leapRight;
+                        else
+                            return RunStatus.Failure;
 
-                    Spell.LogCast("Heroic Leap", Me.CurrentTarget);
-                    SpellManager.Cast("Heroic Leap");
-                    SpellManager.ClickRemoteLocation(leapPos);
-                    StyxWoW.Me.CurrentTarget.Face();
-                    return RunStatus.Success;
-                }));
+                        Spell.LogCast("Heroic Leap", Me.CurrentTarget);
+                        SpellManager.Cast("Heroic Leap");
+                        SpellManager.ClickRemoteLocation(leapPos);
+                        return RunStatus.Success;
+                    }),
+
+                    Movement.CreateFaceTargetBehavior( 20f, true)
+                    )
+                );
         }
 
 

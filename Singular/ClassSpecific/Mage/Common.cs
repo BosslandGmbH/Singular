@@ -17,6 +17,7 @@ using Styx.Common;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Styx.CommonBot.Routines;
 
 namespace Singular.ClassSpecific.Mage
 {
@@ -37,6 +38,15 @@ namespace Singular.ClassSpecific.Mage
         public static bool IsFrozen(this WoWUnit unit)
         {
             return unit.GetAllAuras().Any(a => a.Spell.Mechanic == WoWSpellMechanic.Frozen || (a.Spell.School == WoWSpellSchool.Frost && a.Spell.SpellEffects.Any(e => e.AuraType == WoWApplyAuraType.ModRoot)));
+        }
+
+        [Behavior(BehaviorType.Initialize, WoWClass.Mage)]
+        public static Composite CreateMageInitialize()
+        {
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+                Kite.CreateKitingBehavior(null, null, null);
+
+            return null;
         }
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Mage)]
@@ -65,7 +75,7 @@ namespace Singular.ClassSpecific.Mage
                             ),
                         */
                         CreateMageArmorBehavior(),
-
+/*
                         new PrioritySelector(
                             ctx => MageTable,
                             new Decorator(
@@ -83,21 +93,18 @@ namespace Singular.ClassSpecific.Mage
                                     )
                                 )
                             ),
-
-                        new Decorator(
-                            ctx => ShouldSummonTable && (!Gotfood || NeedTableForBattleground) && Spell.CanCastHack("Conjure Refreshment Table"),
-                            new Sequence(
-                                new DecoratorContinue(
-                                    ctx => StyxWoW.Me.IsMoving,
-                                    new Sequence(
-                                        new Action(ctx => StopMoving.Now()),
-                                        new WaitContinue(2, ctx => !StyxWoW.Me.IsMoving, new ActionAlwaysSucceed())
-                                        )
-                                    ),
-                                new Action(ctx => Logger.Write(Color.White, "^Conjure Refreshment Table")),
-                                new Action(ctx => SpellManager.Cast("Conjure Refreshment Table")),
-                                new WaitContinue(2, ctx => StyxWoW.Me.IsCasting, new ActionAlwaysSucceed()),
-                                new WaitContinue(10, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed())
+*/
+                        new ThrottlePasses(
+                            1, TimeSpan.FromSeconds(10),
+                            RunStatus.Failure,
+                            new Decorator(
+                                ctx => ShouldSummonTable && NeedTableForBattleground,
+                                new Sequence(
+                                    new Action(ctx => Logger.Write(Color.White, "^Conjure Refreshment Table")),
+                                    Spell.Cast("Conjure Refreshment Table", mov => true, on => Me, req => true, cancel => false, LagTolerance.No ),
+                                    // new Action(ctx => SpellManager.Cast("Conjure Refreshment Table")),
+                                    new WaitContinue(4, ctx => !StyxWoW.Me.IsCasting, new ActionAlwaysSucceed())
+                                    )
                                 )
                             ),
 
@@ -147,6 +154,20 @@ namespace Singular.ClassSpecific.Mage
                 );
         }
 
+        /// <summary>
+        /// PullBuffs that must be called only when in Pull and in range of target
+        /// </summary>
+        /// <returns></returns>
+        public static Composite CreateMagePullBuffs()
+        {
+            return new Decorator(
+                req => Me.GotTarget && Me.CurrentTarget.SpellDistance() < 40,
+                new PrioritySelector(
+                    CreateMageRuneOfPowerBehavior(),
+                    CreateMageInvocationBehavior()
+                    )
+                );
+        }
 
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Mage)]
         public static Composite CreateMageCombatBuffs()
@@ -185,17 +206,17 @@ namespace Singular.ClassSpecific.Mage
                     Spell.BuffSelf("Incanter's Ward", req => Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any()),
                     Spell.BuffSelf("Ice Ward"),
 
+                    // cast Evocation for Buff
+                    CreateMagePullBuffs(),
+
+                    // cast Evocation for Heal or Mana
                     new Throttle( 3, Spell.Cast("Evocation", mov => true, on => Me, ret => NeedEvocation, cancel => false) ),
-                        // new Wait( 1, until => !HasTalent(MageTalents.Invocation) || Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
+                    // new Wait( 1, until => !HasTalent(MageTalents.Invocation) || Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
 
                     Dispelling.CreatePurgeEnemyBehavior("Spellsteal"),
                     // CreateMageSpellstealBehavior(),
 
                     Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
-
-                    // cast at most once per 6 seconds
-                    // prevent cast if No Path occurred in last 30 seconds
-                    new Throttle( TimeSpan.FromMilliseconds(6000), Spell.CastOnGround("Rune of Power", on => Me, req => !Me.IsMoving && !Me.InVehicle && !Me.HasAura("Rune of Power") && Singular.Utilities.EventHandlers.LastNoPathFailure.AddSeconds(30) < DateTime.Now, false) ),
 
                     Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
                     Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),
@@ -208,11 +229,36 @@ namespace Singular.ClassSpecific.Mage
 
                     Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp),
 
-                    Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80))
+                    Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80)),
                 
                     // , Spell.BuffSelf( "Ice Floes", req => Me.IsMoving)
+
+                    CreateHealWaterElemental()
                     )
                 );
+        }
+
+        public static Composite CreateHealWaterElemental()
+        {
+            return Spell.Cast("Frostbolt", mov => true, on => Me.Pet,
+                req => 
+                {
+                    if (Me.Pet != null && Me.Pet.IsAlive)
+                    {
+                        if (Me.Pet.PredictedHealthPercent(true) < MageSettings.HealWaterElementalPct)
+                        {
+                            if (Spell.CanCastHack("Frostbolt", Me.Pet, false))
+                            {
+                                Logger.Write(Color.White, "^Heal Water Elemental: currently at {0:F1}%", Me.Pet.HealthPercent);
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                },
+                cancel => Me.Pet == null || !Me.Pet.IsAlive || Me.Pet.PredictedHealthPercent(false) >= 100
+                )
+            ;
         }
 
         private static readonly uint[] MageFoodIds = new uint[]
@@ -231,35 +277,51 @@ namespace Singular.ClassSpecific.Mage
 
         private const uint ArcanePowder = 17020;
 
+        /// <summary>
+        /// True if config allows conjuring tables, we have the spell, are not moving, group members
+        /// are within 15 yds, and no table within 40 yds
+        /// </summary>
         private static bool ShouldSummonTable
         {
             get
             {
                 return MageSettings.SummonTableIfInParty 
                     && SpellManager.HasSpell("Conjure Refreshment Table") 
-                    && Unit.NearbyGroupMembers.Any(p => !p.IsMe );
+                    && !StyxWoW.Me.IsMoving
+                    && MageTable == null
+                    && Unit.GroupMembers.Any(p => !p.IsMe && p.DistanceSqr < 15 * 15);
             }
         }
 
-       static readonly uint[] RefreshmentTableIds = new uint[]
+       static readonly Dictionary<uint, uint> RefreshmentTableIds = new Dictionary<uint,uint>() 
                                          {
-                                             186812,
-                                             207386,
-                                             207387, //This is the one for level 85 - not sure if we need to add another at 90
-                                             211363, //Level 90
+                                             { 186812, 70 }, //Level 70
+                                             { 207386, 80 }, //Level 80
+                                             { 207387, 85 }, //Level 85
+                                             { 211363, 90 }, //Level 90
                                          };
 
-        static private WoWGameObject MageTable
+        /// <summary>
+        /// finds a level appropriate Mage Table if one exists.
+        /// </summary>
+        static public WoWGameObject MageTable
         {
             get
             {
                 return
-                    ObjectManager.GetObjectsOfType<WoWGameObject>().FirstOrDefault(
-                        i => RefreshmentTableIds.Contains(i.Entry) && (StyxWoW.Me.PartyMembers.Any(p => p.Guid == i.CreatedByGuid) || StyxWoW.Me.Guid == i.CreatedByGuid));
+                    ObjectManager.GetObjectsOfType<WoWGameObject>()
+                        .Where(
+                            i => RefreshmentTableIds.ContainsKey(i.Entry) 
+                                && RefreshmentTableIds[i.Entry] <= Me.Level 
+                                && (StyxWoW.Me.PartyMembers.Any(p => p.Guid == i.CreatedByGuid) || StyxWoW.Me.Guid == i.CreatedByGuid)
+                                && i.Distance <= SingularSettings.Instance.TableDistance
+                            )
+                        .OrderByDescending( t => t.Level )
+                        .FirstOrDefault();
             }
         }
 
-        private static int CarriedMageFoodCount
+        public static int CarriedMageFoodCount
         {
             get
             {
@@ -351,20 +413,12 @@ namespace Singular.ClassSpecific.Mage
                 );
              */
 #else
-            if (!SingularSettings.Instance.KiteAllow)
-                return new ActionAlwaysFail();
-
-            return new PrioritySelector(
-                ctx => Unit.NearbyUnfriendlyUnits
-                           .Where(u => u.IsRooted() && Me.SpellDistance(u) < 8) // u.IsFrozen() 
-                           .OrderBy(u => u.DistanceSqr).FirstOrDefault(),
-                new Decorator(
-                    req => req != null,
-                    new Sequence(
-                        new Action(r => Logger.WriteDebug("MageAvoidance: move away from frozen targets! requesting KITING!!!")),
-                        Kite.BeginKitingBehavior()
-                        )
-                    )
+            Composite slowBehave = CreateSlowMeleeBehavior();
+            return Avoidance.CreateAvoidanceBehavior(
+                "Blink", 
+                TalentManager.HasGlyph("Blink") ? 28 : 20, 
+                Disengage.Direction.Frontwards, 
+                slowBehave
                 );
 #endif
         }
@@ -528,7 +582,7 @@ namespace Singular.ClassSpecific.Mage
             if (MageSettings.Armor == MageArmor.None)
                 return MageArmor.None;
 
-            if (StyxWoW.Me.Specialization == WoWSpec.None)
+            if (TalentManager.CurrentSpec == WoWSpec.None)
                 return MageArmor.None;
 
             MageArmor bestArmor;
@@ -538,9 +592,9 @@ namespace Singular.ClassSpecific.Mage
                 bestArmor = MageArmor.Frost;
             else
             {
-                if (Me.Specialization == WoWSpec.MageArcane)
+                if (TalentManager.CurrentSpec == WoWSpec.MageArcane)
                     bestArmor = MageArmor.Mage;
-                else if (Me.Specialization == WoWSpec.MageFrost)
+                else if (TalentManager.CurrentSpec == WoWSpec.MageFrost)
                     bestArmor = MageArmor.Frost;
                 else
                     bestArmor = MageArmor.Molten;
@@ -566,58 +620,17 @@ namespace Singular.ClassSpecific.Mage
         #region Avoidance and Disengage
 
         /// <summary>
-        /// creates a Druid specific avoidance behavior based upon settings.  will check for safe landing
-        /// zones before using WildCharge or rocket jump.  will additionally do a running away or jump turn
+        /// creates a Mage specific avoidance behavior based upon settings.  will check for safe landing
+        /// zones before using Blink or Rocket Jump.  will additionally do a running away or jump turn
         /// attack while moving away from attacking mob if behaviors provided
         /// </summary>
         /// <param name="nonfacingAttack">behavior while running away (back to target - instants only)</param>
         /// <param name="jumpturnAttack">behavior while facing target during jump turn (instants only)</param>
         /// <returns></returns>
-        public static Composite CreateMageAvoidanceBehavior(Composite nonfacingAttack = null, Composite jumpturnAttack = null, SimpleBooleanDelegate needDisengage= null, SimpleBooleanDelegate needKiting = null )
+        public static Composite CreateMageAvoidanceBehavior()
         {
-            if (needDisengage == null)
-                needDisengage = req => Kite.IsDisengageWantedByUserSettings();
-
-            if (needKiting == null)
-                needKiting = req => Kite.IsKitingWantedByUserSettings();
-
-            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jumpturnAttack);
-
-            PrioritySelector pri = new PrioritySelector();
-
-            if (SingularSettings.Instance.DisengageAllowed)
-            {
-                int distBlink = TalentManager.HasGlyph("Blink") ? 28 : 20;
-                pri.AddChild(
-                    new Decorator(
-                        ret => needDisengage(ret),
-                        new PrioritySelector(
-                            Disengage.CreateDisengageBehavior("Blink", Disengage.Direction.Frontwards, distBlink, CreateSlowMeleeBehavior()),
-                            Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
-                            )
-                        )
-                    );
-            }
-
-            if (SingularSettings.Instance.KiteAllow)
-            {
-                pri.AddChild(
-                    new Decorator(
-                        ret => needKiting(ret),
-                        new Sequence(
-                            new Action( r => Logger.WriteDebug("MageAvoidance: requesting KITING!!!")),
-                            Kite.BeginKitingBehavior()
-                            )
-                        )
-                    );
-            }
-
-            if (!pri.Children.Any())
-            {
-                pri.AddChild(new ActionAlwaysFail());
-            }
-
-            return new Decorator( req => MovementManager.IsClassMovementAllowed, pri );
+            int distBlink = TalentManager.HasGlyph("Blink") ? 28 : 20;
+            return Avoidance.CreateAvoidanceBehavior("Blink", distBlink, Disengage.Direction.Frontwards, new ActionAlwaysSucceed());
         }
 
         /*
@@ -627,7 +640,7 @@ namespace Singular.ClassSpecific.Mage
                 ret => Unit.NearbyUnfriendlyUnits.Any(u => u.SpellDistance() <= 8 && !u.Stunned && !u.Rooted && !u.IsSlowed()),
                 new PrioritySelector(
                     new Decorator(
-                        ret => Me.Specialization == WoWSpec.MageFrost,
+                        ret => TalentManager.CurrentSpec == WoWSpec.MageFrost,
                         Mage.Frost.CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8), ClusterType.Radius, 8))
                         ),
                     Spell.Buff("Frost Nova"),
@@ -652,20 +665,26 @@ namespace Singular.ClassSpecific.Mage
                     }),
                 new Decorator(
                     // ret => ret != null && !((WoWUnit)ret).Stunned && !((WoWUnit)ret).Rooted && !((WoWUnit)ret).IsSlowed(),
-                    ret => ret != null && !((WoWUnit)ret).IsCrowdControlled() && !((WoWUnit)ret).IsSlowed(),
+                    ret => ret != null,
                     new PrioritySelector(
                         new Throttle(2,
                             new PrioritySelector(
                                 new Decorator(
-                                    ret => Me.Specialization == WoWSpec.MageFrost,
+                                    req => ((WoWUnit)req).IsCrowdControlled(),
+                                    new Action(r => Logger.WriteDebug("SlowMelee: target already crowd controlled"))
+                                    ),
+                                new Decorator(
+                                    req => ((WoWUnit)req).IsSlowed(60),
+                                    new Action(r => Logger.WriteDebug("SlowMelee: target already slowed at least 50%"))
+                                    ),
+                                new Decorator(
+                                    ret => TalentManager.CurrentSpec == WoWSpec.MageFrost,
                                     Mage.Frost.CastFreeze(on => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.SpellDistance() < 8), ClusterType.Radius, 8))
                                     ),
                                 Spell.CastOnGround("Ring of Frost", onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 30, true),
                                 Spell.Cast("Frost Nova", mov => true, onUnit => (WoWUnit)onUnit, req => ((WoWUnit)req).SpellDistance() < 12, cancel => false),
                                 Spell.Cast("Frostjaw", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false),
-                                Spell.Cast("Cone of Cold", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false),
-                                Spell.Cast("Frost Bolt", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false),
-                                Spell.Cast("Frostfire Bolt", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false)
+                                Spell.Cast("Cone of Cold", mov => true, onUnit => (WoWUnit)onUnit, req => true, cancel => false)
                                 )
                             )
                         )
@@ -683,22 +702,65 @@ namespace Singular.ClassSpecific.Mage
                 if (HasTalent(MageTalents.RuneOfPower))
                     return false;
 
+                if (!Spell.CanCastHack("Evoation"))
+                    return false;
+
                 // always evocate if low mana
                 if (Me.ManaPercent < 30)
+                {
+                    Logger.Write(Color.White, "^Evocation: casting due to low Mana");
                     return true;
-
-                // for invocation talent, return true if buff has expired
-                bool hasInvocation = HasTalent(MageTalents.Invocation);
-                if ( hasInvocation)
-                    return Me.HasAuraExpired("Evocation", "Invoker's Energy", 1);
+                }
 
                 // if low health, return true if we are glyphed (made sure no invocation or rune of power talented chars reach here already)
                 if (Me.HealthPercent < 40)
-                    return TalentManager.HasGlyph("Evocation");
+                {
+                    bool needHeal = TalentManager.HasGlyph("Evocation");
+                    if (needHeal)
+                        Logger.Write(Color.White, "^Evocation: casting for glyphed heal");
+                    return needHeal;
+                }
 
                 return false;
             }
         }
+
+        private static Composite _runeOfPower;
+
+        public static Composite CreateMageRuneOfPowerBehavior()
+        {
+            if (!Common.HasTalent(MageTalents.RuneOfPower))
+                return new ActionAlwaysFail();
+
+            if (_runeOfPower == null)
+            {
+                _runeOfPower = new ThrottlePasses(
+                    1,
+                    TimeSpan.FromSeconds(6),
+                    RunStatus.Failure,
+                    Spell.CastOnGround("Rune of Power", on => Me, req => !Me.IsMoving && !Me.InVehicle && !Me.HasAura("Rune of Power") && Singular.Utilities.EventHandlers.LastNoPathFailure.AddSeconds(15) < DateTime.Now, false)
+                    );
+            }
+
+            return _runeOfPower;
+        }
+
+        public static Composite CreateMageInvocationBehavior()
+        {
+            if (!Common.HasTalent(MageTalents.Invocation))
+                return new ActionAlwaysFail();
+
+            return new Decorator(
+                req => !Me.HasAura("Invoker's Energy") && Spell.CanCastHack("Evocation"),
+                new Sequence(
+                    new Action(r => Logger.Write(Color.White, "^Invocation: buffing Invoker's Energy")),
+                    Spell.Cast("Evocation", on => Me, req => true, cancel => false),
+                    Helpers.Common.CreateWaitForLagDuration(),
+                    new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
+                    )
+                );
+        }
+
     }
 
     public enum MageTalents

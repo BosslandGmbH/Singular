@@ -88,6 +88,8 @@ namespace Singular.ClassSpecific.Paladin
                                 Helpers.Common.CreateAutoAttack(true),
                                 Helpers.Common.CreateInterruptBehavior(),
 
+                                Common.CreatePaladinPullMore(),
+
                                 Common.CreatePaladinBlindingLightBehavior(),
 
                                 Spell.Cast("Hammer of Justice", ret => PaladinSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal),

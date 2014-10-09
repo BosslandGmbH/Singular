@@ -19,6 +19,7 @@ using System.Drawing;
 using Styx.CommonBot.POI;
 using Styx.Common.Helpers;
 using System.Collections.Generic;
+using Styx.CommonBot.Routines;
 
 namespace Singular.ClassSpecific.Hunter
 {
@@ -91,6 +92,22 @@ namespace Singular.ClassSpecific.Hunter
                 );
         }
 
+        [Behavior(BehaviorType.Initialize, WoWClass.Hunter)]
+        public static Composite CreateHunterInitialize()
+        {
+            if (SingularRoutine.CurrentWoWContext == WoWContext.Normal || SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds)
+            {
+                Composite jturn = null;
+                if (!SingularSettings.Instance.JumpTurnAllow)
+                    jturn = null;
+                else
+                    jturn = CreateJumpTurnAttack();
+
+                Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), null, jturn);
+            }
+
+            return null;
+        }
 
         [Behavior(BehaviorType.Rest, WoWClass.Hunter)]
         public static Composite CreateHunterRest()
@@ -561,7 +578,8 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 new Decorator(
-                    ret =>  !SingularSettings.Instance.DisablePetUsage 
+                    ret =>  !SingularSettings.Instance.DisablePetUsage
+                        && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning) 
                         && (!Me.GotAlivePet || (ActivePetNumber != PetWeWant && ActivePetNumber != 0))
                         && PetManager.PetSummonAfterDismountTimer.IsFinished 
                         && !Me.Mounted 
@@ -674,32 +692,7 @@ namespace Singular.ClassSpecific.Hunter
         /// <returns></returns>
         public static Composite CreateHunterAvoidanceBehavior(Composite nonfacingAttack, Composite jumpturnAttack)
         {
-            Composite jturn = null;
-            if (!SingularSettings.Instance.JumpTurnAllow)
-                jturn = null;
-            else if (jumpturnAttack != null)
-                jturn = jumpturnAttack;
-            else
-                jturn = CreateJumpTurnAttack();
-
-            Kite.CreateKitingBehavior(CreateSlowMeleeBehavior(), nonfacingAttack, jturn);
-
-            return new Decorator(
-                req => MovementManager.IsClassMovementAllowed,
-                new PrioritySelector(
-                    new Decorator(
-                        ret => Kite.IsDisengageWantedByUserSettings(),
-                        new PrioritySelector(
-                            Disengage.CreateDisengageBehavior("Disengage", Disengage.Direction.Backwards, 20, CreateSlowMeleeBehaviorForDisengage()),
-                            Disengage.CreateDisengageBehavior("Rocket Jump", Disengage.Direction.Frontwards, 20, CreateSlowMeleeBehavior())
-                            )
-                        ),
-                    new Decorator(
-                        ret => Kite.IsKitingWantedByUserSettings(),
-                        Kite.BeginKitingBehavior()
-                        )
-                    )
-                );
+            return Avoidance.CreateAvoidanceBehavior("Disengage", 20, Disengage.Direction.Backwards, new ActionAlwaysSucceed());
         }
 
         private static bool useRocketJump;

@@ -197,6 +197,22 @@ namespace Singular.Settings
         [Description("Move behind targets for opener or when target stunned/not targeting Druid in Cat Form")]
         public bool MoveBehindTargets { get; set; }
 
+        [Setting]
+        [DefaultValue(1)]
+        [Category("Common")]
+        [DisplayName("Disorienting Roar Count")]
+        [Description("Number of Mobs required before casting Disorienting Roar when Solo/PVP")]
+        public int DisorientingRoarCount { get; set; }
+
+        [Setting]
+        [DefaultValue(25)]
+        [Category("Common")]
+        [DisplayName("Disorienting Roar Health %")]
+        [Description("Health % to cast Disorienting Roar to peel off mobs prior to healing when Solo/PVP")]
+        public int DisorientingRoarHealth { get; set; } 
+
+
+
 /*
                         [Setting]
                         [DefaultValue(false)]
@@ -237,7 +253,7 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(20)]
         [Category("Self Healing")]
-        [DisplayName("Ancestral Swiftness")]
+        [DisplayName("Nature's Swiftness")]
         [Description("Health Percent to cast for self-heal when Solo")]
         public int SelfNaturesSwiftnessHealth { get; set; } 
 

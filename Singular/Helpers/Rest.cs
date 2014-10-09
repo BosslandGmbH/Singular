@@ -14,6 +14,8 @@ using Styx.TreeSharp;
 using System;
 
 using Action = Styx.TreeSharp.Action;
+using System.Drawing;
+using Singular.Managers;
 
 namespace Singular.Helpers
 {
@@ -58,16 +60,18 @@ namespace Singular.Helpers
                                 && Me.HealthPercent <= 85  // not redundant... this eliminates unnecessary GetPredicted... checks
                                 && SpellManager.HasSpell(spellHeal) && Spell.CanCastHack(spellHeal, Me)
                                 && Me.PredictedHealthPercent(includeMyHeals: true) <= 85 && !Me.HasAnyAura("Drink", "Food"),
-                            new PrioritySelector(
+                            new Sequence(
                                 Movement.CreateEnsureMovementStoppedBehavior(reason: "to heal"),
-                                new Action(r => { Logger.WriteDebug("Rest Heal - {0} @ {1:F1}% Predict:{2:F1}% and moving:{3}, cancast:{4}", spellHeal, Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack(spellHeal, Me, skipWowCheck: false)); return RunStatus.Failure; }),
+                                new Action(r => Logger.WriteDebug("Rest Heal - {0} @ {1:F1}% Predict:{2:F1}% and moving:{3}, cancast:{4}", spellHeal, Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack(spellHeal, Me, skipWowCheck: false)) ),
                                 new Sequence(
+                                    ctx => (int) Me.HealthPercent,
                                     Spell.Cast(spellHeal,
                                         mov => true,
                                         on => Me,
                                         req => true,
                                         cancel => Me.HealthPercent > 90
                                         ),
+                                    new WaitContinue( TimeSpan.FromMilliseconds(500), until => Me.HealthPercent > (1.1 * ((int)until)), new ActionAlwaysSucceed()),
                                     new Action( r => Logger.WriteDebug("Rest - After Heal Attempted: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
                                     ),
                                 new Action( r => Logger.WriteDebug("Rest - After Heal Skipped: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
@@ -226,7 +230,7 @@ namespace Singular.Helpers
                 return false;
 
             // ferals and guardians dont wait on mana either
-            if (Me.Specialization == WoWSpec.DruidFeral || Me.Specialization == WoWSpec.DruidGuardian )
+            if (TalentManager.CurrentSpec == WoWSpec.DruidFeral || TalentManager.CurrentSpec == WoWSpec.DruidGuardian )
                 return false;
                 
             // wait for mana if too low

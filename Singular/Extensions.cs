@@ -121,7 +121,7 @@ namespace Singular
             else if (obj is WoWUnit && obj.ToUnit().IsPet)
             {
                 WoWUnit root = obj.ToUnit().OwnedByRoot;
-                name =  root == null ? "(unknown)" : root.SafeName()  + ":Pet";
+                name =  (root == null ? "(unknown-owner)" : root.SafeName()) + ":Pet";
             }
             else
             {
@@ -208,6 +208,9 @@ namespace Singular
         private static string _lastGetPredictedError;
         public static float PredictedHealthPercent(this WoWUnit u, bool includeMyHeals = false)
         {
+#if true
+            return u.GetPredictedHealthPercent(includeMyHeals);
+#else
             float ph = u.GetPredictedHealthPercent(includeMyHeals);
             if (ph > 100f || ph < 0f)
             {
@@ -222,6 +225,7 @@ namespace Singular
                     {
                         _lastGetPredictedError = msg;
                         Logger.WriteDebug(System.Drawing.Color.Pink, msg);
+                        u.LocalGetPredictedHealth(includeMyHeals);
                     }
                 }
 
@@ -229,6 +233,7 @@ namespace Singular
             }
 
             return ph;
+#endif
         }
 
         /// <summary>

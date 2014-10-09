@@ -83,17 +83,23 @@ namespace Singular
 
         private static ulong ArgToGuid(object o)
         {
-            string svalue = o.ToString().Replace("0x", string.Empty);
-            try
-            {
-                return ulong.Parse( svalue, NumberStyles.HexNumber);
-            }
-            catch
-            {
-                Logger.WriteDebug("error parsing Guid '{0}'", o.ToString());
+            string svalue = o.ToString();
+            ulong guid = 0;
+            
+            if (!string.IsNullOrEmpty(svalue))
+            {           
+                svalue = svalue.Replace("0x", string.Empty);
+                try
+                {
+                    guid = ulong.Parse( svalue, NumberStyles.HexNumber);
+                }
+                catch
+                {
+                    Logger.WriteDebug("error parsing Guid '{0}'", o.ToString());
+                }
             }
 
-            return 0;
+            return guid;
         }
     }
 }

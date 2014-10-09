@@ -255,28 +255,28 @@ namespace Singular.Settings
             if (StyxWoW.Me.Class == WoWClass.Warlock)       LogSettings("WarlockSettings", Warlock());
             if (StyxWoW.Me.Class == WoWClass.Warrior)       LogSettings("WarriorSettings", Warrior());
 
-            if (StyxWoW.Me.Specialization == WoWSpec.ShamanRestoration)
+            if (TalentManager.CurrentSpec == WoWSpec.ShamanRestoration)
             {
                 LogSettings("Shaman.Heal.Battleground", Shaman().RestoBattleground);
                 LogSettings("Shaman.Heal.Instance", Shaman().RestoInstance);
                 LogSettings("Shaman.Heal.Raid", Shaman().RestoRaid);
             }
 
-            if (StyxWoW.Me.Specialization == WoWSpec.PriestHoly)
+            if (TalentManager.CurrentSpec == WoWSpec.PriestHoly)
             {
                 LogSettings("Priest.Holy.Heal.Battleground", Priest().HolyBattleground);
                 LogSettings("Priest.Holy.Heal.Instance", Priest().HolyInstance);
                 LogSettings("Priest.Holy.Heal.Raid", Priest().HolyRaid);
             }
 
-            if (StyxWoW.Me.Specialization == WoWSpec.PriestDiscipline)
+            if (TalentManager.CurrentSpec == WoWSpec.PriestDiscipline)
             {
                 LogSettings("Priest.Disc.Heal.Battleground", Priest().DiscBattleground);
                 LogSettings("Priest.Disc.Heal.Instance", Priest().DiscInstance);
                 LogSettings("Priest.Disc.Heal.Raid", Priest().DiscRaid);
             }
 
-            if (StyxWoW.Me.Specialization == WoWSpec.DruidRestoration)
+            if (TalentManager.CurrentSpec == WoWSpec.DruidRestoration)
             {
                 LogSettings("Druid.Heal.Battleground", Druid().Battleground);
                 LogSettings("Druid.Heal.Instance", Druid().Instance);
@@ -491,14 +491,21 @@ namespace Singular.Settings
         [Description("Controls movement allowed within the CC. None: prevent all movement; ClassSpecificOnly: only Charge/HeroicThrow/Blink/Disengage/etc; All: all movement allowed; Auto: same as None if LazyRaider used, otherwise same as All")]
         public AllowMovementType AllowMovement { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(true)]
+        [Category("Movement")]
+        [DisplayName("Move Sideways to Gather Mobs")]
+        [Description("Allow movement to move attacking NPCs in front")]
+        public bool MoveSidewaysToGatherMobs { get; set; }
+
+        [Setting, ReadOnly(false)]
         [DefaultValue(12)]
         [Category("Movement")]
         [DisplayName("Melee Dismount Range")]
         [Description("Distance from target that melee should dismount")]
         public int MeleeDismountRange { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
         [DefaultValue(true)]
         [Category("Movement")]
         [DisplayName("Allow Melee Move Behind")]
@@ -508,7 +515,7 @@ namespace Singular.Settings
         [Setting,ReadOnly(false)]
         [DefaultValue(true)]
         [Category("Movement")]
-        [DisplayName("Keep Melee Mobs Front")]
+        [DisplayName("Keep Melee Mobs in Front")]
         [Description("Allow Singular to move melee classes to keep melee attackers in front.  Works only in Normal (Solo) context")]
         public bool MeleeKeepMobsInFront { get; set; }
 
@@ -570,14 +577,14 @@ namespace Singular.Settings
         public bool DisengageAllowed { get; set; }
 
         [Setting,ReadOnly(false)]
-        [DefaultValue(70)]
+        [DefaultValue(101)]
         [Category("Avoidance")]
         [DisplayName("Disengage at Health %")]
         [Description("Disengage (or equiv) if health below this % and mob in melee range")]
         public int DisengageHealth { get; set; }
 
         [Setting,ReadOnly(false)]
-        [DefaultValue(2)]
+        [DefaultValue(1)]
         [Category("Avoidance")]
         [DisplayName("Disengage at mob count")]
         [Description("Disengage (or equiv) if this many mobs in melee range")]
@@ -591,14 +598,14 @@ namespace Singular.Settings
         public bool KiteAllow { get; set; }
 
         [Setting,ReadOnly(false)]
-        [DefaultValue(50)]
+        [DefaultValue(70)]
         [Category("Avoidance")]
         [DisplayName("Kite below Health %")]
         [Description("Kite if health below this % and mob in melee range")]
         public int KiteHealth { get; set; }
 
         [Setting,ReadOnly(false)]
-        [DefaultValue(2)]
+        [DefaultValue(1)]
         [Category("Avoidance")]
         [DisplayName("Kite at mob count")]
         [Description("Kite if this many mobs in melee range")]
@@ -686,13 +693,6 @@ namespace Singular.Settings
         #endregion 
 
         #region Category: Group Healing / Support
-
-        [Setting,ReadOnly(false)]
-        [DefaultValue(true)]
-        [Category("Group Healing/Support")]
-        [DisplayName("Use Soulwell")]
-        [Description("Use any nearby Soulwell from your group when out of Healthstones")]
-        public bool UseSoulwell { get; set; }
 
         [Setting,ReadOnly(false)]
         [DefaultValue(35)]
@@ -809,6 +809,73 @@ namespace Singular.Settings
 
         #endregion
 
+        #region Category: Group - Use Items
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(true)]
+        [Category("Group: Use Items")]
+        [DisplayName("Spheres: Use")]
+        [Description("True: allow moving to spheres for Health/Chi")]
+        public bool MoveToSpheres { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(15)]
+        [Category("Group: Use Items")]
+        [DisplayName("Spheres: Rest Max Range")]
+        [Description("Max distance willing to move when resting")]
+        public int SphereDistanceAtRest { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(7)]
+        [Category("Group: Use Items")]
+        [DisplayName("Spheres: Combat Max Range")]
+        [Description("Max distance willing to move during combat")]
+        public int SphereDistanceInCombat { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(85)]
+        [Category("Group: Use Items")]
+        [DisplayName("Spheres: Rest Health %")]
+        [Description("Health % to cause move to healing spheres at rest")]
+        public int SphereHealthPercentAtRest { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(60)]
+        [Category("Group: Use Items")]
+        [DisplayName("Spheres: Combat Health %")]
+        [Description("Health % to cause move to healing spheres during combat")]
+        public int SphereHealthPercentInCombat { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(true)]
+        [Category("Group: Use Items")]
+        [DisplayName("Soulwell: Use")]
+        [Description("Use any nearby Soulwell from your group when out of Healthstones")]
+        public bool UseSoulwell { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(40)]
+        [Category("Group: Use Items")]
+        [DisplayName("Soulwell: Max Range")]
+        [Description("Max distance willing to move when resting")]
+        public int SoulwellDistance { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(true)]
+        [Category("Group: Use Items")]
+        [DisplayName("Table: Use")]
+        [Description("Use any nearby Refreshment Table from your group when out of Healthstones")]
+        public bool UseTable { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(40)]
+        [Category("Group: Use Items")]
+        [DisplayName("Table: Max Range")]
+        [Description("Max distance willing to move when to Refreshment Table")]
+        public int TableDistance { get; set; }
+
+        #endregion
+
         #region Category: Healing
 
         #endregion
@@ -903,7 +970,7 @@ namespace Singular.Settings
         [DefaultValue(true)]
         [Category("Targeting")]
         [DisplayName("Target World PVP Regardless")]
-        [Description("True: additional logic enabled to immediately attack enemy player; False: attacks based upon Targeting priority list.  Only effects behavior when Solo")]
+        [Description("Solo Only.  True: when attacked by player, ignore everything else and fight back;  False: attack based upon Targeting priority list.")]
         public bool TargetWorldPvpRegardless { get; set; }
 
         #endregion

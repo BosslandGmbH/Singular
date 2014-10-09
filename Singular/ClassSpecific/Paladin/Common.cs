@@ -131,7 +131,7 @@ namespace Singular.ClassSpecific.Paladin
             if (PaladinSettings.Seal == PaladinSeal.None)
                 return PaladinSeal.None;
 
-            if (StyxWoW.Me.Specialization == WoWSpec.None)
+            if (TalentManager.CurrentSpec == WoWSpec.None)
                 return SpellManager.HasSpell("Seal of Command") ? PaladinSeal.Command : PaladinSeal.None;
 
             PaladinSeal bestSeal = Settings.PaladinSeal.Truth;
@@ -139,7 +139,7 @@ namespace Singular.ClassSpecific.Paladin
                 bestSeal = PaladinSettings.Seal;
             else
             {
-                switch (Me.Specialization)
+                switch (TalentManager.CurrentSpec)
                 {
                     case WoWSpec.PaladinHoly:
                         if (Me.IsInGroup())
@@ -240,6 +240,36 @@ namespace Singular.ClassSpecific.Paladin
 
 
         }
+
+        /// <summary>
+        /// invoke on CurrentTarget if not tagged. use ranged instant casts if possible.  this  
+        /// is a blend of abilities across all specializations
+        /// </summary>
+        /// <returns></returns>
+        public static Composite CreatePaladinPullMore()
+        {
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+                return new ActionAlwaysFail();
+
+            return new Throttle(
+                2,
+                new Decorator(
+                    req => Me.GotTarget
+                        && !Me.CurrentTarget.IsPlayer
+                        && !Me.CurrentTarget.IsTagged
+                        && !Me.CurrentTarget.IsWithinMeleeRange,
+                    new PrioritySelector(
+                        Spell.Cast("Judgement"),
+                        Spell.Cast("Exorcism"),
+                        Spell.Cast("Hammer of Wrath"),
+                        Spell.Cast("Reckoning"),
+                        Spell.Cast("Hammer of Justice"),
+                        Spell.Cast("Holy Shock")
+                        )
+                    )
+                );
+        }
+
 
         public static bool HasTalent(PaladinTalents tal)
         {

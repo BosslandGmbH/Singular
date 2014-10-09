@@ -17,27 +17,6 @@ namespace Singular.Settings
         #region Spheres
 
         [Setting]
-        [DefaultValue(true)]
-        [Category("Spheres")]
-        [DisplayName("Move to Spheres")]
-        [Description("Allow moving to spheres for Chi and Health")]
-        public bool MoveToSpheres { get; set; }
-
-        [Setting]
-        [DefaultValue(15)]
-        [Category("Spheres")]
-        [DisplayName("Max Range at Rest")]
-        [Description("Max distance willing to move when resting")]
-        public int SphereDistanceAtRest { get; set; }
-
-        [Setting]
-        [DefaultValue(5)]
-        [Category("Spheres")]
-        [DisplayName("Max Range in Combat")]
-        [Description("Max distance willing to move during combat")]
-        public int SphereDistanceInCombat { get; set; }
-
-        [Setting]
         [DefaultValue(45)]
         [Category("Spheres")]
         [DisplayName("Rest Healing Sphere Health")]

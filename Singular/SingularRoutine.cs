@@ -29,6 +29,9 @@ namespace Singular
     {
         private static LogLevel _lastLogLevel = LogLevel.None;
 
+        public static uint Latency { get; set; }
+        private static WaitTimer WaitForLatencyCheck = new WaitTimer(TimeSpan.Zero);
+
         public static SingularRoutine Instance { get; private set; }
 
         public override string Name { get { return GetSingularRoutineName(); } }
@@ -38,6 +41,19 @@ namespace Singular
         public override bool WantButton { get { return true; } }
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
+
+        public CapabilityFlags SupportedCapabilities
+        {
+            get
+            {
+                return CapabilityFlags.All;
+            }
+        }
+
+        public static bool IsAllowed( CapabilityFlags flags)
+        {
+            return RoutineManager.GetCapabilityState(flags) == CapabilityState.DontCare;
+        }
 
         delegate void OnTargetChange(WoWUnit unit);
 
@@ -49,6 +65,8 @@ namespace Singular
 
         public override void Initialize()
         {
+            TalentManager.Init();       // initializes CurrentSpec which is referenced everywhere
+
             SingularSettings.Initialize();
 
             WriteSupportInfo();
@@ -58,7 +76,6 @@ namespace Singular
             // When we actually need to use it, we will.
             Spell.GcdInitialize();
 
-            TalentManager.Init();
             EventHandlers.Init();
             MountManager.Init();
             HotkeyDirector.Init();
@@ -171,7 +188,8 @@ namespace Singular
 
         private void PullMoreWeighTargetsFilter(List<Targeting.TargetPriority> units)
         {
-            if (SingularSettings.Instance.PullMoreMobCount > 1 && Me.Combat)
+            // Singular setting botpoi so if set increase that targets weight
+            if (SingularRoutine.IsPullMoreActive && Me.Combat)
             {
                 foreach (Styx.CommonBot.Targeting.TargetPriority p in units)
                 {
@@ -190,7 +208,7 @@ namespace Singular
             // save some support info in case we need
             Logger.WriteFile("{0:F1} days since Windows was restarted", TimeSpan.FromMilliseconds(Environment.TickCount).TotalHours / 24.0);
             Logger.WriteFile("{0} FPS currently in WOW", GetFPS());
-            Logger.WriteFile("{0} ms of Latency in WOW", StyxWoW.WoWClient.Latency);
+            Logger.WriteFile("{0} ms of Latency in WOW", SingularRoutine.Latency);
             Logger.WriteFile("{0} local system time", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"));
 
             // verify installed source integrity 
@@ -389,6 +407,12 @@ namespace Singular
                 return;
             }
             _nextNotInWorldMsgAllowed = DateTime.MinValue;
+
+            if (WaitForLatencyCheck.IsFinished)
+            {
+                Latency = StyxWoW.WoWClient.Latency;
+                WaitForLatencyCheck.Reset();
+            }
 
             // output messages about pulldistance and behaviorflag changes here
             MonitorPullDistance();

@@ -36,7 +36,10 @@ namespace Singular.ClassSpecific.DeathKnight
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Helpers.Common.CreateAutoAttack(true),
+
                         Helpers.Common.CreateInterruptBehavior(),
+
+                        Common.CreateDeathKnightPullMore(),
 
                         Common.CreateGetOverHereBehavior(),
 

@@ -16,6 +16,8 @@ using Styx.Common.Helpers;
 using System.Drawing;
 using Styx.WoWInternals.DBC;
 using Styx.CommonBot.POI;
+using System.Text;
+using Singular.Managers;
 
 namespace Singular.Helpers
 {
@@ -65,7 +67,7 @@ namespace Singular.Helpers
                 return false;
             }
 
-            switch (StyxWoW.Me.Specialization)
+            switch (TalentManager.CurrentSpec)
             {
                 case WoWSpec.DruidFeral:
                 case WoWSpec.DruidGuardian:
@@ -221,17 +223,17 @@ namespace Singular.Helpers
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMe
         {
-            get { return NearbyUnfriendlyUnits.Where(p => p.Combat && p.CurrentTargetGuid == StyxWoW.Me.Guid); }
+            get { return NearbyUnfriendlyUnits.Where(p => p.Aggro || (p.Combat && p.CurrentTargetGuid == StyxWoW.Me.Guid)); }
         }
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithMeOrMyStuff
         {
-            get { return NearbyUnfriendlyUnits.Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingMyStuff()))); }
+            get { return NearbyUnfriendlyUnits.Where(p => p.Aggro || (p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingMyStuff())))); }
         }
 
         public static IEnumerable<WoWUnit> UnitsInCombatWithUsOrOurStuff(int maxSpellDist)
         {
-            return UnfriendlyUnits(maxSpellDist).Where(p => p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingUs()))); 
+            return UnfriendlyUnits(maxSpellDist).Where(p => p.Aggro || (p.Combat && (p.TaggedByMe || (p.GotTarget && p.IsTargetingUs())))); 
         }
 
         public static IEnumerable<WoWUnit> NearbyUnitsInCombatWithUsOrOurStuff
@@ -278,14 +280,14 @@ namespace Singular.Helpers
             if (p.IsPlayer)
             {
                 WoWPlayer pp = p.ToPlayer();
-                if (pp.IsHorde == StyxWoW.Me.IsHorde)
+                if (pp.IsHorde == StyxWoW.Me.IsHorde && !pp.IsHostile)
                 {
                     if (showReason)
-                        Logger.Write(invalidColor, "invalid attack player {0} not enemy", p.SafeName());
+                        Logger.Write(invalidColor, "invalid attack player {0} not a hostile enemy", p.SafeName());
                     return false;
                 }
 
-                if (pp.Guid == StyxWoW.Me.CurrentTargetGuid && !Unit.CanAttackCurrentTarget)
+                if (!pp.CanWeAttack())
                 {
                     if (showReason)
                         Logger.Write(invalidColor, "invalid attack player {0} cannot be Attacked currently", p.SafeName());
@@ -316,13 +318,7 @@ namespace Singular.Helpers
                 if (!ValidUnit(pOwner))
                 {
                     if (showReason)
-                        Logger.Write(invalidColor, "invalid attack unit {0} not an attackable Player as Parent", p.SafeName());
-                    return false;
-                }
-                if (!Blacklist.Contains(pOwner, BlacklistFlags.Combat))
-                {
-                    if (showReason)
-                        Logger.Write(invalidColor, "valid attack unit {0} has an attackable Player as Parent", p.SafeName());
+                        Logger.Write(invalidColor, "invalid attack unit {0} - pets parent not an attackable Player", p.SafeName());
                     return false;
                 }
                 if (!StyxWoW.Me.IsPvPFlagged)
@@ -331,6 +327,14 @@ namespace Singular.Helpers
                         Logger.Write(invalidColor, "valid attackable player {0} but I am not PvP Flagged", p.SafeName());
                     return false;
                 }
+                if (Blacklist.Contains(pOwner, BlacklistFlags.Combat))
+                {
+                    if (showReason)
+                        Logger.Write(invalidColor, "invalid attack unit {0} - Parent blacklisted for combat", p.SafeName());
+                    return false;
+                }
+
+                return true;
             }
 
             // And ignore non-combat pets
@@ -422,19 +426,31 @@ namespace Singular.Helpers
         }
 
         /// <summary>
-        ///   Gets the nearby unfriendly units within *distance* yards.
+        ///   Gets unfriendly units within *distance* yards of CurrentTarget.
         /// </summary>
-        /// <param name="distance"> The distance to check from current target</param>
-        /// <value>The nearby unfriendly units.</value>
+        /// <param name="distance"> The distance to check from CurrentTarget</param>
+        /// <returns>IEnumerable of WoWUnit in range including CurrentTarget</returns>
         public static IEnumerable<WoWUnit> UnfriendlyUnitsNearTarget(float distance)
         {
-            if (StyxWoW.Me.CurrentTarget == null)
+            return UnfriendlyUnitsNearTarget(StyxWoW.Me.CurrentTarget, distance);
+        }
+
+        /// <summary>
+        /// Gets unfriendly units within *distance* yards of *unit*
+        /// </summary>
+        /// <param name="unit">WoWUnit to find targets in range</param>
+        /// <param name="distance">range within WoWUnit of other units</param>
+        /// <returns>IEnumerable of WoWUnit in range including *unit*</returns>
+        public static IEnumerable<WoWUnit> UnfriendlyUnitsNearTarget(WoWUnit unit, float distance)
+        {
+            if (unit == null)
                 return new List<WoWUnit>();
 
-            var dist = distance * distance;
-            var curTarLocation = StyxWoW.Me.CurrentTarget.Location;
-            return NearbyUnfriendlyUnits.Where(
-                        p => p.Location.DistanceSqr(curTarLocation) <= dist).ToList();
+            var distFromTargetSqr = distance * distance;
+            int distFromMe = 40 + (int) distance;
+
+            var curTarLocation = unit.Location;
+            return Unit.UnfriendlyUnits(distFromMe).Where(p => p.Location.DistanceSqr(curTarLocation) <= distFromTargetSqr).ToList();
         }
 
         /// <summary>
@@ -956,7 +972,140 @@ namespace Singular.Helpers
             return me.GroupInfo.IsInParty || me.GroupInfo.IsInRaid;
         }
 
-#if NO_LONGER_USED
+        private static string _lastGetPredictedError;
+        public static float GetVerifiedGetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)
+        {
+            float hbhp = unit.GetPredictedHealthPercent(includeMyHeals);
+#if false
+            Styx.Patchables.IncomingHeal[] heals = unit.IncomingHealsArray().ToArray();
+            uint myhealth = unit.CurrentHealth;
+
+            uint myincoming = TotalIncomingHeals(heals, includeMyHeals);
+            float mypredict = (100f * (myhealth + myincoming)) / unit.MaxHealth;
+
+            if (Math.Abs(mypredict - hbhp) < 2f)
+                return hbhp;
+
+            string msg = string.Format("Predict Error=WoWUnit.GetPredictedHealthPercent({0}) returned {1:F1}% for {2} with MyPredict={3:F1}% and HealthPercent={4:F1}%", includeMyHeals, hbhp, unit.SafeName(), mypredict, myhealth);
+            if (msg != _lastGetPredictedError)
+            {
+                _lastGetPredictedError = msg;
+                Logger.WriteDebug(System.Drawing.Color.Pink, msg);
+            }
+
+            hbhp = Math.Min(hbhp, mypredict);
+#endif
+            return hbhp;
+        }
+
+        private static uint TotalIncomingHeals( Styx.Patchables.IncomingHeal[] heals, bool includeMyHeals = false)
+        {
+            uint aggcheck = heals
+                .Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
+                .Aggregate(0u, (current, heal) => current + heal.HealAmount);
+#if false
+            uint myincoming = 0;
+            foreach (var heal in heals)
+            {
+                if (includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
+                    myincoming += heal.HealAmount;
+            }
+
+            uint sumcheck = (uint) heals
+                .Where(heal => includeMyHeals || heal.OwnerGuid != StyxWoW.Me.Guid)
+                .Sum( heal => (long) heal.HealAmount);                
+
+            if ( myincoming != aggcheck || aggcheck != sumcheck)
+            {
+                Logger.WriteDiagnostic(Color.HotPink, "Accuracy Error= my={0}  agg={1}  sum={2}", myincoming, aggcheck, sumcheck);
+            }
+#endif
+            return aggcheck;
+        }
+
+
+        public static IncomingHeal[] LocalIncomingHeals(this WoWUnit unit)
+        {
+            // Reversing note: CGUnit_C::GetPredictedHeals
+            const int PredictedHealsCount = 0x1374;
+            const int PredictedHealsArray = 0x1378;
+
+            Debug.Assert(unit != null);
+            uint health = unit.CurrentHealth;
+            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
+            if (incomingHealsCnt == 0)
+                return new IncomingHeal[0];
+
+            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
+
+            var heals = StyxWoW.Memory.ReadArray<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
+            return heals;
+        }
+
+
+        public static uint LocalGetPredictedHealthDebug(this WoWUnit unit, bool includeMyHeals = false)
+        {
+            // Reversing note: CGUnit_C::GetPredictedHeals
+            const int PredictedHealsCount = 0x1494;
+            const int PredictedHealsArray = 0x1498;
+            uint maxHealth = unit.MaxHealth;
+
+            Debug.Assert(unit != null);
+            uint health = unit.CurrentHealth;
+            var incomingHealsCnt = StyxWoW.Memory.Read<int>(unit.BaseAddress + PredictedHealsCount);
+            if (incomingHealsCnt == 0)
+            {
+                Logger.WriteDiagnostic( "  0 incoming heals");
+                return health;
+            }
+
+            var incomingHealsListPtr = StyxWoW.Memory.Read<IntPtr>(unit.BaseAddress + PredictedHealsArray);
+            var heals = StyxWoW.Memory.ReadArray<IncomingHeal>(incomingHealsListPtr, incomingHealsCnt);
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append( "\n");
+
+            uint inchealth = 0;
+            foreach ( var heal in heals)
+            {
+                if (includeMyHeals && heal.OwnerGuid == StyxWoW.Me.Guid)
+                    continue;
+                WoWUnit owner = ObjectManager.GetObjectByGuid<WoWUnit>(heal.OwnerGuid);
+                WoWSpell spell = WoWSpell.FromId(heal.spellId);
+                uint HealPct = (heal.HealAmount * 100) / maxHealth;
+
+                sb.Append(
+                    string.Format("  {0} {1}% {2} {3} {4} {5}\r\n", 
+                        heal.IsHealOverTime.ToYN(),
+                        HealPct.ToString().PadLeft(3),
+                        heal.HealAmount.ToString().PadLeft(6),
+                        spell.Name.PadLeft(15).Substring(0, 15),
+                        spell.Id,
+                        owner.Name
+                        )
+                    );
+
+                inchealth += heal.HealAmount;
+            }
+
+            sb.Append( "   Total Incoming Heals = ");
+            sb.Append( (inchealth * 100 / maxHealth).ToString().PadLeft(3));
+            sb.Append( "% ");
+            sb.Append( inchealth.ToString().PadLeft(6));
+            sb.Append("  Predicted Health Pct = ");
+            sb.Append( (((float) health + inchealth) * 100 / unit.MaxHealth).ToString("F1"));
+            sb.Append( "%\r\n");
+
+            Logger.WriteDiagnostic( sb.ToString());
+
+            return health + inchealth;
+        }
+
+        public static float LocalGetPredictedHealthPercentDebug(this WoWUnit unit, bool includeMyHeals = false)
+        {
+             return (float)unit.LocalGetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
+        }
+
         public static uint LocalGetPredictedHealth(this WoWUnit unit, bool includeMyHeals = false)
         {
             // Reversing note: CGUnit_C::GetPredictedHeals
@@ -978,7 +1127,7 @@ namespace Singular.Helpers
 
         public static float LocalGetPredictedHealthPercent(this WoWUnit unit, bool includeMyHeals = false)
         {
-             return (float)unit.LocalGetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
+            return (float)unit.LocalGetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -995,7 +1144,6 @@ namespace Singular.Helpers
 
             public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
         }
-#endif
 
         private static bool lastMovingAwayAnswer = false;
         private static ulong guidLastMovingAwayCheck = 0;
@@ -1052,15 +1200,27 @@ namespace Singular.Helpers
         /// any enemy player including in Sanctuary, not PVP flagged, etc where a player
         /// is not attackable
         /// </summary>
-        public static bool CanAttackCurrentTarget
+        public static bool CanWeAttack(this WoWUnit unit)
         {
-            get
-            {
-                if (StyxWoW.Me.CurrentTarget == null)
-                    return false;
+            if (unit == null)
+                return false;
 
-                return Lua.GetReturnVal<bool>("return UnitCanAttack(\"player\",\"target\")", 0);
+            bool canAttack = false;
+
+            if (unit.Guid == StyxWoW.Me.CurrentTargetGuid)
+                canAttack = Lua.GetReturnVal<bool>("return UnitCanAttack(\"player\",\"target\")", 0);
+            else
+            {
+                WoWUnit focusSave = StyxWoW.Me.FocusedUnit;
+                StyxWoW.Me.SetFocus(unit);
+                canAttack = Lua.GetReturnVal<bool>("return UnitCanAttack(\"player\",\"focus\")", 0);
+                if (focusSave == null || !focusSave.IsValid)
+                    StyxWoW.Me.SetFocus(0);
+                else
+                    StyxWoW.Me.SetFocus(focusSave);
             }
+
+            return canAttack;
         }
     }
 

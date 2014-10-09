@@ -85,7 +85,7 @@ namespace Singular.ClassSpecific.DeathKnight
                 bool depletedBlood, depletedFrost, depletedUnholy;
 
                 // Check Runes per http://wow.joystiq.com/2013/06/25/lichborne-patch-5-4-patch-note-analysis-for-death-knights/#continued
-                if (Me.Specialization == WoWSpec.DeathKnightUnholy)
+                if (TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy)
                 {
                     depletedBlood = BloodRuneSlotsActive == 0;
                     depletedFrost = FrostRuneSlotsActive == 0;
@@ -247,7 +247,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     // following for DPS only -- let Blood fall through in instances
                     Spell.Cast("Death Strike",
-                        ret => (Me.Specialization != WoWSpec.DeathKnightBlood || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+                        ret => (TalentManager.CurrentSpec != WoWSpec.DeathKnightBlood || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                             && Me.GotTarget && Me.CurrentTarget.InLineOfSpellSight && Me.IsSafelyFacing(Me.CurrentTarget)
                             && Me.HealthPercent < Settings.DeathStrikeEmergencyPercent),
 
@@ -261,9 +261,13 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Decorator(
                         ret => TalentManager.CurrentSpec != WoWSpec.DeathKnightUnholy && !GhoulMinionIsActive,
                         Spell.BuffSelf("Raise Dead",
-                            ret => (Me.Specialization == WoWSpec.DeathKnightBlood && Me.HealthPercent < Settings.SummonGhoulPercentBlood)
-                                || (Me.Specialization == WoWSpec.DeathKnightFrost && Me.HealthPercent < Settings.SummonGhoulPercentFrost)
-                                || (Me.HealthPercent < Settings.DeathPactPercent && (!Settings.DeathPactExclusive || !Me.HasAnyAura("Bone Shield","Vampiric Blood","Dancing Rune Weapon","Lichborne","Icebound Fortitude")))
+                            ret => SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning) 
+                                &&
+                                (
+                                    (TalentManager.CurrentSpec == WoWSpec.DeathKnightBlood && Me.HealthPercent < Settings.SummonGhoulPercentBlood)
+                                    || (TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost && Me.HealthPercent < Settings.SummonGhoulPercentFrost)
+                                    || (Me.HealthPercent < Settings.DeathPactPercent && (!Settings.DeathPactExclusive || !Me.HasAnyAura("Bone Shield","Vampiric Blood","Dancing Rune Weapon","Lichborne","Icebound Fortitude")))
+                                )
                             )
                         )
                     )
@@ -323,8 +327,13 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         // I'm unholy and I don't have a pet or I am blood/frost and I am using pet as dps bonus
                         Spell.BuffSelf("Raise Dead",
-                            ret => (TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy && !Me.GotAlivePet) 
-                                || (TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost && Settings.UseGhoulAsDpsCdFrost && !GhoulMinionIsActive)),
+                            ret => SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning) 
+                                && 
+                                (
+                                    (TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy && !Me.GotAlivePet) 
+                                    || (TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost && Settings.UseGhoulAsDpsCdFrost && !GhoulMinionIsActive)
+                                )
+                            ),
 
                         // never use army of the dead in instances if not blood specced unless you have the army of the dead glyph to take away the taunting
                         Spell.BuffSelf("Army of the Dead", 
@@ -379,7 +388,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 if (Presence == DeathKnightPresence.Auto)
                 {
-                    switch (Me.Specialization)
+                    switch (TalentManager.CurrentSpec)
                     {
                         case WoWSpec.DeathKnightBlood:
                             Presence =  DeathKnightPresence.Blood;
@@ -622,8 +631,8 @@ namespace Singular.ClassSpecific.DeathKnight
                     new Decorator(
                         ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentTarget.HasAuraExpired("Frost Fever"),
                         new PrioritySelector(
-                            Spell.Cast("Howling Blast", ret => Spell.UseAOE && Me.Specialization == WoWSpec.DeathKnightFrost),
-                            Spell.Cast("Icy Touch", ret => !Spell.UseAOE || Me.Specialization != WoWSpec.DeathKnightFrost)
+                            Spell.Cast("Howling Blast", ret => Spell.UseAOE && TalentManager.CurrentSpec == WoWSpec.DeathKnightFrost),
+                            Spell.Cast("Icy Touch", ret => !Spell.UseAOE || TalentManager.CurrentSpec != WoWSpec.DeathKnightFrost)
                             )
                         ),
 
@@ -633,6 +642,41 @@ namespace Singular.ClassSpecific.DeathKnight
         }
 
         #endregion
+
+        /// <summary>
+        /// invoke on CurrentTarget if not tagged. use ranged instant casts if possible.  this  
+        /// is a blend of abilities across all specializations
+        /// </summary>
+        /// <returns></returns>
+        public static Composite CreateDeathKnightPullMore()
+        {
+            if (SingularRoutine.CurrentWoWContext != WoWContext.Normal)
+                return new ActionAlwaysFail();
+
+            return new Throttle(
+                2,
+                new Decorator(
+                    req => Me.GotTarget
+                        && !Me.CurrentTarget.IsPlayer
+                        && !Me.CurrentTarget.IsTagged
+                        && !Me.CurrentTarget.IsWithinMeleeRange,
+                    new PrioritySelector(
+                        new Sequence(
+                            ctx => Me.CurrentTarget,
+                            Spell.Cast("Death Grip", on => (on as WoWUnit)),
+                            new DecoratorContinue( ret => Me.IsMoving, new Action(ret => StopMoving.Now())),
+                            new WaitContinue( TimeSpan.FromMilliseconds(500), until => !Me.IsMoving, new ActionAlwaysSucceed()),
+                            new WaitContinue( 1, until => (until as WoWUnit).IsWithinMeleeRange, new ActionAlwaysSucceed())
+                            ),
+                        Spell.Cast("Outbreak"),
+                        Spell.Cast("Icy Touch"),
+                        Spell.Cast("Death Siphon"),
+                        Spell.Cast("Dark Command"),
+                        Spell.Cast("Death Coil")
+                        )
+                    )
+                );
+        }
 
     }
 

@@ -14,6 +14,7 @@ using Styx.WoWInternals;
 using Styx.Common;
 using Styx.Plugins;
 using System.Dynamic;
+using Singular.Managers;
 
 namespace Singular
 {
@@ -88,12 +89,20 @@ namespace Singular
                 return WoWContext.None;
 
             if (ForcedContext != WoWContext.None)
+            {
+                if (_lastContext != ForcedContext)
+                    Logger.Write(Color.White, "Context: forcing use of {0} behaviors", ForcedContext);
+
                 return ForcedContext;
+            }
 
             Map map = StyxWoW.Me.CurrentMap;
 
             if (map.IsBattleground || map.IsArena)
             {
+                if (_lastContext != WoWContext.Battlegrounds)
+                    Logger.Write(Color.White, "Context: using {0} behaviors since in battleground/arena", WoWContext.Battlegrounds);
+
                 return WoWContext.Battlegrounds;
             }
 
@@ -101,14 +110,30 @@ namespace Singular
             {
                 if (Me.IsInInstance)
                 {
+                    if (_lastContext != WoWContext.Instances)
+                        Logger.Write(Color.White, "Context: using {0} behaviors since inside an instance", WoWContext.Instances);
+
                     return WoWContext.Instances;
                 }
 
-                if (Group.Tanks.Any())
+                // if (Group.Tanks.Any() || Group.Healers.Any())
+                const WoWPartyMember.GroupRole hasGroupRoleMask = WoWPartyMember.GroupRole.Healer | WoWPartyMember.GroupRole.Tank | WoWPartyMember.GroupRole.Damage;
+                if ((Me.Role & hasGroupRoleMask) != WoWPartyMember.GroupRole.None)
                 {
+                    if (_lastContext != WoWContext.Instances)
+                        Logger.Write(Color.White, "Context: using {0} behaviors since in group as {1}", WoWContext.Instances, Me.Role & hasGroupRoleMask);
+
                     return WoWContext.Instances;
                 }
+
+                if (_lastContext != WoWContext.Normal)
+                    Logger.Write(Color.White, "Context: no Role assigned (Tank/Healer/Damage), so using Normal (SOLO) behaviors");
+
+                return WoWContext.Normal;
             }
+
+            if (_lastContext != WoWContext.Normal)
+                Logger.Write(Color.White, "Context: using Normal (SOLO) behaviors since we are not in a group");
 
             return WoWContext.Normal;
         }
@@ -339,10 +364,10 @@ namespace Singular
 
         private static string SpecializationName()
         {
-            if (Me.Specialization == WoWSpec.None)
+            if (TalentManager.CurrentSpec == WoWSpec.None)
                 return "Lowbie";
 
-            string spec = Me.Specialization.ToString().CamelToSpaced();
+            string spec = TalentManager.CurrentSpec.ToString().CamelToSpaced();
             int idxLastSpace = spec.LastIndexOf(' ');
             if (idxLastSpace >= 0 && ++idxLastSpace < spec.Length)
                 spec = spec.Substring(idxLastSpace);
@@ -370,7 +395,7 @@ namespace Singular
                 }
             }
 
-            return bot.Name;
+            return bot == null ? "(null)" : bot.Name;
         }
 
         public static BotBase GetCurrentBotBase()

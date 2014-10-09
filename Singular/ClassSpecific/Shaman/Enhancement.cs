@@ -144,11 +144,6 @@ namespace Singular.ClassSpecific.Shaman
 
                         Common.CreateShamanDpsShieldBehavior(),
 
-                        new Decorator(
-                            ret => StyxWoW.Me.Level < 20,
-                            Spell.Cast("Lightning Bolt")
-                            ),
-
                         Helpers.Common.CreateAutoAttack(true),
                         Totems.CreateTotemsBehavior(),
                         Spell.Cast("Lightning Bolt", ret => !ShamanSettings.AvoidMaelstromDamage && StyxWoW.Me.HasAura("Maelstrom Weapon", 5)),
@@ -162,9 +157,10 @@ namespace Singular.ClassSpecific.Shaman
                                 Spell.Buff("Flame Shock", true, req => Me.CurrentTarget.Elite || (!Me.CurrentTarget.IsTrivial() && Unit.UnfriendlyUnits(12).Count() > 1) )
                                 )
                             ),
+
                         Spell.Cast("Earth Shock"),
 
-                        Spell.Cast("Lightning Bolt", ret => Me.CurrentTarget.IsFlying || !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, Me.CurrentTarget.Location))
+                        Spell.Cast("Lightning Bolt", ret => Me.Level < 20 || Me.CurrentTarget.IsFlying || !Styx.Pathing.Navigator.CanNavigateFully(Me.Location, Me.CurrentTarget.Location))
                         )
                     )
                 );
@@ -193,6 +189,9 @@ namespace Singular.ClassSpecific.Shaman
                         Common.CreateShamanDpsShieldBehavior(),
                         // Spell.BuffSelf("Spiritwalker's Grace", ret => StyxWoW.Me.IsMoving && StyxWoW.Me.Combat),
                         Spell.BuffSelf("Feral Spirit", ret => !Unit.IsTrivial(Me.CurrentTarget) && NeedFeralSpirit),
+
+                        // pull more logic (use instants first, then ranged pulls if possible)
+
 
                         Spell.Cast("Elemental Blast"),
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),

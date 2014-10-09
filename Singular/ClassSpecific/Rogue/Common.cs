@@ -65,15 +65,15 @@ namespace Singular.ClassSpecific.Rogue
                     new Sequence(
                         new DecoratorContinue(
                             ret => !Me.Disarmed && !Common.HasDaggerInMainHand && SpellManager.HasSpell("Dispatch"),
-                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Dispatch", Me.Specialization.ToString().CamelToSpaced()))
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Dispatch", TalentManager.CurrentSpec.ToString().CamelToSpaced()))
                             ),
                         new DecoratorContinue(
                             ret => !Me.Disarmed && !Common.HasTwoDaggers && SpellManager.HasSpell("Mutilate"),
-                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires two daggers equipped to cast Mutilate", Me.Specialization.ToString().CamelToSpaced()))
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires two daggers equipped to cast Mutilate", TalentManager.CurrentSpec.ToString().CamelToSpaced()))
                             ),
                         new DecoratorContinue(
                             ret => !Me.Disarmed && !Common.HasDaggerInMainHand && SpellManager.HasSpell("Backstab"),
-                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Backstab", Me.Specialization.ToString().CamelToSpaced()))
+                            new Action(ret => Logger.Write(Color.HotPink, "User Error: a{0} requires a dagger in mainhand to cast Backstab", TalentManager.CurrentSpec.ToString().CamelToSpaced()))
                             ),
                         new ActionAlwaysFail()
                         )
@@ -317,7 +317,7 @@ namespace Singular.ClassSpecific.Rogue
                                     req => UseLongCoolDownAbility,
                                     Spell.BuffSelf("Shadow Blades", req =>
                                     {
-                                        switch (Me.Specialization)
+                                        switch (TalentManager.CurrentSpec)
                                         {
                                             default:
                                             case WoWSpec.RogueAssassination:
@@ -491,7 +491,7 @@ namespace Singular.ClassSpecific.Rogue
 
                     if (closestTarget != null)
                     {
-                        msg = string.Format("^Sap: {0} @ {1:F1} yds from target to avoid aggro while hitting target", closestTarget.SafeName(), closestTarget.Location.Distance(Me.CurrentTarget.Location));
+                        msg = string.Format("^Sap: {0} which is {1:F1} yds from target to avoid aggro while attacking", closestTarget.SafeName(), Me.CurrentTarget.SpellDistance(closestTarget));
                     }
                 }
             }
@@ -501,7 +501,7 @@ namespace Singular.ClassSpecific.Rogue
                 if (RogueSettings.SapMovingTargetsOnPull && Me.CurrentTarget.IsMoving && IsUnitViableForSap(Me.CurrentTarget))
                 {
                     closestTarget = Me.CurrentTarget;
-                    msg = "^Sap: {0} since our target and moving";
+                    msg = string.Format( "^Sap: {0} @ {1:F1} yds since moving", Me.CurrentTarget.SafeName(), Me.CurrentTarget.SpellDistance());
                 }
             }
 

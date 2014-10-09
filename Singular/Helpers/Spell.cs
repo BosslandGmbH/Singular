@@ -58,7 +58,7 @@ namespace Singular.Helpers
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         public static void LogCast(string sname, WoWUnit unit, bool isHeal = false)
         {
-            LogCast(sname, unit, unit.HealthPercent, unit.Distance, isHeal);
+            LogCast(sname, unit, unit.HealthPercent, unit.SpellDistance(), isHeal);
         }
 
         public static void LogCast(string sname, WoWUnit unit, double health, double dist, bool isHeal = false)
@@ -119,6 +119,9 @@ namespace Singular.Helpers
         {
             get
             {
+                if (!SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.Aoe))
+                    return false;
+
                 return HotkeyDirector.IsAoeEnabled && SingularSettings.Instance.AllowAOE;
             }
         }
@@ -134,24 +137,30 @@ namespace Singular.Helpers
         /// <param name="unit">unit</param>
         /// <param name="other">Me if null, otherwise second unit</param>
         /// <returns></returns>
-        public static float MeleeDistance(this WoWUnit unit, WoWUnit other = null)
+        public static float MeleeDistance(this WoWUnit unit, WoWUnit atTarget = null)
         {
             // abort if mob null
             if (unit == null)
                 return 0;
 
-            if (other == null)
+            // when called as SomeUnit.SpellDistance()
+            // .. convert to SomeUnit.SpellDistance(Me)
+            if (atTarget == null)
+                atTarget = StyxWoW.Me;
+
+            // when called as SomeUnit.SpellDistance(Me) then
+            // .. convert to Me.SpellDistance(SomeUnit)
+            if (atTarget.IsMe)
             {
-                if (unit.IsMe)
-                    return 0;
-                other = StyxWoW.Me;
+                atTarget = unit;
+                unit = StyxWoW.Me;
             }
 
             // pvp, then keep it close
-            if (unit.IsPlayer && other.IsPlayer)
+            if (atTarget.IsPlayer && unit.IsPlayer)
                 return 3.5f;
 
-            return Math.Max(5f, other.CombatReach + 1.3333334f + unit.CombatReach);
+            return Math.Max(5f, atTarget.CombatReach + 1.3333334f + unit.CombatReach);
         }
 
         public static float MeleeRange
@@ -264,17 +273,15 @@ namespace Singular.Helpers
             return TimeSpan.FromSeconds(indetermValue);
         }
 
-        public static bool IsSpellOnCooldown(string castName)
-        {
-            SpellFindResults sfr;
-            if (!SpellManager.FindSpell(castName, out sfr))
+        public static bool IsSpellOnCooldown(WoWSpell spell)
+        {           
+            if (spell == null)
                 return true;
 
-            WoWSpell spell = sfr.Override ?? sfr.Original;
             if (Me.ChanneledCastingSpellId != 0)
                 return true;
 
-            uint num = StyxWoW.WoWClient.Latency * 2u;
+            uint num = SingularRoutine.Latency * 2u;
             if (StyxWoW.Me.IsCasting && Me.CurrentCastTimeLeft.TotalMilliseconds > num)
                 return true;
 
@@ -282,6 +289,22 @@ namespace Singular.Helpers
                 return true;
 
             return false;
+        }
+
+        public static bool IsSpellOnCooldown(int id)
+        {
+            WoWSpell spell = WoWSpell.FromId(id);
+            return IsSpellOnCooldown(spell);
+        }
+
+        public static bool IsSpellOnCooldown(string castName)
+        {
+            SpellFindResults sfr;
+            if (!SpellManager.FindSpell(castName, out sfr))
+                return true;
+
+            WoWSpell spell = sfr.Override ?? sfr.Original;
+            return IsSpellOnCooldown(spell);
         }
 
         /// <summary>
@@ -544,7 +567,7 @@ namespace Singular.Helpers
         public static bool IsGlobalCooldown(LagTolerance allow = LagTolerance.Yes)
         {
 #if NO_LATENCY_ISSUES_WITH_GLOBAL_COOLDOWN
-            uint latency = allow == LagTolerance.Yes ? StyxWoW.WoWClient.Latency : 0;
+            uint latency = allow == LagTolerance.Yes ? SingularRoutine.Latency : 0;
             TimeSpan gcdTimeLeft = Spell.GcdTimeLeft;
             return gcdTimeLeft.TotalMilliseconds > latency;
 #else
@@ -591,7 +614,7 @@ namespace Singular.Helpers
             if (StyxWoW.Me.ChannelObjectGuid > 0)
                 return false;
 
-            uint latency = StyxWoW.WoWClient.Latency * 2;
+            uint latency = SingularRoutine.Latency * 2;
             TimeSpan castTimeLeft = StyxWoW.Me.CurrentCastTimeLeft;
             if (allow == LagTolerance.Yes // && castTimeLeft != TimeSpan.Zero 
                 && StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds < latency)
@@ -638,7 +661,7 @@ namespace Singular.Helpers
             if (!StyxWoW.Me.IsChanneling)
                 return false;
 
-            uint latency = StyxWoW.WoWClient.Latency * 2;
+            uint latency = SingularRoutine.Latency * 2;
             TimeSpan timeLeft = StyxWoW.Me.CurrentChannelTimeLeft;
             if (allow == LagTolerance.Yes && timeLeft.TotalMilliseconds < latency)
                 return false;
@@ -1687,7 +1710,7 @@ namespace Singular.Helpers
             bool allowMovingWhileCasting = false;
             if (Me.Class == WoWClass.Shaman)
                 allowMovingWhileCasting = spell.Name == "Lightning Bolt";
-            else if (Me.Specialization == WoWSpec.MageFire)
+            else if (TalentManager.CurrentSpec == WoWSpec.MageFire)
                 allowMovingWhileCasting = spell.Name == "Scorch";
             else if (Me.Class == WoWClass.Hunter)
                 allowMovingWhileCasting = spell.Name == "Steady Shot" || (spell.Name == "Aimed Shot" && TalentManager.HasGlyph("Aimed Shot")) || spell.Name == "Cobra Shot";
@@ -2061,7 +2084,7 @@ namespace Singular.Helpers
 
         public static bool CanCastHackIsCastInProgress(WoWSpell spell, WoWUnit unit)
         {
-            uint lat = StyxWoW.WoWClient.Latency * 2u;
+            uint lat = SingularRoutine.Latency * 2u;
 
             if (Me.ChanneledCastingSpellId == 0)
             {

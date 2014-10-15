@@ -1,3 +1,161 @@
+--- Release 3.0.0.3696 ---
+
+General
+
+fixed - Move Sideways: logic which will gather mobs in front of you improved plus several fixes.  Should no longer move more than few yards to position mobs
+
+*new* - Move Sideways: added setting to allow disabling
+
+changed- Kiting: revised so now performs action only when mobs are crowd controlled or sufficiently slowed ( 60% ).  
+
+fixed - Kiting: improved destination logic allowing use near cliffs, etc
+
+fixed - Healer Movement: logic to stay near tank during combat improved
+
+fixed - Pet Taunt Enable/Disable - should now correctly disable Pet Taunts (Growl, Suffering, etc) upon entering Dungeon/Raid, and enable again when leaving.  Note:  Taunt spell must be on the Pet spell bar for HB to control it
+
+fixed - Talent Spec detection: fixed bug where Singular reacted too quickly to a character changing Specializations.  When leveling a new character this was causing use of the Lowbie spell priorities after Talent Manager assigned specialization at Level 10 until restarted
+
+change- Behaviors used in World Group: will use Solo settings if your character does not have a Role (Tank, Healer, DPS) assigned, but will use Group Behaviors if it does. Previously required having a Tank in group
+
+*new* - Healing Sphere movement:  all classes will now support moving to Monk's Healing Spheres on the ground if needed
+
+*new* - Mage Refreshment Table:  all characters support moving towards to pickup food
+
+*new* - Group Item Use settings:  regrouped some related settings together on General tab
+
+*new* - Group Item Use settings:  added settings to control moving to Soulwell
+
+*new* - Healing Spheres: All classes now support movement to Monk's Healing Spheres based upon settings
+
+*new* - Improper BotBase Logic detection: added Error messages indicating BotBase called Rest Behavior or PreCombatBuff Behavior during Combat
+
+*new* - Capability Flags: Singular now supports the new Capability Flag settings for selecting enabling/disabling of abilities by the BotBase or other components
+
+change- Pull More!: slight change to pull mobs similar to those you are already in combat with
+
+change- Pull More!: no longer pulls additional mobs if in combat with enemy have 2 times characters health
+
+change- Pull More!: additional messaging describing decisions made regarding when to stop pulling additional mobs
+
+change- Pull More!: the Pull More Target Type: LikeCurrent now includes mobs in combat with character or pet
+
+change- Pull More!: will only target additional mobs a maximum of 2 levels above character
+
+change- World Group Behaviors: will now choose Instance Behaviors if you are in a group and have any Role assigned (Tank, Damage, Healer.)  Otherwise Solo behaviors are used
+
+fixed - Double Cast: resolved issue where abilities cast during Rest (like self-Heal) double cast
+
+fixed - Tank Manager: will no longer Taunt enemy players 
+
+
+Death Knight
+
+*new* - All Specs - added Pull More! specific priority which favors ranged instant casts for pulling additional mobs
+
+
+Druid
+
+fixed - All Specs - Disorienting Roar setting added: previously was based upon Natures Swiftness Health
+
+fixed - Balance - Disengage-like ability (Wild Charge) now working as expected
+
+fixed - Balance - corrected distance check before invoking speed buff (Travel Form / Cat Form); now correctly measures distance to within 40 yds of target rather than melee so should be less unnecessary form switching
+
+*new* - Restoration - now supports Pull More once Hurricane is learned
+
+fixed - Balance - no longer should double cast Sunfire or Moonfire
+
+fixed - Balance - now correctly recognizes Feral Druid enemy for Faerie Fire 
+
+
+Mage
+
+change- All Specs - improved Rune of Power and Invocation behavior during Pull
+
+change- All Specs - reduced unnecessary casts of Evocation during combat
+
+change- Frost - will now heal Water Elemental based upon settings
+
+change- All Specs - Conjure Refreshment Table support improved
+
+change- Frost - changed to summon Water Elemental earlier during Rest
+
+fixed - Frost - Ice Lance no longer spams on low health targets. Will only cast if Fingers of Frost procced or target is trivial
+
+fixed - Frost - should no longer cast Freeze or Frost Nova on target that is already frozen
+
+change- Frost - should now include Cone of Cold to slow targets when Freeze and Frost Nova on cooldown
+
+change- Frost - PVP: will use instant Frostfire Bolt and buffed Ice Lance to snipe kills
+
+
+Monk
+
+change- Mistweaver - increased use of Expel Harm while Solo
+
+change- Mistweaver - recognizes Targeted Expulsion glyph and will target based upon need
+
+fixed - Windwalker - improved logic for cancelling FSK
+
+fixed - Windwalker - increased minimum range that Provoke is used to reduce wasted casts
+
+
+
+Paladin
+
+change- Retribution - udpated spell priority to current EJ recommendations
+
+*new* - Holy - now supports Pull More if Holy Prism is known
+
+*new* - All Specs - Pull More! specific spell priority
+
+fixed - Retribution - revised Instance/Raiding spell priority to match current best practices
+
+
+Rogue
+
+change- All Specs - revised Sap messaging
+
+
+Shaman
+
+*new* - All Specs - added Pull More! specific spell priority
+
+change- All Specs - should now cast Tremor Totem more consistently
+
+fixed - All Specs - self-healing no longer casts unnecessary Healing Surges during Rest
+
+change- Enhancement - will now cast Lightning Bolt on ranged targets while moving towards prior to Level 20
+
+
+Warlock
+
+fixed - Destruction - will now cast Rain of Fire only if AOE enabled and no crowd controlled targets in area of effect
+
+
+Warrior
+
+fixed - All Specs - Bladestorm - improved check for casting and when to cancel
+
+fixed - Arms - Heroic Leap - character now turns to face quickly after leap
+
+fixed - All Specs - Charge - should no longer have failed Charge casts due to "Out of range"
+
+change- Protection - will now default to Battle Stance if no Shield equipped.  Purpose is to improve results for those with low-level Warriors that they forgot to buy a shield for at Level 10
+
+*new* - All Specs - supports a Pull More! specific spell priority
+
+fixed - Fury - will now correctly use Storm Bolt, Bladestorm, and Shockwave if talented.
+
+fixed - Protection - should no longer cast Thunder Clap when target out of range
+
+change- Protection - will now cast Heroic Strike as a filler prior to learning Devastate or no shield equipped.  Primarily to help lower level Prot Warriors and those improperly equipped do more damage
+
+
+*new* - Protection - refined logic which will pull additional mobs when in Combat if Pull More! configured to do so
+
+
 --- Release 3.0.0.3629 ---
 
 General

@@ -453,6 +453,7 @@ namespace Singular.Settings
 
         // code should reference SingularSettings.Debug
         //
+        [Browsable(false)]
         [Setting,ReadOnly(false)]
         [DefaultValue(DebugOutputDest.FileOnly)]
         [Category("Debug")]

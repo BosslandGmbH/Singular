@@ -84,6 +84,8 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateWarriorEnragedRegeneration(),
 
+                        Common.CreateDieByTheSwordBehavior(),
+
                         new Decorator(
                             ret => {
                                 if (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss())
@@ -98,7 +100,6 @@ namespace Singular.ClassSpecific.Warrior
                                 return Unit.NearbyUnfriendlyUnits.Count(u => u.IsWithinMeleeRange) >= 4;
                                 },
                             new PrioritySelector(
-                                Spell.OffGCD( Spell.BuffSelf("Die by the Sword", req => Me.HealthPercent < 50)),
                                 Spell.OffGCD( Spell.CastOnGround("Demoralizing Banner", on => Me.CurrentTarget, req => true, false)),
                                 Spell.OffGCD( Spell.BuffSelf("Skull Banner" )),
                                 Spell.OffGCD( Spell.BuffSelf("Avatar")),
@@ -365,7 +366,7 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Spell.BuffSelf(Common.SelectedShout),
 
-                        Spell.BuffSelf("Die by the Sword", req => Me.HealthPercent < 70),
+                        Common.CreateDieByTheSwordBehavior(),
 
                         Spell.BuffSelf("Rallying Cry", req => Me.HealthPercent < 60),
 

@@ -653,6 +653,7 @@ namespace Singular.ClassSpecific.Monk
 
     public enum MonkTalents
     {
+#if PRE_WOD
         Celerity = 1,
         TigersLust,
         Momumentum,
@@ -671,6 +672,40 @@ namespace Singular.ClassSpecific.Monk
         RushingJadeWind,
         InvokeXuenTheWhiteTiger,
         ChiTorpedo
+#else
+
+        Celerity = 1,
+        TigersLust,
+        Momentum,
+
+        ChiWave,
+        ZenSphere,
+        ChiBurst,
+
+        PowerStrikes,
+        Ascension,
+        ChiBrew,
+
+        RingOfPeace,
+        ChargingOxWave,
+        LegSweep,
+
+        HealingElixirs,
+        DampenHarm,
+        DiffuseMagic,
+
+        RushingJadeWind,
+        InvokeXuenTheWhiteTiger,
+        ChiTorpedo,
+
+        SoulDance,
+        BreathOfTheSerpent = SoulDance,
+        HurricaneStrike = SoulDance,
+        ChiExplosion,
+        Serenity,
+        PoolOfMists = Serenity
+
+#endif
     }
 
 }

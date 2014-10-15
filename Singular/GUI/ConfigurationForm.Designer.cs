@@ -45,7 +45,9 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.lblTankToStayNear = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.cboDebugOutput = new System.Windows.Forms.ComboBox();
             this.cboForceUseOf = new System.Windows.Forms.ComboBox();
+            this.label6 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.chkDebugCasting = new System.Windows.Forms.CheckBox();
             this.ShowPlayerNames = new System.Windows.Forms.CheckBox();
@@ -64,8 +66,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.cboDebugOutput = new System.Windows.Forms.ComboBox();
-            this.label6 = new System.Windows.Forms.Label();
+            this.btnDump = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabClass.SuspendLayout();
@@ -271,6 +272,15 @@
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Miscellaneous Debug Settings";
             // 
+            // cboDebugOutput
+            // 
+            this.cboDebugOutput.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.cboDebugOutput.FormattingEnabled = true;
+            this.cboDebugOutput.Location = new System.Drawing.Point(6, 16);
+            this.cboDebugOutput.Name = "cboDebugOutput";
+            this.cboDebugOutput.Size = new System.Drawing.Size(68, 21);
+            this.cboDebugOutput.TabIndex = 5;
+            // 
             // cboForceUseOf
             // 
             this.cboForceUseOf.ForeColor = System.Drawing.SystemColors.ControlText;
@@ -280,6 +290,16 @@
             this.cboForceUseOf.Size = new System.Drawing.Size(130, 21);
             this.cboForceUseOf.TabIndex = 5;
             this.toolTip1.SetToolTip(this.cboForceUseOf, "*not saved* - Select behaviors to use on Taining Dummy");
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.label6.Location = new System.Drawing.Point(80, 20);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(74, 13);
+            this.label6.TabIndex = 1;
+            this.label6.Text = "Debug Output";
             // 
             // label5
             // 
@@ -404,6 +424,7 @@
             // 
             // grpFooter
             // 
+            this.grpFooter.Controls.Add(this.btnDump);
             this.grpFooter.Controls.Add(this.btnLogMark);
             this.grpFooter.Controls.Add(this.btnSaveAndClose);
             this.grpFooter.Controls.Add(this.lblVersion);
@@ -475,24 +496,16 @@
             this.label1.TabIndex = 4;
             this.label1.Text = "Singular";
             // 
-            // cboDebugOutput
+            // btnDump
             // 
-            this.cboDebugOutput.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.cboDebugOutput.FormattingEnabled = true;
-            this.cboDebugOutput.Location = new System.Drawing.Point(6, 16);
-            this.cboDebugOutput.Name = "cboDebugOutput";
-            this.cboDebugOutput.Size = new System.Drawing.Size(68, 21);
-            this.cboDebugOutput.TabIndex = 5;
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label6.Location = new System.Drawing.Point(80, 20);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(74, 13);
-            this.label6.TabIndex = 1;
-            this.label6.Text = "Debug Output";
+            this.btnDump.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.btnDump.Location = new System.Drawing.Point(234, 10);
+            this.btnDump.Name = "btnDump";
+            this.btnDump.Size = new System.Drawing.Size(96, 23);
+            this.btnDump.TabIndex = 8;
+            this.btnDump.Text = "Dump";
+            this.btnDump.UseVisualStyleBackColor = true;
+            this.btnDump.Click += new System.EventHandler(this.btnDump_Click);
             // 
             // ConfigurationForm
             // 
@@ -571,5 +584,6 @@
         private System.Windows.Forms.CheckBox chkDebugCasting;
         private System.Windows.Forms.ComboBox cboDebugOutput;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Button btnDump;
     }
 }

@@ -576,6 +576,11 @@ namespace Singular.GUI
 
             chkDebugCasting.Enabled = (dbgdest != DebugOutputDest.None);
         }
+
+        private void btnDump_Click(object sender, EventArgs e)
+        {
+            Singular.SingularRoutine.PullMoreQuestTargetsDump();
+        }
     }
 
     public class CboItem

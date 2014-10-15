@@ -148,7 +148,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                     Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),
 
                                     // Spell.Cast("Gorefiend's Grasp", ret => Common.HasTalent( DeathKnightTalents.GorefiendsGrasp)),
-                                    Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemoreselessWinter)),
+                                    Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemorselessWinter)),
 
                                     // refresh diseases if possible
                                     new Throttle(2,
@@ -241,7 +241,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                             // Start AoE section
                             Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),
-                            Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemoreselessWinter)),
+                            Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemorselessWinter)),
 
                             // renew/spread disease if possible
                             new Throttle( 2,
@@ -371,7 +371,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                     Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),
 
                                     // Spell.Cast("Gorefiend's Grasp", ret => Common.HasTalent( DeathKnightTalents.GorefiendsGrasp)),
-                                    Spell.Cast("Remorseless Winter", ret => Common.HasTalent(DeathKnightTalents.RemoreselessWinter)),
+                                    Spell.Cast("Remorseless Winter", ret => Common.HasTalent(DeathKnightTalents.RemorselessWinter)),
 
                                     // Apply Diseases
                                     Common.CreateApplyDiseases(),
@@ -380,8 +380,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                     new Throttle( 2,
                                         new PrioritySelector(
                                             Spell.Cast("Blood Boil",
-                                                ret => Common.HasTalent(DeathKnightTalents.RollingBlood)
-                                                    && !StyxWoW.Me.HasAura("Unholy Blight")
+                                                ret => // WOD: Common.HasTalent(DeathKnightTalents.RollingBlood) &&
+                                                    !StyxWoW.Me.HasAura("Unholy Blight")
                                                     && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10
                                                     && Common.ShouldSpreadDiseases),
 
@@ -507,8 +507,8 @@ namespace Singular.ClassSpecific.DeathKnight
             if ( !NeedsDisease(Me.CurrentTarget))
             {
                 int radius = TalentManager.HasGlyph("Pestilence") ? 15 : 10;
-                if (Common.HasTalent(DeathKnightTalents.RollingBlood))
-                    return Unit.NearbyUnfriendlyUnits.Any( u => u.Guid != Me.CurrentTargetGuid && Me.SpellDistance(u) < radius && NeedsDiseaseOrRefresh(u));
+                // WOD: if (Common.HasTalent(DeathKnightTalents.RollingBlood))
+                return Unit.NearbyUnfriendlyUnits.Any( u => u.Guid != Me.CurrentTargetGuid && Me.SpellDistance(u) < radius && NeedsDiseaseOrRefresh(u));
             }
 
             return false;

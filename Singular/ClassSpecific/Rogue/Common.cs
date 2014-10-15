@@ -1174,6 +1174,7 @@ namespace Singular.ClassSpecific.Rogue
 
     public enum RogueTalents
     {
+#if PRE_WOD
         None = 0,
         Nightstalker,
         Subterfuge,
@@ -1193,5 +1194,38 @@ namespace Singular.ClassSpecific.Rogue
         ShurikenToss,
         MarkedForDeath,
         Anticipation
+#else
+
+        Nightstalker = 1,
+        ShadowFocus,
+        Subterfuge,
+
+        CombatReadiness,
+        DeadlyThrow,
+        NerveStrike,
+
+        CheatDeath,
+        Elusiveness,
+        LeechingPoison,
+
+        BurstOfSpeed,
+        CloakAndDagger,
+        Shadowstep,
+
+        DirtyTricks,
+        InternalBleeding,
+        PreyonTheWeak,
+
+        Anticipation,
+        MarkedForDeath,
+        ShurikenToss,
+
+        DeathFromAbove,
+        ShadowReflection,
+        VenomRush
+
+
+#endif
+
     }
 }

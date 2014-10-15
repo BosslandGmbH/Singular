@@ -59,7 +59,7 @@ namespace Singular.Helpers
         {
             PrioritySelector prio = new PrioritySelector();
             // const int spellIdAutoShot = 75;
-            bool autoAttack = 
+            bool autoAttackMelee =
                    TalentManager.CurrentSpec == WoWSpec.None
                 || Me.Class == WoWClass.DeathKnight
                 || TalentManager.CurrentSpec == WoWSpec.DruidGuardian
@@ -70,28 +70,49 @@ namespace Singular.Helpers
                 || TalentManager.CurrentSpec == WoWSpec.PaladinRetribution
                 || Me.Class == WoWClass.Rogue
                 || TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement
-                || Me.Class == WoWClass.Warrior
-				|| Me.Class == WoWClass.Hunter;
+                || Me.Class == WoWClass.Warrior;
 
-            if (autoAttack)
+            bool autoAttackRanged =
+                   TalentManager.CurrentSpec == WoWSpec.None
+                || Me.Class == WoWClass.Hunter;
+
+            if (autoAttackMelee)
             {
                 prio.AddChild(
                     new Throttle(TimeSpan.FromMilliseconds(500),
                         new Decorator(
-                            ret => !StyxWoW.Me.IsAutoAttacking && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
+                            ret => !StyxWoW.Me.IsAutoAttacking && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange, // && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
                             new Action(ret =>
-                                {
-                                    WoWUnit unit = Me.CurrentTarget;
-                                    Logger.Write(Color.White, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
-                                    Lua.DoString("StartAttack()");
-                                    return RunStatus.Failure;
-                                })
+                            {
+                                WoWUnit unit = Me.CurrentTarget;
+                                Logger.Write(Color.White, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                                Lua.DoString("StartAttack()");
+                                return RunStatus.Failure;
+                            })
                             )
                         )
                     );
             }
 
-            if ( includePet)
+            if (autoAttackRanged)
+            {
+                prio.AddChild(
+                    new Throttle(TimeSpan.FromMilliseconds(500),
+                        new Decorator(
+                            ret => !StyxWoW.Me.IsAutoAttacking && Me.GotTarget && Me.CurrentTarget.SpellDistance() < 40, // && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
+                            new Action(ret =>
+                            {
+                                WoWUnit unit = Me.CurrentTarget;
+                                Logger.Write(Color.White, "/startattack on {0} @ {1:F1} yds", unit.SafeName(), unit.SpellDistance());
+                                Lua.DoString("StartAttack()");
+                                return RunStatus.Failure;
+                            })
+                            )
+                        )
+                    );
+            }
+
+            if (includePet)
             {
                 if (SingularRoutine.CurrentWoWContext != WoWContext.Normal || !SingularSettings.Instance.PetTankAdds)
                 {
@@ -535,10 +556,6 @@ namespace Singular.Helpers
             return prio;
         }
 
-        /// <summary>
-        /// Ensures the ready to attack from medium (30yd) range.
-        /// </summary>
-        /// <returns></returns>
         public static Composite EnsureReadyToAttackFromMediumRange( )
         {
             return new PrioritySelector(
@@ -553,10 +570,6 @@ namespace Singular.Helpers
                 );
         }
 
-        /// <summary>
-        /// Ensures the ready to attack from long (40yd) range.
-        /// </summary>
-        /// <returns></returns>
         public static Composite EnsureReadyToAttackFromLongRange()
         {
             return new PrioritySelector(
@@ -572,7 +585,7 @@ namespace Singular.Helpers
         }
 
         static DateTime brezStart = DateTime.Now;
-        static WoWGuid brezPrevGuid;
+        static WoWGuid brezPrevGuid = WoWGuid.Empty;
 
         public static Composite CreateCombatRezBehavior(string spellName, SimpleBooleanDelegate unitFilter = null, SimpleBooleanDelegate requirements = null)
         {

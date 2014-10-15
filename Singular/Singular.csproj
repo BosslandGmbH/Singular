@@ -368,7 +368,7 @@ ECHO Copied</PostBuildEvent>
   <PropertyGroup>
     <PreBuildEvent>if $(ConfigurationName) == Bobby53 (
 SubWCRev.exe $(ProjectDir) $(ProjectDir)SingularRoutine.Version.tmpl $(ProjectDir)SingularRoutine.Version.cs
-$(SolutionDir)..\filegen\bin\debug\filegen $(ProjectDir)
+$(ProjectDir)..\..\filegen\bin\debug\filegen $(ProjectDir)
 )</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

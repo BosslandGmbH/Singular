@@ -880,31 +880,6 @@ namespace Singular.ClassSpecific.Druid
 #endif
 
     }
-    #region Nested type: Talents
-
-    public enum DruidTalents
-    {
-        FelineSwiftness = 1,
-        DispacerBeast,
-        WildCharge,
-        YserasGift,
-        Renewal,
-        CenarionWard,
-        FaerieSwarm,
-        MassEntanglement,
-        Typhoon,
-        SoulOfTheForest,
-        Incarnation,
-        ForceOfNature,
-        DisorientingRoar,
-        UrsolsVortex,
-        MightyBash,
-        HeartOfTheWild,
-        DreamOfCenarius,
-        NaturesVigil
-    }
-
-    #endregion
 
 #region Symbiosis Druid Spells Gained
 
@@ -925,4 +900,68 @@ namespace Singular.ClassSpecific.Druid
 
 #endregion
 
+    public enum DruidTalents
+    {
+#if PRE_WOD
+        FelineSwiftness = 1,
+        DispacerBeast,
+        WildCharge,
+        YserasGift,
+        Renewal,
+        CenarionWard,
+        FaerieSwarm,
+        MassEntanglement,
+        Typhoon,
+        SoulOfTheForest,
+        Incarnation,
+        ForceOfNature,
+        DisorientingRoar,
+        UrsolsVortex,
+        MightyBash,
+        HeartOfTheWild,
+        DreamOfCenarius,
+        NaturesVigil
+#else
+
+        FelineSwiftness = 1,
+        DisplacerBeast,
+        WildCharge,
+
+        YserasGift,
+        Renewal,
+        CenarionWard,
+
+        FaerieSwarm,
+        MassEntanglement,
+        Typhoon,
+
+        SoulOfTheForest,
+        Incarnation,
+        ForceOfNature,
+
+        IncapacitatingRoar,
+        UrsolsVortex,
+        MightyBash,
+
+        HeartOfTheWild,
+        DreamOfCenarius,
+        NaturesVigil,
+
+        Euphoria,
+        LunarInspiration = Euphoria,
+        GuardianOfElune = Euphoria,
+        MomentOfClarity = Euphoria,
+
+        StellarFlare,
+        Bloodtalons = StellarFlare,
+        Pulverize = StellarFlare,
+        Germination = StellarFlare,
+
+        BalanceOfPower,
+        ClawsOfShirvallah = BalanceOfPower,
+        BristlingFur = BalanceOfPower,
+        RampantGrowth = BalanceOfPower
+
+#endif
+    }
 }

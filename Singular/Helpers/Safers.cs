@@ -109,8 +109,8 @@ namespace Singular.Helpers
                                     if (Me.GotTarget && Me.CurrentTarget.IsPlayer && Unit.ValidUnit(Me.CurrentTarget))
                                         return Me.CurrentTarget;
 
-                                    // if attacked in last 60 seconds, go after them
-                                    if ((DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 60)
+                                    // if attacked in last 15 seconds, go after them
+                                    if ((DateTime.Now - EventHandlers.LastAttackedByEnemyPlayer).TotalSeconds < 15)
                                     {
                                         WoWUnit ganker = EventHandlers.AttackingEnemyPlayer;
                                         if (Unit.ValidUnit(ganker))

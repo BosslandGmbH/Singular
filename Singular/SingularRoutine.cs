@@ -488,6 +488,9 @@ namespace Singular
                 TankManager.Instance.Pulse();
 
             HotkeyDirector.Pulse();
+
+            Singular.SingularRoutine.PullMoreQuestTargetsDump();
+
         }
 
         private static WoWGuid _lastPetGuid = WoWGuid.Empty;

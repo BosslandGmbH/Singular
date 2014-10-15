@@ -64,11 +64,12 @@ namespace Singular.ClassSpecific.Warrior
                     new PrioritySelector(
                         Common.CreateWarriorEnragedRegeneration(),
 
+                        Common.CreateDieByTheSwordBehavior(),
+
                         new Decorator(
                             ret => SingularRoutine.CurrentWoWContext == WoWContext.Normal
                                 && (Me.CurrentTarget.IsPlayer || 4 <= Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1)) || Me.CurrentTarget.TimeToDeath() > 40),
                             new PrioritySelector(
-                                Spell.BuffSelf("Die by the Sword", req => Me.HealthPercent < 50),
                                 Spell.CastOnGround("Demoralizing Banner", on => Me.CurrentTarget, req => true, false),
                                 Spell.Cast("Skull Banner"),
                                 Spell.Cast("Avatar"),

@@ -133,5 +133,19 @@ namespace Singular.Settings
         [Description("True: use Disarm on cooldown; False: do not cast")]
         public bool UseDisarm { get; set; }
 
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Defensive")]
+        [DisplayName("Die by the Sword %")]
+        [Description("Health % to cast this ability")]
+        public int DieByTheSwordHealth { get; set; }
+
+        [Setting]
+        [DefaultValue(50)]
+        [Category("Defensive")]
+        [DisplayName("Vigilance %")]
+        [Description("Health % to cast this ability")]
+        public int VigilanceHealth { get; set; }
+
     }
 }

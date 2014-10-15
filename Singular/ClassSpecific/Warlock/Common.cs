@@ -389,7 +389,7 @@ namespace Singular.ClassSpecific.Warlock
         #endregion
 
 
-        private static ulong _lastSapTarget = 0;
+        private static WoWGuid _lastSapTarget = WoWGuid.Empty;
 
 
 
@@ -888,6 +888,7 @@ namespace Singular.ClassSpecific.Warlock
 
     public enum WarlockTalents
     {
+#if PRE_WOD
         None = 0,
         DarkRegeneration,
         SoulLeech,
@@ -907,6 +908,41 @@ namespace Singular.ClassSpecific.Warlock
         ArchimondesDarkness,
         KiljadensCunning,
         MannorothsFury
+#else
+
+        DarkRegeneration,
+        SoulLeech,
+        HarvestLife,
+        SearingFlames = HarvestLife,
+
+        HowlOfTerror,
+        MortalCoil,
+        Shadowfury,
+
+        SoulLink,
+        SacrificialPact,
+        DarkBargain,
+
+        BloodHorror,
+        BurningRush,
+        UnboundWill,
+
+        GrimoireOfSupremacy,
+        GrimoireOfService,
+        GrimoireOfSacrifice,
+        GrimoireOfSynergy = GrimoireOfSacrifice,
+
+        ArchimondesDarkness,
+        KiljaedensCunning,
+        MannorothsFury,
+
+        SoulburnHaunt,
+        Demonbolt = SoulburnHaunt,
+        CharredRemains = SoulburnHaunt,
+        Cataclysm,
+        DemonicServitude
+
+#endif
     }
 
 }

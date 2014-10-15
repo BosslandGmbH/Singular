@@ -127,10 +127,10 @@ namespace Singular.ClassSpecific.Warrior
                         && !Me.CurrentTarget.IsWithinMeleeRange,
                     new PrioritySelector(
                         Common.CreateChargeBehavior(),
-                        Spell.Cast("Heroic Throw", req => Me.IsSafelyFacing(Me.CurrentTarget)),
+                        Spell.Cast("Heroic Throw", req => Me.IsSafelyFacing(Me.CurrentTarget) && !Me.CurrentTarget.IsWithinMeleeRange),
                         Spell.Cast("Taunt"),
                         new Decorator(
-                            req => SpellManager.HasSpell("Throw") && Me.CurrentTarget.SpellDistance() < 27,
+                            req => SpellManager.HasSpell("Throw") && Me.CurrentTarget.SpellDistance().Between(6, 27),
                             new Sequence(
                                 new Action( r => StopMoving.Now() ),
                                 new Wait( 1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
@@ -196,10 +196,6 @@ namespace Singular.ClassSpecific.Warrior
 
         public static Composite CreateChargeBehavior()
         {
-            if (!WarriorSettings.UseWarriorCloser)
-                return new ActionAlwaysFail();
-
-
             if (!WarriorSettings.UseWarriorCloser)
                 return new ActionAlwaysFail();
 
@@ -355,15 +351,18 @@ namespace Singular.ClassSpecific.Warrior
 
                     return false;
                 },
-                new PrioritySelector(
-                    Spell.Cast("Heroic Throw"),
-                    new Sequence(
-                        new PrioritySelector(
-                            Movement.CreateEnsureMovementStoppedBehavior( 27f, on => Me.CurrentTarget, reason: "To cast Throw"),
-                            new ActionAlwaysSucceed()
-                            ),
-                        new Wait( 1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
-                        Spell.Cast("Throw")
+                new Decorator( 
+                    req => !Me.CurrentTarget.IsWithinMeleeRange ,
+                    new PrioritySelector(
+                        Spell.Cast("Heroic Throw"),
+                        new Sequence(
+                            new PrioritySelector(
+                                Movement.CreateEnsureMovementStoppedBehavior( 27f, on => Me.CurrentTarget, reason: "To cast Throw"),
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Wait( 1, until => !Me.IsMoving, new ActionAlwaysSucceed()),
+                            Spell.Cast("Throw")
+                            )
                         )
                     )
                 );
@@ -395,11 +394,37 @@ namespace Singular.ClassSpecific.Warrior
                 );
         }
 
+        public static Composite CreateDieByTheSwordBehavior()
+        {
+            return Spell.OffGCD( Spell.BuffSelf("Die by the Sword", req => Me.Combat && Me.HealthPercent <= WarriorSettings.DieByTheSwordHealth) );
+        }
+
+        public static Composite CreateVigilanceBehavior()
+        {
+            UnitSelectionDelegate onUnit;
+
+            if (WarriorSettings.VigilanceHealth <= 0)
+                return new ActionAlwaysFail();
+
+            if ( SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+                onUnit = on => Unit.GroupMembers
+                    .Where( m => m.PredictedHealthPercent() <= WarriorSettings.VigilanceHealth)
+                    .OrderBy( m => m.HealthPercent)
+                    .FirstOrDefault();
+            else 
+                onUnit = on => (Group.MeIsTank || !Group.AnyTankNearby ? Group.Healers : Group.Tanks)
+                    .Where( m => m.PredictedHealthPercent() <= WarriorSettings.VigilanceHealth)
+                    .OrderBy( m => m.HealthPercent)
+                    .FirstOrDefault();
+
+            return Spell.Buff( "Vigilance",  onUnit);
+        }
 
     }
 
     enum WarriorTalents
     {
+#if PRE_WOD
         None = 0,
         Juggernaut,
         DoubleTime,
@@ -419,5 +444,42 @@ namespace Singular.ClassSpecific.Warrior
         Avatar,
         Bloodbath,
         StormBolt
+#else
+
+        Juggernaut = 1,
+        DoubleTime,
+        Warbringer,
+
+        EnragedRegeneration,
+        SecondWind,
+        ImpendingVictory,
+
+        TasteForBlood,
+        FuriousStrikes = TasteForBlood,
+        HeavyRepercussions = TasteForBlood,
+        SuddenDeath,
+        Slam,
+        UnquenchableThirst = Slam,
+        UnyieldingStrikes = Slam,
+
+        StormBolt,
+        Shockwave,
+        DragonRoar,
+
+        MassSpellReflection,
+        Safeguard,
+        Vigilance,
+
+        Avatar,
+        Bloodbath,
+        Bladestorm,
+
+        AngerManagement,
+        Ravager,
+        Siegebreaker,
+        GladiatorsResolve = Siegebreaker
+
+
+#endif
     }
 }

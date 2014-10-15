@@ -353,6 +353,7 @@ namespace Singular.ClassSpecific.Priest
 
     public enum PriestTalents
     {
+#if PRE_WOD
         VoidTendrils = 1,
         Psyfiend,
         DominateMind,
@@ -371,6 +372,47 @@ namespace Singular.ClassSpecific.Priest
         Cascade,
         DivineStar,
         Halo
+#else
+
+        DesperatePrayer,
+        SpectralGuise,
+        AngelicBulwark,
+
+        BodyAndSoul,
+        AngelicFeather,
+        Phantasm,
+
+        SurgeOfLight,
+        SurgeOfDarkness = SurgeOfLight,
+        Mindbender,
+        PowerWordSolace,
+        Insanity = PowerWordSolace,
+
+        VoidTendrils,
+        PsychicScream,
+        DominateMind,
+
+        TwistOfFate,
+        PowerInfusion,
+        SpiritShell,
+        DivineInsight = SpiritShell,
+        ShadowyInsight = SpiritShell,
+
+        Cascade,
+        DivineStar,
+        Halo,
+
+        ClarityOfWill,
+        ClarityOfPurpose = ClarityOfWill,
+        ClarityOfPower = ClarityOfWill,
+        WordsOfMending,
+        VoidEntropy = WordsOfMending,
+        SavingGrace,
+        AuspiciousSpirits = SavingGrace
+
+
+#endif
+
     }
 
 }

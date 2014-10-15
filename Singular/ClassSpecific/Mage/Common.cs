@@ -747,6 +747,7 @@ namespace Singular.ClassSpecific.Mage
 
         public static Composite CreateMageInvocationBehavior()
         {
+/* WOD:
             if (!Common.HasTalent(MageTalents.Invocation))
                 return new ActionAlwaysFail();
 
@@ -759,12 +760,15 @@ namespace Singular.ClassSpecific.Mage
                     new Wait(TimeSpan.FromMilliseconds(500), until => Me.HasAura("Invoker's Energy"), new ActionAlwaysSucceed())
                     )
                 );
+ */
+            return new ActionAlwaysFail();
         }
 
     }
 
     public enum MageTalents
     {
+#if PRE_WOD
         None = 0,
         PresenceOfMind,
         BlazingSpeed,
@@ -784,5 +788,44 @@ namespace Singular.ClassSpecific.Mage
         Invocation,
         RuneOfPower,
         IncantersWard
+#else
+
+        Evanesce = 1,
+        BlazingSpeed,
+        IceFloes,
+
+        AlterTime,
+        Flameglow,
+        IceBarrier,
+
+        RingOfFrost,
+        IceWard,
+        Frostjaw,
+
+        GreaterInvisibility,
+        Cauterize,
+        ColdSnap,
+
+        NetherTempest,
+        LivingBomb = NetherTempest,
+        FrostBomb = NetherTempest,
+        UnstableMagic,
+        Supernova,
+        BlastWave = Supernova,
+        IceNova = Supernova,
+
+        MirrorImage,
+        RuneOfPower,
+        IncantersFlow,
+
+        Overpowered,
+        Kindling = Overpowered,
+        ThermalVoid = Overpowered,
+        PrismaticCrystal,
+        ArcaneOrb,
+        Meteor = ArcaneOrb,
+        CometStorm = ArcaneOrb
+
+#endif
     }
 }

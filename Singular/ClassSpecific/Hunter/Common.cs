@@ -1124,6 +1124,7 @@ namespace Singular.ClassSpecific.Hunter
 
     enum HunterTalents
     {
+#if PRE_WOD
         None = 0,
         Posthaste,
         NarrowEscape,
@@ -1143,6 +1144,38 @@ namespace Singular.ClassSpecific.Hunter
         GlaiveToss,
         Powershot,
         Barrage
+#else
+
+        Posthaste = 1,
+        NarrowEscape,
+        CrouchingTigerHiddenChimaera,
+
+        BindingShot,
+        WyvernSting,
+        Intimidation,
+
+        Exhilaration,
+        IronHawk,
+        SpiritBond,
+
+        SteadyFocus,
+        DireBeast,
+        ThrillOfTheHunt,
+
+        MurderOfCrows,
+        BlinkStrikes,
+        Stampede,
+
+        GlaiveToss,
+        Powershot,
+        Barrage,
+
+        ExoticMunitions,
+        FocusingShot,
+        Adaptation,
+        LoneWolf = Adaptation
+
+#endif
     }
 
 }

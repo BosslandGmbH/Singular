@@ -220,8 +220,8 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                              req => Me.GotTarget && !Me.CurrentTarget.IsTrivial() && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.TimeToDeath(-1) > 40 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
                              new Decorator(
-                                 req => (Me.HasAura("Invoker's Energy") || !Common.HasTalent(MageTalents.Invocation))
-                                    && (Me.Level < 77 || Me.HasAura("Brain Freeze"))
+                                 req => // WOD: (Me.HasAura("Invoker's Energy") || !Common.HasTalent(MageTalents.Invocation)) &&
+                                    (Me.Level < 77 || Me.HasAura("Brain Freeze"))
                                     && (Me.Level < 24 || Me.HasAura("Fingers of Frost")) 
                                     && (Me.Level < 36 || Spell.CanCastHack("Icy Veins", Me, skipWowCheck: true)),
                                  new PrioritySelector(
@@ -232,7 +232,7 @@ namespace Singular.ClassSpecific.Mage
                                          new Sequence(
                                              new PrioritySelector(
                                                 Spell.BuffSelf("Presence of Mind", req => Spell.GetSpellCooldown("Icy Veins").TotalMinutes > 1.5 || !Spell.IsSpellOnCooldown("Icy Veins")),
-                                                new Decorator(req => !Common.HasTalent(MageTalents.PresenceOfMind), new ActionAlwaysSucceed())
+                                                new Decorator(req => !SpellManager.HasSpell("Presence of Mind"), new ActionAlwaysSucceed())
                                                 ),
                                              new PrioritySelector(
                                                 Spell.BuffSelf("Icy Veins"),
@@ -426,7 +426,7 @@ namespace Singular.ClassSpecific.Mage
 
                         // Stack some for burst if possible
                          new Decorator(
-                             req => (Me.HasAura("Invoker's Energy") || !Common.HasTalent(MageTalents.Invocation)),
+                             req => true, // WOD: (Me.HasAura("Invoker's Energy") || !Common.HasTalent(MageTalents.Invocation)),
                              new PrioritySelector(
 
                                  Spell.BuffSelf( "Mirror Image"),
@@ -435,7 +435,7 @@ namespace Singular.ClassSpecific.Mage
                                      new Sequence(
                                          new PrioritySelector(
                                             Spell.BuffSelf("Presence of Mind", req => Spell.GetSpellCooldown("Icy Veins").TotalMinutes > 1.5 || !Spell.IsSpellOnCooldown("Icy Veins")),
-                                            new Decorator( req => !Common.HasTalent(MageTalents.PresenceOfMind), new ActionAlwaysSucceed())
+                                            new Decorator( req => !SpellManager.HasSpell("Presence of Mind"), new ActionAlwaysSucceed())
                                             ),
                                          new PrioritySelector(
                                             Spell.BuffSelf("Icy Veins"),

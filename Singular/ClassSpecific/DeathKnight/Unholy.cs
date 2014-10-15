@@ -156,8 +156,8 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Throttle( TimeSpan.FromSeconds(1.5f),
                     new PrioritySelector(
                         Spell.Cast("Blood Boil",
-                            ret => Common.HasTalent( DeathKnightTalents.RollingBlood)
-                                && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10
+                            ret => // WOD: Common.HasTalent( DeathKnightTalents.RollingBlood) && 
+                                StyxWoW.Me.CurrentTarget.DistanceSqr <= 10 * 10
                                 && !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases),
 
                         Spell.Cast("Pestilence",
@@ -309,8 +309,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                 new Throttle( 2,
                                     new PrioritySelector(
                                         Spell.Cast("Blood Boil",
-                                            ret => Common.HasTalent(DeathKnightTalents.RollingBlood) 
-                                                && !StyxWoW.Me.HasAura("Unholy Blight") 
+                                            ret => // WOD: Common.HasTalent(DeathKnightTalents.RollingBlood) &&
+                                                !StyxWoW.Me.HasAura("Unholy Blight") 
                                                 && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 && Common.ShouldSpreadDiseases),
                                         Spell.Cast("Pestilence",
                                             ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases)
@@ -340,7 +340,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                         || !StyxWoW.Me.GotAlivePet 
                                         || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")),
 
-                                Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemoreselessWinter)),
+                                Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemorselessWinter)),
                                 Spell.Cast("Horn of Winter"),
 
                                 Movement.CreateMoveToMeleeBehavior(true)

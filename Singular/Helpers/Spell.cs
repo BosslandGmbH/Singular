@@ -1715,7 +1715,7 @@ namespace Singular.Helpers
             else if (Me.Class == WoWClass.Hunter)
                 allowMovingWhileCasting = spell.Name == "Steady Shot" || (spell.Name == "Aimed Shot" && TalentManager.HasGlyph("Aimed Shot")) || spell.Name == "Cobra Shot";
             else if (Me.Class == WoWClass.Warlock)
-                allowMovingWhileCasting = (spell.Name == "Incinerate" || spell.Name == "Malefic Grasp" || spell.Name == "Shadow Bolt") && ClassSpecific.Warlock.Common.HasTalent(ClassSpecific.Warlock.WarlockTalents.KiljadensCunning);
+                allowMovingWhileCasting = (spell.Name == "Incinerate" || spell.Name == "Malefic Grasp" || spell.Name == "Shadow Bolt") && ClassSpecific.Warlock.Common.HasTalent(ClassSpecific.Warlock.WarlockTalents.KiljaedensCunning);
 
             //            if (!allowMovingWhileCasting && Me.ZoneId == 5723)
             //                allowMovingWhileCasting = Me.HasAura("Molten Feather");

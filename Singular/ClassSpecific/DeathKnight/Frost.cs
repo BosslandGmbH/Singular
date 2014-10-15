@@ -425,8 +425,8 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Throttle( 2,
                     new PrioritySelector(
                         Spell.Cast("Blood Boil",
-                            ret => Common.HasTalent(DeathKnightTalents.RollingBlood)
-                                && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))
+                            ret => // WOD: Common.HasTalent(DeathKnightTalents.RollingBlood) &&
+                                Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))
                                 && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.HasAuraExpired("Blood Plague"))),
 
                         Spell.Cast("Pestilence",

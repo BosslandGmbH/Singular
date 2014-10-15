@@ -720,6 +720,7 @@ namespace Singular.ClassSpecific.Shaman
 
     public enum ShamanTalents
     {
+#if PRE_WOD
         NaturesGuardian = 1,
         StoneBulwarkTotem,
         AstralShift,
@@ -738,6 +739,39 @@ namespace Singular.ClassSpecific.Shaman
         UnleashedFury,
         PrimalElementalist,
         ElementalBlast
+#else
+
+        NaturesGuardian = 1,
+        StoneBulwarkTotem,
+        AstralShift,
+
+        FrozenPower,
+        EarthgrabTotem,
+        WindwalkTotem,
+
+        CallOfTheElements,
+        TotemicPersistence,
+        TotemicProjection,
+
+        ElementalMastery,
+        AncestralSwiftness,
+        EchoOfTheElements,
+
+        RushingStreams,
+        AncestralGuidance,
+        Conductivity,
+
+        UnleashedFury,
+        ElementalBlast,
+        PrimalElementalist,
+
+        ElementalFusion,
+        CloudburstTotem = ElementalFusion,
+        StormElementalTotem,
+        LiquidMagma,
+        HighTide = LiquidMagma
+
+#endif
     }
 
 }

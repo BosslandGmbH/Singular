@@ -26,6 +26,10 @@ using Styx.Common.Helpers;
 using System.Collections.Generic;
 
 using Singular.ClassSpecific.Monk;
+using Bots.Quest.QuestOrder;
+using Styx.CommonBot.Profiles.Quest.Order;
+using Styx.WoWInternals.WoWCache;
+using Styx.CommonBot.Profiles;
 
 namespace Singular
 {
@@ -809,89 +813,92 @@ namespace Singular
                 case WoWSpec.DeathKnightBlood:
                 case WoWSpec.DeathKnightFrost:
                 case WoWSpec.DeathKnightUnholy:
-                    needSpell = "Pestilence";
+                    needSpell = "Pestilence";       // 56
                     break;
 
                 case WoWSpec.DruidBalance:
-                    needSpell = "Sunfire";
+                    needSpell = "Sunfire";          // 18
                     break;
 
                 case WoWSpec.DruidFeral:
                 case WoWSpec.DruidGuardian:
-                    needSpell = "Swipe";
+                    needSpell = "Swipe";            // 22
                     break;
 
                 case WoWSpec.DruidRestoration:
-                    needSpell = "Hurricane";
+                    needSpell = "Hurricane";        // 42
                     break;
 
                 case WoWSpec.HunterBeastMastery:
                 case WoWSpec.HunterMarksmanship:
                 case WoWSpec.HunterSurvival:
-                    needSpell = "Multi-Shot";
+                    needSpell = "Multi-Shot";       // 24
                     break;
 
                 case WoWSpec.MageArcane:
                 case WoWSpec.MageFire:
                 case WoWSpec.MageFrost:
-                    needSpell = "Arcane Explosion";
+                    needSpell = "Arcane Explosion"; // 18
                     break;
 
                 case WoWSpec.MonkBrewmaster:
-                    needSpell = "Breath of Fire";
+                    needSpell = "Breath of Fire";   // 18
                     break;
 
                 case WoWSpec.MonkMistweaver:
+                    needSpell = "Spinning Crane Kick";  // 46
+                    break;
+
                 case WoWSpec.MonkWindwalker:
-                    needSpell = "Spinning Crane Kick";
+                    needSpell = "Fists of Fury";  // 10
                     break;
 
                 case WoWSpec.PaladinHoly:
-                    needSpell = "Holy Prism";
+                    needSpell = "Holy Prism";   // 90
                     break;
 
                 case WoWSpec.PaladinProtection:
-                    needSpell = "Avenger's Shield";
+                    needSpell = "Avenger's Shield"; // 10
                     break;
 
                 case WoWSpec.PaladinRetribution:
-                    needSpell = "Hammer of the Righteous";
+                    needSpell = "Hammer of the Righteous";  // 20
                     break;
 
                 case WoWSpec.PriestDiscipline:
                 case WoWSpec.PriestHoly:
                 case WoWSpec.PriestShadow:
-                    needSpell = "Shadow Word: Pain";
+                    needSpell = "Shadow Word: Pain";    // 3 (10 since specialization needed)
                     break;
 
                 case WoWSpec.RogueCombat:
-                    needSpell = "Blade Flurry";
+                    needSpell = "Blade Flurry"; // 10
                     break;
 
                 case WoWSpec.RogueAssassination:
                 case WoWSpec.RogueSubtlety:
-                    needSpell = "Fan of Knives";
+                    needSpell = "Fan of Knives";    // 66
                     break;
 
                 case WoWSpec.ShamanElemental:
                 case WoWSpec.ShamanRestoration:
-                    needSpell = "Chain Lightning";
+                    needSpell = "Chain Lightning";  // 28
                     break;
 
                 case WoWSpec.ShamanEnhancement:
-                    needSpell = "Flame Shock";
+                    needSpell = "Flame Shock";  // 12 (this comes after Lava Lash)
                     break;
 
                 case WoWSpec.WarlockAffliction:
                 case WoWSpec.WarlockDemonology:
                 case WoWSpec.WarlockDestruction:
-                    needSpell = "Corruption";
+                    needSpell = "Corruption";   // 3 (10 since specialization needed)
                     break;
 
                 case WoWSpec.WarriorArms:
                 case WoWSpec.WarriorFury:
                 case WoWSpec.WarriorProtection:
-                    needSpell = "Thunder Clap";
+                    needSpell = "Thunder Clap"; // 20
                     break;
             }
 
@@ -906,7 +913,7 @@ namespace Singular
                     SingularSettings.Instance.PullMoreMobCount
                     );
             }
-            else if (SingularSettings.Instance.UsePullMore == PullMoreUsageType.Auto && !SingularRoutine.IsGrindBotActive)
+            else if (SingularSettings.Instance.UsePullMore == PullMoreUsageType.Auto && !(SingularRoutine.IsGrindBotActive || SingularRoutine.IsQuestBotActive))
             {
                 allow = false;
                 BotBase b = SingularRoutine.GetCurrentBotBase();
@@ -947,7 +954,7 @@ namespace Singular
         }
 
         private static DateTime _nextPullMoreWaitingMessage = DateTime.MinValue;
-
+        private static int _mobCountInCombat { get; set; }
         private static Composite CreatePullMorePull()
         {
             if (false == IsPullMoreActive)
@@ -959,6 +966,7 @@ namespace Singular
                 req => HotkeyDirector.IsPullMoreEnabled && (_allowPullMoreUntil == DateTime.MinValue || _allowPullMoreUntil > DateTime.Now),
 
                 new Sequence(
+
                     new PrioritySelector(
 
                         new Decorator(
@@ -981,7 +989,7 @@ namespace Singular
 
                         new PrioritySelector(
 
-                            ctx => Unit.UnitsInCombatWithUsOrOurStuff(40)
+                            ctx => Unit.UnitsInCombatWithUsOrOurStuff(45)
                                 .FirstOrDefault( u => u.TappedByAllThreatLists || (u.Elite && (u.Level + 8) > Me.Level) || (u.MaxHealth > (Me.MaxHealth * 2))),
 
                             new Decorator(
@@ -1000,82 +1008,86 @@ namespace Singular
                                 )
                             ),
 
-                        new Action(r => {
-                            int mobCount = Unit.UnitsInCombatWithUsOrOurStuff(50).Count();
-                            if (mobCount >= SingularSettings.Instance.PullMoreMobCount)
-                            {
-                                Logger.WriteDiagnostic(Color.White, "Pull More: in combat with {0} mobs, finishing these before pulling more", mobCount);
-                                _allowPullMoreUntil = DateTime.Now;
-                            }
-                            else if (BotPoi.Current == null)
-                            {
+                        new Sequence(
+                            ctx => BotPoi.Current == null ? null : BotPoi.Current.AsObject,
 
-                            }
-                            else if (BotPoi.Current.Type != PoiType.Kill)
-                            {
-
-                            }
-                            else if (BotPoi.Current.AsObject.ToUnit() == null)
-                            {
-
-                            }
-                            else
-                            {
-                                WoWUnit unit = BotPoi.Current.AsObject.ToUnit();
-                                if (unit.IsAlive && (!unit.IsTagged || !unit.IsTargetingMyStuff() || !unit.Combat))
+                            new Action(r => {
+                                _mobCountInCombat = Unit.UnitsInCombatWithUsOrOurStuff(50).Count();
+                                if (_mobCountInCombat >= SingularSettings.Instance.PullMoreMobCount)
                                 {
-                                    if (DateTime.Now > _timeoutPullMoreAt)
-                                    {
-                                        Logger.Write(Color.White, "Pull More: could not pull {0} @ {1:F1} yds within {2} seconds, blacklisting",
-                                            unit.SafeName(),
-                                            unit.SpellDistance(),
-                                            SingularSettings.Instance.PullMoreTimeOut
-                                            );
-                                        Blacklist.Add(unit.Guid, BlacklistFlags.Pull, TimeSpan.FromMinutes(5), "Singular: pull more timed out");
-                                        BotPoi.Clear("Singular: pull more timed out");
-                                    }
-                                    else
-                                    {
-                                        if (DateTime.Now > _nextPullMoreWaitingMessage)
-                                        {
+                                    Logger.WriteDiagnostic(Color.White, "Pull More: in combat with {0} mobs, finishing these before pulling more", _mobCountInCombat);
+                                    _allowPullMoreUntil = DateTime.Now;
+                                }
+                                else if ( r == null )
+                                {
+
+                                }
+                                else if (BotPoi.Current.Type != PoiType.Kill)
+                                {
+
+                                }
+                                else if ((r as WoWObject).ToUnit() == null)
+                                {
+
+                                }
+                                else
+                                {
+                                    // cleared validations, move on to next state
+                                    return RunStatus.Success;
+                                }
+
+                                return RunStatus.Failure;
+                            }),
+
+                            // check if still pulling
+                            new DecoratorContinue(
+                                req => {
+                                    WoWUnit unit = (req as WoWUnit);
+                                    return unit.IsAlive && (!unit.IsTagged || !unit.IsTargetingMyStuff() || !unit.Combat);
+                                    },
+
+                                new Sequence(
+                                    // check if timed out
+                                    new Decorator(
+                                        req => DateTime.Now > _timeoutPullMoreAt,
+                                        new Action( r => 
+                                            {
+                                            WoWUnit unit = (r as WoWUnit);
+                                            Logger.Write(Color.White, "Pull More: could not pull {0} @ {1:F1} yds within {2} seconds, blacklisting",
+                                                unit.SafeName(),
+                                                unit.SpellDistance(),
+                                                SingularSettings.Instance.PullMoreTimeOut
+                                                );
+                                            Blacklist.Add(unit.Guid, BlacklistFlags.Pull, TimeSpan.FromMinutes(5), "Singular: pull more timed out");
+                                            BotPoi.Clear("Singular: pull more timed out");
+                                            return RunStatus.Failure;
+                                            })
+                                        ),
+                                    // otherwise fail since target not engaged yet
+                                    new ThrottlePasses(
+                                        1, TimeSpan.FromSeconds(1), RunStatus.Failure,
+                                        new Action( r => 
+                                            {
+                                            WoWUnit unit = (r as WoWUnit);
                                             Logger.WriteDebug("Pull More: waiting since current KillPoi {0} not attacking me yet (target={1}, combat={2}, tagged={3})",
                                                 unit.SafeName(),
                                                 unit.GotTarget ? unit.SafeName() : "(null)",
                                                 unit.Combat.ToYN(),
                                                 unit.IsTagged.ToYN()
                                                 );
-                                            _nextPullMoreWaitingMessage = DateTime.Now + TimeSpan.FromSeconds(0.5);
-                                        }
-                                    }
-                                }
-                                else
-                                {
+                                            return RunStatus.Failure;
+                                            })
+                                        )
+                                    )
+                                ),
+
+                            // now pull more
+                            new ThrottlePasses(
+                                1, TimeSpan.FromSeconds(1), RunStatus.Failure,
+                                new Action( r => {
+                                    WoWUnit unit = (r as WoWUnit);
                                     _timeoutPullMoreAt = DateTime.MaxValue;
-
-                                    // find a target
-                                    Func<WoWUnit, bool> whereClause = null;
-                                    HashSet<uint> factions;
-                                    switch (SingularSettings.Instance.PullMoreTargetType)
-                                    {
-                                        case PullMoreTargetType.LikeCurrent:
-                                            factions = new HashSet<uint>(
-                                                ObjectManager.GetObjectsOfType<WoWUnit>(allowInheritance: true, includeMeIfFound: false)
-                                                    .Where( u => u.TaggedByMe || u.Aggro || u.PetAggro)
-                                                    .Select( u => u.FactionId)
-                                                    .ToArray()
-                                                );
-                                            whereClause = t => factions.Contains(t.FactionId);
-                                            break;
-
-                                        case PullMoreTargetType.Hostile:
-                                            whereClause = t => t.IsHostile;
-                                            break;
-
-                                        default:
-                                        case PullMoreTargetType.All:
-                                            whereClause = t => true;
-                                            break;
-                                    }
+                                    Func<WoWUnit, bool> whereClause = PullMoreTargetSelectionDelegate();
 
                                     WoWUnit nextPull = Unit.UnfriendlyUnits()
                                         .Where(
@@ -1103,7 +1115,7 @@ namespace Singular
                                             unit.IsTagged.ToYN()
                                             );
 
-                                        Logger.Write(Color.White, "Pull More: pull mob #{0} - {1} @ {2:F1} yds", mobCount, nextPull.SafeName(), nextPull.SpellDistance());
+                                        Logger.Write(Color.White, "Pull More: pulling {0} #{1} - {2} @ {3:F1} yds", _PullMoreTargetFindType, _mobCountInCombat, nextPull.SafeName(), nextPull.SpellDistance());
                                         BotPoi poi = new BotPoi(nextPull, PoiType.Kill, NavType.Run);
                                         Logger.WriteDebug("Setting BotPoi to Kill {0}", nextPull.SafeName());
                                         Styx.CommonBot.POI.BotPoi.Current = poi;
@@ -1122,17 +1134,266 @@ namespace Singular
                                             }
                                         }
                                     }
-                                }
-                            }
 
-                            return RunStatus.Failure;
-                            })
-                        ),
+                                    return RunStatus.Failure;
+                                })
+                            )   
+                        )
+                    ),
 
                     new ActionAlwaysFail()
                     )
                 );
         }
+
+        private static string _PullMoreTargetFindType { get; set; }
+        private static Func<WoWUnit, bool> PullMoreTargetSelectionDelegate()
+        {
+            _PullMoreTargetFindType = "-none-";
+            Func<WoWUnit, bool> whereClause = null;
+          
+            // Auto: if using Questing or Grind Profile, be sure to use
+            // .. the mob specifications provided
+            if (SingularSettings.Instance.UsePullMore == PullMoreUsageType.Auto)
+            {
+                if (SingularRoutine.IsQuestBotActive)
+                {
+                    _PullMoreTargetFindType = "QuestProfileMob";
+                    return PullMoreQuestTargetsDelegate();
+                }
+                else if (SingularRoutine.IsGrindBotActive)
+                {
+                    _PullMoreTargetFindType = "GrindProfileMob";
+                    return PullMoreGrindTargetsDelegate();
+                }
+            }
+
+            // Otherwise, choose targets based upon Users target selection settings
+            HashSet<uint> factions;
+            switch (SingularSettings.Instance.PullMoreTargetType)
+            {
+                case PullMoreTargetType.LikeCurrent:
+                    _PullMoreTargetFindType = "LikeCurrentMob";
+                    factions = new HashSet<uint>(
+                        ObjectManager.GetObjectsOfType<WoWUnit>(allowInheritance: true, includeMeIfFound: false)
+                            .Where(u => u.TaggedByMe || u.Aggro || u.PetAggro)
+                            .Select(u => u.FactionId)
+                            .ToArray()
+                        );
+                    whereClause = t => factions.Contains(t.FactionId);
+                    break;
+
+                case PullMoreTargetType.Hostile:
+                    _PullMoreTargetFindType = "HostileMob";
+                    whereClause = t => t.IsHostile;
+                    break;
+
+                default:
+                case PullMoreTargetType.All:
+                    _PullMoreTargetFindType = "AnyMob";
+                    whereClause = t => true;
+                    break;
+            }
+
+            return whereClause;
+        }
+
+        private static HashSet<WoWGuid> _pmGuids { get; set; }
+        private static Func<WoWUnit, bool> PullMoreQuestTargetsDelegate()
+        {
+            _pmGuids = null;
+
+            var questObjective = QuestOrder.Instance.CurrentNode as ObjectiveNode;
+            var killObjectives = new List<Quest.QuestObjective>();
+            var collectObjectives = new List<Quest.QuestObjective>();
+            
+            if (questObjective != null)
+            {
+                var playerQuest = Quest.FromId(questObjective.QuestId);
+                if (playerQuest != null)
+                {
+                    var objectives = playerQuest.GetObjectives();
+                    foreach (var objective in objectives)
+                    {
+                        if (objective.Type == Quest.QuestObjectiveType.KillMob )
+                        {
+                            killObjectives.Add(objective);
+                        }
+                        else  if (objective.Type == Quest.QuestObjectiveType.CollectItem)
+                        {
+                            collectObjectives.Add(objective);
+                        }
+                    }
+                }
+            }
+
+            if (!killObjectives.Any() && !collectObjectives.Any())
+            {
+                Logger.WriteDiagnostic("PullMoreQuestMobs: no supported Quest Objectives are active");
+            }
+            else
+            {
+                _pmGuids = new HashSet<WoWGuid>(
+                    ObjectManager.GetObjectsOfType<WoWUnit>()
+                        .Where(
+                            u =>
+                            {
+                                WoWCache.CreatureCacheEntry cacheEntry;
+                                if (!u.GetCachedInfo(out cacheEntry))
+                                    return false;
+
+                                bool found = killObjectives.Any( qo => qo.Type == Quest.QuestObjectiveType.KillMob 
+                                                                    && (qo.ID == cacheEntry.GroupID[0] || qo.ID == cacheEntry.GroupID[1]));
+                                if (!found)
+                                    found = collectObjectives.Any( qo => qo.Type == Quest.QuestObjectiveType.CollectItem 
+                                                                    && cacheEntry.QuestItems.Where(i => i > 0).Any( qi => qi == qo.ID));
+                                return found;
+                            })
+                        .Select(u => u.Guid)
+                        .ToArray()
+                    );
+
+                if (!_pmGuids.Any())
+                {
+                    Logger.WriteDiagnostic("PullMoreQuestMobs: no matching QuestMobs found");
+                }
+            }
+
+            if (_pmGuids == null || !_pmGuids.Any())
+                return u => false;
+
+            return u => _pmGuids.Contains(u.Guid);
+        }
+
+        private static uint _prevQuestId;
+        public static void PullMoreQuestTargetsDump()
+        {
+            if (!SingularRoutine.IsQuestBotActive)
+                return;
+
+            var questObjective = QuestOrder.Instance.CurrentNode as ObjectiveNode;
+            var killObjectives = new List<Quest.QuestObjective>();
+            var collectObjectives = new List<Quest.QuestObjective>();
+
+            if (questObjective != null)
+            {
+                if (questObjective.QuestId == _prevQuestId) 
+                    return;
+
+                _prevQuestId = questObjective.QuestId;
+                var playerQuest = Quest.FromId(questObjective.QuestId);
+
+                Logger.WriteDiagnostic("");
+                Logger.WriteDiagnostic("---- Current Quest Dump ----");
+                Logger.WriteDiagnostic("CurrQuestObjInfo: #{0} [{1}], Objective: type={2} #{3} [{4}] ", questObjective.QuestId, questObjective.QuestName, questObjective.ObjectiveType, questObjective.ObjectiveId, questObjective.ObjectiveName);
+
+                if (playerQuest != null)
+                {                       
+                    var objectives = playerQuest.GetObjectives();
+                    Logger.WriteDiagnostic("QuestInfo: #{0} [{1}] has {2} objectives",
+                        playerQuest.Id,
+                        playerQuest.Name,
+                        objectives.Count()
+                        );
+
+                    foreach (var objective in objectives)
+                    {
+                        if (objective.Type == Quest.QuestObjectiveType.KillMob)
+                        {
+                            Logger.WriteDiagnostic( "QuestObj: 'KillMob', ID={0}, Count={1}, Obj='{2}'",
+                                objective.ID,
+                                objective.Count,
+                                objective.Objective
+                                );
+                            killObjectives.Add(objective);
+                        }
+                        else if (objective.Type == Quest.QuestObjectiveType.CollectItem)
+                        {
+                            Logger.WriteDiagnostic("QuestObj: 'CollectItem', ID={0}, Count={1}, Obj='{2}'",
+                                objective.ID,
+                                objective.Count,
+                                objective.Objective
+                                );
+                            collectObjectives.Add(objective);
+                        }
+                    }
+                }
+
+                Logger.WriteDiagnostic("-------------------");
+                if (!killObjectives.Any() && !collectObjectives.Any())
+                {
+                    Logger.WriteDiagnostic("QuestObj: no supported Quest Objectives are active");
+                }
+                else
+                {
+                    foreach (WoWUnit u in ObjectManager.GetObjectsOfType<WoWUnit>())
+                    {
+                        WoWCache.CreatureCacheEntry cacheEntry;
+                        if (!u.GetCachedInfo(out cacheEntry))
+                            Logger.WriteDiagnostic("QuestCache: {0} #{1} - no cache info", u.SafeName(), u.Entry);
+                        else
+                        {
+                            string questItems = "";
+                            foreach (var ce in cacheEntry.QuestItems)
+                            {
+                                if (ce != 0)
+                                    questItems += "#" + ce.ToString() + " ";
+                            }
+
+                            if (string.IsNullOrEmpty(questItems))
+                                questItems = "-no quest items found-";
+
+                            Logger.WriteDiagnostic("QuestCache: {0} #{1} - cid={2} id0={3} id1={4} collectitems={5}",
+                                u.SafeName(),
+                                u.Entry,
+                                cacheEntry.Id,
+                                cacheEntry.GroupID[0],
+                                cacheEntry.GroupID[1],
+                                questItems
+                                );
+                        }
+                    }
+
+                }
+
+                Logger.WriteDiagnostic("-------------------");
+                Logger.WriteDiagnostic("");
+            }
+
+        }
+
+        private static HashSet<uint> _pmFactions { get; set; }
+        private static HashSet<uint> _pmEntrys { get; set; }
+
+        private static Func<WoWUnit, bool> PullMoreGrindTargetsDelegate()
+        {
+            _pmFactions = null;
+            _pmEntrys = null;
+            if (ProfileManager.CurrentProfile != null && ProfileManager.CurrentProfile.GrindArea != null)
+            {
+                if (ProfileManager.CurrentProfile.GrindArea.Factions.Any())
+                    _pmFactions = new HashSet<uint>(ProfileManager.CurrentProfile.GrindArea.Factions.Select(id => (uint) id).ToArray());
+
+                if (ProfileManager.CurrentProfile.GrindArea.MobIDs.Any())
+                    _pmEntrys = new HashSet<uint>(ProfileManager.CurrentProfile.GrindArea.MobIDs.Select(id => (uint) id).ToArray());
+            }
+
+            if (_pmFactions == null && _pmEntrys == null)
+            {
+                Logger.WriteDiagnostic("PullMoreGrindMobs: no matching GrindMob specification found");
+                return u => false;
+            }
+            if (_pmFactions == null)
+            {
+                return u => _pmEntrys.Contains(u.Entry);
+            }
+            if (_pmEntrys == null)
+                return u => _pmFactions.Contains(u.FactionId);
+
+            return u => _pmEntrys.Contains(u.Entry) || _pmFactions.Contains(u.FactionId);
+        }
+
+
 
         #endregion 
 
@@ -1246,7 +1507,7 @@ namespace Singular
                     TimeSpan since = TimeSpanSinceLastCall;
                     if (since.TotalSeconds >= SecondsBetweenWarnings)
                     {
-                        Logger.WriteDiagnostic(Color.HotPink, "info: {0:F1} seconds since BotBase last called Singular (now in OnBotStop)", since.TotalSeconds);
+                        Logger.WriteDiagnostic(Color.HotPink, "info: {0:F1} seconds since BotBase last called Singular (now in OnBotStopped)", since.TotalSeconds);
                     }
                 }
             };

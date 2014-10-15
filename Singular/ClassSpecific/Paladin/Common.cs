@@ -279,6 +279,7 @@ namespace Singular.ClassSpecific.Paladin
 
     public enum PaladinTalents
     {
+#if PRE_WOD
         SpeedOfLight = 1,
         LongArmOfTheLaw,
         PursuitOfJustice,
@@ -297,5 +298,40 @@ namespace Singular.ClassSpecific.Paladin
         HolyPrism,
         LightsHammer,
         ExecutionSentence
+#else
+
+        SpeedOfLight = 1,
+        LongArmOfTheLaw,
+        PursuitOfJustice,
+
+        FistOfJustice,
+        Repentance,
+        BlindingLight,
+
+        SelflessHealer,
+        EternalFlame,
+        SacredShield,
+
+        HandOfPurity,
+        UnbreakableSpirit,
+        Clemency,
+
+        HolyAvenger,
+        SanctifiedWrath,
+        DivinePurpose,
+
+        HolyPrism,
+        LightsHammer,
+        ExecutionSentence,
+
+        BeaconOfFaith,
+        EmpoweredSeals = BeaconOfFaith,
+        BeaconOfInsight,
+        Seraphim = BeaconOfInsight,
+        SavedbyTheLight,
+        HolyShield = SavedbyTheLight,
+        FinalVerdict = SavedbyTheLight
+
+#endif
     }
 }

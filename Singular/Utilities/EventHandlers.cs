@@ -223,9 +223,14 @@ namespace Singular.Utilities
                             guidLastEnemy = enemy.Guid;
                             string extra = "";
                             if (e.Args.GetUpperBound(0) >= 12)
-                                extra = string.Format(" with {0}", e.SpellName);
+                                extra = string.Format(" using {0}", e.SpellName);
 
                             Logger.WriteDiagnostic("GankDetect: attacked by Level {0} {1}{2}", enemy.Level, enemy.SafeName(), extra);
+                            if ( SingularSettings.Instance.TargetWorldPvpRegardless && (BotPoi.Current == null || BotPoi.Current.Guid != enemy.Guid))
+                            {
+                                Logger.Write(Color.White, "GankDetect: setting {0} as BotPoi Kill Target");
+                                BotPoi.Current = new BotPoi(enemy, PoiType.Kill);
+                            }
                         }
                     }
                 }

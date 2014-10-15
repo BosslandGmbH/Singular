@@ -9,6 +9,8 @@ using Action = Styx.TreeSharp.Action;
 using Color = System.Drawing.Color;
 using Styx.Helpers;
 
+using LogLevel = Styx.Common.LogLevel;
+
 namespace Singular
 {
     public static class LogColor

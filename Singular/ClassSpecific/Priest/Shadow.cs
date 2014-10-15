@@ -417,7 +417,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3, cancel => false),
 
                         Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20),
-                        !Common.HasTalent(PriestTalents.SolaceAndInsanity) 
+                        !Common.HasTalent(PriestTalents.Insanity) 
                             ? new ActionAlwaysFail() 
                             : Spell.Cast("Mind Flay", mov => true, ctx => Me.CurrentTarget, ret => Me.CurrentTarget.HasMyAura("Devouring Plague"), cancel => false),
                         Spell.Buff("Shadow Word: Pain", true, on => Me.CurrentTarget, req => true, 3),

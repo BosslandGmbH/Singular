@@ -680,10 +680,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
     }
 
-    #region Nested type: DeathKnightTalents
-
     public enum DeathKnightTalents
     {
+#if PRE_WOD
         RollingBlood = 1,
         PlagueLeech,
         UnholyBlight,
@@ -700,9 +699,39 @@ namespace Singular.ClassSpecific.DeathKnight
         RunicEmpowerment,
         RunicCorruption,
         GorefiendsGrasp,
-        RemoreselessWinter,
+        RemorselessWinter,
         DesecratedGround
+#else
+
+        Plaguebearer = 1,
+        PlagueLeech,
+        UnholyBlight,
+
+        Lichborne,
+        AntiMagicZone,
+        Purgatory,
+
+        DeathsAdvance,
+        Chilblains,
+        Asphyxiate,
+
+        BloodTap,
+        RunicEmpowerment,
+        RunicCorruption,
+
+        DeathPact,
+        DeathSiphon,
+        Conversion,
+
+        GorefiendsGrasp,
+        RemorselessWinter,
+        DesecratedGround,
+
+        NecroticPlague,
+        Defile,
+        BreathOfSindragosa
+
+#endif
     }
 
-    #endregion
 }

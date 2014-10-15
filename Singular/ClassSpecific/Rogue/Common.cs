@@ -459,7 +459,7 @@ namespace Singular.ClassSpecific.Rogue
                 );
         }
 
-        private static ulong _lastSapTarget = 0;
+        private static WoWGuid _lastSapTarget;
 
         private static WoWUnit GetBestSapTarget()
         {
@@ -479,7 +479,7 @@ namespace Singular.ClassSpecific.Rogue
             {
                 // stick with our target if we thought it was a good choice previously 
                 // ... (to avoid zig zag back and forth at boundary distance conditions)
-                if (_lastSapTarget != 0 && Me.CurrentTargetGuid == _lastSapTarget)
+                if (_lastSapTarget.IsValid && Me.CurrentTargetGuid == _lastSapTarget)
                     closestTarget = Me.CurrentTarget;
                 else
                 {
@@ -673,7 +673,7 @@ namespace Singular.ClassSpecific.Rogue
                     return null;
                 
                 // If the player has a focus target set, use it instead. TODO: Add Me.FocusedUnit to the HB API.
-                if (StyxWoW.Me.FocusedUnitGuid != 0)
+                if (StyxWoW.Me.FocusedUnitGuid.IsValid)
                     return StyxWoW.Me.FocusedUnit;
 
                 if (StyxWoW.Me.IsInInstance)
@@ -900,11 +900,11 @@ namespace Singular.ClassSpecific.Rogue
                     on => Me.CurrentTarget,
                     ret =>
                     {
-                        if (Me.ComboPointsTarget != Me.CurrentTargetGuid)
+                        if (Me.ComboPointsTargetGuid != Me.CurrentTargetGuid)
                         {
                             if (StyxWoW.Me.RawComboPoints > 0)
                             {
-                                WoWUnit comboTarget = ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget);
+                                WoWUnit comboTarget = ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid);
                                 if (comboTarget != null)
                                 {
                                     if (Spell.CanCastHack("Redirect", comboTarget))

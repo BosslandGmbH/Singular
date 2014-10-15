@@ -329,9 +329,9 @@ namespace Singular.ClassSpecific.Mage
                 return (int)StyxWoW.Me.CarriedItems.Sum(i => i != null
                                                       && i.ItemInfo != null
                                                       && i.ItemInfo.ItemClass == WoWItemClass.Consumable
-                                                      && i.ItemSpells != null
-                                                      && i.ItemSpells.Count > 0
-                                                      && i.ItemSpells[0].ActualSpell.Name.Contains("Refreshment")
+                                                      && i.Effects != null
+                                                      && i.Effects.Count > 0
+                                                      && i.Effects[0].Spell.Name.Contains("Refreshment")
                                                           ? i.StackCount
                                                           : 0);
             }

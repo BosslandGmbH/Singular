@@ -14,9 +14,7 @@ namespace Singular
     public enum SingularBotEvent
     {
         BotChanged,
-        BotStart,
         BotStarted,
-        BotStop,
         BotStopped
     }
 
@@ -46,9 +44,7 @@ namespace Singular
             {
                 _botEventSubscribed = true;
                 BotEvents.OnBotChanged += e => SingularRaiseBotEvent(SingularBotEvent.BotChanged);
-                BotEvents.OnBotStart += e => SingularRaiseBotEvent(SingularBotEvent.BotStart);
                 BotEvents.OnBotStarted += e => SingularRaiseBotEvent(SingularBotEvent.BotStarted);
-                BotEvents.OnBotStop += e => SingularRaiseBotEvent(SingularBotEvent.BotStop);
                 BotEvents.OnBotStopped += e => SingularRaiseBotEvent(SingularBotEvent.BotStopped);
             }
         }

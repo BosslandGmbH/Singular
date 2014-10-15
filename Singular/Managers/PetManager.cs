@@ -23,7 +23,7 @@ namespace Singular.Managers
     {
         public static readonly WaitTimer CallPetTimer = WaitTimer.OneSecond;
 
-        private static ulong _petGuid;
+        private static WoWGuid _petGuid;
         private static readonly List<WoWPetSpell> PetSpells = new List<WoWPetSpell>();
         public static readonly WaitTimer PetSummonAfterDismountTimer = new WaitTimer(TimeSpan.FromSeconds(2));
 
@@ -167,7 +167,7 @@ namespace Singular.Managers
                 StyxWoW.Me.SetFocus(on);
                 Logger.WriteDebug("CastPetAction: cast [{0}] specifying FocusTarget {1}", action, on.SafeName());
                 Lua.DoString("CastPetAction({0}, 'focus')", spell.ActionBarIndex + 1);
-                StyxWoW.Me.SetFocus(save == null ? 0 : save.Guid);
+                StyxWoW.Me.SetFocus(save == null ? WoWGuid.Empty : save.Guid);
             }
         }
 

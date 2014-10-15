@@ -611,7 +611,7 @@ namespace Singular.Helpers
             //    return RunStatus.Failure;
 
             // following logic previously existed to let channels pass thru -- keeping for now
-            if (StyxWoW.Me.ChannelObjectGuid > 0)
+            if (StyxWoW.Me.ChannelObjectGuid.IsValid)
                 return false;
 
             uint latency = SingularRoutine.Latency * 2;
@@ -959,9 +959,9 @@ namespace Singular.Helpers
 
         #region Buff DoubleCast prevention mechanics
 
-        public static string DoubleCastKey(ulong guid, string spellName)
+        public static string DoubleCastKey(WoWGuid guid, string spellName)
         {
-            return guid.ToString("X") + "-" + spellName;
+            return guid + "-" + spellName;
         }
 
         public static string DoubleCastKey(WoWUnit unit, string spell)
@@ -1699,7 +1699,7 @@ namespace Singular.Helpers
         private static bool AllowMovingWhileCasting(WoWSpell spell)
         {
             // quick return for instant spells
-            if (spell.IsInstantCast() && !IsFunnel(spell))
+            if (spell.IsInstantCast() && !spell.IsChanneled)
             {
                 if (SingularSettings.DebugSpellCasting)
                     Logger.WriteFile( "MoveWhileCasting[{0}]: true, since instant cast and not a funnel spell", spell.Name );
@@ -2052,7 +2052,7 @@ namespace Singular.Helpers
                 return false;
             }
 
-#else
+#elif PRE_WOD
             bool formSwitch = false;
             uint currentPower = Me.CurrentPower;
             if (Me.Class == WoWClass.Druid)
@@ -2076,6 +2076,11 @@ namespace Singular.Helpers
             {
                 if (SingularSettings.DebugSpellCasting)
                     Logger.WriteFile( "CanCast[{0}]: insufficient power (need {1:F0}, have {2:F0} {3})", spell.Name, spell.PowerCost, currentPower, formSwitch ? "Mana in Form" : Me.PowerType.ToString());
+                return false;
+            }
+#else
+            if (!spell.CanCast)
+            {
                 return false;
             }
 #endif
@@ -2182,7 +2187,7 @@ namespace Singular.Helpers
 
         public static bool CanCastHackWillOurMovementInterrupt(WoWSpell spell, WoWUnit unit)
         {
-            if ((spell.CastTime != 0u || IsFunnel(spell)) && Me.IsMoving && !AllowMovingWhileCasting(spell))
+            if ((spell.CastTime != 0u || spell.IsChanneled) && Me.IsMoving && !AllowMovingWhileCasting(spell))
             {
                 if (SingularSettings.DebugSpellCasting)
                     Logger.WriteFile( "CanCast[{0}]: cannot cast while moving", spell.Name);
@@ -2310,32 +2315,6 @@ namespace Singular.Helpers
         }
 
         #endregion
-
-        public static bool IsFunnel(string name)
-        {
-            SpellFindResults sfr;
-            SpellManager.FindSpell(name, out sfr);
-            WoWSpell spell = sfr.Override ?? sfr.Original;
-            if (spell == null)
-                return false;
-            return IsFunnel(spell);
-        }
-
-        public static bool IsFunnel(WoWSpell spell)
-        {
-            // HV has the answer... ty m8
-            bool IsChanneled = false;
-            var row = StyxWoW.Db[Styx.Patchables.ClientDb.Spell].GetRow((uint)spell.Id);
-            if (row.IsValid)
-            {
-                var spellMiscIdx = row.GetField<uint>(24);
-                row = StyxWoW.Db[Styx.Patchables.ClientDb.SpellMisc].GetRow(spellMiscIdx);
-                var flags = row.GetField<uint>(4);
-                IsChanneled = (flags & 68) != 0;
-            }
-
-            return IsChanneled;
-        }
 
         public static WoWSpell GetPendingCursorSpell
         {

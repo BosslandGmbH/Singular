@@ -40,12 +40,12 @@ namespace Singular.ClassSpecific.Druid
                     new Decorator(
                         ret => SpellManager.HasSpell("Savage Roar")
                             && Me.RawComboPoints > 0
-                            && Me.ComboPointsTarget != 0
-                            && null != ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget)
+                            && Me.ComboPointsTargetGuid.IsValid
+                            && null != ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid)
                             && Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds < (Me.RawComboPoints * 6 + 6),
                         new Sequence(
-                            new Action(r => Logger.WriteDebug("cast Savage Roar to use {0} points on corpse of {1} since buff has {2} seconds left", Me.RawComboPoints, ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget).SafeName(), Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds)),
-                            CastSavageRoar( on => ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTarget), req => true)
+                            new Action(r => Logger.WriteDebug("cast Savage Roar to use {0} points on corpse of {1} since buff has {2} seconds left", Me.RawComboPoints, ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid).SafeName(), Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds)),
+                            CastSavageRoar( on => ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid), req => true)
                             )
                         )
                     ),

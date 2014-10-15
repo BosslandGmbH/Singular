@@ -216,7 +216,7 @@ namespace Singular.ClassSpecific.Warlock
 
         #region Handle Forcing Reapply of Doom if Needed due to Buff/Proc
 
-        static ulong _guidLastUberDoom = 0;
+        static WoWGuid _guidLastUberDoom;
         static DateTime _timeNextUberDoom = DateTime.Now;
 
         private static bool NeedToReapplyDoom()

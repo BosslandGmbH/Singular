@@ -85,14 +85,14 @@ namespace Singular.Managers
             return heallist;
         }
 
-        private static ulong lastCompanion = 0;
-        private static ulong lastFocus = 0;
+        private static WoWGuid lastCompanion;
+        private static WoWGuid lastFocus;
 
         protected override void DefaultIncludeTargetsFilter(List<WoWObject> incomingUnits, HashSet<WoWObject> outgoingUnits)
         {
             bool foundMe = false;
             bool isHorde = StyxWoW.Me.IsHorde;
-            ulong focusGuid = Me.FocusedUnitGuid;
+            WoWGuid focusGuid = Me.FocusedUnitGuid;
             bool foundFocus = false;
 
             foreach (WoWObject incomingUnit in incomingUnits)
@@ -313,11 +313,11 @@ namespace Singular.Managers
                 base.Pulse();
         }
 
-        public static HashSet<ulong> GetMainTankGuids()
+        public static HashSet<WoWGuid> GetMainTankGuids()
         {
             var infos = StyxWoW.Me.GroupInfo.RaidMembers;
 
-            return new HashSet<ulong>(
+            return new HashSet<WoWGuid>(
                 from pi in infos
                 where (pi.Role & WoWPartyMember.GroupRole.Tank) != 0
                 select pi.Guid);

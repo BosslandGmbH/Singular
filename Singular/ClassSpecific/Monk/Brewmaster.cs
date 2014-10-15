@@ -27,7 +27,7 @@ namespace Singular.ClassSpecific.Monk
         {
             get
             {
-                return TalentManager.IsSelected((int)MonkTalents.ChiBrew) && Me.CurrentChi == 0 && Me.CurrentTargetGuid > 0 &&
+                return TalentManager.IsSelected((int)MonkTalents.ChiBrew) && Me.CurrentChi == 0 && Me.CurrentTargetGuid.IsValid &&
                        (SingularRoutine.CurrentWoWContext == WoWContext.Instances && Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances);
             }
         }

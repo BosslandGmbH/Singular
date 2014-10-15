@@ -148,12 +148,12 @@ namespace Singular.Helpers
             var spellNameHashes = new HashSet<string>(spellNames);
 
             return (from i in carried
-                    let spells = i.ItemSpells
+                    let spells = i.Effects
                     where i.ItemInfo != null && spells != null && spells.Count != 0 &&
                           i.Usable &&
                           i.Cooldown == 0 &&
                           i.ItemInfo.RequiredLevel <= StyxWoW.Me.Level &&
-                          spells.Any(s => s.IsValid && s.ActualSpell != null && spellNameHashes.Contains(s.ActualSpell.Name))
+                          spells.Any(s => s.Spell != null && spellNameHashes.Contains(s.Spell.Name))
                     orderby i.ItemInfo.Level descending
                     select i).FirstOrDefault();
         }
@@ -407,7 +407,6 @@ namespace Singular.Helpers
                 Logger.WriteFile("Haste(M/R):  {0}/{1}", ss.MeleeHaste, ss.SpellHaste);
                 Logger.WriteFile("SpellPen:    {0}", ss.SpellPen);
                 Logger.WriteFile("PvP Resil:   {0}", ss.Resilience);
-                Logger.WriteFile("PvP Power:   {0}", ss.PvpPower);
                 Logger.WriteFile("");
                 Logger.WriteFile("PrimaryStat: {0}", Me.GetPrimaryStat() );
                 Logger.WriteFile("");
@@ -652,7 +651,6 @@ namespace Singular.Helpers
             public float Mastery { get; set; }
             public float Crit { get; set; }
             public float Resilience { get; set; }
-            public float PvpPower { get; set; }
 
             public SecondaryStats()
             {
@@ -670,7 +668,6 @@ namespace Singular.Helpers
                 Mastery = Lua.GetReturnVal<float>("return GetCombatRating(CR_MASTERY)", 0);
                 Crit = Lua.GetReturnVal<float>("return GetCritChance()", 0);               
                 Resilience = Lua.GetReturnVal<float>("return GetCombatRating(COMBAT_RATING_RESILIENCE_CRIT_TAKEN)", 0);
-                PvpPower = Lua.GetReturnVal<float>("return GetCombatRating(CR_PVP_POWER)", 0);
             }
 
         }

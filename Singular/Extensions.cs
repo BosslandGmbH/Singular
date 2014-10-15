@@ -74,9 +74,9 @@ namespace Singular
         {
             return s.Substring(c > s.Length ? 0 : s.Length - c);
         }
-        public static string UnitID(ulong guid)
+        public static string UnitID(WoWGuid guid)
         {
-            return Right(string.Format("{0:X4}", guid), 4);
+            return Right(string.Format("{0:X4}", guid.Lowest), 4);
         }
 
         public static Styx.StatType GetPrimaryStat(this WoWUnit unit)

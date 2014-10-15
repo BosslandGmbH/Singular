@@ -49,7 +49,7 @@ namespace Singular
         public override Composite RestBehavior { get { return _restBehavior; } }
         public override Composite DeathBehavior { get { return _deathBehavior; } }
 
-        private static ulong _guidLastTarget = 0;
+        private static WoWGuid _guidLastTarget;
         private static WaitTimer _timerLastTarget = new WaitTimer(TimeSpan.FromSeconds(20));
 
         public bool RebuildBehaviors(bool silent = false)
@@ -374,7 +374,7 @@ namespace Singular
                             TimeSpan.FromSeconds(1),
                             RunStatus.Failure,
                             new Decorator(
-                                req => Me.Combat,
+                                req => Me.IsActuallyInCombat,
                                 new Sequence(
                                     new PrioritySelector(
                                         new ThrottlePasses(
@@ -435,7 +435,7 @@ namespace Singular
                             TimeSpan.FromSeconds(1),
                             RunStatus.Failure,
                             new Decorator(
-                                req => Me.Combat,
+                                req => Me.IsActuallyInCombat,
                                 new Sequence(
                                     new PrioritySelector(
                                         new ThrottlePasses(
@@ -608,7 +608,7 @@ namespace Singular
 
         public static void ResetCurrentTarget()
         {
-            _guidLastTarget = 0;
+            _guidLastTarget = WoWGuid.Empty;
         }
 
         private static Composite CreateLogTargetChanges(BehaviorType behav, string sType)
@@ -619,13 +619,13 @@ namespace Singular
                     // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
                     if (Me.CurrentTargetGuid != _guidLastTarget)
                     {
-                        if (Me.CurrentTargetGuid == 0)
+                        if (!Me.CurrentTargetGuid.IsValid)
                         {
-                            if (_guidLastTarget != 0)
+                            if (_guidLastTarget.IsValid)
                             {
                                 if (SingularSettings.Debug)
                                     Logger.WriteDebug(sType + " CurrentTarget now: (null)");
-                                _guidLastTarget = 0;
+                                _guidLastTarget = WoWGuid.Empty;
                             }
                         }
                         else
@@ -636,7 +636,7 @@ namespace Singular
                         }
                     }
                     // testing for Me.CurrentTarget != null also to address objmgr not resolving guid yet to avoid NullRef
-                    else if (Me.CurrentTargetGuid != 0 && Me.CurrentTarget != null && Me.CurrentTarget.IsValid && !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Normal)  
+                    else if (Me.CurrentTargetGuid.IsValid && Me.CurrentTarget != null && Me.CurrentTarget.IsValid && !MovementManager.IsMovementDisabled && SingularRoutine.CurrentWoWContext == WoWContext.Normal)  
                     {       
                         // make sure we get into melee range within reasonable time
                         if ((!Me.IsMelee() || Me.CurrentTarget.IsWithinMeleeRange) && Movement.InLineOfSpellSight(Me.CurrentTarget, 5000))
@@ -1239,9 +1239,9 @@ namespace Singular
             SingularRoutine.OnBotEvent += (src, arg) =>
             {
                 // reset time on Start
-                if (arg.Event == SingularBotEvent.BotStart)
+                if (arg.Event == SingularBotEvent.BotStarted)
                     LastCallToSingular = DateTime.Now;
-                else if (arg.Event == SingularBotEvent.BotStop)
+                else if (arg.Event == SingularBotEvent.BotStopped)
                 {
                     TimeSpan since = TimeSpanSinceLastCall;
                     if (since.TotalSeconds >= SecondsBetweenWarnings)

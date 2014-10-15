@@ -88,7 +88,7 @@ namespace Singular.Helpers
         {
             get
             {
-                ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
+                WoWGuid[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
                     .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
                     .Union(new[] { StyxWoW.Me.Guid })
                     .Distinct()
@@ -105,7 +105,7 @@ namespace Singular.Helpers
         {
             get
             {
-                ulong[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
+                WoWGuid[] guids = StyxWoW.Me.GroupInfo.RaidMemberGuids
                     .Union(StyxWoW.Me.GroupInfo.PartyMemberGuids)
                     .Union(new[] { StyxWoW.Me.Guid })
                     .Distinct()
@@ -812,7 +812,7 @@ namespace Singular.Helpers
         /// IsBoss() checks usually appear in a sequence testing same target repeatedly.  
         /// Cache the values for a fast return in that circumstanc
         /// </summary>
-        private static ulong _lastIsBossGuid = 0;
+        private static WoWGuid _lastIsBossGuid;
         private static bool _lastIsBossResult = false;
    
         /// <summary>
@@ -824,7 +824,7 @@ namespace Singular.Helpers
         /// <returns>true: if boss</returns>
         public static bool IsBoss(this WoWUnit unit)
         {
-            ulong guid = unit == null ? 0 : unit.Guid;
+            WoWGuid guid = unit == null ? WoWGuid.Empty : unit.Guid;
             if ( guid == _lastIsBossGuid )
                 return _lastIsBossResult;
 
@@ -1130,23 +1130,23 @@ namespace Singular.Helpers
             return (float)unit.LocalGetPredictedHealth(includeMyHeals) * 100 / unit.MaxHealth;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct IncomingHeal
-        {
-            public ulong OwnerGuid;
-            public int spellId;
-            private int _dword_C;
-            public uint HealAmount;
-            private byte _isHealOverTime; // includes chaneled spells.
-            private byte _byte_15; // unknown value
-            private byte _byte_16; // unused
-            private byte _byte_17; // unused
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct IncomingHeal
+		{
+			public WoWGuid OwnerGuid;
+			public int spellId;
+			private int _dword_C;
+			public uint HealAmount;
+			private byte _isHealOverTime; // includes chaneled spells.
+			private byte _byte_15; // unknown value
+			private byte _byte_16; // unused
+			private byte _byte_17; // unused
 
-            public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
-        }
+			public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
+		}
 
         private static bool lastMovingAwayAnswer = false;
-        private static ulong guidLastMovingAwayCheck = 0;
+        private static WoWGuid guidLastMovingAwayCheck;
         private static double distLastMovingAwayCheck = 0f;
         private static readonly WaitTimer MovingAwayTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
 
@@ -1154,11 +1154,11 @@ namespace Singular.Helpers
         {
             get
             {
-                if (guidLastMovingAwayCheck != StyxWoW.Me.CurrentTargetGuid || StyxWoW.Me.CurrentTargetGuid == 0)
+                if (guidLastMovingAwayCheck != StyxWoW.Me.CurrentTargetGuid || !StyxWoW.Me.CurrentTargetGuid.IsValid)
                 {
                     lastMovingAwayAnswer = false;
                     if (StyxWoW.Me.CurrentTarget == null)
-                        guidLastMovingAwayCheck = 0;
+                        guidLastMovingAwayCheck = WoWGuid.Empty;
                     else
                     {
                         guidLastMovingAwayCheck = StyxWoW.Me.CurrentTargetGuid;
@@ -1215,7 +1215,7 @@ namespace Singular.Helpers
                 StyxWoW.Me.SetFocus(unit);
                 canAttack = Lua.GetReturnVal<bool>("return UnitCanAttack(\"player\",\"focus\")", 0);
                 if (focusSave == null || !focusSave.IsValid)
-                    StyxWoW.Me.SetFocus(0);
+                    StyxWoW.Me.SetFocus(WoWGuid.Empty);
                 else
                     StyxWoW.Me.SetFocus(focusSave);
             }
@@ -1230,7 +1230,7 @@ namespace Singular.Helpers
     // credit to Handnavi.  the following is a wrapping of his code
     public static class TimeToDeathExtension
     {
-        public static ulong guid { get; set; }  // guid of mob
+        public static WoWGuid guid { get; set; }  // guid of mob
 
         private static uint _firstLife;         // life of mob when first seen
         private static uint _firstLifeMax;      // max life of mob when first seen

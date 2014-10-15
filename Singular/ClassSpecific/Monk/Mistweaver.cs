@@ -10,6 +10,7 @@ using Singular.Managers;
 using Styx;
 using Styx.CommonBot;
 using Styx.TreeSharp;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
 using Rest = Singular.Helpers.Rest;
@@ -205,7 +206,7 @@ namespace Singular.ClassSpecific.Monk
         public static WoWUnit FindStatue()
         {
             const uint JADE_SERPENT_STATUE = 60849;
-            ulong guidMe = Me.Guid;
+            WoWGuid guidMe = Me.Guid;
             return ObjectManager.GetObjectsOfType<WoWUnit>()
                 .FirstOrDefault(u => u.Entry == JADE_SERPENT_STATUE && u.CreatedByUnitGuid == guidMe);
         }
@@ -1666,16 +1667,16 @@ namespace Singular.ClassSpecific.Monk
 #endif
         }
 
-        private static ulong guidLastHealTarget = 0;
+        private static WoWGuid guidLastHealTarget;
         private static Composite ShowHealTarget(UnitSelectionDelegate onUnit)
         {
             return
                 new Sequence(
                     new DecoratorContinue(
-                        ret => onUnit(ret) == null && guidLastHealTarget != 0,
+                        ret => onUnit(ret) == null && guidLastHealTarget.IsValid,
                         new Action(ret =>
                         {
-                            guidLastHealTarget = 0;
+                            guidLastHealTarget = WoWGuid.Empty;
                             Logger.WriteDebug(Color.LightGreen, "Heal Target - none");
                             return RunStatus.Failure;
                         })
@@ -1748,7 +1749,7 @@ namespace Singular.ClassSpecific.Monk
                             );
 
                         WoWUnit healTarg = onUnit(ret);
-                        if (Me.IsInGroup() || (Me.FocusedUnitGuid != 0 && healTarg == Me.FocusedUnit))
+                        if (Me.IsInGroup() || (Me.FocusedUnitGuid.IsValid && healTarg == Me.FocusedUnit))
                         {
                             if (healTarg == null)
                                 line += ",heal=(null)";

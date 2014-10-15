@@ -180,17 +180,17 @@ namespace Singular.ClassSpecific.Monk
                 }
             }
 
-            if (Me.CurrentPower < spell.PowerCost)
-            {
-                Logger.WriteDebug("CanCastSpell: wowSpell {0} requires {1} power but only {2} available", spell.Name, spell.PowerCost, Me.CurrentMana);
-                return false;
-            }
-
             if (Me.IsMoving && spell.CastTime > 0)
             {
                 Logger.WriteDebug("CanCastSpell: wowSpell {0} is not instant ({1} ms cast time) and we are moving", spell.Name, spell.CastTime);
                 return false;
             }
+
+			if (!spell.CanCast)
+			{
+				Logger.WriteDebug("CanCastSpell: wowSpell {0} cannot be cast according to WoW", spell.Name);
+				return false;
+			}
 
             return true;
         }
@@ -415,7 +415,7 @@ namespace Singular.ClassSpecific.Monk
         {
             range *= range;
             return ObjectManager.ObjectList
-                .Where(o => o.Type == WoWObjectType.AiGroup && o.Entry == (uint)typ && o.DistanceSqr < range && !Blacklist.Contains(o.Guid, BlacklistFlags.Combat))
+                .Where(o => o.Type == WoWObjectType.AreaTrigger && o.Entry == (uint)typ && o.DistanceSqr < range && !Blacklist.Contains(o.Guid, BlacklistFlags.Combat))
                 .OrderBy( o => o.DistanceSqr )
                 .FirstOrDefault();
         }
@@ -432,7 +432,7 @@ namespace Singular.ClassSpecific.Monk
             return sphere != null ? sphere.Location : WoWPoint.Empty;
         }
 
-        private static ulong guidSphere = 0;
+        private static WoWGuid guidSphere = WoWGuid.Empty;
         private static WoWPoint locSphere = WoWPoint.Empty;
         private static DateTime timeAbortSphere = DateTime.Now;
 
@@ -445,8 +445,8 @@ namespace Singular.ClassSpecific.Monk
 
                     // check we haven't gotten out of range due to fall / pushback / port / etc
                     new Decorator( 
-                        ret => guidSphere != 0 && Me.Location.Distance(locSphere) > range,
-                        new Action(ret => { guidSphere = 0; locSphere = WoWPoint.Empty; })
+                        ret => guidSphere.IsValid&& Me.Location.Distance(locSphere) > range,
+                        new Action(ret => { guidSphere = WoWGuid.Empty; locSphere = WoWPoint.Empty; })
                         ),
 
                     // validate the sphere we are moving to
@@ -455,7 +455,7 @@ namespace Singular.ClassSpecific.Monk
                         WoWObject sph = FindClosestSphere(typ, range);
                         if (sph == null)
                         {
-                            guidSphere = 0; locSphere = WoWPoint.Empty;
+                            guidSphere = WoWGuid.Empty; locSphere = WoWPoint.Empty;
                             return RunStatus.Failure;
                         }
 
@@ -479,7 +479,7 @@ namespace Singular.ClassSpecific.Monk
 
                     // move to the sphere if out of range
                     new Decorator(
-                        ret => guidSphere != 0 && Me.Location.Distance(locSphere) > 1,
+                        ret => guidSphere.IsValid && Me.Location.Distance(locSphere) > 1,
                         Movement.CreateMoveToLocationBehavior(ret => locSphere, true, ret => 0f)
                         ),
 
@@ -564,7 +564,20 @@ namespace Singular.ClassSpecific.Monk
                                 new Action( r => Logger.Write( Color.White, "/grappleweapon: received buff [{0}] #{1}", (r as WoWAura).Name, (r as WoWAura).SpellId))
                                 )
                             ),
-                        new Action(r => Blacklist.Add((r as CtxGrapple).target.IsPlayer ? (r as CtxGrapple).target.Guid : (r as CtxGrapple).target.Entry, BlacklistFlags.Node, TimeSpan.FromDays(7), "Singular: failed Grapple Weapon on this target"))
+						new Action(r =>
+						{
+							CtxGrapple grapple = (CtxGrapple)r;
+							if (grapple.target.IsPlayer)
+							{
+								Blacklist.Add(grapple.target.Guid, BlacklistFlags.Node, TimeSpan.FromDays(7),
+									"Singular: failed Grapple Weapon on this target");
+							}
+							else
+							{
+								Blacklist.Add(grapple.target.Entry, grapple.target.Location, BlacklistFlags.Node, TimeSpan.FromDays(7),
+									"Singular: failed Grapple Weapon on this target");
+							}
+						})
                         )
                     )
                 );
@@ -594,7 +607,7 @@ namespace Singular.ClassSpecific.Monk
             }
             else
             {
-                if (!u.IsHumanoid || Blacklist.Contains(u.Entry, BlacklistFlags.Node))
+                if (!u.IsHumanoid || Blacklist.Contains(be => be.Entry == u.Entry && (be.Flags & BlacklistFlags.Node) != 0))
                 {
                     return false;
                 }

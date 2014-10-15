@@ -1,4 +1,5 @@
-﻿using Styx;
+﻿using Bots.DungeonBuddy.Helpers;
+using Styx;
 using Styx.CommonBot;
 using Styx.WoWInternals;
 using System;
@@ -108,7 +109,7 @@ namespace Singular.Managers
 
         // static INavigationProvider _prevNavigation = null;
         static IPlayerMover _prevPlayerMover = null;
-        static IStuckHandler _prevStuckHandler = null;
+        static StuckHandler _prevStuckHandler = null;
 
         #region Initialization
 
@@ -117,9 +118,9 @@ namespace Singular.Managers
             SingularRoutine.OnBotEvent += (src, arg) =>
             {
                 IsManualMovementBotActive = SingularRoutine.IsBotInUse("LazyRaider", "Raid Bot", "Tyrael");
-                if (arg.Event == SingularBotEvent.BotStart)
+                if (arg.Event == SingularBotEvent.BotStarted)
                     MovementManager.Start();
-                else if (arg.Event == SingularBotEvent.BotStop)
+                else if (arg.Event == SingularBotEvent.BotStopped)
                     MovementManager.Stop();
                 else if (arg.Event == SingularBotEvent.BotChanged)
                     MovementManager.Change();
@@ -213,20 +214,32 @@ namespace Singular.Managers
 
         #region Local Classes for No Movement Providers
 
-        class NoNavigation : INavigationProvider
+        class NoNavigation : NavigationProvider
         {
-            public bool AtLocation(WoWPoint point1, WoWPoint point2) { return true; }
-            public bool CanNavigateFully(WoWPoint from, WoWPoint to, int maxHops) { return true; }
-            public bool Clear() { return true; }
-            public WoWPoint[] GeneratePath(WoWPoint from, WoWPoint to) { return new WoWPoint[] { new WoWPoint(from.X, from.Y, from.Z) }; }
-            public MoveResult MoveTo(WoWPoint location) { return MoveResult.Moved; }
-            public float PathPrecision { get; set; }
-            public IStuckHandler StuckHandler { get; set; }
+	        public NoNavigation()
+	        {
+		        StuckHandler = new ScriptHelpers.NoUnstuck();
+	        }
 
-            public NoNavigation()
-            {
-                StuckHandler = new NoStuckHandling();
-            }
+	        public override MoveResult MoveTo(WoWPoint location)
+	        {
+		        return MoveResult.Moved;
+	        }
+
+	        public override WoWPoint[] GeneratePath(WoWPoint @from, WoWPoint to)
+	        {
+		        return new[]
+		        {
+			        from
+		        };
+	        }
+
+	        public override bool AtLocation(WoWPoint point1, WoWPoint point2)
+	        {
+		        return true;
+	        }
+
+	        public override float PathPrecision { get; set; }
         }
 
         class NoPlayerMovement : IPlayerMover
@@ -236,11 +249,11 @@ namespace Singular.Managers
             public void MoveTowards(WoWPoint location) { }
         }
 
-        class NoStuckHandling : IStuckHandler
+        class NoStuckHandling : StuckHandler
         {
-            public bool IsStuck() { return false; }
-            public void Reset() { }
-            public void Unstick() { }
+            public override bool IsStuck() { return false; }
+			public override void Reset() { }
+			public override void Unstick() { }
         }
 
         private static NoNavigation pNoNavigation = new NoNavigation();

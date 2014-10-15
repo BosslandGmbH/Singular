@@ -481,7 +481,7 @@ namespace Singular.Helpers
         }
 
         private static readonly WaitTimer _nextTargetMessageTimer = WaitTimer.TenSeconds;
-        private static ulong _lastTargetMessageGuid = (ulong) 0xffffffffffffffff;
+        private static WoWGuid _lastTargetMessageGuid;
 
         /// <summary>
         /// targeting is blocked if pending spell on cursor, so this routine checks if a spell is on cursor

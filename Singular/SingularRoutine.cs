@@ -490,7 +490,7 @@ namespace Singular
             HotkeyDirector.Pulse();
         }
 
-        private static ulong _lastPetGuid = 0;
+        private static WoWGuid _lastPetGuid = WoWGuid.Empty;
         private static bool _lastPetAlive;
 
         private void CheckCurrentPet()
@@ -500,9 +500,9 @@ namespace Singular
 
             if (Me.Pet == null)
             {
-                if (_lastPetGuid != 0)
+                if (_lastPetGuid.IsValid)
                 {
-                    _lastPetGuid = 0;
+                    _lastPetGuid = WoWGuid.Empty;
                     if (SingularSettings.Debug)
                         Logger.WriteDebug("YourCurrentPet: (none)");
                 }
@@ -523,8 +523,8 @@ namespace Singular
 
         }
 
-        private static ulong _lastCheckCurrTargetGuid = 0;
-        private static ulong _lastCheckPetsTargetGuid = 0;
+        private static WoWGuid _lastCheckCurrTargetGuid;
+        private static WoWGuid _lastCheckPetsTargetGuid;
 
         private void CheckCurrentTarget()
         {
@@ -532,15 +532,15 @@ namespace Singular
         }
 
 
-        private void CheckTarget(WoWUnit unit, ref ulong prevGuid, string description, OnTargetChange onchg)
+        private void CheckTarget(WoWUnit unit, ref WoWGuid prevGuid, string description, OnTargetChange onchg)
         {
             // there are moments where CurrentTargetGuid != 0 but CurrentTarget == null. following
             // .. tries to handle by only checking CurrentTarget reference and treating null as guid = 0
             if (unit == null)
             {
-                if (prevGuid != 0)
+                if (prevGuid.IsValid)
                 {
-                    prevGuid = 0;
+                    prevGuid = WoWGuid.Empty;
                     onchg(unit);
                     if (SingularSettings.Debug)
                         Logger.WriteDebug(description + ": changed to: (null)");

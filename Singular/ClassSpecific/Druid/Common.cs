@@ -531,16 +531,11 @@ namespace Singular.ClassSpecific.Druid
                             return false;
                     }
 
-                    Mount.MountWrapper mount = Mount.Mounts.FirstOrDefault(m => m.IsSummoned);
-                    Logger.WriteDebug("DruidSwimBuff: breathvisible={0} canmount={1} mounted={2} mountdispid={3} creatureid={4} spellid={5} name={6} type={7}",
+                    Logger.WriteDebug( "DruidSwimBuff: breath={0} canmount={1} mounted={2} mountdispid={3}",
                         breath.IsVisible.ToYN(),
                         Mount.CanMount().ToYN(),
                         Me.Mounted.ToYN(),
-                        Me.MountDisplayId,
-                        mount == null ? 0 : mount.CreatureId,
-                        mount == null ? 0 : mount.CreatureSpellId,
-                        mount == null ? "n/a" : mount.Name,
-                        mount == null ? "n/a" : mount.Type.ToString()
+                        Me.MountDisplayId
                         );
                 }
 
@@ -718,7 +713,7 @@ namespace Singular.ClassSpecific.Druid
                     return false;
             }
 
-            if ((spell.CastTime != 0u || Spell.IsFunnel(spell)) && Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura(spell))
+            if ((spell.CastTime != 0u || spell.IsChanneled) && Me.IsMoving && !Spell.HaveAllowMovingWhileCastingAura(spell))
                 return false;
 
             if (Me.ChanneledCastingSpellId == 0)
@@ -730,7 +725,7 @@ namespace Singular.ClassSpecific.Druid
                     return false;
             }
 
-            if (Me.CurrentPower < spell.PowerCost)
+            if (!spell.CanCast)
                 return false;
 
             return true;

@@ -29,8 +29,8 @@ namespace Singular.ClassSpecific.Shaman
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static ShamanSettings ShamanSettings { get { return SingularSettings.Instance.Shaman(); } }
 
-        private static ulong guidLastHealTarget = 0;
-        private static ulong guidLastEarthShield = 0;
+        private static WoWGuid guidLastHealTarget;
+        private static WoWGuid guidLastEarthShield;
 
         #region REST
 
@@ -116,7 +116,7 @@ namespace Singular.ClassSpecific.Shaman
                 }
             }
 
-            guidLastEarthShield = target != null ? target.Guid : 0;
+            guidLastEarthShield = target != null ? target.Guid : WoWGuid.Empty;
             return target;
         }
 
@@ -988,7 +988,7 @@ namespace Singular.ClassSpecific.Shaman
                             );
 
                         WoWUnit healTarg = onHealUnit(ret);
-                        if (Me.IsInGroup() || (Me.FocusedUnitGuid != 0 && healTarg == Me.FocusedUnit))
+                        if (Me.IsInGroup() || (Me.FocusedUnitGuid.IsValid && healTarg == Me.FocusedUnit))
                         {
                             if (healTarg == null)
                                 line += ", heal=(null)";

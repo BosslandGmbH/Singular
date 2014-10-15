@@ -155,25 +155,25 @@ namespace Singular.Managers
                 CurrentSpec = StyxWoW.Me.Specialization;
 
                 Talents.Clear();
-                TalentId = new int[6];
+                TalentId = new int[7];
 
-                // Always 18 talents. 6 rows of 3 talents.
-                for (int index = 1; index <= 6 * 3; index++)
-                {
-                    var selected =
-                        Lua.GetReturnVal<bool>(
-                            string.Format(
-                                "local t= select(5,GetTalentInfo({0})) if t == true then return 1 end return nil", index),
-                            0);
-                    var t = new Talent {Index = index, Selected = selected};
-                    Talents.Add(t);
+                // Always 21 talents. 7 rows of 3 talents.
+	            for (int row = 0; row < 7; row++)
+	            {
+		            for (int col = 0; col < 3; col++)
+		            {
+						var selected = Lua.GetReturnVal<bool>(string.Format("local t = select(4, GetTalentInfo({0}, {1}, GetActiveSpecGroup())) if t then return 1 end return nil", row + 1, col + 1), 0);
+			            int index = 1 + row * 3 + col;
+						var t = new Talent { Index = index, Selected = selected };
+						Talents.Add(t);
 
-                    if (selected)
-                        TalentId[(index-1) / 3] = index;
-                }
+						if (selected)
+							TalentId[row] = index;
+		            }
+	            }
 
                 Glyphs.Clear();
-                GlyphId = new int[6];
+                GlyphId = new int[7];
 
                 // 6 glyphs all the time. Plain and simple!
                 for (int i = 1; i <= 6; i++)

@@ -92,9 +92,9 @@ namespace Singular.Managers
 
             SingularRoutine.OnBotEvent += (src,arg) =>
             {
-                if (arg.Event == SingularBotEvent.BotStart)
+                if (arg.Event == SingularBotEvent.BotStarted)
                     HotkeyDirector.Start(true);
-                else if (arg.Event == SingularBotEvent.BotStop)
+                else if (arg.Event == SingularBotEvent.BotStopped)
                     HotkeyDirector.Stop();
             };
         }

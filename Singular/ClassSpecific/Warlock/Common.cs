@@ -420,7 +420,7 @@ namespace Singular.ClassSpecific.Warlock
             else if (WarlockSettings.UseFearCount > 0 && Unit.NearbyUnitsInCombatWithMe.Count() >= WarlockSettings.UseFearCount)
             {
                 closestTarget = Unit.NearbyUnitsInCombatWithMe
-                    .Where(u => !u.IsUndead && u.Guid != (!Me.GotAlivePet ? 0 : Me.Pet.CurrentTargetGuid))
+                    .Where(u => !u.IsUndead && u.Guid != (!Me.GotAlivePet ? WoWGuid.Empty : Me.Pet.CurrentTargetGuid))
                     .OrderByDescending(u => u.IsPlayer)
                     .ThenBy(u => u.DistanceSqr)
                     .FirstOrDefault();

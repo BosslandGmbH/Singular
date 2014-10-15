@@ -150,7 +150,7 @@ namespace Singular
                 BotEvents.Battleground.OnBattlegroundEntered += e => UpdateContext();
                 SingularRoutine.OnBotEvent += (src, arg) =>
                 {
-                    if (arg.Event == SingularBotEvent.BotStart || arg.Event == SingularBotEvent.BotChanged)
+                    if (arg.Event == SingularBotEvent.BotStarted || arg.Event == SingularBotEvent.BotChanged)
                     {
                         // check if any of the bot detection values have changed which we use to 
                         // .. conditionally build trees

@@ -111,9 +111,9 @@ namespace Singular.Utilities
         public static bool IsShapeshiftSuppressed { get { return SuppressShapeshiftUntil > DateTime.Now; } }
 
         public static WoWUnit LastLineOfSightTarget { get; set; }
-        public static ulong LastNoPathTarget { get; set; }
+        public static WoWGuid LastNoPathTarget { get; set; }
 
-        public static Dictionary<ulong, int> MobsThatEvaded = new Dictionary<ulong, int>();
+        public static Dictionary<WoWGuid, int> MobsThatEvaded = new Dictionary<WoWGuid, int>();
 
         public static WoWUnit AttackingEnemyPlayer { get; set; }
         public static DateTime LastAttackedByEnemyPlayer { get; set; }
@@ -197,7 +197,7 @@ namespace Singular.Utilities
         }
 
 
-        static ulong guidLastEnemy;
+        static WoWGuid guidLastEnemy;
 
         private static void HandleCombatLog(object sender, LuaEventArgs args)
         {
@@ -247,17 +247,17 @@ namespace Singular.Utilities
                     Logger.WriteDiagnostic("[CombatLog] {0} {1}#{2} failure: '{3}'", e.Event, e.Spell.Name, e.SpellId, e.Args[14] );
                     if ( e.Args[14].ToString() == LocalizedLineOfSightFailure )
                     {
-                        ulong guid = 0;
+                        WoWGuid guid = WoWGuid.Empty;
                         try
                         {
                             LastLineOfSightTarget = e.DestUnit;
-                            guid = LastLineOfSightTarget == null ? 0 : LastLineOfSightTarget.Guid;
+                            guid = LastLineOfSightTarget == null ? WoWGuid.Empty : LastLineOfSightTarget.Guid;
                         }
                         catch
                         {
                         }
 
-                        if (guid == 0)
+                        if (!guid.IsValid)
                         {
                             Logger.WriteFile("[CombatLog] no valid destunit so using CurrentTarget");
                             LastLineOfSightTarget = StyxWoW.Me.CurrentTarget;
@@ -388,7 +388,7 @@ namespace Singular.Utilities
         private static void HandleEvadeBuggedMob(LuaEventArgs args, CombatLogEventArgs e)
         {
             WoWUnit unit = e.DestUnit;
-            ulong guid = e.DestGuid;
+            WoWGuid guid = e.DestGuid;
 
             if (unit == null && StyxWoW.Me.CurrentTarget != null)
             {

@@ -70,14 +70,15 @@ namespace Singular.Helpers
                 || TalentManager.CurrentSpec == WoWSpec.PaladinRetribution
                 || Me.Class == WoWClass.Rogue
                 || TalentManager.CurrentSpec == WoWSpec.ShamanEnhancement
-                || Me.Class == WoWClass.Warrior;
+                || Me.Class == WoWClass.Warrior
+				|| Me.Class == WoWClass.Hunter;
 
             if (autoAttack)
             {
                 prio.AddChild(
                     new Throttle(TimeSpan.FromMilliseconds(500),
                         new Decorator(
-                            ret => !StyxWoW.Me.IsAutoAttacking && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange, // && StyxWoW.Me.AutoRepeatingSpellId != spellIdAutoShot,
+                            ret => !StyxWoW.Me.IsAutoAttacking && Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
                             new Action(ret =>
                                 {
                                     WoWUnit unit = Me.CurrentTarget;
@@ -571,7 +572,7 @@ namespace Singular.Helpers
         }
 
         static DateTime brezStart = DateTime.Now;
-        static ulong brezPrevGuid = 0;
+        static WoWGuid brezPrevGuid;
 
         public static Composite CreateCombatRezBehavior(string spellName, SimpleBooleanDelegate unitFilter = null, SimpleBooleanDelegate requirements = null)
         {

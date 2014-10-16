@@ -234,9 +234,6 @@ namespace Singular.ClassSpecific.Rogue
                         // Defensive
                         Spell.BuffSelf("Combat Readiness", ret => !Me.HasAnyAura("Feint", "Evasion") && Unit.NearbyUnfriendlyUnits.Count(u => u.CurrentTargetGuid == Me.Guid) > 2 ),
 
-                        // Symbiosis
-                        new Throttle(179, Spell.BuffSelf("Growl", ret => Me.HealthPercent < 65 && SingularRoutine.CurrentWoWContext != WoWContext.Instances)),
-
                         // stun an add 4 out of every 10 secs if possible
                         Spell.Cast("Gouge", onGouge ),
 

@@ -71,39 +71,6 @@ namespace Singular.ClassSpecific.Druid
         }
 
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Battlegrounds, 2)]
-        public static Composite CreateFeralPreCombatBuffForSymbiosisBattlegrounds( )
-        {
-            return Common.CreateDruidCastSymbiosis(on => GetFeralBestSymbiosisTargetForBattlegrounds());
-        }
-
-        private static WoWPlayer GetFeralBestSymbiosisTargetForBattlegrounds()
-        {
-            return (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Priest)
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Paladin)
-                ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Shaman)
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior)
-                ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight))));
-        }
-
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.Instances, 2)]
-        public static Composite CreateFeralPreCombatBuffForSymbiosisInstances()
-        {
-            return Common.CreateDruidCastSymbiosis(on => GetFeralBestSymbiosisTargetForInstances());
-        }
-
-        private static WoWPlayer GetFeralBestSymbiosisTargetForInstances()
-        {
-            return (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Specialization == WoWSpec.PaladinHoly)
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Specialization == WoWSpec.PaladinProtection)
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Specialization == WoWSpec.WarriorProtection)
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Monk)
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Priest)
-                ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Shaman)
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior)
-                ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight)))))));
-        }
-
         [Behavior(BehaviorType.Pull, WoWClass.Druid, WoWSpec.DruidFeral, WoWContext.All)]
         public static Composite CreateFeralNormalPull()
         {
@@ -233,8 +200,7 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 new Action(ret => { _currTargetTimeToDeath = Me.CurrentTarget.TimeToDeath(); return RunStatus.Failure; }),
-                CreateFeralDiagnosticOutputBehavior("Combat"),
-                Common.SymbBuff( Symbiosis.DivineShield, on => Me, req => Me.HealthPercent < 20)
+                CreateFeralDiagnosticOutputBehavior("Combat")
                 );
         }
 
@@ -266,18 +232,6 @@ namespace Singular.ClassSpecific.Druid
                         Helpers.Common.CreateInterruptBehavior(),
 
                         CreateFeralAoeCombat(),
-
-#region Symbiosis
-                        new Decorator(
-                            ret => Me.HasAura( "Symbiosis") && !Me.HasAura("Prowl"),
-                            new PrioritySelector(
-                                Common.SymbCast(Symbiosis.FeralSpirit, on => Me.CurrentTarget, ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances || Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count( u => u.IsTargetingMeOrPet ) >= 2),
-                                Common.SymbCast(Symbiosis.ShatteringBlow, on => Me.CurrentTarget, ret => Me.CurrentTarget.IsPlayer && Me.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield")),
-                                Common.SymbCast(Symbiosis.DeathCoil, on => Me.CurrentTarget, ret => !Me.CurrentTarget.IsWithinMeleeRange),
-                                Common.SymbCast(Symbiosis.Clash, on => Me.CurrentTarget, ret => !Me.CurrentTarget.IsWithinMeleeRange)
-                                )
-                            ),
-#endregion
 
                         //Single target
                         Common.CreateFaerieFireBehavior( on => Me.CurrentTarget, req => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),
@@ -360,18 +314,6 @@ namespace Singular.ClassSpecific.Druid
                         Helpers.Common.CreateInterruptBehavior(),
 
                         CreateFeralAoeCombat(),
-
-            #region Symbiosis
-                        new Decorator(
-                            ret => Me.HasAura("Symbiosis") && !Me.HasAura("Prowl"),
-                            new PrioritySelector(
-                                Common.SymbCast(Symbiosis.FeralSpirit, on => Me.CurrentTarget, ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances || Me.CurrentTarget.IsBoss() || Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2),
-                                Common.SymbCast(Symbiosis.ShatteringBlow, on => Me.CurrentTarget, ret => Me.CurrentTarget.IsPlayer && Me.HasAnyAura("Ice Block", "Hand of Protection", "Divine Shield")),
-                                Common.SymbCast(Symbiosis.DeathCoil, on => Me.CurrentTarget, ret => !Me.CurrentTarget.IsWithinMeleeRange),
-                                Common.SymbCast(Symbiosis.Clash, on => Me.CurrentTarget, ret => !Me.CurrentTarget.IsWithinMeleeRange)
-                                )
-                            ),
-            #endregion
 
                         // 1. Keep Faerie Fire up (if no other armor debuff).
                         Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => !Me.CurrentTarget.HasAura("Weakened Armor", 3)),

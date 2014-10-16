@@ -124,8 +124,6 @@ namespace Singular.ClassSpecific.Warrior
                         new Decorator(
                             req => Me.GotTarget && Me.CurrentTarget.IsWithinMeleeRange,
                             new PrioritySelector(
-                        // Symbiosis
-
                                 new Decorator(
                                     ret => Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer || (!Me.IsInGroup() && AoeCount >= 3),
                                     new PrioritySelector(

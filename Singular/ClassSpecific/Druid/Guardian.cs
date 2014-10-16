@@ -84,14 +84,7 @@ namespace Singular.ClassSpecific.Druid
                     req => Me.GotTarget && !Me.CurrentTarget.IsTrivial(),
                     new PrioritySelector(
                         // Enrage ourselves back up to 60 rage for SD/FR usage.
-                        Spell.BuffSelf("Enrage", ret=>StyxWoW.Me.RagePercent <= 40),
-
-                        // Symbiosis
-                        Common.SymbCast(Symbiosis.BoneShield, on => Me, ret => !Me.HasAura("Bone Shield")),
-                        Common.SymbCast(Symbiosis.ElusiveBrew, on => Me, ret => StyxWoW.Me.HealthPercent <= 60 && !Me.HasAura("Elusive Brew")),
-                        Common.SymbCast(Symbiosis.SpellReflection, on => Me, ret => Unit.NearbyUnfriendlyUnits.Any(u => u.IsCasting && u.CurrentTargetGuid == Me.Guid && u.CurrentCastTimeLeft.TotalMilliseconds.Between(200,2000))),
-                        // Common.SymbCast(Symbiosis.LightningShield, on => Me, ret => !Me.HasAura("Lightning Shield")),
-                        Common.SymbCast(Symbiosis.FrostArmor, on => Me, ret => Me.GotTarget && Me.CurrentTarget.IsPlayer && !Me.HasAura("Frost Armor"))
+                        Spell.BuffSelf("Enrage", ret=>StyxWoW.Me.RagePercent <= 40)
                         )
                     ),
 
@@ -146,9 +139,6 @@ namespace Singular.ClassSpecific.Druid
                         Spell.Cast("Lacerate"),
                         Common.CreateFaerieFireBehavior( on => Me.CurrentTarget, req => true),
 
-                        // Symbiosis
-                        Common.SymbCast(Symbiosis.Consecration, on => Me, req => Me.CurrentTarget.SpellDistance() < 8),
-
                         Spell.Cast("Maul", ret => Me.CurrentTarget.CurrentTargetGuid != Me.Guid || SingularRoutine.CurrentWoWContext != WoWContext.Instances),
 
                         CreateGuardianWildChargeBehavior()
@@ -198,39 +188,6 @@ namespace Singular.ClassSpecific.Druid
         }
 
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.Instances, 2)]
-        public static Composite CreateGuardianPreCombatBuffForSymbiosisInstances(UnitSelectionDelegate onUnit)
-        {
-            return Common.CreateDruidCastSymbiosis(on => GetGuardianBestSymbiosisTargetInstances());
-        }
-
-        private static WoWPlayer GetGuardianBestSymbiosisTargetInstances()
-        {
-            return Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight)     // bone shield
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Paladin)        // consecration
-                    ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior)    // spell reflect
-                        ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Monk)    // evasive brew
-                        )
-                    );
-        }
-
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidGuardian, WoWContext.Battlegrounds, 2)]
-        public static Composite CreateGuardianPreCombatBuffForSymbiosisPvp(UnitSelectionDelegate onUnit)
-        {
-            return Common.CreateDruidCastSymbiosis(on => GetGuardianBestSymbiosisTargetPVP());
-        }
-
-        private static WoWPlayer GetGuardianBestSymbiosisTargetPVP()
-        {
-            return Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior)             // spell reflect
-                ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Mage)               // frost armor
-                    ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight)    // bone shield
-                        ?? (Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Paladin)    // consecration
-                            ?? Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Monk)    // evasive brew
-                            )
-                        )
-                    );
-        }
 
         #region Diagnostics
 

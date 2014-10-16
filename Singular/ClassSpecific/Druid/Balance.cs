@@ -590,7 +590,6 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalancePreCombatBuffBattlegrounds()
         {
             return new PrioritySelector(
-                Common.CreateDruidCastSymbiosis(on => GetBalanceBestSymbiosisTarget()),
                 new Decorator(
                     ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || !Unit.NearbyUnfriendlyUnits.Any(),
                     new PrioritySelector(
@@ -622,46 +621,11 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateBalanceCombatBuffBattlegrounds()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
+                Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed)
 
-                // Symbiosis
-/*
-                Common.SymbCast("Mirror Image", on => Me.CurrentTarget, ret => Me.GotTarget && Me.Shapeshift == ShapeshiftForm.Moonkin),
-                Common.SymbCast("Hammer of Justice", on => Me.CurrentTarget, ret => Me.GotTarget && !Me.CurrentTarget.IsBoss() && (Me.CurrentTarget.IsCasting || Me.CurrentTarget.IsPlayer)),
-
-                Common.SymbBuff("Unending Resolve", on => Me, ret => Me.HealthPercent < DruidSettings.Barkskin),
-                Common.SymbBuff("Anti-Magic Shell", on => Me, ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == Me.Guid)),
-                // add mass dispel ...
-                Common.SymbBuff("Cloak of Shadows", on => Me, ret => Me.ActiveAuras.Any(a => a.Value.IsHarmful && a.Value.IsActive && a.Value.Spell.DispelType != WoWDispelType.None))
-*/
-                Common.SymbCast( Symbiosis.MirrorImage, on => Me.CurrentTarget, ret => Me.GotTarget && Me.Shapeshift == ShapeshiftForm.Moonkin),
-                Common.SymbCast( Symbiosis.HammerOfJustice, on => Me.CurrentTarget, ret => Me.GotTarget && !Me.CurrentTarget.IsBoss() && (Me.CurrentTarget.IsCasting || Me.CurrentTarget.IsPlayer)),
-
-                Common.SymbBuff( Symbiosis.UnendingResolve, on => Me, ret => Me.HealthPercent < DruidSettings.Barkskin),
-                Common.SymbBuff( Symbiosis.AntiMagicShell, on => Me, ret => Unit.NearbyUnfriendlyUnits.Any(u => (u.IsCasting || u.ChanneledCastingSpellId != 0) && u.CurrentTargetGuid == Me.Guid)),
-                // add mass dispel ...
-                Common.SymbBuff( Symbiosis.CloakOfShadows, on => Me, ret => Me.ActiveAuras.Any(a => a.Value.IsHarmful && a.Value.IsActive && a.Value.Spell.DispelType != WoWDispelType.None))
                 );
         }
 
-        private static WoWUnit GetBalanceBestSymbiosisTarget()
-        {
-            WoWUnit target = null;
-            if (target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Mage);
-            if (target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warlock);
-            if (target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight);
-            if (target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Paladin);
-            if (target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Rogue);
-            // if (target == null)
-            //    target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Priest);
-
-            return target;
-        }
 
         #region Avoidance and Disengage
 

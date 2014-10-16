@@ -22,7 +22,7 @@ namespace Singular.ClassSpecific.DeathKnight
 {
     public class Blood
     {
-        private static DeathKnightSettings Settings { get { return SingularSettings.Instance.DeathKnight(); } }
+        private static DeathKnightSettings DeathKnightSettings { get { return SingularSettings.Instance.DeathKnight(); } }
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
 
         #region CombatBuffs
@@ -52,32 +52,29 @@ namespace Singular.ClassSpecific.DeathKnight
                         ret => Unit.NearbyUnfriendlyUnits.Count() > 2),
 
                     Spell.BuffSelf("Bone Shield",
-                        ret => !Settings.BoneShieldExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude")),
+                        ret => !DeathKnightSettings.BoneShieldExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude")),
 
                     Spell.BuffSelf("Vampiric Blood",
-                        ret => Me.HealthPercent < Settings.VampiricBloodPercent
-                            && (!Settings.VampiricBloodExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude"))),
+                        ret => Me.HealthPercent < DeathKnightSettings.VampiricBloodPercent
+                            && (!DeathKnightSettings.VampiricBloodExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude"))),
 
                     Spell.BuffSelf("Icebound Fortitude",
-                        ret => StyxWoW.Me.HealthPercent < Settings.IceboundFortitudePercent
-                            && (!Settings.IceboundFortitudeExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude"))),
+                        ret => StyxWoW.Me.HealthPercent < DeathKnightSettings.IceboundFortitudePercent
+                            && (!DeathKnightSettings.IceboundFortitudeExclusive || !Me.HasAnyAura("Bone Shield", "Vampiric Blood", "Dancing Rune Weapon", "Lichborne", "Icebound Fortitude"))),
 
                     Spell.BuffSelf("Lichborne",ret => StyxWoW.Me.IsCrowdControlled()),
 
                     Spell.BuffSelf("Desecrated Ground", ret => Common.HasTalent( DeathKnightTalents.DesecratedGround) && StyxWoW.Me.IsCrowdControlled()),
 
-                    // Symbiosis
-                    Spell.Cast("Might of Ursoc", ret => Me.HealthPercent < Settings.VampiricBloodPercent),
-
                     // use army of the dead defensively
                     Spell.BuffSelf("Army of the Dead",
-                        ret => Settings.UseArmyOfTheDead 
+                        ret => DeathKnightSettings.UseArmyOfTheDead 
                             && SingularRoutine.CurrentWoWContext == WoWContext.Instances 
-                            && StyxWoW.Me.HealthPercent < Settings.ArmyOfTheDeadPercent),
+                            && StyxWoW.Me.HealthPercent < DeathKnightSettings.ArmyOfTheDeadPercent),
 
                     // I need to use Empower Rune Weapon to use Death Strike
                     Spell.BuffSelf("Empower Rune Weapon",
-                        ret => StyxWoW.Me.HealthPercent < Settings.EmpowerRuneWeaponPercent
+                        ret => StyxWoW.Me.HealthPercent < DeathKnightSettings.EmpowerRuneWeaponPercent
                             && !Spell.CanCastHack("Death Strike")),
 
                     Helpers.Common.CreateCombatRezBehavior("Raise Ally", on => ((WoWUnit)on).SpellDistance() < 40 && ((WoWUnit)on).InLineOfSpellSight),
@@ -86,7 +83,7 @@ namespace Singular.ClassSpecific.DeathKnight
                     // I am using pet as dps bonus
                     Spell.BuffSelf("Raise Dead",
                         ret => Helpers.Common.UseLongCoolDownAbility
-                            && Settings.UseGhoulAsDpsCdBlood
+                            && DeathKnightSettings.UseGhoulAsDpsCdBlood
                             && SingularRoutine.IsAllowed(Styx.CommonBot.Routines.CapabilityFlags.PetSummoning) 
                             && !Common.GhoulMinionIsActive),
 
@@ -97,7 +94,9 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     Spell.OffGCD( Spell.BuffSelf("Blood Tap", ret => NeedBloodTap() ) ),
 
-                    Spell.Cast("Plague Leech", ret => Common.CanCastPlagueLeech)
+                    Spell.Cast("Plague Leech", ret => Common.CanCastPlagueLeech),
+
+                    Spell.BuffSelf("Horn of Winter")
                     )
                 );
         }
@@ -143,7 +142,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         new PrioritySelector(
                             ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
                             new Decorator(
-                                ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= Settings.DeathAndDecayCount,
+                                ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
                                 new PrioritySelector(
                                     Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),
 
@@ -165,9 +164,9 @@ namespace Singular.ClassSpecific.DeathKnight
                                     Spell.Cast("Death Strike"),
 
                                     // AoE Damage
-                                    Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
-                                    Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
-                                    Spell.Cast("Rune Strike"),
+                                    Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= DeathKnightSettings.BloodBoilCount),
+                                    // Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < DeathKnightSettings.BloodBoilCount),
+                                    // Spell.Cast("Rune Strike"),
                                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                                     new ActionAlwaysSucceed()
@@ -188,7 +187,6 @@ namespace Singular.ClassSpecific.DeathKnight
                         // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                         Spell.Cast("Death Coil", ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
                         Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
-                        Spell.Cast("Rune Strike"),
 
                         // Active Mitigation
                         new Sequence(
@@ -197,10 +195,9 @@ namespace Singular.ClassSpecific.DeathKnight
                             ),
 
 
-                        Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
+                        Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= DeathKnightSettings.BloodBoilCount),
                         Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
-                        Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
-                        Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Heart Strike") && _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
+                        // Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < DeathKnightSettings.BloodBoilCount),
                         Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
                         // *** 3 Lowbie Cast what we have Priority
@@ -251,19 +248,17 @@ namespace Singular.ClassSpecific.DeathKnight
                                     )
                                 ),
 
-
                             // apply / refresh disease if needed 
                             Common.CreateApplyDiseases(),
 
                             // If we don't have RS yet, just resort to DC. Its not the greatest, but oh well. Make sure we keep enough RP banked for a self-heal if need be.
                             Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
-                            Spell.Cast("Rune Strike"),
-                            Spell.Cast("Death Coil", ret => !SpellManager.HasSpell("Rune Strike") && StyxWoW.Me.CurrentRunicPower >= 80),
-                            Spell.Cast("Death Coil", ret => !StyxWoW.Me.CurrentTarget.IsWithinMeleeRange ),
+                            Spell.Cast("Death Coil", ret => StyxWoW.Me.CurrentRunicPower >= 80),
                             Spell.Buff("Necrotic Strike"),
                             Spell.Cast("Death Strike"),
                             Spell.Cast("Heart Strike"),
                             Spell.Cast("Icy Touch"),
+                            Spell.Cast("Death Coil"),
                             Spell.Cast("Horn of Winter")
                             )
                         ),
@@ -311,63 +306,67 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             TankManager.NeedTankTargeting = (SingularRoutine.CurrentWoWContext == WoWContext.Instances);
 
-            return
-                new PrioritySelector(
+            return new PrioritySelector(
 
-                    Helpers.Common.EnsureReadyToAttackFromMelee(),
-                    Spell.WaitForCastOrChannel(),
-                    Helpers.Common.CreateAutoAttack(true),
+                Helpers.Common.EnsureReadyToAttackFromMelee(),
+                Spell.WaitForCastOrChannel(),
+                Helpers.Common.CreateAutoAttack(true),
 
-                    new Decorator(
-                        ret => !Spell.IsGlobalCooldown(),
-                        new PrioritySelector(
-                            Helpers.Common.CreateInterruptBehavior(),
+                new Decorator(
+                    ret => !Spell.IsGlobalCooldown(),
+                    new PrioritySelector(
+                        Helpers.Common.CreateInterruptBehavior(),
 
-                            Common.CreateDeathKnightPullMore(),
+                        Common.CreateDeathKnightPullMore(),
 
-                            // Taunts
-                            //------------------------------------------------------------------------
-                            new Decorator( 
-                                ret => SingularSettings.Instance.EnableTaunting 
-                                    && TankManager.Instance.NeedToTaunt.Any()
-                                    && TankManager.Instance.NeedToTaunt.FirstOrDefault().InLineOfSpellSight,
-                                new Throttle( TimeSpan.FromMilliseconds(1500),
-                                    new PrioritySelector(
-                                        // Direct Taunt
-                                        Spell.Cast("Dark Command",
-                                            ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
-                                            ret => true),
+                        // Taunts
+                        //------------------------------------------------------------------------
+                        new Decorator( 
+                            ret => SingularSettings.Instance.EnableTaunting 
+                                && TankManager.Instance.NeedToTaunt.Any()
+                                && TankManager.Instance.NeedToTaunt.FirstOrDefault().InLineOfSpellSight,
+                            new Throttle( TimeSpan.FromMilliseconds(1500),
+                                new PrioritySelector(
+                                    // Direct Taunt
+                                    Spell.Cast("Dark Command",
+                                        ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
+                                        ret => true),
 
-                                        new Decorator(
-                                            ret => TankManager.Instance.NeedToTaunt.Any()   /*recheck just before referencing member*/
-                                                && Me.SpellDistance(TankManager.Instance.NeedToTaunt.FirstOrDefault()) > 10,
+                                    new Decorator(
+                                        ret => TankManager.Instance.NeedToTaunt.Any()   /*recheck just before referencing member*/
+                                            && Me.SpellDistance(TankManager.Instance.NeedToTaunt.FirstOrDefault()) > 10,
 
-                                            new PrioritySelector(
-                                                // use DG if we have to (be sure to stop movement)
-                                                Common.CreateDeathGripBehavior(),
+                                        new PrioritySelector(
+                                            // use DG if we have to (be sure to stop movement)
+                                            Common.CreateDeathGripBehavior(),
 
-                                                // CoI for the agro and to slow
-                                                Spell.Cast("Chains of Ice",
-                                                    ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
-                                                    req => Me.IsSafelyFacing(TankManager.Instance.NeedToTaunt.FirstOrDefault())),
+                                            // CoI for the agro and to slow
+                                            Spell.Cast("Chains of Ice",
+                                                ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(),
+                                                req => Me.IsSafelyFacing(TankManager.Instance.NeedToTaunt.FirstOrDefault())),
 
-                                                // everything else on CD, so hit with a DC if possible
-                                                Spell.Cast("Death Coil", 
-                                                    ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(), 
-                                                    req => Me.IsSafelyFacing(TankManager.Instance.NeedToTaunt.FirstOrDefault()))
-                                                )
+                                            // everything else on CD, so hit with a DC if possible
+                                            Spell.Cast("Death Coil", 
+                                                ctx => TankManager.Instance.NeedToTaunt.FirstOrDefault(), 
+                                                req => Me.IsSafelyFacing(TankManager.Instance.NeedToTaunt.FirstOrDefault()))
                                             )
                                         )
                                     )
-                                 ),
+                                )
+                                ),
+
+                        Common.CreateDarkSuccorBehavior(),
 
                         // Start AoE section
                         //------------------------------------------------------------------------
                         new PrioritySelector(
                             ctx => _nearbyUnfriendlyUnits = Unit.UnfriendlyUnitsNearTarget(15f).ToList(),
                             new Decorator(
-                                ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= Settings.DeathAndDecayCount,
+                                ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count() >= DeathKnightSettings.DeathAndDecayCount,
                                 new PrioritySelector(
+
+                                    Spell.Cast("Death Strike", req => Me.HealthPercent <= DeathKnightSettings.DeathStrikeEmergencyPercent),
+
                                     Spell.CastOnGround("Death and Decay", ret => StyxWoW.Me.CurrentTarget, ret => true, false),
 
                                     // Spell.Cast("Gorefiend's Grasp", ret => Common.HasTalent( DeathKnightTalents.GorefiendsGrasp)),
@@ -398,8 +397,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                         ),
 
                                     // AoE Damage
-                                    Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= Settings.BloodBoilCount),
-                                    Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < Settings.BloodBoilCount),
+                                    Spell.Cast("Blood Boil", ret => Spell.UseAOE && _nearbyUnfriendlyUnits.Count >= DeathKnightSettings.BloodBoilCount),
+                                    Spell.Cast("Heart Strike", ret => _nearbyUnfriendlyUnits.Count < DeathKnightSettings.BloodBoilCount),
                                     Spell.Cast("Rune Strike"),
                                     Spell.Cast("Icy Touch", ret => !StyxWoW.Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost)),
 
@@ -443,29 +442,39 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             return new PrioritySelector(
                 // Runic Power Dump if approaching capp
+                Spell.Cast("Death Coil", req => Me.CurrentRunicPower >= 80),
+
+                // use Crimson Scourge
                 new Decorator(
-                    req => Me.CurrentRunicPower >= 80,
+                    req => Me.HasAura("Crimson Scourge"),
                     new PrioritySelector(
-                        Spell.Cast("Rune Strike"),
-                        Spell.Cast("Death Coil")
+                        Spell.CastOnGround( "Death and Decay", on => Me.CurrentTarget, req => !Me.CurrentTarget.IsMoving),
+                        Spell.Cast( "Blood Boil" )
                         )
                     ),
 
-                // Healing and Active Mitigation - just cast DS on cooldown
-                Spell.Cast("Death Strike", req => Me.HealthPercent < 99 || Common.BloodRuneSlotsActive == 0),
+                // Blood Tap behavior
+                new Decorator( 
+                    req => Common.HasTalent(DeathKnightTalents.BloodTap) && Me.GetAuraStacks("Blood Charges") >= 10 && Common.DeathRuneSlotsActive == 0,
+                    new PrioritySelector(
+                        Spell.OffGCD( Spell.BuffSelf("Blood Tap") ),
+                        Spell.OffGCD( Spell.BuffSelf("Blood Tap") )
+                        )
+                    ),
+
+                // use Frost, Unholy, and Death Runes
+                Spell.Cast("Death Strike"),
 
                 // use Blood Runes
                 new Decorator(
-                    req => Common.BloodRuneSlotsActive > 0,
+                    req => Common.BloodRuneSlotsActive > (Common.HasTalent(DeathKnightTalents.RunicEmpowerment) ? 1 : 0),
                     new PrioritySelector(
-                        Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
-                        Spell.Cast("Heart Strike"),
-                        Spell.Cast("Blood Strike", ret => !SpellManager.HasSpell("Heart Strike"))
+                        Spell.Cast("Soul Reaper", req => Me.CurrentTarget.HealthPercent <= 35),
+                        Spell.Cast("Blood Boil")
                         )
                     ),
 
-                Spell.Cast("Rune Strike"),
-                Spell.Cast("Death Coil", req => !SpellManager.HasSpell("Rune Strike")),
+                Spell.Cast("Death Coil"),
                 Spell.Cast("Horn of Winter", on => Me),
 
                 new Decorator(

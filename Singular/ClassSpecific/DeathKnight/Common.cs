@@ -454,14 +454,6 @@ namespace Singular.ClassSpecific.DeathKnight
 
         public static Composite CreateDarkSuccorBehavior()
         {
-            if (Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Combat)
-            {
-                if (Common.SelectedPresence == DeathKnightPresence.Blood && TalentManager.HasGlyph("Dark Succor"))
-                {
-                    Logger.Write(Color.White, "User Error:  Glyph of Dark Succor does not proc in Blood Presence -- glyph socket wasted");
-                }
-            }
-
             // health below determined %
             // user wants to cast on cooldown without regard to health
             // we have aura AND (target is about to die OR aura expires in less than 3 secs)
@@ -627,7 +619,12 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     Spell.Cast("Outbreak", ret => Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague")),
 
-                // now Rune based abilities
+                    // now Rune based abilities
+                    Spell.Cast(
+                        "Plague Strike",
+                        ret => TalentManager.CurrentSpec == WoWSpec.DeathKnightUnholy
+                            && (Me.CurrentTarget.HasAuraExpired("Frost Fever") || Me.CurrentTarget.HasAuraExpired("Blood Plague"))),
+
                     new Decorator(
                         ret => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentTarget.HasAuraExpired("Frost Fever"),
                         new PrioritySelector(

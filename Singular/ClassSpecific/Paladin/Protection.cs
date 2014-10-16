@@ -92,13 +92,6 @@ namespace Singular.ClassSpecific.Paladin
                             "Divine Protection",
                             ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt),
 
-                    // Symbiosis
-                        Spell.BuffSelf(
-                            "Barkskin",
-                            ret => Me.HealthPercent <= PaladinSettings.DivineProtectionHealthProt
-                                && !Me.HasAura("Divine Protection")
-                                && Spell.GetSpellCooldown("Divine Protection", 6).TotalSeconds > 0),
-
                         Spell.BuffSelf(
                             "Guardian of Ancient Kings",
                             ret => Me.HealthPercent <= PaladinSettings.GoAKHealth),

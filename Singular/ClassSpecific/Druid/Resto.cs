@@ -821,25 +821,10 @@ namespace Singular.ClassSpecific.Druid
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Innervate", ret => StyxWoW.Me.ManaPercent < 15 || StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
-                Spell.BuffSelf("Barkskin", ret => StyxWoW.Me.HealthPercent <= DruidSettings.Barkskin || Unit.NearbyUnitsInCombatWithMe.Any()),
-
-                // Symbiosis
-                Common.SymbBuff(Symbiosis.IceboundFortitude, on => Me, ret => Me.HealthPercent < DruidSettings.Barkskin),
-                Common.SymbBuff(Symbiosis.Deterrence, on => Me, ret => Me.HealthPercent < DruidSettings.Barkskin),
-                Common.SymbBuff(Symbiosis.Evasion, on => Me, ret => Me.HealthPercent < DruidSettings.Barkskin),
-                Common.SymbBuff(Symbiosis.FortifyingBrew, on => Me, ret => Me.HealthPercent < DruidSettings.Barkskin),
-                Common.SymbBuff(Symbiosis.IntimidatingRoar, on => Me.CurrentTarget, ret => Me.CurrentTarget.SpellDistance() < 10 && Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 8 * 8) > 1),
-
-                Common.SymbBuff(Symbiosis.SpiritwalkersGrace, on => Me, ret => Me.IsMoving && Me.Combat)
+                Spell.BuffSelf("Barkskin", ret => StyxWoW.Me.HealthPercent <= DruidSettings.Barkskin || Unit.NearbyUnitsInCombatWithMe.Any())
                 );
         }
 
-
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidRestoration, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
-        public static Composite CreateRestoPreCombatBuffForSymbiosis(UnitSelectionDelegate onUnit)
-        {
-            return Common.CreateDruidCastSymbiosis(on => GetRestoBestSymbiosisTarget());
-        }
 
         public static WoWUnit GetBestTankTargetFor(string hotName, int stacks = 1, float health = 100f)
         {
@@ -900,25 +885,6 @@ namespace Singular.ClassSpecific.Druid
             return hotTarget;
         }
 
-
-        private static WoWUnit GetRestoBestSymbiosisTarget()
-        {
-            WoWUnit target = null;
-
-            if ( SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds )
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Warrior);
-
-            if ( target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.DeathKnight);
-            if ( target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Hunter);
-            if ( target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Rogue);
-            if ( target == null)
-                target = Unit.NearbyGroupMembers.FirstOrDefault(p => Common.IsValidSymbiosisTarget(p) && p.Class == WoWClass.Monk);
-
-            return target;
-        }
 
         private static int checkMushroomCount { get; set; }
 

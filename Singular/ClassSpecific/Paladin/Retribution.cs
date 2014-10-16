@@ -315,10 +315,7 @@ namespace Singular.ClassSpecific.Paladin
                         Spell.Cast("Judgment"),
                         Spell.Cast("Exorcism"),
                         Spell.Cast("Templar's Verdict", req => Me.CurrentHolyPower >= 3),
-                        Spell.BuffSelf("Sacred Shield"),
-
-                        // Symbiosis
-                        Spell.Cast("Wrath", ret => !Me.CurrentTarget.IsWithinMeleeRange && Me.CurrentTarget.SpellDistance() < 40)
+                        Spell.BuffSelf("Sacred Shield")
                         )
                     ),
 

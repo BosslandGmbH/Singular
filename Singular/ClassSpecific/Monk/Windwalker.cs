@@ -198,9 +198,6 @@ namespace Singular.ClassSpecific.Monk
 
                         Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
 
-                        // Symbiosis
-                        Spell.Cast("Bear Hug", ret => !Unit.NearbyUnfriendlyUnits.Any( u => u.Guid != Me.CurrentTargetGuid && u.CurrentTargetGuid == Me.Guid)),
-
                         // AoE behavior
                         Spell.Cast("Paralysis", 
                             onu => Unit.NearbyUnfriendlyUnits

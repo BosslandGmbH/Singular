@@ -922,7 +922,16 @@ namespace Singular
                     b == null ? "(null)" : b.Name
                     );
             }
-            else if ( SingularSettings.Instance.PullMoreTargetType == PullMoreTargetType.None || SingularSettings.Instance.PullMoreMobCount <= 1)
+            else if (SingularSettings.Instance.UsePullMore == PullMoreUsageType.Auto && SingularRoutine.IsQuestBotActive && !IsQuestProfileLoaded)
+            {
+                allow = false;
+                BotBase b = SingularRoutine.GetCurrentBotBase();
+                Logger.WriteDiagnostic("Pull More: disabled because use:{0} and botbase:{1} but no Quest profile loaded",
+                    SingularSettings.Instance.UsePullMore,
+                    b == null ? "(null)" : b.Name
+                    );
+            }
+            else if (SingularSettings.Instance.PullMoreTargetType == PullMoreTargetType.None || SingularSettings.Instance.PullMoreMobCount <= 1)
             {
                 allow = false;
                 Logger.WriteDiagnostic("Pull More: disabled by user configuration (use:{0}, target:{1}, count:{2}",
@@ -1201,6 +1210,10 @@ namespace Singular
         private static HashSet<WoWGuid> _pmGuids { get; set; }
         private static Func<WoWUnit, bool> PullMoreQuestTargetsDelegate()
         {
+            // shouldnt be needed if we make it here, but handle safely
+            if (!IsQuestProfileLoaded)
+                return t => false;
+
             _pmGuids = null;
 
             var questObjective = QuestOrder.Instance.CurrentNode as ObjectiveNode;
@@ -1268,7 +1281,7 @@ namespace Singular
         private static uint _prevQuestId;
         public static void PullMoreQuestTargetsDump()
         {
-            if (!SingularRoutine.IsQuestBotActive)
+            if (!IsQuestProfileLoaded)
                 return;
 
             var questObjective = QuestOrder.Instance.CurrentNode as ObjectiveNode;
@@ -1360,6 +1373,14 @@ namespace Singular
                 Logger.WriteDiagnostic("");
             }
 
+        }
+
+        public static bool IsQuestProfileLoaded
+        {
+            get
+            {
+                return SingularRoutine.IsQuestBotActive && QuestOrder.Instance != null;
+            }
         }
 
         private static HashSet<uint> _pmFactions { get; set; }

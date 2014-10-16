@@ -190,9 +190,6 @@ namespace Singular.ClassSpecific.Warlock
         {
             return new PrioritySelector(
 
-                // Symbiosis
-                Spell.Cast("Rejuvenation", on => Me, ret => Me.HasAuraExpired("Rejuvenation", 1) && Me.HealthPercent < 95),
-
                 // won't live long with no Pet, so try to summon
                 new Decorator(
                     ret => GetCurrentPet() == WarlockPet.None && GetBestPet() != WarlockPet.None,

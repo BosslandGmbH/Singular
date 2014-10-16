@@ -49,9 +49,6 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Common.CreateDarkSimulacrumBehavior(),
 
-                        // Symbiosis
-                        Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
-
                         // *** Cool downs ***
                         Spell.BuffSelf("Unholy Frenzy",
                             ret => Me.CurrentTarget.IsWithinMeleeRange 
@@ -218,9 +215,6 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Common.CreateDarkSimulacrumBehavior(),
 
-                        // Symbiosis
-                        Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
-
                         // *** Cool downs ***
                         Spell.BuffSelf("Unholy Frenzy",
                                        ret =>
@@ -284,23 +278,22 @@ namespace Singular.ClassSpecific.DeathKnight
                         Helpers.Common.CreateAutoAttack(true),
                         Helpers.Common.CreateInterruptBehavior(),
 
-                        // Symbiosis
-                        Spell.CastOnGround("Wild Mushroom: Plague", ret => StyxWoW.Me.CurrentTarget.Location, ret => Spell.UseAOE, false),
-
                         // *** Cool downs ***
-                        Spell.BuffSelf("Unholy Frenzy",
-                                       ret =>
-                                       StyxWoW.Me.CurrentTarget.IsWithinMeleeRange &&
-                                       !PartyBuff.WeHaveBloodlust &&
-                                       Helpers.Common.UseLongCoolDownAbility),
-                        Spell.Cast("Summon Gargoyle",
-                                   ret =>
-                                   DeathKnightSettings.UseSummonGargoyle && Helpers.Common.UseLongCoolDownAbility),
+                        Spell.BuffSelf(
+                            "Unholy Frenzy",
+                            ret => StyxWoW.Me.CurrentTarget.IsWithinMeleeRange 
+                                && !PartyBuff.WeHaveBloodlust 
+                                && Helpers.Common.UseLongCoolDownAbility),
+
+                        Spell.Cast(
+                            "Summon Gargoyle",
+                            ret => DeathKnightSettings.UseSummonGargoyle 
+                                && Helpers.Common.UseLongCoolDownAbility),
 
                         // Start AoE section
                         new Decorator(
-                            ret =>
-                            Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= DeathKnightSettings.DeathAndDecayCount,
+                            ret => Spell.UseAOE 
+                                && Unit.UnfriendlyUnitsNearTarget(12f).Count() >= DeathKnightSettings.DeathAndDecayCount,
                             new PrioritySelector(
                                 // Diseases
                                 Common.CreateApplyDiseases(),
@@ -309,11 +302,13 @@ namespace Singular.ClassSpecific.DeathKnight
                                 new Throttle( 2,
                                     new PrioritySelector(
                                         Spell.Cast("Blood Boil",
-                                            ret => // WOD: Common.HasTalent(DeathKnightTalents.RollingBlood) &&
-                                                !StyxWoW.Me.HasAura("Unholy Blight") 
-                                                && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 && Common.ShouldSpreadDiseases),
+                                            ret => !StyxWoW.Me.HasAura("Unholy Blight") 
+                                                && StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 
+                                                && Common.ShouldSpreadDiseases),
+
                                         Spell.Cast("Pestilence",
-                                            ret => !StyxWoW.Me.HasAura("Unholy Blight") && Common.ShouldSpreadDiseases)
+                                            ret => !StyxWoW.Me.HasAura("Unholy Blight") 
+                                                && Common.ShouldSpreadDiseases)
                                         )
                                     ),
 
@@ -328,8 +323,8 @@ namespace Singular.ClassSpecific.DeathKnight
                                     false),
 
                                 Spell.Cast("Blood Boil",
-                                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 && StyxWoW.Me.DeathRuneCount > 0 
-                                        || (StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2)),
+                                    ret => StyxWoW.Me.CurrentTarget.DistanceSqr <= 10*10 
+                                        && (StyxWoW.Me.DeathRuneCount > 0  || (StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2))),
 
                                 // Execute
                                 Spell.Cast("Soul Reaper", ret => StyxWoW.Me.CurrentTarget.HealthPercent < 35),
@@ -357,38 +352,33 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Diseases
                         Common.CreateApplyDiseases(),
 
-                        // Scourge Strike/Death and Decay*(Unholy/Death Runes are Capped)
-                        new Decorator(
-                            req => Common.UnholyRuneSlotsActive >= 2,
-                            new PrioritySelector(
-                                Spell.CastOnGround("Death and Decay",
-                                    on => StyxWoW.Me.CurrentTarget,
-                                    ret => Spell.UseAOE,
-                                    false),
-                                Spell.Cast("Scourge Strike")
-                                )
-                            ),
-
                         // Dark Transformation
                         Spell.Cast("Dark Transformation",
                             ret => StyxWoW.Me.GotAlivePet
                                 && !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
                                 && StyxWoW.Me.HasAura("Shadow Infusion", 5)),
-                        
+
+                        // Death Coil if Dark Trans not active
+                        Spell.Cast("Death Coil",
+                            req => !StyxWoW.Me.GotAlivePet
+                                || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")
+                            ),
+
+                        // Scourge Strike on Death or Unholy Runes active
+                        Spell.Cast("Scourge Strike",
+                            req => Common.DeathRuneSlotsActive > 0 
+                                || Common.UnholyRuneSlotsActive > 0),
+
+                        // Festering Strike on both Blood and Frost runes active
+                        Spell.Cast("Festering Strike",
+                            req => Common.BloodRuneSlotsActive > 0
+                                && Common.FrostRuneSlotsActive > 0),
+
                         // Death Coil (Sudden Doom, high RP)
                         Spell.Cast("Death Coil",
                             ret => Me.HasAura(SuddenDoom)
                                 || Me.CurrentRunicPower >= 80
                                 || (Me.BloodRuneCount + Me.FrostRuneCount + Me.UnholyRuneCount + Me.DeathRuneCount == 0)),                       
-
-                        // Festering Strike (BB and FF are up)
-                        Spell.Cast("Festering Strike", ret => StyxWoW.Me.BloodRuneCount == 2 && StyxWoW.Me.FrostRuneCount == 2),
-                        
-                        // Scourge Strike
-                        Spell.Cast("Scourge Strike"),
-                        
-                        // Festering Strike
-                        Spell.Cast("Festering Strike"),
 
                         // Horn of Winter
                         Spell.Cast("Horn of Winter"),

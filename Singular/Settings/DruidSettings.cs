@@ -179,13 +179,6 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Enable Symbiosis")]
-        [Description("True: will cast Symbiosis upon group member enabling special abilities")]
-        public bool UseSymbiosis { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
         [DisplayName("Use Wild Charge")]
         [Description("Use Wild Charge as appropriate for spec")]
         public bool UseWildCharge { get; set; }

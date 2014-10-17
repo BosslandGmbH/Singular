@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>10/16/2014 11:20:49</ScanTime>
+  <ScanTime>10/16/2014 20:42:20</ScanTime>
   <FileList>
     <File Hash="31758" Name="ClassSpecific\DeathKnight\Blood.cs" />
     <File Hash="34083" Name="ClassSpecific\DeathKnight\Common.cs" />
@@ -24,11 +24,11 @@
     <File Hash="18410" Name="ClassSpecific\Mage\Fire.cs" />
     <File Hash="39518" Name="ClassSpecific\Mage\Frost.cs" />
     <File Hash="5429" Name="ClassSpecific\Mage\Lowbie.cs" />
-    <File Hash="20809" Name="ClassSpecific\Monk\Brewmaster.cs" />
-    <File Hash="33938" Name="ClassSpecific\Monk\Common.cs" />
+    <File Hash="21125" Name="ClassSpecific\Monk\Brewmaster.cs" />
+    <File Hash="33461" Name="ClassSpecific\Monk\Common.cs" />
     <File Hash="1495" Name="ClassSpecific\Monk\Lowbie.cs" />
-    <File Hash="91329" Name="ClassSpecific\Monk\Mistweaver.cs" />
-    <File Hash="23282" Name="ClassSpecific\Monk\Windwalker.cs" />
+    <File Hash="92736" Name="ClassSpecific\Monk\Mistweaver.cs" />
+    <File Hash="23475" Name="ClassSpecific\Monk\Windwalker.cs" />
     <File Hash="13239" Name="ClassSpecific\Paladin\Common.cs" />
     <File Hash="10834" Name="ClassSpecific\Paladin\Holy.cs" />
     <File Hash="2270" Name="ClassSpecific\Paladin\Lowbie.cs" />
@@ -118,7 +118,7 @@
     <File Hash="1727" Name="Settings\SpellList.PurgeWhitelist.cs" />
     <File Hash="5002" Name="Settings\WarlockSettings.cs" />
     <File Hash="5065" Name="Settings\WarriorSettings.cs" />
-    <File Hash="76333" Name="SingularRoutine.Behaviors.cs" />
+    <File Hash="76865" Name="SingularRoutine.Behaviors.cs" />
     <File Hash="1809" Name="SingularRoutine.BotEvents.cs" />
     <File Hash="20693" Name="SingularRoutine.Context.cs" />
     <File Hash="26826" Name="SingularRoutine.cs" />

@@ -101,6 +101,14 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.All)]
+        public static Composite CreateMonkPreCombatBuffs()
+        {
+            return new PrioritySelector(
+                PartyBuff.BuffGroup("Legacy of the White Tiger")
+                );
+        }
+
         [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkBrewmaster, priority: 1)]
         public static Composite CreateBrewmasterMonkCombatBuffs()
         {

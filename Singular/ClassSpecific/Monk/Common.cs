@@ -32,18 +32,6 @@ namespace Singular.ClassSpecific.Monk
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         public static bool HasTalent(MonkTalents tal) { return TalentManager.IsSelected((int)tal); }
 
-        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, (WoWSpec)int.MaxValue, WoWContext.All, 1)]
-        public static Composite CreateMonkPreCombatBuffs()
-        {
-            return new PrioritySelector(
-                // behaviors handling group buffing... handles special moments like
-                // .. during the buff spam parade during battleground preparation, etc.
-                // .. check our own buffs in PullBuffs and CombatBuffs if needed
-                PartyBuff.BuffGroup("Legacy of the White Tiger"),
-                PartyBuff.BuffGroup("Legacy of the Emperor")
-                );
-        }
-
         [Behavior(BehaviorType.LossOfControl, WoWClass.Monk, (WoWSpec) int.MaxValue, WoWContext.Normal | WoWContext.Battlegrounds )]
         public static Composite CreateMonkLossOfControlBehavior()
         {
@@ -71,8 +59,8 @@ namespace Singular.ClassSpecific.Monk
 
             return new PrioritySelector(
                 
-                Spell.BuffSelf( "Legacy of the White Tiger"),
-                Spell.BuffSelf( "Legacy of the Emperor"),
+                PartyBuff.BuffGroup( "Legacy of the White Tiger", req => Me.Specialization == WoWSpec.MonkBrewmaster || Me.Specialization == WoWSpec.MonkWindwalker),
+                PartyBuff.BuffGroup("Legacy of the Emperor", req => Me.Specialization == WoWSpec.MonkMistweaver),
 
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),

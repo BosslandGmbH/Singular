@@ -102,14 +102,19 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
-        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal | WoWContext.Battlegrounds )]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.All)]
+        public static Composite CreateMonkPreCombatBuffs()
+        {
+            return new PrioritySelector(
+                PartyBuff.BuffGroup("Legacy of the White Tiger")
+                );
+        }
+
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateWindwalkerMonkCombatBuffs()
         {
             return new PrioritySelector(
                 Spell.BuffSelf("Stance of the Fierce Tiger"),
-
-                Spell.BuffSelf("Legacy of the White Tiger"),
-                Spell.BuffSelf("Legacy of the Emperor"),
 
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),

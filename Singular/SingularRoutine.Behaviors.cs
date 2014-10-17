@@ -26,10 +26,11 @@ using Styx.Common.Helpers;
 using System.Collections.Generic;
 
 using Singular.ClassSpecific.Monk;
-using Bots.Quest.QuestOrder;
-using Styx.CommonBot.Profiles.Quest.Order;
+//using Bots.Quest.QuestOrder;
+//using Styx.CommonBot.Profiles.Quest.Order;
 using Styx.WoWInternals.WoWCache;
 using Styx.CommonBot.Profiles;
+
 
 namespace Singular
 {
@@ -1208,6 +1209,26 @@ namespace Singular
         }
 
         private static HashSet<WoWGuid> _pmGuids { get; set; }
+
+#if HB_DE
+        public static void PullMoreQuestTargetsDump()
+        {
+
+        }
+
+        private static Func<WoWUnit, bool> PullMoreQuestTargetsDelegate()
+        {
+            return t => false;
+        }
+
+        public static bool IsQuestProfileLoaded
+        {
+            get
+            {
+                return false;
+            }
+        }
+#else
         private static Func<WoWUnit, bool> PullMoreQuestTargetsDelegate()
         {
             // shouldnt be needed if we make it here, but handle safely
@@ -1216,7 +1237,7 @@ namespace Singular
 
             _pmGuids = null;
 
-            var questObjective = QuestOrder.Instance.CurrentNode as ObjectiveNode;
+            var questObjective = Bots.Quest.QuestOrder.QuestOrder.Instance.CurrentNode as Styx.CommonBot.Profiles.Quest.Order.ObjectiveNode;
             var killObjectives = new List<Quest.QuestObjective>();
             var collectObjectives = new List<Quest.QuestObjective>();
             
@@ -1284,7 +1305,7 @@ namespace Singular
             if (!IsQuestProfileLoaded)
                 return;
 
-            var questObjective = QuestOrder.Instance.CurrentNode as ObjectiveNode;
+            var questObjective = Bots.Quest.QuestOrder.QuestOrder.Instance.CurrentNode as Styx.CommonBot.Profiles.Quest.Order.ObjectiveNode;
             var killObjectives = new List<Quest.QuestObjective>();
             var collectObjectives = new List<Quest.QuestObjective>();
 
@@ -1379,10 +1400,11 @@ namespace Singular
         {
             get
             {
-                return SingularRoutine.IsQuestBotActive && QuestOrder.Instance != null;
+                return SingularRoutine.IsQuestBotActive && Bots.Quest.QuestOrder.QuestOrder.Instance != null;
             }
         }
 
+#endif
         private static HashSet<uint> _pmFactions { get; set; }
         private static HashSet<uint> _pmEntrys { get; set; }
 
@@ -1416,7 +1438,7 @@ namespace Singular
 
 
 
-        #endregion 
+        #endregion
 
         private static Composite TestDynaWait()
         {

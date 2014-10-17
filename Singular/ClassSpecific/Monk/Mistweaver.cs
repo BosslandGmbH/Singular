@@ -111,16 +111,46 @@ namespace Singular.ClassSpecific.Monk
 
         #region BUFFS
 
-        [Behavior(BehaviorType.PullBuffs | BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkMistweaver)]
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkMistweaver, WoWContext.Normal)]
+        public static Composite CreateMonkPreCombatBuffsSolo()
+        {
+            return new PrioritySelector(
+                Spell.BuffSelf("Stance of the Spirited Crane"),
+                PartyBuff.BuffGroup("Legacy of the Emperor")
+                );
+        }
+
+        [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Monk, WoWSpec.MonkMistweaver, WoWContext.Battlegrounds | WoWContext.Instances)]
+        public static Composite CreateMonkPreCombatBuffsGroup()
+        {
+            return new PrioritySelector(
+                Spell.BuffSelf("Stance of the Wise Serpent"),
+                PartyBuff.BuffGroup("Legacy of the Emperor")
+                );
+        }
+
+        [Behavior(BehaviorType.PullBuffs | BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkMistweaver, WoWContext.Normal)]
+        public static Composite CreateMistweaverCombatBuffsNormal()
+        {
+            return new PrioritySelector(
+
+                // common Monk group buffs applied in Common.CreateMonkPreCombatBuffs
+                // common Monk personal buffs applied in Common.CreateMonkCombatBuffs
+                Spell.BuffSelf("Stance of the Spirited Crane"),
+
+                // cast Mana Tea if low on Mana
+                CreateManaTeaBehavior()
+                );
+        }
+
+        [Behavior(BehaviorType.PullBuffs | BehaviorType.CombatBuffs, WoWClass.Monk, WoWSpec.MonkMistweaver, WoWContext.Battlegrounds | WoWContext.Instances)]
         public static Composite CreateMistweaverCombatBuffs()
         {
             return new PrioritySelector(
 
-                // stance
-                Spell.BuffSelf("Stance of the Wise Serpent"), // ret => Me.IsInGroup()),
-
                 // common Monk group buffs applied in Common.CreateMonkPreCombatBuffs
                 // common Monk personal buffs applied in Common.CreateMonkCombatBuffs
+                Spell.BuffSelf("Stance of the Wise Serpent"),
 
                 // cast Mana Tea if low on Mana
                 CreateManaTeaBehavior()

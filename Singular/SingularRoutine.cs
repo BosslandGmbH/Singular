@@ -211,6 +211,10 @@ namespace Singular
             Logger.WriteFile("{0} ms of Latency in WOW", SingularRoutine.Latency);
             Logger.WriteFile("{0} local system time", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"));
 
+#if HB_DE
+            Logger.WriteFile("HB_DE defined for this build");
+#endif
+
             // verify installed source integrity 
             try
             {

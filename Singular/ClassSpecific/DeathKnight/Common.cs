@@ -161,7 +161,10 @@ namespace Singular.ClassSpecific.DeathKnight
                 new Throttle(10, Spell.BuffSelf("Path of Frost", ret => Settings.UsePathOfFrost)),
 
                 // Bone Shield has 1 min cd and 5 min duration, so cast out of combat if possible
-                Spell.BuffSelf( "Bone Shield", req => Me.IsInInstance || Battlegrounds.IsInsideBattleground)
+                Spell.BuffSelf( "Bone Shield", req => Me.IsInInstance || Battlegrounds.IsInsideBattleground),
+
+                // Attack Power Buff
+                Spell.BuffSelf("Horn of Winter", ret => !Me.HasPartyBuff(PartyBuffType.AttackPower))
                 );
         }
 
@@ -174,6 +177,8 @@ namespace Singular.ClassSpecific.DeathKnight
         {
             return new PrioritySelector(
                 CreateDeathKnightPresenceBehavior(),
+
+                // Attack Power Buff
                 Spell.BuffSelf("Horn of Winter", ret => !Me.HasPartyBuff(PartyBuffType.AttackPower))
                 );
         }
@@ -356,6 +361,7 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Spell.Cast("Plague Leech", ret => CanCastPlagueLeech),
 
+                        // Attack Power Buff
                         Spell.BuffSelf("Horn of Winter", ret => !Me.HasPartyBuff(PartyBuffType.AttackPower))
                     )
                 );

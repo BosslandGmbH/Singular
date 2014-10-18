@@ -636,6 +636,31 @@ namespace Singular.Helpers
 
 
         /// <summary>
+        /// aura considered expired if spell is known and aura not present or has less than specified time remaining
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <param name="spell">spell that applies aura</param>
+        /// <param name="aura">aura</param>
+        /// <param name="tm">time to </param>
+        /// <param name="myAura">true: restrict to only your characters auras</param>
+        /// <returns>true if spell known and aura missing or less than 'secs' time left, otherwise false</returns>
+        public static bool HasAuraExpired(this WoWUnit u, string spell, string aura, int stackCount, TimeSpan tm, bool myAura = true)
+        {
+            // need to compare millisecs even though seconds are provided.  otherwise see it as expired 999 ms early because
+            // .. of loss of precision
+            if (!SpellManager.HasSpell(spell))
+                return false;
+
+            uint stacks;
+            TimeSpan timeLeft = u.GetAuraStacksAndTimeLeft(aura, out stacks, myAura);
+            if (timeLeft.TotalSeconds <= tm.TotalSeconds || stacks < stackCount)
+                return true;
+
+            return false;
+        }
+
+
+        /// <summary>
         /// aura considered expired if aura not present or less than specified time remaining.  
         /// differs from HasAuraExpired since it assumes you have learned the spell which applies it already
         /// </summary>
@@ -694,6 +719,27 @@ namespace Singular.Helpers
                 onUnit.GetAllAuras().Where(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
+        }
+
+        public static TimeSpan GetAuraStacksAndTimeLeft(this WoWUnit onUnit, string auraName, out uint stackCount, bool fromMyAura = true)
+        {
+            if (onUnit == null)
+            {
+                stackCount = 0;
+                return TimeSpan.Zero;
+            }
+
+            WoWAura wantedAura =
+                onUnit.GetAllAuras().Where(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+
+            if (wantedAura == null)
+            {
+                stackCount = 0;
+                return TimeSpan.Zero;
+            }
+
+            stackCount = Math.Max( 1, wantedAura.StackCount);
+            return wantedAura.TimeLeft;
         }
 
         public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, int auraID, bool fromMyAura = true)

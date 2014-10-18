@@ -50,13 +50,7 @@ namespace Singular.ClassSpecific.Warrior
 
                         CreateDiagnosticOutputBehavior("Pull"),
 
-                        new Throttle( 2,
-                            Spell.Cast(Common.SelectedShout, 
-                                on => Me, 
-                                req => !Me.HasAura(Common.SelectedShout) 
-                                    || (Me.CurrentRage < (Me.MaxRage - 40) && (Me.SpellDistance() >= 27 || Spell.GetSpellCooldown("Charge").TotalSeconds > 1))
-                                )
-                            ),
+                        new Throttle( 2, Spell.BuffSelf(Common.SelectedShout)),
 
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
@@ -214,10 +208,7 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast("Shockwave"),
                                         Spell.Cast("Dragon Roar")
                                         )
-                                    ),
-
-                                // Added cast of Shout for rage generation
-                                Spell.Cast(Common.SelectedShout, ret => StyxWoW.Me.CurrentRage < (StyxWoW.Me.MaxRage - 20))
+                                    )
                                 )
                             ),
 
@@ -273,10 +264,8 @@ namespace Singular.ClassSpecific.Warrior
                                 // 9.    Use Slam
                                 //           If you cannot use Execute Icon Execute (the target is above 20% health) AND
                                 //           If you have 40 or more rage.
-                                Spell.Cast("Slam", ret => Me.RagePercent >= 40 && Me.CurrentTarget.HealthPercent > 20),
+                                Spell.Cast("Slam", ret => Me.RagePercent >= 40 && Me.CurrentTarget.HealthPercent > 20)
 
-                                //10.    Use Battle Shout or Commanding Shout Icon Commanding Shout (depending on which of the two you have chosen to provide for your raid) in order to generate rage when nothing else is available (only if you have less than 85 rage).
-                                Spell.Cast( Common.SelectedShout, ret => StyxWoW.Me.CurrentRage < 85 )
                                 )
                             ),
 
@@ -292,8 +281,8 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast("Overpower"),
                                         Spell.Cast("Storm Bolt"),
                                         Spell.Cast("Dragon Roar", ret => (Me.CurrentTarget.IsBoss() || SingularRoutine.CurrentWoWContext != WoWContext.Instances) && (Me.CurrentTarget.Distance <= 8 || Me.CurrentTarget.IsWithinMeleeRange)),
-                                        Spell.Cast("Slam"),
-                                        Spell.Cast(Common.SelectedShout))
+                                        Spell.Cast("Slam")
+                                        )
                                     ),
         #endregion
 
@@ -420,12 +409,6 @@ namespace Singular.ClassSpecific.Warrior
                                 && Me.CurrentTarget.HasAnyAura("Ice Block", "Hand of Protection")),
 
                         Common.CreateVictoryRushBehavior(),
-
-                        // manufacture some rage
-                        Spell.Cast(Common.SelectedShout,
-                            ret => StyxWoW.Me.CurrentRage < 50
-                                && Me.CurrentTarget.Distance > 10
-                                && !Spell.IsSpellOnCooldown("Charge")),
                       
             #region Stun
 

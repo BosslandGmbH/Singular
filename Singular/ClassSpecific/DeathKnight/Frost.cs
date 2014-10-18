@@ -184,8 +184,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                           // both Unholy Runes are off cooldown
                                           Spell.Cast("Obliterate", ret => Me.UnholyRuneCount == 2),
                                           Spell.Cast("Frost Strike"),
-                                          Spell.Cast(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch"),
-                                          Spell.Cast("Horn of Winter")
+                                          Spell.Cast(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch")
                                           )),
                         // *** 2 Hand Single Target Priority
                         new Decorator(ctx => !IsDualWielding,
@@ -209,8 +208,7 @@ namespace Singular.ClassSpecific.DeathKnight
                                           Spell.Cast(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch", req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.HasAura("Freezing Fog")),
 
                                           Spell.Cast("Obliterate"),
-                                          Spell.Cast("Frost Strike"),
-                                          Spell.Cast("Horn of Winter")
+                                          Spell.Cast("Frost Strike")
                                           ))
                         )
                     ),
@@ -304,9 +302,6 @@ namespace Singular.ClassSpecific.DeathKnight
                 // Obliterate
                 Spell.Cast("Obliterate"),
 
-                // Horn of Winter
-                Spell.Cast("Horn of Winter", on => Me),
-
                 // Plague Leech
                 Spell.Cast("Plague Leech", req => Common.CanCastPlagueLeech)
                 );
@@ -339,9 +334,6 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // Obliterate
                 Spell.Cast("Obliterate"),
-
-                // Horn of Winter
-                Spell.Cast("Horn of Winter", on => Me),
 
                 // Plague Leech
                 Spell.Cast("Plague Leech", req => Common.CanCastPlagueLeech)
@@ -388,9 +380,6 @@ namespace Singular.ClassSpecific.DeathKnight
                 // Frost Strikeif RP is 40 or higher
                 Spell.Cast("Frost Strike", req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentRunicPower >= 40),
 
-                // Horn of Winter
-                Spell.Cast("Horn of Winter", on => Me),
-
                 // Plague Leech
                 Spell.Cast("Plague Leech", req => Common.CanCastPlagueLeech),
 
@@ -436,9 +425,6 @@ namespace Singular.ClassSpecific.DeathKnight
 
                 // Frost Strikeif RP is 40 or higher
                 Spell.Cast("Frost Strike", req => !Me.CurrentTarget.IsImmune(WoWSpellSchool.Frost) && Me.CurrentRunicPower >= 40),
-
-                // Horn of Winter
-                Spell.Cast("Horn of Winter", on => Me),
 
                 // Plague Leech
                 Spell.Cast("Plague Leech", req => Common.CanCastPlagueLeech),

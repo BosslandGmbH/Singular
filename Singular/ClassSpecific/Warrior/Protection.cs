@@ -47,17 +47,11 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateChargeBehavior(),
 
-                        //Buff up (or use to generate Rage)
-                        new Throttle( TimeSpan.FromSeconds(1), 
+                        //Buff up 
+                        new Throttle( TimeSpan.FromSeconds(2), 
                             new PrioritySelector(
-
-                                Spell.Cast("Battle Shout", 
-                                    ret => !Me.HasMyAura("Commanding Shout") 
-                                        && (!Me.HasPartyBuff(PartyBuffType.AttackPower) || Me.CurrentRage < 20)),
-
-                                Spell.Cast("Commanding Shout", 
-                                    ret => !Me.HasMyAura("Battle Shout") 
-                                        && (!Me.HasPartyBuff(PartyBuffType.Stamina) || Me.CurrentRage < 20))
+                                Spell.Cast("Battle Shout", ret => !Me.HasMyAura("Commanding Shout") && !Me.HasPartyBuff(PartyBuffType.AttackPower)),
+                                Spell.Cast("Commanding Shout", ret => !Me.HasMyAura("Battle Shout") && !Me.HasPartyBuff(PartyBuffType.Stamina))
                                 )
                             ),
 

@@ -96,7 +96,8 @@ namespace Singular.ClassSpecific.DeathKnight
 
                     Spell.Cast("Plague Leech", ret => Common.CanCastPlagueLeech),
 
-                    Spell.BuffSelf("Horn of Winter")
+                    // Attack Power Buff
+                    Spell.BuffSelf("Horn of Winter", ret => !Me.HasPartyBuff(PartyBuffType.AttackPower))
                     )
                 );
         }

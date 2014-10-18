@@ -42,7 +42,7 @@ namespace Singular.ClassSpecific.Warrior
                         CreateDiagnosticOutputBehavior("Pull"),
 
                         //Buff up
-                        Spell.Cast(Common.SelectedShout),
+                        Spell.BuffSelf(Common.SelectedShout),
 
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
@@ -258,17 +258,11 @@ namespace Singular.ClassSpecific.Warrior
                 // HT on CD. Why not? No GCD extra damage. :)
                 Spell.Cast("Heroic Throw"),
 
-                // Shout when we need to pool some rage.
-                Spell.Cast(Common.SelectedShout, ret => !TargetSmashed && StyxWoW.Me.CurrentRage < 70),
-
                 // Fill with WS when BT/CS aren't about to come off CD, and we have some rage to spend.
                 Spell.Cast("Wild Strike", ret => !WithinExecuteRange && BTCD.TotalSeconds >= 1 && CSCD.TotalSeconds >= 1.6 && StyxWoW.Me.CurrentRage >= 60),
 
                 // Costs nothing, and does some damage. So cast it please!
-                Spell.Cast("Impending Victory", ret => !WithinExecuteRange),
-
-                // Very last in the prio, just pop BS to waste a GCD and get some rage. Nothing else to do here.
-                Spell.Cast(Common.SelectedShout, ret => StyxWoW.Me.CurrentRage < 70)
+                Spell.Cast("Impending Victory", ret => !WithinExecuteRange)
                 );
         }
 

@@ -504,7 +504,7 @@ namespace Singular.Helpers
             return new Decorator(
                 ret => SingularSettings.Instance.WaitForResSickness && StyxWoW.Me.HasAura("Resurrection Sickness"),
                 new PrioritySelector(
-                    new Throttle(TimeSpan.FromMinutes(1), new Action(r => Logger.Write("Waiting out Resurrection Sickness (expires in {0:F0} seconds", StyxWoW.Me.GetAuraTimeLeft("Resurrection Sickness", false).TotalSeconds))),
+                    new Throttle(TimeSpan.FromMinutes(1), new Action(r => Logger.Write("Waiting out Resurrection Sickness (expires in {0:F0} seconds)", StyxWoW.Me.GetAuraTimeLeft("Resurrection Sickness", false).TotalSeconds))),
                     new Action(ret => { })
                     )
                 );

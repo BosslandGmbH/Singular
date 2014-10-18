@@ -118,28 +118,58 @@ namespace Singular.ClassSpecific.Druid
 
                         CreateGuardianTauntBehavior(),
 
-                        Spell.Cast("Maul", ret => Me.CurrentRage >= 90 && StyxWoW.Me.HasAura("Tooth and Claw")),
-
-                        Spell.Cast("Mangle"),
-                        Spell.Cast("Thrash", req => Me.CurrentTarget.HasAuraExpired("Thrash",1) || Me.CurrentTarget.HasAuraExpired("Weakened Blows", 1)),
-
-                        Spell.Cast("Bear Hug", 
-                            ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances
-                                && !Me.HasAura("Berserk") 
-                                && !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.CurrentTargetGuid == Me.Guid)),
-
                         new Decorator(
-                            ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 2,
+                            req => true,    // Noxxic
                             new PrioritySelector(
-                                Spell.Cast("Berserk"),
-                                Spell.Cast("Thrash"),
-                                Spell.Cast("Swipe")
+
+                                new Decorator(
+                                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 2,
+                                    new PrioritySelector(
+                                        Spell.Cast("Berserk"),
+                                        Spell.Cast("Thrash"),
+                                        Spell.Cast("Maul", ret => StyxWoW.Me.HasAura("Tooth and Claw"))
+                                        )
+                                    ),
+
+                                Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => true),
+
+                                Spell.Cast("Mangle"),
+                                Spell.Cast("Thrash", req => Me.CurrentTarget.HasAuraExpired("Thrash", 1)),
+                                Spell.Cast("Maul", ret => StyxWoW.Me.HasAura("Tooth and Claw")),
+
+                                Spell.Cast("Lacerate", req => Me.CurrentTarget.HasAuraExpired("Lacerate", "Lacerate", 3, TimeSpan.FromSeconds(3), true)),
+
+                                Spell.Cast("Maul", ret => Me.CurrentTarget.CurrentTargetGuid != Me.Guid || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
                                 )
                             ),
-                        Spell.Cast("Lacerate"),
-                        Common.CreateFaerieFireBehavior( on => Me.CurrentTarget, req => true),
 
-                        Spell.Cast("Maul", ret => Me.CurrentTarget.CurrentTargetGuid != Me.Guid || SingularRoutine.CurrentWoWContext != WoWContext.Instances),
+                        new Decorator(
+                            req => false,
+                            new PrioritySelector(
+                                Spell.Cast("Maul", ret => Me.CurrentRage >= 90 && StyxWoW.Me.HasAura("Tooth and Claw")),
+
+                                Spell.Cast("Mangle"),
+                                Spell.Cast("Thrash", req => Me.CurrentTarget.HasAuraExpired("Thrash", 1) || Me.CurrentTarget.HasAuraExpired("Weakened Blows", 1)),
+
+                                Spell.Cast("Bear Hug",
+                                    ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances
+                                        && !Me.HasAura("Berserk")
+                                        && !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Me.CurrentTargetGuid && u.CurrentTargetGuid == Me.Guid)),
+
+                                new Decorator(
+                                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 2,
+                                    new PrioritySelector(
+                                        Spell.Cast("Berserk"),
+                                        Spell.Cast("Thrash"),
+                                        Spell.Cast("Swipe")
+                                        )
+                                    ),
+                                Spell.Cast("Lacerate"),
+                                Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => true),
+
+                                Spell.Cast("Maul", ret => Me.CurrentTarget.CurrentTargetGuid != Me.Guid || SingularRoutine.CurrentWoWContext != WoWContext.Instances)
+                                )
+                            ),
 
                         CreateGuardianWildChargeBehavior()
                         )
@@ -218,7 +248,7 @@ namespace Singular.ClassSpecific.Druid
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)
                     {
-                        log += string.Format(", th={0:F1}%, dist={1:F1}, inmelee={2}, face={3}, loss={4}, dead={5} secs, lacerat={6}, thrash={7}, weakarmor={8}",
+                        log += string.Format(", th={0:F1}%, dist={1:F1}, inmelee={2}, face={3}, loss={4}, dead={5} secs, rake={6}, lacerat={7}@{8}, thrash={9}, weakarmor={10}",
                             target.HealthPercent,
                             target.Distance,
                             target.IsWithinMeleeRange.ToYN(),
@@ -226,7 +256,9 @@ namespace Singular.ClassSpecific.Druid
                             target.InLineOfSpellSight.ToYN(),
                             target.TimeToDeath(),
                             (long)target.GetAuraTimeLeft("Rake", true).TotalMilliseconds,
+                            target.GetAuraStacks("Lacerate", true),
                             (long)target.GetAuraTimeLeft("Lacerate", true).TotalMilliseconds,
+                            (long)target.GetAuraTimeLeft("Thrash", true).TotalMilliseconds,
                             (long)target.GetAuraTimeLeft("Weakened Armor", true).TotalMilliseconds
                             );
                     }

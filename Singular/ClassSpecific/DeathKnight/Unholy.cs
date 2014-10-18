@@ -107,10 +107,6 @@ namespace Singular.ClassSpecific.DeathKnight
                         // Festering Strike
                         Spell.Cast("Festering Strike"),
 
-                        // Horn of Winter
-                        Spell.Cast("Horn of Winter"),
-
-
                         // post Single target
                         // attack at range if possible
                         Spell.Cast("Death Coil", req => Me.GotTarget && !Me.CurrentTarget.IsWithinMeleeRange ),
@@ -180,8 +176,7 @@ namespace Singular.ClassSpecific.DeathKnight
                             ctx =>
                             StyxWoW.Me.HasAura(SuddenDoom) || StyxWoW.Me.RunicPowerPercent >= 80 ||
                             !StyxWoW.Me.GotAlivePet ||
-                            !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")),
-                Spell.Cast("Horn of Winter")
+                            !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation"))
                 );
         }
 
@@ -253,8 +248,7 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Festering Strike"),
                         Spell.Cast("Death Coil",
                                    ret =>
-                                   !StyxWoW.Me.GotAlivePet || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")),
-                        Spell.Cast("Horn of Winter")
+                                   !StyxWoW.Me.GotAlivePet || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation"))
                         )
                     )
                 );
@@ -336,7 +330,6 @@ namespace Singular.ClassSpecific.DeathKnight
                                         || !StyxWoW.Me.Pet.ActiveAuras.ContainsKey("Dark Transformation")),
 
                                 Spell.Cast("Remorseless Winter", ret => Common.HasTalent( DeathKnightTalents.RemorselessWinter)),
-                                Spell.Cast("Horn of Winter"),
 
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
@@ -379,9 +372,6 @@ namespace Singular.ClassSpecific.DeathKnight
                             ret => Me.HasAura(SuddenDoom)
                                 || Me.CurrentRunicPower >= 80
                                 || (Me.BloodRuneCount + Me.FrostRuneCount + Me.UnholyRuneCount + Me.DeathRuneCount == 0)),                       
-
-                        // Horn of Winter
-                        Spell.Cast("Horn of Winter"),
 
                         // post Single target
                         // attack at range if possible

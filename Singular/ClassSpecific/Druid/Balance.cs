@@ -249,29 +249,30 @@ namespace Singular.ClassSpecific.Druid
 
                         Helpers.Common.CreateInterruptBehavior(),
 
-                        // detonate any left over mushrooms that may exist now we are below AoE count
-                        Spell.Cast("Wild Mushroom: Detonate", ret => Spell.UseAOE && MushroomCount > 0),
+                        new Decorator(
+                            req => true,
+                            new PrioritySelector(
+                                //  1 Starsurge when Lunar Empowerment is down and Eclipse energy is > 20.
+                                Spell.Cast( "Starsurge", req => Me.CurrentEclipse < -20 && !Me.HasAura("Lunar Empowerment")),
 
-                        // make sure we always have DoTs 
-                        new Sequence(
-                            Spell.Buff("Sunfire", true, on => Me.CurrentTarget, req => true, 2),
-                            new Action(ret => Logger.WriteDebug("Adding DoT:  Sunfire"))
-                            ),
+                                //  2 Starsurge when Solar Empowerment is down and Eclipse energy is > 20.
+                                Spell.Cast( "Starsurge", req => Me.CurrentEclipse > 20 && !Me.HasAura("Solar Empowerment")),
 
-                        new Sequence(
-                            Spell.Buff("Moonfire", true, on => Me.CurrentTarget, req => true, 2),
-                            new Action(ret => Logger.WriteDebug("Adding DoT:  Moonfire"))
-                            ),
+                                //  3 Starsurge with 3 charges. Watch for Shooting Stars procs.
+                                Spell.Cast("Starsurge", req => Spell.GetCharges("Starsurge") >= 3),
 
-                        CreateDoTRefreshOnEclipse(),
+                                //  4 Sunfire to maintain DoT and consume Solar Peak buff.
+                                Spell.Cast("Sunfire", req => Me.CurrentTarget.HasAuraExpired("Sunfire", 3) || Me.HasAura("Solar Peak")),
 
-                        Spell.Cast("Starsurge", on => Me.CurrentTarget, req => true, cancel => false),
-                        Spell.Cast("Starfall", ret => Me.CurrentTarget.IsPlayer || (Me.CurrentTarget.Elite && (Me.CurrentTarget.Level + 10) >= Me.Level)),
+                                //  5 Moonfire to maintain DoT and consume Lunar Peak buff.
+                                Spell.Cast("Moonfire", req => Me.CurrentTarget.HasAuraExpired("Moonfire", 3) || Me.HasAura("Lunar Peak")),
 
-                        new PrioritySelector(
-                            ctx => GetEclipseDirection() == EclipseType.Lunar,
-                            Spell.Cast("Starfire", ret => !(bool)ret),
-                            Spell.Cast("Wrath", ret => (bool)ret)
+                                //  6 Wrath as a filler when in a Solar Eclipse.
+                                Spell.Cast("Wrath", req => Me.HasAura("Eclipse Visual (Solar)")),
+
+                                //  7 Starfire as a filler when in a Lunar Eclipse.     
+                                Spell.Cast("Starfire", req => Me.HasAura("Eclipse Visual (Lunar)"))
+                                )
                             )
                         )
                     )
@@ -480,35 +481,30 @@ namespace Singular.ClassSpecific.Druid
 
                         Helpers.Common.CreateInterruptBehavior(),
 
-                        // make sure we always have DoTs 
-                        new Sequence(
-                            Spell.Buff("Sunfire", on => Me.CurrentTarget.HasAuraExpired("Sunfire", 2)),
-                            new Action(ret => Logger.WriteDebug("Adding DoT:  Sunfire"))
-                            ),
-
-                        new Sequence(
-                            Spell.Buff("Moonfire", on => Me.CurrentTarget.HasAuraExpired("Moonfire", 2)),
-                            new Action(ret => Logger.WriteDebug("Adding DoT:  Moonfire"))
-                            ),
-
-                        new Decorator( 
-                            ret => Me.HasAura("Celestial Alignment"),
+                        new Decorator(
+                            req => true,
                             new PrioritySelector(
-                                // to do: make last two casts DoTs if possible... 
-                                Spell.Cast("Starsurge", on => Me.CurrentTarget, req => true, cancel => false),
-                                Spell.Cast("Starfire")
+                                //  1 Starsurge when Lunar Empowerment is down and Eclipse energy is > 20.
+                                Spell.Cast("Starsurge", req => Me.CurrentEclipse < -20 && !Me.HasAura("Lunar Empowerment")),
+
+                                //  2 Starsurge when Solar Empowerment is down and Eclipse energy is > 20.
+                                Spell.Cast("Starsurge", req => Me.CurrentEclipse > 20 && !Me.HasAura("Solar Empowerment")),
+
+                                //  3 Starsurge with 3 charges. Watch for Shooting Stars procs.
+                                Spell.Cast("Starsurge", req => Spell.GetCharges("Starsurge") >= 3),
+
+                                //  4 Sunfire to maintain DoT and consume Solar Peak buff.
+                                Spell.Cast("Sunfire", req => Me.CurrentTarget.HasAuraExpired("Sunfire", 3) || Me.HasAura("Solar Peak")),
+
+                                //  5 Moonfire to maintain DoT and consume Lunar Peak buff.
+                                Spell.Cast("Moonfire", req => Me.CurrentTarget.HasAuraExpired("Moonfire", 3) || Me.HasAura("Lunar Peak")),
+
+                                //  6 Wrath as a filler when in a Solar Eclipse.
+                                Spell.Cast("Wrath", req => Me.HasAura("Eclipse Visual (Solar)")),
+
+                                //  7 Starfire as a filler when in a Lunar Eclipse.     
+                                Spell.Cast("Starfire", req => Me.HasAura("Eclipse Visual (Lunar)"))
                                 )
-                            ),
-
-                        CreateDoTRefreshOnEclipse(),
-
-                        Spell.Cast("Starsurge", on => Me.CurrentTarget, req => true, cancel => false),
-                        Spell.Cast("Starfall"),
-
-                        new PrioritySelector(
-                            ctx => GetEclipseDirection() == EclipseType.Lunar,
-                            Spell.Cast("Starfire", ret => !(bool) ret ),
-                            Spell.Cast("Wrath", ret => (bool) ret)
                             )
                         )
                     )
@@ -530,9 +526,11 @@ namespace Singular.ClassSpecific.Druid
                 new Action(ret =>
                 {
                     EclipseType eclipseCurrent;
-                    if (StyxWoW.Me.HasAura("Eclipse (Solar)"))
+                    // if (StyxWoW.Me.HasAura("Eclipse (Solar)"))
+                    if (StyxWoW.Me.HasAura("Solar Peak"))
                         eclipseCurrent = EclipseType.Solar;
-                    else if (StyxWoW.Me.HasAura("Eclipse (Lunar)"))
+                    // else if (StyxWoW.Me.HasAura("Eclipse (Lunar)"))
+                    else if (StyxWoW.Me.HasAura("Lunar Peak"))
                         eclipseCurrent = EclipseType.Lunar;
                     else
                         eclipseCurrent = EclipseType.None;
@@ -547,23 +545,16 @@ namespace Singular.ClassSpecific.Druid
                 }),
 
                 new Sequence(
+                    new Action(r => Logger.WriteDebug("Refresh DoT: Moonfire")),
                     Spell.Buff("Moonfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Lunar),
-                    new Action(ret =>
-                    {
-                        newEclipseDotNeeded = false;
-                        Logger.WriteDebug("Refresh DoT: Moonfire");
-                    })
+                    new Action(ret => newEclipseDotNeeded = false )
                     ),
 
                 new Sequence(
+                    new Action(r => Logger.WriteDebug("Refresh DoT: Sunfire")),
                     Spell.Buff("Sunfire", ret => newEclipseDotNeeded && eclipseLastCheck == EclipseType.Solar),
-                    new Action(ret =>
-                    {
-                        newEclipseDotNeeded = false;
-                        Logger.WriteDebug("Refresh DoT: Sunfire");
-                    })
+                    new Action(ret => newEclipseDotNeeded = false )
                     )
-
                 );
         }
 
@@ -589,6 +580,7 @@ namespace Singular.ClassSpecific.Druid
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Druid, WoWSpec.DruidBalance, WoWContext.Battlegrounds | WoWContext.Instances, 2)]
         public static Composite CreateBalancePreCombatBuffBattlegrounds()
         {
+#if DO_WE_NEED_THIS
             return new PrioritySelector(
                 new Decorator(
                     ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || !Unit.NearbyUnfriendlyUnits.Any(),
@@ -597,6 +589,9 @@ namespace Singular.ClassSpecific.Druid
                         )
                     )
                 );
+#else
+            return new ActionAlwaysFail();
+#endif
         }
 
 
@@ -743,6 +738,7 @@ namespace Singular.ClassSpecific.Druid
                         Me.CurrentEclipse,
                         MushroomCount
                         );
+
 
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)

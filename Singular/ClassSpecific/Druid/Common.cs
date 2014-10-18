@@ -389,7 +389,7 @@ namespace Singular.ClassSpecific.Druid
             // Fairie Fire has a 1.5 sec GCD, Faerie Swarm 0.0.  Handle both here
             return new ThrottlePasses( 1, TimeSpan.FromMilliseconds(500),
                 new Sequence(
-                    Spell.Buff("Faerie Fire", on => onUnit(on), ret => Required(ret)),
+                    Spell.Buff("Faerie Fire", on => onUnit(on), ret => onUnit(ret).HasAuraExpired("Faerie Fire", 2, false) && Required(ret)),
                     new DecoratorContinue( req => HasTalent(DruidTalents.FaerieSwarm), new ActionAlwaysFail())
                     )
                 );

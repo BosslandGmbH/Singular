@@ -1,3 +1,84 @@
+--- Release 4.0.0.3756 ---
+
+General
+
+*new* - internal changes for supporting increased number of talents and class identification of them
+
+*new* - support for specialization specific talents
+
+fixed - referencing namespace not available in German version
+
+fixed - redundant Debug flag removed from Class Config => General.  Should only be accessible from Debugging tab
+
+change- removed Symbiosis support from all non-Druids
+
+change- Gank detection now only considers targets that have attacked within last 15 seconds (down from 60)
+
+change- Gank detection now reactors more quickly to targeting
+
+
+Death Knight
+
+*new* - All Specs - Dark Succor support now baseline
+
+*new* - All Specs - Blood Boil now spreads diseases as baseline
+
+fixed - All Specs - Horn of Winter spam (was casting to generate runic power as a filler due to mechanic no longer available)
+
+change- Blood - spell priorities adjusted
+
+change- Frost - spell priorities rewritten
+
+change- Unholy - spell priorities rewritten
+
+
+Druid
+
+change- All Specs - removed support for Symbiosis
+
+*new* - Balance - rewrite of spell priorites 
+
+change- Feral - revised spell priorities 
+
+fixed - Feral - behind target requirement removed for Shred 
+
+*new* - Guardian - rewrite of spell priorities
+
+
+
+Hunter
+
+change- All Specs - ranged auto-attack added back.  Previously depended upon being initiated by first ability cast but now intentionally begin
+
+
+Monk
+
+fixed - Mistweaver - Legend of the White Tiger spam
+
+fixed - Brewmaster/Windwalker - Legend of the Emperor spam
+
+fixed - Mistweaver - attempting to cast spells not permitted in current stance
+
+fixed - Mistweaver - will enter Stance of the Wise Serpent when in healer role, otherwise Crane stance
+
+
+Priest
+
+*new* - Shadow - recognizes Shadow specific talent Insanity
+
+
+
+Warrior
+
+change- All Specs - added settings for Die by the Sword and Vigilance
+
+fixed - All Specs - during Pull, reserve Heroic Throw for when out of melee range
+
+*new* - All Specs - Die by the Sword behavior controlled via new Warrior specific setting
+
+*new* - Protection - Vigilance controlled by new Warrior specific setting
+
+
 --- Release 3.0.0.3696 ---
 
 General

@@ -814,7 +814,7 @@ namespace Singular
                 case WoWSpec.DeathKnightBlood:
                 case WoWSpec.DeathKnightFrost:
                 case WoWSpec.DeathKnightUnholy:
-                    needSpell = "Pestilence";       // 56
+                    needSpell = "Blood Boil";       // 56
                     break;
 
                 case WoWSpec.DruidBalance:
@@ -823,7 +823,7 @@ namespace Singular
 
                 case WoWSpec.DruidFeral:
                 case WoWSpec.DruidGuardian:
-                    needSpell = "Swipe";            // 22
+                    needSpell = "Thrash";            // 14
                     break;
 
                 case WoWSpec.DruidRestoration:

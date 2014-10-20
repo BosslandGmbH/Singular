@@ -43,7 +43,6 @@ namespace Singular.ClassSpecific.Hunter
                         CreateMarksmanDiagnosticOutputBehavior(),
 
                         Common.CreateMisdirectionBehavior(),
-                        // Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(Me.CurrentTarget) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
 
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
@@ -68,25 +67,16 @@ namespace Singular.ClassSpecific.Hunter
                         new Decorator(
                             ret => Spell.UseAOE && !(Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
                             new PrioritySelector(
-                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, ret => true),
-                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-                                BuffSteadyFocus(),
-                                Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!")),
+                                ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u.InLineOfSpellSight).OrderByDescending(u => (uint) u.HealthPercent).FirstOrDefault(),
+                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), req => Me.HealthPercent < 85),
                                 Spell.Cast("Multi-Shot", ctx => Clusters.GetBestUnitForCluster(Unit.NearbyUnfriendlyUnits.Where(u => u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u)), ClusterType.Radius, 8f)),
                                 Common.CastSteadyShot(on => Me.CurrentTarget)
                                 )
                             ),
 
                         // Single Target Rotation
-                        Spell.Buff("Serpent Sting"),
                         Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
-                        BuffSteadyFocus(),
-                        Spell.Cast("Chimera Shot"),
-                        Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!")),
-
-                        Spell.Cast("Arcane Shot",
-                            ret => Me.HasAura("Thrill of the Hunt")
-                                || (Me.CurrentFocus > 60 && (Me.IsMoving || Unit.NearbyUnfriendlyUnits.Any(u => u.IsWithinMeleeRange && (u.IsPlayer || u.CurrentTargetGuid == Me.Guid))))),
+                        Spell.Cast("Chimaera Shot"),
                         Spell.Cast("Aimed Shot", ret => Me.CurrentFocus > 60),
                         Common.CastSteadyShot(on => Me.CurrentTarget)
                         )
@@ -136,15 +126,12 @@ namespace Singular.ClassSpecific.Hunter
                                 && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
 
                         // Single Target Rotation
-                        Spell.Buff("Serpent Sting"),
                         Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
-                        BuffSteadyFocus(),
-                        Spell.Cast("Chimera Shot"),
+                        Spell.Cast("Chimaera Shot"),
                         Spell.Cast("Aimed Shot", ret => Me.HasAura("Fire!")),
 
                         // don't use long casts in PVP
                 // Spell.Cast("Aimed Shot", ret => Me.CurrentFocus > 60),
-                        Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 50),
                         Common.CastSteadyShot(on => Me.CurrentTarget)
                         )
                     ),
@@ -184,16 +171,6 @@ namespace Singular.ClassSpecific.Hunter
             }
         }
 
-        private static Composite BuffSteadyFocus()
-        {
-            if (!SpellManager.HasSpell( "Steady Focus"))
-                return new Action(ret => { return RunStatus.Failure; });
-
-            return new Throttle( 2, TimeSpan.FromMilliseconds( 2400),
-                Common.CastSteadyShot(on => Me.CurrentTarget, ret => Me.GetAuraTimeLeft("Steady Focus", false).TotalSeconds < 4)
-                );
-        }
-        
         private static Composite CreateMarksmanDiagnosticOutputBehavior()
         {
             return new Decorator(

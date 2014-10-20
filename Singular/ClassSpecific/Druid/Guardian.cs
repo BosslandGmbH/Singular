@@ -80,18 +80,9 @@ namespace Singular.ClassSpecific.Druid
             return new PrioritySelector(
                 Spell.BuffSelf("Bear Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
-                new Decorator(
-                    req => Me.GotTarget && !Me.CurrentTarget.IsTrivial(),
-                    new PrioritySelector(
-                        // Enrage ourselves back up to 60 rage for SD/FR usage.
-                        Spell.BuffSelf("Enrage", ret=>StyxWoW.Me.RagePercent <= 40)
-                        )
-                    ),
-
                 Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < Settings.TankFrenziedRegenerationHealth && Me.CurrentRage >=60),
                 Spell.BuffSelf("Frenzied Regeneration", ret => Me.HealthPercent < 30 && Me.CurrentRage >= 15),
                 Spell.BuffSelf("Savage Defense", ret => Me.HealthPercent <= Settings.TankSavageDefense),
-                Spell.BuffSelf("Might of Ursoc", ret => Me.HealthPercent <= Settings.TankMightOfUrsoc),
                 Spell.BuffSelf("Survival Instincts", ret => Me.HealthPercent <= Settings.TankSurvivalInstinctsHealth),
                 Spell.BuffSelf("Barkskin", ret => Me.HealthPercent <= Settings.TankFeralBarkskin),
                 Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent <= Settings.SelfRenewalHealth)
@@ -160,8 +151,7 @@ namespace Singular.ClassSpecific.Druid
                                     ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < 8) >= 2,
                                     new PrioritySelector(
                                         Spell.Cast("Berserk"),
-                                        Spell.Cast("Thrash"),
-                                        Spell.Cast("Swipe")
+                                        Spell.Cast("Thrash")
                                         )
                                     ),
                                 Spell.Cast("Lacerate"),

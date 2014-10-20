@@ -42,7 +42,6 @@ namespace Singular.ClassSpecific.DeathKnight
                         Spell.Cast("Death Coil"),
                         Spell.Buff("Icy Touch", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsTargetingMeOrPet && u.HasAuraExpired("Frost Fever") && Me.SpellDistance(u) < 30 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => true, 3, "Frost Fever"),
                         Spell.Buff("Plague Strike", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.IsTargetingMeOrPet && u.HasAuraExpired("Blood Plague") && u.IsWithinMeleeRange && Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => true, 3, "Blood Plague"),
-                        Spell.Cast("Blood Strike"),
                         Spell.Cast("Icy Touch"),
                         Spell.Cast("Plague Strike")
                         )

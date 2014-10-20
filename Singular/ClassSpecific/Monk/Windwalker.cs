@@ -273,8 +273,15 @@ namespace Singular.ClassSpecific.Monk
 
                         Helpers.Common.CreateInterruptBehavior(),
 
-                        // ranged attack on the run
-                        Spell.Cast("Spinning Fire Blossom", req => Spell.UseAOE && Me.IsMoving && Me.CurrentTarget.SpellDistance().Between(10, 50) && Me.IsSafelyFacing(Me.CurrentTarget, 5f) && Me.IsSafelyBehind(Me.CurrentTarget)),
+                        // ranged attack on the run when chasing
+                        Spell.Cast(
+                            "Spinning Fire Blossom", 
+                            req => Spell.UseAOE 
+                                && Me.IsMoving 
+                                && Me.CurrentTarget.SpellDistance().Between(10, 50) 
+                                && Me.IsSafelyFacing(Me.CurrentTarget, 5f) 
+                                && Me.IsSafelyBehind(Me.CurrentTarget)
+                                ),
 
                         Common.CreateGrappleWeaponBehavior(),
 

@@ -39,12 +39,10 @@ namespace Singular.ClassSpecific.Druid
                 new Throttle(10,
                     new Decorator(
                         ret => SpellManager.HasSpell("Savage Roar")
-                            && Me.RawComboPoints > 0
-                            && Me.ComboPointsTargetGuid.IsValid
-                            && null != ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid)
-                            && Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds < (Me.RawComboPoints * 6 + 6),
+                            && Me.ComboPoints > 0
+                            && Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds < (Me.ComboPoints * 6 + 6),
                         new Sequence(
-                            new Action(r => Logger.WriteDebug("cast Savage Roar to use {0} points on corpse of {1} since buff has {2} seconds left", Me.RawComboPoints, ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid).SafeName(), Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds)),
+                            new Action(r => Logger.WriteDebug("cast Savage Roar to use {0} points on corpse of {1} since buff has {2} seconds left", Me.ComboPoints, ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid).SafeName(), Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds)),
                             CastSavageRoar( on => ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid), req => true)
                             )
                         )
@@ -119,8 +117,7 @@ namespace Singular.ClassSpecific.Druid
                                         && ((Me.CurrentTarget.Distance > 15 && Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 3)
                                             || Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 40)
                                     ),
-                                Spell.Cast("Ravage", ret => Me.IsSafelyBehind(Me.CurrentTarget) && SingularRoutine.CurrentWoWContext == WoWContext.Instances ),
-                                Spell.Cast("Pounce")
+                                Spell.Cast("Rake")
                                 )
                             ),
                         Spell.Buff("Rake")
@@ -270,8 +267,6 @@ namespace Singular.ClassSpecific.Druid
                                 && Me.CurrentTarget.TimeToDeath() >= 7
                                 && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 3),
 
-                        Spell.Cast("Ravage"),
-
                         Spell.Buff("Rake", ret => Me.CurrentTarget.GetAuraTimeLeft("Rake", true).TotalSeconds < 3),
 
                         Spell.Cast("Shred"),
@@ -314,7 +309,7 @@ namespace Singular.ClassSpecific.Druid
                         CreateFeralAoeCombat(),
 
                         // 1. Keep Faerie Fire up (if no other armor debuff).
-                        Common.CreateFaerieFireBehavior(on => Me.CurrentTarget, req => !Me.CurrentTarget.HasAura("Faerie Fire", 3)),
+                        Common.CreateFaerieFireBehavior(),
 
                         new Decorator(
                             ret => Me.GotTarget
@@ -398,7 +393,7 @@ namespace Singular.ClassSpecific.Druid
                                     ret => DruidSettings.FeralSpellPriority != Singular.Settings.DruidSettings.SpellPriority.Noxxic,
                                     new PrioritySelector(
                                         // 5b. made a higher priority to prioritize consuming Omen of Clarity with Thrash if needed
-                                        // CastThrash( on => Me.CurrentTarget, req => Me.HasAura("Clearcasting")),
+                                        CastThrash( on => Me.CurrentTarget, req => Me.HasAura("Clearcasting")),
 
                                         // 6. Ferocious Bite if the boss has less than 25% hp remaining and Rip is near expiring.
                                         Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent < 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds > 250),

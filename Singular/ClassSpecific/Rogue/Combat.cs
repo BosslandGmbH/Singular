@@ -226,11 +226,11 @@ namespace Singular.ClassSpecific.Rogue
                         Me.HealthPercent,
                         Me.CurrentEnergy,
                         Me.IsMoving,
-                        Common.IsStealthed,
+                        Common.AreStealthAbilitiesAvailable,
                         Common.AoeCount,
                         (int) Me.GetAuraTimeLeft("Recuperate", true).TotalSeconds,
                         (int) Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds,
-                        Me.RawComboPoints,
+                        Me.ComboPoints,
                         Me.ComboPoints,
                         Common.AoeCount 
                         );

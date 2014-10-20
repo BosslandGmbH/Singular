@@ -183,13 +183,6 @@ namespace Singular.Settings
         public int RuneTapPercent { get; set; }
 
         [Setting]
-        [DefaultValue(70)]
-        [Category("Blood")]
-        [DisplayName("Summon Ghoul Percent")]
-        [Description("Blood Spec: Cast Raise Dead when Blood Spec Health falls below this Health %")]
-        public int SummonGhoulPercentBlood { get; set; }
-
-        [Setting]
         [DefaultValue(false)]
         [Category("Blood")]
         [DisplayName("Use Ghoul As Dps CoolDown")]
@@ -219,13 +212,6 @@ namespace Singular.Settings
         [Description("Frost Spec: Ghoul is used for DPS rather than saved for Death Pact")]
         public bool UseGhoulAsDpsCdFrost { get; set; }
 
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Frost")]
-        [DisplayName("Summon Ghoul Percent")]
-        [Description("Frost Spec: Cast Raise Dead when Blood Spec Health falls below this Health %")]
-        public int SummonGhoulPercentFrost { get; set; }
-        
         #endregion
 
         #region Category: Unholy

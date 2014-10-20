@@ -123,14 +123,6 @@ namespace Singular.ClassSpecific.Druid
                                    DruidSettings.TranquilityCount,
                             cancel => false
                             ),
-                        //Use Innervate on party members if we have Glyph of Innervate
-                        Spell.Buff(
-                            "Innervate",
-                            ret => (WoWUnit)ret,
-                            ret =>
-                            TalentManager.HasGlyph("Innervate") && StyxWoW.Me.Combat && (WoWUnit)ret != StyxWoW.Me &&
-                            StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana &&
-                            ((WoWUnit)ret).PowerType == WoWPowerType.Mana && ((WoWUnit)ret).ManaPercent <= DruidSettings.InnervateMana),
                         Spell.Cast(
                             "Swiftmend",
                             ret => (WoWUnit)ret,
@@ -150,12 +142,6 @@ namespace Singular.ClassSpecific.Druid
                             "Healing Touch",
                             ret => (WoWUnit)ret,
                             ret => ((WoWUnit)ret).HealthPercent <= DruidSettings.HealingTouch),
-                        Spell.Cast(
-                            "Nourish",
-                            ret => (WoWUnit)ret,
-                            ret => ((WoWUnit)ret).HealthPercent <= DruidSettings.Nourish &&
-                                   ((((WoWUnit)ret).HasAura("Rejuvenation") || ((WoWUnit)ret).HasAura("Regrowth") ||
-                                    ((WoWUnit)ret).HasAura("Lifebloom") || ((WoWUnit)ret).HasAura("Wild Growth")))),
                         Spell.Cast(
                             "Rejuvenation",
                             ret => (WoWUnit)ret,
@@ -212,7 +198,7 @@ namespace Singular.ClassSpecific.Druid
             #region Save the Group
 
             // Tank: Rebirth
-            if (SingularSettings.Instance.CombatRezTarget != CombatRezTarget.None )
+            if (Helpers.Common.CombatRezTargetSetting != CombatRezTarget.None)
             {
                 behavs.AddBehavior(799, "Rebirth Tank/Healer", "Rebirth",
                     Helpers.Common.CreateCombatRezBehavior( "Rebirth", filter => true, requirements => true)
@@ -245,8 +231,7 @@ namespace Singular.ClassSpecific.Druid
                             Spell.BuffSelf("Nature's Swiftness"),
                             new PrioritySelector(
                                 Spell.Cast("Regrowth", on => (WoWUnit)on, req => true, cancel => false),
-                                Spell.Cast("Healing Touch", on => (WoWUnit)on, req => true, cancel => false),
-                                Spell.Cast("Nourish", on => (WoWUnit)on, req => true, cancel => false)
+                                Spell.Cast("Healing Touch", on => (WoWUnit)on, req => true, cancel => false)
                                 )
                             )
                         )
@@ -318,7 +303,7 @@ namespace Singular.ClassSpecific.Druid
                 {
                     WoWUnit unit = GetLifebloomTarget();
                     if (unit != null && (unit.Combat || Me.Combat) 
-                        && (unit.GetAuraStacks("Lifebloom") < 3 || unit.GetAuraTimeLeft("Lifebloom").TotalMilliseconds < 2800) 
+                        && (!unit.HasMyAura("Lifebloom") || unit.GetAuraTimeLeft("Lifebloom").TotalMilliseconds < 2800) 
                         && Spell.CanCastHack("Lifebloom", unit, skipWowCheck: true))
                     {
                         Logger.WriteDebug("Buffing Lifebloom ON TANK: {0}", unit.SafeName());
@@ -418,7 +403,7 @@ namespace Singular.ClassSpecific.Druid
 
             #region AoE Heals
 
-            int maxDirectHeal = Math.Max(DruidSettings.Heal.Nourish, Math.Max(DruidSettings.Heal.HealingTouch, DruidSettings.Heal.Regrowth));
+            int maxDirectHeal = Math.Max(DruidSettings.Heal.HealingTouch, DruidSettings.Heal.Regrowth);
 
             if (DruidSettings.Heal.WildGrowth != 0)
                 behavs.AddBehavior(HealthToPriority(DruidSettings.Heal.WildGrowth) + PriAoeBase, "Wild Growth @ " + DruidSettings.Heal.WildGrowth + "% MinCount: " + DruidSettings.Heal.CountWildGrowth, "Wild Growth",
@@ -471,7 +456,7 @@ namespace Singular.ClassSpecific.Druid
                             if (target.HealthPercent > 95)
                             {
                                 WoWUnit lbTarget = GetLifebloomTarget();
-                                if (lbTarget != null && lbTarget.GetAuraStacks("Lifebloom") >= 3 && lbTarget.GetAuraTimeLeft("Lifebloom").TotalMilliseconds.Between(500,10000))
+                                if (lbTarget != null && lbTarget.HasMyAura("Lifebloom") && lbTarget.GetAuraTimeLeft("Lifebloom").TotalMilliseconds.Between(500,10000))
                                 {
                                     return lbTarget;
                                 }
@@ -490,7 +475,7 @@ namespace Singular.ClassSpecific.Druid
                 behavs.AddBehavior(199 + PriSingleBase, "Lifebloom - Tree of Life", "Lifebloom",
                     Spell.Cast("Lifebloom", 
                         mov => false,
-                        on => HealerManager.Instance.TargetList.FirstOrDefault( h => (h.GetAuraStacks("Lifebloom") < 3 || h.GetAuraTimeLeft("Lifebloom").TotalMilliseconds < 2500) && Spell.CanCastHack("Lifebloom", h, skipWowCheck: true)),
+                        on => HealerManager.Instance.TargetList.FirstOrDefault( h => (!h.HasMyAura("Lifebloom") || h.GetAuraTimeLeft("Lifebloom").TotalMilliseconds < 2500) && Spell.CanCastHack("Lifebloom", h, skipWowCheck: true)),
                         req => Me.GetAuraTimeLeft("Incarnation") != TimeSpan.Zero,
                         cancel => false
                         )
@@ -551,16 +536,6 @@ namespace Singular.ClassSpecific.Druid
                         );
                 }
 
-                behavs.AddBehavior(HealthToPriority(DruidSettings.Heal.Nourish) + PriSingleBase, "Nourish @ " + DruidSettings.Heal.Nourish + "%", "Nourish",
-                new PrioritySelector(
-                    Spell.Cast("Nourish",
-                        mov => true,
-                        on => (WoWUnit)on,
-                        req => ((WoWUnit)req).HealthPercent < DruidSettings.Heal.Nourish && ((WoWUnit)req).HasAnyOfMyAuras("Rejuvenation", "Regrowth", "Lifebloom", "Wild Growth"),
-                        cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
-                        )
-                    )
-                );
             }
 
             if (DruidSettings.Heal.HealingTouch != 0)
@@ -734,7 +709,6 @@ namespace Singular.ClassSpecific.Druid
                             // Direct Heals After
                             Spell.Cast("Healing Touch", on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 65),
                             Spell.Cast("Regrowth", on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 75),
-                            Spell.Cast("Nourish", on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 85),
 
                             // if Moving, spread Rejuv around on those that need to be topped off
                             new Decorator(
@@ -820,7 +794,6 @@ namespace Singular.ClassSpecific.Druid
         public static Composite CreateRestoDruidCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Innervate", ret => StyxWoW.Me.ManaPercent < 15 || StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
                 Spell.BuffSelf("Barkskin", ret => StyxWoW.Me.HealthPercent <= DruidSettings.Barkskin || Unit.NearbyUnitsInCombatWithMe.Any())
                 );
         }
@@ -856,7 +829,6 @@ namespace Singular.ClassSpecific.Druid
         public static WoWUnit GetLifebloomTarget(float health = 100f)
         {
             string hotName = "Lifebloom";
-            int stacks = 3;
 /*
             // fast test unless RaFHelper.Leader is whacked
             try

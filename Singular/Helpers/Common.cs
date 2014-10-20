@@ -587,9 +587,17 @@ namespace Singular.Helpers
         static DateTime brezStart = DateTime.Now;
         static WoWGuid brezPrevGuid = WoWGuid.Empty;
 
+        public static CombatRezTarget CombatRezTargetSetting
+        {
+            get
+            {
+                return Me.GroupInfo.IsInRaid ? SingularSettings.Instance.CombatRezTargetRaid : SingularSettings.Instance.CombatRezTargetParty;
+            }
+        }
         public static Composite CreateCombatRezBehavior(string spellName, SimpleBooleanDelegate unitFilter = null, SimpleBooleanDelegate requirements = null)
         {
             UnitSelectionDelegate onUnit;
+            CombatRezTarget rezTarget = CombatRezTargetSetting;
 
             if (unitFilter == null)
                 unitFilter = req => true;
@@ -597,7 +605,7 @@ namespace Singular.Helpers
             if (requirements == null)
                 requirements = req => true;
 
-            switch (SingularSettings.Instance.CombatRezTarget)
+            switch (rezTarget)
             {
                 default:
                     onUnit = null;

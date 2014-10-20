@@ -95,7 +95,6 @@ namespace Singular.ClassSpecific.Druid
 
                     Spell.Cast("Rejuvenation", on => Me, req => Me.HealthPercent <= DruidSettings.MoonBeastRejuvenationHealth && Me.HasAuraExpired("Rejuvenation", 1)),
 
-                    Common.CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < DruidSettings.SelfNaturesSwiftnessHealth ),
                     Spell.BuffSelf("Renewal", ret => Me.HealthPercent < DruidSettings.SelfRenewalHealth),
                     Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < DruidSettings.SelfCenarionWardHealth),
 
@@ -216,9 +215,6 @@ namespace Singular.ClassSpecific.Druid
 
                         // Spell.Buff("Entangling Roots", ret => Me.CurrentTarget.Distance > 12),
                         Spell.Buff("Faerie Swarm", ret => Me.CurrentTarget.IsMoving && Me.CurrentTarget.Distance > 20),
-
-                        Spell.BuffSelf("Innervate",
-                            ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
 
                         // yes, only 8yds because we are knocking back only if close to melee range
                         Spell.Cast("Typhoon",
@@ -381,8 +377,9 @@ namespace Singular.ClassSpecific.Druid
 
                         // Spread MF/IS on Rouges / Feral Druids first
                         Common.CreateFaerieFireBehavior(
-                            on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || p.Shapeshift == ShapeshiftForm.Cat) && !p.HasAnyAura("Faerie Fire", "Faerie Swarm") && p.Distance < 35 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight), 
-                            req => true),
+                            on => (WoWUnit)Unit.NearbyUnfriendlyUnits.FirstOrDefault(p => (p.Class == WoWClass.Rogue || p.Shapeshift == ShapeshiftForm.Cat) && !p.HasAnyAura("Faerie Swarm") && p.Distance < 38 && Me.IsSafelyFacing(p) && p.InLineOfSpellSight), 
+                            req => true
+                            ),
 
                         // More DoTs!!  Dot EVERYTHING (including pets) to boost Shooting Stars proc chance
                         new PrioritySelector(
@@ -444,14 +441,6 @@ namespace Singular.ClassSpecific.Druid
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
 
-                        Spell.Buff("Innervate",
-                            ret => (from healer in Group.Healers 
-                                    where healer != null && healer.IsAlive && healer.Distance < 30 && healer.ManaPercent <= 15
-                                    select healer).FirstOrDefault()),
-
-                        Spell.BuffSelf("Innervate",
-                            ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
-
                         Spell.BuffSelf("Moonkin Form", req => !Utilities.EventHandlers.IsShapeshiftSuppressed),
 
                         // Spell.Cast("Mighty Bash", ret => Me.CurrentTarget.IsWithinMeleeRange),
@@ -462,8 +451,6 @@ namespace Singular.ClassSpecific.Druid
                             new Decorator(
                                 req => ((int)req) > 1,
                                 new PrioritySelector(
-
-                                    // CreateMushroomSetAndDetonateBehavior(),
 
                                     Spell.Cast("Starfall", ret => StyxWoW.Me),
 

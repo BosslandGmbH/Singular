@@ -52,7 +52,7 @@ namespace Singular.ClassSpecific.Rogue
                         Common.CreateAttackFlyingOrUnreachableMobs(),
 
                         // ok, everything else failed so just hit him!!!!
-                        Spell.OffGCD(Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints < 4 && Me.IsWithinMeleeRange)),
+                        Spell.OffGCD(Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints < 4 && Me.IsWithinMeleeRange)),
                         Spell.Cast("Hemorrhage")
                         )
                     )
@@ -79,7 +79,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         Common.CreateRogueOpenerBehavior(),
 
-                        Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints <= 3),
+                        Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints <= 3),
 
                         new Decorator(
                             ret => Common.AoeCount > 1 && !Me.CurrentTarget.IsPlayer,
@@ -103,7 +103,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.BuffSelf("Shadow Dance",
                             ret => Me.GotTarget
-                                && !Common.IsStealthed
+                                && !Common.AreStealthAbilitiesAvailable
                                 && !Me.HasAuraExpired("Slice and Dice", 3)
                                 && Me.ComboPoints < 2),
 
@@ -115,11 +115,11 @@ namespace Singular.ClassSpecific.Rogue
                         Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => Common.IsAmbushNeeded(), canCast: Common.RogueCanCastOpener),
 
                         Spell.Buff("Hemorrhage"),
-                        Spell.Cast("Backstab", ret => Me.IsSafelyBehind(Me.CurrentTarget) && Common.HasDaggerInMainHand),
+                        Spell.Cast("Backstab", ret => Me.IsBehindOrSide(Me.CurrentTarget) && Common.HasDaggerInMainHand),
                         Spell.BuffSelf("Fan of Knives", ret => !Me.CurrentTarget.IsPlayer && Common.AoeCount >= RogueSettings.FanOfKnivesCount),
 
                 // following cast is as a Combo Point builder if we can't cast Backstab
-                        Spell.Cast("Hemorrhage", ret => Me.CurrentEnergy >= 35 || !SpellManager.HasSpell("Backstab") || !Me.IsSafelyBehind(Me.CurrentTarget)),
+                        Spell.Cast("Hemorrhage", ret => Me.CurrentEnergy >= 35 || !SpellManager.HasSpell("Backstab") || !Me.IsBehindOrSide(Me.CurrentTarget)),
 
                         Common.CheckThatDaggersAreEquippedIfNeeded()
                         )
@@ -149,7 +149,7 @@ namespace Singular.ClassSpecific.Rogue
                         Helpers.Common.CreateInterruptBehavior(),
                         Common.CreateDismantleBehavior(),
 
-                        Spell.Buff("Premeditation", req => Common.IsStealthed && Me.ComboPoints <= 3),
+                        Spell.Buff("Premeditation", req => Common.AreStealthAbilitiesAvailable && Me.ComboPoints <= 3),
 
                         new Decorator(
                             ret => Common.AoeCount >= 3 && Spell.UseAOE,
@@ -200,11 +200,11 @@ namespace Singular.ClassSpecific.Rogue
                         Me.HealthPercent,
                         Me.CurrentEnergy,
                         Me.IsMoving,
-                        Common.IsStealthed,
+                        Common.AreStealthAbilitiesAvailable,
                         Common.AoeCount,
                         (int)Me.GetAuraTimeLeft("Recuperate", true).TotalSeconds,
                         (int)Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds,
-                        Me.RawComboPoints,
+                        Me.ComboPoints,
                         Me.ComboPoints,
                         Common.AoeCount
                         );
@@ -213,12 +213,13 @@ namespace Singular.ClassSpecific.Rogue
                     if (target != null)
                     {
                         sMsg += string.Format(
-                            ", {0}, {1:F1}%, {2} secs, {3:F1} yds, behind={4}, loss={5}, rupture={6}",
+                            ", {0}, {1:F1}%, {2} secs, {3:F1} yds, behind={4}, behindorside={5}, loss={6}, rupture={7}",
                             target.SafeName(),
                             target.HealthPercent,
                             target.TimeToDeath(),
                             target.Distance,
                             Me.IsSafelyBehind(target),
+                            Me.IsBehindOrSide(target),
                             target.InLineOfSpellSight,
                             (int)target.GetAuraTimeLeft("Rupture", true).TotalSeconds
                             );

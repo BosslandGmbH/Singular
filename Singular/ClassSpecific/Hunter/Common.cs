@@ -200,8 +200,6 @@ namespace Singular.ClassSpecific.Hunter
                     ret => !Spell.IsGlobalCooldown(),
                     new PrioritySelector(
                         Spell.BuffSelf("Track Hidden"),
-                        Spell.BuffSelf("Aspect of the Hawk", ret => !Me.IsMoving && !Me.HasAnyAura("Aspect of the Hawk", "Aspect of the Iron Hawk")),
-
                         Spell.Buff("Mend Pet", onUnit => Me.Pet, req => Me.GotAlivePet && Pet.HealthPercent < 85),
                         CreateHunterCallPetBehavior(true)
                         )
@@ -220,12 +218,7 @@ namespace Singular.ClassSpecific.Hunter
                     new PrioritySelector(
 
                         CreateHunterCallPetBehavior(true)
-                        /*
-                        Spell.Buff("Hunter's Mark", 
-                            ret => Unit.ValidUnit(Target) 
-                                && !TalentManager.HasGlyph("Marked for Death")
-                                && !Unit.NearbyUnfriendlyUnits.Any( u => u.Guid != Target.Guid))
-                         */
+
                         )
                     )
                 );
@@ -236,8 +229,7 @@ namespace Singular.ClassSpecific.Hunter
         {
             return new PrioritySelector(
                 CreateHunterCallPetBehavior(false),
-                CreateMisdirectionBehavior(),
-                Spell.Buff("Hunter's Mark", req => Target != null && Unit.ValidUnit(Target) && Target.SpellDistance().Between(44, 65) && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)) 
+                CreateMisdirectionBehavior()
                 );
         }
 
@@ -289,20 +281,11 @@ namespace Singular.ClassSpecific.Hunter
                     Spell.Buff("Deterrence",
                         ret => (Me.HealthPercent <= HunterSettings.DeterrenceHealth || HunterSettings.DeterrenceCount <= Unit.NearbyUnfriendlyUnits.Count(u => u.Combat && u.CurrentTargetGuid == Me.Guid && !u.IsPet))),
 
-                    Spell.BuffSelf("Aspect of the Hawk", ret => !Me.IsMoving && !Me.HasAnyAura("Aspect of the Hawk", "Aspect of the Iron Hawk")),
-
                     new Decorator(
                         ret => SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds,
                         CreateMisdirectionBehavior()
                         ),
 
-                    // don't use Hunter's Mark in Battlegrounds unless soloing someone
-                    /*                        Spell.Buff("Hunter's Mark",
-                                        ret => Unit.ValidUnit(Target)
-                                            && !TalentManager.HasGlyph("Marked for Death")
-                                            && (SingularRoutine.CurrentWoWContext != WoWContext.Battlegrounds || !Unit.NearbyUnfriendlyUnits.Any(u => u.Guid != Target.Guid))
-                                            && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
-                    */
                     Spell.BuffSelf("Exhilaration", ret => Me.HealthPercent < 35 || (Pet != null && Pet.HealthPercent < 25)),
 
                     Spell.Buff("Widow Venom", ret => HunterSettings.UseWidowVenom && Target.IsPlayer && Me.IsSafelyFacing(Target) && Target.InLineOfSpellSight),
@@ -317,11 +300,9 @@ namespace Singular.ClassSpecific.Hunter
 
                     // Level 75 Talents
                     Spell.Cast("A Murder of Crows"),
-                    Spell.Cast("Lynx Rush", ret => Pet != null && Unit.NearbyUnfriendlyUnits.Any(u => Pet.Location.Distance(u.Location) <= 10)),
 
                     // Level 60 Talents
                     Spell.Cast("Dire Beast"),
-                    Spell.Cast("Fervor", ctx => Me.CurrentFocus < 50),
 
                     // Level 90 Talents
                     Spell.Cast("Glaive Toss", req => Me.IsSafelyFacing(Me.CurrentTarget)),
@@ -333,21 +314,8 @@ namespace Singular.ClassSpecific.Hunter
                         ret => Pet != null && Target != null && Target.IsAlive
                             && (Target.IsBoss() || Target.IsPlayer || ScaryNPC || 3 <= Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet)),
                         new PrioritySelector(
-                            Spell.Buff("Rapid Fire", ret => !Me.HasAura("The Beast Within")),
-                            Spell.Cast("Rabid", ret => Me.HasAura("The Beast Within"))
-/*
-                            ,
-                            Spell.Cast("Readiness", ret =>
-                            {
-                                bool readyForReadiness = true;
-                                if (SpellManager.HasSpell("Bestial Wrath"))
-                                    readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Bestial Wrath").TotalSeconds.Between(5, 50);
-                                if (SpellManager.HasSpell("Rapid Fire"))
-                                    readyForReadiness = readyForReadiness && Spell.GetSpellCooldown("Rapid Fire").TotalSeconds.Between(30, 165);
-                                return readyForReadiness;
-                            })
- */
-                             )
+                            Spell.Buff("Rapid Fire", ret => Me.Specialization == WoWSpec.HunterMarksmanship && !Me.HasAura("The Beast Within"))
+                            )
                        ),
 
 
@@ -936,8 +904,7 @@ namespace Singular.ClassSpecific.Hunter
                 new PrioritySelector(
                     ctx => SafeArea.NearestEnemyMobAttackingMe,
                     Spell.Buff("Kill Shot", on => (WoWUnit)on),
-                    Spell.Buff("Serpent Sting", on => (WoWUnit) on),
-                    Spell.Cast("Chimera Shot", on => (WoWUnit)on),
+                    Spell.Cast("Chimaera Shot", on => (WoWUnit)on),
                     Spell.Cast("Explosive Shot", on => (WoWUnit)on),
                     Spell.Cast("Black Arrow", on => (WoWUnit) on),
                     Spell.CastHack("Kill Command", on => (WoWUnit) on, req => Me.GotAlivePet && Me.Pet.CurrentTargetGuid == ((WoWUnit)req).Guid && Me.Pet.SpellDistance((WoWUnit) req) < 25f),
@@ -988,7 +955,7 @@ namespace Singular.ClassSpecific.Hunter
                     && onUnit(ret).SpellDistance() < 40
                     && SpellManager.HasSpell("Steady Shot"),
                 new Sequence(
-                    new Action(ret => Logger.Write("*Steady Shot on {0} @ {1:F1}% at {2:F1} yds", onUnit(ret).SafeName(), onUnit(ret).HealthPercent, onUnit(ret).Distance)),
+                    new Action(ret => Spell.LogCast("Steady Shot", onUnit(ret))),
                     new Action(ret => SpellManager.Cast("Steady Shot", onUnit(ret)))
                     )
                 );

@@ -737,10 +737,17 @@ namespace Singular.ClassSpecific.Priest
 
                 HealerManager.CreateStayNearTankBehavior(
                     new Decorator(
-                        unit => unit != null 
-                            && ((unit as WoWUnit).SpellDistance() > SingularSettings.Instance.StayNearTankRangeCombat + 20 
-                                || ((unit as WoWUnit).IsMoving && (unit as WoWUnit).MeIsSafelyBehind && (unit as WoWUnit).SpellDistance() > SingularSettings.Instance.StayNearTankRangeCombat + 10))
-                            && Me.IsSafelyFacing(unit as WoWUnit, 60f),
+                        unit => {
+                            if (unit != null)
+                            {
+                                float dist = (unit as WoWUnit).SpellDistance();
+                                if (dist > SingularSettings.Instance.StayNearTankRangeCombat + 20)
+                                    return true;
+                                if (dist > SingularSettings.Instance.StayNearTankRangeCombat + 10 && (unit as WoWUnit).IsMovingAway() && Me.IsSafelyFacing(unit as WoWUnit, 60f))
+                                    return true;
+                            }
+                            return false;
+                            },
                         Common.CreatePriestMovementBuff()
                         )
                     ),

@@ -48,8 +48,6 @@ namespace Singular.ClassSpecific.DeathKnight
 
                         Common.CreateDeathKnightPullMore(),
 
-                        Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.IsPlayer && Me.DeathRuneCount > 0),
-
                         Common.CreateGetOverHereBehavior(),
 
                         Common.CreateDarkSuccorBehavior(),
@@ -95,7 +93,6 @@ namespace Singular.ClassSpecific.DeathKnight
                                 Spell.Buff("Plague Strike", true, on => Me.CurrentTarget, req => true, "Blood Plague"),
                                 Spell.Cast("Death Strike", ret => Me.HealthPercent < 90),
                                 Spell.Cast("Frost Strike"),
-                                Spell.Cast("Death Coil", ret => !Me.CurrentTarget.IsWithinMeleeRange ),
                                 Spell.Cast(sp => Spell.UseAOE ? "Howling Blast" : "Icy Touch"),
                                 Spell.Cast("Plague Strike")
                                 )
@@ -124,8 +121,6 @@ namespace Singular.ClassSpecific.DeathKnight
                     new PrioritySelector(
                         Helpers.Common.CreateAutoAttack(true),
 
-                        Spell.Cast("Necrotic Strike", ret => Me.DeathRuneCount > 0),
-
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Common.CreateDarkSuccorBehavior(),
@@ -153,8 +148,6 @@ namespace Singular.ClassSpecific.DeathKnight
                                 )
                             ),
 
-                        Spell.Cast("Necrotic Strike", ret => Me.DeathRuneCount > 0 || Me.CurrentTarget.HasAuraExpired("Necrotic Strike", 1)),
-
                         // *** Dual Weld Single Target Priority
                         new Decorator(ctx => IsDualWielding,
                                       new PrioritySelector(
@@ -172,7 +165,6 @@ namespace Singular.ClassSpecific.DeathKnight
                                           Spell.Cast("Obliterate",
                                                      ret =>
                                                      Me.HasAura(KillingMachine) && Common.UnholyRuneSlotsActive == 2),
-                                          Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.HasAuraExpired("Necrotic Strike", 1)),
 
                                           // RP Capped
                                           Spell.Cast("Frost Strike",
@@ -197,7 +189,6 @@ namespace Singular.ClassSpecific.DeathKnight
 
                                           // Killing Machine
                                           Spell.Cast("Obliterate", ret => Me.HasAura(KillingMachine)),
-                                          Spell.Cast("Necrotic Strike", ret => Me.CurrentTarget.HasAuraExpired("Necrotic Strike", 1)),
 
                                           // RP Capped
                                           Spell.Cast("Frost Strike",
@@ -453,18 +444,10 @@ namespace Singular.ClassSpecific.DeathKnight
                 Spell.Cast("Plague Strike", ret => Me.CurrentTarget.HasAuraExpired("Blood Plague")),
 
                 // spread disease
-                new Throttle( 2,
-                    new PrioritySelector(
-                        Spell.Cast("Blood Boil",
-                            ret => // WOD: Common.HasTalent(DeathKnightTalents.RollingBlood) &&
-                                Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))
-                                && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.HasAuraExpired("Blood Plague"))),
-
-                        Spell.Cast("Pestilence",
-                            ret => !StyxWoW.Me.HasAura("Unholy Blight")
-                                && !Me.CurrentTarget.HasAuraExpired("Blood Plague")
-                                && Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague")))
-                        )
+                new Throttle( 2, 
+                    Spell.Cast("Blood Boil",
+                        ret => Unit.UnfriendlyUnitsNearTarget(10).Any(u => u.HasAuraExpired("Blood Plague"))
+                            && Unit.UnfriendlyUnitsNearTarget(10).Any(u => !u.HasAuraExpired("Blood Plague")))
                     ),
 
                 // damage

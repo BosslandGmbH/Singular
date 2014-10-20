@@ -440,9 +440,10 @@ namespace Singular.ClassSpecific.Shaman
         {
             if (Totems.NeedToRecallTotems)
             {
-                Logger.Write("Recalling totems!");
                 if (SpellManager.HasSpell("Totemic Recall"))
                 {
+                    Logger.Write(Color.White, "^Recalling totems!");
+                    Spell.LogCast("Totemic Recall", Me);
                     return SpellManager.Cast("Totemic Recall");
                 }
 
@@ -475,6 +476,7 @@ namespace Singular.ClassSpecific.Shaman
                 return;
             }
 
+            Logger.Write("^Destroy Totem Type: {0}", type.ToString());
             Lua.DoString("DestroyTotem({0})", (int)type);
         }
 
@@ -482,14 +484,14 @@ namespace Singular.ClassSpecific.Shaman
         private static readonly Dictionary<WoWTotemType, WoWTotem> LastSetTotems = new Dictionary<WoWTotemType, WoWTotem>();
 
 
-        #region Helper shit
+        #region Helper stuff
 
         public static bool NeedToRecallTotems 
         { 
             get 
             { 
                 return TotemsInRange == 0 
-                    && StyxWoW.Me.Totems.Count(t => t.Unit != null) != 0
+                    && StyxWoW.Me.Totems.Count(t => t.Unit != null) > 0
                     && !Unit.NearbyFriendlyPlayers.Any( f => f.Combat )
                     && !StyxWoW.Me.Totems.Any(t => totemsWeDontRecall.Any( twl => twl == t.WoWTotem )); 
             } 

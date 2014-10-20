@@ -473,13 +473,13 @@ namespace Singular.Helpers
                     FixGlobalCooldownCheckSpell = "Cat Form";
                     break;
                 case WoWClass.Hunter:
-                    FixGlobalCooldownCheckSpell = "Hunter's Mark";
+                    FixGlobalCooldownCheckSpell = "Track Demons";
                     break;
                 case WoWClass.Mage:
                     FixGlobalCooldownCheckSpell = "Polymorph";
                     break;
                 case WoWClass.Monk:
-                    FixGlobalCooldownCheckSpell = "Stance of the Fierce Tiger";
+                    FixGlobalCooldownCheckSpell = "Surging Mist";
                     break;
                 case WoWClass.Paladin:
                     FixGlobalCooldownCheckSpell = "Righteous Fury";
@@ -519,7 +519,7 @@ namespace Singular.Helpers
                     FixGlobalCooldownCheckSpell = "Frostfire Bolt";
                     break;
                 case WoWClass.Monk:
-                    //FixGlobalCooldownCheckSpell = "";
+                    FixGlobalCooldownCheckSpell = "Stance of the Fierce Tiger";
                     break;
                 case WoWClass.Paladin:
                     FixGlobalCooldownCheckSpell = "Seal of Command";

@@ -29,9 +29,23 @@ namespace Singular.ClassSpecific.Rogue
         private static RogueSettings RogueSettings { get { return SingularSettings.Instance.Rogue(); } }
         private static bool HasTalent(RogueTalents tal) { return TalentManager.IsSelected((int)tal); }
 
-        public static bool IsStealthed { get { return Me.HasAnyAura("Stealth", "Shadow Dance", "Vanish"); } }
-        public static bool IsActuallyStealthed { get { return Me.HasAnyAura("Stealth", "Vanish"); } }
+        /// <summary>
+        /// checks if we are stealthed or an ability granting use of stealth only abilities is active
+        /// </summary>
+        public static bool AreStealthAbilitiesAvailable { get { return Me.HasAnyAura("Stealth", "Shadow Dance", "Vanish"); } }
+        
+        /// <summary>
+        /// checks if we are stealthed.  does not include buffs which grant use of stealth abilities
+        /// while not stealthed
+        /// </summary>
+        public static bool IsStealthed { get { return Me.HasAnyAura("Stealth", "Vanish"); } }
 
+        /// <summary>
+        /// determines if we should use Cloak and Dagger ability.  this allows encapsulating check for 
+        /// pick pocket mode, etc
+        /// </summary>
+        /// <param name="unit"></param>
+        /// <returns></returns>
         public static bool CloakAndDagger( WoWUnit unit)
         { 
             if (SingularRoutine.CurrentWoWContext == WoWContext.Normal && RogueSettings.UsePickPocket && unit != null && IsMobPickPocketable(unit))
@@ -86,7 +100,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueHeal()
         {
             return new Decorator(
-                ret => !Spell.IsCastingOrChannelling() & !Spell.IsGlobalCooldown() && !IsStealthed && !Group.AnyHealerNearby,
+                ret => !Spell.IsCastingOrChannelling() & !Spell.IsGlobalCooldown() && !AreStealthAbilitiesAvailable && !Group.AnyHealerNearby,
                 new PrioritySelector(
                     Movement.CreateFaceTargetBehavior(),
                     new Decorator(
@@ -116,7 +130,7 @@ namespace Singular.ClassSpecific.Rogue
                         ),
 
                     new Decorator(
-                        ret => RogueSettings.RecuperateHealth > 0 && Me.RawComboPoints > 0,
+                        ret => RogueSettings.RecuperateHealth > 0 && Me.ComboPoints > 0,
                         new PrioritySelector(
                 // cast regardless of combo points if we are below health level
                             Spell.BuffSelf("Recuperate", ret => Me.HealthPercent < RogueSettings.RecuperateHealth),
@@ -124,7 +138,7 @@ namespace Singular.ClassSpecific.Rogue
                             // cast at higher health level based upon number of attackers
                             Spell.BuffSelf("Recuperate",
                                 ret => AoeCount > 0
-                                    && Me.RawComboPoints >= Math.Min(AoeCount, 3)
+                                    && Me.ComboPoints >= Math.Min(AoeCount, 3)
                                     && Me.HealthPercent < (100 * (AoeCount - 1) + RogueSettings.RecuperateHealth) / AoeCount),
 
                             // cast if partially need healing and mob about to die
@@ -160,9 +174,9 @@ namespace Singular.ClassSpecific.Rogue
                     TimeSpan.FromSeconds(3),
                     Spell.Cast("Recuperate", 
                         on => Me,
-                        ret => StyxWoW.Me.RawComboPoints > 0 
+                        ret => StyxWoW.Me.ComboPoints > 0 
                             && Spell.IsSpellOnCooldown("Redirect")
-                            && Me.HasAuraExpired("Recuperate", 3 + Me.RawComboPoints * 6))
+                            && Me.HasAuraExpired("Recuperate", 3 + Me.ComboPoints * 6))
                     )
                 );
         }
@@ -177,7 +191,7 @@ namespace Singular.ClassSpecific.Rogue
                         if (!Me.GotTarget || (Unit.IsTrivial(Me.CurrentTarget) && !RogueSettings.PickPocketOnlyPull))
                             return false;
 
-                        if (IsStealthed)
+                        if (AreStealthAbilitiesAvailable)
                             return false;
                         
                         float dist = Me.CurrentTarget.SpellDistance();
@@ -195,7 +209,7 @@ namespace Singular.ClassSpecific.Rogue
 
                 CreateRogueRedirectBehavior(),
 
-                Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.RawComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !Spell.CanCastHack("Redirect"))),
+                Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.ComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !Spell.CanCastHack("Redirect"))),
                 new Throttle( 1,
                     new Decorator(
                         req => MovementManager.IsClassMovementAllowed && StyxWoW.Me.IsMoving && StyxWoW.Me.GotTarget,
@@ -278,7 +292,7 @@ namespace Singular.ClassSpecific.Rogue
                         // Redirect if we have CP left
                         CreateRogueRedirectBehavior(),
 
-                        Spell.Cast("Marked for Death", ret => StyxWoW.Me.RawComboPoints == 0),
+                        Spell.Cast("Marked for Death", ret => StyxWoW.Me.ComboPoints == 0),
 
                         Spell.Cast("Deadly Throw",
                             ret => Me.ComboPoints >= 3
@@ -289,18 +303,20 @@ namespace Singular.ClassSpecific.Rogue
                         // Pursuit
                         Spell.Cast("Shadowstep", ret => MovementManager.IsClassMovementAllowed && Me.CurrentTarget.Distance > 12 && Unit.CurrentTargetIsMovingAwayFromMe),
                         Spell.Cast("Burst of Speed", ret => MovementManager.IsClassMovementAllowed && Me.IsMoving && Me.CurrentTarget.Distance > 10 && Unit.CurrentTargetIsMovingAwayFromMe),
-                        Spell.Cast("Shuriken Toss", ret => !IsStealthed && !Me.CurrentTarget.IsWithinMeleeRange && Me.IsSafelyFacing(Me.CurrentTarget)),
+                        Spell.Cast("Shuriken Toss", ret => !AreStealthAbilitiesAvailable && !Me.CurrentTarget.IsWithinMeleeRange && Me.IsSafelyFacing(Me.CurrentTarget)),
 
                         // Vanish to boost DPS if behind target, not stealthed, have slice/dice, and 0/1 combo pts
                         new Sequence(
                             Spell.BuffSelf("Vanish",
                                 ret => Me.GotTarget
                                     && !SingularRoutine.IsQuestBotActive
-                                    && !IsStealthed
+                                    && SingularRoutine.CurrentWoWContext != WoWContext.Normal
+                                    && !AreStealthAbilitiesAvailable
                                     && !Me.HasAuraExpired("Slice and Dice", 4)
                                     && Me.ComboPoints < 2
-                                    && Me.IsSafelyBehind(Me.CurrentTarget)),
-                            new Wait(TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed()),
+                                    // && Me.IsSafelyBehind(Me.CurrentTarget)
+                                    ),
+                            new Wait(TimeSpan.FromMilliseconds(500), ret => AreStealthAbilitiesAvailable, new ActionAlwaysSucceed()),
                             CreateRogueOpenerBehavior()
                             ),
 
@@ -403,7 +419,7 @@ namespace Singular.ClassSpecific.Rogue
                     new Sequence(
                         new Action(r => Logger.WriteDebug("MovingAwayFromMe: Target ({0:F2}) faster than Me ({1:F2}) -- trying Sprint or Ranged Attack", Me.CurrentTarget.MovementInfo.CurrentSpeed, Me.MovementInfo.CurrentSpeed)),
                         new PrioritySelector(
-                            Spell.Cast("Sap", req => IsStealthed && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon)),
+                            Spell.Cast("Sap", req => AreStealthAbilitiesAvailable && (Me.CurrentTarget.IsHumanoid || Me.CurrentTarget.IsBeast || Me.CurrentTarget.IsDemon || Me.CurrentTarget.IsDragon)),
                             new Decorator(
                                 req => !Me.HasAnyAura("Sprint","Burst of Speed","Shadowstep"),
                                 new PrioritySelector(
@@ -435,7 +451,7 @@ namespace Singular.ClassSpecific.Rogue
                 return new ActionAlwaysFail();
 
             return new Decorator(
-                req => IsStealthed && Me.GotTarget && SpellManager.HasSpell("Sap"),
+                req => AreStealthAbilitiesAvailable && Me.GotTarget && SpellManager.HasSpell("Sap"),
                 new PrioritySelector(
                     ctx => GetBestSapTarget(),
                     new Decorator(
@@ -463,7 +479,7 @@ namespace Singular.ClassSpecific.Rogue
             if (RogueSettings.SapAddDistance <= 0 && !RogueSettings.SapMovingTargetsOnPull)
                 return null;
 
-            if (!Me.GotTarget || !IsStealthed)
+            if (!Me.GotTarget || !AreStealthAbilitiesAvailable)
                 return null;
 
             if (Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Sap")))
@@ -551,7 +567,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueOpenerBehavior()
         {
             return new Decorator(
-                ret => Common.IsStealthed,
+                ret => Common.AreStealthAbilitiesAvailable,
                 new PrioritySelector(
                     CreateRoguePickPocket(),
 
@@ -587,7 +603,7 @@ namespace Singular.ClassSpecific.Rogue
                         ),
 
                     new Decorator(
-                        req => IsStealthed,
+                        req => AreStealthAbilitiesAvailable,
                         new PrioritySelector(
                             Spell.Cast(sp => "Garrote", chkMov => false, on => Me.CurrentTarget, req => IsGarroteNeeded() && (Me.CurrentTarget.IsCasting || Me.CurrentTarget.GetPrimaryStat() == StatType.Intellect), canCast: RogueCanCastOpener),
                             Spell.Cast(sp => "Ambush", chkMov => false, on => Me.CurrentTarget, req => IsAmbushNeeded(), canCast: RogueCanCastOpener),
@@ -601,26 +617,17 @@ namespace Singular.ClassSpecific.Rogue
 
         public static bool IsAmbushNeeded()
         {
-            if (IsStealthed)
-            {
-                if (Me.IsSafelyBehind(Me.CurrentTarget))
-                    return true;
-
-                if (CloakAndDagger(Me.CurrentTarget) && IsActuallyStealthed)
-                    return true;
-            }
-
-            return false;
+            return AreStealthAbilitiesAvailable;
         }
 
         private static bool IsCheapShotNeeded()
         {
-            return IsStealthed || (CloakAndDagger(Me.CurrentTarget) && IsActuallyStealthed);
+            return AreStealthAbilitiesAvailable;
         }
 
         private static bool IsGarroteNeeded()
         {
-            return (IsStealthed && !Me.IsSafelyBehind(Me.CurrentTarget)) || (CloakAndDagger(Me.CurrentTarget) && IsActuallyStealthed);
+            return AreStealthAbilitiesAvailable;
         }
 
         public static Composite CreateRogueBlindOnAddBehavior()
@@ -806,8 +813,8 @@ namespace Singular.ClassSpecific.Rogue
         {
             return new PrioritySelector(
                 new Sequence(
-                    Spell.BuffSelf("Stealth", ret => !IsStealthed && (req == null || req(ret)) && !Me.GetAllAuras().Any( a => a.IsHarmful)),
-                    new Wait( TimeSpan.FromMilliseconds(500), ret => IsStealthed, new ActionAlwaysSucceed())
+                    Spell.BuffSelf("Stealth", ret => !AreStealthAbilitiesAvailable && (req == null || req(ret)) && !Me.GetAllAuras().Any( a => a.IsHarmful)),
+                    new Wait( TimeSpan.FromMilliseconds(500), ret => AreStealthAbilitiesAvailable, new ActionAlwaysSucceed())
                     )                
                 );
         }
@@ -852,7 +859,7 @@ namespace Singular.ClassSpecific.Rogue
             return new Throttle(5,
                 new Decorator(
                     ret => (!Me.Combat || RogueSettings.AllowPickPocketInCombat)
-                        && IsStealthed
+                        && AreStealthAbilitiesAvailable
                         && Me.GotTarget
                         && Me.CurrentTarget.IsAlive
                         && !Me.CurrentTarget.IsPlayer
@@ -888,7 +895,7 @@ namespace Singular.ClassSpecific.Rogue
 
         public static Composite CreateRogueRedirectBehavior()
         {
-            // throttling this cast as there is an issue which occurs in that RawComboPoints is non-zero, 
+            // throttling this cast as there is an issue which occurs in that ComboPoints is non-zero, 
             // .. but WOW is reporting no combo pts exist.  believe this was due to original wowunit no 
             // .. longer being in objmgr, but just in case throttling to avoid redirect spam loop
             return new Throttle(3,
@@ -899,14 +906,14 @@ namespace Singular.ClassSpecific.Rogue
                     {
                         if (Me.ComboPointsTargetGuid != Me.CurrentTargetGuid)
                         {
-                            if (StyxWoW.Me.RawComboPoints > 0)
+                            if (StyxWoW.Me.ComboPoints > 0)
                             {
                                 WoWUnit comboTarget = ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid);
                                 if (comboTarget != null)
                                 {
                                     if (Spell.CanCastHack("Redirect", comboTarget))
                                     {
-                                        Logger.Write(Color.White, "^Redirect: place {0} pts from {1} @ {2:F1} yds onto new target {3}", StyxWoW.Me.RawComboPoints, comboTarget.SafeName(), comboTarget.Distance, Me.CurrentTarget.SafeName());
+                                        Logger.Write(Color.White, "^Redirect: place {0} pts from {1} @ {2:F1} yds onto new target {3}", StyxWoW.Me.ComboPoints, comboTarget.SafeName(), comboTarget.Distance, Me.CurrentTarget.SafeName());
                                         return true;
                                     }
                                 }
@@ -952,7 +959,7 @@ namespace Singular.ClassSpecific.Rogue
         public static Composite CreateRogueOpenBoxes()
         {
             return new Decorator(
-                ret => RogueSettings.UsePickLock && !Me.IsFlying && !Me.Mounted && !IsStealthed && SpellManager.HasSpell("Pick Lock") && AutoLootIsEnabled(),
+                ret => RogueSettings.UsePickLock && !Me.IsFlying && !Me.Mounted && !AreStealthAbilitiesAvailable && SpellManager.HasSpell("Pick Lock") && AutoLootIsEnabled(),
 
                 new PrioritySelector(
                     // open unlocked box

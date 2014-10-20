@@ -1191,16 +1191,44 @@ namespace Singular.Helpers
 			public bool IsHealOverTime { get { return _isHealOverTime == 1; } }
 		}
 
+        /// <summary>
+        /// unit is located behind or along the side of target
+        /// </summary>
+        /// <param name="unit">units position to check</param>
+        /// <param name="target">target to determine position against</param>
+        /// <returns>true if on side or behind, otherwise false</returns>
+        public static bool IsBehindOrSide( this WoWUnit unit, WoWUnit target)
+        {
+            return unit != null && target != null && !target.IsSafelyFacing(unit, 160);
+        }
+
+        /// <summary>
+        /// basic check if mob is running away from you.  true for any mob moving
+        /// that has their back to you.  be aware will return true for one you
+        /// approach from the rear even if they are backing up towards you 
+        /// </summary>
+        /// <param name="unit">unit</param>
+        /// <returns>true: mob moving and you are safely behind it</returns>
+        public static bool IsMovingAway(this WoWUnit unit)
+        {
+            return unit.IsMoving && !unit.IsWithinMeleeRange && StyxWoW.Me.IsSafelyBehind(unit);
+        }
+
+
         private static bool lastMovingAwayAnswer = false;
         private static WoWGuid guidLastMovingAwayCheck;
         private static double distLastMovingAwayCheck = 0f;
         private static readonly WaitTimer MovingAwayTimer = new WaitTimer(TimeSpan.FromMilliseconds(500));
 
+        /// <summary>
+        /// tracks if current target has moved away from.  works for blink and other quick
+        /// movements which have nothing to do with direction enemy is facing
+        /// </summary>
         public static bool CurrentTargetIsMovingAwayFromMe
         {
             get
             {
-                if (guidLastMovingAwayCheck != StyxWoW.Me.CurrentTargetGuid || !StyxWoW.Me.CurrentTargetGuid.IsValid)
+                if (!StyxWoW.Me.CurrentTargetGuid.IsValid || guidLastMovingAwayCheck != StyxWoW.Me.CurrentTargetGuid)
                 {
                     lastMovingAwayAnswer = false;
                     if (StyxWoW.Me.CurrentTarget == null)

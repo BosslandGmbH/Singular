@@ -772,14 +772,21 @@ namespace Singular.Settings
         [Description("Dispel harmful debuffs")]
         public RelativePriority DispelDebuffs { get; set; }
 
-        [Setting,ReadOnly(false)]
-        [DefaultValue(CombatRezTarget.TankOrHealer)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(CombatRezTarget.Healer)]
         [Category("Group Healing/Support")]
-        [DisplayName("Combat Rez Target")]
+        [DisplayName("Combat Rez Target Party")]
         [Description("None: disable Combat Rez; other setting limits rez to target with that role set")]
-        public CombatRezTarget CombatRezTarget { get; set; }
+        public CombatRezTarget CombatRezTargetParty { get; set; }
 
-        [Setting,ReadOnly(false)]
+        [Setting, ReadOnly(false)]
+        [DefaultValue(CombatRezTarget.Tank)]
+        [Category("Group Healing/Support")]
+        [DisplayName("Combat Rez Target Raid")]
+        [Description("None: disable Combat Rez; other setting limits rez to target with that role set")]
+        public CombatRezTarget CombatRezTargetRaid { get; set; }
+
+        [Setting, ReadOnly(false)]
         [DefaultValue(2)]
         [Category("Group Healing/Support")]
         [DisplayName("Combat Rez Delay")]

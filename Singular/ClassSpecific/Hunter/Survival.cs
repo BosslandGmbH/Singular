@@ -42,7 +42,6 @@ namespace Singular.ClassSpecific.Hunter
                         CreateSurvivalDiagnosticOutputBehavior(),
 
                         Common.CreateMisdirectionBehavior(),
-                        // Spell.Buff("Hunter's Mark", ret => Unit.ValidUnit(Me.CurrentTarget) && !TalentManager.HasGlyph("Marked for Death") && !Me.CurrentTarget.IsImmune(WoWSpellSchool.Arcane)),
 
                         Common.CreateHunterAvoidanceBehavior(null, null),
 
@@ -67,22 +66,23 @@ namespace Singular.ClassSpecific.Hunter
                         new Decorator(
                             ret => Spell.UseAOE && !(Me.CurrentTarget.IsBoss() || Me.CurrentTarget.IsPlayer) && Unit.UnfriendlyUnitsNearTarget(8f).Count() >= 3,
                             new PrioritySelector(
-                                Spell.Cast("Kill Shot", onUnit => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && u.Distance < 40 && u.InLineOfSpellSight && Me.IsSafelyFacing(u))),
-                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, ret => true),
-                                Spell.Cast("Multi-Shot"),
-                                Spell.Cast("Explosive Shot"),
-                                Spell.Cast("Cobra Shot"),
-                                Common.CastSteadyShot(on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot"))
+                                ctx => Unit.NearbyUnitsInCombatWithUsOrOurStuff.Where(u => u.InLineOfSpellSight).OrderByDescending(u => (uint)u.HealthPercent).FirstOrDefault(),
+                                Common.CreateHunterTrapBehavior("Explosive Trap", true, on => Me.CurrentTarget, req => true),
+                                Spell.Cast("Multi-Shot", req => Me.CurrentFocus > 70),
+                                Spell.Cast("Black Arrow", on => (WoWUnit) on),
+                                Spell.Cast("Explosive Shot", on => (WoWUnit) on, req => Me.HasAura("Lock and Load")),
+                                Spell.Cast("Arcane Shot", on => (WoWUnit) on, ret => Me.CurrentFocus > 70 || !Me.CurrentTarget.HasMyAura("Serpent Sting")),
+                                Spell.Cast("Cobra Shot", on => (WoWUnit) on),
+                                Common.CastSteadyShot(on => (WoWUnit) on, ret => !SpellManager.HasSpell("Cobra Shot"))
                                 )
                             ),
 
                         // Single Target Rotation
-                        Spell.Buff("Serpent Sting"),
+                        Spell.Cast("Black Arrow", ret => Me.CurrentTarget.TimeToDeath() > 12),
                         Spell.Cast("Explosive Shot"),
-                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
-                        Spell.Cast("Black Arrow", ret => Me.CurrentTarget.TimeToDeath() > 12 ),
-                        Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 60 || Me.HasAura("Thrill of the Hunt")),
+                        Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 70 || !Me.CurrentTarget.HasMyAura("Serpent Sting")),
                         Spell.Cast("Cobra Shot"),
+
                         Common.CastSteadyShot( on => Me.CurrentTarget, ret => !SpellManager.HasSpell("Cobra Shot"))
                         )
                     ),
@@ -135,9 +135,7 @@ namespace Singular.ClassSpecific.Hunter
                                 && (!Me.CurrentTarget.GotTarget || Me.CurrentTarget.CurrentTarget == Me)),
 
                         // Single Target Rotation
-                        Spell.Buff("Serpent Sting"),
                         Spell.Cast("Explosive Shot"),
-                        Spell.Cast("Kill Shot", ctx => Me.CurrentTarget.HealthPercent < 20),
                         Spell.Cast("Black Arrow", ret => Me.CurrentTarget.TimeToDeath() > 12),
                         Spell.Cast("Arcane Shot", ret => Me.CurrentFocus > 60 || Me.HasAura("Thrill of the Hunt")),
                         Spell.Cast("Cobra Shot"),

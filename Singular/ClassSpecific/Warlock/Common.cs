@@ -715,7 +715,7 @@ namespace Singular.ClassSpecific.Warlock
 
         private static bool UseSoulstoneForBattleRez()
         {
-            bool cast = SingularSettings.Instance.CombatRezTarget != CombatRezTarget.None 
+            bool cast = Helpers.Common.CombatRezTargetSetting != CombatRezTarget.None 
                 && (WarlockSettings.UseSoulstone == Soulstone.Ressurect || (WarlockSettings.UseSoulstone == Soulstone.Auto && SingularRoutine.CurrentWoWContext == WoWContext.Instances));
             return cast;
         }

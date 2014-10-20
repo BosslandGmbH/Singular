@@ -101,7 +101,6 @@ namespace Singular.ClassSpecific.Druid
             return new Decorator(
                 req => !Unit.IsTrivial(Me.CurrentTarget),
                 new PrioritySelector(
-                    Spell.BuffSelf("Innervate", ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
                     Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < DruidSettings.Barkskin || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
                     Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
 
@@ -159,7 +158,6 @@ namespace Singular.ClassSpecific.Druid
 
                 CreateRebirthBehavior(ctx => Group.Tanks.FirstOrDefault(t => !t.IsMe && t.IsDead) ?? Group.Healers.FirstOrDefault(h => !h.IsMe && h.IsDead)),
 
-                Spell.Buff("Innervate", ret => StyxWoW.Me.ManaPercent <= DruidSettings.InnervateMana),
                 Spell.Cast("Barkskin", ctx => Me, ret => Me.HealthPercent < DruidSettings.Barkskin || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
                 Spell.Cast("Disorenting Roar", ctx => Me, ret => Me.HealthPercent < 40 || Unit.NearbyUnitsInCombatWithMeOrMyStuff.Count() >= 3),
 
@@ -260,10 +258,7 @@ namespace Singular.ClassSpecific.Druid
                 Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < DruidSettings.SelfRenewalHealth),
                 Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < DruidSettings.SelfCenarionWardHealth),
 
-                CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < DruidSettings.SelfNaturesSwiftnessHealth),
-
                 Spell.Cast("Disorienting Roar", ret => Me.HealthPercent <= DruidSettings.DisorientingRoarHealth && DruidSettings.DisorientingRoarCount <= Unit.NearbyUnfriendlyUnits.Count(u => u.Aggro || (u.Combat && u.IsTargetingMeOrPet))),
-                Spell.Cast("Might of Ursoc", ret => Me.HealthPercent < DruidSettings.SelfNaturesSwiftnessHealth),
 
                 // heal out of form at this point (try to Barkskin at least)
                 new Throttle(Spell.BuffSelf("Barkskin", ret => Me.HealthPercent < DruidSettings.Barkskin)),
@@ -291,10 +286,6 @@ namespace Singular.ClassSpecific.Druid
 
                 Spell.Cast("Renewal", on => Me, ret => Me.HealthPercent < DruidSettings.SelfRenewalHealth),
                 Spell.BuffSelf("Cenarion Ward", ret => Me.HealthPercent < DruidSettings.SelfCenarionWardHealth),
-
-                CreateNaturesSwiftnessHeal(ret => Me.HealthPercent < DruidSettings.SelfNaturesSwiftnessHealth),
-
-                Spell.Cast("Might of Ursoc", ret => Me.HealthPercent < DruidSettings.SelfNaturesSwiftnessHealth),
 
                 // heal out of form at this point (try to Barkskin at least)
                 new Throttle(Spell.BuffSelf("Barkskin", ret => Me.HealthPercent < DruidSettings.Barkskin)),
@@ -381,15 +372,22 @@ namespace Singular.ClassSpecific.Druid
             return Helpers.Common.CreateCombatRezBehavior("Rebirth", filter => true, reqd => !Me.HasAnyAura("Nature's Swiftness", "Predatory Swiftness"));
         }
 
-        public static Composite CreateFaerieFireBehavior(UnitSelectionDelegate onUnit, SimpleBooleanDelegate Required)
+        public static Composite CreateFaerieFireBehavior(UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate Required = null)
         {
             if (onUnit == null)
                 onUnit = on => Me.CurrentTarget;
 
+            if (Required == null)
+                Required = req => true;
+
             // Fairie Fire has a 1.5 sec GCD, Faerie Swarm 0.0.  Handle both here
             return new ThrottlePasses( 1, TimeSpan.FromMilliseconds(500),
                 new Sequence(
-                    Spell.Buff("Faerie Fire", on => onUnit(on), ret => onUnit(ret).HasAuraExpired("Faerie Fire", 2, false) && Required(ret)),
+                    new PrioritySelector(
+                        Spell.Buff("Faerie Swarm", on => onUnit(on), ret => Required(ret)),
+                        Spell.Buff("Faerie Fire", on => onUnit(on), ret => Required(ret))
+                        ),
+                    // fail if used Faerie Swarm since off GCD
                     new DecoratorContinue( req => HasTalent(DruidTalents.FaerieSwarm), new ActionAlwaysFail())
                     )
                 );

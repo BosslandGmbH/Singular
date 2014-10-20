@@ -170,13 +170,6 @@ namespace Singular.Settings
         public bool UseTravelForm { get; set; }
 
         [Setting]
-        [DefaultValue(40)]
-        [Category("Common")]
-        [DisplayName("Innervate Mana")]
-        [Description("Innervate will be used when your mana drops below this value")]
-        public int InnervateMana { get; set; }
-
-        [Setting]
         [DefaultValue(true)]
         [Category("Common")]
         [DisplayName("Use Wild Charge")]
@@ -330,13 +323,6 @@ namespace Singular.Settings
         public int HealingTouch { get; set; }
 
         [Setting]
-        [DefaultValue(75)]
-        [Category("Restoration")]
-        [DisplayName("Nourish Health")]
-        [Description("Nourish will be used at this value")]
-        public int Nourish { get; set; }
-
-        [Setting]
         [DefaultValue(90)]
         [Category("Restoration")]
         [DisplayName("Rejuvenation Health")]
@@ -367,13 +353,6 @@ namespace Singular.Settings
         [DisplayName("Savage Defense Health")]
         [Description("Savage Defense will be used at this value. Set this to 100 to enable on cooldown usage.")]
         public int TankSavageDefense { get; set; }
-
-        [Setting]
-        [DefaultValue(30)]
-        [Category("Guardian")]
-        [DisplayName("Might of Ursoc Health")]
-        [Description("Might of Ursoc will be used at this value. Set this to 100 to enable on cooldown usage.")]
-        public int TankMightOfUrsoc { get; set; }
 
         [Setting]
         [DefaultValue(55)]

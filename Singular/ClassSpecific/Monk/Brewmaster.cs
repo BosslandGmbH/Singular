@@ -69,7 +69,7 @@ namespace Singular.ClassSpecific.Monk
                 _dishaze = new Throttle(
                     TimeSpan.FromMilliseconds(2500),
                     new PrioritySelector(
-                        ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.SpellDistance() > 15 || (u.IsMoving && !u.IsWithinMeleeRange && Me.IsSafelyBehind(u)))),
+                        ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.SpellDistance() > 15 || u.IsMovingAway())),
                         Spell.CastOnGround("Dizzying Haze", on => on as WoWUnit, req => true, false)
                         )
                     );
@@ -227,7 +227,7 @@ namespace Singular.ClassSpecific.Monk
                                 on => Me.CurrentTarget, 
                                 req => !Me.CurrentTarget.HasMyAura("Dizzying Haze")
                                     && !Me.CurrentTarget.IsCrowdControlled()
-                                    && (Me.CurrentTarget.SpellDistance() > 15 || (Me.CurrentTarget.IsMoving && !Me.CurrentTarget.IsWithinMeleeRange && Me.IsSafelyBehind(Me.CurrentTarget))), 
+                                    && (Me.CurrentTarget.SpellDistance() > 15 || Me.CurrentTarget.IsMovingAway()), 
                                 waitForSpell: false
                                 )
                             ),
@@ -257,7 +257,7 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Touch of Death", ret => Me.CurrentChi >= 3 && Me.HasAura("Death Note")),
                 // slow if current target running away
                 new Throttle( TimeSpan.FromMilliseconds(1500),                           
-                    Spell.CastOnGround("Dizzying Haze", on => Me.CurrentTarget, req => Me.CurrentTarget.IsMoving && !Me.IsWithinMeleeRange && Me.IsSafelyBehind(Me.CurrentTarget), waitForSpell: false)
+                    Spell.CastOnGround("Dizzying Haze", on => Me.CurrentTarget, req => Me.CurrentTarget.IsMovingAway(), waitForSpell: false)
                     ),
                 Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
                 Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),

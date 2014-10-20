@@ -102,7 +102,7 @@ namespace Singular.ClassSpecific.Rogue
 
                         Spell.Buff("Vendetta", ret => Me.CurrentTarget.IsPlayer || Me.CurrentTarget.Elite || Me.CurrentTarget.IsBoss() || Common.AoeCount > 1),
 
-                        Spell.Cast("Garrote", ret => Common.IsStealthed && Me.CurrentTarget.MeIsBehind),
+                        Spell.Cast("Garrote", ret => Common.AreStealthAbilitiesAvailable && Me.CurrentTarget.MeIsBehind),
 
                         new Decorator(
                             ret => Common.AoeCount >= 3 && Spell.UseAOE,
@@ -184,7 +184,7 @@ namespace Singular.ClassSpecific.Rogue
                                 )
                             ),
 
-                        Spell.Cast("Garrote", ret => Common.IsStealthed && Me.CurrentTarget.MeIsBehind),
+                        Spell.Cast("Garrote", ret => Common.AreStealthAbilitiesAvailable && Me.CurrentTarget.MeIsBehind),
                         Spell.Buff("Vendetta",  ret => Me.CurrentTarget.IsBoss() &&  (Me.CurrentTarget.HealthPercent < 35 || TalentManager.IsSelected(13))),
 
                         Spell.Cast("Slice and Dice", on => Me, ret => Me.ComboPoints > 0 && Me.HasAuraExpired("Slice and Dice", 2)),
@@ -227,11 +227,11 @@ namespace Singular.ClassSpecific.Rogue
                         Me.HealthPercent,
                         Me.CurrentEnergy,
                         Me.IsMoving,
-                        Common.IsStealthed,
+                        Common.AreStealthAbilitiesAvailable,
                         Common.AoeCount,
                         (int)Me.GetAuraTimeLeft("Recuperate", true).TotalSeconds,
                         (int)Me.GetAuraTimeLeft("Slice and Dice", true).TotalSeconds,
-                        Me.RawComboPoints,
+                        Me.ComboPoints,
                         Me.ComboPoints,
                         Common.AoeCount 
                         );

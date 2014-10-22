@@ -356,6 +356,71 @@ namespace Singular.ClassSpecific.Druid
 
         #endregion
 
+        public static Composite CastHurricaneBehavior(UnitSelectionDelegate onUnit, SimpleBooleanDelegate cancel = null)
+        {
+            if (cancel == null)
+            {
+                cancel = u =>
+                    {
+                        if (Me.HealthPercent < 30)
+                        {
+                            Logger.Write("/cancel Hurricane since my health at {0:F1}%", Me.HealthPercent);
+                            return true;
+                        }
+                        return false;
+                    };
+            }
+
+            return new Sequence(
+                ctx => onUnit(ctx),
+
+                Spell.CastOnGround("Hurricane", on => (WoWUnit)on, req => Me.HealthPercent > 40 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3, false),
+
+                new Wait(
+                    TimeSpan.FromMilliseconds(1000),
+                    until => Spell.IsCastingOrChannelling() && Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Hurricane")),
+                    new ActionAlwaysSucceed()
+                    ),
+                new Wait(
+                    TimeSpan.FromSeconds(10),
+                    until =>
+                    {
+                        if (!Spell.IsCastingOrChannelling())
+                        {
+                            Logger.WriteDiagnostic("Hurricane: cast complete or interrupted");
+                            return true;
+                        }
+                        int cnt = Unit.NearbyUnfriendlyUnits.Count(u => u.HasMyAura("Hurricane"));
+                        if (cnt < 3)
+                        {
+                            Logger.Write( Color.White, "/cancel Hurricane since only {0} targets effected", cnt);
+                            return true;
+                        }
+                        if (cancel(until))
+                        {
+                            // message should be output by cancel delegate
+                            SpellManager.StopCasting();
+                            return true;
+                        }
+
+                        return false;
+                    },
+                    new ActionAlwaysSucceed()
+                    ),
+                new DecoratorContinue(
+                    req => Spell.IsChannelling(),
+                    new Action(r => SpellManager.StopCasting())
+                    ),
+                new WaitContinue(
+                    TimeSpan.FromMilliseconds(500),
+                    until => !Spell.IsChannelling(),
+                    new ActionAlwaysSucceed()
+                    )
+                )
+            ;
+        }
+
+
         internal static Composite CreateProwlBehavior(SimpleBooleanDelegate req = null)
         {
             return new Sequence(

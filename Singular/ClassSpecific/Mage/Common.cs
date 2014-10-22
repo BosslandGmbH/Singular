@@ -108,18 +108,7 @@ namespace Singular.ClassSpecific.Mage
                                 )
                             ),
 
-                        Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !ShouldSummonTable),
-                        Spell.BuffSelf("Conjure Mana Gem", ret => !HaveManaGem )
-/*
-                        new Throttle( 1,
-                            new Decorator(ret => !HaveManaGem && Spell.CanCastHack("Conjure Mana Gem"),
-                                new Sequence(
-                                    new Action(ret => Logger.Write("*Conjure Mana Gem")),
-                                    new Action(ret => SpellManager.Cast(759))
-                                    )
-                                )
-                            )
-*/ 
+                        Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !ShouldSummonTable)
                         )
                     )
                 );
@@ -229,8 +218,6 @@ namespace Singular.ClassSpecific.Mage
 
                     Spell.BuffSelf("Time Warp", ret => MageSettings.UseTimeWarp && NeedToTimeWarp),
 
-                    Common.CreateUseManaGemBehavior(ret => Me.ManaPercent < (SingularRoutine.CurrentWoWContext == WoWContext.Instances ? 20 : 80)),
-                
                     // , Spell.BuffSelf( "Ice Floes", req => Me.IsMoving)
 
                     CreateHealWaterElemental()

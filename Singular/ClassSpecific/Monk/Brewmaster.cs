@@ -54,7 +54,7 @@ namespace Singular.ClassSpecific.Monk
                         CreateDizzyingHazeSingleton(),
                         CreateCloseDistanceBehavior(),
                         Spell.Cast("Tiger Palm"),
-                        Spell.Cast("Expel Harm", ret => Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10),
+                        Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10),
                         Spell.Cast("Jab")
                         )
                     )
@@ -69,7 +69,7 @@ namespace Singular.ClassSpecific.Monk
                 _dishaze = new Throttle(
                     TimeSpan.FromMilliseconds(2500),
                     new PrioritySelector(
-                        ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => (u.SpellDistance() > 15 || u.IsMovingAway())),
+                        ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => !Me.HasMyAura("Dizzying Haze") && (u.SpellDistance() > 15 || u.IsMovingAway())),
                         Spell.CastOnGround("Dizzying Haze", on => on as WoWUnit, req => true, false)
                         )
                     );
@@ -93,7 +93,7 @@ namespace Singular.ClassSpecific.Monk
                         CreateCloseDistanceBehavior(),
                         CreateDizzyingHazeSingleton(),
                         Spell.Cast("Tiger Palm"),
-                        Spell.Cast("Expel Harm", ret => Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10),
+                        Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10),
                         Spell.Cast("Jab")
                 //Only roll to get to the mob quicker. 
                         )
@@ -140,7 +140,7 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
-        [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkBrewmaster, priority: 1)]
+        [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Instances, priority: 1)]
         public static Composite CreateBrewmasterMonkHeal()
         {
             return new PrioritySelector(
@@ -215,25 +215,35 @@ namespace Singular.ClassSpecific.Monk
                         // stun if configured to do so
                         Spell.Cast("Leg Sweep", ret => Spell.UseAOE && MonkSettings.StunMobsWhileSolo && SingularRoutine.CurrentWoWContext == WoWContext.Normal && Me.CurrentTarget.IsWithinMeleeRange),
 
-                        // make sure I have aggro.
+                        // taunt if needed
                         Spell.Cast("Provoke", ret => TankManager.Instance.NeedToTaunt.FirstOrDefault(), ret => SingularSettings.Instance.EnableTaunting),
-                        Spell.Cast("Keg Smash", ctx => Me.CurrentChi < (Me.MaxChi - 2)),
 
-                        // use dizzying only if target not in range of keg smash and running away or further than roll distance
-                        // ... avoid crowd controlled targets 
-                        new Throttle( TimeSpan.FromMilliseconds(2500),                           
-                            Spell.CastOnGround(
-                                "Dizzying Haze", 
-                                on => Me.CurrentTarget, 
-                                req => !Me.CurrentTarget.HasMyAura("Dizzying Haze")
-                                    && !Me.CurrentTarget.IsCrowdControlled()
-                                    && (Me.CurrentTarget.SpellDistance() > 15 || Me.CurrentTarget.IsMovingAway()), 
-                                waitForSpell: false
+                        Spell.Cast("Jab", req => Me.CurrentChi < Me.MaxChi && Me.CurrentEnergy > 85),
+
+                        new Decorator(
+                            req => Me.CurrentChi <= (Me.MaxChi - 2),
+                            new PrioritySelector(
+                                Spell.Cast("Keg Smash"),
+                                Spell.Cast("Expel Harm"),
+                                Spell.Cast("Jab")
                                 )
                             ),
 
-                        Spell.Cast("Tiger Palm", ret => Me.CurrentChi >= 1 && Me.HasKnownAuraExpired("Tiger Power")),
-                        Spell.Cast("Blackout Kick", ret => Me.CurrentChi >= 2),
+                        // use dizzying only if target not in range of keg smash or running away and doesnt have debuff
+                        CreateDizzyingHazeSingleton(),
+
+                        new Decorator(
+                            req => Me.CurrentChi > 2,
+                            new PrioritySelector(
+                                Spell.BuffSelf("Elusive Brew", ctx => MonkSettings.UseElusiveBrew && Me.HasAura("Elusive Brew", MonkSettings.ElusiveBrewMinumumCount)),
+                                Spell.BuffSelf("Purifying Brew", ctx => Me.HasAnyAura("Moderate Stagger", "Heavy Stagger") && Me.CurrentChi >= 3),
+                                Spell.Cast("Blackout Kick", ctx => SpellManager.HasSpell("Brewmaster Training") && Me.HasKnownAuraExpired("Shuffle", 1)),
+                                Spell.Cast("Guard"),
+                                Spell.Cast("Blackout Kick", req => Me.CurrentChi >= 4),
+                                Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired("Tiger Power", 2))
+                                )
+                            ),
+
                         Spell.Cast("Jab"),
 
                         CreateCloseDistanceBehavior()
@@ -264,8 +274,6 @@ namespace Singular.ClassSpecific.Monk
                 Spell.Cast("Jab")
                 );
         }
-
-        #region Instance
 
         [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Instances)]
         public static Composite CreateBrewmasterMonkInstanceCombat()
@@ -337,7 +345,7 @@ namespace Singular.ClassSpecific.Monk
                                         )
                                     ),
 
-                                Spell.Cast("Expel Harm", req => Me.HealthPercent < 90 && Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 10 * 10)),
+                                Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), req => Me.HealthPercent < 90 && Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 10 * 10)),
                                 Spell.Cast("Jab")
                                 )
                             ),
@@ -350,8 +358,6 @@ namespace Singular.ClassSpecific.Monk
                     )
                 );
         }
-
-        #endregion
 
         public static Composite CreateCloseDistanceBehavior()
         {

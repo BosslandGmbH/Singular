@@ -782,7 +782,9 @@ namespace Singular
                 _rangePullMore = Me.IsMelee() ? SingularSettings.Instance.PullMoreDistMelee : SingularSettings.Instance.PullMoreDistRanged;
                 Logger.Write("Pull More: will pull up to {0} from mob types=[{1}] within {2} yds during Combat", 
                     SingularSettings.Instance.PullMoreMobCount,
-                    SingularSettings.Instance.PullMoreTargetType,
+                    SingularSettings.Instance.UsePullMore != PullMoreUsageType.Auto 
+                        ? SingularSettings.Instance.PullMoreTargetType.ToString()
+                        : (SingularRoutine.IsQuestBotActive ? "Quest" : "Grind"),
                     _rangePullMore
                     );
             }
@@ -923,15 +925,6 @@ namespace Singular
                     b == null ? "(null)" : b.Name
                     );
             }
-            else if (SingularSettings.Instance.UsePullMore == PullMoreUsageType.Auto && SingularRoutine.IsQuestBotActive && !IsQuestProfileLoaded)
-            {
-                allow = false;
-                BotBase b = SingularRoutine.GetCurrentBotBase();
-                Logger.WriteDiagnostic("Pull More: disabled because use:{0} and botbase:{1} but no Quest profile loaded",
-                    SingularSettings.Instance.UsePullMore,
-                    b == null ? "(null)" : b.Name
-                    );
-            }
             else if (SingularSettings.Instance.PullMoreTargetType == PullMoreTargetType.None || SingularSettings.Instance.PullMoreMobCount <= 1)
             {
                 allow = false;
@@ -978,6 +971,11 @@ namespace Singular
                 new Sequence(
 
                     new PrioritySelector(
+
+                        new Decorator(
+                            req => SingularSettings.Instance.UsePullMore == PullMoreUsageType.Auto && SingularRoutine.IsQuestBotActive && !IsQuestProfileLoaded,
+                            new ActionAlwaysFail()
+                            ),
 
                         new Decorator(
                             req => Me.HealthPercent < SingularSettings.Instance.PullMoreMinHealth,
@@ -1109,7 +1107,7 @@ namespace Singular
                                                 && !Blacklist.Contains(t, BlacklistFlags.Pull | BlacklistFlags.Combat)
                                                 && Unit.ValidUnit(t)
                                                 && t.Level <= (Me.Level + 2)
-                                                && whereClause(t)
+                                                && (whereClause(t) || Targeting.Instance.TargetList.Any(u => u.Guid == t.Guid))
                                                 && t.SpellDistance() <= _rangePullMore
                                             )
                                         .OrderBy(k => (long)k.DistanceSqr)
@@ -1125,7 +1123,7 @@ namespace Singular
                                             unit.IsTagged.ToYN()
                                             );
 
-                                        Logger.Write(Color.White, "Pull More: pulling {0} #{1} - {2} @ {3:F1} yds", _PullMoreTargetFindType, _mobCountInCombat, nextPull.SafeName(), nextPull.SpellDistance());
+                                        Logger.Write(Color.White, "Pull More: pulling {0} #{1} - {2} @ {3:F1} yds", _PullMoreTargetFindType, _mobCountInCombat + 1, nextPull.SafeName(), nextPull.SpellDistance());
                                         BotPoi poi = new BotPoi(nextPull, PoiType.Kill, NavType.Run);
                                         Logger.WriteDebug("Setting BotPoi to Kill {0}", nextPull.SafeName());
                                         Styx.CommonBot.POI.BotPoi.Current = poi;
@@ -1168,12 +1166,12 @@ namespace Singular
             {
                 if (SingularRoutine.IsQuestBotActive)
                 {
-                    _PullMoreTargetFindType = "QuestProfileMob";
+                    _PullMoreTargetFindType = "Quest Mob";
                     return PullMoreQuestTargetsDelegate();
                 }
                 else if (SingularRoutine.IsGrindBotActive)
                 {
-                    _PullMoreTargetFindType = "GrindProfileMob";
+                    _PullMoreTargetFindType = "Grind Mob";
                     return PullMoreGrindTargetsDelegate();
                 }
             }
@@ -1183,7 +1181,7 @@ namespace Singular
             switch (SingularSettings.Instance.PullMoreTargetType)
             {
                 case PullMoreTargetType.LikeCurrent:
-                    _PullMoreTargetFindType = "LikeCurrentMob";
+                    _PullMoreTargetFindType = "Like Current";
                     factions = new HashSet<uint>(
                         ObjectManager.GetObjectsOfType<WoWUnit>(allowInheritance: true, includeMeIfFound: false)
                             .Where(u => u.TaggedByMe || u.Aggro || u.PetAggro)
@@ -1194,13 +1192,13 @@ namespace Singular
                     break;
 
                 case PullMoreTargetType.Hostile:
-                    _PullMoreTargetFindType = "HostileMob";
+                    _PullMoreTargetFindType = "Hostile Mob";
                     whereClause = t => t.IsHostile;
                     break;
 
                 default:
                 case PullMoreTargetType.All:
-                    _PullMoreTargetFindType = "AnyMob";
+                    _PullMoreTargetFindType = "Any Mob";
                     whereClause = t => true;
                     break;
             }
@@ -1237,10 +1235,12 @@ namespace Singular
 
             _pmGuids = null;
 
-            var questObjective = Bots.Quest.QuestOrder.QuestOrder.Instance.CurrentNode as Styx.CommonBot.Profiles.Quest.Order.ObjectiveNode;
             var killObjectives = new List<Quest.QuestObjective>();
             var collectObjectives = new List<Quest.QuestObjective>();
-            
+
+#if OLD_WAY
+            // find only quest associated with current QuestOrder
+            var questObjective = Bots.Quest.QuestOrder.QuestOrder.Instance.CurrentNode as Styx.CommonBot.Profiles.Quest.Order.ObjectiveNode;
             if (questObjective != null)
             {
                 var playerQuest = Quest.FromId(questObjective.QuestId);
@@ -1260,10 +1260,48 @@ namespace Singular
                     }
                 }
             }
+#else
+            // loop through all open quests
+            foreach (var playerQuest in Styx.WoWInternals.QuestLog.Instance.GetAllQuests())
+            {
+                if (playerQuest.IsCompleted || playerQuest.IsFailed)
+                    continue;
+
+                // Logger.WriteDiagnostic("Quest: {0} #{1}", playerQuest.Name, playerQuest.Id);
+                var objectives = playerQuest.GetObjectives();
+
+                WoWDescriptorQuest wd;
+                playerQuest.GetData(out wd);
+                string wdout = "";
+
+                foreach (ushort i in wd.ObjectivesDone)
+                {
+                    wdout += i.ToString() + " ";
+                }
+
+                // Logger.WriteDiagnostic("   Completed: {0}", wdout);
+                foreach (var objective in objectives)
+                {
+                    if (wd.ObjectivesDone[objective.Index] < objective.Count)
+                    {
+                        if (objective.Type == Quest.QuestObjectiveType.KillMob)
+                        {
+                            // Logger.WriteDiagnostic("   KillQuestObj:  #{0}  {1} {2}", objective.ID, objective.Index, objective.Count);
+                            killObjectives.Add(objective);
+                        }
+                        else if (objective.Type == Quest.QuestObjectiveType.CollectItem)
+                        {
+                            // Logger.WriteDiagnostic("   CollQuestObj:  #{0}  {1} {2}", objective.ID, objective.Index, objective.Count);
+                            collectObjectives.Add(objective);
+                        }
+                    }
+                }
+            }
+#endif
 
             if (!killObjectives.Any() && !collectObjectives.Any())
             {
-                Logger.WriteDiagnostic("PullMoreQuestMobs: no supported Quest Objectives are active");
+                // Logger.WriteDiagnostic("PullMoreQuestMobs: no supported Quest Objectives are active");
             }
             else
             {
@@ -1289,7 +1327,7 @@ namespace Singular
 
                 if (!_pmGuids.Any())
                 {
-                    Logger.WriteDiagnostic("PullMoreQuestMobs: no matching QuestMobs found");
+                    // Logger.WriteDiagnostic("PullMoreQuestMobs: no matching QuestMobs found");
                 }
             }
 
@@ -1305,66 +1343,57 @@ namespace Singular
             if (!IsQuestProfileLoaded)
                 return;
 
-            var questObjective = Bots.Quest.QuestOrder.QuestOrder.Instance.CurrentNode as Styx.CommonBot.Profiles.Quest.Order.ObjectiveNode;
-            var killObjectives = new List<Quest.QuestObjective>();
-            var collectObjectives = new List<Quest.QuestObjective>();
 
-            if (questObjective != null)
+            // loop through all open quests
+            foreach (var playerQuest in Styx.WoWInternals.QuestLog.Instance.GetAllQuests())
             {
-                if (questObjective.QuestId == _prevQuestId) 
-                    return;
+                var killObjectives = new List<Quest.QuestObjective>();
+                var collectObjectives = new List<Quest.QuestObjective>();
 
-                _prevQuestId = questObjective.QuestId;
-                var playerQuest = Quest.FromId(questObjective.QuestId);
+                Logger.WriteDiagnostic("-----------------------------");
+                var objectives = playerQuest.GetObjectives();
+                Logger.WriteDiagnostic("Quest: #{0} [{1}] complete:{2} failed:{3} objectiveCount:{4}",
+                    playerQuest.Id,
+                    playerQuest.Name,
+                    playerQuest.IsCompleted.ToYN(),
+                    playerQuest.IsFailed.ToYN(),
+                    objectives.Count()
+                    );
 
-                Logger.WriteDiagnostic("");
-                Logger.WriteDiagnostic("---- Current Quest Dump ----");
-                Logger.WriteDiagnostic("CurrQuestObjInfo: #{0} [{1}], Objective: type={2} #{3} [{4}] ", questObjective.QuestId, questObjective.QuestName, questObjective.ObjectiveType, questObjective.ObjectiveId, questObjective.ObjectiveName);
+                WoWDescriptorQuest wd;
+                playerQuest.GetData(out wd);
+                string wdout = "";
 
-                if (playerQuest != null)
-                {                       
-                    var objectives = playerQuest.GetObjectives();
-                    Logger.WriteDiagnostic("QuestInfo: #{0} [{1}] has {2} objectives",
-                        playerQuest.Id,
-                        playerQuest.Name,
-                        objectives.Count()
-                        );
+                foreach (ushort i in wd.ObjectivesDone)
+                {
+                    wdout += i.ToString() + " ";
+                }
 
-                    foreach (var objective in objectives)
+                Logger.WriteDiagnostic("   Completed: {0}", wdout);
+                foreach (var objective in objectives)
+                {
+                    Logger.WriteDiagnostic("   CurrQuestObjInfo: #{0} [{1}], Objective: type={2} #{3} idx={4} cnt={5} ", playerQuest.Id, playerQuest.Name, objective.Type, objective.ID, objective.Index, objective.Count);
+                    if (objective.Type == Quest.QuestObjectiveType.KillMob)
                     {
-                        if (objective.Type == Quest.QuestObjectiveType.KillMob)
-                        {
-                            Logger.WriteDiagnostic( "QuestObj: 'KillMob', ID={0}, Count={1}, Obj='{2}'",
-                                objective.ID,
-                                objective.Count,
-                                objective.Objective
-                                );
-                            killObjectives.Add(objective);
-                        }
-                        else if (objective.Type == Quest.QuestObjectiveType.CollectItem)
-                        {
-                            Logger.WriteDiagnostic("QuestObj: 'CollectItem', ID={0}, Count={1}, Obj='{2}'",
-                                objective.ID,
-                                objective.Count,
-                                objective.Objective
-                                );
-                            collectObjectives.Add(objective);
-                        }
+                        killObjectives.Add(objective);
+                    }
+                    else if (objective.Type == Quest.QuestObjectiveType.CollectItem)
+                    {
+                        collectObjectives.Add(objective);
                     }
                 }
 
-                Logger.WriteDiagnostic("-------------------");
                 if (!killObjectives.Any() && !collectObjectives.Any())
                 {
                     Logger.WriteDiagnostic("QuestObj: no supported Quest Objectives are active");
                 }
                 else
                 {
-                    foreach (WoWUnit u in ObjectManager.GetObjectsOfType<WoWUnit>())
+                    foreach (WoWUnit u in ObjectManager.GetObjectsOfType<WoWUnit>().Where(u => u.SpellDistance() < _rangePullMore))
                     {
                         WoWCache.CreatureCacheEntry cacheEntry;
                         if (!u.GetCachedInfo(out cacheEntry))
-                            Logger.WriteDiagnostic("QuestCache: {0} #{1} - no cache info", u.SafeName(), u.Entry);
+                            Logger.WriteDiagnostic("      QuestCache: {0} #{1} - no cache info", u.SafeName(), u.Entry);
                         else
                         {
                             string questItems = "";
@@ -1377,7 +1406,7 @@ namespace Singular
                             if (string.IsNullOrEmpty(questItems))
                                 questItems = "-no quest items found-";
 
-                            Logger.WriteDiagnostic("QuestCache: {0} #{1} - cid={2} id0={3} id1={4} collectitems={5}",
+                            Logger.WriteDiagnostic("      QuestCache: {0} #{1} - cid={2} id0={3} id1={4} questitems={5}",
                                 u.SafeName(),
                                 u.Entry,
                                 cacheEntry.Id,
@@ -1390,10 +1419,10 @@ namespace Singular
 
                 }
 
-                Logger.WriteDiagnostic("-------------------");
-                Logger.WriteDiagnostic("");
             }
 
+            Logger.WriteDiagnostic("-------------------");
+            Logger.WriteDiagnostic("");
         }
 
         public static bool IsQuestProfileLoaded

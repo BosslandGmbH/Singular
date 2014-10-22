@@ -136,12 +136,7 @@ namespace Singular.ClassSpecific.Mage
                                 // Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Inferno Blast") && Me.CurrentTarget.HasAnyAura("Pyroblast", "Ignite", "Combustion")),
                                 Spell.Cast("Dragon's Breath", ret => Me.CurrentTarget.DistanceSqr <= 12 * 12),
-                                Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
-                                Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3),
-                                new Decorator(
-                                    ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3,
-                                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 10f, 5f)
-                                    )
+                                Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location)
                                 )
                             ),
 
@@ -164,19 +159,16 @@ namespace Singular.ClassSpecific.Mage
                             ret =>  !Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire),
                             new PrioritySelector(
                                 Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
-                                Spell.Cast("Pyroblast", 
-                                    ret => Me.ActiveAuras.ContainsKey("Pyroblast!") 
+                                Spell.Cast("Pyroblast",
+                                    ret => Me.ActiveAuras.ContainsKey("Pyroblast!") && Me.ActiveAuras.ContainsKey("Heating Up")
                                         || (Me.CurrentTarget.TreatAsFrozen() && !Unit.NearbyUnitsInCombatWithMeOrMyStuff.Any(u => u.Guid != Me.CurrentTargetGuid))
                                         || (Me.CurrentTarget.TimeToDeath() > 15 && !Me.CurrentTarget.HasAura("Pyroblast"))),
                                 Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
-                                Spell.Cast("Fire Blast", ret => !SpellManager.HasSpell("Inferno Blast")),
-                                Spell.Cast("Scorch"),
-                                Spell.Cast("Fireball")
+                                Spell.Cast("Fireball", ret => !SpellManager.HasSpell("Inferno Blast")),
+                                Spell.Cast("Scorch")
                                 )
                             ),
 
-                        // 
-                        Spell.Cast("Ice Lance", ret => ((Me.IsMoving && Spell.HaveAllowMovingWhileCastingAura() ) || Me.CurrentTarget.TreatAsFrozen()) && Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire)),
                         Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Fireball") || Me.CurrentTarget.IsImmune(WoWSpellSchool.Fire))
                         )
                     ),
@@ -278,12 +270,7 @@ namespace Singular.ClassSpecific.Mage
                                 // Movement.CreateEnsureMovementStoppedBehavior(5f),
                                 Spell.Cast("Inferno Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
                                 Spell.Cast("Dragon's Breath", ret => Me.CurrentTarget.DistanceSqr <= 12 * 12),
-                                Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
-                                Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3),
-                                new Decorator( 
-                                    ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3,
-                                    Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 10f, 5f)
-                                    )
+                                Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location)
                                 )
                             ),
 
@@ -292,9 +279,10 @@ namespace Singular.ClassSpecific.Mage
                         // Single Target
                         // living bomb in Common
                         Spell.Cast("Combustion", ret => Me.CurrentTarget.HasMyAura("Ignite")),
-                        Spell.Cast("Pyroblast", ret => Me.ActiveAuras.ContainsKey("Pyroblast!")),
+                        Spell.Cast("Pyroblast", ret => Me.ActiveAuras.ContainsKey("Pyroblast!") && Me.ActiveAuras.ContainsKey("Heating Up")),
                         Spell.Cast("Inferno Blast", ret => Me.ActiveAuras.ContainsKey("Heating Up")),
                         Spell.Cast("Fireball"),
+                        Spell.Cast("Scorch"),
 
                         Spell.Cast("Frostfire Bolt")
                         )

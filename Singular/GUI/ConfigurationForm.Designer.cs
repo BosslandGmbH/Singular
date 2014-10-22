@@ -60,13 +60,13 @@
             this.lblAuxTargets = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.grpFooter = new System.Windows.Forms.GroupBox();
+            this.btnDump = new System.Windows.Forms.Button();
             this.btnLogMark = new System.Windows.Forms.Button();
             this.btnSaveAndClose = new System.Windows.Forms.Button();
             this.lblVersion = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.btnDump = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabGeneral.SuspendLayout();
             this.tabClass.SuspendLayout();
@@ -440,13 +440,24 @@
             this.grpFooter.TabIndex = 5;
             this.grpFooter.TabStop = false;
             // 
+            // btnDump
+            // 
+            this.btnDump.ForeColor = System.Drawing.SystemColors.ControlDark;
+            this.btnDump.Location = new System.Drawing.Point(234, 11);
+            this.btnDump.Name = "btnDump";
+            this.btnDump.Size = new System.Drawing.Size(23, 19);
+            this.btnDump.TabIndex = 8;
+            this.btnDump.Text = "Q";
+            this.btnDump.UseVisualStyleBackColor = true;
+            this.btnDump.Click += new System.EventHandler(this.btnDump_Click);
+            // 
             // btnLogMark
             // 
             this.btnLogMark.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnLogMark.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnLogMark.Location = new System.Drawing.Point(132, 33);
+            this.btnLogMark.Location = new System.Drawing.Point(132, 35);
             this.btnLogMark.Name = "btnLogMark";
-            this.btnLogMark.Size = new System.Drawing.Size(96, 23);
+            this.btnLogMark.Size = new System.Drawing.Size(96, 26);
             this.btnLogMark.TabIndex = 6;
             this.btnLogMark.Text = "LOGMARK!";
             this.toolTip1.SetToolTip(this.btnLogMark, "Add a LogMark to log file to simplify indicating where a problem occurred");
@@ -457,9 +468,9 @@
             // 
             this.btnSaveAndClose.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnSaveAndClose.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnSaveAndClose.Location = new System.Drawing.Point(234, 33);
+            this.btnSaveAndClose.Location = new System.Drawing.Point(234, 35);
             this.btnSaveAndClose.Name = "btnSaveAndClose";
-            this.btnSaveAndClose.Size = new System.Drawing.Size(96, 23);
+            this.btnSaveAndClose.Size = new System.Drawing.Size(96, 26);
             this.btnSaveAndClose.TabIndex = 7;
             this.btnSaveAndClose.Text = "Save && Close";
             this.btnSaveAndClose.UseVisualStyleBackColor = true;
@@ -495,17 +506,6 @@
             this.label1.Size = new System.Drawing.Size(79, 25);
             this.label1.TabIndex = 4;
             this.label1.Text = "Singular";
-            // 
-            // btnDump
-            // 
-            this.btnDump.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnDump.Location = new System.Drawing.Point(234, 10);
-            this.btnDump.Name = "btnDump";
-            this.btnDump.Size = new System.Drawing.Size(96, 23);
-            this.btnDump.TabIndex = 8;
-            this.btnDump.Text = "Dump";
-            this.btnDump.UseVisualStyleBackColor = true;
-            this.btnDump.Click += new System.EventHandler(this.btnDump_Click);
             // 
             // ConfigurationForm
             // 

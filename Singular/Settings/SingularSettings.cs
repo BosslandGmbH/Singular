@@ -991,7 +991,7 @@ namespace Singular.Settings
         [DefaultValue(PullMoreUsageType.Auto)]
         [Category("Enemy Control - Pull More!")]
         [DisplayName("Pull More Allowed")]
-        [Description("Auto: enable the feature only with Grind Bot; Enable: pull adds based upon settings; None: disable pull more feature")]
+        [Description("Auto: enable the feature only with Questing and Grind Bot; Enable: pull adds based upon settings; None: disable pull more feature")]
         public PullMoreUsageType UsePullMore
         {
             get

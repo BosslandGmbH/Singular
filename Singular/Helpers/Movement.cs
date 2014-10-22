@@ -619,7 +619,7 @@ namespace Singular.Helpers
 
             internal CMTSData()
             {
-                Distance = (float) Math.Min( 5.0, StyxWoW.Me.CurrentTarget.Distance);
+                Distance = (float) Math.Max( 2.5, Math.Min( 5.0, StyxWoW.Me.CurrentTarget.Distance));
                 Facing = Me.RenderFacing;
                 Speed = Me.MovementInfo.RunSpeed;
                 MoveTime = Distance / Speed;

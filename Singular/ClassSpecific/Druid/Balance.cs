@@ -238,7 +238,7 @@ namespace Singular.ClassSpecific.Druid
                                     Spell.Buff("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
                                     Spell.Buff("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2))),
 
-                                    CastHurricaneBehavior( on => Me.CurrentTarget)
+                                    Common.CastHurricaneBehavior( on => Me.CurrentTarget)
                                     )
                                 )
                             ),
@@ -273,56 +273,6 @@ namespace Singular.ClassSpecific.Druid
                         )
                     )
                 );
-        }
-
-        private static Composite CastHurricaneBehavior( UnitSelectionDelegate onUnit)
-        {
-            return new Sequence(
-                ctx => onUnit(ctx),
-
-                Spell.CastOnGround("Hurricane", on => (WoWUnit) on, req => Me.HealthPercent > 40 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3, false),
-
-                new Wait(
-                    TimeSpan.FromMilliseconds(1000),
-                    until => Spell.IsCastingOrChannelling() && Unit.NearbyUnfriendlyUnits.Any(u => u.HasMyAura("Hurricane")),
-                    new ActionAlwaysSucceed()
-                    ),
-                new Wait(
-                    TimeSpan.FromSeconds(10),
-                    until =>
-                    {
-                        if (!Spell.IsCastingOrChannelling())
-                        {
-                            Logger.Write("Hurricane: no longer casting");
-                            return true;
-                        }
-                        if (Me.HealthPercent < 30)
-                        {
-                            Logger.Write("/cancel Hurricane since my health at {0:F1}%", Me.HealthPercent);
-                            return true;
-                        }
-                        int cnt = Unit.NearbyUnfriendlyUnits.Count(u => u.HasMyAura("Hurricane"));
-                        if (cnt < 3)
-                        {
-                            Logger.Write("/cancel Hurricane since only {0} targets effected", cnt);
-                            return true;
-                        }
-
-                        return false;
-                    },
-                    new ActionAlwaysSucceed()
-                    ),
-                new DecoratorContinue(
-                    req => Spell.IsChannelling(),
-                    new Action(r => SpellManager.StopCasting())
-                    ),
-                new WaitContinue(
-                    TimeSpan.FromMilliseconds(500),
-                    until => !Spell.IsChannelling(),
-                    new ActionAlwaysSucceed()
-                    )
-                )
-            ;
         }
 
         #endregion

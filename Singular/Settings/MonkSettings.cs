@@ -133,6 +133,17 @@ namespace Singular.Settings
 
         #endregion
 
+        #region Category: Self-Healing
+
+        [Setting]
+        [DefaultValue(40)]
+        [Category("Self-Heal")]
+        [DisplayName("Surging Mist %")]
+        [Description("Health % to cast this ability at. Set to 100 to cast on cooldown, Set to 0 to disable.")]
+        public int SurgingMist { get; set; }
+
+        #endregion
+
         #region Context Late Loading Wrappers
 
         private MistweaverHealSettings _mistbattleground;
@@ -428,6 +439,13 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(60)]
         [Category("Health %")]
+        [DisplayName("% Surging Mist")]
+        [Description("Health % to cast this ability at. Set to 0 to disable.")]
+        public int SurgingMist { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Health %")]
         [DisplayName("% Chi Wave Talent")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int ChiWaveTalent { get; set; }
@@ -442,23 +460,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(60)]
         [Category("Health %")]
-        [DisplayName("% Zen Sphere Talent")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int ZenSphereTalent { get; set; }
-
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Health %")]
-        [DisplayName("% Zen Sphere Talent")]
+        [DisplayName("% Healing Sphere")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int HealingSphere { get; set; }
-
-        [Setting]
-        [DefaultValue(60)]
-        [Category("Health %")]
-        [DisplayName("% Zen Meditation")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int ZenMeditation { get; set; }
 
         [Setting]
         [DefaultValue(1)]
@@ -472,14 +476,7 @@ namespace Singular.Settings
         [Category("Target Minimum")]
         [DisplayName("Count Chi Burst Talent")]
         [Description("Min number of players healed")]
-        public int CountChiBurstTalent { get; set; }      
-
-        [Setting]
-        [DefaultValue(1)]
-        [Category("Target Minimum")]
-        [DisplayName("Count Zen Meditation")]
-        [Description("Min number of players protected")]
-        public int CountZenMeditation { get; set; }
-
+        public int CountChiBurstTalent { get; set; }
     }
+
 }

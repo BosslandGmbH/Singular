@@ -1889,8 +1889,9 @@ namespace Singular.Helpers
                                     new Action(r => Lua.DoString("SpellStopTargeting()"))   //just in case
                                     ),
 
-                                new Wait(TimeSpan.FromMilliseconds(750),
-                                    ret => Spell.GetPendingCursorSpell == null || Me.IsCasting || Me.IsChanneling,
+                                new Wait(
+                                    TimeSpan.FromMilliseconds(750),
+                                    until => Me.IsCasting || Me.IsChanneling,
                                     new ActionAlwaysSucceed()
                                     ),
 

@@ -122,54 +122,36 @@ namespace Singular.ClassSpecific.Mage
                         Helpers.Common.CreateInterruptBehavior(),
 
                         Spell.BuffSelf("Arcane Power"),
-/*
-                        new Decorator(
-                            ret => !Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr < 10 * 10 && u.IsCrowdControlled()),
-                            new PrioritySelector(
-                                Spell.BuffSelf("Frost Nova",
-                                    ret => Unit.NearbyUnfriendlyUnits.Any(u =>
-                                                    u.DistanceSqr <= 8 * 8 && !u.IsFrozen() && !u.Stunned))
-                                )),
-*/
+
                         // AoE comes first
                         new Decorator(
-                            ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
-                                // Movement.CreateEnsureMovementStoppedBehavior(5f),
-                                Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
-                                Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
-                                Spell.Cast("Arcane Barrage", ret => Me.HasAura("Arcane Charge", Math.Min(6, Unit.UnfriendlyUnitsNearTarget(10f).Count()))),
-                                Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3),
-                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 8f, 5f)
+                                Spell.Cast("Arcane Barrage", ret => Me.HasAura("Arcane Charge", 4)),
+                                Spell.Cast(
+                                    "Cone of Cold",
+                                    req => Clusters.GetClusterCount(Me.CurrentTarget, Unit.UnfriendlyUnitsNearTarget(12f), ClusterType.Cone, 12) >= 3
+                                    ),
+                                Spell.Cast(
+                                    "Arcane Explosion",
+                                    req => Unit.UnfriendlyUnits(8).Count() >= 3
+                                    )
                                 )
                             ),
 
-                        // Movement.CreateEnsureMovementStoppedBehavior(35f),
-                        Common.CreateMagePolymorphOnAddBehavior(),
+                        new Decorator(
+                            req => Me.HasAura("Arcane Power"),
+                            new PrioritySelector(
+                                Spell.Cast("Arcane Missiles"),
+                                Spell.Cast("Arcane Blast")
+                                )
+                            ),
 
-                        new Action( r => {
-                            useArcaneNow = false;
-                            uint ac = Me.GetAuraStacks("Arcane Charge");
-                            if (ac >= 4)
-                                useArcaneNow = true;
-                            else
-                            {
-                                long ttd = Me.CurrentTarget.TimeToDeath();
-                                if (ttd > 6)
-                                    useArcaneNow = ac >= 2;
-                                else if (ttd > 3)
-                                    useArcaneNow = ac >= 1;
-                                else
-                                    useArcaneNow = ttd >= 0;
-                            }
-                            return RunStatus.Failure;
-                            }),
-
-                        // Living Bomb in CombatBuffs()
-                        Spell.Cast("Arcane Missiles", ret => useArcaneNow && Me.HasAura("Arcane Missiles!")),
-                        Spell.Cast("Arcane Barrage", ret => useArcaneNow),
+                        Spell.Cast("Arcane Missiles", ret => Me.GetAuraStacks("Arcane Charge") >= 4),
+                        Spell.Cast("Arcane Barrage", ret => Me.GetAuraStacks("Arcane Charge") >= 4),
                         Spell.Cast("Arcane Blast"),
 
+                        // shouldnt be needed, but keep as a stop-safe filler
                         Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast"))
                         )
                     )
@@ -204,11 +186,37 @@ namespace Singular.ClassSpecific.Mage
 
                         Spell.BuffSelf("Arcane Power"),
                         Spell.BuffSelf("Mirror Image"),
-                        Spell.BuffSelf("Flame Orb"),
-                        Spell.Cast("Arcane Missiles", ret => Me.HasAura("Arcane Missiles!")),
-                        Spell.Cast("Arcane Barrage", ret => Me.GetAuraByName("Arcane Charge") != null && Me.GetAuraByName("Arcane Charge").StackCount >= 4),
-                        Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast")),
-                        Spell.Cast("Arcane Blast")
+
+                        // AoE comes first
+                        new Decorator(
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            new PrioritySelector(
+                                Spell.Cast("Arcane Barrage", ret => Me.HasAura("Arcane Charge", 4)),
+                                Spell.Cast(
+                                    "Cone of Cold",
+                                    req => Clusters.GetClusterCount(Me.CurrentTarget, Unit.UnfriendlyUnitsNearTarget(12f), ClusterType.Cone, 12) >= 3
+                                    ),
+                                Spell.Cast(
+                                    "Arcane Explosion",
+                                    req => Unit.UnfriendlyUnits(8).Count() >= 3
+                                    )
+                                )
+                            ),
+
+                        new Decorator(
+                            req => Me.HasAura("Arcane Power"),
+                            new PrioritySelector(
+                                Spell.Cast("Arcane Missiles"),
+                                Spell.Cast("Arcane Blast")
+                                )
+                            ),
+
+                        Spell.Cast("Arcane Missiles", ret => Me.GetAuraStacks("Arcane Charge") >= 4),
+                        Spell.Cast("Arcane Barrage", ret => Me.GetAuraStacks("Arcane Charge") >= 4),
+                        Spell.Cast("Arcane Blast"),
+
+                        // shouldnt be needed, but keep as a stop-safe filler
+                        Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast"))
                         )
                     )
                 );
@@ -239,24 +247,33 @@ namespace Singular.ClassSpecific.Mage
 
                         // AoE comes first
                         new Decorator(
-                            ret => Spell.UseAOE && Me.Level >= 25 && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                            ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
                             new PrioritySelector(
-                                // Movement.CreateEnsureMovementStoppedBehavior(5f),
-                                Spell.Cast("Fire Blast", ret => TalentManager.HasGlyph("Fire Blast") && Me.CurrentTarget.HasAnyAura("Frost Bomb", "Living Bomb", "Nether Tempest")),
-                                Spell.CastOnGround("Flamestrike", loc => Me.CurrentTarget.Location),
-                                Spell.Cast("Arcane Barrage", ret => Me.HasAura( "Arcane Charge", Math.Min( 6, Unit.UnfriendlyUnitsNearTarget(10f).Count()))),
-                                Spell.Cast("Arcane Explosion", ret => Unit.NearbyUnfriendlyUnits.Count(t => t.Distance <= 10) >= 3),
-                                Movement.CreateMoveToUnitBehavior( on => StyxWoW.Me.CurrentTarget, 8f, 5f)
+                                Spell.Cast("Arcane Barrage", ret => Me.HasAura( "Arcane Charge", 4)),
+                                Spell.Cast(
+                                    "Cone of Cold", 
+                                    req => Clusters.GetClusterCount( Me.CurrentTarget, Unit.UnfriendlyUnitsNearTarget(12f), ClusterType.Cone, 12) >= 3
+                                    ),
+                                Spell.Cast(
+                                    "Arcane Explosion", 
+                                    req => Unit.UnfriendlyUnits(8).Count() >= 3
+                                    )                                   
                                 )
                             ),
 
-                        // Movement.CreateEnsureMovementStoppedBehavior(35f),
+                        new Decorator(
+                            req => Me.HasAura("Arcane Power"),
+                            new PrioritySelector(
+                                Spell.Cast("Arcane Missiles"),
+                                Spell.Cast("Arcane Blast")
+                                )
+                            ),
 
-                        // Living Bomb in CombatBuffs()
-                        Spell.Cast("Arcane Missiles", ret => Me.HasAura("Arcane Missiles!", 2)),
+                        Spell.Cast("Arcane Missiles", ret => Me.GetAuraStacks("Arcane Charge") >= 4),
                         Spell.Cast("Arcane Barrage", ret => Me.GetAuraStacks("Arcane Charge") >= 4),
                         Spell.Cast("Arcane Blast"),
 
+                        // shouldnt be needed, but keep as a stop-safe filler
                         Spell.Cast("Frostfire Bolt", ret => !SpellManager.HasSpell("Arcane Blast"))
                         )
                     ),

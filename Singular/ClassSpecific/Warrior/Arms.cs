@@ -165,41 +165,12 @@ namespace Singular.ClassSpecific.Warrior
 
                         CreateArmsAoeCombat(ret => Unit.NearbyUnfriendlyUnits.Count(u => u.Distance < (u.MeleeDistance() + 1))),
 
+                        // Noxxic
+                        //----------------
                         new Decorator(
-                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.IcyVeins,
-
+                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.Noxxic,
                             new PrioritySelector(
-                                // Noxxic
-                                //----------------
-                                // 1. Mortal Strike on cooldown. Applies Deep Wounds.
-                                Spell.Cast("Mortal Strike"),
 
-                                // 2. Colossus Smash Use as often as possible. Watch for Sudden Death procs.
-                                Spell.Cast("Colossus Smash"),
-
-                                // 3. Heroic Leap if Colossus Smash buff is up. Not on the GCD!
-/*
-                                new Sequence(
-                                    Spell.CastOnGround("Heroic Leap", loc => Me.Location, req => Me.GotTarget && Me.CurrentTarget.SpellDistance() < 8 && Me.CurrentTarget.HasAura("Colossus Smash"), false),
-                                    new ActionAlwaysFail()),
-*/
-                                // 4. Heroic Strike to dump Rage (70+) when Colossus Smash is up. Not on the GCD!
-                                //      added cast when Colossus Smash not learned yet -OR- target will die soon
-                                new Sequence(
-                                    Spell.Cast("Heroic Strike", req => NeedHeroicStrikeDumpNoxxic ),
-                                    new ActionAlwaysFail()
-                                    ),
-
-                                // 5. Execute on cooldown when target is below 20% health.
-                                Spell.Cast("Execute"),
-
-                                // 6. Overpower whenever available.
-                                Spell.Cast("Overpower"),
-
-                                // 7. Slam to dump Rage (40+) when target is above 20% Health.
-                                Spell.Cast("Slam", ret => Me.RagePercent >= 40 && Me.CurrentTarget.HealthPercent > 20),
-
-                                // Added Use of Non-Rage consuming Abilities for players/bosses
                                 new Decorator(
                                     ret => Spell.UseAOE && Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.Distance < 8,
                                     new PrioritySelector(
@@ -208,13 +179,53 @@ namespace Singular.ClassSpecific.Warrior
                                         Spell.Cast("Shockwave"),
                                         Spell.Cast("Dragon Roar")
                                         )
+                                    ),
+
+                                new Decorator(
+                                    req => !Me.CurrentTarget.HasAura("Colossus Smash"),
+                                    new PrioritySelector(
+                                        // 1 Rend maintained at all times. Refresh with < 5 sec remaining.
+                                        Spell.Cast( "Rend", req => Me.CurrentTarget.HasAuraExpired("Rend", 4)),
+
+                                        // 2 Execute with >= 60 Rage and target is below 20% health.
+                                        Spell.Cast( "Execute", req => Me.CurrentRage > 60 && Me.CurrentTarget.HealthPercent <= 20),
+
+                                        // 3 Mortal Strike on cooldown when target is above 20% health.
+                                        Spell.Cast( "Mortal Strike", req => Me.HealthPercent > 20),
+
+                                        // 4 Colossus Smash as often as possible.
+                                        Spell.Cast( "Colossus Smash"),
+
+                                        // 5 Whirlwind as a filler ability when target is above 20% health.
+                                        Spell.Cast( "Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 ),
+
+                                        // 6 Run out of range and Charge back for additional Rage.
+                                        new ActionAlwaysFail()
+                                        )
+                                    ),
+
+                                new Decorator(
+                                    req => Me.CurrentTarget.HasAura("Colossus Smash"),
+                                    new PrioritySelector(
+                                        // 1 Execute on cooldown when target is below 20% health.
+                                        Spell.Cast( "Execute", req => Me.CurrentTarget.HealthPercent <= 20),
+
+                                        // 2 Mortal Strike on cooldown when target is above 20% health.
+                                        Spell.Cast( "Mortal Strike", req => Me.HealthPercent > 20),
+
+                                        // 3 Whirlwind as a filler ability when target is above 20% health.
+                                        Spell.Cast( "Whirlwind", req => Me.CurrentTarget.HealthPercent > 20 ),
+
+                                        // 4 Run out of range and Charge back for additional Rage.
+                                        new ActionAlwaysFail()
+                                        )
                                     )
                                 )
                             ),
 
 
                         new Decorator(
-                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.Noxxic,
+                            ret => WarriorSettings.ArmsSpellPriority == Singular.Settings.WarriorSettings.SpellPriority.IcyVeins,
                             new PrioritySelector(
                                 // Icy-Veins
                                 //-------------------------------

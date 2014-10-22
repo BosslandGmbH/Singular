@@ -323,35 +323,7 @@ namespace Singular.ClassSpecific.Monk
                             Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
                             Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
 
-                            Spell.Cast("Expel Harm", on =>
-                            {
-                                if (Spell.IsSpellOnCooldown("Expel Harm"))
-                                    return null;
-
-                                WoWUnit target = null;
-                                WoWUnit targetOffheal = null;
-
-                                if (Me.HealthPercent < MonkSettings.ExpelHarmHealth)
-                                    target = Me;
-                                else if (TalentManager.HasGlyph("Targeted Explusion"))
-                                {
-                                    targetOffheal = Unit.GroupMembers
-                                        .Where(p => p.IsAlive && p.DistanceSqr < 40 * 40)
-                                        .OrderBy(p => p.PredictedHealthPercent())
-                                        .FirstOrDefault();
-                                    target = targetOffheal;
-                                }
-
-                                if (target != null)
-                                    Logger.WriteDebug("Expel Harm:  Heal {0} @ actual:{1:F1}% predict:{2:F1}% and Me moving:{3}", target.SafeName(), target.HealthPercent, target.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving.ToYN());
-                                else if (Me.CurrentChi <= (Me.MaxChi - 2))
-                                {
-                                    target = targetOffheal ?? Me;
-                                    Logger.WriteDebug("Expel Harm:  Chi Build (Chi={0}) {1} @ actual:{2:F1}% predict:{3:F1}% and Me moving:{4}", Me.CurrentChi, target.SafeName(), target.HealthPercent, target.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving.ToYN());
-                                }
-
-                                return target;
-                            }),
+                            Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget()),
 
                             Spell.Cast(sp => "Crackling Jade Lightning", mov => true, on => Me.CurrentTarget, req => Me.CurrentTarget.SpellDistance() < 40, cancel => false),
                             Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
@@ -441,7 +413,7 @@ namespace Singular.ClassSpecific.Monk
                                     Spell.Cast("Tiger Palm", ret => Me.CurrentChi > 0 && Me.HasKnownAuraExpired("Tiger Power")),
                                     Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi),
 
-                                    Spell.Cast("Expel Harm", ret => Me.CurrentChi < (Me.MaxChi - 2) || Me.HealthPercent < 80),
+                                    Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.CurrentChi < (Me.MaxChi - 2) || Me.HealthPercent < 80),
 
                                     Spell.Cast(
                                         "Crackling Jade Lightning",
@@ -566,7 +538,7 @@ namespace Singular.ClassSpecific.Monk
                                     ),
 
                                 // I WANT CHI!!!
-                                Spell.Cast("Expel Harm", ret => Me.CurrentChi < Me.MaxChi),
+                                Spell.Cast("Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.CurrentChi < Me.MaxChi),
 
                                 // deal with buffs as highest priority
                                 new Decorator(
@@ -1121,7 +1093,7 @@ namespace Singular.ClassSpecific.Monk
                 HealthToPriority(1) + 500,
                 "Expel Harm in Combat for Chi",
                 "Expel Harm",
-                Spell.BuffSelf("Expel Harm", req => Me.Combat && Me.CurrentChi < Me.MaxChi )
+                Spell.Buff("Expel Harm", on => Common.BestExpelHarmTarget(), req => Me.Combat && Me.CurrentChi < Me.MaxChi)
                 );
 
             if (!selfOnly)

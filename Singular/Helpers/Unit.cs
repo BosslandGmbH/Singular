@@ -464,6 +464,11 @@ namespace Singular.Helpers
             return HasAura(unit, aura, 0);
         }
 
+        public static bool HasAura(this WoWUnit unit, int spellId)
+        {
+            return HasAura(unit, spellId, 0);
+        }
+
         /// <summary>
         ///  Checks the aura count by the name on specified unit.
         /// </summary>
@@ -474,6 +479,12 @@ namespace Singular.Helpers
         public static bool HasAura(this WoWUnit unit, string aura, int stacks)
         {
             return HasAura(unit, aura, stacks, null);
+        }
+
+
+        public static bool HasAura(this WoWUnit unit, int spellId, int stacks)
+        {
+            return HasAura(unit, spellId, stacks, null);
         }
 
 
@@ -760,6 +771,20 @@ namespace Singular.Helpers
 
             WoWAura wantedAura =
                 onUnit.GetAllAuras().Where(a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
+
+            if (wantedAura == null)
+                return 0;
+
+            return wantedAura.StackCount == 0 ? 1 : wantedAura.StackCount;
+        }
+
+        public static uint GetAuraStacks(this WoWUnit onUnit, int spellId, bool fromMyAura = true)
+        {
+            if (onUnit == null)
+                return 0;
+
+            WoWAura wantedAura =
+                onUnit.GetAllAuras().Where(a => a.SpellId == spellId && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
 
             if (wantedAura == null)
                 return 0;

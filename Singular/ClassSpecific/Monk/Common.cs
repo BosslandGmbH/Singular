@@ -110,11 +110,246 @@ namespace Singular.ClassSpecific.Monk
                         )
                     ),
 
-                // Rest up damnit! Do this first, so we make sure we're fully rested.
-                Rest.CreateDefaultRestBehaviour( null, "Resuscitate")
+                Common.CreateMonkDpsHealBehavior(),
+
+                // Rest up! Do this first, so we make sure we're fully rested.
+                Rest.CreateDefaultRestBehaviour( "Surging Mist", "Resuscitate")
                 );
         }
-        
+
+        public static Composite CreateMonkDpsHealBehavior()
+        {
+            Composite offheal;
+            if (!SingularSettings.Instance.DpsOffHealAllowed)
+                offheal = new ActionAlwaysFail();
+            else
+            {
+                offheal = new Decorator(
+                    ret => HealerManager.ActingAsOffHealer,
+                    CreateMonkOffHealBehavior()
+                    );
+            }
+
+            return new Decorator(
+                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                new PrioritySelector(
+
+                    Common.CreateHealingSphereBehavior(65),
+
+                    new Decorator(
+                        ret => !Me.Combat
+                            && !Me.IsMoving
+                            && Me.HealthPercent <= 85  // not redundant... this eliminates unnecessary GetPredicted... checks
+                            && SpellManager.HasSpell("Surging Mist")
+                            && Me.PredictedHealthPercent(includeMyHeals: true) < 85,
+                        new PrioritySelector(
+                            new Sequence(
+                                ctx => (float)Me.HealthPercent,
+                                new Action(r => Logger.WriteDebug("Surging Mist: {0:F1}% Predict:{1:F1}% and moving:{2}, cancast:{3}", (float)r, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack("Surging Mist", Me, skipWowCheck: false))),
+                                Spell.Cast(
+                                    "Surging Mist",
+                                    mov => true,
+                                    on => Me,
+                                    req => true,
+                                    cancel => Me.HealthPercent > 85
+                                    ),
+                                new WaitContinue(TimeSpan.FromMilliseconds(500), until => !Me.IsCasting && Me.HealthPercent > (1.1 * ((float)until)), new ActionAlwaysSucceed()),
+                                new Action(r => Logger.WriteDebug("Surging Mist: After Heal Attempted: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
+                                ),
+                            Spell.Buff( "Expel Harm", on => Me, req => Me.HealthPercent < MonkSettings.ExpelHarmHealth)
+                            )
+                        ),
+
+                    new Decorator(
+                        ret => Me.Combat,
+
+                        new PrioritySelector(
+
+                            // add buff / shield here
+
+                            // save myself if possible
+                            new Decorator(
+                                ret => (!Me.IsInGroup() || Battlegrounds.IsInsideBattleground)
+                                    && !Me.IsMoving 
+                                    && Me.HealthPercent < MonkSettings.SurgingMist
+                                    && Me.PredictedHealthPercent(includeMyHeals: true) < MonkSettings.SurgingMist,
+                                new PrioritySelector(
+                                    new Sequence(
+                                        ctx => (float)Me.HealthPercent,
+                                        new Action(r => Logger.WriteDebug("Surging Mist: {0:F1}% Predict:{1:F1}% and moving:{2}, cancast:{3}", (float)r, Me.PredictedHealthPercent(includeMyHeals: true), Me.IsMoving, Spell.CanCastHack("Surging Mist", Me, skipWowCheck: false))),
+                                        Spell.Cast(
+                                            "Surging Mist",
+                                            mov => true,
+                                            on => Me,
+                                            req => true,
+                                            cancel => Me.HealthPercent > 85
+                                            ),
+                                        new WaitContinue(TimeSpan.FromMilliseconds(500), until => !Me.IsCasting && Me.HealthPercent > (1.1 * ((float)until)), new ActionAlwaysSucceed()),
+                                        new Action(r => Logger.WriteDebug("Surging Mist: After Heal Attempted: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
+                                        ),
+                                    new Action(r => Logger.WriteDebug("Surging Mist: After Heal Skipped: {0:F1}% Predicted: {1:F1}%", Me.HealthPercent, Me.PredictedHealthPercent(includeMyHeals: true)))
+                                    )
+                                )
+                            )
+                        ),
+
+                    offheal
+                    )
+                );
+
+
+        }
+
+        private static WoWUnit _moveToHealUnit = null;
+
+        public static Composite CreateMonkOffHealBehavior()
+        {
+            HealerManager.NeedHealTargeting = true;
+            PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
+            int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, MonkSettings.OffHealSettings.SurgingMist);
+
+            bool moveInRange = (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds);
+
+            Logger.WriteDebugInBehaviorCreate("Monk Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
+/*
+            int dispelPriority = (SingularSettings.Instance.DispelDebuffs == RelativePriority.HighPriority) ? 999 : -999;
+            if (SingularSettings.Instance.DispelDebuffs != RelativePriority.None)
+                behavs.AddBehavior(dispelPriority, "Cleanse Spirit", null, Dispelling.CreateDispelBehavior());
+*/
+            #region Save the Group
+
+
+            #endregion
+
+            #region AoE Heals
+
+                behavs.AddBehavior(
+                    Mistweaver.HealthToPriority(MonkSettings.MistHealSettings.ChiWave) + 400,
+                    String.Format("Chi Wave on {0} targets @ {1}%", MonkSettings.OffHealSettings.CountChiWaveTalent, MonkSettings.OffHealSettings.ChiWaveTalent),
+                    "Chi Wave",
+                    CreateClusterHeal("Chi Wave", ClusterType.Cone, MonkSettings.OffHealSettings.ChiWaveTalent, MonkSettings.OffHealSettings.CountChiWaveTalent, 40)
+                    );
+
+                behavs.AddBehavior(
+                    Mistweaver.HealthToPriority(MonkSettings.MistHealSettings.ChiBurstTalent) + 400,
+                    String.Format("Chi Burst on {0} targets @ {1}%", MonkSettings.OffHealSettings.CountChiBurstTalent, MonkSettings.OffHealSettings.ChiBurstTalent),
+                    "Chi Burst",
+                    CreateClusterHeal("Chi Burst", ClusterType.Cone, MonkSettings.OffHealSettings.ChiBurstTalent, MonkSettings.OffHealSettings.CountChiBurstTalent, 40)
+                    );
+
+
+            #endregion
+
+            #region Single Target Heals
+
+            behavs.AddBehavior(Mistweaver.HealthToPriority(MonkSettings.OffHealSettings.SurgingMist),
+                string.Format("Surging Mist @ {0}%", MonkSettings.OffHealSettings.SurgingMist),
+                "Surging Mist",
+                Spell.Cast("Surging Mist",
+                    mov => true,
+                    on => (WoWUnit)on,
+                    req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < MonkSettings.OffHealSettings.SurgingMist,
+                    cancel => ((WoWUnit)cancel).HealthPercent > cancelHeal
+                    )
+                );
+
+            #endregion
+
+            behavs.OrderBehaviors();
+
+            if (Singular.Dynamics.CompositeBuilder.CurrentBehaviorType == BehaviorType.Heal )
+                behavs.ListBehaviors();
+
+            return new PrioritySelector(
+                ctx => HealerManager.FindLowestHealthTarget(), // HealerManager.Instance.FirstUnit,
+
+                new Decorator(
+                    ret => ret != null && (Me.Combat || ((WoWUnit)ret).Combat || ((WoWUnit)ret).PredictedHealthPercent() <= 99),
+
+                    new PrioritySelector(
+                        new Decorator(
+                            ret => !Spell.IsGlobalCooldown(),
+                            new PrioritySelector(
+
+                                behavs.GenerateBehaviorTree(),
+
+                                new Decorator(
+                                    ret => moveInRange,
+                                    new Sequence(
+                                        new Action(r => _moveToHealUnit = (WoWUnit)r),
+                                        new PrioritySelector(
+                                            Movement.CreateMoveToLosBehavior(on => _moveToHealUnit),
+                                            Movement.CreateMoveToUnitBehavior(on => _moveToHealUnit, 30f, 25f)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+        public static Composite CreateClusterHeal( string spell, ClusterType ct, int health, int range, int minCount)
+        {
+            return new Decorator(
+                req => (req as WoWUnit).HealthPercent < health,
+                new PrioritySelector(
+
+                    ctx => Clusters.GetBestUnitForCluster(HealerManager.Instance.TargetList.Where(u => u.HealthPercent <= health), ct, range),
+
+                    new Decorator(
+                        req =>
+                        {
+                            if (req == null)
+                                return false;
+
+                            if (!Spell.CanCastHack(spell, (WoWUnit)req))
+                                return false;
+
+                            if (!((WoWUnit)req).InLineOfSpellSight)
+                                return false;
+
+                            int count = Clusters.GetClusterCount(
+                                (WoWUnit)req,
+                                HealerManager.Instance.TargetList.Where(u => u.HealthPercent <= health),
+                                ct,
+                                range
+                                );
+
+                            if (count < minCount)
+                                return false;
+
+                            Logger.Write(Color.White, "^Casting {0} on {1} in attempt to hit {2} members below {3}%", spell, ((WoWUnit)req).SafeName(), count, health);
+                            return true;
+                        },
+
+                        new Sequence(
+                            new DecoratorContinue(
+                                req => !Me.IsSafelyFacing((WoWUnit)req, 5f),
+                                new PrioritySelector(
+                                    new Sequence(
+                                        new Action(r => Logger.WriteDiagnostic("{0}: trying to face {1}", spell, ((WoWUnit)r).SafeName())),
+                                        new Action(r => ((WoWUnit)r).Face()),
+                                        new Wait(TimeSpan.FromMilliseconds(1500), until => Me.IsSafelyFacing((WoWUnit)until, 5f), new ActionAlwaysSucceed()),
+                                        new Action(r => Logger.Write("{0}:  succeeded at facing {1}", spell, ((WoWUnit)r).SafeName()))
+                                        ),
+                                    new Action(r =>
+                                    {
+                                        Logger.Write("{0}:  failed at facing {1}", spell, ((WoWUnit)r).SafeName());
+                                        return RunStatus.Failure;
+                                    })
+                                    )
+                                ),
+
+                            Spell.Cast(spell, mov => true, on => (WoWUnit)on, req => true, cancel => false)
+                            )
+                        )
+                    )
+                );
+
+        }
+
         /// <summary>
         /// a SpellManager.CanCast replacement to allow checking whether a spell can be cast 
         /// without checking if another is in progress, since Monks need to cast during
@@ -314,7 +549,7 @@ namespace Singular.ClassSpecific.Monk
 
                                 /* cancel when in range */
                                 new Wait( 
-                                    2,
+                                    TimeSpan.FromMilliseconds(2500),
                                     until => {
                                         if (!Me.Auras.ContainsKey("Flying Serpent Kick"))
                                         {
@@ -324,15 +559,21 @@ namespace Singular.ClassSpecific.Monk
 
                                         if (!hasFSKGlpyh)
                                         {
+                                            SpellFindResults sfr;
+                                            SpellManager.FindSpell("Flying Serpent Kick", out sfr);
+
                                             if (((until as WoWUnit).IsWithinMeleeRange || (until as WoWUnit).SpellDistance() < 8f))
                                             {
                                                 Logger.Write(Color.White, "/cancel Flying Serpent Kick in melee range of {0} @ {1:F1} yds", (until as WoWUnit).SafeName(), (until as WoWUnit).SpellDistance());
+                                                //SpellManager.Cast("Flying Serprent Kick");
+                                                // Lua.DoString("CastSpellByID(" + sfr.Original.Id + ")");
                                                 return true;
                                             }
-
-                                            if ((until as WoWUnit).IsBehind(Me))
+                                            else if ((until as WoWUnit).IsBehind(Me))
                                             {
                                                 Logger.Write(Color.White, "/cancel Flying Serpent Kick flew past {0} @ {1:F1} yds", (until as WoWUnit).SafeName(), (until as WoWUnit).SpellDistance());
+                                                //SpellManager.Cast("Flying Serprent Kick");
+                                                //Lua.DoString("CastSpellByID(" + sfr.Original.Id + ")");
                                                 return true;
                                             }
                                         }
@@ -353,7 +594,7 @@ namespace Singular.ClassSpecific.Monk
                                                 else
                                                 {
                                                     Logger.WriteDebug("CloseDistance: casting Flying Serpent Kick to cancel");
-                                                    SpellManager.Cast("Flying Serprent Kick");
+                                                    SpellManager.Cast(101545);
                                                 }
                                             }),
                                             /* wait until cancel takes effect */
@@ -361,7 +602,7 @@ namespace Singular.ClassSpecific.Monk
                                                 new Wait(
                                                     TimeSpan.FromMilliseconds(450),
                                                     until => !Me.Auras.ContainsKey("Flying Serpent Kick"),
-                                                    new Action( r => Logger.WriteDebug("CloseDistance: Flying Serpent Kick aura no longer exists"))
+                                                    new Action( r => Logger.WriteDebug("CloseDistance: Flying Serpent Kick complete, landed {0:F1} yds from {1}", (r as WoWUnit).SpellDistance(), (r as WoWUnit).SafeName()))
                                                     ),
                                                 new Action( r => {
                                                     Logger.WriteDebug("CloseDistance: error - Flying Serpent Kick was not removed - lag?");
@@ -636,7 +877,43 @@ namespace Singular.ClassSpecific.Monk
                     cancel => false
                     )
                 );
-            }   
+            }
+
+
+        /// <summary>
+        /// selects best target, favoring healing multiple group members followed by damaging multiple targets
+        /// </summary>
+        /// <returns></returns>
+        private static WoWUnit BestChiBurstTarget()
+        {
+            WoWUnit target = null;
+
+            if (Me.IsInGroup())
+                target = Clusters.GetBestUnitForCluster(
+                    Unit.NearbyGroupMembers.Where(m => m.IsAlive && m.HealthPercent < 80),
+                    ClusterType.PathToUnit,
+                    40f);
+
+            if (target == null || target.IsMe)
+                target = Clusters.GetBestUnitForCluster(
+                    Unit.NearbyUnitsInCombatWithMeOrMyStuff,
+                    ClusterType.PathToUnit,
+                    40f);
+
+            if (target == null)
+                target = Me;
+
+            return target;
+        }
+
+        public static WoWUnit BestExpelHarmTarget()
+        {
+            if (HealerManager.NeedHealTargeting)
+                return HealerManager.Instance.TargetList.FirstOrDefault( t => t.SpellDistance() < 40 && t.InLineOfSpellSight) ?? Me;
+
+            return Unit.NearbyGroupMembers.FirstOrDefault(t => t.SpellDistance() < 40 && t.InLineOfSpellSight) ?? Me;
+        }
+
     }
 
     public enum MonkTalents

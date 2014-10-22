@@ -25,7 +25,6 @@ namespace Singular.ClassSpecific.Monk
         // delay casting instant ranged abilities if we just cast Roll/FSK
         private readonly static WaitTimer RollTimer = new WaitTimer(TimeSpan.FromMilliseconds(1500));
 
-        #region NORMAL
         [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal )]
         public static Composite CreateWindwalkerMonkPullNormal()
         {
@@ -77,7 +76,7 @@ namespace Singular.ClassSpecific.Monk
 
                         Spell.Cast("Blackout Kick", ret => Me.CurrentChi == Me.MaxChi || Me.HasAura("Combo Breaker: Blackout Kick")),
                         Spell.Cast("Tiger Palm", ret => (Me.CurrentChi > 0 && Me.HasKnownAuraExpired( "Tiger Power")) || Me.HasAura("Combo Breaker: Tiger Palm")),
-                        Spell.Cast( "Expel Harm", ret => Me.CurrentChi < (Me.MaxChi-2) && Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10 ),
+                        Spell.Cast( "Expel Harm", on => Common.BestExpelHarmTarget(), ret => Me.CurrentChi < (Me.MaxChi-2) && Me.HealthPercent < 80 && Me.CurrentTarget.Distance < 10 ),
                         Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
                         )
                     ),
@@ -152,6 +151,7 @@ namespace Singular.ClassSpecific.Monk
         }
 
         [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal)]
+        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances)]
         public static Composite CreateWindwalkerMonkCombatNormal()
         {
             return new PrioritySelector(
@@ -225,18 +225,37 @@ namespace Singular.ClassSpecific.Monk
                         Spell.Cast("Blackout Kick", ret => Me.HasAura("Combo Breaker: Blackout Kick")),
                         Spell.Cast("Tiger Palm", ret => Me.HasAura("Combo Breaker: Tiger Palm")),
 
-                        Spell.Cast( "Expel Harm", ret => Me.CurrentChi < (Me.MaxChi-2) && Me.HealthPercent < 80),
+                        Spell.Buff( "Expel Harm", on => Common.BestExpelHarmTarget(), req => Me.CurrentChi < (Me.MaxChi-2) && Me.HealthPercent < 80),
 
-                        Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi)
+                        Spell.Cast("Jab", ret => Me.CurrentChi < Me.MaxChi),
+
+                        new Decorator(
+                            req => Me.CurrentChi <= 3,
+                            new PrioritySelector(
+                                Spell.Buff("Expel Harm", on => Common.BestExpelHarmTarget()),
+                                Spell.Cast("Jab")
+                                )
+                            ),
+
+                        new Decorator(
+                            req => Me.CurrentChi > 0,
+                            new PrioritySelector(
+                                Spell.Cast("Tiger Palm", ret => Me.HasKnownAuraExpired( "Tiger Power")),
+                                Spell.Cast("Rising Sun Kick"),
+                                Spell.Cast("Fists of Fury", 
+                                    ret => Unit.NearbyUnfriendlyUnits.Count( u => u.IsWithinMeleeRange && Me.IsSafelyFacing(u)) >= 2),
+
+                                Spell.Cast("Blackout Kick", ret => Me.HasAura("Combo Breaker: Blackout Kick")),
+                                Spell.Cast("Tiger Palm", ret => Me.HasAura("Combo Breaker: Tiger Palm")),
+                                Spell.Cast("Blackout Kick")
+                                )
+                            )
                         )
                     ),
 
                 Movement.CreateMoveToMeleeBehavior(true)
                 );
         }
-
-        #endregion
-        #region BATTLEGROUNDS
 
         [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Battlegrounds  )]
         public static Composite CreateWindwalkerMonkPullBattlegrounds()
@@ -344,10 +363,6 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
-        #endregion
-
-        #region INSTANCES
-
         [Behavior(BehaviorType.Pull, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances )]
         public static Composite CreateWindwalkerMonkPullInstances()
         {
@@ -392,87 +407,40 @@ namespace Singular.ClassSpecific.Monk
                 );
         }
 
-        [Behavior(BehaviorType.Combat, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Instances)]
-        public static Composite CreateWindwalkerMonkCombatInstances()
-        {
-            return CreateWindwalkerMonkCombatNormal();
-        }
 
-        #endregion
-
-
-
+        [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkBrewmaster, WoWContext.Normal | WoWContext.Battlegrounds)]
         [Behavior(BehaviorType.Heal, WoWClass.Monk, WoWSpec.MonkWindwalker, WoWContext.Normal | WoWContext.Battlegrounds)]
         public static Composite CreateWindwalkerMonkHeal()
         {
             return new PrioritySelector(
 
-                Common.CreateHealingSphereBehavior(65),
+                Common.CreateMonkDpsHealBehavior()
 
-                Spell.Cast("Expel Harm", on =>
-                {
-                    WoWUnit target = null;
-                        
-                    if (Me.HealthPercent < MonkSettings.ExpelHarmHealth)
-                        target = Me;
-                    else if (MonkSettings.AllowOffHeal && TalentManager.HasGlyph("Targeted Explusion"))
-                        target = Unit.GroupMembers.Where(p => p.IsAlive && p.PredictedHealthPercent() < MonkSettings.ExpelHarmHealth && p.DistanceSqr < 40 * 40).FirstOrDefault();
-
-                    if (target != null)
-                        Logger.WriteDebug("Expel Harm Heal @ actual:{0:F1}% predict:{1:F1}% and moving:{2}", target.HealthPercent, target.PredictedHealthPercent(includeMyHeals: true), target.IsMoving);
-
-                    return target;
-                }),
-
-                Spell.Cast( "Chi Wave", ctx => Me, ret => TalentManager.IsSelected((int)MonkTalents.ChiWave) && Me.HealthPercent < MonkSettings.ChiWavePct)
                 );
         }
 
-        /// <summary>
-        /// selects best target, favoring healing multiple group members followed by damaging multiple targets
-        /// </summary>
-        /// <returns></returns>
-        private static WoWUnit BestChiBurstTarget()
-        {
-            WoWUnit target = null;
-
-            if (Me.IsInGroup())
-                target = Clusters.GetBestUnitForCluster( 
-                    Unit.NearbyGroupMembers.Where(m => m.IsAlive && m.HealthPercent < 80), 
-                    ClusterType.PathToUnit, 
-                    40f);
-
-            if ( target == null || target.IsMe)
-                target = Clusters.GetBestUnitForCluster(
-                    Unit.NearbyUnitsInCombatWithMeOrMyStuff,
-                    ClusterType.PathToUnit,
-                    40f);
-
-            if (target == null)
-                target = Me;
-
-            return target;
-        }
         private static Composite CreateWindwalkerDiagnosticBehavior()
         {
-            return new ThrottlePasses( 1, 1,
+            return new ThrottlePasses(1, 1,
                 new Decorator(
                     ret => SingularSettings.Debug,
-                    new Action( ret => {
+                    new Action(ret =>
+                    {
                         Logger.WriteDebug(".... health={0:F1}%, energy={1}%, chi={2}, tpower={3}, tptime={4}, tgt={5:F1} @ {6:F1}, ",
                             Me.HealthPercent,
                             Me.CurrentEnergy,
                             Me.CurrentChi,
                             Me.HasAura("Tiger Power"),
                             Me.GetAuraTimeLeft("Tiger Power", true).TotalMilliseconds,
-                            Me.CurrentTarget == null ? 0f : Me.CurrentTarget.HealthPercent ,
+                            Me.CurrentTarget == null ? 0f : Me.CurrentTarget.HealthPercent,
                             (Me.CurrentTarget ?? Me).Distance
                             );
                         return RunStatus.Failure;
-                        })
+                    })
                     )
                 );
 
         }
+
     }
 }

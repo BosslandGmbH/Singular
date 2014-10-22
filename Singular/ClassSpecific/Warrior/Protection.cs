@@ -166,11 +166,6 @@ namespace Singular.ClassSpecific.Warrior
 
                         Common.CreateVictoryRushBehavior(),
 
-                        Spell.Cast("Execute", 
-                            ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances 
-                                && Me.CurrentRage > RageDump 
-                                && Me.CurrentTarget.HealthPercent < 20),
-
                         new Decorator( 
                             ret => SingularSettings.Instance.EnableTaunting && SingularRoutine.CurrentWoWContext == WoWContext.Instances,
                             CreateTauntBehavior()
@@ -186,22 +181,6 @@ namespace Singular.ClassSpecific.Warrior
                         // special "in combat" pull logic for mobs not tagged and out of melee range
                         Common.CreateWarriorCombatPullMore(),
 
-                        // Handle Ultimatum procs 
-                        // Handle Glyph of Incite procs
-                        // Dump Rage
-                        new Throttle(
-                            new Decorator(
-                                ret => HasUltimatum || Me.HasAura("Glyph of Incite") || Me.CurrentRage > RageDump,
-                                new PrioritySelector(
-                                    Spell.Cast("Cleave", ret => Me.IsInGroup() && UseAOE),
-                                    Spell.Cast("Heroic Strike")
-                                    )
-                                )
-                            ),
-
-                        // Handle proccing Glyph of Incite buff
-                        // Spell.Cast( "Devastate", ret => TalentManager.HasGlyph("Incite") && Me.HasAura("Deadly Calm") && !Me.HasAura("Glyph of Incite")),
-
                         // Multi-target?  get the debuff on them
                         new Decorator(
                             ret => UseAOE,
@@ -215,12 +194,21 @@ namespace Singular.ClassSpecific.Warrior
 
                         // Generate Rage
                         Spell.Cast("Shield Slam", ret => Me.CurrentRage < RageBuild && HasShieldInOffHand),
-                        Spell.Cast("Revenge", ret => Me.CurrentRage < RageBuild ),
-                        Spell.Cast("Devastate", ret => !Me.CurrentTarget.HasAura("Weakened Armor", 3) && Unit.NearbyGroupMembers.Any(m => m.Class == WoWClass.Druid)),
+                        Spell.Cast("Revenge"),
+                        Spell.Cast("Execute", ret => Me.CurrentRage > RageDump && Me.CurrentTarget.HealthPercent <= 20),
                         Spell.Cast("Thunder Clap", ret => Me.CurrentTarget.SpellDistance() < 8f && !Me.CurrentTarget.ActiveAuras.ContainsKey("Weakened Blows")),
 
                         // Filler
                         Spell.Cast("Devastate"),
+
+                        // Dump Rage
+                        new Throttle(
+                            new PrioritySelector(
+                                Spell.Cast("Cleave", ret => Spell.UseAOE && UseAOE && Me.CurrentRage > RageDump && Me.IsInGroup() && UseAOE),
+                                Spell.Cast("Heroic Strike", req => HasUltimatum || Me.CurrentRage > RageDump )
+                                )
+                            ),
+
                         Spell.Cast("Heroic Strike", req => !SpellManager.HasSpell("Devastate") || !HasShieldInOffHand),
 
                         //Charge

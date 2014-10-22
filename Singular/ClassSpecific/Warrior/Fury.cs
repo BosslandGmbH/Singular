@@ -171,29 +171,21 @@ namespace Singular.ClassSpecific.Warrior
                                 Spell.BuffSelf("Bladestorm"),
                                 Spell.Cast("Shockwave"),
                                 Spell.Cast("Dragon Roar"),
-                        // Only pop RB when we have a few stacks of meat cleaver. Increased DPS by quite a bit.
-                                Spell.Cast("Raging Blow", ret => StyxWoW.Me.CurrentTarget.IsWithinMeleeRange && StyxWoW.Me.HasAura("Meat Cleaver", 3)),
-                                Spell.Cast("Whirlwind"),
+
+                                // do some AOE prior to learning BT
                                 Spell.Cast("Thunder Clap", req => !SpellManager.HasSpell("Whirlwind")),
-                                Spell.Cast("Cleave")
-                                )
-                            ),
 
-                        // Low level support
-                        new Decorator(ret => StyxWoW.Me.Level < 30,
-                            new PrioritySelector(
-                                Common.CreateVictoryRushBehavior(),
+                                //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
+                                Spell.Cast("Bloodthirst", ret => !IsEnraged),
 
-                                // apply weakened blows if a mob attacking us other than our current target
-                                Spell.Cast("Thunder Clap", ret => Unit.UnfriendlyUnits().Any(u => u.IsWithinMeleeRange && u.Guid != Me.CurrentTargetGuid && !u.HasAura("Weakened Blows"))),
+                                //Whirlwind as a Rage dump and to build Raging Blow stacks.
+                                Spell.Cast("Whirlwind", ret => Me.RagePercent > 80),
 
-                                Spell.Cast("Execute"),
-                                Spell.Cast("Bloodthirst"),
-                                Spell.Cast("Wild Strike"),
+                                //Raging Blow with Raging Blow stacks.
+                                Spell.Cast("Raging Blow", ret => Me.HasAura("Raging Blow", 1)),
 
-                                //rage dump
-                                Spell.Cast("Thunder Clap", ret => StyxWoW.Me.RagePercent > 50 && Unit.UnfriendlyUnits().Any(u => u.Guid != Me.CurrentTargetGuid && u.DistanceSqr < 8 * 8)),
-                                Spell.Cast("Heroic Strike", ret => StyxWoW.Me.RagePercent > 60)
+                                //Wild Strike to consume Bloodsurge procs.
+                                Spell.Cast("Wild Strike", ret => IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
                                 )
                             ),
 
@@ -214,36 +206,44 @@ namespace Singular.ClassSpecific.Warrior
         private static Composite SingleTarget()
         {
             return new PrioritySelector(
-                // Prio 00 -> if Solo, try to not waste stacks of Raging Blow
-                Spell.Cast("Raging Blow", ret => SingularRoutine.CurrentWoWContext != WoWContext.Instances && (StyxWoW.Me.GetAuraTimeLeft("Raging Blow").TotalSeconds < 2 || StyxWoW.Me.HasAura("Raging Blow", 2))),
 
-                // Prio #1 -> BR whenever we're not enraged, and can actually melee the target.
-                Spell.BuffSelf("Berserker Rage", ret => !IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange),
+                new Decorator(
+                    req => Me.CurrentTarget.HealthPercent > 20,
+                    new PrioritySelector(
 
-                // DC if we have rage, target has CS, and we're not within execute range.
-                // Spell.BuffSelf("Deadly Calm", ret => StyxWoW.Me.RagePercent >= 40 && TargetSmashed && !WithinExecuteRange),
+                        //Wild Strike to prevent capping your Rage.
+                        Spell.Cast("Wild Strike", ret => Me.RagePercent > 80),
 
-                // Cast CS when the requirements are met. There's a few, so this is extracted into its own property.
-                Spell.Cast("Heroic Strike", ret => NeedHeroicStrike),
+                        //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
+                        Spell.Cast("Bloodthirst", ret => !IsEnraged),
 
-                // CS on cooldown
-                Spell.Cast("Colossus Smash"),
+                        //Raging Blow when available.
+                        Spell.Cast("Raging Blow"),
 
-                // BT basically on cooldown, unless we're in execute range, then save it for rage building. Execute is worth more DPR here.
-                Spell.Cast("Bloodthirst", ret => !WithinExecuteRange || (StyxWoW.Me.CurrentTarget.HealthPercent <= 20 && StyxWoW.Me.RagePercent <= 30)),
+                        //Wild Strike when Enraged or with Bloodsurge procs.
+                        Spell.Cast("Wild Strike", ret => IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
+                        )
+                    ),
 
-                // Wild strike proc. (Bloodsurge)
-                Spell.Cast("Wild Strike", ret => !WithinExecuteRange && StyxWoW.Me.HasAura("Bloodsurge")),
+                new Decorator(
+                    req => Me.CurrentTarget.HealthPercent <= 20,
+                    new PrioritySelector(
 
-                // Execute on CD
-                Spell.Cast("Execute", ret => WithinExecuteRange),
+                        //Execute to prevent capping your Rage.
+                        Spell.Cast( "Execute", req => Me.RagePercent > 80),
 
-                // RB only when we're not going to have BT come off CD during a GCD
-                Spell.Cast("Raging Blow", ret => BTCD.TotalSeconds >= 1),
+                        //Bloodthirst on cooldown when not Enraged. Procs Bloodsurge.
+                        Spell.Cast("Bloodthirst", ret => !IsEnraged),
 
-                // Dump rage on WS
-                Spell.Cast("Wild Strike", ret => !WithinExecuteRange && TargetSmashed && BTCD.TotalSeconds >= 1),
+                        //Execute while Enraged or with >= 60 Rage.
+                        Spell.Cast("Execute", req => Me.RagePercent >= 60),
 
+                        //Wild Strike when Enraged or with Bloodsurge procs.
+                        Spell.Cast("Wild Strike", ret => IsEnraged || StyxWoW.Me.HasAura("Bloodsurge"))
+                        )
+                    ),
+
+                // BR whenever we're not enraged, and can actually melee the target.
                 // Use abilities that cost no rage, such as your tier 4 talents, etc
                 new Decorator(
                     ret => Spell.UseAOE && Me.GotTarget && (Me.CurrentTarget.IsPlayer || Me.CurrentTarget.IsBoss()) && Me.CurrentTarget.Distance < 8,
@@ -255,14 +255,7 @@ namespace Singular.ClassSpecific.Warrior
                         )
                     ),
 
-                // HT on CD. Why not? No GCD extra damage. :)
-                Spell.Cast("Heroic Throw"),
-
-                // Fill with WS when BT/CS aren't about to come off CD, and we have some rage to spend.
-                Spell.Cast("Wild Strike", ret => !WithinExecuteRange && BTCD.TotalSeconds >= 1 && CSCD.TotalSeconds >= 1.6 && StyxWoW.Me.CurrentRage >= 60),
-
-                // Costs nothing, and does some damage. So cast it please!
-                Spell.Cast("Impending Victory", ret => !WithinExecuteRange)
+                Spell.BuffSelf("Berserker Rage", ret => !IsEnraged && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
                 );
         }
 

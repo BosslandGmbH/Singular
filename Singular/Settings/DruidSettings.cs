@@ -604,9 +604,7 @@ namespace Singular.Settings
                     Regrowth = 75;
                     WildGrowth = 90;
                     CountWildGrowth = 3;
-                    SwiftmendAOE = 0;
-                    CountSwiftmendAOE = 0;
-                    SwiftmendDirectHeal = 74;
+                    Swiftmend = 74;
                     WildMushroomBloom = 60;
                     CountMushroomBloom = 1;
                     Tranquility = 0;
@@ -626,9 +624,7 @@ namespace Singular.Settings
                     Regrowth = 40;
                     WildGrowth = 85;
                     CountWildGrowth = 3;
-                    SwiftmendAOE = 0;
-                    CountSwiftmendAOE = 0;
-                    SwiftmendDirectHeal = 70;
+                    Swiftmend = 70;
                     WildMushroomBloom = 85;
                     CountMushroomBloom = 2;
                     Tranquility = 60;
@@ -648,9 +644,7 @@ namespace Singular.Settings
                     Regrowth = 40;
                     WildGrowth = 90;
                     CountWildGrowth = 4;
-                    SwiftmendAOE = 0;
-                    CountSwiftmendAOE = 0;
-                    SwiftmendDirectHeal = 85;
+                    Swiftmend = 85;
                     WildMushroomBloom = 95;
                     CountMushroomBloom = 3;
                     Tranquility = 70;
@@ -718,23 +712,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(70)]
         [Category("Restoration")]
-        [DisplayName("% Swiftmend (AOE)")]
-        [Description("Health % to cast this ability at based upon minimum player count. Set to 0 to disable.")]
-        public int SwiftmendAOE { get; set; }
-
-        [Setting]
-        [DefaultValue(3)]
-        [Category("Restoration")]
-        [DisplayName("Swiftmend (AOE) Min Count")]
-        [Description("Min number of players healed")]
-        public int CountSwiftmendAOE { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Restoration")]
-        [DisplayName("% Swiftmend (Direct Heal)")]
+        [DisplayName("% Swiftmend")]
         [Description("Health % to cast this ability at based upon single player health. Set to 0 to disable.")]
-        public int SwiftmendDirectHeal { get; set; }
+        public int Swiftmend { get; set; }
 
         [Setting]
         [DefaultValue(70)]

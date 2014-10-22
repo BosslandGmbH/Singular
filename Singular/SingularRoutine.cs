@@ -493,7 +493,7 @@ namespace Singular
 
             HotkeyDirector.Pulse();
 
-            Singular.SingularRoutine.PullMoreQuestTargetsDump();
+            // Singular.SingularRoutine.PullMoreQuestTargetsDump();
 
         }
 

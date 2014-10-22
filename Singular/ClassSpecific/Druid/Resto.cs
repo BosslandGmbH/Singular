@@ -181,7 +181,7 @@ namespace Singular.ClassSpecific.Druid
 
             HealerManager.NeedHealTargeting = true;
             PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
-            int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, Math.Max(DruidSettings.Heal.Rejuvenation, Math.Max(DruidSettings.Heal.HealingTouch, Math.Max(DruidSettings.Heal.Nourish, DruidSettings.Heal.Regrowth))));
+            int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, Math.Max(DruidSettings.Heal.Rejuvenation, Math.Max(DruidSettings.Heal.HealingTouch, DruidSettings.Heal.Regrowth)));
 
             Logger.WriteDebugInBehaviorCreate("Druid Healing: will cancel cast of direct heal if health reaches {0:F1}%", cancelHeal);
 
@@ -252,12 +252,12 @@ namespace Singular.ClassSpecific.Druid
                         )
                     );
 
-            if (DruidSettings.Heal.SwiftmendDirectHeal != 0)
+            if (DruidSettings.Heal.Swiftmend != 0)
             {
-                behavs.AddBehavior(797, "Swiftmend Direct @ " + DruidSettings.Heal.SwiftmendDirectHeal + "%", "Swiftmend",
+                behavs.AddBehavior(797, "Swiftmend Direct @ " + DruidSettings.Heal.Swiftmend + "%", "Swiftmend",
                     new Decorator(
                         ret => (!Spell.IsSpellOnCooldown("Swiftmend") || Spell.GetCharges("Force of Nature") > 0)
-                            && ((WoWUnit)ret).PredictedHealthPercent(includeMyHeals: true) < DruidSettings.Heal.SwiftmendDirectHeal
+                            && ((WoWUnit)ret).PredictedHealthPercent(includeMyHeals: true) < DruidSettings.Heal.Swiftmend
                             && (StyxWoW.Me.GroupInfo.IsInParty || StyxWoW.Me.GroupInfo.IsInRaid)
                             && Spell.CanCastHack("Rejuvenation", (WoWUnit)ret, skipWowCheck: true),
                         new Sequence(
@@ -493,13 +493,13 @@ namespace Singular.ClassSpecific.Druid
                     )
                 );
 
-            if (DruidSettings.Heal.Nourish != 0)
+            if (DruidSettings.Heal.HealingTouch != 0)
             {
                 // roll 3 Rejuvs if Glyph of Rejuvenation equipped
                 if (TalentManager.HasGlyph("Rejuvenation"))
                 {
                     // make priority 1 higher than Noursh (-1 here due to way HealthToPriority works)
-                    behavs.AddBehavior(HealthToPriority(DruidSettings.Heal.Nourish-1) + PriSingleBase, "Roll 3 Rejuvenations for Glyph", "Rejuvenation",
+                    behavs.AddBehavior(HealthToPriority(DruidSettings.Heal.HealingTouch - 1) + PriSingleBase, "Roll 3 Rejuvenations for Glyph", "Rejuvenation",
                         new PrioritySelector(
                             Spell.Buff("Rejuvenation",
                                 true,
@@ -780,8 +780,42 @@ namespace Singular.ClassSpecific.Druid
                             req => !Spell.IsGlobalCooldown(),
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
+
+                                new Decorator(
+                                    ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 3,
+                                    new PrioritySelector(
+
+                                        new PrioritySelector(
+                                            ctx => Unit.UnitsInCombatWithUsOrOurStuff(35).Where(u => !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
+                                            Spell.Buff("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
+                                            new Decorator(
+                                                req => SingularRoutine.CurrentWoWContext == WoWContext.Normal,
+                                                Common.CastHurricaneBehavior(
+                                                    on => Me.CurrentTarget,
+                                                    cancel => {
+                                                        if (Me.HealthPercent < 30)
+                                                        {
+                                                            Logger.Write("/cancel Hurricane since my health at {0:F1}%", Me.HealthPercent);
+                                                            return true;
+                                                        }
+                                                        return false;
+                                                    }
+
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ),
+
+
                                 Spell.Buff("Moonfire"),
-                                Spell.Cast("Wrath", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
+                                Spell.Cast(
+                                    "Wrath", 
+                                    on => Unit.UnitsInCombatWithUsOrOurStuff(40).Where(u => !u.IsCrowdControlled() && u.InLineOfSpellSight).OrderByDescending(u => (uint)u.HealthPercent).FirstOrDefault(), 
+                                    req => true, 
+                                    cancel => HealerManager.CancelHealerDPS()
+                                    ),
+
                                 Movement.CreateMoveToUnitBehavior(on => Me.CurrentTarget, 35f, 30f)
                                 )
                             )

@@ -113,7 +113,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Stance of the Fierce Tiger"),
+                Spell.Buff("Stance of the Fierce Tiger", 0, on => Me),
 
                 new Decorator(
                     req => !Unit.IsTrivial(Me.CurrentTarget),
@@ -390,7 +390,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateWindwalkerMonkInstanceCombatBuffs()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Stance of the Fierce Tiger"),
+                Spell.Buff("Stance of the Fierce Tiger", 0, on => Me),
                 Spell.Cast("Tigereye Brew", ctx => Me, ret => Me.HasAura("Tigereye Brew", 10)),
                 Spell.Cast("Energizing Brew", ctx => Me, ret => Me.CurrentEnergy < 40),
                 Spell.Cast("Chi Brew", ctx => Me, ret => Me.CurrentChi == 0),

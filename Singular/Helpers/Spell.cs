@@ -40,20 +40,24 @@ namespace Singular.Helpers
 
     public delegate WoWUnit UnitSelectionDelegate(object context);
     public delegate WoWObject ObjSelectionDelegate(object context);
+    public delegate bool SpellFindDelegate(object contact, out SpellFindResults sfr);
+
     public delegate bool CanCastDelegate(SpellFindResults sfr, WoWUnit unit, bool skipWowCheck = false);
 
     public delegate bool SimpleBooleanDelegate(object context);
     public delegate string SimpleStringDelegate(object context);
     public delegate int SimpleIntDelegate(object context);
     public delegate float SimpleFloatDelegate(object context);
-
+    
     public delegate TimeSpan SimpleTimeSpanDelegate(object context);
-
+    
     internal static class Spell
     {
         // type casting method for context dereferencing within Spell class
         private static CastContext CastContext(this object ctx) { return (CastContext)ctx; }
         private static CogContext CogContext(this object ctx) { return (CogContext)ctx; }
+
+        private static SpellFindResults EmptySFR = new SpellFindResults(null);
 
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         public static void LogCast(string sname, WoWUnit unit, bool isHeal = false)
@@ -1137,15 +1141,24 @@ namespace Singular.Helpers
                 );
         }
 
-
-        public static Composite Buff(string name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, int expirSecs, params string[] buffNames)
+        public static Composite Buff(string name, int expirSecs = 3, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null, bool myBuff = true, params string[] buffNames)
         {
-            return Buff(sp => name, myBuff, onUnit, requirements, expirSecs, buffNames);
+            return Buff(sp => name, expirSecs, onUnit, requirements, myBuff, buffNames);
         }
 
 
-        public static Composite Buff(SimpleStringDelegate name, bool myBuff, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, int expirSecs, params string[] buffNames)
+        public static Composite Buff(SimpleStringDelegate name, int expirSecs, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null, bool myBuff = true, params string[] buffNames)
         {
+            return Buff(name, TimeSpan.FromSeconds(expirSecs), onUnit, requirements, myBuff, buffNames);
+        }
+
+        public static Composite Buff(SimpleStringDelegate name, TimeSpan expires, UnitSelectionDelegate onUnit = null, SimpleBooleanDelegate requirements = null, bool myBuff = true, params string[] buffNames)
+        {
+            if (onUnit == null)
+                onUnit = u => Me.CurrentTarget;
+            if (requirements == null)
+                requirements = req => true;
+
             return new Decorator(
                 ret =>
                 {
@@ -1163,19 +1176,22 @@ namespace Singular.Helpers
                     if (DoubleCastPreventionDict.Contains(_buffUnit, _buffName))
                         return false;
 
+                    if (Spell.GetSpellCooldown(_buffName) > TimeSpan.Zero)
+                        return false;
+
                     bool hasExpired;
                     if (!buffNames.Any())
                     {
-                        hasExpired = _buffUnit.HasAuraExpired(_buffName, expirSecs, myBuff);
+                        hasExpired = _buffUnit.HasAuraExpired(_buffName, expires, myBuff);
                         if (hasExpired && SingularSettings.Debug)
                             Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, auraleft={2:F1} secs", _buffName, SpellManager.HasSpell(_buffName).ToYN(), _buffUnit.GetAuraTimeLeft(_buffName, true).TotalSeconds);
 
                         return hasExpired;
                     }
 
-                    hasExpired = SpellManager.HasSpell(_buffName) && buffNames.All(b => _buffUnit.HasKnownAuraExpired(b, expirSecs, myBuff));
+                    hasExpired = SpellManager.HasSpell(_buffName) && buffNames.All(b => _buffUnit.HasKnownAuraExpired(b, expires, myBuff));
                     if (hasExpired && SingularSettings.Debug)
-                        Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, all auras less than {2:F1} secs", _buffName, SpellManager.HasSpell(_buffName).ToYN(), expirSecs );
+                        Logger.WriteDebug("Spell.Buff(r=>'{0}'): hasspell={1}, all auras less than {2:F1} secs", _buffName, SpellManager.HasSpell(_buffName).ToYN(), expires.TotalSeconds);
 
                     return hasExpired;
                 },
@@ -1214,14 +1230,9 @@ namespace Singular.Helpers
         /// </remarks>
         /// <param name = "name">The buff name.</param>
         /// <returns>.</returns>
-        public static Composite BuffSelf(string name)
+        public static Composite BuffSelf(string name, int expirSecs = 3)
         {
-            return Buff(name, false, on => Me, req => true);
-        }
-
-        public static Composite BuffSelf(string name, int expirSecs)
-        {
-            return Buff(name, false, on => Me, req => true, expirSecs);
+            return Buff(name, expirSecs, on => Me, req => true, false);
         }
 
         /// <summary>
@@ -1241,7 +1252,7 @@ namespace Singular.Helpers
 
         public static Composite BuffSelf(string name, SimpleBooleanDelegate requirements, int expirSecs)
         {
-            return Buff(name, false, on => Me, requirements, expirSecs);
+            return Buff(name, expirSecs, on => Me, requirements, false);
         }
 
         public static Composite BuffSelf(SimpleStringDelegate name, SimpleBooleanDelegate requirements)
@@ -1251,7 +1262,7 @@ namespace Singular.Helpers
 
         public static Composite BuffSelf(SimpleStringDelegate name, SimpleBooleanDelegate requirements, int expirSecs)
         {
-            return Buff(name, false, on => Me, requirements, expirSecs);
+            return Buff(name, expirSecs, on => Me, requirements: requirements);
         }
 
 
@@ -1461,214 +1472,229 @@ namespace Singular.Helpers
         public static Composite Cast(SimpleStringDelegate name, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
             SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, bool skipWowCheck = false, CanCastDelegate canCast = null)
         {
+            SpellFindDelegate ssd =
+                (object ctx, out SpellFindResults sfr) =>
+                {
+                    if (name != null)
+                    {
+                        string spellName = name(ctx);
+                        if (spellName != null)
+                        {
+                            return SpellManager.FindSpell(spellName, out sfr);
+                        }
+                    }
+
+                    sfr = EmptySFR;
+                    return false;
+                };
+
+            return Cast(ssd, checkMovement, onUnit, requirements, cancel, allow, skipWowCheck, canCast);
+        }
+
+        public static Composite Cast(SpellFindDelegate ssd, SimpleBooleanDelegate checkMovement, UnitSelectionDelegate onUnit,
+            SimpleBooleanDelegate requirements, SimpleBooleanDelegate cancel = null, LagTolerance allow = LagTolerance.Yes, bool skipWowCheck = false, CanCastDelegate canCast = null)
+        {
             // only need to check these at creation time
-            if (name == null || checkMovement == null || onUnit == null || requirements == null)
+            if (ssd == null || checkMovement == null || onUnit == null || requirements == null)
                 return new ActionAlwaysFail();
 
             if (canCast == null)
                 canCast = CanCastHack;
 
-            return new Decorator(
-                ret => name(ret) != null,
+            // throttle attempts at casting this spell.  note: this only limits this particular
+            // .. instance of the spell.cast behavior.  in other words, if this is for a cast
+            // .. of flame shock, it would only throttle this tree, not any other trees which
+            // .. also cast flame shock
+            return new Throttle(
 
-                // throttle attempts at casting this spell.  note: this only limits this particular
-                // .. instance of the spell.cast behavior.  in other words, if this is for a cast
-                // .. of flame shock, it would only throttle this tree, not any other trees which
-                // .. also cast flame shock
-                new Throttle(TimeSpan.FromMilliseconds(SingularSettings.Instance.SameSpellThrottle),
+                TimeSpan.FromMilliseconds(SingularSettings.Instance.SameSpellThrottle),
 
-                    new PrioritySelector(
+                new PrioritySelector(
 
-                        // create a CastContext object to save passed in context and other values
-                        ctx => new CastContext(onUnit(ctx), ctx),
+                    // create a CastContext object to save passed in context and other values
+                    ctx => new CastContext(ctx, ssd, onUnit),
 
-                        new Sequence(
-                            // cast the spell, saving state information including if we queued this cast
-                            new Action(ret =>
-                            {
-                                CastContext cctx = ret.CastContext();
-                                cctx.spell = null;
-                                if (cctx.unit == null)
-                                    return RunStatus.Failure;
-
-                                if (!requirements(cctx.context))
-                                    return RunStatus.Failure;
-
-                                // find spell 
-                                cctx.name = name(cctx.context);
-                                SpellFindResults sfr;
-                                if (!SpellManager.FindSpell(cctx.name, out sfr))
-                                    return RunStatus.Failure;
-
-                                cctx.spell = sfr.Override ?? sfr.Original;
-
-                                if (checkMovement(cctx.context) && Me.IsMoving && !AllowMovingWhileCasting(cctx.spell))
-                                {
-                                    if (SingularSettings.DebugSpellCasting)
-                                        Logger.WriteDebug("skipping Spell.Cast({0},[{1}]) because we are moving", cctx.unit.SafeName(), cctx.spell.Name);
-                                    return RunStatus.Failure;
-                                }
-
-                                // check we can cast it on target without checking for movement
-                                // if (!Spell.CanCastHack(_spell, cctx.unit, true, false, allow == LagTolerance.Yes))
-                                if (!canCast(sfr, cctx.unit, skipWowCheck))
-                                {
-                                    if (SingularSettings.DebugSpellCasting)
-                                        Logger.WriteDebug("skipping Spell.Cast({0},[{1}]) because CanCastHack failed", cctx.unit.SafeName(), cctx.spell.Name);
-                                    return RunStatus.Failure;
-                                }
-
-                                // save status of queueing spell (lag tolerance - the prior spell still completing)
-                                cctx.IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
-
-                                LogCast(cctx.spell.Name, cctx.unit, cctx.health, cctx.distance, cctx.spell.IsHeal());
-                                if (!SpellManager.Cast(cctx.spell, cctx.unit))
-                                {
-                                    Logger.Write(Color.LightPink, "cast of {0} on {1} failed!", cctx.spell.Name, cctx.unit.SafeName());
-                                    return RunStatus.Failure;
-                                }
-
-                                SingularRoutine.UpdateDiagnosticCastingState();
-                                return RunStatus.Success;
-                            }),
-
-                            new Action(r =>
-                            {
-                                if (SingularSettings.DebugSpellCasting)
-                                {
-                                    CastContext cctx = r.CastContext();
-                                    Logger.WriteFile("Spell.Cast[{0}]: checking to ensure cast in progress", cctx.spell.Name);
-                                }
-                                return RunStatus.Success;
-                            }),
-
-                        // for instant spell, wait for GCD to start
-                        // for non-instant spell, wait for .IsCasting / .IsChanneling to start
-                            new PrioritySelector(
-                                new Wait(
-                                    TimeSpan.FromMilliseconds(350),
-                                    until =>
-                                    {
-                                        CastContext cctx = until.CastContext();
-                                        if (cctx.spell.IsInstantCast() && Spell.GcdTimeLeft.TotalMilliseconds > 650)
-                                        {
-                                            if (SingularSettings.DebugSpellCasting)
-                                                Logger.WriteFile( "Spell.Cast[{0}]: instant cast and GCD has {1} left, isgcd={2}", cctx.spell.Name, (long)Spell.GcdTimeLeft.TotalMilliseconds, Spell.IsGlobalCooldown(allow).ToYN());
-                                            return true;
-                                        }
-
-                                        if (Me.CurrentCastTimeLeft.TotalMilliseconds > 750)
-                                        {
-                                            if (SingularSettings.DebugSpellCasting)
-                                                Logger.WriteFile( "Spell.Cast[{0}]: cast time {1} left, iscasting={2}", cctx.spell.Name, (long)Me.CurrentCastTimeLeft.TotalMilliseconds, Spell.IsCasting(allow).ToYN());
-                                            return true;
-                                        }
-
-                                        if (Me.CurrentChannelTimeLeft.TotalMilliseconds > 750)
-                                        {
-                                            if (SingularSettings.DebugSpellCasting)
-                                                Logger.WriteFile( "Spell.Cast[{0}]: channel spell and channel has {1} left, ischanneling={2}", cctx.spell.Name, (long)Me.CurrentChannelTimeLeft.TotalMilliseconds, Spell.IsChannelling(allow).ToYN());
-                                            return true;
-                                        }
-
-                                        return false;
-                                    },
-                                    new ActionAlwaysSucceed()
-                                    ),
-                                new Action( r => {
-                                    if (SingularSettings.DebugSpellCasting)
-                                    {
-                                        CastContext cctx = r.CastContext();
-                                        Logger.WriteFile( "Spell.Cast[{0}]: timed out failing to detect spell in progress - gcdleft={1}/{2}, castleft={3}/{4}, chanleft={5}/{6}", cctx.spell.Name, Spell.IsGlobalCooldown(allow).ToYN(), (long)Spell.GcdTimeLeft.TotalMilliseconds, Spell.IsCasting(allow).ToYN(), (long)Me.CurrentCastTimeLeft.TotalMilliseconds, Spell.IsCasting(allow).ToYN(), (long)Me.CurrentChannelTimeLeft.TotalMilliseconds);
-                                    }
-                                    return RunStatus.Success;
-                                    })
-                                ),
-
-                // now check for one of the possible done casting states
-                            new PrioritySelector(
-
-                                // for cast already ended, assume it has no Global Cooldown
-                                new Decorator(
-                                    ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
-                                    new Action(r =>
-                                    {
-                                        CastContext cctx = r.CastContext();
-                                        if (SingularSettings.DebugSpellCasting)
-                                            Logger.WriteFile( "Spell.Cast(\"{0}\"): forcing success, assuming off the global cooldown", cctx.spell.Name);
-                                        return RunStatus.Success;
-                                    })
-                                    ),
-
-                                // for instant or no cancel method given, we are done
-                                new Decorator(
-                                    ret => cancel == null || ret.CastContext().spell.IsInstantCast(),
-                                    new Action(r =>
-                                    {
-                                        CastContext cctx = r.CastContext();
-
-                                        if (SingularSettings.DebugSpellCasting)
-                                            Logger.WriteFile( "Spell.Cast(\"{0}\"): no cancel delegate or instant", cctx.spell.Name);
-                                        return RunStatus.Success;
-                                    })
-                                    ),
-
-                                // while casting/channeling call the cancel method to see if we should abort
-                                new Wait(12,
-                                    until =>
-                                    {
-                                        CastContext cctx = until.CastContext();
-                                        SingularRoutine.UpdateDiagnosticCastingState();
-
-                                        // Interrupted or finished casting. 
-                                        if (!Spell.IsCastingOrChannelling(allow))
-                                        {
-                                            Logger.WriteDebug("Spell.Cast(\"{0}\"): cast has ended", cctx.spell.Name);
-                                            return true;
-                                        }
-
-                                        // check cancel delegate if we are finished
-                                        if (cancel(cctx.context))
-                                        {
-                                            SpellManager.StopCasting();
-                                            Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", cctx.spell.Name, cctx.unit.SafeName(), cctx.unit.HealthPercent);
-                                            return true;
-                                        }
-                                        // continue casting/channeling at this point
-                                        return false;
-                                    },
-                                    new ActionAlwaysSucceed()
-                                    ),
-
-                                // if we are here, we timed out after 12 seconds (very odd)
-                                new Action(r =>
-                                {
-                                    CastContext cctx = r.CastContext();
-                                    Logger.WriteDebug("Spell.Cast(\"{0}\"): timed out waiting for cast to end", cctx.spell.Name);
-                                    return RunStatus.Success;
-                                })
-
-                                ),
-
-                                // made it this far then we are RunStatus.Success, so reset wowunit reference and return
-                                new Action(ret =>
-                                {
-                                    CastContext cctx = ret.CastContext();
-                                    cctx.unit = null;
-                                    cctx.spell = null;
-                                    return RunStatus.Success;
-                                })
-                            ),
-
-                        // cast Sequence failed, so only thing left is to reset cached references and report failure
+                    new Sequence(
+                        // cast the spell, saving state information including if we queued this cast
                         new Action(ret =>
                         {
                             CastContext cctx = ret.CastContext();
-                            cctx.unit = null;
-                            cctx.spell = null;
-                            return RunStatus.Failure;
-                        })
-                        )
+
+                            if (cctx.spell == null)
+                                return RunStatus.Failure;   
+
+                            if (cctx.unit == null)
+                                return RunStatus.Failure;
+
+                            if (!requirements(cctx.context))
+                                return RunStatus.Failure;
+
+                            if (checkMovement(cctx.context) && Me.IsMoving && !AllowMovingWhileCasting(cctx.spell))
+                            {
+                                if (SingularSettings.DebugSpellCasting)
+                                    Logger.WriteDebug("skipping Spell.Cast({0},[{1}]) because we are moving", cctx.unit.SafeName(), cctx.spell.Name);
+                                return RunStatus.Failure;
+                            }
+
+                            // check we can cast it on target without checking for movement
+                            // if (!Spell.CanCastHack(_spell, cctx.unit, true, false, allow == LagTolerance.Yes))
+                            if (!canCast(cctx.sfr, cctx.unit, skipWowCheck))
+                            {
+                                if (SingularSettings.DebugSpellCasting)
+                                    Logger.WriteDebug("skipping Spell.Cast({0},[{1}]) because CanCastHack failed", cctx.unit.SafeName(), cctx.spell.Name);
+                                return RunStatus.Failure;
+                            }
+
+                            // save status of queueing spell (lag tolerance - the prior spell still completing)
+                            cctx.IsSpellBeingQueued = allow == LagTolerance.Yes && (Spell.GcdActive || StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling);
+
+                            LogCast(cctx.spell.Name, cctx.unit, cctx.health, cctx.distance, cctx.spell.IsHeal());
+                            if (!SpellManager.Cast(cctx.spell, cctx.unit))
+                            {
+                                Logger.Write(Color.LightPink, "cast of {0} on {1} failed!", cctx.spell.Name, cctx.unit.SafeName());
+                                return RunStatus.Failure;
+                            }
+
+                            SingularRoutine.UpdateDiagnosticCastingState();
+                            return RunStatus.Success;
+                        }),
+
+                        new Action(r =>
+                        {
+                            if (SingularSettings.DebugSpellCasting)
+                            {
+                                CastContext cctx = r.CastContext();
+                                Logger.WriteFile("Spell.Cast[{0}]: checking to ensure cast in progress", cctx.spell.Name);
+                            }
+                            return RunStatus.Success;
+                        }),
+
+                    // for instant spell, wait for GCD to start
+                    // for non-instant spell, wait for .IsCasting / .IsChanneling to start
+                        new PrioritySelector(
+                            new Wait(
+                                TimeSpan.FromMilliseconds(350),
+                                until =>
+                                {
+                                    CastContext cctx = until.CastContext();
+                                    if (cctx.spell.IsInstantCast() && Spell.GcdTimeLeft.TotalMilliseconds > 650)
+                                    {
+                                        if (SingularSettings.DebugSpellCasting)
+                                            Logger.WriteFile( "Spell.Cast[{0}]: instant cast and GCD has {1} left, isgcd={2}", cctx.spell.Name, (long)Spell.GcdTimeLeft.TotalMilliseconds, Spell.IsGlobalCooldown(allow).ToYN());
+                                        return true;
+                                    }
+
+                                    if (Me.CurrentCastTimeLeft.TotalMilliseconds > 750)
+                                    {
+                                        if (SingularSettings.DebugSpellCasting)
+                                            Logger.WriteFile( "Spell.Cast[{0}]: cast time {1} left, iscasting={2}", cctx.spell.Name, (long)Me.CurrentCastTimeLeft.TotalMilliseconds, Spell.IsCasting(allow).ToYN());
+                                        return true;
+                                    }
+
+                                    if (Me.CurrentChannelTimeLeft.TotalMilliseconds > 750)
+                                    {
+                                        if (SingularSettings.DebugSpellCasting)
+                                            Logger.WriteFile( "Spell.Cast[{0}]: channel spell and channel has {1} left, ischanneling={2}", cctx.spell.Name, (long)Me.CurrentChannelTimeLeft.TotalMilliseconds, Spell.IsChannelling(allow).ToYN());
+                                        return true;
+                                    }
+
+                                    return false;
+                                },
+                                new ActionAlwaysSucceed()
+                                ),
+                            new Action( r => {
+                                if (SingularSettings.DebugSpellCasting)
+                                {
+                                    CastContext cctx = r.CastContext();
+                                    Logger.WriteFile( "Spell.Cast[{0}]: timed out failing to detect spell in progress - gcdleft={1}/{2}, castleft={3}/{4}, chanleft={5}/{6}", cctx.spell.Name, Spell.IsGlobalCooldown(allow).ToYN(), (long)Spell.GcdTimeLeft.TotalMilliseconds, Spell.IsCasting(allow).ToYN(), (long)Me.CurrentCastTimeLeft.TotalMilliseconds, Spell.IsCasting(allow).ToYN(), (long)Me.CurrentChannelTimeLeft.TotalMilliseconds);
+                                }
+                                return RunStatus.Success;
+                                })
+                            ),
+
+            // now check for one of the possible done casting states
+                        new PrioritySelector(
+
+                            // for cast already ended, assume it has no Global Cooldown
+                            new Decorator(
+                                ret => !Spell.IsGlobalCooldown() && !Spell.IsCastingOrChannelling(),
+                                new Action(r =>
+                                {
+                                    CastContext cctx = r.CastContext();
+                                    if (SingularSettings.DebugSpellCasting)
+                                        Logger.WriteFile( "Spell.Cast(\"{0}\"): forcing success, assuming off the global cooldown", cctx.spell.Name);
+                                    return RunStatus.Success;
+                                })
+                                ),
+
+                            // for instant or no cancel method given, we are done
+                            new Decorator(
+                                ret => cancel == null || ret.CastContext().spell.IsInstantCast(),
+                                new Action(r =>
+                                {
+                                    CastContext cctx = r.CastContext();
+
+                                    if (SingularSettings.DebugSpellCasting)
+                                        Logger.WriteFile( "Spell.Cast(\"{0}\"): no cancel delegate or instant", cctx.spell.Name);
+                                    return RunStatus.Success;
+                                })
+                                ),
+
+                            // while casting/channeling call the cancel method to see if we should abort
+                            new Wait(12,
+                                until =>
+                                {
+                                    CastContext cctx = until.CastContext();
+                                    SingularRoutine.UpdateDiagnosticCastingState();
+
+                                    // Interrupted or finished casting. 
+                                    if (!Spell.IsCastingOrChannelling(allow))
+                                    {
+                                        Logger.WriteDebug("Spell.Cast(\"{0}\"): cast has ended", cctx.spell.Name);
+                                        return true;
+                                    }
+
+                                    // check cancel delegate if we are finished
+                                    if (cancel(cctx.context))
+                                    {
+                                        SpellManager.StopCasting();
+                                        Logger.Write(System.Drawing.Color.Orange, "/cancel {0} on {1} @ {2:F1}%", cctx.spell.Name, cctx.unit.SafeName(), cctx.unit.HealthPercent);
+                                        return true;
+                                    }
+                                    // continue casting/channeling at this point
+                                    return false;
+                                },
+                                new ActionAlwaysSucceed()
+                                ),
+
+                            // if we are here, we timed out after 12 seconds (very odd)
+                            new Action(r =>
+                            {
+                                CastContext cctx = r.CastContext();
+                                Logger.WriteDebug("Spell.Cast(\"{0}\"): timed out waiting for cast to end", cctx.spell.Name);
+                                return RunStatus.Success;
+                            })
+
+                            ),
+
+                            // made it this far then we are RunStatus.Success, so reset wowunit reference and return
+                            new Action(ret =>
+                            {
+                                CastContext cctx = ret.CastContext();
+                                cctx.unit = null;
+                                cctx.spell = null;
+                                return RunStatus.Success;
+                            })
+                        ),
+
+                    // cast Sequence failed, so only thing left is to reset cached references and report failure
+                    new Action(ret =>
+                    {
+                        CastContext cctx = ret.CastContext();
+                        cctx.unit = null;
+                        cctx.spell = null;
+                        return RunStatus.Failure;
+                    })
                     )
                 );
         }
@@ -1810,24 +1836,34 @@ namespace Singular.Helpers
         /// <param name="requirements"></param>
         /// <param name="waitForSpell"></param>
         /// <returns></returns>
-        public static Composite CastOnGround(string spell, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, bool waitForSpell = true)
+        public static Composite CastOnGround(string spellName, UnitSelectionDelegate onUnit, SimpleBooleanDelegate requirements, bool waitForSpell = true)
         {
-            if (onUnit == null || requirements == null)
+            if (spellName == null || onUnit == null || requirements == null)
                 return new ActionAlwaysFail();
 
-            return new Decorator(
-                req => requirements(req),
-                new Sequence(
-                    ctx => new CastContext( onUnit(ctx), ctx),
-                    new PrioritySelector(
-                        new Decorator(
-                            ret => ret.CastContext().unit != null && ret.CastContext().unit.Distance < Spell.ActualMaxRange(spell, null),
-                            CastOnGround(spell, loc => loc.CastContext().unit.Location, req => true, waitForSpell, desc => string.Format("on {0} @ {1:F1}%", desc.CastContext().unit.SafeName(), desc.CastContext().unit.HealthPercent))
-                            ),
-                        new Action(r => { return RunStatus.Failure; })
-                        )
+            SpellFindDelegate ssd =
+                (object ctx, out SpellFindResults sfr) =>
+                {
+                    return SpellManager.FindSpell(spellName, out sfr);
+                };
+#if ERR
+            return new PrioritySelector(
+                ctx => new CastContext(ctx, ssd, onUnit),
+                new PrioritySelector(
+                    ctx => new CogContext(ctx as CastContext, desc => string.Format("on {0} @ {1:F1}%", desc.CastContext().unit.SafeName(), desc.CastContext().unit.HealthPercent)),
+                    ContextCastOnGround(requirements, waitForSpell)
                     )
                 );
+#else
+            return new PrioritySelector(
+                ctx => {
+                    CastContext cc = new CastContext(ctx, ssd, onUnit);
+                    CogContext cog = new CogContext(cc, desc => string.Format("on {0} @ {1:F1}%", cc.unit.SafeName(), cc.unit.HealthPercent));
+                    return cog;
+                    },
+                ContextCastOnGround(requirements, waitForSpell)
+                );
+#endif
         }
 
         /// <summary>
@@ -1841,77 +1877,109 @@ namespace Singular.Helpers
         /// <param name = "requirements">The requirements.</param>
         /// <param name="waitForSpell">Waits for spell to become active on cursor if true. </param>
         /// <returns>.</returns>
-        public static Composite CastOnGround(string spell, LocationRetriever onLocRtrv,
+        public static Composite CastOnGround(string spellName, LocationRetriever onLocRtrv,
             SimpleBooleanDelegate requirements, bool waitForSpell = true, SimpleStringDelegate tgtDescRtrv = null)
         {
-            if ( onLocRtrv == null || requirements == null )
+            if (spellName == null || onLocRtrv == null || requirements == null)
+                return new ActionAlwaysFail();
+
+            SpellFindDelegate ssd =
+                (object ctx, out SpellFindResults sfr) =>
+                {
+                    return SpellManager.FindSpell(spellName, out sfr);
+                };
+
+            return new PrioritySelector(
+                ctx => new CogContext( ctx, ssd, onLocRtrv, tgtDescRtrv),
+                ContextCastOnGround(requirements, waitForSpell)
+                );
+        }
+
+        /// <summary>
+        /// PRIVATE CastOnGround :: requires a valid CastContext to already be set as current context
+        /// .. in parent Composite
+        /// </summary>
+        /// <param name="onLocRtrv"></param>
+        /// <param name="requirements"></param>
+        /// <param name="waitForSpell"></param>
+        /// <param name="tgtDescRtrv"></param>
+        /// <returns></returns>
+        private static Composite ContextCastOnGround( SimpleBooleanDelegate requirements, bool waitForSpell = true)
+        {
+            if ( requirements == null )
                 return new ActionAlwaysFail();
 
             return new Decorator(
-                req => requirements(req),    
+                req => {
+                    CogContext cog = req.CogContext();
+                    if (cog.spell == null || cog.loc == WoWPoint.Empty || !requirements(cog.context))
+                        return false;
+
+                    if (!Spell.CanCastHack(cog.sfr, null, skipWowCheck:true))
+                        return false;
+
+                    if (!LocationInRange(cog.name, cog.loc))
+                        return false;
+
+                    if (!GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), cog.loc))
+                        return false;
+
+                    return true;
+                    },    
            
-                new PrioritySelector(                
-                    ctx => new CogContext(onLocRtrv, tgtDescRtrv, ctx),
+                new Sequence(
+                    new Action( ret => {
+                        CogContext cog = ret.CogContext();
+                        Logger.Write( LogColor.SpellNonHeal, "*{0} {1}at {2:F1} yds {3}", cog.name, cog.targetDesc, cog.loc.Distance(StyxWoW.Me.Location), cog.loc);
+                        return SpellManager.Cast(cog.spell) ? RunStatus.Success : RunStatus.Failure; 
+                        }),
 
-                    new Decorator(
-                        req => Spell.CanCastHack(spell, null, skipWowCheck:true)
-                            && LocationInRange(spell, (req as CogContext).loc)
-                            && GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), (req as CogContext).loc),
-                        new Sequence(
-                            new Action( ret => {
-                                CogContext cog = ret.CogContext();
-                                Logger.Write("*{0} {1}at {2:F1} yds {3}", spell, cog.targetDesc, cog.loc.Distance(StyxWoW.Me.Location), cog.loc);
-                                return SpellManager.Cast(spell) ? RunStatus.Success : RunStatus.Failure; 
-                                }),
-
-                            new DecoratorContinue(
-                                ctx => waitForSpell,
-                                new PrioritySelector(
-                                    new WaitContinue(1,
-                                        ret => GetPendingCursorSpell != null && GetPendingCursorSpell.Name == spell,
-                                        new ActionAlwaysSucceed()
-                                        ),
-                                    new Action(r =>
-                                    {
-                                        Logger.WriteDebug("error: spell {0} not seen as pending on cursor after 1 second", spell);
-                                        return RunStatus.Failure;
-                                    })
-                                    )
+                    new DecoratorContinue(
+                        ctx => waitForSpell,
+                        new PrioritySelector(
+                            new WaitContinue(1,
+                                ret => GetPendingCursorSpell != null && GetPendingCursorSpell.Name == ret.CogContext().name,
+                                new ActionAlwaysSucceed()
                                 ),
-
-                            new Action(ret => SpellManager.ClickRemoteLocation(ret.CogContext().loc)),
-
-                            // check for we are done status
-                            new PrioritySelector(
-                    // done if cursor doesn't have spell anymore
-                                new Decorator(
-                                    ret => !waitForSpell,
-                                    new Action(r => Lua.DoString("SpellStopTargeting()"))   //just in case
-                                    ),
-
-                                new Wait(
-                                    TimeSpan.FromMilliseconds(750),
-                                    until => Me.IsCasting || Me.IsChanneling,
-                                    new ActionAlwaysSucceed()
-                                    ),
-
-                                // otherwise cancel
-                                new Action(ret =>
-                                {
-                                    Logger.WriteDebug("/cancel {0} - click {1} failed -OR- Pending Cursor Spell API broken -- distance={2:F1} yds, loss={3}, face={4}",
-                                        spell,
-                                        ret.CogContext().loc,
-                                        StyxWoW.Me.Location.Distance(ret.CogContext().loc),
-                                        GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ret.CogContext().loc),
-                                        StyxWoW.Me.IsSafelyFacing(ret.CogContext().loc)
-                                        );
-
-                                    // Pending Spell Cursor API is broken... seems like we can't really check at this point, so assume it failed and worked... uggghhh
-                                    Lua.DoString("SpellStopTargeting()");
-                                    return RunStatus.Failure;
-                                })
-                                )
+                            new Action(r =>
+                            {
+                                Logger.WriteDebug("error: spell {0} not seen as pending on cursor after 1 second", r.CogContext().name);
+                                return RunStatus.Failure;
+                            })
                             )
+                        ),
+
+                    new Action(ret => SpellManager.ClickRemoteLocation(ret.CogContext().loc)),
+
+                    // check for we are done status
+                    new PrioritySelector(
+            // done if cursor doesn't have spell anymore
+                        new Decorator(
+                            ret => !waitForSpell,
+                            new Action(r => Lua.DoString("SpellStopTargeting()"))   //just in case
+                            ),
+
+                        new Wait(
+                            TimeSpan.FromMilliseconds(750),
+                            until => Me.IsCasting || Me.IsChanneling,
+                            new ActionAlwaysSucceed()
+                            ),
+
+                        // otherwise cancel
+                        new Action(ret =>
+                        {
+                            Logger.WriteDebug("/cancel {0} - click {1} failed -OR- Pending Cursor Spell API broken -- distance={2:F1} yds, loss={3}, face={4}",
+                                ret.CogContext().name,
+                                ret.CogContext().loc,
+                                StyxWoW.Me.Location.Distance(ret.CogContext().loc),
+                                GameWorld.IsInLineOfSpellSight(StyxWoW.Me.GetTraceLinePos(), ret.CogContext().loc),
+                                StyxWoW.Me.IsSafelyFacing(ret.CogContext().loc)
+                                );
+
+                            // Pending Spell Cursor API is broken... seems like we can't really check at this point, so assume it failed and worked... uggghhh
+                            Lua.DoString("SpellStopTargeting()");
+                            return RunStatus.Failure;
+                        })
                         )
                     )
                 );
@@ -2399,6 +2467,7 @@ namespace Singular.Helpers
     internal class CastContext
     {
         internal string name;
+        internal SpellFindResults sfr;
         internal WoWSpell spell;
         internal WoWUnit unit;
         internal double health;
@@ -2413,20 +2482,28 @@ namespace Singular.Helpers
         }
 
         // always create passing the existing context so it is preserved for delegate usage
-        internal CastContext(WoWUnit u, object ctx)
+        internal CastContext(object ctx, SpellFindDelegate ssd, UnitSelectionDelegate onUnit)
         {
-            unit = u;
-            context = ctx;
+            if (ssd == null || onUnit == null)
+                return;
 
-            // health/dist change quickly, so grab these now where
-            // .. we check requirements so the log message we output
-            // .. later reflects what they were when we were testing
-            // .. as opposed to what they may have changed to
-            // .. (since spell lookup, move while casting check, and cancast take time)
-            if (unit != null)
+            if (ssd(ctx, out sfr))
             {
-                health = unit.HealthPercent;
-                distance = unit.SpellDistance();
+                spell = sfr.Override ?? sfr.Original;
+                name = spell.Name;
+                context = ctx;
+                unit = onUnit(ctx);
+
+                // health/dist change quickly, so grab these now where
+                // .. we check requirements so the log message we output
+                // .. later reflects what they were when we were testing
+                // .. as opposed to what they may have changed to
+                // .. (since spell lookup, move while casting check, and cancast take time)
+                if (unit != null)
+                {
+                    health = unit.HealthPercent;
+                    distance = unit.SpellDistance();
+                }
             }
         }
     }
@@ -2438,29 +2515,49 @@ namespace Singular.Helpers
     /// </summary>
     internal class CogContext
     {
+        internal string name;
+        internal SpellFindResults sfr;
+        internal WoWSpell spell;
         internal WoWPoint loc;
         internal string targetDesc;
         internal object context;
 
         // always create passing the existing context so it is preserved for delegate usage
-        internal CogContext(object ctx)
+        internal CogContext(object ctx, SpellFindDelegate ssd, LocationRetriever locrtrv, SimpleStringDelegate descrtrv)
         {
-            context = ctx;
+
+            if (ssd(ctx, out sfr))
+            {
+                spell = sfr.Override ?? sfr.Original;
+                name = spell.Name;
+                context = ctx;
+
+                loc = WoWPoint.Empty;
+                targetDesc = "";
+                if (locrtrv != null)
+                {
+                    loc = locrtrv(ctx);
+                    if (descrtrv != null)
+                    {
+                        targetDesc = descrtrv(ctx) + " ";
+                    }
+                }
+            }
         }
 
-        // always create passing the existing context so it is preserved for delegate usage
-        internal CogContext(LocationRetriever locrtrv, SimpleStringDelegate descrtrv, object ctx)
+        internal CogContext(CastContext cc, SimpleStringDelegate descrtrv)
         {
-            loc = WoWPoint.Empty;
-            targetDesc = "";
-            context = ctx;
-
-            if (locrtrv != null)
+            if (cc.unit != null)
             {
-                loc = locrtrv(ctx);
+                loc = cc.unit.Location;
+                spell = cc.spell;
+                context = cc.context;
+                name = cc.name;
+                sfr = cc.sfr;
+                spell = cc.spell;
                 if (descrtrv != null)
                 {
-                    targetDesc = descrtrv(ctx) + " ";
+                    targetDesc = descrtrv(context) + " ";
                 }
             }
         }

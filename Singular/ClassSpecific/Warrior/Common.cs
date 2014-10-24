@@ -93,6 +93,7 @@ namespace Singular.ClassSpecific.Warrior
 
 
         [Behavior(BehaviorType.PreCombatBuffs, WoWClass.Warrior)]
+        [Behavior(BehaviorType.CombatBuffs, WoWClass.Warrior, priority: 999)]
         public static Composite CreateWarriorNormalPreCombatBuffs()
         {
             return

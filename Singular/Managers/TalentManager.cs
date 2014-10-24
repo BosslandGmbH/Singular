@@ -197,10 +197,11 @@ namespace Singular.Managers
         {
             if (SpecChangeTestTimer.IsFinished)
             {
-                if (StyxWoW.Me.Specialization != TalentManager.CurrentSpec)
+                if (StyxWoW.Me.Specialization != CurrentSpec)
                 {
+                    CurrentSpec = StyxWoW.Me.Specialization;
                     RebuildNeeded = true;
-                    Logger.Write(Color.White, "TalentManager: Your character changed specializations!");
+                    Logger.Write(Color.White, "TalentManager: Your character changed specializations to {0}", CurrentSpec.ToString().CamelToSpaced());
                 }
             }
 

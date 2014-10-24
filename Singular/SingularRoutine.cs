@@ -444,6 +444,8 @@ namespace Singular
                 }
             }
 
+            UpdateDiagnosticFPS();
+
             // talentmanager.Pulse() intense if does work, so return if true
             if (TalentManager.Pulse())
                 return;
@@ -663,5 +665,17 @@ namespace Singular
             }
             return retVal;
         }
+
+        private static WaitTimer _pollInterval = new WaitTimer(TimeSpan.FromSeconds(10));
+
+        private static void UpdateDiagnosticFPS()
+        {
+            if ( SingularSettings.Debug && _pollInterval.IsFinished )
+            {
+                Logger.WriteDebug("PerfMon: FPS:{0} Latency:{1}", GetFPS(), SingularRoutine.Latency);
+                _pollInterval.Reset();
+            }
+        }
+
     }
 }

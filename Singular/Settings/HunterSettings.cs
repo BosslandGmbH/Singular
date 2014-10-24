@@ -40,7 +40,7 @@ namespace Singular.Settings
         [DefaultValue(70)]
         [Category("Pet")]
         [DisplayName("Mend Pet Percent")]
-        public double MendPetPercent { get; set; }
+        public int MendPetPct { get; set; }
 
         #endregion
 

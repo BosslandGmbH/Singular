@@ -204,7 +204,7 @@ namespace Singular.ClassSpecific.Monk
 
         public static Composite CreateMonkOffHealBehavior()
         {
-            HealerManager.NeedHealTargeting = true;
+            HealerManager.NeedHealTargeting = SingularSettings.Instance.DpsOffHealAllowed;
             PrioritizedBehaviorList behavs = new PrioritizedBehaviorList();
             int cancelHeal = (int)Math.Max(SingularSettings.Instance.IgnoreHealTargetsAboveHealth, MonkSettings.OffHealSettings.SurgingMist);
 

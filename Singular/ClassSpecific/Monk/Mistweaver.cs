@@ -115,7 +115,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkPreCombatBuffsSolo()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Stance of the Spirited Crane"),
+                Spell.BuffSelf("Stance of the Spirited Crane", 0),
                 PartyBuff.BuffGroup("Legacy of the Emperor")
                 );
         }
@@ -124,7 +124,7 @@ namespace Singular.ClassSpecific.Monk
         public static Composite CreateMonkPreCombatBuffsGroup()
         {
             return new PrioritySelector(
-                Spell.BuffSelf("Stance of the Wise Serpent"),
+                Spell.BuffSelf("Stance of the Wise Serpent", 0),
                 PartyBuff.BuffGroup("Legacy of the Emperor")
                 );
         }

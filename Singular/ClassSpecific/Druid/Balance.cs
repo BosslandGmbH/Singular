@@ -173,19 +173,26 @@ namespace Singular.ClassSpecific.Druid
                             ret => Me.CurrentTarget.Distance < 12
                                 || ObjectManager.GetObjectsOfType<WoWPlayer>(false, false).Any(p => p.Location.DistanceSqr(Me.CurrentTarget.Location) <= 40 * 40),
                             new PrioritySelector(
-                                Spell.Buff("Sunfire", ret => GetEclipseDirection() == EclipseType.Solar),
+                                Spell.Buff("Sunfire", ret => Me.CurrentEclipse > 0),
                                 Spell.Buff("Moonfire")
                                 )
                             ),
 
                         // otherwise, start with a bigger hitter with cast time so we can follow 
                         // with an instant to maximize damage at initial aggro
-                        Spell.Cast("Starsurge", on => Me.CurrentTarget, req => true, cancel => false),
-                        Spell.Cast("Wrath", ret => GetEclipseDirection() == EclipseType.Solar),
+                        new Throttle(
+                            3,
+                            Spell.Cast("Starsurge", 
+                                req => (Me.CurrentEclipse < -20 && !Me.HasAura("Lunar Empowerment"))
+                                    || (Me.CurrentEclipse > 20 && !Me.HasAura("Solar Empowerment"))
+                                    || Spell.GetCharges("Starsurge") >= 3
+                                )
+                            ),
 
-                        // we must be moving if here so throw an instant of some type
-                        Spell.Buff("Sunfire", ret => GetEclipseDirection() == EclipseType.Solar),
-                        Spell.Buff("Moonfire")
+                        Spell.Cast("Wrath", ret => Me.CurrentEclipse > 0),
+                        Spell.Cast("Starfire", ret => Me.CurrentEclipse < 0),
+                        Spell.Buff("Sunfire", ret => Me.CurrentEclipse > 0),
+                        Spell.Buff("Moonfire", req => Me.CurrentEclipse <= 0)
                         )
                     ),
 
@@ -235,9 +242,8 @@ namespace Singular.ClassSpecific.Druid
 
                                 new PrioritySelector(
                                     ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
-                                    Spell.Buff("Moonfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
-                                    Spell.Buff("Sunfire", ret => ((List<WoWUnit>)ret).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2))),
-
+                                    Spell.Cast("Sunfire", on => ((List<WoWUnit>)on).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2)), req => Me.CurrentEclipse > 0 && Me.CurrentTarget.HasKnownAuraExpired("Sunfire", 3)),
+                                    Spell.Cast("Moonfire", on => ((List<WoWUnit>)on).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2)), req => Me.CurrentEclipse > 0 && Me.CurrentTarget.HasKnownAuraExpired("Moonfire", 3)),
                                     Common.CastHurricaneBehavior( on => Me.CurrentTarget)
                                     )
                                 )
@@ -248,26 +254,31 @@ namespace Singular.ClassSpecific.Druid
                         new Decorator(
                             req => true,
                             new PrioritySelector(
-                                //  1 Starsurge when Lunar Empowerment is down and Eclipse energy is > 20.
-                                Spell.Cast( "Starsurge", req => Me.CurrentEclipse < -20 && !Me.HasAura("Lunar Empowerment")),
+                                new Throttle(
+                                    3,
+                                    new PrioritySelector(
+                                        //  1 Starsurge when Lunar Empowerment is down and Eclipse energy is > 20.
+                                        Spell.Cast( "Starsurge", req => Me.CurrentEclipse < -20 && !Me.HasAura("Lunar Empowerment")),
 
-                                //  2 Starsurge when Solar Empowerment is down and Eclipse energy is > 20.
-                                Spell.Cast( "Starsurge", req => Me.CurrentEclipse > 20 && !Me.HasAura("Solar Empowerment")),
+                                        //  2 Starsurge when Solar Empowerment is down and Eclipse energy is > 20.
+                                        Spell.Cast( "Starsurge", req => Me.CurrentEclipse > 20 && !Me.HasAura("Solar Empowerment")),
 
-                                //  3 Starsurge with 3 charges. Watch for Shooting Stars procs.
-                                Spell.Cast("Starsurge", req => Spell.GetCharges("Starsurge") >= 3),
+                                        //  3 Starsurge with 3 charges. Watch for Shooting Stars procs.
+                                        Spell.Cast("Starsurge", req => Spell.GetCharges("Starsurge") >= 3)
+                                        )
+                                    ),
 
                                 //  4 Sunfire to maintain DoT and consume Solar Peak buff.
-                                Spell.Cast("Sunfire", req => Me.CurrentTarget.HasAuraExpired("Sunfire", 3) || Me.HasAura("Solar Peak")),
+                                Spell.Cast("Sunfire", req => Me.CurrentEclipse > 0 && (Me.CurrentTarget.HasKnownAuraExpired("Sunfire", 3) || Me.HasAura("Solar Peak"))),
 
                                 //  5 Moonfire to maintain DoT and consume Lunar Peak buff.
-                                Spell.Cast("Moonfire", req => Me.CurrentTarget.HasAuraExpired("Moonfire", 3) || Me.HasAura("Lunar Peak")),
+                                Spell.Cast("Moonfire", req => Me.CurrentEclipse <= 0 && (Me.CurrentTarget.HasAuraExpired("Moonfire", 3) || Me.HasAura("Lunar Peak"))),
 
                                 //  6 Wrath as a filler when in a Solar Eclipse.
-                                Spell.Cast("Wrath", req => Me.HasAura("Eclipse Visual (Solar)")),
+                                Spell.Cast("Wrath", req => Me.CurrentEclipse > 0),
 
                                 //  7 Starfire as a filler when in a Lunar Eclipse.     
-                                Spell.Cast("Starfire", req => Me.HasAura("Eclipse Visual (Lunar)"))
+                                Spell.Cast("Starfire", req => Me.CurrentEclipse <= 0)
                                 )
                             )
                         )
@@ -409,8 +420,8 @@ namespace Singular.ClassSpecific.Druid
                                     new PrioritySelector(
                                         ctx => Unit.NearbyUnfriendlyUnits.Where(u => u.Combat && !u.IsCrowdControlled() && Me.IsSafelyFacing(u)).ToList(),
                                         Spell.Buff("Sunfire", on => (WoWUnit) ((List<WoWUnit>)on).FirstOrDefault(u => u.HasAuraExpired("Sunfire", 2))),
-                                        Spell.CastOnGround("Hurricane", on => Me.CurrentTarget, req => (!Spell.UseAOE ? 1 : Unit.UnfriendlyUnitsNearTarget(10f).Count()) > 3, false),
-                                        Spell.Buff("Moonfire", on => (WoWUnit) ((List<WoWUnit>)on).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2)))
+                                        Spell.Buff("Moonfire", on => (WoWUnit) ((List<WoWUnit>)on).FirstOrDefault(u => u.HasAuraExpired("Moonfire", 2))),
+                                        Spell.CastOnGround("Hurricane", on => Me.CurrentTarget, req => Spell.UseAOE, false)
                                         )
                                     )
                                 )
@@ -665,17 +676,25 @@ namespace Singular.ClassSpecific.Druid
                     string log;
                     WoWAura eclips = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Eclipse (Solar)" || a.Name == "Eclipse (Lunar)");
                     string eclipsString = eclips == null ? "None" : (eclips.Name == "Eclipse (Solar)" ? "Solar" : "Lunar");
+                    WoWAura empower = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Solar Empowerment" || a.Name == "Lunar Empowerment");
+                    string empowerString = empower == null ? "None" : empower.Name.Remove(5);
+                    WoWAura peak = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Solar Peak" || a.Name == "Lunar Peak");
+                    string peakString = peak == null ? "None" : peak.Name.Remove(5);
+                    WoWAura visual = Me.GetAllAuras().FirstOrDefault(a => a.Name == "Eclipse Visual (Solar)" || a.Name == "Eclipse Visual (Solar)");
+                    string visualString = visual == null ? "None" : visual.Name.Substring(16,5);
 
-                    log = string.Format(".... h={0:F1}%/m={1:F1}%, form:{2}, eclps={3}, towards={4}, eclps#={5}, mushcnt={6}",
+                    log = string.Format(".... h={0:F1}%/m={1:F1}%, form:{2}, empower={3}, peak={4}, visual={5}, eclps={6}, towards={7}, eclps#={8}, mushcnt={9}",
                         Me.HealthPercent,
                         Me.ManaPercent,
                         Me.Shapeshift.ToString(),
+                        empowerString,
+                        peakString,
+                        visualString,
                         eclipsString,
                         GetEclipseDirection().ToString(),
                         Me.CurrentEclipse,
                         MushroomCount
                         );
-
 
                     WoWUnit target = Me.CurrentTarget;
                     if (target != null)

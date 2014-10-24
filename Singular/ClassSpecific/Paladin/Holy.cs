@@ -69,7 +69,7 @@ namespace Singular.ClassSpecific.Paladin
                 new PrioritySelector(
                     Spell.BuffSelf(
                         "Divine Plea",
-                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Paladin().DivinePleaMana)
+                        ret => StyxWoW.Me.ManaPercent <= SingularSettings.Instance.Paladin().DivinePleaManaPct)
                     );
         }
         [Behavior(BehaviorType.Combat, WoWClass.Paladin, WoWSpec.PaladinHoly)]

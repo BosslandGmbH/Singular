@@ -24,6 +24,18 @@ namespace Singular.ClassSpecific.Priest
         private static LocalPlayer Me { get { return StyxWoW.Me; } }
         private static PriestSettings PriestSettings { get { return SingularSettings.Instance.Priest(); } }
 
+        #region Orbs
+        private static uint OrbCount        { get { return Me.GetCurrentPower(WoWPowerType.ShadowOrbs); } }
+        private static uint MaxOrbs         { get; set; }
+        private static bool NeedMoreOrbs    { get { return OrbCount < MaxOrbs; } }
+        #endregion 
+
+        [Behavior(BehaviorType.Initialize, WoWClass.Priest, WoWSpec.PriestShadow)]
+        public static Composite CreateShadowInitialize()
+        {
+            MaxOrbs = Me.GetMaxPower(WoWPowerType.ShadowOrbs);
+            return null;
+        }
 
         [Behavior(BehaviorType.Rest, WoWClass.Priest, WoWSpec.PriestShadow)]
         public static Composite CreateShadowPriestRestBehavior()
@@ -53,7 +65,7 @@ namespace Singular.ClassSpecific.Priest
             return new PrioritySelector(
                 Spell.Cast("Desperate Prayer", ret => Me, ret => Me.HealthPercent < PriestSettings.DesperatePrayerHealth),
 
-                Spell.BuffSelf("Power Word: Shield", ret => (Me.HealthPercent < PriestSettings.ShieldHealthPercent || (!Me.HasAura("Shadowform") && SpellManager.HasSpell("Shadowform"))) && !Me.HasAura("Weakened Soul")),
+                Spell.BuffSelf("Power Word: Shield", ret => (Me.HealthPercent < PriestSettings.PowerWordShield || (!Me.HasAura("Shadowform") && SpellManager.HasSpell("Shadowform"))) && !Me.HasAura("Weakened Soul")),
 
                 // keep heal buffs on if (glyph no longer required)
                 new PrioritySelector(
@@ -62,12 +74,12 @@ namespace Singular.ClassSpecific.Priest
                     ),
 
                 Spell.Cast("Psychic Scream", ret => PriestSettings.UsePsychicScream
-                    && Me.HealthPercent <= PriestSettings.ShadowFlashHealHealth
+                    && Me.HealthPercent <= PriestSettings.ShadowFlashHeal
                     && (Unit.NearbyUnfriendlyUnits.Count(u => u.DistanceSqr < 10 * 10) >= PriestSettings.PsychicScreamAddCount || (SingularRoutine.CurrentWoWContext == WoWContext.Battlegrounds && Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 8 )))),
 
                 Spell.Cast("Flash Heal",
                     ctx => Me,
-                    ret => Me.HealthPercent <= PriestSettings.ShadowFlashHealHealth),
+                    ret => Me.HealthPercent <= PriestSettings.ShadowFlashHeal),
 
                 Spell.Cast("Flash Heal",
                     ctx => Me,
@@ -90,7 +102,8 @@ namespace Singular.ClassSpecific.Priest
 
                         Spell.BuffSelf("Shadowform"),
 
-                        Spell.Buff("Devouring Plague", true),
+                        Spell.Buff("Devouring Plague", req => OrbCount >= 3),
+                        Spell.Cast("Mind Blast", req => OrbCount < MaxOrbs),
                         Spell.Buff("Vampiric Touch", true),
                         Spell.Buff("Shadow Word: Pain", true)
 
@@ -138,7 +151,7 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Cast("Power Infusion", ret => Me.CurrentTarget.TimeToDeath() > 20 || AoeTargets.Count() > 2),
                 
                                 // don't attempt to heal unless below a certain percentage health
-                                Spell.Cast("Vampiric Embrace", ret => Me, ret => Me.HealthPercent < 65 && Me.CurrentTarget.TimeToDeath() > 10)
+                                Spell.Cast("Vampiric Embrace", ret => Me, ret => Me.HealthPercent < PriestSettings.VampiricEmbracePct && Me.CurrentTarget.TimeToDeath() > 10)
                                 )
                             ),
 
@@ -154,7 +167,7 @@ namespace Singular.ClassSpecific.Priest
                                 // halo only if nothing near we aren't already in combat with
                                 Spell.Cast("Halo", 
                                     ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
-                                Spell.Cast("Mind Sear", mov => true, ctx => (WoWUnit)ctx, ret => AoeTargets.Count() > 5, cancel => Me.HealthPercent < PriestSettings.ShadowFlashHealHealth ),
+                                Spell.Cast("Mind Sear", mov => true, ctx => (WoWUnit)ctx, ret => AoeTargets.Count() > 5, cancel => Me.HealthPercent < PriestSettings.ShadowFlashHeal ),
 
                                 new PrioritySelector(
                                     ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
@@ -162,7 +175,7 @@ namespace Singular.ClassSpecific.Priest
                                     Spell.Buff("Shadow Word: Pain", on => (WoWUnit) on)
                                     ),
 
-                                Spell.Cast("Mind Sear", mov => true, ctx => (WoWUnit)ctx, ret => AoeTargets.Count() > 2, cancel => Me.HealthPercent < PriestSettings.ShadowFlashHealHealth)
+                                Spell.Cast("Mind Sear", mov => true, ctx => (WoWUnit)ctx, ret => AoeTargets.Count() > 2, cancel => Me.HealthPercent < PriestSettings.ShadowFlashHeal)
                                 )
                             ),
 
@@ -178,21 +191,26 @@ namespace Singular.ClassSpecific.Priest
 
                             new PrioritySelector(
                                 // We don't want to dot targets below 40% hp to conserve mana. Mind Blast/Flay will kill them soon anyway
-                                Spell.Buff("Devouring Plague", true, ret => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= PriestSettings.NormalContextOrbs),
-                                Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3, cancel => false),
-                                Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20),
+                                Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
                                 Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
+                                Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => OrbCount < MaxOrbs, cancel => false),
+                                Spell.Buff("Devouring Plague", true, ret => OrbCount >= 3),
                                 Spell.Buff("Vampiric Touch"),
                                 Spell.Buff("Shadow Word: Pain", true, ret => Me.CurrentTarget.Elite || Me.CurrentTarget.HealthPercent > 40),
-                                Spell.Cast("Mind Flay", mov => true, on => Me.CurrentTarget, req => Me.ManaPercent >= PriestSettings.MindFlayMana, cancel => false )
+                                Spell.Cast("Mind Flay", mov => true, on => Me.CurrentTarget, req => Me.ManaPercent >= PriestSettings.MindFlayManaPct, cancel => false )
                                 )
                             ),
 
                         // for targets that die quickly
                         new PrioritySelector(
+                            Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
+                            Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
                             Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20),
-                            Spell.Buff("Devouring Plague", true, ret => !Unit.IsTrivial(Me.CurrentTarget) && Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= PriestSettings.NormalContextOrbs ),
-                            Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3, cancel => false),
+                            Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => OrbCount < MaxOrbs, cancel => false),
+
+                            CastInsanity(),
+
+                            Spell.Buff("Devouring Plague", true, ret => !Unit.IsTrivial(Me.CurrentTarget) && OrbCount >= 3),
 
                             new Decorator(
                                 ret => Me.GotTarget && Me.CurrentTarget.TimeToDeath() > 8 && !Unit.IsTrivial(Me.CurrentTarget),
@@ -205,7 +223,6 @@ namespace Singular.ClassSpecific.Priest
                             Spell.Cast("Halo", 
                                 ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),                           
 
-                            Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
                             CastMindFlay()
                             )
                         )
@@ -233,8 +250,15 @@ namespace Singular.ClassSpecific.Priest
                         Spell.BuffSelf("Shadowform"),
 
                         // blow-up target (or snipe a kill) when possible 
-                        Spell.Cast("Shadow Word: Insanity", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.GetAuraTimeLeft("Shadow Word: Pain", true).TotalMilliseconds.Between(350, 5000) && u.InLineOfSpellSight)),
                         Spell.Cast("Shadow Word: Death", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HealthPercent < 20 && Me.IsSafelyFacing(u) && u.InLineOfSpellSight)),
+
+                        // don't attempt to heal unless below a certain percentage health
+                        Spell.Cast(
+                            "Vampiric Embrace",
+                            ret => Me,
+                            ret => Me.CurrentTarget.TimeToDeath(-1) > 12
+                                && Unit.NearbyGroupMembers.Any(u => u.HealthPercent < PriestSettings.VampiricEmbracePct)
+                            ),
 
                         Helpers.Common.CreateInterruptBehavior(),
                         Dispelling.CreatePurgeEnemyBehavior("Dispel Magic"),
@@ -255,7 +279,7 @@ namespace Singular.ClassSpecific.Priest
                                     ),
                                 Spell.Cast("Psychic Horror", 
                                     on => (WoWUnit)on, 
-                                    req => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) == 1
+                                    req => OrbCount >= 1
                                         && ((WoWUnit)req).Distance < 30 
                                         && (((WoWUnit)req).Class == WoWClass.Hunter || ((WoWUnit)req).Class == WoWClass.Rogue || ((WoWUnit)req).Class == WoWClass.Warrior || ((WoWUnit)req).Class == WoWClass.DeathKnight || ((WoWUnit)req).HasAnyAura("Inquisition", "Maelstrom Weapon", "Savage Roar"))
                                     )
@@ -268,7 +292,7 @@ namespace Singular.ClassSpecific.Priest
                         Spell.Cast("Halo", 
                             ret => !Unit.NearbyUnfriendlyUnits.Any(u => Me.SpellDistance(u) < 32 && u.IsCrowdControlled())
                                 && Unit.NearbyUnfriendlyUnits.Count( u => Me.SpellDistance(u) < 32) > 1
-                                && Unit.NearbyFriendlyPlayers.Any( f => f.HealthPercent < 80)),
+                            ),
 
                         // snipe kills where possible
                         Spell.Cast("Shadow Word: Death", 
@@ -277,7 +301,7 @@ namespace Singular.ClassSpecific.Priest
 
                         // at 3 orbs, time for some burst
                         new Decorator(
-                            ret => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= 3,
+                            ret => OrbCount >= 3,
                             new PrioritySelector(
                                 Spell.Cast("Mindbender"),
                                 Spell.Cast("Power Infusion"),
@@ -289,37 +313,22 @@ namespace Singular.ClassSpecific.Priest
                         // only cast Mind Spike if its instant
                         Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
 
-                        Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3, cancel => false),
+                        CastInsanity(),
+
+                        Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => OrbCount < 3, cancel => false),
                       
-                        Spell.Buff("Vampiric Touch", true, on => Me.CurrentTarget, req => Me.CurrentTarget.TimeToDeath() > 6, 3),
-                        Spell.Buff("Shadow Word: Pain", true, on => Me.CurrentTarget, req => Me.CurrentTarget.TimeToDeath() > 6, 1),
+                        Spell.Buff("Vampiric Touch", 3, on => Me.CurrentTarget, req => Me.CurrentTarget.TimeToDeath() > 6),
+                        Spell.Buff("Shadow Word: Pain", 1, on => Me.CurrentTarget, req => Me.CurrentTarget.TimeToDeath() > 6),
 
                         // multi-dot to supply procs and mana
                         new PrioritySelector(
                             ctx => Unit.NearbyUnfriendlyUnits
                                 .FirstOrDefault(u => u.Guid != Me.CurrentTargetGuid && (u.HasAuraExpired("Vampiric Touch", 3) || u.HasAuraExpired("Shadow Word: Pain", 1)) && u.InLineOfSpellSight),
-                            Spell.Buff("Vampiric Touch", true, on => (WoWUnit) on, req => true, 3),
-                            Spell.Buff("Shadow Word: Pain", true, on => (WoWUnit) on, req => true, 1)
+                            Spell.Buff("Vampiric Touch", 3, on => (WoWUnit) on, req => true),
+                            Spell.Buff("Shadow Word: Pain", 1, on => (WoWUnit) on, req => true)
                             ),
 
-                        Spell.Cast("Mind Flay", mov => true, on => Me.CurrentTarget, req => true, 
-                            cancel => {
-                                if (Spell.IsGlobalCooldown())
-                                    return false;
-
-                                if ( !Spell.IsSpellOnCooldown("Mind Blast") && Spell.GetSpellCastTime("Mind Blast") == TimeSpan.Zero)
-                                    Logger.Write(Color.White, "/cancel Mind Flay for instant Mind Blast proc");
-                                else if (Me.HasAura("Surge of Darkness"))
-                                    Logger.Write(Color.White, "/cancel Mind Flay for instant Mind Spike proc");
-                                else if (SpellManager.HasSpell("Shadow Word: Insanity") && Unit.NearbyUnfriendlyUnits.Any(u => u.GetAuraTimeLeft("Shadow Word: Pain", true).TotalMilliseconds.Between(1000, 5000) && u.InLineOfSpellSight ))
-                                    Logger.Write(Color.White, "/cancel Mind Flay for Shadow Word: Insanity proc");
-                                else if (!Spell.IsSpellOnCooldown("Shadow Word: Death") && Unit.NearbyUnfriendlyUnits.Any(u => u.HealthPercent < 20 && u.InLineOfSpellSight))
-                                    Logger.Write(Color.White, "/cancel Mind Flay for Shadow Word: Death proc");
-                                else
-                                    return false;
-
-                                return true;
-                            })
+                        CastMindFlay()
                         )
                     )
                 );
@@ -354,6 +363,14 @@ namespace Singular.ClassSpecific.Priest
 
                         Spell.BuffSelf("Shadowform"),
 
+                        // don't attempt to heal unless below a certain percentage health
+                        Spell.Cast(
+                            "Vampiric Embrace", 
+                            ret => Me, 
+                            ret => Me.CurrentTarget.IsBoss()
+                                && Unit.NearbyGroupMembers.Count( u => u.HealthPercent < PriestSettings.VampiricEmbracePct ) >= PriestSettings.VampiricEmbraceCount
+                            ),
+
                         // use fade to drop aggro.
                         Common.CreateFadeBehavior(),
 
@@ -372,11 +389,20 @@ namespace Singular.ClassSpecific.Priest
                                 Spell.Cast("Divine Star"),
                                 Spell.Cast("Cascade"),
 
+                                new Decorator(
+                                    req => AoeTargets.Count() <= 4,
+                                    new PrioritySelector(
+                                        ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
+                                        Spell.Buff("Vampiric Touch", on => (WoWUnit) on),
+                                        Spell.Buff("Shadow Word: Pain", on => (WoWUnit) on)
+                                        )
+                                    ),
+
                                 Spell.Cast("Mind Sear", 
                                     mov => true, 
                                     ctx => BestMindSearTarget, 
                                     ret => true, 
-                                    cancel => Me.HealthPercent < PriestSettings.ShadowFlashHealHealth ),
+                                    cancel => Me.HealthPercent < PriestSettings.ShadowFlashHeal ),
 
                                 new PrioritySelector(
                                     ctx => AoeTargets.FirstOrDefault(u => !u.HasAllMyAuras("Shadow Word: Pain", "Vampiric Touch")),
@@ -387,50 +413,19 @@ namespace Singular.ClassSpecific.Priest
                             ),
 
                         // Single target rotation
-#if SOLO_PRE_52
-                        Spell.Buff("Devouring Plague", true, ret => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= (Me.CurrentTarget.IsBoss() ? 3 : PriestSettings.NormalContextOrbs )),
-
-                        Spell.Cast("Mind Blast", ret => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3 || Me.HasAura("Divine Insight")),
-
-                        Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20),
-
-                        Spell.Cast("Halo", 
-                            ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
-
-                        Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
-                        Spell.Cast("Mindbender"),
-                        Spell.Cast("Power Infusion"),
-                        Spell.Buff("Vampiric Touch", true, on => Me.CurrentTarget, req => true, 3),
-                        Spell.Buff("Shadow Word: Pain", true, on => Me.CurrentTarget, req => true, 3),
-                        Common.CreateShadowfiendBehavior(),
-                        Spell.Cast("Mind Flay", ret => Me.ManaPercent >= PriestSettings.MindFlayMana)
-#else
                         Spell.BuffSelf( "Dispersion", req => Me.ManaPercent < PriestSettings.DispersionMana),
-                        Spell.Cast(
-                            "Hymn of Hope",
-                            on => Me,
-                            ret => StyxWoW.Me.ManaPercent <= PriestSettings.HymnofHopeMana && Spell.GetSpellCooldown("Shadowfiend").TotalMilliseconds > 0,
-                            cancel => false),
 
                         Spell.BuffSelf("Power Infusion", req => !Me.IsMoving && Spell.CanCastHack("Shadow Word: Pain", Me.CurrentTarget, skipWowCheck: true) && !Me.CurrentTarget.IsMoving),
-                        Spell.Buff("Devouring Plague", true, ret => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) >= (Me.CurrentTarget.IsBoss() ? 3 : PriestSettings.NormalContextOrbs)),
-                        Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => Me.GetCurrentPower(WoWPowerType.ShadowOrbs) < 3, cancel => false),
+                        
+                        Spell.Cast("Devouring Plague", req => OrbCount >= 3),
+                        Spell.Cast("Mind Blast", on => Me.CurrentTarget, req => OrbCount < MaxOrbs, cancel => false),
 
-                        Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20),
-                        !Common.HasTalent(PriestTalents.Insanity) 
-                            ? new ActionAlwaysFail() 
-                            : Spell.Cast("Mind Flay", mov => true, ctx => Me.CurrentTarget, ret => Me.CurrentTarget.HasMyAura("Devouring Plague"), cancel => false),
-                        Spell.Buff("Shadow Word: Pain", true, on => Me.CurrentTarget, req => true, 3),
-                        Spell.Buff("Vampiric Touch", true, on => Me.CurrentTarget, req => true, 3),
+                        Spell.Cast("Shadow Word: Death", ret => Me.CurrentTarget.HealthPercent <= 20 && OrbCount < MaxOrbs),
                         Spell.Cast("Mind Spike", ret => Me.HasAura("Surge of Darkness")),
-                        Spell.Cast("Mindbender"),
-                        Common.CreateShadowfiendBehavior(),
-                        Spell.Cast("Halo", ret => Unit.NearbyUnfriendlyUnits.All(u => Me.SpellDistance(u) < 34 && !u.IsCrowdControlled() && u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingMyRaidMember))),
-                        Spell.Cast("Divine Star"),
-                        Spell.Cast("Cascade"),
-                        Spell.Cast("Mind Sear", mov => true, ctx => Me.CurrentTarget, ret => AoeTargets.Count() > 1, cancel => false),
-                        Spell.Cast("Mind Flay", mov => true, ctx => Me.CurrentTarget, ret => Me.ManaPercent >= PriestSettings.MindFlayMana, cancel => false)
-#endif
+                        CastInsanity(),
+                        Spell.Buff("Shadow Word: Pain", 5, on => Me.CurrentTarget, req => true),
+                        Spell.Buff("Vampiric Touch", 4, on => Me.CurrentTarget, req => true),
+                        CastMindFlay()
                         )
                     )
                 );
@@ -502,12 +497,27 @@ namespace Singular.ClassSpecific.Priest
             return null;
         }
 
+        static Composite CastInsanity()
+        {
+            const int INSANITY = 129197;
+            /*
+            return Spell.Cast(
+                INSANITY,
+                mov => true,
+                on => Me.CurrentTarget,
+                req => Me.HasAura("Shadow Word: Insanity"),
+                cancel => false
+                );
+            */
+            return null;
+        }
+
         static Composite CastMindFlay()
         {
             return Spell.Cast("Mind Flay", 
                 mov => true, 
                 on => Me.CurrentTarget, 
-                req => Me.ManaPercent > PriestSettings.MindFlayMana,
+                req => Me.ManaPercent > PriestSettings.MindFlayManaPct,
                 cancel =>
                 {
                     if (Spell.IsGlobalCooldown())
@@ -541,7 +551,7 @@ namespace Singular.ClassSpecific.Priest
             return new ThrottlePasses(1, 1,
                 new Action(ret =>
                 {
-                    uint orbs = Me.GetCurrentPower(WoWPowerType.ShadowOrbs);
+                    uint orbs = OrbCount;
 
                     string line = string.Format(".... [{0}] h={1:F1}%/m={2:F1}%, moving={3}, form={4}, orbs={5}, surgdark={6}, divinsight={7}",
                         CompositeBuilder.CurrentBehaviorType.ToString(),

@@ -485,10 +485,9 @@ namespace Singular.ClassSpecific.Druid
             behavs.AddBehavior(198 + PriSingleBase, "Rejuvenation @ " + DruidSettings.Heal.Rejuvenation + "%", "Rejuvenation",
                 new PrioritySelector(
                     Spell.Buff("Rejuvenation",
-                        true,
+                        1,
                         on => (WoWUnit)on,
-                        req => ((WoWUnit)req).HealthPercent < DruidSettings.Heal.Rejuvenation,
-                        1
+                        req => ((WoWUnit)req).HealthPercent < DruidSettings.Heal.Rejuvenation
                         )
                     )
                 );
@@ -502,7 +501,7 @@ namespace Singular.ClassSpecific.Druid
                     behavs.AddBehavior(HealthToPriority(DruidSettings.Heal.HealingTouch - 1) + PriSingleBase, "Roll 3 Rejuvenations for Glyph", "Rejuvenation",
                         new PrioritySelector(
                             Spell.Buff("Rejuvenation",
-                                true,
+                                1,
                                 on =>
                                 {
                                     // iterate through so we can stop at either 3 with rejuv or first without
@@ -529,8 +528,7 @@ namespace Singular.ClassSpecific.Druid
 
                                     return null;
                                 },
-                                req => true,
-                                1
+                                req => true
                                 )
                             )
                         );
@@ -703,8 +701,8 @@ namespace Singular.ClassSpecific.Druid
                         new Action(on => Logger.WriteDebug("NonCombatHeal on {0}: health={1:F1}% predicted={2:F1}% +mine={3:F1}", ((WoWUnit)on).SafeName(), ((WoWUnit)on).HealthPercent, ((WoWUnit)on).PredictedHealthPercent(), ((WoWUnit)on).PredictedHealthPercent(includeMyHeals: true))),
                         new PrioritySelector(
                             // BUFFS First
-                            Spell.Buff("Rejuvenation", true, on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 95, 1),
-                            Spell.Buff("Regrowth", true, on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 80 && !TalentManager.HasGlyph("Regrowth"), 1),
+                            Spell.Buff("Rejuvenation", 1, on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 95),
+                            Spell.Buff("Regrowth", 1, on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 80 && !TalentManager.HasGlyph("Regrowth")),
 
                             // Direct Heals After
                             Spell.Cast("Healing Touch", on => (WoWUnit)on, req => ((WoWUnit)req).PredictedHealthPercent(includeMyHeals: true) < 65),

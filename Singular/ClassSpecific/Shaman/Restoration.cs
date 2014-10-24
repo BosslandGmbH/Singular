@@ -194,7 +194,7 @@ namespace Singular.ClassSpecific.Shaman
                         Totems.CreateTotemsBehavior(),
 
                         Spell.Cast("Elemental Blast"),
-                        Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
+                        Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
                         Spell.Cast("Lava Burst"),
                         Spell.Cast("Earth Shock"),
                         Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled())),
@@ -243,7 +243,7 @@ namespace Singular.ClassSpecific.Shaman
                                 Totems.CreateTotemsBehavior(),
 
                                 Spell.Cast("Elemental Blast"),
-                                Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
+                                Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true ),
                                 Spell.Cast("Lava Burst"),
                                 Spell.Cast("Earth Shock"),
                                 Spell.Cast("Chain Lightning", ret => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled())),
@@ -328,7 +328,7 @@ namespace Singular.ClassSpecific.Shaman
                             new PrioritySelector(
                                 Helpers.Common.CreateInterruptBehavior(),
                                 Spell.Cast("Elemental Blast", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
-                                Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
+                                Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
                                 Spell.Cast("Lava Burst", on => Me.CurrentTarget, req => true, cancel => HealerManager.CancelHealerDPS()),
                                 Spell.Cast("Earth Shock"),
                                 Spell.Cast("Chain Lightning", on => Me.CurrentTarget, req => Spell.UseAOE && Unit.UnfriendlyUnitsNearTarget(10f).Count() >= 2 && !Unit.UnfriendlyUnitsNearTarget(12f).Any(u => u.IsCrowdControlled()), cancel => HealerManager.CancelHealerDPS()),

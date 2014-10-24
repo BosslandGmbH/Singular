@@ -46,7 +46,46 @@ namespace Singular.ClassSpecific.Warlock
                     new PrioritySelector(
                         CreateWarlockDiagnosticOutputBehavior( "Pull" ),
                         Helpers.Common.CreateAutoAttack(true),
-                        Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
+
+                        // grinding or questing, if target meets these cast Flame Shock if possible
+                        // 1. mob is less than 12 yds, so no benefit from delay in Lightning Bolt missile arrival
+                        // 2. area has another player competing for mobs (we want to tag the mob quickly)
+                        new Decorator(
+                            ret =>{
+                                if (StyxWoW.Me.CurrentTarget.IsHostile && StyxWoW.Me.CurrentTarget.Distance < 12)
+                                {
+                                    Logger.WriteDiagnostic("NormalPull: fast pull since hostile target is {0:F1} yds away", StyxWoW.Me.CurrentTarget.Distance);
+                                    return true;
+                                }
+                                WoWPlayer nearby = ObjectManager.GetObjectsOfType<WoWPlayer>(true, false).FirstOrDefault(p => !p.IsMe && p.SpellDistance(Me.CurrentTarget) <= 40);
+                                if (nearby != null)
+                                {
+                                    Logger.WriteDiagnostic("NormalPull: fast pull since player {0} targeting my target from @ {1:F1} yds", nearby.SafeName(), nearby.SpellDistance(Me.CurrentTarget));
+                                    return true;
+                                }
+                                return false;
+                                },
+
+                            new PrioritySelector(
+                                // instant spells
+                                Spell.Cast("Conflagrate"),
+                                Spell.CastOnGround(
+                                    "Rain of Fire", 
+                                    on => Me.CurrentTarget, 
+                                    req => Spell.UseAOE 
+                                        && _InstantRoF 
+                                        && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => u.Guid != Me.CurrentTargetGuid && (!u.Aggro || u.IsCrowdControlled())), 
+                                    false
+                                    ),
+                                new Action( r => {
+                                    Logger.WriteDiagnostic("NormalPull: no instant cast spells were available -- using default Pull logic");
+                                    return RunStatus.Failure;
+                                    })
+                                )
+                            ),
+
+
+                        Spell.Buff("Immolate", 3, on => Me.CurrentTarget, ret => true),
                         Spell.Cast("Incinerate")
                         )
                     )
@@ -89,7 +128,7 @@ namespace Singular.ClassSpecific.Warlock
 
                         // Noxxic
                         Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
-                        Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
+                        Spell.Buff("Immolate", 3, on => Me.CurrentTarget, ret => true),
                         Spell.Cast("Conflagrate"),
                         Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 
@@ -152,7 +191,7 @@ namespace Singular.ClassSpecific.Warlock
                             req => WarlockSettings.DestructionSpellPriority == Singular.Settings.WarlockSettings.SpellPriority.Noxxic,
                             new PrioritySelector(
                                 Spell.Cast("Shadowburn", ret => Me.CurrentTarget.HealthPercent < 20),
-                                Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
+                                Spell.Buff("Immolate", 3, on => Me.CurrentTarget, ret => true),
                                 Spell.Cast("Conflagrate"),
                                 Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 
@@ -183,7 +222,7 @@ namespace Singular.ClassSpecific.Warlock
                                     return false;
                                 }),
 
-                                Spell.Buff("Immolate", true, on => Me.CurrentTarget, ret => true, 3),
+                                Spell.Buff("Immolate", 3, on => Me.CurrentTarget, ret => true),
                                 Spell.Cast("Conflagrate", req => Spell.GetCharges("Conflagrate") >= 2),
                                 Spell.CastOnGround("Rain of Fire", on => Me.CurrentTarget, req => Spell.UseAOE && _InstantRoF && !Me.CurrentTarget.IsMoving && !Me.CurrentTarget.HasMyAura("Rain of Fire") && !Unit.UnfriendlyUnitsNearTarget(8).Any(u => !u.Aggro || u.IsCrowdControlled()), false),
 

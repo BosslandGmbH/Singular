@@ -207,8 +207,6 @@ namespace Singular.ClassSpecific.Rogue
                         return false;
                     }),
 
-                CreateRogueRedirectBehavior(),
-
                 Spell.BuffSelf("Recuperate", ret => StyxWoW.Me.ComboPoints > 0 && (!SpellManager.HasSpell("Redirect") || !Spell.CanCastHack("Redirect"))),
                 new Throttle( 1,
                     new Decorator(
@@ -288,9 +286,6 @@ namespace Singular.ClassSpecific.Rogue
                             }),
 
                         Common.CreateRogueBlindOnAddBehavior(),
-
-                        // Redirect if we have CP left
-                        CreateRogueRedirectBehavior(),
 
                         Spell.Cast("Marked for Death", ret => StyxWoW.Me.ComboPoints == 0),
 
@@ -872,7 +867,7 @@ namespace Singular.ClassSpecific.Rogue
                         new WaitContinue(TimeSpan.FromMilliseconds(RogueSettings.PrePickPocketPause), req => false, new ActionAlwaysSucceed()),
                         Spell.Cast("Pick Pocket", on => (WoWUnit) on),
                         new WaitContinue( TimeSpan.FromMilliseconds( RogueSettings.PostPickPocketPause), req => false, new ActionAlwaysSucceed()),
-                        new Action( r => Blacklist.Add( Me.CurrentTarget, BlacklistFlags.Node, TimeSpan.FromMinutes(RogueSettings.SuccessfulPostPickPocketBlacklistMinutes), string.Format("Singular: do not pick pocket {0} again for {1}", ((WoWUnit)r).SafeName() ))),
+                        new Action(r => Blacklist.Add(Me.CurrentTarget, BlacklistFlags.Node, TimeSpan.FromMinutes(RogueSettings.SuccessfulPostPickPocketBlacklistMinutes), string.Format("Singular: do not pick pocket {0} again for {1}", ((WoWUnit)r).SafeName(), RogueSettings.SuccessfulPostPickPocketBlacklistMinutes))),
                         new ActionAlwaysFail() // not on the GCD, so fail
                         )
                     )
@@ -891,38 +886,6 @@ namespace Singular.ClassSpecific.Rogue
                                         ret => Me.CurrentTarget.ThreatInfo.RawPercent > 80
                                             && Me.IsInGroup()
                                             && Group.AnyTankNearby);
-        }
-
-        public static Composite CreateRogueRedirectBehavior()
-        {
-            // throttling this cast as there is an issue which occurs in that ComboPoints is non-zero, 
-            // .. but WOW is reporting no combo pts exist.  believe this was due to original wowunit no 
-            // .. longer being in objmgr, but just in case throttling to avoid redirect spam loop
-            return new Throttle(3,
-                Spell.Cast(
-                    "Redirect",
-                    on => Me.CurrentTarget,
-                    ret =>
-                    {
-                        if (Me.ComboPointsTargetGuid != Me.CurrentTargetGuid)
-                        {
-                            if (StyxWoW.Me.ComboPoints > 0)
-                            {
-                                WoWUnit comboTarget = ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid);
-                                if (comboTarget != null)
-                                {
-                                    if (Spell.CanCastHack("Redirect", comboTarget))
-                                    {
-                                        Logger.Write(Color.White, "^Redirect: place {0} pts from {1} @ {2:F1} yds onto new target {3}", StyxWoW.Me.ComboPoints, comboTarget.SafeName(), comboTarget.Distance, Me.CurrentTarget.SafeName());
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-
-                        return false;
-                    })
-                );
         }
 
         public static bool HasDaggerInMainHand

@@ -639,7 +639,11 @@ namespace Singular.Helpers
                 return false;
 
             TimeSpan timeLeft = u.GetAuraTimeLeft(aura, myAura);
-            if (timeLeft.TotalSeconds <= tm.TotalSeconds)
+
+            // be aware: test previously was <= and vague recollection that was needed 
+            // .. but no comment and need a way to consider passive ones found with timeleft of 0 as not expired if
+            // .. if we pass 0 in as the timespan
+            if (timeLeft < tm)
                 return true;
 
             return false;
@@ -681,6 +685,11 @@ namespace Singular.Helpers
         public static bool HasKnownAuraExpired(this WoWUnit u, string aura, int secs = 3, bool myAura = true)
         {
             return u.GetAuraTimeLeft(aura, myAura).TotalSeconds < (double)secs;
+        }
+
+        public static bool HasKnownAuraExpired(this WoWUnit u, string aura, TimeSpan exp, bool myAura = true)
+        {
+            return u.GetAuraTimeLeft(aura, myAura) < exp;
         }
 
 

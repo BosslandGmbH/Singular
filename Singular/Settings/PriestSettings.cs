@@ -79,14 +79,29 @@ namespace Singular.Settings
         [Category("Shadow")]
         [DisplayName("Flash Heal Health")]
         [Description("Health for Flash Heal for shadow spec")]
-        public double ShadowFlashHealHealth { get; set; }
+        public int ShadowFlashHeal { get; set; }
 
         [Setting]
         [DefaultValue(50)]
         [Category("Shadow")]
         [DisplayName("Mind Flay Mana")]
         [Description("Will only use Mind Flay while manapercent is above this value")]
-        public double MindFlayMana { get; set; }
+        public int MindFlayManaPct { get; set; }
+
+        [Setting]
+        [DefaultValue(60)]
+        [Category("Shadow")]
+        [DisplayName("Vampiric Embrace Health")]
+        [Description("Health % for Vampiric Embrace")]
+        public int VampiricEmbracePct { get; set; }
+
+        [Setting]
+        [DefaultValue(3)]
+        [Category("Shadow")]
+        [DisplayName("Vampiric Embrace Health")]
+        [Description("Count of players for Vampiric Embrace in Instances (Solo and Dungeon checks only characters health")]
+        public int VampiricEmbraceCount { get; set; }
+
 
 /*
         [Setting]
@@ -96,12 +111,6 @@ namespace Singular.Settings
         [Description("Casts mind blast anyway after this many seconds if we haven't got 3 shadow orbs")]
         public int MindBlastTimer { get; set; }
 */
-        [Setting]
-        [DefaultValue(2)]
-        [Category("Shadow")]
-        [DisplayName("Orbs When Solo")]
-        [Description("Cast Devouring Plague at orb count in Normal (Solo) context")]
-        public int NormalContextOrbs { get; set; }
 /*
         [Setting]
         [DefaultValue(false)]
@@ -169,7 +178,7 @@ namespace Singular.Settings
         [Category("Common")]
         [DisplayName("Shield Health Percent")]
         [Description("Use PW:Shield below this %")]
-        public double ShieldHealthPercent { get; set; }
+        public int PowerWordShield { get; set; }
 
         [Setting]
         [DefaultValue(00)]
@@ -217,13 +226,6 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(true)]
         [Category("Common")]
-        [DisplayName("Use Inner Fire")]
-        [Description("Use Inner Fire, otherwise uses Inner Will")]
-        public bool UseInnerFire { get; set; }
-
-        [Setting]
-        [DefaultValue(true)]
-        [Category("Common")]
         [DisplayName("Allow Kiting")]
         [Description("Allow Kiting mob to minimize damage taken")]
         public bool AllowKiting { get; set; }
@@ -251,13 +253,6 @@ namespace Singular.Settings
         [Description("Mindbender will be used at this value")] 
         public int MindbenderMana { get; set; }
 */
-        [Setting]
-        [DefaultValue(50)]
-        [Category("Common")]
-        [DisplayName("Hymn of Hope Mana")]
-        [Description("Hymn of Hope will be used at this value")]
-        public int HymnofHopeMana { get; set; }
-
         [Setting]
         [DefaultValue(30)]
         [Category("Common")]
@@ -322,23 +317,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(50)]
         [Category("Discipline")]
-        [DisplayName("Greater Heal Health")]
-        [Description("Greater Heal will be used at this value")]
-        public int GreaterHeal { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Discipline")]
         [DisplayName("Heal Health")]
         [Description("Heal will be used at this value")]
-        public int HealHealthPercentage { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Discipline")]
-        [DisplayName("Renew Health")]
-        [Description("Renew will be used at this value")]
-        public int Renew { get; set; }
+        public int Heal { get; set; }
 
         [Setting]
         [DefaultValue(30)]
@@ -346,20 +327,6 @@ namespace Singular.Settings
         [DisplayName("Pain Suppression Health")]
         [Description("Pain Suppression will be used at this value")]
         public int PainSuppression { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Discipline")]
-        [DisplayName("Binding Heal Self Health")]
-        [Description("Binding Heal will be used when your health is below this value")]
-        public int BindingHealMe { get; set; }
-
-        [Setting]
-        [DefaultValue(70)]
-        [Category("Discipline")]
-        [DisplayName("Binding Heal Other Health")]
-        [Description("Binding Heal will be used when someone elses health is below this value")]
-        public int BindingHealThem { get; set; }
 
         [Setting]
         [DefaultValue(50)]
@@ -403,9 +370,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(50)]
         [Category("Holy")]
-        [DisplayName("Greater Heal Health")]
-        [Description("Greater Heal will be used at this value")]
-        public int HolyGreaterHeal { get; set; }
+        [DisplayName("Heal Health")]
+        [Description("Heal will be used at this value")]
+        public int HolyHeal { get; set; }
 
         [Setting]
         [DefaultValue(25)]
@@ -483,7 +450,6 @@ namespace Singular.Settings
                     Renew = 95;
                     PrayerOfMending = 94;
                     Heal = 0;
-                    GreaterHeal = 0;
                     FlashHeal = 80;
                     BindingHeal = 55;
                     HolyLevel90Talent = 85;
@@ -493,7 +459,6 @@ namespace Singular.Settings
                     PrayerOfHealing = 85;
                     DivineHymn = 75;
                     GuardianSpirit = 35;
-                    VoidShift = 15;
                     CountHolyWordSanctuary = 3;
                     CountLevel90Talent = 3;
                     CountCircleOfHealing = 3;
@@ -504,8 +469,7 @@ namespace Singular.Settings
                 {
                     Renew = 95;
                     PrayerOfMending = 85;
-                    Heal = 90;
-                    GreaterHeal = 65;
+                    Heal = 65;
                     FlashHeal = 65;
                     BindingHeal = 35;
                     HolyLevel90Talent = 80;
@@ -515,7 +479,6 @@ namespace Singular.Settings
                     PrayerOfHealing = 85;
                     DivineHymn = 75;
                     GuardianSpirit = 20;
-                    VoidShift = 19;
                     CountHolyWordSanctuary = 3;
                     CountLevel90Talent = 3;
                     CountCircleOfHealing = 3;
@@ -527,8 +490,7 @@ namespace Singular.Settings
                     PowerWordShield = 100;
                     Renew = 95;
                     PrayerOfMending = 94;
-                    Heal = 0;
-                    GreaterHeal = 40;
+                    Heal = 40;
                     FlashHeal = 20;
                     BindingHeal = 30;
                     HolyLevel90Talent = 80;
@@ -538,7 +500,6 @@ namespace Singular.Settings
                     PrayerOfHealing = 85;
                     DivineHymn = 75;
                     GuardianSpirit = 20;
-                    VoidShift = 19;
                     CountHolyWordSanctuary = 3;
                     CountLevel90Talent = 4;
                     CountCircleOfHealing = 4;
@@ -597,18 +558,11 @@ namespace Singular.Settings
         public int PrayerOfMending { get; set; }
 
         [Setting]
-        [DefaultValue(0)]
+        [DefaultValue(40)]
         [Category("Health %")]
         [DisplayName("% Heal")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int Heal { get; set; }
-
-        [Setting]
-        [DefaultValue(40)]
-        [Category("Health %")]
-        [DisplayName("% Greater Heal")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int GreaterHeal { get; set; }
 
         [Setting]
         [DefaultValue(20)]
@@ -672,13 +626,6 @@ namespace Singular.Settings
         [DisplayName("% Guardian Spirit")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int GuardianSpirit { get; set; }
-
-        [Setting]
-        [DefaultValue(19)]
-        [Category("Health %")]
-        [DisplayName("% Void Shift")]
-        [Description("Caster health % or greater to allow this ability. Set to 0 to disable.")]
-        public int VoidShift { get; set; }
 
         #region Counts
 
@@ -745,15 +692,11 @@ namespace Singular.Settings
             {
                 if (ctx == Singular.HealingContext.Battlegrounds)
                 {
-                    Renew = 0;
                     Penance = 80;
-                    Heal = 0;
                     PrayerOfMending = 80;
-                    GreaterHeal = 0;
+                    Heal = 0;
                     FlashHeal = 80;
-                    BindingHeal = 79;
                     PrayerOfHealing = 90;
-                    VoidShift = 35;
                     PainSuppression = 0;
                     DiscLevel90Talent = 85;
                     PowerWordBarrier = 40;
@@ -767,15 +710,11 @@ namespace Singular.Settings
                 }
                 else if (ctx == Singular.HealingContext.Instances)
                 {
-                    Renew = 0;
                     Penance = 80;
-                    Heal = 95;
                     PrayerOfMending = 80;
-                    GreaterHeal = 60;
+                    Heal = 60;
                     FlashHeal = 30;
-                    BindingHeal = 75;
                     PrayerOfHealing = 90;
-                    VoidShift = 29;
                     PainSuppression = 0;
                     DiscLevel90Talent = 85;
                     PowerWordBarrier = 0;
@@ -789,15 +728,11 @@ namespace Singular.Settings
                 }
                 else if (ctx == Singular.HealingContext.Raids)
                 {
-                    Renew = 0;
                     Penance = 80;
-                    Heal = 0;
                     PrayerOfMending = 90;
-                    GreaterHeal = 50;
+                    Heal = 50;
                     FlashHeal = 30;
-                    BindingHeal = 70;
                     PrayerOfHealing = 89;
-                    VoidShift = 20;
                     PainSuppression = 49;
                     DiscLevel90Talent = 89;
                     PowerWordBarrier = 80;
@@ -830,23 +765,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(0)]
         [Category("Healing")]
-        [DisplayName("% Renew")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int Renew { get; set; }
-
-        [Setting]
-        [DefaultValue(0)]
-        [Category("Healing")]
         [DisplayName("% Penance")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int Penance { get; set; }
-
-        [Setting]
-        [DefaultValue(0)]
-        [Category("Healing")]
-        [DisplayName("% Heal")]
-        [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int Heal { get; set; }
 
         [Setting]
         [DefaultValue(90)]
@@ -858,9 +779,9 @@ namespace Singular.Settings
         [Setting]
         [DefaultValue(60)]
         [Category("Healing")]
-        [DisplayName("% Greater Heal")]
+        [DisplayName("% Heal")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
-        public int GreaterHeal { get; set; }
+        public int Heal { get; set; }
 
         [Setting]
         [DefaultValue(30)]
@@ -870,25 +791,11 @@ namespace Singular.Settings
         public int FlashHeal { get; set; }
 
         [Setting]
-        [DefaultValue(70)]
-        [Category("Healing")]
-        [DisplayName("% Binding Heal")]
-        [Description("Health % to cast this ability at.Set to 0 to disable.")]
-        public int BindingHeal { get; set; }
-
-        [Setting]
         [DefaultValue(89)]
         [Category("Healing")]
         [DisplayName("% Prayer of Healing")]
         [Description("Health % to cast this ability at. Set to 0 to disable.")]
         public int PrayerOfHealing { get; set; }
-
-        [Setting]
-        [DefaultValue(20)]
-        [Category("Healing")]
-        [DisplayName("% Void Shift")]
-        [Description("Caster health % or greater to allow this ability. Set to 0 to disable.")]
-        public int VoidShift { get; set; }
 
         [Setting]
         [DefaultValue(0)]

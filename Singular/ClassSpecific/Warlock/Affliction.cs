@@ -222,7 +222,7 @@ namespace Singular.ClassSpecific.Warlock
                         // Glyph of Siphon Life? then spam Corruption around....
                         new Decorator(
                             ret => TalentManager.HasGlyph( "Siphon Life"),
-                            Spell.Buff( "Corruption", true, ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasAuraExpired("Corruption", 2)), req => true, 2)
+                            Spell.Buff( "Corruption", 2, ctx => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => u.HasAuraExpired("Corruption", 2)), req => true)
                             ),
 
                         // now go around the room with instant DoTs
@@ -316,15 +316,15 @@ namespace Singular.ClassSpecific.Warlock
                         new PrioritySelector(
                             // target below 20% we have a higher prior on Haunt (but skip if soulburn already up...)
                            Spell.Buff("Haunt", 
-                                true,
-                                ctx => onUnit(ctx),
+                                2,
+                                onUnit,
                                 req => Me.CurrentSoulShards > 0
                                     && Me.CurrentTarget.HealthPercent < 20
-                                    && !Me.HasAura("Soulburn"),
-                                2),
+                                    && !Me.HasAura("Soulburn")
+                                ),
 
                             // otherwise, save 2 shards for Soulburn and instant pet rez if needed (unless Misery buff up)
-                            Spell.Buff("Haunt", true, ctx => onUnit(ctx), req => Me.CurrentSoulShards > 2 || Me.HasAura("Dark Soul: Misery"), 2)
+                            Spell.Buff("Haunt", 2, onUnit, req => Me.CurrentSoulShards > 2 || Me.HasAura("Dark Soul: Misery"))
                             )
                         ),
 
@@ -367,9 +367,9 @@ namespace Singular.ClassSpecific.Warlock
                     new Decorator(
                         req => _dotCount < 4,
                         new PrioritySelector(
-                            Spell.Buff("Agony", true, onUnit, ret => true, 3),
-                            Spell.Buff("Corruption", true, onUnit, ret => true, 3),
-                            Spell.Buff("Unstable Affliction", true, onUnit, req => true, 3)
+                            Spell.Buff("Agony", 3, onUnit, ret => true),
+                            Spell.Buff("Corruption", 3, onUnit, ret => true),
+                            Spell.Buff("Unstable Affliction", 3, onUnit, req => true)
                             )
                         )
                     );
@@ -381,12 +381,12 @@ namespace Singular.ClassSpecific.Warlock
 
                     // target has all my DoTs but not Haunt -- make sure Soulburn isn't active
                    Spell.Buff("Haunt", 
-                        true,
+                        2,
                         ctx => onUnit(ctx), 
                         req => Me.CurrentSoulShards > 0
                             && onUnit(req).HasAllMyAuras("Agony", "Corruption", "Unstable Affliction")
-                            && !Me.HasAura("Soulburn"),
-                        2),
+                            && !Me.HasAura("Soulburn")
+                        ),
 
                     // soulburn + soulswap sequence if requested
                     new Sequence(
@@ -403,9 +403,9 @@ namespace Singular.ClassSpecific.Warlock
                         CreateCastSoulSwap(onUnit)
                         ),
 
-                    Spell.Buff("Corruption", true, ctx => onUnit(ctx), req => true, 3),
-                    Spell.Buff("Agony", true, ctx => onUnit(ctx), req => true, 3),
-                    Spell.Buff("Unstable Affliction", true, ctx => onUnit(ctx), req => true, 3)
+                    Spell.Buff("Corruption", 3, ctx => onUnit(ctx), req => true),
+                    Spell.Buff("Agony", 3, ctx => onUnit(ctx), req => true),
+                    Spell.Buff("Unstable Affliction", 3, ctx => onUnit(ctx), req => true)
                     );
         }
 
@@ -424,7 +424,7 @@ namespace Singular.ClassSpecific.Warlock
                         && onUnit(ret).InLineOfSpellSight,
                     new Action(ret =>
                     {
-                        Logger.Write(string.Format("*Soul Swap on {0}", onUnit(ret).SafeName()));
+                        Logger.Write(LogColor.SpellNonHeal, string.Format("*Soul Swap on {0}", onUnit(ret).SafeName()));
                         SpellManager.Cast("Soul Swap", onUnit(ret));
                     })
                     )

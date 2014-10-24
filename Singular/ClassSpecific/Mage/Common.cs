@@ -207,9 +207,9 @@ namespace Singular.ClassSpecific.Mage
 
                     Spell.Cast("Ice Barrier", on => Me, ret => Me.HasAuraExpired("Ice Barrier", 2)),
 
-                    Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
-                    Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),
-                    Spell.Buff("Frost Bomb", true, on => Me.CurrentTarget, req => true, 0),
+                    Spell.Buff("Nether Tempest", 1, on => Me.CurrentTarget, req => true),
+                    Spell.Buff("Living Bomb", 0, on => Me.CurrentTarget, req => true),
+                    Spell.Buff("Frost Bomb", 0, on => Me.CurrentTarget, req => true),
 
                     // Spell.Cast("Alter Time", ret => StyxWoW.Me.HasAura("Icy Veins") && StyxWoW.Me.HasAura("Brain Freeze") && StyxWoW.Me.HasAura("Fingers of Frost") && StyxWoW.Me.HasAura("Invoker's Energy")),
 

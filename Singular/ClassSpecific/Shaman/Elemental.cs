@@ -272,7 +272,7 @@ namespace Singular.ClassSpecific.Shaman
                                 new Decorator(
                                     ret => !Me.HasAura("Lightning Shield",  7),
                                     new PrioritySelector(
-                                        Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 9),
+                                        Spell.Buff("Flame Shock", 9, on => Me.CurrentTarget, req => true),
                                         Spell.Buff("Flame Shock", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero)
                                         )
                                     ),
@@ -289,8 +289,8 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.Cast("Unleash Elements", req => Common.IsImbuedForDPS(StyxWoW.Me.Inventory.Equipped.MainHand) && !Me.HasAura("Lightning Shield", 4)),
                         Spell.Cast("Elemental Blast", ret => !Me.HasAura("Lightning Shield", 5)),
-                        Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 9),
-                        Spell.Buff("Flame Shock", true, on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero),
+                        Spell.Buff("Flame Shock", 9, on => Me.CurrentTarget, req => true),
+                        Spell.Buff("Flame Shock", on => Unit.NearbyUnfriendlyUnits.FirstOrDefault(u => Me.IsSafelyFacing(u) && u.InLineOfSpellSight), req => Spell.GetSpellCastTime("Lava Burst") != TimeSpan.Zero),
                         Spell.Cast("Lava Burst"),
                         Spell.BuffSelf("Searing Totem", ret => Me.GotTarget && Me.CurrentTarget.Distance < Totems.GetTotemRange(WoWTotem.Searing) && !Totems.Exist(WoWTotemType.Fire)),
                         Spell.Cast("Lightning Bolt")
@@ -337,7 +337,7 @@ namespace Singular.ClassSpecific.Shaman
 
                         Spell.Cast("Elemental Blast", on => Me.CurrentTarget, req => true, cancel => false),
 
-                        Spell.Buff("Flame Shock", true, on => Me.CurrentTarget, req => true, 3),
+                        Spell.Buff("Flame Shock", 3, on => Me.CurrentTarget, req => true),
 
                         Spell.Cast("Unleash Elements", ret => Common.HasTalent(ShamanTalents.UnleashedFury)),
 

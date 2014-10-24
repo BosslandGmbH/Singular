@@ -110,8 +110,8 @@ namespace Singular.ClassSpecific.Mage
                                 return false;
                             },
                             new PrioritySelector(
-                                Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
-                                Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),
+                                Spell.Buff("Nether Tempest", 1, on => Me.CurrentTarget, req => true),
+                                Spell.Buff("Living Bomb", 0, on => Me.CurrentTarget, req => true),
                                 Spell.Cast("Ice Lance"),
                                 Spell.Cast("Fire Blast")
                                 )
@@ -125,9 +125,9 @@ namespace Singular.ClassSpecific.Mage
                         new Decorator(
                             req => !Me.CurrentTarget.IsTrivial(),
                             new PrioritySelector(
-                                Spell.Buff("Nether Tempest", true, on => Me.CurrentTarget, req => true, 1),
-                                Spell.Buff("Living Bomb", true, on => Me.CurrentTarget, req => true, 0),
-                                Spell.Buff("Frost Bomb", true, on => Me.CurrentTarget, req => true, 0)
+                                Spell.Buff("Nether Tempest", 1, on => Me.CurrentTarget, req => true),
+                                Spell.Buff("Living Bomb", 0, on => Me.CurrentTarget, req => true),
+                                Spell.Buff("Frost Bomb", 0, on => Me.CurrentTarget, req => true)
                                 )
                             ),
 

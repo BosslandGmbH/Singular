@@ -325,7 +325,6 @@ namespace Singular.ClassSpecific.Mage
                             target.HealthPercent,
                             Me.IsSafelyFacing(target),
                             target.InLineOfSpellSight,
-                            target.GetAuraTimeLeft("Living Bomb").TotalMilliseconds,
                             target.TreatAsFrozen()
                             );
 

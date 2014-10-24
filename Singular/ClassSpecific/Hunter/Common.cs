@@ -270,7 +270,7 @@ namespace Singular.ClassSpecific.Hunter
                             )
                         ),
 
-                    new Throttle(2, Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPercent)),
+                    new Throttle(2, Spell.Buff("Mend Pet", onUnit => Pet, ret => Me.GotAlivePet && Pet.HealthPercent < HunterSettings.MendPetPct)),
 
                     // don't worry about wrong pet, only missing or dead pet
                     new Decorator(

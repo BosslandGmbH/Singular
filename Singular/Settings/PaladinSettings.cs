@@ -181,7 +181,7 @@ namespace Singular.Settings
         [Category("Holy")]
         [DisplayName("Divine Plea Mana")]
         [Description("Divine Plea will be used at this value")]
-        public double DivinePleaMana { get; set; }
+        public int DivinePleaManaPct { get; set; }
 
          #endregion
 

@@ -42,8 +42,11 @@ namespace Singular.ClassSpecific.Druid
                             && Me.ComboPoints > 0
                             && Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds < (Me.ComboPoints * 6 + 6),
                         new Sequence(
-                            new Action(r => Logger.WriteDebug("cast Savage Roar to use {0} points on corpse of {1} since buff has {2} seconds left", Me.ComboPoints, ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid).SafeName(), Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds)),
-                            CastSavageRoar( on => ObjectManager.GetObjectByGuid<WoWUnit>(Me.ComboPointsTargetGuid), req => true)
+                            new Action(r => Logger.WriteDebug("cast Savage Roar to use {0} points since buff has {1:F1} seconds left", 
+                                Me.ComboPoints, 
+                                Me.GetAuraTimeLeft("Savage Roar", true).TotalSeconds)
+                                ),
+                            CastSavageRoar( on => Me, req => true)
                             )
                         )
                     ),
@@ -117,10 +120,10 @@ namespace Singular.ClassSpecific.Druid
                                         && ((Me.CurrentTarget.Distance > 15 && Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 3)
                                             || Spell.GetSpellCooldown("Wild Charge", 999).TotalSeconds > 40)
                                     ),
-                                Spell.Cast("Rake")
+                                Spell.Buff("Rake", 3)
                                 )
                             ),
-                        Spell.Buff("Rake")
+                        Spell.Buff("Rake", 3)
                         )
                     ),
 
@@ -267,7 +270,7 @@ namespace Singular.ClassSpecific.Druid
                                 && Me.CurrentTarget.TimeToDeath() >= 7
                                 && Me.CurrentTarget.GetAuraTimeLeft("Rip", true).TotalSeconds < 3),
 
-                        Spell.Buff("Rake", ret => Me.CurrentTarget.GetAuraTimeLeft("Rake", true).TotalSeconds < 3),
+                        Spell.Buff("Rake", 3 ),
 
                         Spell.Cast("Shred"),
 
@@ -399,7 +402,7 @@ namespace Singular.ClassSpecific.Druid
                                         Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent < 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds > 250),
 
                                         // 8. Keep 5 combo point Rip up.
-                                        Spell.Buff("Rip", true, on => Me.CurrentTarget, req => Me.ComboPoints >= 5, 3),
+                                        Spell.Buff("Rip", 3, on => Me.CurrentTarget, req => Me.ComboPoints >= 5),
 
                                         // 7. Ferocious Bite if you have 5 CP and at least 6 - 10 seconds on Savage Roar and Rip
                                         Spell.Cast("Ferocious Bite", 
@@ -409,7 +412,7 @@ namespace Singular.ClassSpecific.Druid
                                                 ),
 
                                         // 9. Keep Rake up
-                                        Spell.Buff("Rake", true, on => Me.CurrentTarget, req => true, 3),
+                                        Spell.Buff("Rake", 3),
 
                                         // 10. Spend Omen of Clarity procs on Thrash if Thrash has less than 6 seconds remaining.
                                         CastThrash(on => Me.CurrentTarget, req => Me.HasAura("Clearcasting"), 6),
@@ -434,7 +437,7 @@ namespace Singular.ClassSpecific.Druid
                                             req => Me.ComboPoints >= 5,
                                             new PrioritySelector(
                                                 Spell.Cast("Ferocious Bite", req => Me.CurrentTarget.HealthPercent <= 25 && Me.CurrentTarget.GetAuraTimeLeft("Rip").TotalMilliseconds > 250),
-                                                Spell.Buff("Rip", true, on => Me.CurrentTarget, req => true, 6),
+                                                Spell.Buff("Rip", 6, on => Me.CurrentTarget, req => true),
                                                 Spell.Cast("Ferocious Bite")
                                                 )
                                             ),
@@ -446,7 +449,7 @@ namespace Singular.ClassSpecific.Druid
                                                 // note:  id used to fix Thrash Spell Override bug (similar to Savage Roar)
                                                 // CastThrash( on => Me.CurrentTarget, req => Me.HasAura("Clearcasting")),
 
-                                                Spell.Buff("Rake", true, on => Me.CurrentTarget, req => true, 3),
+                                                Spell.Buff("Rake", 3),
 
                                                 // following if 3 - 4 targets
                                                 CastThrash( on => Me.CurrentTarget, req => _aoeCount >= 3, 2),

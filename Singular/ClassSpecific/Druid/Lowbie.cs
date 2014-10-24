@@ -120,7 +120,7 @@ namespace Singular.ClassSpecific.Druid
                 */
                                 Spell.Cast("Ferocious Bite", ret => StyxWoW.Me.ComboPoints >= 5 || Me.ComboPoints >= Me.CurrentTarget.TimeToDeath(99)),
 
-                                Spell.Cast("Mangle"),
+                                Spell.Cast("Shred"),
                                 Movement.CreateMoveToMeleeBehavior(true)
                                 )
                             )

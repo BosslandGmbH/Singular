@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FileCheckData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ScanTime>10/24/2014 13:31:09</ScanTime>
+  <ScanTime>10/24/2014 13:57:37</ScanTime>
   <FileList>
     <File Hash="27813" Name="ClassSpecific\DeathKnight\Blood.cs" />
-    <File Hash="33455" Name="ClassSpecific\DeathKnight\Common.cs" />
+    <File Hash="33471" Name="ClassSpecific\DeathKnight\Common.cs" />
     <File Hash="23231" Name="ClassSpecific\DeathKnight\Frost.cs" />
     <File Hash="2579" Name="ClassSpecific\DeathKnight\Lowbie.cs" />
     <File Hash="17606" Name="ClassSpecific\DeathKnight\Unholy.cs" />

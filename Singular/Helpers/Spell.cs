@@ -1889,10 +1889,11 @@ namespace Singular.Helpers
                     return SpellManager.FindSpell(spellName, out sfr);
                 };
 
-            return new PrioritySelector(
-                ctx => new CogContext( ctx, ssd, onLocRtrv, tgtDescRtrv),
-                ContextCastOnGround(requirements, waitForSpell)
-                );
+            return new Decorator(ctx => requirements(ctx),
+                    new PrioritySelector(
+                    ctx => new CogContext( ctx, ssd, onLocRtrv, tgtDescRtrv),
+                        ContextCastOnGround(requirements, waitForSpell)
+                ));
         }
 
         /// <summary>

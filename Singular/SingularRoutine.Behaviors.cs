@@ -1282,6 +1282,10 @@ namespace Singular
                 // Logger.WriteDiagnostic("   Completed: {0}", wdout);
                 foreach (var objective in objectives)
                 {
+                    // ensure the index is valid - not really sure if this check is required but better be safe than sorry. HV
+                    if (objective.Index < 0 || objective.Index >= wd.ObjectivesDone.Length)
+                        continue;
+                    
                     if (wd.ObjectivesDone[objective.Index] < objective.Count)
                     {
                         if (objective.Type == Quest.QuestObjectiveType.KillMob)

@@ -80,7 +80,7 @@
     <File Hash="5375" Name="Helpers\PVP.cs" />
     <File Hash="13279" Name="Helpers\Rest.cs" />
     <File Hash="35572" Name="Helpers\Safers.cs" />
-    <File Hash="111475" Name="Helpers\Spell.cs" />
+    <File Hash="111549" Name="Helpers\Spell.cs" />
     <File Hash="16825" Name="Helpers\Throttle.cs" />
     <File Hash="62869" Name="Helpers\Unit.cs" />
     <File Hash="54180" Name="Lists\BossList.cs" />
@@ -115,7 +115,7 @@
     <File Hash="1727" Name="Settings\SpellList.PurgeWhitelist.cs" />
     <File Hash="5002" Name="Settings\WarlockSettings.cs" />
     <File Hash="5065" Name="Settings\WarriorSettings.cs" />
-    <File Hash="77984" Name="SingularRoutine.Behaviors.cs" />
+    <File Hash="78262" Name="SingularRoutine.Behaviors.cs" />
     <File Hash="1809" Name="SingularRoutine.BotEvents.cs" />
     <File Hash="20693" Name="SingularRoutine.Context.cs" />
     <File Hash="27365" Name="SingularRoutine.cs" />

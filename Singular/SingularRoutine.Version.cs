@@ -33,8 +33,8 @@ using Styx.CommonBot.Routines;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("4.0.0.3826")]
-[assembly: AssemblyFileVersion("4.0.0.3826")]
+[assembly: AssemblyVersion("4.0.0.3836")]
+[assembly: AssemblyFileVersion("4.0.0.3836")]
 
 namespace Singular
 {

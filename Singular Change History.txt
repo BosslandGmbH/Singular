@@ -1,3 +1,63 @@
+--- Release 4.0.0.3793 ---
+
+General
+
+fixed - bug: Singular not recognizing specialization change
+
+fixed - Pull More with Questing and Grind profiles: when PullMoreUsage = Auto, will now only pull additional mobs matching active quests which have not been completed.  Supports both kill quests and mob drop quests.  
+
+*new* - Pull More will work with Natfoth's profile-less quest bot pulling additional mobs only if contained in Target List
+
+
+Druid
+
+fixed - Restoration - resolved issues due to recent changes in spec including Lifebloom usage
+
+
+Mage
+
+fixed - All Specs - all specs had their spell priorities rewritten
+
+fixed - Frost - bug: Fingers of Frost - aura check was finding wrong aura so inconsistent recognition of number of stacks occurred (and lower DPS)
+
+
+Monk
+
+fixed - All Specs - all specs had their spell priorities rewritten
+
+fixed - Windwalker - bug: Flying Serpent Kick would not cancel at target when not glyphed
+
+change- All Specs - Expel Harm now targets lowest health group member since previously glyphed behavior now baseline
+
+fixed - Brewmaster/Windwalker - now have access to Surging Mist, so added self-heal logic during combat and at rest.
+
+
+Warrior
+
+fixed - All Specs - all specs spell priorities rewritten (default priority only if supports multiple)
+
+
+--- Release 4.0.0.3775 ---
+
+General
+
+updated : Following specs should be usable with latest version of HonorBuddy .750 or later:
+
+- Blood Death Knight
+- Frost Death Knight
+- Unholy Death Knight
+
+- Guardian Druid
+- Feral Druid
+- Balance Druid
+
+- BeastMaster Hunter
+- Marksmanship Hunter
+- Survival Hunter
+
+other : Combat Ressurrection now has a target selection setting specific for Raids (defaults to Tanks) and Partys (defaults to Tanks and Healers)
+
+
 --- Release 4.0.0.3756 ---
 
 General
